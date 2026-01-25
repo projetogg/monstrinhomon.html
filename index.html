@@ -411,6 +411,15 @@ function checkEvolution(mi){
       return false;
     }
     mi.monsterId=evo.toMonsterId;
+    // Recalculate stats for the evolved form
+    const newStats=calculateMonsterStats(newMonster,mi.level);
+    const hpRatio=mi.hp/mi.hpMax; // Preserve HP percentage
+    mi.hpMax=Math.round(newStats.hp*(RARITY_PWR[newMonster.rarity]||1));
+    mi.hp=Math.round(mi.hpMax*hpRatio);
+    mi.atk=newStats.atk;
+    mi.def=newStats.def;
+    mi.spd=newStats.spd;
+    mi.ene=newStats.ene;
     toast(`🎉 ${oldMonster?.name||"Monstrinho"} evoluiu para ${newMonster.name}!`);
     save();
     return true;
@@ -490,7 +499,8 @@ function groupAvgLevel(pids){
 }
 
 function captureChance({rarity,monLevel,avgLevel,itemBonus,d20}){
-  // New threshold-based capture system from CAPTURE_TABLE.csv
+  // Legacy dice-based capture chance calculation (kept for backward compatibility)
+  // Note: The new capture system uses threshold-based logic (see canCapture function)
   const threshold=CAPTURE_THRESHOLD[rarity]||0.35;
   const base=CAPTURE_BASE[rarity]||30;
   const delta=monLevel-avgLevel;
@@ -503,9 +513,10 @@ function captureChance({rarity,monLevel,avgLevel,itemBonus,d20}){
 }
 
 function canCapture({currentHp,maxHp,rarity,itemBonus}){
-  // Threshold-based capture: success if HP% <= threshold + item bonus
+  // Threshold-based capture from CONFIG: success if HP% <= threshold + item bonus
+  // This is the primary capture mechanic according to CAPTURE_TABLE.csv
   const hpPercent=currentHp/maxHp;
-  const threshold=(CAPTURE_THRESHOLD[rarity]||0.35)+(itemBonus||0);
+  const threshold=(CAPTURE_THRESHOLD[rarity]||0.35)+(itemBonus||0)*state.config.masterCaptureMultiplier;
   return hpPercent<=threshold;
 }
 
