@@ -1,0 +1,6 @@
+control_key,value,type,description,safe_range,notes
+debug_allow_cross_class_battle,False,bool,Permite usar monstros de outras classes em batalha (DEBUG/plot). Captura continua livre.,FALSE/TRUE,Use só quando quiser quebrar a regra de troca entre jogadores.
+force_encounter_id,,text,"Se preenchido, força um encontro específico (ex.: ENC_001).",ID,
+xp_multiplier,"=VLOOKUP(""master_xp_multiplier"",CONFIG!A:B,2,FALSE)",float,Multiplicador global de XP.,0.2–5.0,Referência do CONFIG.
+enemy_stat_multiplier,"=VLOOKUP(""master_enemy_stat_multiplier"",CONFIG!A:B,2,FALSE)",float,Multiplicador global de stats inimigos.,0.5–3.0,Referência do CONFIG.
+capture_multiplier,"=VLOOKUP(""master_capture_multiplier"",CONFIG!A:B,2,FALSE)",float,Multiplicador global de captura.,0.2–3.0,Referência do CONFIG.

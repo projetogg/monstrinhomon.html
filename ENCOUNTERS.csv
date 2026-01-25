@@ -1,0 +1,3 @@
+encounter_id,tipo_encontro,local_id,periodo,min_level,max_level,monster_id_1,monster_id_2,monster_id_3,recomp_xp,recomp_gold,drop_table_id,notes
+ENC_001,Selvagem,LOC_001,Qualquer,1,3,MON_100,,,30,20,DROP_001,Encontro tutorial: 1 monstro selvagem.
+ENC_002,Treinador,LOC_001,Qualquer,2,4,MON_100,MON_100,,60,40,DROP_002,Treinador novato com 2 monstros.

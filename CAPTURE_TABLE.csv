@@ -1,0 +1,6 @@
+raridade,base_hp_threshold,notes
+Comum,0.35,Captura garantida se HP% <= limite final.
+Incomum,0.3,
+Raro,0.22,
+Místico,0.15,
+Lendário,0.08,Geralmente só por história; limite bem baixo.
