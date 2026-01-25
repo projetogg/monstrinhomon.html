@@ -864,8 +864,12 @@
                 if (!attacker || !defender) return 0;
                 
                 // Level difference modifier: reduces damage significantly when levels are far apart
-                // Using power of 1.5 creates a steep curve: 10 level diff = ~4% damage, 5 level diff = ~23%
-                // This prevents high-level monsters from one-shotting low-level ones
+                // Using power of 1.5 creates a steep curve to prevent unfair matchups:
+                // - 10 level difference ≈ 3% damage modifier (almost no damage)
+                // - 5 level difference ≈ 8% damage modifier
+                // - 3 level difference ≈ 17% damage modifier
+                // - Similar levels (0-1) ≈ 50-100% damage modifier (full effect)
+                // This ensures high-level monsters can't one-shot low-level ones
                 const levelDiff = Math.abs((attacker.level || 1) - (defender.level || 1));
                 const levelMod = 1 / (1 + Math.pow(levelDiff, 1.5));
                 
