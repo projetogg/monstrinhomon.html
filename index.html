@@ -119,6 +119,10 @@
         .badge-rare { background: #3498db; color: white; }
         .badge-epic { background: #9b59b6; color: white; }
         .badge-legendary { background: #f39c12; color: white; }
+        .badge-fire { background: var(--fire-color); color: white; }
+        .badge-water { background: var(--water-color); color: white; }
+        .badge-plant { background: var(--plant-color); color: white; }
+        .badge-electric { background: var(--electric-color); color: var(--dark); }
         
         .encounter-panel {
             background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
@@ -710,10 +714,17 @@
                         </div>
                         
                         <h4>Choose Action:</h4>
-                        <div class="flex-center">
-                            <button class="btn btn-success btn-large" onclick="attemptCapture()">🎯 Capture</button>
-                            <button class="btn btn-danger btn-large" onclick="attackWild()">⚔️ Attack</button>
-                            <button class="btn btn-warning btn-large" onclick="fleeEncounter()">🏃 Flee</button>
+                        <div class="flex-center" style="flex-direction: column;">
+                            <div style="margin: 10px 0;">
+                                <label style="font-weight: bold; font-size: 18px;">🎲 Enter your d20 roll:</label>
+                                <input type="number" id="diceRoll" min="1" max="20" placeholder="1-20" 
+                                       style="width: 120px; text-align: center; font-size: 24px; font-weight: bold; height: 60px; margin: 10px;">
+                            </div>
+                            <div class="flex-center">
+                                <button class="btn btn-success btn-large" onclick="attemptCapture()">🎯 Capture</button>
+                                <button class="btn btn-danger btn-large" onclick="attackWild()">⚔️ Attack</button>
+                                <button class="btn btn-warning btn-large" onclick="fleeEncounter()">🏃 Flee</button>
+                            </div>
                         </div>
                         
                         <div class="combat-log" id="combatLog">
@@ -801,13 +812,18 @@
                     return;
                 }
                 
-                const playerRoll = parseInt(prompt('Roll d20 for your attack (1-20):') || '0');
+                // Get dice roll from input field instead of prompt for better mobile UX
+                const diceInput = document.getElementById('diceRoll');
+                const playerRoll = parseInt(diceInput?.value || '0');
                 const enemyRoll = Math.floor(Math.random() * 20) + 1;
                 
                 if (playerRoll < 1 || playerRoll > 20) {
-                    alert('Invalid roll');
+                    alert('Please enter a valid roll between 1 and 20');
                     return;
                 }
+                
+                // Clear the input for next roll
+                if (diceInput) diceInput.value = '';
                 
                 encounter.log = encounter.log || [];
                 encounter.log.push(`${playerMonster.name} rolled ${playerRoll}, ${encounter.wildMonster.name} rolled ${enemyRoll}`);
@@ -847,6 +863,9 @@
             try {
                 if (!attacker || !defender) return 0;
                 
+                // Level difference modifier: reduces damage significantly when levels are far apart
+                // Using power of 1.5 creates a steep curve: 10 level diff = ~4% damage, 5 level diff = ~23%
+                // This prevents high-level monsters from one-shotting low-level ones
                 const levelDiff = Math.abs((attacker.level || 1) - (defender.level || 1));
                 const levelMod = 1 / (1 + Math.pow(levelDiff, 1.5));
                 
