@@ -935,14 +935,41 @@ function viewEncounter(){
   const s=sess();
   if(!s){
     const c=cardView("Encontro");
-    c.appendChild(pEl("Nenhuma sessão ativa. Vá para <strong>Início</strong> para criar uma sessão."));
+    c.appendChild(pEl("Nenhuma sessão ativa. Vá para <strong>Início</strong> para criar uma party."));
     root.appendChild(c);
     return root;
   }
   ensureSession(s);
   
+  const isParty=!!s.party;
+  
   const enc=cardView("Novo Encontro");
-  enc.appendChild(pEl("Crie um encontro selvagem para captura ou batalha."));
+  enc.appendChild(pEl(isParty?"Escolha o tipo de encontro para sua party.":"Crie um encontro selvagem para captura ou batalha."));
+  
+  // Encounter type selection (only for party mode)
+  let encounterType="capture"; // capture or boss
+  if(isParty){
+    const typeOpts=[
+      {value:"capture",label:"Captura Individual (1 jogador)"},
+      {value:"boss",label:"Boss/Treinador (party inteira)"}
+    ];
+    enc.appendChild(field("Tipo de Encontro",select(typeOpts,encounterType,v=>encounterType=v)));
+  }
+  
+  // Party member selection (for individual encounters)
+  let selPlayer="";
+  if(isParty && s.players.length>0){
+    const playerOpts=s.players.map(pid=>{
+      const p=player(pid);
+      const pc=pclass(p?.playerClassId);
+      return {value:pid,label:`${p?.name||"?"} (${pc?.name||"?"})`};
+    });
+    selPlayer=playerOpts[0]?.value||"";
+    
+    const playerField=field("Jogador (só para Captura)",select(playerOpts,selPlayer,v=>selPlayer=v));
+    playerField.id="player-select-field";
+    enc.appendChild(playerField);
+  }
   
   const monsOpts=getNewMonsters().map(m=>({value:m.id,label:`${m.name} (${m.class}) - ${m.rarity}`}));
   let selMon=monsOpts[0]?.value||"";
@@ -957,14 +984,28 @@ function viewEncounter(){
     const m=cat(selMon);
     if(!m){toast("Monstrinho inválido");return;}
     
-    // Create enemy instance
-    const enemy=createInstance(WILD_OWNER_ID,selMon,selLevel);
-    
-    // Show encounter details
-    toast(`Encontro criado: ${m.name} Lv${selLevel}!`);
-    
-    // Log encounter
-    logEncounter(s,"wild",`${m.name} Lv${selLevel} (HP: ${enemy.hp}/${enemy.hpMax})`);
+    if(isParty && encounterType==="capture"){
+      if(!selPlayer){toast("Selecione um jogador para o encontro individual");return;}
+      const p=player(selPlayer);
+      if(!p){toast("Jogador inválido");return;}
+      
+      // Individual capture encounter
+      const enemy=createInstance(WILD_OWNER_ID,selMon,selLevel);
+      toast(`Encontro Individual: ${p.name} vs ${m.name} Lv${selLevel}!`);
+      logEncounter(s,"capture",`${p.name} enfrenta ${m.name} Lv${selLevel} (HP: ${enemy.hp}/${enemy.hpMax}) - Captura só possível com HP > 0`);
+    }
+    else if(isParty && encounterType==="boss"){
+      // Group boss/trainer encounter
+      const enemy=createInstance(WILD_OWNER_ID,selMon,selLevel);
+      toast(`Encontro em Grupo: Party vs ${m.name} Lv${selLevel}!`);
+      logEncounter(s,"boss",`Party (${s.players.length} jogadores) enfrenta ${m.name} Lv${selLevel} (HP: ${enemy.hp}/${enemy.hpMax})`);
+    }
+    else{
+      // Legacy: single player encounter
+      const enemy=createInstance(WILD_OWNER_ID,selMon,selLevel);
+      toast(`Encontro criado: ${m.name} Lv${selLevel}!`);
+      logEncounter(s,"wild",`${m.name} Lv${selLevel} (HP: ${enemy.hp}/${enemy.hpMax})`);
+    }
     
     render();
   }));
@@ -977,7 +1018,16 @@ function viewEncounter(){
     const list=document.createElement("div");list.className="list";
     s.encounters.slice(0,10).forEach(e=>{
       const item=document.createElement("div");item.className="item";
-      item.innerHTML=`<div class="title"><span class="badge ${e.kind==='wild'?'good':'warn'}">${e.kind}</span><span class="muted">${fmt(e.at)}</span></div>`;
+      let badgeClass="good";
+      let kindLabel=e.kind;
+      if(e.kind==="capture")kindLabel="Captura Individual";
+      else if(e.kind==="boss")kindLabel="Boss/Treinador";
+      else if(e.kind==="wild")kindLabel="Selvagem";
+      
+      if(e.kind==="boss")badgeClass="warn";
+      else if(e.kind==="capture")badgeClass="";
+      
+      item.innerHTML=`<div class="title"><span class="badge ${badgeClass}">${kindLabel}</span><span class="muted">${fmt(e.at)}</span></div>`;
       item.innerHTML+=`<div>${esc(e.summary)}</div>`;
       list.appendChild(item);
     });
