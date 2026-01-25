@@ -215,8 +215,10 @@ const DEFAULT={
     ],
     instances:[],
     evolutions:[
-      {id:"EVO_001",fromMonsterId:"MON_002",toMonsterId:"MON_002B",triggerLevel:12,autoEvolve:true,notes:"Pedrino S1→S2"},
-      {id:"EVO_002",fromMonsterId:"MON_002B",toMonsterId:"MON_002C",triggerLevel:25,autoEvolve:true,notes:"Pedrino S2→S3 (dupla classe Guerreiro+Mago)"}
+      // Note: MON_002B and MON_002C are placeholders - not yet implemented in catalog
+      // These will be added in a future update when the S2/S3 forms are designed
+      {id:"EVO_001",fromMonsterId:"MON_002",toMonsterId:"MON_002B",triggerLevel:12,autoEvolve:true,notes:"Pedrino S1→S2 (placeholder)"},
+      {id:"EVO_002",fromMonsterId:"MON_002B",toMonsterId:"MON_002C",triggerLevel:25,autoEvolve:true,notes:"Pedrino S2→S3 (placeholder - dupla classe Guerreiro+Mago)"}
     ],
     locations:[
       {id:"LOC_001",name:"Campina Inicial",description:"Área segura para aprender captura e batalha.",recommendedLevel:"1-4",notes:"Local tutorial"}
@@ -402,13 +404,16 @@ function checkEvolution(mi){
   if(mi.level>=evo.triggerLevel){
     // Evolve the monster
     const oldMonster=cat(mi.monsterId);
-    mi.monsterId=evo.toMonsterId;
-    const newMonster=cat(mi.monsterId);
-    if(newMonster){
-      toast(`🎉 ${oldMonster?.name||"Monstrinho"} evoluiu para ${newMonster.name}!`);
-      save();
-      return true;
+    const newMonster=cat(evo.toMonsterId);
+    // Check if target evolution exists in catalog (may be placeholder)
+    if(!newMonster){
+      console.warn(`Evolution target ${evo.toMonsterId} not yet implemented in catalog`);
+      return false;
     }
+    mi.monsterId=evo.toMonsterId;
+    toast(`🎉 ${oldMonster?.name||"Monstrinho"} evoluiu para ${newMonster.name}!`);
+    save();
+    return true;
   }
   return false;
 }
