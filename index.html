@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Monstrinhomon - Terapia Assistida</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Menu Principal -->
+        <div id="main-menu" class="screen active">
+            <div class="logo">
+                <h1>🐉 Monstrinhomon</h1>
+                <p class="subtitle">Aventura Terapêutica</p>
+            </div>
+            <div class="menu-buttons">
+                <button class="btn-primary" onclick="game.showScreen('therapeutic-panel')">📋 Painel Terapêutico</button>
+                <button class="btn-primary" onclick="game.showScreen('team-screen')">👥 Meu Time</button>
+                <button class="btn-primary" onclick="game.showScreen('box-screen')">📦 Box de Monstrinhos</button>
+                <button class="btn-primary" onclick="game.showScreen('explore-screen')">🔍 Explorar</button>
+                <button class="btn-primary" onclick="game.showScreen('trade-screen')">🔄 Trocar</button>
+            </div>
+        </div>
+
+        <!-- Painel Terapêutico -->
+        <div id="therapeutic-panel" class="screen">
+            <div class="panel-header">
+                <button class="btn-back" onclick="game.showScreen('main-menu')">← Voltar</button>
+                <h2>Painel Terapêutico</h2>
+            </div>
+            <div class="panel-content">
+                <div class="objectives-section">
+                    <h3>Objetivos</h3>
+                    <div id="objectives-list"></div>
+                    <button class="btn-secondary" onclick="game.addObjective()">+ Adicionar Objetivo</button>
+                </div>
+                <div class="medals-section">
+                    <h3>Medalhas Conquistadas</h3>
+                    <div id="medals-display"></div>
+                </div>
+                <div class="xp-section">
+                    <h3>Progresso de XP</h3>
+                    <div class="xp-bar">
+                        <div id="xp-fill" class="xp-fill"></div>
+                    </div>
+                    <p id="xp-text">0 / 100 XP</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tela do Time -->
+        <div id="team-screen" class="screen">
+            <div class="panel-header">
+                <button class="btn-back" onclick="game.showScreen('main-menu')">← Voltar</button>
+                <h2>Meu Time (Máx. 6)</h2>
+            </div>
+            <div id="team-display" class="team-grid"></div>
+        </div>
+
+        <!-- Box de Monstrinhos -->
+        <div id="box-screen" class="screen">
+            <div class="panel-header">
+                <button class="btn-back" onclick="game.showScreen('main-menu')">← Voltar</button>
+                <h2>Box de Monstrinhos</h2>
+            </div>
+            <div id="box-display" class="monster-grid"></div>
+        </div>
+
+        <!-- Exploração -->
+        <div id="explore-screen" class="screen">
+            <div class="panel-header">
+                <button class="btn-back" onclick="game.showScreen('main-menu')">← Voltar</button>
+                <h2>Explorar</h2>
+            </div>
+            <div class="explore-content">
+                <div class="location-info">
+                    <h3 id="location-name">Floresta Inicial</h3>
+                    <p id="location-description">Um local tranquilo para começar sua aventura.</p>
+                </div>
+                <div class="explore-buttons">
+                    <button class="btn-primary" onclick="game.encounter('wild')">🌿 Procurar Monstrinho</button>
+                    <button class="btn-primary" onclick="game.encounter('boss')">⚔️ Desafiar Boss</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Batalha -->
+        <div id="battle-screen" class="screen">
+            <div class="battle-header">
+                <div class="enemy-info">
+                    <h3 id="enemy-name"></h3>
+                    <div class="hp-bar">
+                        <div id="enemy-hp-fill" class="hp-fill"></div>
+                    </div>
+                    <p id="enemy-hp-text"></p>
+                    <p id="enemy-stats"></p>
+                </div>
+            </div>
+            
+            <div class="battle-log" id="battle-log"></div>
+            
+            <div class="battle-footer">
+                <div class="player-info">
+                    <h3 id="player-monster-name"></h3>
+                    <div class="hp-bar">
+                        <div id="player-hp-fill" class="hp-fill"></div>
+                    </div>
+                    <p id="player-hp-text"></p>
+                    <p id="player-stats"></p>
+                </div>
+                <div class="battle-actions" id="battle-actions">
+                    <button class="btn-battle" onclick="game.battleAction('attack')">⚔️ Atacar</button>
+                    <button class="btn-battle" onclick="game.battleAction('item')">🎒 Item</button>
+                    <button class="btn-battle" onclick="game.battleAction('switch')">🔄 Trocar</button>
+                    <button class="btn-battle" id="flee-btn" onclick="game.battleAction('flee')">🏃 Fugir</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Captura -->
+        <div id="capture-screen" class="screen">
+            <div class="capture-content">
+                <h2>Tentar Capturar?</h2>
+                <div id="capture-info"></div>
+                <div class="capture-buttons">
+                    <button class="btn-primary" onclick="game.attemptCapture()">🎯 Tentar Capturar</button>
+                    <button class="btn-secondary" onclick="game.showScreen('main-menu')">Deixar Ir</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Troca -->
+        <div id="trade-screen" class="screen">
+            <div class="panel-header">
+                <button class="btn-back" onclick="game.showScreen('main-menu')">← Voltar</button>
+                <h2>Sistema de Trocas</h2>
+            </div>
+            <div class="trade-content">
+                <div class="trade-section">
+                    <h3>Seus Monstrinhos</h3>
+                    <div id="trade-your-monsters" class="monster-grid"></div>
+                </div>
+                <div class="trade-section">
+                    <h3>Código de Troca</h3>
+                    <input type="text" id="trade-code-input" placeholder="Cole o código aqui">
+                    <button class="btn-primary" onclick="game.importTrade()">Importar</button>
+                    <button class="btn-secondary" onclick="game.exportSelected()">Exportar Selecionado</button>
+                    <div id="trade-code-output"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Itens -->
+        <div id="item-modal" class="modal">
+            <div class="modal-content">
+                <h3>Escolher Item</h3>
+                <div id="item-list"></div>
+                <button class="btn-secondary" onclick="game.closeModal()">Cancelar</button>
+            </div>
+        </div>
+
+        <!-- Modal de Troca de Monstrinho -->
+        <div id="switch-modal" class="modal">
+            <div class="modal-content">
+                <h3>Trocar Monstrinho</h3>
+                <div id="switch-list"></div>
+                <button class="btn-secondary" onclick="game.closeModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,561 @@
+/* Reset e Base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #333;
+    overflow: hidden;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+#app {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Telas */
+.screen {
+    display: none;
+    width: 100%;
+    height: 100%;
+    background: white;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.screen.active {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Menu Principal */
+#main-menu {
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+}
+
+.logo {
+    text-align: center;
+    margin-bottom: 40px;
+    color: white;
+}
+
+.logo h1 {
+    font-size: 48px;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.subtitle {
+    font-size: 18px;
+    opacity: 0.9;
+}
+
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+    max-width: 400px;
+}
+
+/* Botões */
+.btn-primary, .btn-secondary, .btn-battle, .btn-back {
+    padding: 18px 30px;
+    font-size: 18px;
+    font-weight: 600;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.btn-secondary {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.btn-back {
+    background: #f0f0f0;
+    color: #333;
+    padding: 10px 20px;
+    font-size: 16px;
+    align-self: flex-start;
+}
+
+.btn-battle {
+    background: #4CAF50;
+    color: white;
+    flex: 1;
+    padding: 15px;
+    font-size: 16px;
+}
+
+/* Headers */
+.panel-header {
+    background: #f8f9fa;
+    padding: 20px;
+    border-bottom: 2px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.panel-header h2 {
+    font-size: 24px;
+    color: #333;
+}
+
+/* Painel Terapêutico */
+.panel-content {
+    padding: 20px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.objectives-section, .medals-section, .xp-section {
+    margin-bottom: 30px;
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.objectives-section h3, .medals-section h3, .xp-section h3 {
+    margin-bottom: 15px;
+    color: #667eea;
+}
+
+#objectives-list {
+    margin-bottom: 15px;
+}
+
+.objective-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.objective-item input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+}
+
+.objective-item input[type="text"] {
+    flex: 1;
+    border: none;
+    font-size: 16px;
+    padding: 5px;
+}
+
+.objective-item button {
+    background: #ff4444;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Medalhas */
+#medals-display {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 15px;
+}
+
+.medal-item {
+    text-align: center;
+    padding: 15px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.medal-item .medal-icon {
+    font-size: 40px;
+    margin-bottom: 5px;
+}
+
+.medal-item .medal-name {
+    font-size: 12px;
+    color: #666;
+}
+
+/* Barra de XP */
+.xp-bar {
+    width: 100%;
+    height: 30px;
+    background: #e0e0e0;
+    border-radius: 15px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.xp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%);
+    transition: width 0.5s ease;
+    border-radius: 15px;
+}
+
+#xp-text {
+    text-align: center;
+    font-weight: 600;
+    color: #666;
+}
+
+/* Time e Box */
+.team-grid, .monster-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    padding: 20px;
+}
+
+.monster-card {
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+    border: 3px solid transparent;
+}
+
+.monster-card:active {
+    transform: scale(0.95);
+}
+
+.monster-card.selected {
+    border-color: #667eea;
+}
+
+.monster-card .monster-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.monster-card .monster-name {
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.monster-card .monster-level {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.monster-card .monster-type {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 5px;
+    font-size: 12px;
+    color: white;
+    margin: 2px;
+}
+
+.monster-card .monster-hp {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+}
+
+/* Tipos de Monstrinhos */
+.type-fogo { background: #F08030; }
+.type-agua { background: #6890F0; }
+.type-planta { background: #78C850; }
+.type-eletrico { background: #F8D030; }
+.type-normal { background: #A8A878; }
+.type-pedra { background: #B8A038; }
+
+/* Raridades */
+.rarity-comum { border-color: #999; }
+.rarity-incomum { border-color: #4CAF50; }
+.rarity-raro { border-color: #2196F3; }
+.rarity-epico { border-color: #9C27B0; }
+.rarity-lendario { border-color: #FF9800; }
+
+/* Exploração */
+.explore-content {
+    padding: 20px;
+    flex: 1;
+}
+
+.location-info {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.location-info h3 {
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+.explore-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Batalha */
+#battle-screen {
+    background: linear-gradient(180deg, #87CEEB 0%, #90EE90 100%);
+}
+
+.battle-header, .battle-footer {
+    background: rgba(255,255,255,0.9);
+    padding: 20px;
+}
+
+.battle-header {
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.battle-footer {
+    border-top: 2px solid #e0e0e0;
+}
+
+.enemy-info, .player-info {
+    margin-bottom: 15px;
+}
+
+.enemy-info h3, .player-info h3 {
+    margin-bottom: 10px;
+    font-size: 20px;
+}
+
+.hp-bar {
+    width: 100%;
+    height: 25px;
+    background: #ffcccc;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.hp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%);
+    transition: width 0.3s ease;
+}
+
+.hp-fill.low {
+    background: linear-gradient(90deg, #ff9800 0%, #ff5722 100%);
+}
+
+.hp-fill.critical {
+    background: linear-gradient(90deg, #f44336 0%, #e91e63 100%);
+}
+
+.battle-log {
+    flex: 1;
+    background: rgba(255,255,255,0.7);
+    margin: 0 20px;
+    padding: 15px;
+    border-radius: 12px;
+    overflow-y: auto;
+    font-size: 14px;
+    max-height: 300px;
+}
+
+.battle-log p {
+    margin-bottom: 8px;
+    padding: 5px;
+    background: white;
+    border-radius: 5px;
+}
+
+.battle-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+}
+
+/* Captura */
+.capture-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    padding: 40px;
+    text-align: center;
+}
+
+.capture-content h2 {
+    margin-bottom: 30px;
+    color: #667eea;
+}
+
+#capture-info {
+    background: #f8f9fa;
+    padding: 30px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.capture-buttons {
+    display: flex;
+    gap: 15px;
+}
+
+/* Troca */
+.trade-content {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.trade-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.trade-section h3 {
+    margin-bottom: 15px;
+    color: #667eea;
+}
+
+#trade-code-input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 10px;
+    font-family: monospace;
+}
+
+#trade-code-output {
+    margin-top: 15px;
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    word-break: break-all;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-content h3 {
+    margin-bottom: 20px;
+    color: #667eea;
+}
+
+#item-list, #switch-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.item-button, .switch-button {
+    padding: 15px;
+    background: #f8f9fa;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+}
+
+.item-button:active, .switch-button:active {
+    transform: scale(0.98);
+    background: #e0e0e0;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+}
+
+.empty-state-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+}
+
+/* Responsividade para iPad */
+@media (min-width: 768px) {
+    .menu-buttons {
+        max-width: 500px;
+    }
+    
+    .team-grid, .monster-grid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+    
+    .battle-actions {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (orientation: landscape) {
+    .battle-log {
+        max-height: 200px;
+    }
+}
