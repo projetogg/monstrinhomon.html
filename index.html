@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Monstrinhomon - Therapeutic Game</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --fire-color: #ff6b35; --water-color: #4ecdc4; --plant-color: #95e06c; --electric-color: #ffe66d;
+            --primary: #6c5ce7; --secondary: #fd79a8; --success: #00b894; --warning: #fdcb6e;
+            --danger: #d63031; --dark: #2d3436; --light: #dfe6e9;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--dark); min-height: 100vh; overflow-x: hidden;
+        }
+        
+        .app-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        
+        .error-panel {
+            position: fixed; top: 0; left: 0; right: 0; background: #d63031; color: white;
+            padding: 15px; z-index: 10000; display: none; font-family: monospace; font-size: 14px;
+        }
+        .error-panel.show { display: block; }
+        .error-panel button {
+            background: white; color: #d63031; border: none; padding: 8px 15px; margin: 5px;
+            border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold;
+        }
+        
+        .header {
+            background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .header h1 { color: var(--primary); font-size: 2.5em; text-align: center; margin-bottom: 10px; }
+        
+        .tabs {
+            display: flex; gap: 10px; overflow-x: auto; padding: 10px 0;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .tab-button {
+            background: var(--light); border: none; padding: 15px 25px; border-radius: 15px;
+            font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.3s;
+            white-space: nowrap; min-width: 100px; min-height: 44px;
+        }
+        .tab-button.active {
+            background: var(--primary); color: white; transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4);
+        }
+        
+        .tab-content {
+            display: none; background: white; border-radius: 20px; padding: 25px;
+            min-height: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .tab-content.active { display: block; animation: fadeIn 0.3s; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .btn {
+            background: var(--primary); color: white; border: none; padding: 15px 30px;
+            border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer;
+            transition: all 0.3s; min-height: 44px; min-width: 44px;
+        }
+        .btn:active { transform: scale(0.95); }
+        .btn-success { background: var(--success); }
+        .btn-danger { background: var(--danger); }
+        .btn-warning { background: var(--warning); color: var(--dark); }
+        .btn-secondary { background: var(--secondary); }
+        .btn-large { font-size: 20px; padding: 20px 40px; }
+        
+        input, select, textarea {
+            width: 100%; padding: 12px; border: 2px solid var(--light); border-radius: 10px;
+            font-size: 16px; margin: 8px 0; min-height: 44px;
+        }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); }
+        
+        .card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px; padding: 20px; margin: 15px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .monster-card {
+            display: inline-block; width: 150px; margin: 10px; padding: 15px;
+            border-radius: 15px; text-align: center; cursor: pointer; transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .monster-card:active { transform: scale(0.95); }
+        .monster-card.fire { background: linear-gradient(135deg, #ff6b35 0%, #ff8c61 100%); }
+        .monster-card.water { background: linear-gradient(135deg, #4ecdc4 0%, #7ee0d7 100%); }
+        .monster-card.plant { background: linear-gradient(135deg, #95e06c 0%, #b3eb93 100%); }
+        .monster-card.electric { background: linear-gradient(135deg, #ffe66d 0%, #fff09c 100%); }
+        
+        .progress-bar {
+            width: 100%; height: 30px; background: var(--light); border-radius: 15px;
+            overflow: hidden; position: relative; margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%; background: linear-gradient(90deg, var(--success) 0%, #00b894 100%);
+            transition: width 0.5s; display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: bold; font-size: 14px;
+        }
+        .progress-fill.hp { background: linear-gradient(90deg, #d63031 0%, #ff7675 100%); }
+        .progress-fill.xp { background: linear-gradient(90deg, #6c5ce7 0%, #a29bfe 100%); }
+        
+        .badge {
+            display: inline-block; padding: 5px 12px; border-radius: 20px;
+            font-size: 12px; font-weight: bold; margin: 2px;
+        }
+        .badge-common { background: #95a5a6; color: white; }
+        .badge-rare { background: #3498db; color: white; }
+        .badge-epic { background: #9b59b6; color: white; }
+        .badge-legendary { background: #f39c12; color: white; }
+        
+        .encounter-panel {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+            border-radius: 20px; padding: 25px; margin: 20px 0;
+        }
+        
+        .combat-log {
+            background: white; border-radius: 15px; padding: 15px; max-height: 300px;
+            overflow-y: auto; font-family: monospace; font-size: 14px;
+        }
+        .combat-log div { padding: 5px 0; border-bottom: 1px solid var(--light); }
+        
+        .therapist-panel {
+            border: 3px dashed var(--warning); border-radius: 20px; padding: 20px;
+            margin: 20px 0; background: #fffbea;
+        }
+        
+        .objective-item {
+            display: flex; align-items: center; gap: 10px; padding: 15px;
+            background: white; border-radius: 10px; margin: 10px 0;
+        }
+        
+        .medal { font-size: 48px; display: inline-block; margin: 10px; }
+        .hidden { display: none !important; }
+        .flex { display: flex; gap: 15px; flex-wrap: wrap; }
+        .flex-center { display: flex; justify-content: center; align-items: center; gap: 15px; }
+        
+        .stat-box {
+            display: inline-block; padding: 10px 20px; background: var(--light);
+            border-radius: 10px; margin: 5px; font-weight: bold;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1.8em; }
+            .tab-button { padding: 12px 20px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="errorPanel" class="error-panel">
+        <div id="errorMessage"></div>
+        <button onclick="copyError()">📋 Copy Error</button>
+        <button onclick="dismissError()">✖ Dismiss</button>
+    </div>
+
+    <div class="app-container">
+        <div class="header">
+            <h1>🎮 Monstrinhomon 🌟</h1>
+            <div class="tabs">
+                <button class="tab-button active" onclick="switchTab('home')">🏠 Home</button>
+                <button class="tab-button" onclick="switchTab('session')">📋 Session</button>
+                <button class="tab-button" onclick="switchTab('players')">👥 Players</button>
+                <button class="tab-button" onclick="switchTab('encounter')">⚔️ Encounter</button>
+                <button class="tab-button" onclick="switchTab('therapy')">🎯 Therapy</button>
+                <button class="tab-button" onclick="switchTab('report')">📊 Report</button>
+                <button class="tab-button" onclick="switchTab('settings')">⚙️ Settings</button>
+            </div>
+        </div>
+
+        <div id="tabHome" class="tab-content active">
+            <h2>Welcome to Monstrinhomon! 🎉</h2>
+            <p style="font-size: 18px; margin: 20px 0;">A therapeutic game for young trainers.</p>
+            
+            <div class="card">
+                <h3>Quick Stats</h3>
+                <div id="homeStats">
+                    <div class="stat-box">Active Players: <span id="statPlayers">0</span></div>
+                    <div class="stat-box">Total Monsters: <span id="statMonsters">0</span></div>
+                    <div class="stat-box">Session Active: <span id="statSession">No</span></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Quick Actions</h3>
+                <div class="flex">
+                    <button class="btn btn-large btn-success" onclick="switchTab('session')">Start New Session</button>
+                    <button class="btn btn-large" onclick="switchTab('players')">Manage Players</button>
+                    <button class="btn btn-large btn-secondary" onclick="switchTab('encounter')">Start Encounter</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tabSession" class="tab-content">
+            <h2>Session Management 📋</h2>
+            
+            <div class="card">
+                <h3>Create New Session</h3>
+                <input type="text" id="sessionName" placeholder="Session Name (e.g., Therapy Session 2024-01-15)">
+                <button class="btn btn-success" onclick="createSession()">Create Session</button>
+            </div>
+
+            <div id="activeSessionPanel" class="card hidden">
+                <h3>Active Session: <span id="activeSessionName"></span></h3>
+                <p>Created: <span id="sessionCreated"></span></p>
+                
+                <h4>Turn Order</h4>
+                <div id="turnOrderList"></div>
+                
+                <button class="btn btn-warning" onclick="nextTurn()">Next Turn ▶</button>
+                <button class="btn btn-danger" onclick="endSession()">End Session</button>
+            </div>
+        </div>
+
+        <div id="tabPlayers" class="tab-content">
+            <h2>Player Management 👥</h2>
+            
+            <div class="card">
+                <h3>Add New Player</h3>
+                <input type="text" id="playerName" placeholder="Player Name">
+                <select id="playerClass">
+                    <option value="">Select Class</option>
+                    <option value="fire">🔥 Fire Trainer</option>
+                    <option value="water">💧 Water Trainer</option>
+                    <option value="plant">🌿 Plant Trainer</option>
+                    <option value="electric">⚡ Electric Trainer</option>
+                </select>
+                <button class="btn btn-success" onclick="addPlayer()">Add Player</button>
+            </div>
+
+            <div id="playersList"></div>
+        </div>
+
+        <div id="tabEncounter" class="tab-content">
+            <h2>Encounter ⚔️</h2>
+            
+            <div class="card">
+                <h3>Start New Encounter</h3>
+                <select id="encounterType">
+                    <option value="wild">🌟 Wild Monster (Capture)</option>
+                    <option value="trainer">👤 Trainer Battle</option>
+                    <option value="boss">👹 Boss Battle</option>
+                    <option value="event">📖 Narrative Event</option>
+                </select>
+                <button class="btn btn-success" onclick="startEncounter()">Start Encounter</button>
+            </div>
+
+            <div id="encounterPanel" class="hidden"></div>
+        </div>
+
+        <div id="tabTherapy" class="tab-content">
+            <h2>Therapeutic Objectives 🎯</h2>
+            
+            <div class="therapist-panel">
+                <h3>⚕️ Therapist Controls</h3>
+                
+                <div class="card">
+                    <h4>Add Objective</h4>
+                    <input type="text" id="newObjective" placeholder="Objective description">
+                    <select id="objectiveWeight">
+                        <option value="1">Low Weight (1)</option>
+                        <option value="2">Medium Weight (2)</option>
+                        <option value="3">High Weight (3)</option>
+                    </select>
+                    <button class="btn btn-success" onclick="addObjective()">Add Objective</button>
+                </div>
+
+                <div id="objectivesList"></div>
+            </div>
+
+            <div id="therapyPlayersList"></div>
+        </div>
+
+        <div id="tabReport" class="tab-content">
+            <h2>Session Report 📊</h2>
+            <div id="reportContent"></div>
+        </div>
+
+        <div id="tabSettings" class="tab-content">
+            <h2>Settings ⚙️</h2>
+            
+            <div class="card">
+                <h3>Game Configuration</h3>
+                <label>
+                    <input type="checkbox" id="therapistMode" onchange="toggleTherapistMode()">
+                    Therapist Mode (Show advanced controls)
+                </label>
+            </div>
+
+            <div class="card">
+                <h3>Data Management</h3>
+                <button class="btn btn-success" onclick="exportData()">📥 Export All Data</button>
+                <button class="btn btn-warning" onclick="importData()">📤 Import Data</button>
+                <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear All Data</button>
+            </div>
+
+            <div id="configPanel" class="card hidden">
+                <h3>Advanced Configuration</h3>
+                <div id="configEditor"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // GLOBAL ERROR HANDLER
+        window.addEventListener('error', function(event) {
+            showError(event.error || event.message, event.error?.stack || '');
+        });
+
+        window.addEventListener('unhandledrejection', function(event) {
+            showError('Promise Rejection: ' + event.reason, event.reason?.stack || '');
+        });
+
+        function showError(message, stack) {
+            const panel = document.getElementById('errorPanel');
+            const messageDiv = document.getElementById('errorMessage');
+            messageDiv.innerHTML = `<strong>Error:</strong> ${message}<br><pre>${stack}</pre>`;
+            panel.classList.add('show');
+            console.error('Error caught:', message, stack);
+        }
+
+        function dismissError() {
+            document.getElementById('errorPanel').classList.remove('show');
+        }
+
+        function copyError() {
+            const text = document.getElementById('errorMessage').innerText;
+            navigator.clipboard.writeText(text).catch(e => alert('Copy failed: ' + e));
+        }
+
+        // STATE MANAGEMENT
+        const GameState = {
+            players: [],
+            monsters: [],
+            sessions: [],
+            currentSession: null,
+            currentEncounter: null,
+            objectives: [],
+            config: {
+                maxTeamSize: 6,
+                maxLevel: 100,
+                baseDamageMultiplier: 10,
+                captureBaseChance: 50,
+                medalTiers: { bronze: 10, silver: 25, gold: 50 },
+                xpBonusPercent: 10,
+                classAdvantages: {
+                    fire: { strong: 'plant', weak: 'water' },
+                    water: { strong: 'fire', weak: 'plant' },
+                    plant: { strong: 'water', weak: 'electric' },
+                    electric: { strong: 'plant', weak: 'fire' }
+                }
+            }
+        };
+
+        // MONSTER CATALOG
+        const MONSTER_CATALOG = [
+            { id: 1, name: 'Flameo', class: 'fire', rarity: 'common', baseHp: 45, emoji: '🔥' },
+            { id: 2, name: 'Pyrozard', class: 'fire', rarity: 'rare', baseHp: 60, emoji: '🐉' },
+            { id: 3, name: 'Infernix', class: 'fire', rarity: 'legendary', baseHp: 100, emoji: '🦅' },
+            { id: 4, name: 'Aquafin', class: 'water', rarity: 'common', baseHp: 50, emoji: '💧' },
+            { id: 5, name: 'Hydroseal', class: 'water', rarity: 'rare', baseHp: 65, emoji: '🦭' },
+            { id: 6, name: 'Oceanus', class: 'water', rarity: 'epic', baseHp: 85, emoji: '🐋' },
+            { id: 7, name: 'Leafling', class: 'plant', rarity: 'common', baseHp: 42, emoji: '🌱' },
+            { id: 8, name: 'Vinewrap', class: 'plant', rarity: 'rare', baseHp: 58, emoji: '🌿' },
+            { id: 9, name: 'Treemor', class: 'plant', rarity: 'epic', baseHp: 80, emoji: '🌳' },
+            { id: 10, name: 'Sparkbit', class: 'electric', rarity: 'common', baseHp: 40, emoji: '⚡' },
+            { id: 11, name: 'Voltiger', class: 'electric', rarity: 'rare', baseHp: 62, emoji: '🐯' },
+            { id: 12, name: 'Thunderon', class: 'electric', rarity: 'legendary', baseHp: 95, emoji: '⚡' },
+            { id: 13, name: 'Magmole', class: 'fire', rarity: 'common', baseHp: 48, emoji: '🦔' },
+            { id: 14, name: 'Coralina', class: 'water', rarity: 'common', baseHp: 44, emoji: '🪸' },
+            { id: 15, name: 'Petalion', class: 'plant', rarity: 'legendary', baseHp: 98, emoji: '🌺' }
+        ];
+
+        // DEFAULT OBJECTIVES
+        const DEFAULT_OBJECTIVES = [
+            { id: 1, text: 'Followed group rules', weight: 2 },
+            { id: 2, text: 'Waited for turn patiently', weight: 3 },
+            { id: 3, text: 'Helped another player', weight: 3 },
+            { id: 4, text: 'Used calm voice throughout', weight: 2 },
+            { id: 5, text: 'Made good eye contact', weight: 1 },
+            { id: 6, text: 'Shared materials/ideas', weight: 2 }
+        ];
+
+        // INITIALIZATION
+        function init() {
+            try {
+                loadFromLocalStorage();
+                if (!GameState.objectives || GameState.objectives.length === 0) {
+                    GameState.objectives = [...DEFAULT_OBJECTIVES];
+                }
+                updateAllViews();
+                console.log('Monstrinhomon initialized successfully');
+            } catch (error) {
+                showError('Initialization failed', error.stack);
+            }
+        }
+
+        // LOCAL STORAGE
+        function saveToLocalStorage() {
+            try {
+                const data = JSON.stringify(GameState);
+                localStorage.setItem('monstrinhomon_state', data);
+            } catch (error) {
+                showError('Failed to save data', error.stack);
+            }
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const data = localStorage.getItem('monstrinhomon_state');
+                if (data) {
+                    const loaded = JSON.parse(data);
+                    Object.assign(GameState, loaded);
+                }
+            } catch (error) {
+                console.warn('Failed to load saved data:', error);
+            }
+        }
+
+        // TAB SWITCHING
+        function switchTab(tabName) {
+            try {
+                const tabs = document.querySelectorAll('.tab-content');
+                const buttons = document.querySelectorAll('.tab-button');
+                
+                tabs.forEach(tab => tab.classList.remove('active'));
+                buttons.forEach(btn => btn.classList.remove('active'));
+                
+                const activeTab = document.getElementById('tab' + tabName.charAt(0).toUpperCase() + tabName.slice(1));
+                if (activeTab) {
+                    activeTab.classList.add('active');
+                }
+                
+                const activeButton = Array.from(buttons).find(btn => 
+                    btn.textContent.toLowerCase().includes(tabName.toLowerCase())
+                );
+                if (activeButton) {
+                    activeButton.classList.add('active');
+                }
+                
+                updateAllViews();
+            } catch (error) {
+                showError('Tab switching failed', error.stack);
+            }
+        }
+
+        // PLAYER MANAGEMENT
+        function addPlayer() {
+            try {
+                const name = document.getElementById('playerName')?.value?.trim();
+                const playerClass = document.getElementById('playerClass')?.value;
+                
+                if (!name) {
+                    alert('Please enter a player name');
+                    return;
+                }
+                
+                if (!playerClass) {
+                    alert('Please select a class');
+                    return;
+                }
+                
+                const player = {
+                    id: Date.now(),
+                    name: name,
+                    playerClassId: playerClass,
+                    money: 100,
+                    afterlifeCurrency: 0,
+                    team: [],
+                    box: [],
+                    inventory: {}
+                };
+                
+                GameState.players = GameState.players || [];
+                GameState.players.push(player);
+                
+                giveStarterMonster(player);
+                
+                document.getElementById('playerName').value = '';
+                document.getElementById('playerClass').value = '';
+                
+                saveToLocalStorage();
+                updateAllViews();
+            } catch (error) {
+                showError('Failed to add player', error.stack);
+            }
+        }
+
+        function giveStarterMonster(player) {
+            try {
+                const classMonsters = MONSTER_CATALOG.filter(m => 
+                    m?.class === player?.playerClassId && m?.rarity === 'common'
+                );
+                
+                if (!classMonsters || classMonsters.length === 0) return;
+                
+                const starterTemplate = classMonsters[0];
+                const monster = createMonsterInstance(starterTemplate, player.id, 5);
+                
+                if (monster) {
+                    player.team = player.team || [];
+                    player.team.push(monster);
+                    GameState.monsters = GameState.monsters || [];
+                    GameState.monsters.push(monster);
+                }
+            } catch (error) {
+                console.error('Failed to give starter monster:', error);
+            }
+        }
+
+        function createMonsterInstance(template, ownerId, level = 1) {
+            try {
+                if (!template) return null;
+                
+                const hpMax = Math.floor((template.baseHp || 50) * (1 + (level - 1) * 0.1));
+                
+                return {
+                    id: Date.now() + Math.random(),
+                    ownerId: ownerId,
+                    monsterId: template.id,
+                    name: template.name,
+                    class: template.class,
+                    rarity: template.rarity,
+                    emoji: template.emoji,
+                    level: level,
+                    xp: 0,
+                    hp: hpMax,
+                    hpMax: hpMax,
+                    status: 'healthy'
+                };
+            } catch (error) {
+                console.error('Failed to create monster instance:', error);
+                return null;
+            }
+        }
+
+        // SESSION MANAGEMENT
+        function createSession() {
+            try {
+                const name = document.getElementById('sessionName')?.value?.trim();
+                
+                if (!name) {
+                    alert('Please enter a session name');
+                    return;
+                }
+                
+                if (!GameState.players || GameState.players.length === 0) {
+                    alert('Please add players first');
+                    return;
+                }
+                
+                const session = {
+                    id: Date.now(),
+                    name: name,
+                    createdAt: new Date().toISOString(),
+                    completedAt: null,
+                    players: GameState.players.map(p => p?.id).filter(id => id),
+                    turnOrder: [...GameState.players.map(p => p?.id).filter(id => id)],
+                    currentTurnIndex: 0,
+                    encountersLog: [],
+                    therapy: {
+                        perPlayer: {}
+                    }
+                };
+                
+                GameState.players.forEach(player => {
+                    if (player?.id) {
+                        session.therapy.perPlayer[player.id] = {
+                            pm: 0,
+                            medals: [],
+                            logs: [],
+                            completedObjectives: []
+                        };
+                    }
+                });
+                
+                GameState.sessions = GameState.sessions || [];
+                GameState.sessions.push(session);
+                GameState.currentSession = session;
+                
+                document.getElementById('sessionName').value = '';
+                
+                saveToLocalStorage();
+                updateAllViews();
+            } catch (error) {
+                showError('Failed to create session', error.stack);
+            }
+        }
+
+        function nextTurn() {
+            try {
+                if (!GameState.currentSession) return;
+                
+                const session = GameState.currentSession;
+                session.currentTurnIndex = ((session.currentTurnIndex || 0) + 1) % (session.turnOrder?.length || 1);
+                
+                saveToLocalStorage();
+                updateAllViews();
+            } catch (error) {
+                showError('Failed to advance turn', error.stack);
+            }
+        }
+
+        function endSession() {
+            try {
+                if (!GameState.currentSession) return;
+                
+                if (confirm('End this session?')) {
+                    GameState.currentSession.completedAt = new Date().toISOString();
+                    GameState.currentSession = null;
+                    
+                    saveToLocalStorage();
+                    updateAllViews();
+                }
+            } catch (error) {
+                showError('Failed to end session', error.stack);
+            }
+        }
+
+        // ENCOUNTER MANAGEMENT
+        function startEncounter() {
+            try {
+                const type = document.getElementById('encounterType')?.value;
+                
+                if (!type) {
+                    alert('Please select encounter type');
+                    return;
+                }
+                
+                if (!GameState.currentSession) {
+                    alert('Please create a session first');
+                    return;
+                }
+                
+                const encounter = {
+                    id: Date.now(),
+                    type: type,
+                    active: true,
+                    log: []
+                };
+                
+                if (type === 'wild') {
+                    const randomMonster = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
+                    const level = Math.floor(Math.random() * 10) + 1;
+                    encounter.wildMonster = createMonsterInstance(randomMonster, null, level);
+                    encounter.wildMonster.id = 'wild_' + Date.now();
+                }
+                
+                GameState.currentEncounter = encounter;
+                
+                saveToLocalStorage();
+                renderEncounter();
+            } catch (error) {
+                showError('Failed to start encounter', error.stack);
+            }
+        }
+
+        function renderEncounter() {
+            try {
+                const panel = document.getElementById('encounterPanel');
+                if (!panel) return;
+                
+                const encounter = GameState.currentEncounter;
+                
+                if (!encounter || !encounter.active) {
+                    panel.classList.add('hidden');
+                    return;
+                }
+                
+                panel.classList.remove('hidden');
+                
+                if (encounter.type === 'wild') {
+                    renderWildEncounter(panel, encounter);
+                } else {
+                    panel.innerHTML = '<div class="encounter-panel"><h3>Encounter type not yet implemented</h3></div>';
+                }
+            } catch (error) {
+                showError('Failed to render encounter', error.stack);
+            }
+        }
+
+        function renderWildEncounter(panel, encounter) {
+            try {
+                const monster = encounter.wildMonster;
+                if (!monster) return;
+                
+                const html = `
+                    <div class="encounter-panel">
+                        <h3>Wild ${monster.emoji} ${monster.name} appeared!</h3>
+                        <div class="monster-card ${monster.class}">
+                            <div style="font-size: 48px;">${monster.emoji}</div>
+                            <strong>${monster.name}</strong>
+                            <div class="badge badge-${monster.rarity}">${monster.rarity}</div>
+                            <div>Level ${monster.level}</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill hp" style="width: ${(monster.hp / monster.hpMax) * 100}%">
+                                    ${monster.hp}/${monster.hpMax} HP
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h4>Choose Action:</h4>
+                        <div class="flex-center">
+                            <button class="btn btn-success btn-large" onclick="attemptCapture()">🎯 Capture</button>
+                            <button class="btn btn-danger btn-large" onclick="attackWild()">⚔️ Attack</button>
+                            <button class="btn btn-warning btn-large" onclick="fleeEncounter()">🏃 Flee</button>
+                        </div>
+                        
+                        <div class="combat-log" id="combatLog">
+                            ${(encounter.log || []).map(entry => `<div>${entry}</div>`).join('')}
+                        </div>
+                    </div>
+                `;
+                
+                panel.innerHTML = html;
+            } catch (error) {
+                showError('Failed to render wild encounter', error.stack);
+            }
+        }
+
+        function attemptCapture() {
+            try {
+                const encounter = GameState.currentEncounter;
+                if (!encounter?.wildMonster) return;
+                
+                const monster = encounter.wildMonster;
+                
+                const baseChance = GameState.config?.captureBaseChance || 50;
+                const levelMod = -monster.level * 2;
+                const rarityMod = { common: 10, rare: 0, epic: -10, legendary: -20 }[monster.rarity] || 0;
+                const hpMod = Math.floor(((monster.hpMax - monster.hp) / monster.hpMax) * 20);
+                
+                const totalChance = Math.max(5, Math.min(95, baseChance + levelMod + rarityMod + hpMod));
+                
+                const roll = Math.floor(Math.random() * 100) + 1;
+                
+                encounter.log = encounter.log || [];
+                encounter.log.push(`Capture attempt! Chance: ${totalChance}%, Rolled: ${roll}`);
+                
+                if (roll <= totalChance) {
+                    encounter.log.push(`✅ ${monster.name} was captured!`);
+                    
+                    const currentPlayer = getCurrentPlayer();
+                    if (currentPlayer) {
+                        monster.ownerId = currentPlayer.id;
+                        
+                        currentPlayer.team = currentPlayer.team || [];
+                        currentPlayer.box = currentPlayer.box || [];
+                        
+                        if (currentPlayer.team.length < (GameState.config?.maxTeamSize || 6)) {
+                            currentPlayer.team.push(monster);
+                        } else {
+                            currentPlayer.box.push(monster);
+                        }
+                        
+                        GameState.monsters = GameState.monsters || [];
+                        GameState.monsters.push(monster);
+                    }
+                    
+                    encounter.active = false;
+                    GameState.currentEncounter = null;
+                } else if (roll > 90) {
+                    encounter.log.push(`❌ ${monster.name} broke free and fled!`);
+                    encounter.active = false;
+                    GameState.currentEncounter = null;
+                } else {
+                    encounter.log.push(`❌ ${monster.name} broke free!`);
+                }
+                
+                saveToLocalStorage();
+                renderEncounter();
+            } catch (error) {
+                showError('Capture attempt failed', error.stack);
+            }
+        }
+
+        function attackWild() {
+            try {
+                const encounter = GameState.currentEncounter;
+                if (!encounter?.wildMonster) return;
+                
+                const currentPlayer = getCurrentPlayer();
+                if (!currentPlayer) {
+                    alert('No current player');
+                    return;
+                }
+                
+                const playerMonster = currentPlayer.team?.[0];
+                if (!playerMonster) {
+                    alert('Player has no monsters in team');
+                    return;
+                }
+                
+                const playerRoll = parseInt(prompt('Roll d20 for your attack (1-20):') || '0');
+                const enemyRoll = Math.floor(Math.random() * 20) + 1;
+                
+                if (playerRoll < 1 || playerRoll > 20) {
+                    alert('Invalid roll');
+                    return;
+                }
+                
+                encounter.log = encounter.log || [];
+                encounter.log.push(`${playerMonster.name} rolled ${playerRoll}, ${encounter.wildMonster.name} rolled ${enemyRoll}`);
+                
+                if (playerRoll > enemyRoll) {
+                    const damage = calculateDamage(playerMonster, encounter.wildMonster, playerRoll - enemyRoll);
+                    encounter.wildMonster.hp = Math.max(0, encounter.wildMonster.hp - damage);
+                    encounter.log.push(`💥 ${playerMonster.name} deals ${damage} damage!`);
+                    
+                    if (encounter.wildMonster.hp <= 0) {
+                        encounter.log.push(`🏆 ${encounter.wildMonster.name} fainted! Victory!`);
+                        giveXp(playerMonster, encounter.wildMonster.level * 20);
+                        encounter.active = false;
+                        GameState.currentEncounter = null;
+                    }
+                } else if (enemyRoll > playerRoll) {
+                    const damage = calculateDamage(encounter.wildMonster, playerMonster, enemyRoll - playerRoll);
+                    playerMonster.hp = Math.max(0, playerMonster.hp - damage);
+                    encounter.log.push(`💥 ${encounter.wildMonster.name} deals ${damage} damage!`);
+                    
+                    if (playerMonster.hp <= 0) {
+                        encounter.log.push(`😵 ${playerMonster.name} fainted!`);
+                        playerMonster.status = 'fainted';
+                    }
+                } else {
+                    encounter.log.push('⚔️ Both attacks miss!');
+                }
+                
+                saveToLocalStorage();
+                renderEncounter();
+            } catch (error) {
+                showError('Attack failed', error.stack);
+            }
+        }
+
+        function calculateDamage(attacker, defender, margin) {
+            try {
+                if (!attacker || !defender) return 0;
+                
+                const levelDiff = Math.abs((attacker.level || 1) - (defender.level || 1));
+                const levelMod = 1 / (1 + Math.pow(levelDiff, 1.5));
+                
+                const classAdv = GameState.config?.classAdvantages?.[attacker.class];
+                let classMult = 1;
+                if (classAdv?.strong === defender.class) {
+                    classMult = 1.5;
+                } else if (classAdv?.weak === defender.class) {
+                    classMult = 0.67;
+                }
+                
+                const baseDamage = margin * (GameState.config?.baseDamageMultiplier || 10) * levelMod * classMult;
+                
+                return Math.max(1, Math.floor(baseDamage));
+            } catch (error) {
+                console.error('Damage calculation failed:', error);
+                return 1;
+            }
+        }
+
+        function giveXp(monster, amount) {
+            try {
+                if (!monster) return;
+                
+                monster.xp = (monster.xp || 0) + amount;
+                
+                const xpNeeded = (monster.level || 1) * 100;
+                
+                while (monster.xp >= xpNeeded && monster.level < (GameState.config?.maxLevel || 100)) {
+                    monster.xp -= xpNeeded;
+                    monster.level++;
+                    
+                    const template = MONSTER_CATALOG.find(m => m?.id === monster.monsterId);
+                    if (template) {
+                        monster.hpMax = Math.floor((template.baseHp || 50) * (1 + (monster.level - 1) * 0.1));
+                        monster.hp = monster.hpMax;
+                    }
+                }
+                
+                saveToLocalStorage();
+            } catch (error) {
+                console.error('Failed to give XP:', error);
+            }
+        }
+
+        function fleeEncounter() {
+            try {
+                const encounter = GameState.currentEncounter;
+                if (!encounter) return;
+                
+                if (confirm('Flee from this encounter?')) {
+                    encounter.log = encounter.log || [];
+                    encounter.log.push('🏃 Fled from encounter');
+                    encounter.active = false;
+                    GameState.currentEncounter = null;
+                    
+                    saveToLocalStorage();
+                    renderEncounter();
+                }
+            } catch (error) {
+                showError('Flee failed', error.stack);
+            }
+        }
+
+        function getCurrentPlayer() {
+            try {
+                if (!GameState.currentSession) return null;
+                
+                const turnIndex = GameState.currentSession.currentTurnIndex || 0;
+                const playerId = GameState.currentSession.turnOrder?.[turnIndex];
+                
+                return GameState.players?.find(p => p?.id === playerId) || null;
+            } catch (error) {
+                console.error('Failed to get current player:', error);
+                return null;
+            }
+        }
+
+        // THERAPY MANAGEMENT
+        function addObjective() {
+            try {
+                const text = document.getElementById('newObjective')?.value?.trim();
+                const weight = parseInt(document.getElementById('objectiveWeight')?.value || '1');
+                
+                if (!text) {
+                    alert('Please enter objective description');
+                    return;
+                }
+                
+                const objective = {
+                    id: Date.now(),
+                    text: text,
+                    weight: weight
+                };
+                
+                GameState.objectives = GameState.objectives || [];
+                GameState.objectives.push(objective);
+                
+                document.getElementById('newObjective').value = '';
+                
+                saveToLocalStorage();
+                updateAllViews();
+            } catch (error) {
+                showError('Failed to add objective', error.stack);
+            }
+        }
+
+        function toggleObjectiveForPlayer(playerId, objectiveId) {
+            try {
+                if (!GameState.currentSession) return;
+                
+                const therapy = GameState.currentSession.therapy?.perPlayer?.[playerId];
+                if (!therapy) return;
+                
+                therapy.completedObjectives = therapy.completedObjectives || [];
+                
+                const index = therapy.completedObjectives.indexOf(objectiveId);
+                if (index > -1) {
+                    therapy.completedObjectives.splice(index, 1);
+                } else {
+                    therapy.completedObjectives.push(objectiveId);
+                }
+                
+                therapy.pm = 0;
+                therapy.completedObjectives.forEach(objId => {
+                    const obj = GameState.objectives?.find(o => o?.id === objId);
+                    if (obj) {
+                        therapy.pm += obj.weight || 0;
+                    }
+                });
+                
+                updateMedals(playerId);
+                
+                saveToLocalStorage();
+                updateAllViews();
+            } catch (error) {
+                showError('Failed to toggle objective', error.stack);
+            }
+        }
+
+        function updateMedals(playerId) {
+            try {
+                if (!GameState.currentSession) return;
+                
+                const therapy = GameState.currentSession.therapy?.perPlayer?.[playerId];
+                if (!therapy) return;
+                
+                const pm = therapy.pm || 0;
+                const tiers = GameState.config?.medalTiers || { bronze: 10, silver: 25, gold: 50 };
+                
+                therapy.medals = therapy.medals || [];
+                
+                if (pm >= tiers.gold && !therapy.medals.includes('gold')) {
+                    therapy.medals.push('gold');
+                } else if (pm >= tiers.silver && !therapy.medals.includes('silver')) {
+                    therapy.medals.push('silver');
+                } else if (pm >= tiers.bronze && !therapy.medals.includes('bronze')) {
+                    therapy.medals.push('bronze');
+                }
+            } catch (error) {
+                console.error('Failed to update medals:', error);
+            }
+        }
+
+        // UI UPDATE FUNCTIONS
+        function updateAllViews() {
+            try {
+                updateHomeStats();
+                updatePlayersList();
+                updateSessionView();
+                updateTherapyView();
+                updateReportView();
+                renderEncounter();
+            } catch (error) {
+                console.error('Failed to update views:', error);
+            }
+        }
+
+        function updateHomeStats() {
+            try {
+                const statPlayers = document.getElementById('statPlayers');
+                const statMonsters = document.getElementById('statMonsters');
+                const statSession = document.getElementById('statSession');
+                
+                if (statPlayers) statPlayers.textContent = GameState.players?.length || 0;
+                if (statMonsters) statMonsters.textContent = GameState.monsters?.length || 0;
+                if (statSession) statSession.textContent = GameState.currentSession ? 'Yes' : 'No';
+            } catch (error) {
+                console.error('Failed to update home stats:', error);
+            }
+        }
+
+        function updatePlayersList() {
+            try {
+                const container = document.getElementById('playersList');
+                if (!container) return;
+                
+                if (!GameState.players || GameState.players.length === 0) {
+                    container.innerHTML = '<div class="card"><p>No players yet. Add one above!</p></div>';
+                    return;
+                }
+                
+                let html = '';
+                GameState.players.forEach(player => {
+                    if (!player) return;
+                    
+                    const teamCount = player.team?.length || 0;
+                    const boxCount = player.box?.length || 0;
+                    
+                    html += `
+                        <div class="card">
+                            <h3>${player.name}</h3>
+                            <div class="badge badge-${player.playerClassId}">${player.playerClassId}</div>
+                            <p>💰 Money: ${player.money || 0} | ⭐ Afterlife: ${player.afterlifeCurrency || 0}</p>
+                            <p>👥 Team: ${teamCount}/${GameState.config?.maxTeamSize || 6} | 📦 Box: ${boxCount}</p>
+                            
+                            <h4>Team:</h4>
+                            <div class="flex">
+                                ${(player.team || []).map(m => renderMonsterCard(m)).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Failed to update players list:', error);
+            }
+        }
+
+        function renderMonsterCard(monster) {
+            try {
+                if (!monster) return '';
+                
+                const hpPercent = ((monster.hp || 0) / (monster.hpMax || 1)) * 100;
+                const xpNeeded = (monster.level || 1) * 100;
+                const xpPercent = ((monster.xp || 0) / xpNeeded) * 100;
+                
+                return `
+                    <div class="monster-card ${monster.class || 'common'}">
+                        <div style="font-size: 36px;">${monster.emoji || '🔮'}</div>
+                        <strong>${monster.name || 'Unknown'}</strong>
+                        <div class="badge badge-${monster.rarity || 'common'}">${monster.rarity || 'common'}</div>
+                        <div>Lv ${monster.level || 1}</div>
+                        <div class="progress-bar" style="height: 20px;">
+                            <div class="progress-fill hp" style="width: ${hpPercent}%"></div>
+                        </div>
+                        <small>${monster.hp || 0}/${monster.hpMax || 0} HP</small>
+                        <div class="progress-bar" style="height: 15px;">
+                            <div class="progress-fill xp" style="width: ${xpPercent}%"></div>
+                        </div>
+                        <small>${monster.xp || 0}/${xpNeeded} XP</small>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Failed to render monster card:', error);
+                return '<div class="monster-card">Error</div>';
+            }
+        }
+
+        function updateSessionView() {
+            try {
+                const panel = document.getElementById('activeSessionPanel');
+                if (!panel) return;
+                
+                if (!GameState.currentSession) {
+                    panel.classList.add('hidden');
+                    return;
+                }
+                
+                panel.classList.remove('hidden');
+                
+                const session = GameState.currentSession;
+                document.getElementById('activeSessionName').textContent = session.name || 'Unnamed';
+                document.getElementById('sessionCreated').textContent = new Date(session.createdAt).toLocaleString();
+                
+                const turnList = document.getElementById('turnOrderList');
+                if (turnList) {
+                    let html = '<div class="flex">';
+                    (session.turnOrder || []).forEach((playerId, index) => {
+                        const player = GameState.players?.find(p => p?.id === playerId);
+                        if (player) {
+                            const isCurrent = index === (session.currentTurnIndex || 0);
+                            html += `
+                                <div class="stat-box" style="${isCurrent ? 'background: var(--success); color: white;' : ''}">
+                                    ${isCurrent ? '▶ ' : ''}${player.name}
+                                </div>
+                            `;
+                        }
+                    });
+                    html += '</div>';
+                    turnList.innerHTML = html;
+                }
+            } catch (error) {
+                console.error('Failed to update session view:', error);
+            }
+        }
+
+        function updateTherapyView() {
+            try {
+                const objectivesList = document.getElementById('objectivesList');
+                if (objectivesList) {
+                    let html = '<h4>Current Objectives:</h4>';
+                    (GameState.objectives || []).forEach(obj => {
+                        if (!obj) return;
+                        html += `
+                            <div class="objective-item">
+                                <strong>Weight ${obj.weight}:</strong> ${obj.text}
+                            </div>
+                        `;
+                    });
+                    objectivesList.innerHTML = html;
+                }
+                
+                const therapyPlayersList = document.getElementById('therapyPlayersList');
+                if (!therapyPlayersList) return;
+                
+                if (!GameState.currentSession) {
+                    therapyPlayersList.innerHTML = '<div class="card"><p>No active session</p></div>';
+                    return;
+                }
+                
+                let html = '';
+                (GameState.players || []).forEach(player => {
+                    if (!player) return;
+                    
+                    const therapy = GameState.currentSession.therapy?.perPlayer?.[player.id];
+                    if (!therapy) return;
+                    
+                    html += `
+                        <div class="card">
+                            <h3>${player.name}</h3>
+                            <p><strong>PM (Merit Points):</strong> ${therapy.pm || 0}</p>
+                            <p><strong>Medals:</strong> 
+                                ${(therapy.medals || []).map(m => {
+                                    const emoji = { bronze: '🥉', silver: '🥈', gold: '🥇' }[m] || '🏅';
+                                    return `<span class="medal">${emoji}</span>`;
+                                }).join('')}
+                            </p>
+                            
+                            <h4>Objectives:</h4>
+                            ${(GameState.objectives || []).map(obj => {
+                                if (!obj) return '';
+                                const completed = therapy.completedObjectives?.includes(obj.id);
+                                return `
+                                    <div class="objective-item">
+                                        <input type="checkbox" 
+                                               ${completed ? 'checked' : ''}
+                                               onchange="toggleObjectiveForPlayer(${player.id}, ${obj.id})"
+                                               style="width: 30px; height: 30px; cursor: pointer;">
+                                        <span>${obj.text} (${obj.weight} PM)</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    `;
+                });
+                
+                therapyPlayersList.innerHTML = html;
+            } catch (error) {
+                console.error('Failed to update therapy view:', error);
+            }
+        }
+
+        function updateReportView() {
+            try {
+                const container = document.getElementById('reportContent');
+                if (!container) return;
+                
+                if (!GameState.currentSession) {
+                    container.innerHTML = '<div class="card"><p>No active session</p></div>';
+                    return;
+                }
+                
+                const session = GameState.currentSession;
+                
+                let html = `
+                    <div class="card">
+                        <h3>Session: ${session.name}</h3>
+                        <p>Started: ${new Date(session.createdAt).toLocaleString()}</p>
+                        ${session.completedAt ? `<p>Ended: ${new Date(session.completedAt).toLocaleString()}</p>` : '<p>Status: Active</p>'}
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Player Summary</h3>
+                        ${(GameState.players || []).map(player => {
+                            if (!player) return '';
+                            const therapy = session.therapy?.perPlayer?.[player.id];
+                            if (!therapy) return '';
+                            
+                            return `
+                                <div style="margin: 15px 0; padding: 15px; background: white; border-radius: 10px;">
+                                    <h4>${player.name}</h4>
+                                    <p>PM Earned: ${therapy.pm || 0}</p>
+                                    <p>Medals: ${(therapy.medals || []).join(', ') || 'None yet'}</p>
+                                    <p>Objectives Completed: ${therapy.completedObjectives?.length || 0}/${GameState.objectives?.length || 0}</p>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+                
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Failed to update report view:', error);
+            }
+        }
+
+        // DATA MANAGEMENT
+        function exportData() {
+            try {
+                const data = JSON.stringify(GameState, null, 2);
+                const blob = new Blob([data], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `monstrinhomon_backup_${Date.now()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                showError('Export failed', error.stack);
+            }
+        }
+
+        function importData() {
+            try {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'application/json';
+                input.onchange = (e) => {
+                    const file = e.target?.files?.[0];
+                    if (!file) return;
+                    
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const data = JSON.parse(event.target?.result || '{}');
+                            Object.assign(GameState, data);
+                            saveToLocalStorage();
+                            updateAllViews();
+                            alert('Data imported successfully!');
+                        } catch (error) {
+                            showError('Import failed', error.stack);
+                        }
+                    };
+                    reader.readAsText(file);
+                };
+                input.click();
+            } catch (error) {
+                showError('Import failed', error.stack);
+            }
+        }
+
+        function clearAllData() {
+            try {
+                if (confirm('Are you sure? This will delete ALL data!')) {
+                    if (confirm('Really sure? This cannot be undone!')) {
+                        localStorage.removeItem('monstrinhomon_state');
+                        location.reload();
+                    }
+                }
+            } catch (error) {
+                showError('Clear data failed', error.stack);
+            }
+        }
+
+        function toggleTherapistMode() {
+            try {
+                const checked = document.getElementById('therapistMode')?.checked;
+                const configPanel = document.getElementById('configPanel');
+                if (configPanel) {
+                    if (checked) {
+                        configPanel.classList.remove('hidden');
+                    } else {
+                        configPanel.classList.add('hidden');
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to toggle therapist mode:', error);
+            }
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
