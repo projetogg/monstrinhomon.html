@@ -168,7 +168,7 @@ const CLASS_GROWTH={
 
 const DEFAULT={
   therapist:false,
-  ui:{tab:"home",selectedPlayer:null,encounterMode:"capture",battleKind:"trainer"},
+  ui:{tab:"home",selectedPlayer:null,encounterMode:"capture",battleKind:"trainer",partySetup:{step:"size",size:1,members:[]}},
   config:{
     maxLevel:100,
     xpBase:60,
@@ -188,7 +188,7 @@ const DEFAULT={
     battleXpBase:15
   },
   data:{
-    sessions:[],activeSessionId:null,players:[],
+    sessions:[],activeSessionId:null,players:[],parties:[],
     playerClasses:[
       {id:"CLS_WAR",name:"Guerreiro",allowed:["Guerreiro"],description:"Resistente, combate corpo a corpo."},
       {id:"CLS_MAG",name:"Mago",allowed:["Mago"],description:"Dano mágico e controle."},
@@ -305,6 +305,7 @@ function ensurePlayer(p){
 
 function ensureSession(s){
   if(!s.players)s.players=[];
+  if(!s.party)s.party=null; // Party ID if this is a party-based session
   if(!s.turnOrder)s.turnOrder=[];
   if(!s.encounters)s.encounters=[];
   if(!s.therapy)s.therapy={};
@@ -635,17 +636,19 @@ function wrapTwo(root,a,b){root.appendChild(a);root.appendChild(b);return root;}
 
 function viewHome(){
   const root=document.createElement("div");root.className="grid two";
+  
+  // Check if we're in party setup mode
+  if(state.ui.partySetup && state.ui.partySetup.step!=="complete"){
+    return viewPartySetup();
+  }
+  
   const a=cardView("Ações rápidas");
   a.appendChild(pEl(`Use como Mestre/Terapeuta. Crianças rolam o d20 físico; você só registra aqui.`));
   const row=document.createElement("div");row.className="row";
-  row.appendChild(btn("Nova sessão","primary",()=>{
-    const s={
-      id:id("sess"),name:"Sessão "+new Date().toLocaleDateString("pt-BR"),
-      createdAt:now(),completedAt:null,players:[],turnOrder:[],encounters:[],therapy:{}
-    };
-    state.data.sessions.unshift(s);
-    state.data.activeSessionId=s.id;
-    save();toast("Sessão criada");state.ui.tab="session";render();
+  row.appendChild(btn("Nova Party (Grupo)","primary",()=>{
+    // Start party creation flow
+    state.ui.partySetup={step:"size",size:1,members:[]};
+    save();render();
   }));
   row.appendChild(btn("Continuar","",()=>{
     if(!state.data.activeSessionId&&state.data.sessions.length)
@@ -666,7 +669,8 @@ function viewHome(){
   if(!s)b.appendChild(pEl("Nenhuma sessão ativa."));
   else{
     ensureSession(s);
-    b.appendChild(pEl(`<strong>${esc(s.name)}</strong><br><span class="muted">Criada: ${fmt(s.createdAt)}</span>`));
+    const partyInfo=s.party?` (Party de ${s.players.length} jogadores)`:"";
+    b.appendChild(pEl(`<strong>${esc(s.name)}${partyInfo}</strong><br><span class="muted">Criada: ${fmt(s.createdAt)}</span>`));
     b.appendChild(pEl(`Jogadores: <strong>${s.players.length}</strong> · Registros: <strong>${s.encounters.length}</strong>`));
     b.appendChild(pEl(`<span class="hint">Dica:</span> você pode misturar isso com o Canva e usar o MVP só para rolagem.`));
   }
@@ -675,22 +679,149 @@ function viewHome(){
   return root;
 }
 
+function viewPartySetup(){
+  const root=document.createElement("div");root.className="grid";
+  const setup=state.ui.partySetup;
+  
+  if(setup.step==="size"){
+    // Step 1: Select party size
+    const card=cardView("Criar Nova Party");
+    card.appendChild(pEl("<strong>Passo 1:</strong> Quantos jogadores na party?"));
+    const sizeRow=document.createElement("div");sizeRow.className="row";
+    for(let i=1;i<=6;i++){
+      const isSelected=setup.size===i;
+      sizeRow.appendChild(btn(i.toString(),isSelected?"primary":"",()=>{
+        setup.size=i;
+        save();render();
+      }));
+    }
+    card.appendChild(sizeRow);
+    card.appendChild(pEl(`<span class="muted">Selecionado: ${setup.size} jogador${setup.size>1?"es":""}</span>`));
+    const btnRow=document.createElement("div");btnRow.className="row";
+    btnRow.appendChild(btn("Cancelar","bad",()=>{
+      state.ui.partySetup={step:"complete"};
+      save();render();
+    }));
+    btnRow.appendChild(btn("Próximo: Criar Jogadores","good",()=>{
+      setup.step="create";
+      setup.members=[];
+      save();render();
+    }));
+    card.appendChild(btnRow);
+    root.appendChild(card);
+  }
+  else if(setup.step==="create"){
+    // Step 2: Create each party member
+    const card=cardView(`Criar Party (${setup.members.length}/${setup.size})`);
+    
+    if(setup.members.length<setup.size){
+      // Create next member
+      card.appendChild(pEl(`<strong>Passo 2:</strong> Criando jogador ${setup.members.length+1} de ${setup.size}`));
+      
+      let newName="";
+      let newClassId=state.data.playerClasses[0]?.id||"";
+      
+      card.appendChild(field("Nome do Jogador",inputText("",v=>newName=v)));
+      const classOpts=state.data.playerClasses.map(c=>({value:c.id,label:c.name}));
+      card.appendChild(field("Classe",select(classOpts,newClassId,v=>newClassId=v)));
+      
+      const btnRow=document.createElement("div");btnRow.className="row";
+      btnRow.appendChild(btn("Cancelar Tudo","bad",()=>{
+        if(confirm("Cancelar criação da party?")){
+          state.ui.partySetup={step:"complete"};
+          save();render();
+        }
+      }));
+      btnRow.appendChild(btn("Adicionar à Party","primary",()=>{
+        if(!newName){toast("Digite um nome");return;}
+        
+        // Create player
+        const p={
+          id:id("player"),name:newName,playerClassId:newClassId,
+          money:100,afterlife:0,team:[],box:[],
+          inv:structuredClone(DEFAULT_STARTER_INVENTORY)
+        };
+        state.data.players.push(p);
+        
+        // Give starter monster
+        const pc=pclass(newClassId);
+        if(pc){
+          const starterMons=state.data.catalog.filter(m=>m.isStarter&&pc.allowed.includes(m.class));
+          if(starterMons.length>0){
+            const starter=starterMons[0];
+            const mi=createInstance(p.id,starter.id,5);
+            p.team.push(mi.id);
+          }
+        }
+        
+        setup.members.push(p.id);
+        save();toast(`${newName} adicionado à party!`);render();
+      }));
+      card.appendChild(btnRow);
+    }
+    else{
+      // All members created - finalize
+      card.appendChild(pEl(`<strong>Party completa!</strong> ${setup.size} jogadores criados.`));
+      
+      const list=document.createElement("div");list.className="list";
+      setup.members.forEach(pid=>{
+        const p=player(pid);
+        if(!p)return;
+        const pc=pclass(p.playerClassId);
+        const item=document.createElement("div");item.className="item";
+        item.innerHTML=`<div class="title"><strong>${esc(p.name)}</strong><span class="badge">${esc(pc?.name||"?")}</span></div>`;
+        list.appendChild(item);
+      });
+      card.appendChild(list);
+      
+      card.appendChild(btn("Iniciar Aventura!","good",()=>{
+        // Create session with party
+        const party={id:id("party"),members:setup.members,createdAt:now()};
+        state.data.parties.push(party);
+        
+        const s={
+          id:id("sess"),name:"Sessão "+new Date().toLocaleDateString("pt-BR"),
+          createdAt:now(),completedAt:null,
+          players:setup.members,party:party.id,
+          turnOrder:[],encounters:[],therapy:{}
+        };
+        state.data.sessions.unshift(s);
+        state.data.activeSessionId=s.id;
+        state.ui.partySetup={step:"complete"};
+        
+        save();toast(`Party criada com ${setup.size} jogadores!`);
+        state.ui.tab="session";render();
+      }));
+    }
+    
+    root.appendChild(card);
+  }
+  
+  return root;
+}
+
 function viewSession(){
   const root=document.createElement("div");root.className="grid";
   const s=sess();
   if(!s){
     const c=cardView("Sessão");
-    c.appendChild(pEl("Nenhuma sessão ativa. Vá para <strong>Início</strong> para criar uma sessão."));
+    c.appendChild(pEl("Nenhuma sessão ativa. Vá para <strong>Início</strong> para criar uma party."));
     root.appendChild(c);
     return root;
   }
   ensureSession(s);
   
-  const info=cardView("Informações da Sessão");
+  const isParty=!!s.party;
+  const info=cardView(isParty?"Party - Informações da Sessão":"Informações da Sessão");
   info.appendChild(pEl(`<strong>Nome:</strong> ${esc(s.name)}<br><strong>Criada:</strong> ${fmt(s.createdAt)}`));
+  if(isParty){
+    info.appendChild(pEl(`<strong>Modo:</strong> Party (Grupo de ${s.players.length} jogadores)`));
+  }
   info.appendChild(pEl(`<strong>Jogadores:</strong> ${s.players.length} · <strong>Encontros:</strong> ${s.encounters.length}`));
   const btnRow=document.createElement("div");btnRow.className="row";
-  btnRow.appendChild(btn("Adicionar Jogador","primary",()=>{state.ui.tab="players";render();}));
+  if(!isParty){
+    btnRow.appendChild(btn("Adicionar Jogador","primary",()=>{state.ui.tab="players";render();}));
+  }
   btnRow.appendChild(btn("Novo Encontro","good",()=>{state.ui.tab="encounter";render();}));
   btnRow.appendChild(btn("Finalizar Sessão","warn",()=>{
     if(confirm("Finalizar esta sessão?")){
@@ -703,7 +834,7 @@ function viewSession(){
   root.appendChild(info);
   
   if(s.players.length>0){
-    const players=cardView("Jogadores na Sessão");
+    const players=cardView(isParty?"Party Members (todos visíveis)":"Jogadores na Sessão");
     const list=document.createElement("div");list.className="list";
     s.players.forEach(pid=>{
       const p=player(pid);
