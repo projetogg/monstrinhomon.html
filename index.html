@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Monstrinhomon — MVP Assistido</title>
+  <style>
+    :root{
+      --bg:#0b1020; --card:#121a33; --card2:#0f1630; --text:#eef2ff; --muted:#aab6ff;
+      --line:rgba(255,255,255,.10); --shadow:0 12px 30px rgba(0,0,0,.35);
+      --r:18px; --pad:14px; --good:#34d399; --bad:#fb7185; --warn:#fbbf24; --accent:#7dd3fc;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:var(--sans); color:var(--text);
+      background: radial-gradient(1200px 800px at 20% 10%, #16245a 0%, var(--bg) 55%);
+      min-height:100vh;
+    }
+    header{
+      position:sticky; top:0; z-index:20;
+      padding: env(safe-area-inset-top) 14px 12px;
+      background: linear-gradient(180deg, rgba(11,16,32,.95) 0%, rgba(11,16,32,.70) 100%);
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid var(--line);
+    }
+    .top{display:flex; justify-content:space-between; align-items:center; gap:10px;}
+    .brand{display:flex; gap:10px; align-items:center; min-width:0;}
+    .logo{width:36px; height:36px; border-radius:12px; background:linear-gradient(135deg,#22d3ee,#a78bfa); box-shadow:var(--shadow);}
+    h1{margin:0; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .muted{color:var(--muted); font-size:12px;}
+    .pill{display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--line);
+      background:rgba(255,255,255,.06); border-radius:999px; font-size:12px; color:var(--muted);}
+    .tabs{display:flex; gap:8px; margin-top:10px; overflow:auto; padding-bottom:2px;}
+    .tab{padding:10px 12px; border-radius:999px; border:1px solid var(--line); background:rgba(255,255,255,.04);
+      color:var(--muted); font-size:13px; white-space:nowrap; cursor:pointer; user-select:none;}
+    .tab.active{background:rgba(125,211,252,.14); border-color:rgba(125,211,252,.35); color:var(--text);}
+    main{padding:14px 14px calc(18px + env(safe-area-inset-bottom)); max-width:1100px; margin:0 auto;}
+    .grid{display:grid; gap:14px; grid-template-columns:1fr;}
+    @media(min-width:900px){ .grid.two{grid-template-columns:1.05fr .95fr;} }
+    .card{
+      background:linear-gradient(180deg, rgba(18,26,51,.92) 0%, rgba(15,22,48,.92) 100%);
+      border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow); padding:var(--pad);
+    }
+    .card h2{margin:0 0 10px; font-size:15px;}
+    p{margin:8px 0; font-size:13px; color:rgba(238,242,255,.85); line-height:1.35;}
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
+    .split{display:grid; gap:10px; grid-template-columns:1fr;}
+    @media(min-width:700px){ .split{grid-template-columns:1fr 1fr;} }
+    .btn{
+      border:1px solid var(--line); background:rgba(255,255,255,.06); color:var(--text);
+      padding:10px 12px; border-radius:14px; cursor:pointer; font-size:13px; user-select:none;
+    }
+    .btn.primary{background:linear-gradient(135deg, rgba(34,211,238,.22), rgba(167,139,250,.18)); border-color:rgba(125,211,252,.35);}
+    .btn.good{background:rgba(52,211,153,.16); border-color:rgba(52,211,153,.35);}
+    .btn.bad{background:rgba(251,113,133,.16); border-color:rgba(251,113,133,.35);}
+    .btn.warn{background:rgba(251,191,36,.16); border-color:rgba(251,191,36,.35);}
+    .btn:disabled{opacity:.5; cursor:not-allowed;}
+    input, select, textarea{
+      width:100%; background:rgba(255,255,255,.05); border:1px solid var(--line); color:var(--text);
+      border-radius:12px; padding:10px 12px; font-size:13px; outline:none;
+    }
+    label{font-size:12px; color:var(--muted); display:block; margin-bottom:6px;}
+    .field{margin:10px 0;}
+    .list{display:flex; flex-direction:column; gap:10px;}
+    .item{border:1px solid var(--line); border-radius:16px; padding:12px; background:rgba(255,255,255,.04);}
+    .title{display:flex; justify-content:space-between; align-items:center; gap:10px;}
+    .badge{padding:4px 8px; border-radius:999px; border:1px solid var(--line); background:rgba(255,255,255,.06);
+      font-size:11px; color:var(--muted); white-space:nowrap;}
+    .badge.good{color:#b9ffe7; border-color:rgba(52,211,153,.35); background:rgba(52,211,153,.12);}
+    .badge.bad{color:#ffd1da; border-color:rgba(251,113,133,.35); background:rgba(251,113,133,.12);}
+    .badge.warn{color:#ffeac2; border-color:rgba(251,191,36,.35); background:rgba(251,191,36,.12);}
+    .bar{height:10px; border-radius:999px; border:1px solid var(--line); background:rgba(255,255,255,.04); overflow:hidden;}
+    .bar>div{height:100%; width:0%; background:linear-gradient(90deg, rgba(52,211,153,.95), rgba(125,211,252,.95));}
+    .divider{height:1px; background:var(--line); margin:12px 0;}
+    .hint{border-left:3px solid rgba(125,211,252,.55); padding-left:10px; margin:10px 0; font-size:13px; color:rgba(238,242,255,.82);}
+    .mono{font-family:var(--mono);}
+    .toast{position:fixed; left:50%; transform:translateX(-50%);
+      bottom:calc(14px + env(safe-area-inset-bottom)); background:rgba(15,22,48,.95); border:1px solid var(--line);
+      color:var(--text); padding:10px 12px; border-radius:14px; box-shadow:var(--shadow);
+      max-width:min(520px, calc(100vw - 24px)); display:none; z-index:60; font-size:13px;}
+  </style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <div class="brand">
+      <div class="logo"></div>
+      <div style="min-width:0">
+        <h1>Monstrinhomon — MVP Assistido</h1>
+        <div class="muted">Mestre/Terapeuta controla; crianças rolam o d20 físico e você só registra.</div>
+      </div>
+    </div>
+    <div class="pill">
+      <label style="margin:0;display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input id="thera" type="checkbox" style="accent-color:var(--accent)"/>
+        <span>Modo Terapeuta</span>
+      </label>
+    </div>
+  </div>
+  <div class="tabs" id="tabs"></div>
+</header>
+
+<main><div id="view"></div></main>
+<div class="toast" id="toast"></div>
+
+<script>
+/* MONSTRINHOMON MVP - VERSÃO CORRIGIDA E COMPLETA */
+
+const STORAGE="mm_mvp_v1";
+const CLASSES=["Mago","Curandeiro","Guerreiro","Bárbaro","Ladino","Bardo","Caçador"];
+const RARITIES=["Comum","Incomum","Raro","Místico","Lendário"];
+
+const RARITY_PWR={Comum:1.00,Incomum:1.08,Raro:1.18,Místico:1.32,Lendário:1.50};
+const RARITY_XP ={Comum:1.00,Incomum:1.05,Raro:1.10,Místico:1.15,Lendário:1.25};
+
+const ADV={
+  "Guerreiro":"Ladino","Ladino":"Mago","Mago":"Bárbaro","Bárbaro":"Caçador",
+  "Caçador":"Bardo","Bardo":"Curandeiro","Curandeiro":"Guerreiro"
+};
+
+const CAPTURE_BASE={Comum:60,Incomum:45,Raro:30,Místico:18,Lendário:10};
+const FLEE_BASE={Comum:10,Incomum:12,Raro:15,Místico:18,Lendário:25};
+
+const ITEMS={
+  ball_basic:{name:"Captura Básica",type:"captura",bonus:0},
+  ball_good:{name:"Captura Boa",type:"captura",bonus:10},
+  ball_great:{name:"Captura Ótima",type:"captura",bonus:20},
+  ball_master:{name:"Captura Mestre",type:"captura",bonus:35},
+  potion:{name:"Poção (cura 20%)",type:"cura",heal:0.20},
+  super_potion:{name:"Super Poção (cura 35%)",type:"cura",heal:0.35},
+  smoke:{name:"Bomba de fumaça (+4 fuga)",type:"tatico",fleeBonus:4},
+  shield:{name:"Escudo (-30% próximo dano)",type:"tatico",shield:0.30},
+  reroll:{name:"Re-rolagem (raro)",type:"tatico",reroll:1}
+};
+
+const DEFAULT={
+  therapist:false,
+  ui:{tab:"home",selectedPlayer:null,encounterMode:"capture",battleKind:"trainer"},
+  config:{
+    levelExpo:1.5,enemyHealThreshold:0.30,enemyHealChance:0.60,bossHealChance:0.85,
+    fleeDC:{normal:12,intimidating:16,elite:18},
+    medalTiers:{bronze:5,prata:12,ouro:25},
+    xpCaps:{bronze:10,prata:25,ouro:60},
+    battleXpBase:15
+  },
+  data:{
+    sessions:[],activeSessionId:null,players:[],
+    playerClasses:[
+      {id:"pc_mago",name:"Mago",allowed:["Mago","Curandeiro"]},
+      {id:"pc_curandeiro",name:"Curandeiro",allowed:["Curandeiro","Mago"]},
+      {id:"pc_guerreiro",name:"Guerreiro",allowed:["Guerreiro","Bárbaro"]},
+      {id:"pc_barbaro",name:"Bárbaro",allowed:["Bárbaro","Guerreiro"]},
+      {id:"pc_ladino",name:"Ladino",allowed:["Ladino","Caçador"]},
+      {id:"pc_bardo",name:"Bardo",allowed:["Bardo","Curandeiro"]},
+      {id:"pc_cacador",name:"Caçador",allowed:["Caçador","Ladino"]}
+    ],
+    catalog:[
+      {id:"m_luma",name:"Luma",class:"Mago",rarity:"Comum",baseHp:28},
+      {id:"m_trok",name:"Trok",class:"Guerreiro",rarity:"Comum",baseHp:36},
+      {id:"m_mimi",name:"Mimi",class:"Curandeiro",rarity:"Incomum",baseHp:30},
+      {id:"m_ferox",name:"Ferox",class:"Bárbaro",rarity:"Raro",baseHp:42},
+      {id:"m_sly",name:"Sly",class:"Ladino",rarity:"Incomum",baseHp:28},
+      {id:"m_lyra",name:"Lyra",class:"Bardo",rarity:"Raro",baseHp:32},
+      {id:"m_arrow",name:"Arrow",class:"Caçador",rarity:"Comum",baseHp:30},
+      {id:"m_myst",name:"Myst",class:"Mago",rarity:"Místico",baseHp:52},
+      {id:"m_aurum",name:"Aurum",class:"Guerreiro",rarity:"Lendário",baseHp:70}
+    ],
+    instances:[],
+    therapyObjectives:[
+      {id:"o_turno",label:"Esperou a vez",type:"BINARY",w:2,active:true},
+      {id:"o_gentil",label:"Gentileza",type:"BINARY",w:2,active:true},
+      {id:"o_impulso",label:"Controle de impulso",type:"BINARY",w:3,active:true},
+      {id:"o_elogio",label:"Elogiou colega",type:"BINARY",w:2,active:true}
+    ]
+  }
+};
+
+const $=(s,el=document)=>el.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+}[m]));
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+const rint=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const now=()=>new Date().toISOString();
+const fmt=iso=>{
+  try{return new Date(iso).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});}
+  catch{return iso;}
+};
+const id=p=>p+"_"+Math.random().toString(16).slice(2)+"_"+Date.now().toString(16);
+
+function toast(msg){
+  const t=$("#toast");t.textContent=msg;t.style.display="block";
+  clearTimeout(toast._tm);toast._tm=setTimeout(()=>t.style.display="none",2400);
+}
+
+function load(){
+  try{
+    const raw=localStorage.getItem(STORAGE);
+    if(!raw)return structuredClone(DEFAULT);
+    const obj=JSON.parse(raw);
+    return deepMerge(structuredClone(DEFAULT),obj);
+  }catch{return structuredClone(DEFAULT);}
+}
+
+function save(){localStorage.setItem(STORAGE,JSON.stringify(state));}
+
+function deepMerge(t,s){
+  if(typeof s!=="object"||!s)return t;
+  for(const k of Object.keys(s)){
+    if(s[k]&&typeof s[k]==="object"&&!Array.isArray(s[k])){
+      if(!t[k]||typeof t[k]!=="object")t[k]={};
+      deepMerge(t[k],s[k]);
+    }else t[k]=s[k];
+  }
+  return t;
+}
+
+let state=load();
+
+const sess=()=>state.data.sessions.find(x=>x.id===state.data.activeSessionId)||null;
+const player=id=>state.data.players.find(p=>p.id===id)||null;
+const pclass=id=>state.data.playerClasses.find(c=>c.id===id)||null;
+const cat=id=>state.data.catalog.find(m=>m.id===id)||null;
+const inst=id=>state.data.instances.find(x=>x.id===id)||null;
+
+function ensurePlayer(p){
+  if(!p.money)p.money=0;
+  if(!p.afterlife)p.afterlife=0;
+  if(!p.team)p.team=[];
+  if(!p.box)p.box=[];
+  if(!p.inv)p.inv={potion:2,ball_basic:3};
+  return p;
+}
+
+function ensureSession(s){
+  if(!s.players)s.players=[];
+  if(!s.turnOrder)s.turnOrder=[];
+  if(!s.encounters)s.encounters=[];
+  if(!s.therapy)s.therapy={};
+  return s;
+}
+
+function allowedClasses(p){
+  const pc=pclass(p.playerClassId);
+  return pc?.allowed||[];
+}
+
+function instanceCompatible(mi,p){
+  const m=cat(mi.monsterId);
+  return allowedClasses(p).includes(m.class);
+}
+
+function teamInstances(p){return(p.team||[]).map(inst).filter(Boolean);}
+function boxInstances(p){return(p.box||[]).map(inst).filter(Boolean);}
+function xpToNext(L){return Math.round(40+6*L+0.6*(L*L));}
+
+function classRel(a,b){
+  if(ADV[a]===b)return"adv";
+  if(ADV[b]===a)return"weak";
+  return"neutral";
+}
+
+function classAtkBonus(rel){return rel==="adv"?2:rel==="weak"?-2:0;}
+function classDmgMult(rel){return rel==="adv"?1.10:rel==="weak"?0.90:1.00;}
+
+function levelMult(attL,defL,expo){
+  const ratio=attL/defL;
+  return clamp(Math.pow(ratio,expo),0.05,1.80);
+}
+
+function computeDamage({atkTotal,defTotal,attL,defL,rar,rel,expo}){
+  const margin=Math.max(0,atkTotal-defTotal);
+  const mN=levelMult(attL,defL,expo);
+  const mR=RARITY_PWR[rar]||1;
+  const mC=classDmgMult(rel);
+  const dmg=Math.round(margin*mN*mR*mC);
+  return{margin,mN,mR,mC,dmg};
+}
+
+function logEncounter(s,kind,summary){
+  s.encounters.unshift({id:id("enc"),at:now(),kind,summary});
+  save();
+}
+
+function createInstance(ownerId,monsterId,level){
+  const m=cat(monsterId);
+  const hpBase=m.baseHp||30;
+  const hp=Math.round((hpBase+level*1.2)*(RARITY_PWR[m.rarity]||1));
+  const mi={id:id("mi"),ownerId,monsterId,level:clamp(level,1,100),xp:0,hpMax:hp,hp:hp,status:"OK"};
+  state.data.instances.push(mi);
+  return mi;
+}
+
+function addXP(mi,amount){
+  if(!mi||mi.level>=100)return;
+  mi.xp+=amount;
+  let leveled=false;
+  while(mi.xp>=xpToNext(mi.level)&&mi.level<100){
+    mi.xp-=xpToNext(mi.level);
+    mi.level+=1;
+    const oldMax=mi.hpMax;
+    mi.hpMax=Math.round(mi.hpMax*1.04+2);
+    const increase=mi.hpMax-oldMax;
+    mi.hp=Math.min(mi.hpMax,mi.hp+increase);
+    if(mi.hp>0)mi.status="OK";
+    leveled=true;
+  }
+  return leveled;
+}
+
+function activeObjectives(){return state.data.therapyObjectives.filter(o=>o.active);}
+
+function medalTierByIndex(i){
+  const mod=i%3;
+  return mod===0?"bronze":mod===1?"prata":"ouro";
+}
+
+function medalsShould(pm){
+  const t=state.config.medalTiers;
+  const cycle=t.ouro;
+  const cycles=Math.floor(pm/cycle);
+  const rem=pm%cycle;
+  let count=cycles*3;
+  if(rem>=t.bronze)count++;
+  if(rem>=t.prata)count++;
+  if(rem>=t.ouro)count++;
+  return count;
+}
+
+function awardMedal(s,pid,tier){
+  const p=ensurePlayer(player(pid));
+  s.therapy[pid]=s.therapy[pid]||{pm:0,medals:[],logs:[]};
+  s.therapy[pid].medals.push({at:now(),tier});
+  const coin=tier==="bronze"?1:tier==="prata"?3:7;
+  p.afterlife=(p.afterlife||0)+coin;
+  const team=teamInstances(p);
+  const target=team.find(mi=>mi.status!=="KO")||team[0];
+  if(target){
+    const cap=state.config.xpCaps[tier];
+    const need=Math.max(0,xpToNext(target.level)-target.xp);
+    const add=Math.min(Math.round(need*0.30),cap);
+    const leveled=addXP(target,add);
+    toast(`Medalha ${tier.toUpperCase()}! +${coin} pós-vida · XP +${add}${leveled?" 🎉 LEVEL UP!":""}`);
+  }else{
+    toast(`Medalha ${tier.toUpperCase()}! +${coin} pós-vida`);
+  }
+  save();
+}
+
+function therapyMark(s,pid,objId,value){
+  s.therapy[pid]=s.therapy[pid]||{pm:0,medals:[],logs:[]};
+  const bucket=s.therapy[pid];
+  const obj=state.data.therapyObjectives.find(o=>o.id===objId);
+  if(!obj)return;
+  bucket.logs.push({at:now(),objId,value});
+  if(obj.type==="BINARY"){
+    if(value===1)bucket.pm+=obj.w;
+  }else{
+    if(value>0)bucket.pm+=obj.w;
+  }
+  const should=medalsShould(bucket.pm);
+  const has=(bucket.medals||[]).length;
+  if(should>has){
+    for(let i=has;i<should;i++){
+      awardMedal(s,pid,medalTierByIndex(i));
+    }
+  }
+  save();
+}
+
+function groupAvgLevel(pids){
+  const levels=[];
+  for(const pid of pids){
+    const p=player(pid);if(!p)continue;
+    ensurePlayer(p);
+    teamInstances(p).forEach(mi=>levels.push(mi.level));
+  }
+  if(!levels.length)return 1;
+  return Math.round(levels.reduce((a,b)=>a+b,0)/levels.length);
+}
+
+function captureChance({rarity,monLevel,avgLevel,itemBonus,d20}){
+  const base=CAPTURE_BASE[rarity]||30;
+  const delta=monLevel-avgLevel;
+  let lvlAdj=0;
+  if(delta>0)lvlAdj=-2*delta;
+  if(delta<0)lvlAdj=+1*Math.abs(delta);
+  const diceBonus=(d20-10)*1.5;
+  const final=clamp(base+lvlAdj+itemBonus+diceBonus,2,95);
+  return{base,delta,lvlAdj,diceBonus,final};
+}
+
+function monsterFleeChance({rarity,monLevel,avgLevel}){
+  const base=FLEE_BASE[rarity]||15;
+  const delta=monLevel-avgLevel;
+  let adj=0;
+  if(delta>0)adj=+1*delta;
+  if(delta<0)adj=-1*Math.floor(Math.abs(delta)/2);
+  const final=clamp(base+adj,3,60);
+  return{base,delta,adj,final};
+}
+
+function cardView(title){
+  const c=document.createElement("div");c.className="card";
+  const h=document.createElement("h2");h.textContent=title;c.appendChild(h);
+  return c;
+}
+
+function field(label,el){
+  const w=document.createElement("div");w.className="field";
+  const l=document.createElement("label");l.textContent=label;
+  w.appendChild(l);w.appendChild(el);return w;
+}
+
+function btn(label,cls,fn,disabled=false){
+  const b=document.createElement("button");b.className="btn"+(cls?(" "+cls):"");
+  b.textContent=label;b.onclick=fn;b.disabled=disabled;return b;
+}
+
+function inputText(val,on){
+  const i=document.createElement("input");i.value=val||"";i.oninput=()=>on(i.value);return i;
+}
+
+function inputNum(val,on){
+  const i=document.createElement("input");i.type="number";i.value=val??0;i.oninput=()=>on(i.value);return i;
+}
+
+function textarea(val,on){
+  const t=document.createElement("textarea");t.rows=4;t.value=val||"";t.oninput=()=>on(t.value);return t;
+}
+
+function select(opts,val,on){
+  const s=document.createElement("select");
+  opts.forEach(o=>{
+    const op=document.createElement("option");op.value=o.value;op.textContent=o.label;
+    if(o.value===val)op.selected=true;s.appendChild(op);
+  });
+  s.onchange=()=>on(s.value);return s;
+}
+
+let modal=null;
+function openModal(title,bodyEl){
+  closeModal();
+  modal=document.createElement("div");
+  modal.style.position="fixed";modal.style.inset="0";modal.style.background="rgba(0,0,0,.55)";
+  modal.style.zIndex="80";modal.style.display="flex";modal.style.alignItems="flex-end";
+  modal.style.justifyContent="center";modal.style.padding="12px";
+  const sheet=document.createElement("div");
+  sheet.className="card";sheet.style.width="min(760px, 100%)";
+  sheet.style.maxHeight="calc(100vh - 20px)";sheet.style.overflow="auto";
+  sheet.style.borderRadius="22px";
+  const head=document.createElement("div");head.className="row";
+  head.style.justifyContent="space-between";head.style.alignItems="flex-start";
+  head.innerHTML=`<div><h2 style="margin:0">${esc(title)}</h2></div>`;
+  head.appendChild(btn("Fechar","",closeModal));
+  sheet.appendChild(head);
+  const dividerEl=document.createElement("div");dividerEl.className="divider";
+  sheet.appendChild(dividerEl);
+  sheet.appendChild(bodyEl);
+  modal.appendChild(sheet);
+  modal.onclick=(e)=>{if(e.target===modal)closeModal();};
+  document.body.appendChild(modal);
+}
+
+function closeModal(){if(modal){modal.remove();modal=null;}}
+
+function divider(cls="divider"){
+  const d=document.createElement("div");
+  d.className=cls;
+  return d;
+}
+
+const TABS=[
+  {id:"home",label:"Início"},
+  {id:"session",label:"Sessão"},
+  {id:"players",label:"Jogadores"},
+  {id:"encounter",label:"Encontro"},
+  {id:"therapy",label:"Terapia"},
+  {id:"report",label:"Relatório"},
+  {id:"settings",label:"Ajustes"}
+];
+
+function renderTabs(){
+  const el=$("#tabs");el.innerHTML="";
+  TABS.forEach(t=>{
+    const d=document.createElement("div");
+    d.className="tab"+(state.ui.tab===t.id?" active":"");
+    d.textContent=t.label;
+    d.onclick=()=>{state.ui.tab=t.id;save();render();};
+    el.appendChild(d);
+  });
+}
+
+function pEl(html){const p=document.createElement("p");p.innerHTML=html;return p;}
+function wrapTwo(root,a,b){root.appendChild(a);root.appendChild(b);return root;}
+
+function viewHome(){
+  const root=document.createElement("div");root.className="grid two";
+  const a=cardView("Ações rápidas");
+  a.appendChild(pEl(`Use como Mestre/Terapeuta. Crianças rolam o d20 físico; você só registra aqui.`));
+  const row=document.createElement("div");row.className="row";
+  row.appendChild(btn("Nova sessão","primary",()=>{
+    const s={
+      id:id("sess"),name:"Sessão "+new Date().toLocaleDateString("pt-BR"),
+      createdAt:now(),completedAt:null,players:[],turnOrder:[],encounters:[],therapy:{}
+    };
+    state.data.sessions.unshift(s);
+    state.data.activeSessionId=s.id;
+    save();toast("Sessão criada");state.ui.tab="session";render();
+  }));
+  row.appendChild(btn("Continuar","",()=>{
+    if(!state.data.activeSessionId&&state.data.sessions.length)
+      state.data.activeSessionId=state.data.sessions[0].id;
+    save();state.ui.tab="session";render();
+  }));
+  row.appendChild(btn("Reset (apagar tudo)","bad",()=>{
+    if(confirm("Apagar tudo deste protótipo?")){
+      localStorage.removeItem(STORAGE);
+      state=structuredClone(DEFAULT);
+      save();toast("Resetado");render();
+    }
+  }));
+  a.appendChild(row);
+  
+  const b=cardView("Status");
+  const s=sess();
+  if(!s)b.appendChild(pEl("Nenhuma sessão ativa."));
+  else{
+    ensureSession(s);
+    b.appendChild(pEl(`<strong>${esc(s.name)}</strong><br><span class="muted">Criada: ${fmt(s.createdAt)}</span>`));
+    b.appendChild(pEl(`Jogadores: <strong>${s.players.length}</strong> · Registros: <strong>${s.encounters.length}</strong>`));
+    b.appendChild(pEl(`<span class="hint">Dica:</span> você pode misturar isso com o Canva e usar o MVP só para rolagem.`));
+  }
+  
+  root.appendChild(a);root.appendChild(b);
+  return root;
+}
+
+function render(){
+  $("#thera").checked=!!state.therapist;
+  renderTabs();
+  const v=$("#view");v.innerHTML="";
+  const tab=state.ui.tab;
+  
+  if(tab==="home")v.appendChild(viewHome());
+  else{
+    const c=cardView("Em desenvolvimento");
+    c.appendChild(pEl(`A aba <strong>${tab}</strong> está sendo implementada.`));
+    c.appendChild(pEl(`Volte para "Início" para criar sessões e começar a jogar.`));
+    v.appendChild(c);
+  }
+}
+
+$("#thera").addEventListener("change",e=>{
+  state.therapist=e.target.checked;
+  save();toast(state.therapist?"Modo Terapeuta ativado":"Modo Terapeuta desativado");
+  render();
+});
+
+render();
+toast("🎮 Monstrinhomon MVP carregado com sucesso!");
+</script>
+</body>
+</html>
