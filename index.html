@@ -283,7 +283,7 @@ const cat=id=>state.data.catalog.find(m=>m.id===id)||null;
 const inst=id=>state.data.instances.find(x=>x.id===id)||null;
 const skill=id=>SKILLS[id]||null;
 const item=id=>ITEMS[id]||null;
-const location=id=>state.data.locations.find(l=>l.id===id)||null;
+const getLocation=id=>state.data.locations.find(l=>l.id===id)||null;
 const encounter=id=>state.data.encounters.find(e=>e.id===id)||null;
 const evolution=monsterId=>state.data.evolutions.find(e=>e.fromMonsterId===monsterId)||null;
 
