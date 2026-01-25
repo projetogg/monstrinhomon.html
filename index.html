@@ -669,6 +669,207 @@ function viewHome(){
   return root;
 }
 
+function viewSession(){
+  const root=document.createElement("div");root.className="grid";
+  const s=sess();
+  if(!s){
+    const c=cardView("Sessão");
+    c.appendChild(pEl("Nenhuma sessão ativa. Vá para <strong>Início</strong> para criar uma sessão."));
+    root.appendChild(c);
+    return root;
+  }
+  ensureSession(s);
+  
+  const info=cardView("Informações da Sessão");
+  info.appendChild(pEl(`<strong>Nome:</strong> ${esc(s.name)}<br><strong>Criada:</strong> ${fmt(s.createdAt)}`));
+  info.appendChild(pEl(`<strong>Jogadores:</strong> ${s.players.length} · <strong>Encontros:</strong> ${s.encounters.length}`));
+  const btnRow=document.createElement("div");btnRow.className="row";
+  btnRow.appendChild(btn("Adicionar Jogador","primary",()=>{state.ui.tab="players";render();}));
+  btnRow.appendChild(btn("Novo Encontro","good",()=>{state.ui.tab="encounter";render();}));
+  btnRow.appendChild(btn("Finalizar Sessão","warn",()=>{
+    if(confirm("Finalizar esta sessão?")){
+      s.completedAt=now();
+      state.data.activeSessionId=null;
+      save();toast("Sessão finalizada");state.ui.tab="home";render();
+    }
+  }));
+  info.appendChild(btnRow);
+  root.appendChild(info);
+  
+  if(s.players.length>0){
+    const players=cardView("Jogadores na Sessão");
+    const list=document.createElement("div");list.className="list";
+    s.players.forEach(pid=>{
+      const p=player(pid);
+      if(!p)return;
+      ensurePlayer(p);
+      const item=document.createElement("div");item.className="item";
+      const pc=pclass(p.playerClassId);
+      const team=teamInstances(p);
+      item.innerHTML=`<div class="title"><strong>${esc(p.name)}</strong><span class="badge">${esc(pc?.name||"?")}</span></div>`;
+      item.innerHTML+=`<div class="muted">Equipe: ${team.length} · Caixa: ${(p.box||[]).length} · Dinheiro: ${p.money||0} · Pós-vida: ${p.afterlife||0}</div>`;
+      list.appendChild(item);
+    });
+    players.appendChild(list);
+    root.appendChild(players);
+  }
+  
+  return root;
+}
+
+function viewPlayers(){
+  const root=document.createElement("div");root.className="grid";
+  const s=sess();
+  if(!s){
+    const c=cardView("Jogadores");
+    c.appendChild(pEl("Nenhuma sessão ativa. Vá para <strong>Início</strong> para criar uma sessão."));
+    root.appendChild(c);
+    return root;
+  }
+  ensureSession(s);
+  
+  const add=cardView("Novo Jogador");
+  let newName="";
+  let newClassId=state.data.playerClasses[0]?.id||"";
+  add.appendChild(field("Nome",inputText("",v=>newName=v)));
+  const classOpts=state.data.playerClasses.map(c=>({value:c.id,label:c.name}));
+  add.appendChild(field("Classe",select(classOpts,newClassId,v=>newClassId=v)));
+  add.appendChild(btn("Criar Jogador","primary",()=>{
+    if(!newName){toast("Digite um nome");return;}
+    const p={id:id("player"),name:newName,playerClassId:newClassId,money:100,afterlife:0,team:[],box:[],inv:{IT_CAP_01:5,IT_HEAL_01:3}};
+    state.data.players.push(p);
+    if(!s.players.includes(p.id))s.players.push(p.id);
+    
+    // Give starter monster
+    const pc=pclass(newClassId);
+    if(pc){
+      const starterMons=state.data.catalog.filter(m=>m.isStarter&&pc.allowed.includes(m.class));
+      if(starterMons.length>0){
+        const starter=starterMons[0];
+        const mi=createInstance(p.id,starter.id,5);
+        p.team.push(mi.id);
+      }
+    }
+    
+    save();toast(`Jogador ${newName} criado!`);render();
+  }));
+  root.appendChild(add);
+  
+  const list=cardView("Jogadores");
+  if(state.data.players.length===0){
+    list.appendChild(pEl("Nenhum jogador criado ainda."));
+  }else{
+    const items=document.createElement("div");items.className="list";
+    state.data.players.forEach(p=>{
+      ensurePlayer(p);
+      const item=document.createElement("div");item.className="item";
+      const pc=pclass(p.playerClassId);
+      const team=teamInstances(p);
+      item.innerHTML=`<div class="title"><strong>${esc(p.name)}</strong><span class="badge">${esc(pc?.name||"?")}</span></div>`;
+      item.innerHTML+=`<div class="muted">Dinheiro: ${p.money||0} · Pós-vida: ${p.afterlife||0}</div>`;
+      
+      if(team.length>0){
+        const teamDiv=document.createElement("div");
+        teamDiv.style.marginTop="8px";
+        teamDiv.innerHTML="<strong>Equipe:</strong>";
+        team.forEach(mi=>{
+          const m=cat(mi.monsterId);
+          if(!m)return;
+          const badge=document.createElement("span");
+          badge.className="badge";
+          badge.textContent=`${m.name} Lv${mi.level} (${mi.hp}/${mi.hpMax}HP)`;
+          teamDiv.appendChild(document.createTextNode(" "));
+          teamDiv.appendChild(badge);
+        });
+        item.appendChild(teamDiv);
+      }
+      
+      items.appendChild(item);
+    });
+    list.appendChild(items);
+  }
+  root.appendChild(list);
+  
+  return root;
+}
+
+function viewEncounter(){
+  const root=document.createElement("div");root.className="grid";
+  const s=sess();
+  if(!s){
+    const c=cardView("Encontro");
+    c.appendChild(pEl("Nenhuma sessão ativa. Vá para <strong>Início</strong> para criar uma sessão."));
+    root.appendChild(c);
+    return root;
+  }
+  ensureSession(s);
+  
+  const enc=cardView("Novo Encontro");
+  enc.appendChild(pEl("Crie um encontro selvagem para captura ou batalha."));
+  
+  const monsOpts=state.data.catalog.filter(m=>m.id.startsWith("MON_")).map(m=>({value:m.id,label:`${m.name} (${m.class}) - ${m.rarity}`}));
+  let selMon=monsOpts[0]?.value||"";
+  let selLevel=5;
+  
+  enc.appendChild(field("Monstrinho",select(monsOpts,selMon,v=>selMon=v)));
+  enc.appendChild(field("Nível",inputNum(5,v=>selLevel=parseInt(v)||1)));
+  
+  const btnRow=document.createElement("div");btnRow.className="row";
+  btnRow.appendChild(btn("Gerar Encontro","good",()=>{
+    if(!selMon){toast("Selecione um monstrinho");return;}
+    const m=cat(selMon);
+    if(!m){toast("Monstrinho inválido");return;}
+    
+    // Create enemy instance
+    const enemy=createInstance("wild",selMon,selLevel);
+    
+    // Show encounter details
+    toast(`Encontro criado: ${m.name} Lv${selLevel}!`);
+    
+    // Log encounter
+    logEncounter(s,"wild",`${m.name} Lv${selLevel} (HP: ${enemy.hp}/${enemy.hpMax})`);
+    
+    render();
+  }));
+  enc.appendChild(btnRow);
+  root.appendChild(enc);
+  
+  // Show recent encounters
+  if(s.encounters.length>0){
+    const history=cardView("Histórico de Encontros");
+    const list=document.createElement("div");list.className="list";
+    s.encounters.slice(0,10).forEach(e=>{
+      const item=document.createElement("div");item.className="item";
+      item.innerHTML=`<div class="title"><span class="badge ${e.kind==='wild'?'good':'warn'}">${e.kind}</span><span class="muted">${fmt(e.at)}</span></div>`;
+      item.innerHTML+=`<div>${esc(e.summary)}</div>`;
+      list.appendChild(item);
+    });
+    history.appendChild(list);
+    root.appendChild(history);
+  }
+  
+  return root;
+}
+
+function viewCatalog(){
+  const root=document.createElement("div");root.className="grid";
+  const c=cardView("Catálogo de Monstrinhos");
+  c.appendChild(pEl(`Total: <strong>${state.data.catalog.filter(m=>m.id.startsWith("MON_")).length}</strong> monstrinhos`));
+  
+  const list=document.createElement("div");list.className="list";
+  state.data.catalog.filter(m=>m.id.startsWith("MON_")).forEach(m=>{
+    const item=document.createElement("div");item.className="item";
+    item.innerHTML=`<div class="title"><strong>${esc(m.name)}</strong><span class="badge ${m.rarity==='Comum'?'':'good'}">${m.rarity}</span></div>`;
+    item.innerHTML+=`<div class="muted">Classe: ${m.class} · HP Base: ${m.baseHp} · ATK: ${m.baseAtk||0} · DEF: ${m.baseDef||0}</div>`;
+    if(m.isStarter)item.innerHTML+=`<span class="badge good">Inicial</span>`;
+    list.appendChild(item);
+  });
+  c.appendChild(list);
+  root.appendChild(c);
+  
+  return root;
+}
+
 function render(){
   $("#thera").checked=!!state.therapist;
   renderTabs();
@@ -676,6 +877,10 @@ function render(){
   const tab=state.ui.tab;
   
   if(tab==="home")v.appendChild(viewHome());
+  else if(tab==="session")v.appendChild(viewSession());
+  else if(tab==="players")v.appendChild(viewPlayers());
+  else if(tab==="encounter")v.appendChild(viewEncounter());
+  else if(tab==="report")v.appendChild(viewCatalog());
   else{
     const c=cardView("Em desenvolvimento");
     c.appendChild(pEl(`A aba <strong>${tab}</strong> está sendo implementada.`));
