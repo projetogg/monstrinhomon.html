@@ -132,10 +132,10 @@ const ITEMS={
   IT_HEAL_01:{id:"IT_HEAL_01",name:"Petisco de Cura",type:"Cura",rarity:"Comum",stackMax:99,price:30,healPercent:0.25,description:"Cura 25% do HP."},
   IT_REV_01:{id:"IT_REV_01",name:"Pena Reviva",type:"Reviver",rarity:"Raro",stackMax:10,price:300,revivePercent:0.40,description:"Revive após derrota."},
   IT_KEY_01:{id:"IT_KEY_01",name:"Selo do Mestre",type:"Chave",rarity:"Lendário",stackMax:1,price:0,description:"Libera captura multi-classe."},
-  // Legacy compatibility items
-  ball_basic:{name:"Orbe de Captura",type:"captura",bonus:0,id:"IT_CAP_01"},
-  ball_good:{name:"Orbe Reforçado",type:"captura",bonus:8,id:"IT_CAP_02"},
-  potion:{name:"Petisco de Cura",type:"cura",heal:0.25,id:"IT_HEAL_01"}
+  // Legacy compatibility items - bonuses normalized to decimal format (0-1 scale)
+  ball_basic:{name:"Orbe de Captura",type:"captura",bonus:0,captureBonus:0,id:"IT_CAP_01"},
+  ball_good:{name:"Orbe Reforçado",type:"captura",bonus:0.08,captureBonus:0.08,id:"IT_CAP_02"},
+  potion:{name:"Petisco de Cura",type:"cura",heal:0.25,healPercent:0.25,id:"IT_HEAL_01"}
 };
 
 // Skills from HABILIDADES.csv
@@ -215,8 +215,9 @@ const DEFAULT={
     ],
     instances:[],
     evolutions:[
-      // Note: MON_002B and MON_002C are placeholders - not yet implemented in catalog
-      // These will be added in a future update when the S2/S3 forms are designed
+      // TODO: Implement MON_002B and MON_002C monsters in catalog
+      // These are placeholders from EVOLUCOES.csv - not yet implemented
+      // When added, MON_002C should have dual class Guerreiro+Mago
       {id:"EVO_001",fromMonsterId:"MON_002",toMonsterId:"MON_002B",triggerLevel:12,autoEvolve:true,notes:"Pedrino S1→S2 (placeholder)"},
       {id:"EVO_002",fromMonsterId:"MON_002B",toMonsterId:"MON_002C",triggerLevel:25,autoEvolve:true,notes:"Pedrino S2→S3 (placeholder - dupla classe Guerreiro+Mago)"}
     ],
@@ -499,7 +500,8 @@ function groupAvgLevel(pids){
 }
 
 function captureChance({rarity,monLevel,avgLevel,itemBonus,d20}){
-  // Legacy dice-based capture chance calculation (kept for backward compatibility)
+  // DEPRECATED: Legacy dice-based capture chance calculation (kept for backward compatibility)
+  // TODO: Remove after migrating all existing code to use canCapture() function
   // Note: The new capture system uses threshold-based logic (see canCapture function)
   const threshold=CAPTURE_THRESHOLD[rarity]||0.35;
   const base=CAPTURE_BASE[rarity]||30;
@@ -513,8 +515,9 @@ function captureChance({rarity,monLevel,avgLevel,itemBonus,d20}){
 }
 
 function canCapture({currentHp,maxHp,rarity,itemBonus}){
-  // Threshold-based capture from CONFIG: success if HP% <= threshold + item bonus
-  // This is the primary capture mechanic according to CAPTURE_TABLE.csv
+  // PRIMARY CAPTURE MECHANIC: Threshold-based capture from CONFIG and CAPTURE_TABLE.csv
+  // Success if HP% <= threshold + item bonus
+  // This replaces the old dice-based system per game design requirements
   const hpPercent=currentHp/maxHp;
   const threshold=(CAPTURE_THRESHOLD[rarity]||0.35)+(itemBonus||0)*state.config.masterCaptureMultiplier;
   return hpPercent<=threshold;
