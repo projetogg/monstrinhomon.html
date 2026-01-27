@@ -1,0 +1,5 @@
+drop_table_id,item_id,chance,min_qty,max_qty,notes
+DROP_001,IT_CAP_01,0.35,1,1,Orbe comum em encontro selvagem.
+DROP_001,IT_HEAL_01,0.25,1,2,Petisco de cura.
+DROP_002,IT_CAP_01,0.5,1,2,Treinador dá itens básicos.
+DROP_002,IT_HEAL_01,0.4,1,2,Cura para continuar.

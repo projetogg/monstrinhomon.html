@@ -1,0 +1,10 @@
+Monstrinhosmon — Planilha de Dados (v3)
+""
+Objetivo: este arquivo é a fonte de verdade (single source of truth) para os dados do jogo. Ideal para exportar para CSV/JSON e versionar no GitHub.
+"Correção de lógica aplicada: NÃO existe “tipo por elemento”. O tipo do monstrinho é CLASSE (Guerreiro, Mago, Curandeiro etc.)."
+"Regra central: o Jogador tem CLASSE. Qualquer jogador pode CAPTURAR monstrinhos de qualquer classe, mas em BATALHA só pode USAR monstrinhos da própria classe (incentiva trocas). O Mestre pode sobrescrever via MASTER_CONTROLS (debug_allow_cross_class_battle)."
+Captura: sem d20. A captura é automática comparando HP% com limite por raridade + bônus do item (veja RULES e CAPTURE_TABLE).
+""
+Aba TEST_SCENARIO tem um primeiro teste completo: Quest + Combate + Captura.
+""
+"Atenção: alguns IDs de evolução estão como placeholder (porque as formas S2/S3 ainda não foram cadastradas). Você pode preencher depois seguindo o padrão MON_XXXB, MON_XXXC etc."

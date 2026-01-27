@@ -1,0 +1,6 @@
+item_id,nome,tipo_item,raridade,stack_max,preco,efeito_resumo,efeito_detalhe,capture_threshold_bonus,notes
+IT_CAP_01,Orbe de Captura,Captura,Comum,99,50,Tenta capturar um monstrinho.,Usa taxa base de captura + bônus por HP baixo. Consumível.,0.0,Aumenta o limite de HP% permitido para captura (sem dado).
+IT_CAP_02,Orbe Reforçado,Captura,Incomum,99,120,Melhor chance de captura.,+0.15 na chance final (antes do limite). Consumível.,0.08,Aumenta o limite de HP% permitido para captura (sem dado).
+IT_HEAL_01,Petisco de Cura,Cura,Comum,99,30,Cura 25% do HP.,"Cura instantânea, não remove status.",,
+IT_REV_01,Pena Reviva,Reviver,Raro,10,300,Revive após derrota.,Restaura 40% do HP do monstrinho derrotado.,,
+IT_KEY_01,Selo do Mestre,Chave,Lendário,1,0,Libera captura multi-classe.,Item de história: permite capturar monstros de qualquer classe quando ativo.,,
