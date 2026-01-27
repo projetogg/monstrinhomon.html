@@ -1,0 +1,2 @@
+test_id,descricao,player_class,starter_monster_id,start_items,quest_id,encounter_sequence,expected_outcome,notes
+TST_001,Tutorial completo: iniciar → aceitar QST_001 → enfrentar ENC_002 → receber recompensa → tentar captura em ENC_001.,Guerreiro,MON_002,IT_CAP_01;IT_HEAL_01,QST_001,ENC_002 -> ENC_001,"Após vencer ENC_002, jogador recebe IT_CAP_02 e tenta capturar MON_100 com IT_CAP_01.","Se estiver difícil, aumente master_capture_multiplier ou reduza master_enemy_stat_multiplier."

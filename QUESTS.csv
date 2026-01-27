@@ -1,0 +1,3 @@
+quest_id,nome,descricao,local_id,pre_req,reward_xp,reward_gold,reward_item_id,next_quest_id,notes
+QST_001,O Ovo Perdido,Encontre o Ovo Perdido na Campina Inicial e vença o Treinador Novato.,LOC_001,,80,60,IT_CAP_02,QST_002,Quest tutorial: ensina andar→combate→recompensa.
+QST_002,Primeira Captura,Capture 1 monstrinho selvagem na Campina Inicial.,LOC_001,QST_001,60,40,IT_HEAL_01,,Encaminha para loop principal.
