@@ -422,6 +422,143 @@
             { id: 'MON_100', name: 'Rato-de-Lama', class: 'Guerreiro', rarity: 'Comum', baseHp: 20, baseAtk: 5, baseDef: 3, emoji: '🐀' }
         ];
 
+        // ENE REGEN CONSTANTS por classe (fallback)
+        const ENE_REGEN_BY_CLASS = {
+            'Mago': { pct: 0.18, min: 3 },
+            'Curandeiro': { pct: 0.18, min: 3 },
+            'Bardo': { pct: 0.14, min: 2 },
+            'Caçador': { pct: 0.14, min: 2 },
+            'Ladino': { pct: 0.14, min: 2 },
+            'Animalista': { pct: 0.12, min: 2 },
+            'Bárbaro': { pct: 0.12, min: 2 },
+            'Guerreiro': { pct: 0.10, min: 1 }
+        };
+
+        // POWER BÁSICO por classe (ataque sem habilidade)
+        const BASIC_ATTACK_POWER = {
+            'Guerreiro': 12,
+            'Mago': 11,
+            'Curandeiro': 10,
+            'Bárbaro': 14,
+            'Ladino': 12,
+            'Bardo': 11,
+            'Caçador': 13,
+            'Animalista': 12
+        };
+
+        // SKILL DEFINITIONS (inline - por classe e estágio)
+        const SKILL_DEFS = {
+            // GUERREIRO
+            'Guerreiro': {
+                'Golpe de Espada': [
+                    { tier: 1, name: 'Golpe de Espada I', type: 'DAMAGE', cost: 4, power: 18, desc: 'Ataque com espada.' },
+                    { tier: 2, name: 'Golpe de Espada II', type: 'DAMAGE', cost: 6, power: 24, desc: 'Ataque forte com espada.' },
+                    { tier: 3, name: 'Golpe de Espada III', type: 'DAMAGE', cost: 8, power: 30, desc: 'Ataque devastador com espada.' }
+                ],
+                'Escudo': [
+                    { tier: 1, name: 'Escudo I', type: 'BUFF', cost: 4, power: 2, buffType: 'DEF', target: 'self', duration: 2, desc: 'Aumenta DEF temporariamente.' },
+                    { tier: 2, name: 'Escudo II', type: 'BUFF', cost: 6, power: 3, buffType: 'DEF', target: 'self', duration: 2, desc: 'Aumenta muito a DEF.' },
+                    { tier: 3, name: 'Escudo III', type: 'BUFF', cost: 8, power: 4, buffType: 'DEF', target: 'self', duration: 3, desc: 'Escudo poderoso.' }
+                ],
+                'Provocar': [
+                    null, // S0 não tem
+                    { tier: 2, name: 'Provocar I', type: 'TAUNT', cost: 4, power: 0, desc: 'Provoca o inimigo.' },
+                    { tier: 3, name: 'Provocar II', type: 'TAUNT', cost: 6, power: 0, desc: 'Provoca intensamente.' }
+                ]
+            },
+            // CURANDEIRO
+            'Curandeiro': {
+                'Cura': [
+                    { tier: 1, name: 'Cura I', type: 'HEAL', cost: 5, power: 15, target: 'ally', desc: 'Cura leve.' },
+                    { tier: 2, name: 'Cura II', type: 'HEAL', cost: 7, power: 25, target: 'ally', desc: 'Cura moderada.' },
+                    { tier: 3, name: 'Cura III', type: 'HEAL', cost: 10, power: 40, target: 'ally', desc: 'Cura poderosa.' }
+                ],
+                'Bênção': [
+                    { tier: 1, name: 'Bênção I', type: 'BUFF', cost: 4, power: 2, buffType: 'ATK', target: 'ally', duration: 2, desc: 'Aumenta ATK do aliado.' },
+                    { tier: 2, name: 'Bênção II', type: 'BUFF', cost: 6, power: 3, buffType: 'ATK', target: 'ally', duration: 2, desc: 'Aumenta muito o ATK.' },
+                    { tier: 3, name: 'Bênção III', type: 'BUFF', cost: 8, power: 4, buffType: 'DEF', target: 'ally', duration: 3, desc: 'Bênção poderosa (DEF).' }
+                ]
+            },
+            // MAGO
+            'Mago': {
+                'Magia Elemental': [
+                    { tier: 1, name: 'Magia Elemental I', type: 'DAMAGE', cost: 4, power: 20, desc: 'Magia elemental.' },
+                    { tier: 2, name: 'Magia Elemental II', type: 'DAMAGE', cost: 6, power: 26, desc: 'Magia elemental forte.' },
+                    { tier: 3, name: 'Magia Elemental III', type: 'DAMAGE', cost: 8, power: 32, desc: 'Magia elemental poderosa.' }
+                ],
+                'Explosão Elemental': [
+                    { tier: 1, name: 'Explosão Elemental I', type: 'DAMAGE', cost: 6, power: 24, desc: 'Explosão mágica.' },
+                    { tier: 2, name: 'Explosão Elemental II', type: 'DAMAGE', cost: 8, power: 32, desc: 'Explosão mágica forte.' },
+                    { tier: 3, name: 'Explosão Elemental III', type: 'DAMAGE', cost: 12, power: 38, desc: 'Explosão devastadora.' }
+                ]
+            },
+            // BÁRBARO
+            'Bárbaro': {
+                'Fúria': [
+                    { tier: 1, name: 'Fúria I', type: 'BUFF', cost: 4, power: 3, buffType: 'ATK', target: 'self', duration: 2, debuffType: 'DEF', debuffPower: -1, desc: 'Aumenta ATK, reduz DEF.' },
+                    { tier: 2, name: 'Fúria II', type: 'BUFF', cost: 6, power: 4, buffType: 'ATK', target: 'self', duration: 2, debuffType: 'DEF', debuffPower: -2, desc: 'Fúria intensa.' },
+                    { tier: 3, name: 'Fúria III', type: 'BUFF', cost: 8, power: 6, buffType: 'ATK', target: 'self', duration: 3, debuffType: 'DEF', debuffPower: -2, desc: 'Fúria selvagem.' }
+                ],
+                'Golpe Brutal': [
+                    { tier: 1, name: 'Golpe Brutal I', type: 'DAMAGE', cost: 6, power: 24, desc: 'Golpe brutal.' },
+                    { tier: 2, name: 'Golpe Brutal II', type: 'DAMAGE', cost: 8, power: 32, desc: 'Golpe muito brutal.' },
+                    { tier: 3, name: 'Golpe Brutal III', type: 'DAMAGE', cost: 12, power: 38, desc: 'Golpe devastador.' }
+                ]
+            },
+            // LADINO
+            'Ladino': {
+                'Ataque Preciso': [
+                    { tier: 1, name: 'Ataque Preciso I', type: 'DAMAGE', cost: 4, power: 19, desc: 'Ataque preciso.' },
+                    { tier: 2, name: 'Ataque Preciso II', type: 'DAMAGE', cost: 6, power: 24, desc: 'Ataque muito preciso.' },
+                    { tier: 3, name: 'Ataque Preciso III', type: 'DAMAGE', cost: 8, power: 30, desc: 'Ataque extremamente preciso.' }
+                ],
+                'Enfraquecer': [
+                    null, // S0 não tem
+                    { tier: 2, name: 'Enfraquecer I', type: 'BUFF', cost: 4, power: -2, buffType: 'ATK', target: 'enemy', duration: 1, desc: 'Reduz ATK do inimigo.' },
+                    { tier: 3, name: 'Enfraquecer II', type: 'BUFF', cost: 6, power: -3, buffType: 'ATK', target: 'enemy', duration: 2, desc: 'Enfraquece muito o inimigo.' }
+                ]
+            },
+            // BARDO
+            'Bardo': {
+                'Canção de Coragem': [
+                    { tier: 1, name: 'Canção de Coragem I', type: 'BUFF', cost: 4, power: 2, buffType: 'ATK', target: 'ally', duration: 2, desc: 'Aumenta ATK.' },
+                    { tier: 2, name: 'Canção de Coragem II', type: 'BUFF', cost: 6, power: 3, buffType: 'ATK', target: 'ally', duration: 2, desc: 'Aumenta muito o ATK.' },
+                    { tier: 3, name: 'Canção de Coragem III', type: 'BUFF', cost: 8, power: 4, buffType: 'ATK', target: 'ally', duration: 3, desc: 'Canção inspiradora.' }
+                ],
+                'Canção Calmante': [
+                    { tier: 1, name: 'Canção Calmante I', type: 'HEAL', cost: 5, power: 12, target: 'ally', desc: 'Cura leve.' },
+                    { tier: 2, name: 'Canção Calmante II', type: 'BUFF', cost: 6, power: 2, buffType: 'DEF', target: 'ally', duration: 2, desc: 'Aumenta DEF.' },
+                    { tier: 3, name: 'Canção Calmante III', type: 'BUFF', cost: 8, power: 3, buffType: 'DEF', target: 'ally', duration: 3, desc: 'Canção protetora.' }
+                ]
+            },
+            // CAÇADOR
+            'Caçador': {
+                'Flecha Poderosa': [
+                    { tier: 1, name: 'Flecha Poderosa I', type: 'DAMAGE', cost: 4, power: 19, desc: 'Flecha poderosa.' },
+                    { tier: 2, name: 'Flecha Poderosa II', type: 'DAMAGE', cost: 6, power: 24, desc: 'Flecha muito poderosa.' },
+                    { tier: 3, name: 'Flecha Poderosa III', type: 'DAMAGE', cost: 8, power: 30, desc: 'Flecha devastadora.' }
+                ],
+                'Armadilha': [
+                    null, // S0 não tem
+                    { tier: 2, name: 'Armadilha I', type: 'BUFF', cost: 4, power: -2, buffType: 'SPD', target: 'enemy', duration: 1, desc: 'Reduz SPD do inimigo.' },
+                    { tier: 3, name: 'Armadilha II', type: 'BUFF', cost: 6, power: -3, buffType: 'SPD', target: 'enemy', duration: 2, desc: 'Armadilha poderosa.' }
+                ]
+            },
+            // ANIMALISTA
+            'Animalista': {
+                'Investida Bestial': [
+                    { tier: 1, name: 'Investida Bestial I', type: 'DAMAGE', cost: 4, power: 19, desc: 'Investida feroz.' },
+                    { tier: 2, name: 'Investida Bestial II', type: 'DAMAGE', cost: 6, power: 24, desc: 'Investida muito feroz.' },
+                    { tier: 3, name: 'Investida Bestial III', type: 'DAMAGE', cost: 8, power: 30, desc: 'Investida selvagem.' }
+                ],
+                'Instinto Selvagem': [
+                    { tier: 1, name: 'Instinto Selvagem I', type: 'BUFF', cost: 4, power: 2, buffType: 'DEF', target: 'self', duration: 2, desc: 'Aumenta DEF.' },
+                    { tier: 2, name: 'Instinto Selvagem II', type: 'BUFF', cost: 6, power: 2, buffType: 'SPD', target: 'self', duration: 2, desc: 'Aumenta SPD.' },
+                    { tier: 3, name: 'Instinto Selvagem III', type: 'BUFF', cost: 8, power: 3, buffType: 'DEF', target: 'self', duration: 3, desc: 'Instinto aguçado.' }
+                ]
+            }
+        };
+
         // CLASTERORB TIERS (Sistema de captura em tiers)
         const CLASTERORBS = {
             'CLASTERORB_COMUM': { id: 'CLASTERORB_COMUM', name: 'ClasterOrb Comum', type: 'CAPTURE', capture_bonus_pp: 0, emoji: '⚪' },
@@ -638,6 +775,13 @@
                 const eneGrowth = 2; // growth_ene padrão
                 const eneMax = Math.floor(baseEne + eneGrowth * (level - 1));
                 
+                // Determinar stage baseado no nível (simplificado)
+                // S0: nível 1-9, S1: 10-24, S2: 25-44, S3: 45+
+                let stage = 0;
+                if (level >= 45) stage = 3;
+                else if (level >= 25) stage = 2;
+                else if (level >= 10) stage = 1;
+                
                 return {
                     id: Date.now() + Math.random(),
                     ownerId: ownerId,
@@ -655,8 +799,9 @@
                     poder: poder,
                     ene: eneMax,      // ENE atual (começa cheio)
                     eneMax: eneMax,   // ENE máximo
+                    stage: stage,     // Estágio de evolução (0-3)
                     status: 'healthy',
-                    skill: null       // Será definido ao entrar em batalha
+                    buffs: []         // Array para buffs temporários
                 };
             } catch (error) {
                 console.error('Failed to create monster instance:', error);
@@ -671,19 +816,196 @@
                 
                 // Buscar habilidade da mesma classe
                 const classSkills = SKILLS_CATALOG.filter(s => s.class === monster.class);
+        }
+
+        // Obter habilidades do monstrinho baseado em classe e estágio
+        function getMonsterSkills(monster) {
+            try {
+                if (!monster || !monster.class) return [];
                 
-                if (classSkills.length > 0) {
-                    // Por enquanto, retorna a primeira habilidade da classe
-                    return classSkills[0];
+                const classSkills = SKILL_DEFS[monster.class];
+                if (!classSkills) return [];
+                
+                const stage = monster.stage || 0;
+                const skillList = [];
+                
+                // Pegar as duas primeiras skills sempre disponíveis
+                const skillNames = Object.keys(classSkills);
+                for (let i = 0; i < Math.min(2, skillNames.length); i++) {
+                    const skillTiers = classSkills[skillNames[i]];
+                    const skill = skillTiers[stage];
+                    if (skill) {
+                        skillList.push(skill);
+                    }
                 }
                 
-                // Fallback: retorna primeira habilidade disponível
-                return SKILLS_CATALOG[0];
+                // Terceira skill (se existir e stage >= 1)
+                if (skillNames.length > 2 && stage >= 1) {
+                    const skillTiers = classSkills[skillNames[2]];
+                    const skill = skillTiers[stage];
+                    if (skill) {
+                        skillList.push(skill);
+                    }
+                }
+                
+                return skillList;
             } catch (error) {
-                console.error('Failed to get monster skill:', error);
-                return null;
+                console.error('Failed to get monster skills:', error);
+                return [];
             }
         }
+
+        // Aplicar regeneração de ENE
+        function applyEneRegen(monster, encounter) {
+            try {
+                if (!monster || !monster.class) return;
+                
+                const regenData = ENE_REGEN_BY_CLASS[monster.class] || { pct: 0.10, min: 1 };
+                const eneGain = Math.max(regenData.min, Math.ceil(monster.eneMax * regenData.pct));
+                
+                monster.ene = Math.min(monster.eneMax, monster.ene + eneGain);
+                
+                if (encounter && encounter.log) {
+                    encounter.log.push(`⚡ ${monster.name} regenerou ${eneGain} ENE (${monster.ene}/${monster.eneMax})`);
+                }
+            } catch (error) {
+                console.error('Failed to apply ENE regen:', error);
+            }
+        }
+
+        // Usar habilidade
+        function useSkill(attacker, skill, defender, encounter) {
+            try {
+                if (!attacker || !skill || !defender) return false;
+                
+                // Verificar se tem ENE suficiente
+                if (attacker.ene < skill.cost) {
+                    return false;
+                }
+                
+                // Consumir ENE
+                attacker.ene -= skill.cost;
+                
+                encounter.log = encounter.log || [];
+                encounter.log.push(`✨ ${attacker.name} usa ${skill.name}! (-${skill.cost} ENE)`);
+                
+                // Aplicar efeito baseado no tipo
+                switch (skill.type) {
+                    case 'DAMAGE':
+                        // Calcular dano da habilidade com nova fórmula
+                        const atkMods = getBuffModifiers(attacker);
+                        const effectiveAtk = Math.max(1, attacker.atk + atkMods.atk);
+                        
+                        const defMods = getBuffModifiers(defender);
+                        const effectiveDef = Math.max(1, defender.def + defMods.def);
+                        
+                        // Vantagem de classe
+                        const classAdv = GameState.config?.classAdvantages?.[attacker.class];
+                        let damageMult = 1.0;
+                        if (classAdv?.strong === defender.class) {
+                            damageMult = 1.10;
+                        } else if (classAdv?.weak === defender.class) {
+                            damageMult = 0.90;
+                        }
+                        
+                        const skillDamage = calcDamage({
+                            atk: effectiveAtk,
+                            def: effectiveDef,
+                            power: skill.power,
+                            damageMult: damageMult
+                        });
+                        
+                        defender.hp = Math.max(0, defender.hp - skillDamage);
+                        encounter.log.push(`💥 ${defender.name} recebe ${skillDamage} de dano!`);
+                        break;
+                        
+                    case 'HEAL':
+                        // Curar (self ou ally)
+                        const healAmount = skill.power;
+                        const target = (skill.target === 'ally' || skill.target === 'self') ? attacker : defender;
+                        target.hp = Math.min(target.hpMax, target.hp + healAmount);
+                        encounter.log.push(`💚 ${target.name} recupera ${healAmount} HP!`);
+                        break;
+                        
+                    case 'BUFF':
+                        // Aplicar buff/debuff
+                        const buffTarget = skill.target === 'enemy' ? defender : attacker;
+                        buffTarget.buffs = buffTarget.buffs || [];
+                        
+                        const buff = {
+                            type: skill.buffType,
+                            power: skill.power,
+                            duration: skill.duration || 1,
+                            source: skill.name
+                        };
+                        buffTarget.buffs.push(buff);
+                        
+                        const buffDesc = skill.power > 0 ? `+${skill.power}` : skill.power;
+                        encounter.log.push(`🔮 ${buffTarget.name} recebe ${buff.type} ${buffDesc} por ${buff.duration} turnos!`);
+                        
+                        // Se for Fúria (Bárbaro), aplicar também o debuff
+                        if (skill.debuffType && skill.debuffPower) {
+                            const debuff = {
+                                type: skill.debuffType,
+                                power: skill.debuffPower,
+                                duration: skill.duration || 1,
+                                source: skill.name
+                            };
+                            attacker.buffs.push(debuff);
+                            encounter.log.push(`⚠️ ${attacker.name} recebe ${debuff.type} ${debuff.power} por ${debuff.duration} turnos!`);
+                        }
+                        break;
+                        
+                    case 'TAUNT':
+                        // Marcar alvo como provocado (flag simples)
+                        defender.taunted = true;
+                        encounter.log.push(`😠 ${defender.name} foi provocado!`);
+                        break;
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('Failed to use skill:', error);
+                return false;
+            }
+        }
+
+        // Atualizar buffs (reduzir duração, remover expirados)
+        function updateBuffs(monster) {
+            try {
+                if (!monster || !monster.buffs) return;
+                
+                monster.buffs = monster.buffs.filter(buff => {
+                    buff.duration--;
+                    return buff.duration > 0;
+                });
+            } catch (error) {
+                console.error('Failed to update buffs:', error);
+            }
+        }
+
+        // Calcular modificadores de buffs
+        function getBuffModifiers(monster) {
+            try {
+                if (!monster || !monster.buffs) return { atk: 0, def: 0, spd: 0 };
+                
+                const mods = { atk: 0, def: 0, spd: 0 };
+                
+                monster.buffs.forEach(buff => {
+                    const type = buff.type.toLowerCase();
+                    if (type === 'atk') mods.atk += buff.power;
+                    else if (type === 'def') mods.def += buff.power;
+                    else if (type === 'spd') mods.spd += buff.power;
+                });
+                
+                return mods;
+            } catch (error) {
+                console.error('Failed to get buff modifiers:', error);
+                return { atk: 0, def: 0, spd: 0 };
+            }
+        }
+
+        // Função antiga removida - usar getMonsterSkills acima
 
         // Migrar inventário antigo para novo sistema ClasterOrb
         function migrateInventory(player) {
@@ -988,17 +1310,34 @@
                                     `<button class="btn btn-success btn-large" disabled style="opacity: 0.5;">🎯 Sem Orbes</button>`
                                 }
                                 <button class="btn btn-danger btn-large" onclick="attackWild()">⚔️ Attack</button>
-                                ${playerMonster && playerMonster.skill ? (() => {
-                                    const skill = playerMonster.skill;
-                                    const canUseSkill = (playerMonster.ene || 0) >= skill.energy_cost;
-                                    return `<button class="btn btn-primary btn-large" onclick="useSkillWild()" 
-                                            ${!canUseSkill ? 'disabled style="opacity: 0.5;"' : ''} 
-                                            title="${skill.name}: ${skill.desc} (Power: ${skill.power})">
-                                        ⚡ Skill (-${skill.energy_cost} ENE)
-                                    </button>`;
-                                })() : ''}
                                 <button class="btn btn-warning btn-large" onclick="fleeEncounter()">🏃 Flee</button>
                             </div>
+                            
+                            ${playerMonster ? (() => {
+                                const skills = getMonsterSkills(playerMonster);
+                                if (!skills || skills.length === 0) return '';
+                                
+                                return `
+                                <div style="margin-top: 15px; padding: 10px; background: #f3e5f5; border-radius: 8px;">
+                                    <strong style="font-size: 16px;">✨ Habilidades</strong>
+                                    <div class="flex-center" style="margin-top: 10px; gap: 10px;">
+                                        ${skills.map((skill, idx) => {
+                                            if (!skill) return '';
+                                            const canUse = (playerMonster.ene || 0) >= skill.cost;
+                                            return `
+                                            <button class="btn btn-primary" 
+                                                    onclick="useSkillWild(${idx})" 
+                                                    ${!canUse ? 'disabled style="opacity: 0.5;"' : ''}
+                                                    title="${skill.desc}">
+                                                ${skill.name}<br>
+                                                <small>(-${skill.cost} ENE)</small>
+                                            </button>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                </div>
+                                `;
+                            })() : ''}
                         </div>
                         
                         <div class="combat-log" id="combatLog" style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 10px; max-height: 300px; overflow-y: auto;">
@@ -1223,12 +1562,10 @@
                 encounter.log = encounter.log || [];
                 
                 // ENE REGEN no início do turno do jogador
-                if (playerMonster.ene !== undefined && playerMonster.eneMax) {
-                    const regenInfo = CLASS_ENERGY_REGEN[playerMonster.class] || { ene_regen_pct: 0.10, ene_regen_min: 1 };
-                    const eneGain = Math.max(regenInfo.ene_regen_min, Math.ceil(playerMonster.eneMax * regenInfo.ene_regen_pct));
-                    playerMonster.ene = Math.min(playerMonster.eneMax, playerMonster.ene + eneGain);
-                    encounter.log.push(`⚡ ${playerMonster.name} regenerou +${eneGain} ENE (${playerMonster.ene}/${playerMonster.eneMax})`);
-                }
+                applyEneRegen(playerMonster, encounter);
+                
+                // Atualizar buffs (reduzir duração)
+                updateBuffs(playerMonster);
                 
                 // CRIT 20 ou FALHA 1 (GAME_RULES.md)
                 let isCrit20 = false;
@@ -1265,12 +1602,33 @@
                 const playerHit = isFail1 ? false : (isCrit20 ? true : checkHit(playerRoll, playerMonster, encounter.wildMonster));
                 
                 if (playerHit) {
-                    let damage = calculateDamage(playerMonster, encounter.wildMonster);
-                    
-                    // Se crit 20 com poder dobrado, multiplica dano por 2
+                    // Calcular dano com power modificado se CRIT 20
+                    let power = BASIC_ATTACK_POWER[playerMonster.class] || 12;
                     if (isCrit20 && critBonus === 'double_power') {
-                        damage *= 2;
+                        power *= 2; // Dobrar POWER antes do cálculo
                     }
+                    
+                    // Calcular dano com nova fórmula
+                    const atkMods = getBuffModifiers(playerMonster);
+                    const effectiveAtk = Math.max(1, playerMonster.atk + atkMods.atk);
+                    
+                    const defMods = getBuffModifiers(encounter.wildMonster);
+                    const effectiveDef = Math.max(1, encounter.wildMonster.def + defMods.def);
+                    
+                    const classAdv = GameState.config?.classAdvantages?.[playerMonster.class];
+                    let damageMult = 1.0;
+                    if (classAdv?.strong === encounter.wildMonster.class) {
+                        damageMult = 1.10;
+                    } else if (classAdv?.weak === encounter.wildMonster.class) {
+                        damageMult = 0.90;
+                    }
+                    
+                    const damage = calcDamage({
+                        atk: effectiveAtk,
+                        def: effectiveDef,
+                        power: power,
+                        damageMult: damageMult
+                    });
                     
                     encounter.wildMonster.hp = Math.max(0, encounter.wildMonster.hp - damage);
                     encounter.log.push(`💥 ${playerMonster.name} hits! Deals ${damage} damage!`);
@@ -1355,11 +1713,119 @@
             }
         }
 
-        // Usar habilidade contra o selvagem
-        function useSkillWild() {
+        // Usar habilidade contra o selvagem (por índice 0, 1, 2)
+        function useSkillWild(skillIndex) {
             try {
                 const encounter = GameState.currentEncounter;
                 if (!encounter?.wildMonster) return;
+                
+                const playerId = encounter.selectedPlayerId;
+                const player = GameState.players.find(p => p.id === playerId);
+                if (!player) return;
+                
+                const playerMonster = player.team?.[0];
+                if (!playerMonster) {
+                    alert('No monster available');
+                    return;
+                }
+                
+                // Obter habilidades disponíveis
+                const skills = getMonsterSkills(playerMonster);
+                if (!skills || skillIndex >= skills.length || !skills[skillIndex]) {
+                    alert('Skill not available');
+                    return;
+                }
+                
+                const skill = skills[skillIndex];
+                
+                // Validar ENE suficiente
+                if ((playerMonster.ene || 0) < skill.cost) {
+                    alert(`❌ ENE insuficiente! Precisa de ${skill.cost} ENE.`);
+                    return;
+                }
+                
+                encounter.log = encounter.log || [];
+                
+                // ENE REGEN no início do turno
+                applyEneRegen(playerMonster, encounter);
+                
+                // Atualizar buffs
+                updateBuffs(playerMonster);
+                
+                // Usar habilidade
+                const success = useSkill(playerMonster, skill, encounter.wildMonster, encounter);
+                
+                if (!success) {
+                    alert('Failed to use skill');
+                    return;
+                }
+                
+                // Verificar se o selvagem foi derrotado
+                if (encounter.wildMonster.hp <= 0) {
+                    encounter.log.push(`🏆 ${encounter.wildMonster.name} foi derrotado!`);
+                    const xpGained = calculateBattleXP(encounter.wildMonster);
+                    giveXp(playerMonster, xpGained);
+                    encounter.log.push(`✨ ${playerMonster.name} ganhou ${xpGained} XP!`);
+                    encounter.active = false;
+                    GameState.currentEncounter = null;
+                    saveToLocalStorage();
+                    renderEncounter();
+                    return;
+                }
+                
+                // Fase 2: Contra-ataque do selvagem
+                const wildMonster = encounter.wildMonster;
+                
+                // Atualizar buffs do selvagem
+                updateBuffs(wildMonster);
+                
+                // IA: 50% chance de usar habilidade se tiver ENE
+                const wildSkills = getMonsterSkills(wildMonster);
+                const canUseSkill = wildSkills.length > 0 && (wildMonster.ene || 0) >= wildSkills[0].cost;
+                const useWildSkill = canUseSkill && Math.random() < 0.5;
+                
+                if (useWildSkill) {
+                    // Selvagem usa habilidade
+                    useSkill(wildMonster, wildSkills[0], playerMonster, encounter);
+                    
+                    if (playerMonster.hp <= 0) {
+                        encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
+                        playerMonster.status = 'fainted';
+                        encounter.active = false;
+                        GameState.currentEncounter = null;
+                    }
+                } else {
+                    // Ataque básico do selvagem
+                    const enemyRoll = Math.floor(Math.random() * 20) + 1;
+                    const enemyHit = checkHit(enemyRoll, wildMonster, playerMonster);
+                    encounter.log.push(`🎲 ${wildMonster.name} rola ${enemyRoll} (ATK: ${wildMonster.atk})`);
+                    
+                    if (enemyHit) {
+                        const mods = getBuffModifiers(wildMonster);
+                        const effectiveAtk = wildMonster.atk + mods.atk;
+                        const damage = calculateDamage(wildMonster, playerMonster);
+                        playerMonster.hp = Math.max(0, playerMonster.hp - damage);
+                        encounter.log.push(`💥 ${wildMonster.name} acerta! Causa ${damage} de dano!`);
+                        
+                        if (playerMonster.hp <= 0) {
+                            encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
+                            playerMonster.status = 'fainted';
+                            encounter.active = false;
+                            GameState.currentEncounter = null;
+                        }
+                    } else {
+                        encounter.log.push(`❌ ${wildMonster.name} erra!`);
+                    }
+                }
+                
+                saveToLocalStorage();
+                renderEncounter();
+            } catch (error) {
+                showError('Skill use failed', error.stack);
+            }
+        }
+
+        // OBSOLETE - removed old useSkillWild function
                 
                 const playerId = encounter.selectedPlayerId;
                 const player = GameState.players.find(p => p.id === playerId);
@@ -1520,13 +1986,43 @@
         }
 
         // Calcula dano: max(1, ATK + PODER - DEF) com modificadores de classe
+        // Nova fórmula de dano (v1)
+        function calcDamage({ atk, def, power, damageMult = 1.0 }) {
+            try {
+                // ratio = ATK / (ATK + DEF)
+                const ratio = atk / (atk + def);
+                
+                // danoBase = floor(POWER * ratio)
+                const baseD = Math.floor(power * ratio);
+                
+                // Aplicar multiplicador de classe
+                const finalD = Math.floor(baseD * damageMult);
+                
+                // Dano mínimo sempre 1
+                return Math.max(1, finalD);
+            } catch (error) {
+                console.error('Damage calculation failed:', error);
+                return 1;
+            }
+        }
+
+        // Wrapper para compatibilidade - calcula dano com ataque básico
         function calculateDamage(attacker, defender) {
             try {
                 if (!attacker || !defender) return 1;
                 
                 const atkValue = attacker.atk || 5;
-                const poderValue = attacker.poder || Math.floor(atkValue * 0.5);
                 const defValue = defender.def || 3;
+                
+                // POWER básico por classe
+                const basicPower = BASIC_ATTACK_POWER[attacker.class] || 12;
+                
+                // Aplicar modificadores de buff
+                const atkMods = getBuffModifiers(attacker);
+                const effectiveAtk = Math.max(1, atkValue + atkMods.atk);
+                
+                const defMods = getBuffModifiers(defender);
+                const effectiveDef = Math.max(1, defValue + defMods.def);
                 
                 // Vantagem de classe: +10% dano se forte, -10% dano se fraco
                 const classAdv = GameState.config?.classAdvantages?.[attacker.class];
@@ -1537,10 +2033,12 @@
                     damageMult = 0.90;
                 }
                 
-                const baseDamage = atkValue + poderValue - defValue;
-                const finalDamage = Math.floor(baseDamage * damageMult);
-                
-                return Math.max(1, finalDamage);
+                return calcDamage({
+                    atk: effectiveAtk,
+                    def: effectiveDef,
+                    power: basicPower,
+                    damageMult: damageMult
+                });
             } catch (error) {
                 console.error('Damage calculation failed:', error);
                 return 1;

@@ -63,13 +63,29 @@ d20 + ATK + class_advantage_bonus >= DEF
 - **d20 = 1**: SEMPRE erra
 - **class_advantage_bonus**: +2 se vantagem, -2 se desvantagem, 0 se neutro
 
-### 3.2 Dano
+### 3.2 Cálculo de Dano (Regra Oficial v1)
+
+Após o acerto (hit), o dano usa a seguinte fórmula:
+
+**Fórmula:**
 ```javascript
-Dano = max(1, (ATK + PODER - DEF) * class_advantage_mult)
+ratio = ATK / (ATK + DEF)
+danoBase = Math.floor(POWER * ratio)
+danoFinal = Math.max(1, danoBase)
 ```
 
-- **PODER**: metade do ATK (calculado dinamicamente)
-- **class_advantage_mult**: 1.10 se vantagem, 0.90 se desvantagem, 1.0 se neutro
+**Onde POWER vem:**
+- **Ataque Básico**: POWER_BASIC (por classe: 10-14)
+- **Habilidade**: POWER_SKILL (definido pela habilidade I/II/III: 16-38)
+
+**Modificadores:**
+- **Vantagem de classe**: +10% dano (aplicar no danoBase)
+- **Desvantagem de classe**: -10% dano (aplicar no danoBase)
+- **CRIT 20** (bônus "Poder Duplo"): dobra o POWER antes do cálculo
+
+**Regras adicionais:**
+- Dano mínimo sempre 1
+- O ratio limita o dano mesmo em níveis altos
 
 ### 3.3 Turnos
 1. Jogador escolhe ação (Atacar, Habilidade, Item, Fugir)
@@ -84,7 +100,7 @@ Dano = max(1, (ATK + PODER - DEF) * class_advantage_mult)
 Quando **d20 = 20**:
 1. **SEMPRE acerta** (ignora DEF)
 2. **Aplica 1 bônus aleatório:**
-   - **(A) Poder Dobrado**: Dano deste ataque é multiplicado por 2
+   - **(A) Poder Dobrado**: POWER x2 neste ataque (antes do cálculo de dano)
    - **(B) Item Pequeno**: Ganha 1 item aleatório (Petisco de Cura ou similar)
    - **(C) Dinheiro Extra**: Ganha 20-50 moedas extras
 
@@ -96,7 +112,83 @@ Quando **d20 = 20**:
 
 ---
 
-## 4. SISTEMA DE CAPTURA (Sem Dado)
+## 4. SISTEMA DE ENERGIA (ENE) E HABILIDADES
+
+### 4.1 Sistema de Energia
+- Cada monstrinho tem **ENE_MAX** e **ENE_atual**
+- **ENE_MAX** = 10 + (level - 1) * 2 (crescimento por nível)
+- Começa com ENE cheio no início da batalha
+
+### 4.2 Tipos de Ação
+1. **Ataque Básico**: Não gasta ENE (POWER 10-14 por classe)
+2. **Habilidade**: Gasta ENE (quantidade definida na habilidade)
+3. **Item**: Não gasta ENE
+
+### 4.3 Regeneração de ENE
+**Por turno**, no início do turno do atacante:
+```javascript
+eneGain = Math.max(ene_regen_min, Math.ceil(eneMax * ene_regen_pct))
+ene = Math.min(eneMax, ene + eneGain)
+```
+
+**Valores de regen por classe:**
+- **Mago/Curandeiro**: 18% (min 3) - alta regeneração
+- **Bardo/Caçador/Ladino**: 14% (min 2) - regeneração média
+- **Animalista/Bárbaro**: 12% (min 2) - regeneração média-baixa
+- **Guerreiro**: 10% (min 1) - regeneração baixa
+
+### 4.4 Habilidades por Classe e Estágio
+
+Habilidades são **automaticamente upgradadas** baseado no estágio (S0-S3):
+- **S0** (Nível 1-9): Habilidades Tier I
+- **S1** (Nível 10-24): Habilidades Tier II
+- **S2** (Nível 25-44): Habilidades Tier II
+- **S3** (Nível 45+): Habilidades Tier III
+
+**Classes e suas habilidades:**
+
+#### Guerreiro
+- **Golpe de Espada I/II/III** (DAMAGE): 4/6/8 ENE, Power 18/24/30
+- **Escudo I/II/III** (BUFF DEF self): 4/6/8 ENE, +2/+3/+4 DEF por 2-3 turnos
+- **Provocar I/II** (TAUNT): 4/6 ENE (disponível a partir de S1)
+
+#### Curandeiro
+- **Cura I/II/III** (HEAL): 5/7/10 ENE, 15/25/40 HP
+- **Bênção I/II/III** (BUFF): 4/6/8 ENE, +2/+3/+4 ATK ou DEF
+
+#### Mago
+- **Magia Elemental I/II/III** (DAMAGE): 4/6/8 ENE, Power 20/26/32
+- **Explosão Elemental I/II/III** (DAMAGE alto): 6/8/12 ENE, Power 24/32/38
+- **Nota**: Mago não possui ROOT neste MVP
+
+#### Bárbaro
+- **Fúria I/II/III** (BUFF self +ATK, -DEF): 4/6/8 ENE, +3/+4/+6 ATK, -1/-2/-2 DEF
+- **Golpe Brutal I/II/III** (DAMAGE): 6/8/12 ENE, Power 24/32/38
+
+#### Ladino
+- **Ataque Preciso I/II/III** (DAMAGE): 4/6/8 ENE, Power 19/24/30
+- **Enfraquecer I/II** (DEBUFF enemy): 4/6 ENE, -2/-3 ATK por 1-2 turnos
+
+#### Bardo
+- **Canção de Coragem I/II/III** (BUFF ATK): 4/6/8 ENE, +2/+3/+4 ATK
+- **Canção Calmante I/II/III** (HEAL/BUFF): 5/6/8 ENE, 12 HP ou +2/+3 DEF
+
+#### Caçador
+- **Flecha Poderosa I/II/III** (DAMAGE): 4/6/8 ENE, Power 19/24/30
+- **Armadilha I/II** (DEBUFF enemy SPD): 4/6 ENE, -2/-3 SPD por 1-2 turnos
+
+#### Animalista
+- **Investida Bestial I/II/III** (DAMAGE): 4/6/8 ENE, Power 19/24/30
+- **Instinto Selvagem I/II/III** (BUFF self): 4/6/8 ENE, +2/+2/+3 DEF ou SPD
+
+### 4.5 Uso de Habilidades
+- Interface mostra 2-3 botões de habilidade por turno
+- Botões desabilitados se ENE < custo
+- Ao usar: consome ENE, aplica efeito, loga no combate
+
+---
+
+## 5. SISTEMA DE CAPTURA (Sem Dado)
 
 ### 4.1 Quando Pode Capturar
 - ✅ **Somente em encontros INDIVIDUAIS** (Wild Monster)
