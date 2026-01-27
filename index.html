@@ -1297,6 +1297,34 @@
                                 <button class="btn btn-warning btn-large" onclick="fleeEncounter()">🏃 Flee</button>
                             </div>
                             
+                            ${playerMonster && player ? (() => {
+                                const healItems = player.inventory?.['IT_HEAL_01'] || 0;
+                                const canUseItem = healItems > 0 && playerMonster.hp > 0 && playerMonster.hp < playerMonster.hpMax;
+                                
+                                return `
+                                <div style="margin: 15px 0; padding: 15px; background: #e8f5e9; border-radius: 8px; border: 2px solid #4caf50;">
+                                    <strong style="font-size: 16px;">💚 Usar Item de Cura</strong>
+                                    <div style="margin-top: 10px;">
+                                        <div><strong>Petisco de Cura disponível:</strong> ${healItems}x</div>
+                                        <div><strong>HP atual:</strong> ${playerMonster.hp}/${playerMonster.hpMax}</div>
+                                        ${!canUseItem && healItems === 0 ? 
+                                            `<div style="color: #c62828; margin-top: 5px;">❌ Sem itens de cura disponíveis</div>` : 
+                                            !canUseItem && playerMonster.hp <= 0 ? 
+                                            `<div style="color: #c62828; margin-top: 5px;">❌ Monstrinho desmaiado, não pode usar item</div>` :
+                                            !canUseItem && playerMonster.hp >= playerMonster.hpMax ?
+                                            `<div style="color: #f57c00; margin-top: 5px;">⚠️ HP já está cheio</div>` : ''
+                                        }
+                                    </div>
+                                    <button class="btn btn-primary" 
+                                            onclick="useItemInBattle('IT_HEAL_01')"
+                                            ${!canUseItem ? 'disabled style="opacity: 0.5;"' : ''}
+                                            style="margin-top: 10px; width: 100%;">
+                                        💚 Usar Petisco de Cura
+                                    </button>
+                                </div>
+                                `;
+                            })() : ''}
+                            
                             ${playerMonster ? (() => {
                                 const skills = getMonsterSkills(playerMonster);
                                 if (!skills || skills.length === 0) return '';
@@ -1504,6 +1532,152 @@
                 renderEncounter();
             } catch (error) {
                 showError('Capture attempt failed', error.stack);
+            }
+        }
+
+        // Feature 3.1: Usar Item em Batalha
+        function useItemInBattle(itemId) {
+            try {
+                const encounter = GameState.currentEncounter;
+                if (!encounter?.wildMonster) return;
+                
+                const playerId = encounter.selectedPlayerId;
+                const player = GameState.players.find(p => p.id === playerId);
+                if (!player) {
+                    alert('Nenhum jogador selecionado para este encontro');
+                    return;
+                }
+                
+                const playerMonster = player.team?.[0];
+                if (!playerMonster) {
+                    alert('Jogador não tem monstrinhos no time');
+                    return;
+                }
+                
+                // VALIDAÇÕES (GAME_RULES.md)
+                
+                // 1. Validar HP > 0 (monstrinho não desmaiado)
+                if (playerMonster.hp <= 0) {
+                    alert('❌ Não pode usar item! Monstrinho está desmaiado (HP = 0).');
+                    return;
+                }
+                
+                // 2. Validar HP < HPMax (não usar se já está cheio)
+                if (playerMonster.hp >= playerMonster.hpMax) {
+                    alert('⚠️ HP já está no máximo! Não é necessário usar item de cura.');
+                    return;
+                }
+                
+                // 3. Validar item disponível no inventário
+                player.inventory = player.inventory || {};
+                const itemCount = player.inventory[itemId] || 0;
+                
+                if (itemCount <= 0) {
+                    alert('❌ Você não tem Petisco de Cura disponível!');
+                    return;
+                }
+                
+                encounter.log = encounter.log || [];
+                
+                // CONSUMIR 1 unidade do item
+                player.inventory[itemId]--;
+                encounter.log.push(`💚 ${player.name} usou Petisco de Cura! (Restam: ${player.inventory[itemId]})`);
+                
+                // APLICAR CURA
+                // Petisco de Cura: restaura 30 HP ou 30% do HP máximo (o que for maior)
+                const healAmount = Math.max(30, Math.floor(playerMonster.hpMax * 0.30));
+                const hpBefore = playerMonster.hp;
+                playerMonster.hp = Math.min(playerMonster.hpMax, playerMonster.hp + healAmount);
+                const actualHeal = playerMonster.hp - hpBefore;
+                
+                encounter.log.push(`✨ ${playerMonster.name} recuperou ${actualHeal} HP! (${playerMonster.hp}/${playerMonster.hpMax})`);
+                
+                // SALVAR ESTADO
+                saveToLocalStorage();
+                
+                // INIMIGO ATACA (contra-ataque automático após usar item)
+                if (encounter.wildMonster.hp > 0) {
+                    encounter.log.push(`⚔️ Vez do inimigo...`);
+                    
+                    const wildMonster = encounter.wildMonster;
+                    
+                    // Aplicar ENE regen do inimigo
+                    applyEneRegen(wildMonster, encounter);
+                    
+                    // Atualizar buffs do inimigo
+                    updateBuffs(wildMonster);
+                    
+                    // IA: 50% chance de usar habilidade se tiver ENE
+                    const wildSkills = getMonsterSkills(wildMonster);
+                    const canUseSkill = wildSkills && wildSkills.length > 0 && (wildMonster.ene || 0) >= wildSkills[0].cost;
+                    const shouldUseSkill = canUseSkill && Math.random() < 0.5;
+                    
+                    if (shouldUseSkill) {
+                        const skill = wildSkills[0];
+                        wildMonster.ene -= skill.cost;
+                        encounter.log.push(`✨ ${wildMonster.name} usa ${skill.name}! (-${skill.cost} ENE)`);
+                        
+                        // Usar habilidade
+                        useSkill(wildMonster, skill, playerMonster, encounter);
+                    } else {
+                        // Ataque básico
+                        const enemyRoll = Math.floor(Math.random() * 20) + 1;
+                        encounter.log.push(`🎲 ${wildMonster.name} rolls ${enemyRoll} (ATK: ${wildMonster.atk})`);
+                        
+                        const enemyHit = enemyRoll === 1 ? false : (enemyRoll === 20 ? true : checkHit(enemyRoll, wildMonster, playerMonster));
+                        
+                        if (enemyHit) {
+                            const power = BASIC_ATTACK_POWER[wildMonster.class] || 12;
+                            
+                            const atkMods = getBuffModifiers(wildMonster);
+                            const effectiveAtk = Math.max(1, wildMonster.atk + atkMods.atk);
+                            
+                            const defMods = getBuffModifiers(playerMonster);
+                            const effectiveDef = Math.max(1, playerMonster.def + defMods.def);
+                            
+                            const classAdv = GameState.config?.classAdvantages?.[wildMonster.class];
+                            let damageMult = 1.0;
+                            if (classAdv?.strong === playerMonster.class) {
+                                damageMult = 1.10;
+                            } else if (classAdv?.weak === playerMonster.class) {
+                                damageMult = 0.90;
+                            }
+                            
+                            const damage = calcDamage({
+                                atk: effectiveAtk,
+                                def: effectiveDef,
+                                power: power,
+                                damageMult: damageMult
+                            });
+                            
+                            playerMonster.hp = Math.max(0, playerMonster.hp - damage);
+                            encounter.log.push(`💥 ${wildMonster.name} hits! Deals ${damage} damage!`);
+                            
+                            // Verificar se jogador perdeu
+                            if (playerMonster.hp <= 0) {
+                                encounter.log.push(`💀 ${playerMonster.name} fainted! Defeat!`);
+                                encounter.active = false;
+                                GameState.currentEncounter = null;
+                                saveToLocalStorage();
+                                renderEncounter();
+                                return;
+                            }
+                        } else {
+                            if (enemyRoll === 1) {
+                                encounter.log.push(`💀 FALHA CRÍTICA! ${wildMonster.name} erra!`);
+                            } else {
+                                encounter.log.push(`❌ ${wildMonster.name} misses!`);
+                            }
+                        }
+                    }
+                }
+                
+                // RENDER atualizado
+                saveToLocalStorage();
+                renderEncounter();
+                
+            } catch (error) {
+                showError('Failed to use item in battle', error.stack);
             }
         }
 
