@@ -884,6 +884,14 @@
                 const player = GameState.players.find(p => p.id === playerId);
                 const playerMonster = player?.team?.[0];
                 
+                // Atribuir habilidades se ainda não tiver
+                if (monster && !monster.skill) {
+                    monster.skill = getMonsterSkill(monster);
+                }
+                if (playerMonster && !playerMonster.skill) {
+                    playerMonster.skill = getMonsterSkill(playerMonster);
+                }
+                
                 // Calcular threshold de captura
                 const hpPercent = monster.hp / monster.hpMax;
                 const baseThreshold = GameState.config?.captureThreshold?.[monster.rarity] || 0.35;
@@ -893,7 +901,13 @@
                     <div class="encounter-panel">
                         <h3>Wild ${monster.emoji} ${monster.name} appeared!</h3>
                         ${player ? `<p><strong>Jogador:</strong> ${player.name} (${player.class})</p>` : ''}
-                        ${playerMonster ? `<p><strong>Seu Monstrinho:</strong> ${playerMonster.emoji} ${playerMonster.name} (Nv ${playerMonster.level}) - HP: ${playerMonster.hp}/${playerMonster.hpMax}</p>` : ''}
+                        ${playerMonster ? `
+                        <div style="margin: 10px 0; padding: 10px; background: #e8f5e9; border-radius: 8px;">
+                            <p><strong>Seu Monstrinho:</strong> ${playerMonster.emoji} ${playerMonster.name} (Nv ${playerMonster.level})</p>
+                            <div><strong>HP:</strong> ${playerMonster.hp}/${playerMonster.hpMax}</div>
+                            <div><strong>⚡ ENE:</strong> ${playerMonster.ene || 0}/${playerMonster.eneMax || 0}</div>
+                        </div>
+                        ` : ''}
                         
                         <div class="monster-card ${monster.class}" style="display: inline-block; margin: 20px;">
                             <div style="font-size: 48px;">${monster.emoji}</div>
@@ -904,6 +918,7 @@
                             <div style="margin-top: 8px;">
                                 <div><strong>ATK:</strong> ${monster.atk} | <strong>DEF:</strong> ${monster.def}</div>
                                 <div><strong>PODER:</strong> ${monster.poder}</div>
+                                <div><strong>⚡ ENE:</strong> ${monster.ene || 0}/${monster.eneMax || 0}</div>
                             </div>
                             <div class="progress-bar" style="margin-top: 10px;">
                                 <div class="progress-fill hp" style="width: ${(monster.hp / monster.hpMax) * 100}%">
@@ -973,6 +988,15 @@
                                     `<button class="btn btn-success btn-large" disabled style="opacity: 0.5;">🎯 Sem Orbes</button>`
                                 }
                                 <button class="btn btn-danger btn-large" onclick="attackWild()">⚔️ Attack</button>
+                                ${playerMonster && playerMonster.skill ? (() => {
+                                    const skill = playerMonster.skill;
+                                    const canUseSkill = (playerMonster.ene || 0) >= skill.energy_cost;
+                                    return `<button class="btn btn-primary btn-large" onclick="useSkillWild()" 
+                                            ${!canUseSkill ? 'disabled style="opacity: 0.5;"' : ''} 
+                                            title="${skill.name}: ${skill.desc} (Power: ${skill.power})">
+                                        ⚡ Skill (-${skill.energy_cost} ENE)
+                                    </button>`;
+                                })() : ''}
                                 <button class="btn btn-warning btn-large" onclick="fleeEncounter()">🏃 Flee</button>
                             </div>
                         </div>
@@ -1198,6 +1222,14 @@
                 
                 encounter.log = encounter.log || [];
                 
+                // ENE REGEN no início do turno do jogador
+                if (playerMonster.ene !== undefined && playerMonster.eneMax) {
+                    const regenInfo = CLASS_ENERGY_REGEN[playerMonster.class] || { ene_regen_pct: 0.10, ene_regen_min: 1 };
+                    const eneGain = Math.max(regenInfo.ene_regen_min, Math.ceil(playerMonster.eneMax * regenInfo.ene_regen_pct));
+                    playerMonster.ene = Math.min(playerMonster.eneMax, playerMonster.ene + eneGain);
+                    encounter.log.push(`⚡ ${playerMonster.name} regenerou +${eneGain} ENE (${playerMonster.ene}/${playerMonster.eneMax})`);
+                }
+                
                 // CRIT 20 ou FALHA 1 (GAME_RULES.md)
                 let isCrit20 = false;
                 let isFail1 = false;
@@ -1264,23 +1296,55 @@
                 
                 // Fase 2: Contra-ataque do monstrinho selvagem (se ainda vivo)
                 if (encounter.wildMonster.hp > 0) {
-                    const enemyRoll = Math.floor(Math.random() * 20) + 1;
-                    const enemyHit = checkHit(enemyRoll, encounter.wildMonster, playerMonster);
-                    encounter.log.push(`🎲 Wild ${encounter.wildMonster.name} rolls ${enemyRoll} (ATK: ${encounter.wildMonster.atk})`);
+                    const wildMonster = encounter.wildMonster;
+                    const wildSkill = wildMonster.skill;
                     
-                    if (enemyHit) {
-                        const damage = calculateDamage(encounter.wildMonster, playerMonster);
-                        playerMonster.hp = Math.max(0, playerMonster.hp - damage);
-                        encounter.log.push(`💥 ${encounter.wildMonster.name} hits! Deals ${damage} damage!`);
+                    // IA: 50% chance de usar habilidade se tiver ENE
+                    const useSkill = wildSkill && (wildMonster.ene || 0) >= wildSkill.energy_cost && Math.random() < 0.5;
+                    
+                    if (useSkill) {
+                        wildMonster.ene -= wildSkill.energy_cost;
+                        encounter.log.push(`✨ ${wildMonster.name} usa ${wildSkill.name}! (-${wildSkill.energy_cost} ENE)`);
                         
-                        if (playerMonster.hp <= 0) {
-                            encounter.log.push(`😵 ${playerMonster.name} fainted!`);
-                            playerMonster.status = 'fainted';
-                            encounter.active = false;
-                            GameState.currentEncounter = null;
+                        const enemyRoll = Math.floor(Math.random() * 20) + 1;
+                        const enemyHit = checkHit(enemyRoll, wildMonster, playerMonster);
+                        encounter.log.push(`🎲 ${wildMonster.name} rolls ${enemyRoll}`);
+                        
+                        if (enemyHit) {
+                            const baseDamage = wildMonster.atk + wildSkill.power - playerMonster.def;
+                            const damage = Math.max(1, baseDamage);
+                            playerMonster.hp = Math.max(0, playerMonster.hp - damage);
+                            encounter.log.push(`💥 ${wildSkill.name} acerta! Causa ${damage} de dano!`);
+                            
+                            if (playerMonster.hp <= 0) {
+                                encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
+                                playerMonster.status = 'fainted';
+                                encounter.active = false;
+                                GameState.currentEncounter = null;
+                            }
+                        } else {
+                            encounter.log.push(`❌ ${wildSkill.name} erra!`);
                         }
                     } else {
-                        encounter.log.push(`❌ ${encounter.wildMonster.name} misses!`);
+                        // Ataque básico
+                        const enemyRoll = Math.floor(Math.random() * 20) + 1;
+                        const enemyHit = checkHit(enemyRoll, wildMonster, playerMonster);
+                        encounter.log.push(`🎲 Wild ${wildMonster.name} rolls ${enemyRoll} (ATK: ${wildMonster.atk})`);
+                        
+                        if (enemyHit) {
+                            const damage = calculateDamage(wildMonster, playerMonster);
+                            playerMonster.hp = Math.max(0, playerMonster.hp - damage);
+                            encounter.log.push(`💥 ${wildMonster.name} hits! Deals ${damage} damage!`);
+                            
+                            if (playerMonster.hp <= 0) {
+                                encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
+                                playerMonster.status = 'fainted';
+                                encounter.active = false;
+                                GameState.currentEncounter = null;
+                            }
+                        } else {
+                            encounter.log.push(`❌ ${wildMonster.name} misses!`);
+                        }
                     }
                 }
                 
@@ -1288,6 +1352,145 @@
                 renderEncounter();
             } catch (error) {
                 showError('Attack failed', error.stack);
+            }
+        }
+
+        // Usar habilidade contra o selvagem
+        function useSkillWild() {
+            try {
+                const encounter = GameState.currentEncounter;
+                if (!encounter?.wildMonster) return;
+                
+                const playerId = encounter.selectedPlayerId;
+                const player = GameState.players.find(p => p.id === playerId);
+                if (!player) return;
+                
+                const playerMonster = player.team?.[0];
+                if (!playerMonster || !playerMonster.skill) {
+                    alert('No skill available');
+                    return;
+                }
+                
+                const skill = playerMonster.skill;
+                
+                // Validar ENE suficiente
+                if ((playerMonster.ene || 0) < skill.energy_cost) {
+                    alert(`❌ ENE insuficiente! Precisa de ${skill.energy_cost} ENE.`);
+                    return;
+                }
+                
+                // Get dice roll from input field
+                const diceInput = document.getElementById('diceRoll');
+                const playerRoll = parseInt(diceInput?.value || '0');
+                
+                if (playerRoll < 1 || playerRoll > 20) {
+                    alert('Please enter a valid roll between 1 and 20');
+                    return;
+                }
+                
+                if (diceInput) diceInput.value = '';
+                
+                encounter.log = encounter.log || [];
+                
+                // ENE REGEN no início do turno
+                const regenInfo = CLASS_ENERGY_REGEN[playerMonster.class] || { ene_regen_pct: 0.10, ene_regen_min: 1 };
+                const eneGain = Math.max(regenInfo.ene_regen_min, Math.ceil(playerMonster.eneMax * regenInfo.ene_regen_pct));
+                playerMonster.ene = Math.min(playerMonster.eneMax, playerMonster.ene + eneGain);
+                encounter.log.push(`⚡ ${playerMonster.name} regenerou +${eneGain} ENE (${playerMonster.ene}/${playerMonster.eneMax})`);
+                
+                // CONSUMIR ENE
+                playerMonster.ene -= skill.energy_cost;
+                encounter.log.push(`✨ ${playerMonster.name} usa ${skill.name}! (-${skill.energy_cost} ENE, resta ${playerMonster.ene})`);
+                
+                // Lógica de acerto (mesma do ataque básico)
+                const playerHit = playerRoll === 1 ? false : (playerRoll === 20 ? true : checkHit(playerRoll, playerMonster, encounter.wildMonster));
+                encounter.log.push(`🎲 ${player.name}'s ${playerMonster.name} rolls ${playerRoll} (ATK: ${playerMonster.atk})`);
+                
+                if (playerHit) {
+                    // Dano da habilidade: ATK + power - DEF
+                    const baseDamage = playerMonster.atk + skill.power - encounter.wildMonster.def;
+                    const damage = Math.max(1, baseDamage);
+                    
+                    encounter.wildMonster.hp = Math.max(0, encounter.wildMonster.hp - damage);
+                    encounter.log.push(`💥 ${skill.name} acerta! Causa ${damage} de dano!`);
+                    
+                    if (encounter.wildMonster.hp <= 0) {
+                        encounter.log.push(`🏆 ${encounter.wildMonster.name} fainted! Victory!`);
+                        const xpGained = calculateBattleXP(encounter.wildMonster);
+                        giveXp(playerMonster, xpGained);
+                        encounter.log.push(`✨ ${playerMonster.name} gains ${xpGained} XP!`);
+                        encounter.active = false;
+                        GameState.currentEncounter = null;
+                        saveToLocalStorage();
+                        renderEncounter();
+                        return;
+                    }
+                } else {
+                    if (playerRoll === 1) {
+                        encounter.log.push(`💀 FALHA CRÍTICA! ${skill.name} erra!`);
+                    } else {
+                        encounter.log.push(`❌ ${skill.name} erra!`);
+                    }
+                }
+                
+                // Fase 2: Contra-ataque do selvagem (com possibilidade de usar habilidade)
+                if (encounter.wildMonster.hp > 0) {
+                    const wildMonster = encounter.wildMonster;
+                    const wildSkill = wildMonster.skill;
+                    
+                    // IA: 50% chance de usar habilidade se tiver ENE
+                    const useSkill = wildSkill && (wildMonster.ene || 0) >= wildSkill.energy_cost && Math.random() < 0.5;
+                    
+                    if (useSkill) {
+                        wildMonster.ene -= wildSkill.energy_cost;
+                        encounter.log.push(`✨ ${wildMonster.name} usa ${wildSkill.name}! (-${wildSkill.energy_cost} ENE)`);
+                        
+                        const enemyRoll = Math.floor(Math.random() * 20) + 1;
+                        const enemyHit = checkHit(enemyRoll, wildMonster, playerMonster);
+                        encounter.log.push(`🎲 ${wildMonster.name} rolls ${enemyRoll}`);
+                        
+                        if (enemyHit) {
+                            const baseDamage = wildMonster.atk + wildSkill.power - playerMonster.def;
+                            const damage = Math.max(1, baseDamage);
+                            playerMonster.hp = Math.max(0, playerMonster.hp - damage);
+                            encounter.log.push(`💥 ${wildSkill.name} acerta! Causa ${damage} de dano!`);
+                            
+                            if (playerMonster.hp <= 0) {
+                                encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
+                                playerMonster.status = 'fainted';
+                                encounter.active = false;
+                                GameState.currentEncounter = null;
+                            }
+                        } else {
+                            encounter.log.push(`❌ ${wildSkill.name} erra!`);
+                        }
+                    } else {
+                        // Ataque básico
+                        const enemyRoll = Math.floor(Math.random() * 20) + 1;
+                        const enemyHit = checkHit(enemyRoll, wildMonster, playerMonster);
+                        encounter.log.push(`🎲 Wild ${wildMonster.name} rolls ${enemyRoll} (ATK: ${wildMonster.atk})`);
+                        
+                        if (enemyHit) {
+                            const damage = calculateDamage(wildMonster, playerMonster);
+                            playerMonster.hp = Math.max(0, playerMonster.hp - damage);
+                            encounter.log.push(`💥 ${wildMonster.name} hits! Deals ${damage} damage!`);
+                            
+                            if (playerMonster.hp <= 0) {
+                                encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
+                                playerMonster.status = 'fainted';
+                                encounter.active = false;
+                                GameState.currentEncounter = null;
+                            }
+                        } else {
+                            encounter.log.push(`❌ ${wildMonster.name} misses!`);
+                        }
+                    }
+                }
+                
+                saveToLocalStorage();
+                renderEncounter();
+            } catch (error) {
+                showError('Skill use failed', error.stack);
             }
         }
 
