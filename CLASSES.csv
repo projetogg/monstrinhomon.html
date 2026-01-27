@@ -1,0 +1,9 @@
+class_id,nome,descricao_curta,growth_hp,growth_atk,growth_def,growth_spd,growth_ene,capture_rule,capture_notes,battle_deploy_rule,battle_notes
+CLS_WAR,Guerreiro,"Resistente, combate corpo a corpo.",6,3,4,2,2,Any,Qualquer jogador pode capturar monstros de qualquer classe.,SelfOnly,"Em batalha, só pode usar monstros da mesma classe do jogador (incentiva trocas)."
+CLS_MAG,Mago,Dano mágico e controle.,4,5,2,2,5,Any,Qualquer jogador pode capturar monstros de qualquer classe.,SelfOnly,"Em batalha, só pode usar monstros da mesma classe do jogador (incentiva trocas)."
+CLS_HEA,Curandeiro,Suporte e cura.,5,2,2,2,6,Any,Qualquer jogador pode capturar monstros de qualquer classe.,SelfOnly,"Em batalha, só pode usar monstros da mesma classe do jogador (incentiva trocas)."
+CLS_BAR,Bárbaro,"Alta força, risco/recompensa.",6,5,2,2,2,Any,Qualquer jogador pode capturar monstros de qualquer classe.,SelfOnly,"Em batalha, só pode usar monstros da mesma classe do jogador (incentiva trocas)."
+CLS_ROG,Ladino,"Velocidade, crítico, furtividade.",4,4,2,5,2,Any,Qualquer jogador pode capturar monstros de qualquer classe.,SelfOnly,"Em batalha, só pode usar monstros da mesma classe do jogador (incentiva trocas)."
+CLS_BRD,Bardo,"Alcance longo, buffs/debuffs.",4,3,2,3,4,Any,Qualquer jogador pode capturar monstros de qualquer classe.,SelfOnly,"Em batalha, só pode usar monstros da mesma classe do jogador (incentiva trocas)."
+CLS_HUN,Caçador,"Alcance longo, dano consistente.",5,4,2,4,3,Any,Qualquer jogador pode capturar monstros de qualquer classe.,SelfOnly,"Em batalha, só pode usar monstros da mesma classe do jogador (incentiva trocas)."
+CLS_ANM,Animalista,"Curto alcance, versátil.",6,3,3,3,3,Any,Qualquer jogador pode capturar monstros de qualquer classe.,SelfOnly,"Em batalha, só pode usar monstros da mesma classe do jogador (incentiva trocas)."

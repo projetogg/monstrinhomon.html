@@ -1,0 +1,3 @@
+evo_id,from_monster_id,to_monster_id,trigger_level,auto_evolve,notes
+EVO_001,MON_002,MON_002B,12,True,Pedrino S1→S2 (placeholder).
+EVO_002,MON_002B,MON_002C,25,True,Pedrino S2→S3 (placeholder; S3 terá dupla classe Guerreiro+Mago).

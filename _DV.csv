@@ -1,0 +1,9 @@
+classe,raridade,estagio,alvo,categoria_habilidade,tipo_item,tipo_encontro,periodo,status
+Guerreiro,Comum,S1,Inimigo,Ataque,Captura,Selvagem,Manhã,Atordoado
+Mago,Incomum,S2,Aliado,Suporte,Cura,Treinador,Tarde,Enraizado
+Curandeiro,Raro,S3,Self,Controle,Buff,Boss,Noite,Envenenado
+Bárbaro,Místico,,Área,Cura,Reviver,,Qualquer,Queimando
+Ladino,Lendário,,,,Chave,,,Congelado
+Bardo,,,,,Lendário,,,Fortalecido
+Caçador,,,,,,,,Protegido
+Animalista,,,,,,,,Acelerado

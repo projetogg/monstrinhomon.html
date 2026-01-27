@@ -1,0 +1,12 @@
+section,key,value_formula,explanation
+BATALHA,Acerto,d20 + ATK >= DEF,"Use d20 físico. Se passou, acertou."
+BATALHA,Dano_reduzido,"MAX(1, ATK + PODER - DEF)",Dano mínimo 1. PODER é do golpe/habilidade.
+BATALHA,Classe_em_batalha,SelfOnly,Jogador só pode usar monstros da sua própria classe em batalha (trocas entre jogadores).
+CAPTURA,Sem_dado,TRUE,Captura não usa d20. É uma checagem automática pelo HP% e modificadores.
+CAPTURA,HP_percent,hp_atual / hp_max,Calcule a porcentagem de HP atual do alvo.
+CAPTURA,Base_threshold,"VLOOKUP(raridade, CAPTURE_TABLE!A:B, 2, FALSE)",Limite base por raridade (aba CAPTURE_TABLE).
+CAPTURA,Item_bonus,"VLOOKUP(item_id, ITENS!A:I, 9, FALSE)",Bônus do item de captura (coluna capture_threshold_bonus).
+CAPTURA,Status_bonus,0,Opcional: bônus por status (sono/paralisia). Pode virar tabela depois.
+CAPTURA,Threshold_final,"MIN(0.95, (Base_threshold + Item_bonus + Status_bonus) * capture_multiplier)",Aplica multiplicador do Mestre (MASTER_CONTROLS).
+CAPTURA,Sucesso,HP_percent <= Threshold_final,"Se verdadeiro, captura é bem-sucedida."
+XP,XP_Recebido,xp_base * xp_multiplier,XP base vezes multiplicador do Mestre.

@@ -1,0 +1,12 @@
+key,value,type,description
+max_level,100,int,Nível máximo do monstrinho
+xp_base,60,int,XP base para o nível 1→2 (modelo padrão)
+xp_growth,1.15,float,Multiplicador de crescimento do XP por nível (modelo padrão)
+capture_base_rate,0.35,float,Chance base de captura antes de modificadores
+capture_hp_bonus_max,0.25,float,Bônus máximo por HP baixo (ex.: +0.25 quando HP% muito baixo)
+master_xp_multiplier,1,float,Multiplicador global de XP (ajuste rápido do Mestre)
+master_enemy_stat_multiplier,1,float,Multiplicador global de stats inimigos (ajuste rápido do Mestre)
+master_capture_multiplier,1,float,Multiplicador global de captura (ajuste rápido do Mestre)
+starter_evo_levels,12;25;45,text,Níveis de evolução automáticos para iniciais (se tiverem 3 evoluções)
+nonstarter_evo_levels,15;30,text,Níveis de evolução automáticos para não-iniciais (S1→S2; S2→S3)
+capture_model,threshold_no_dice,text,Modelo de captura sem dado: compara HP% com limite por raridade + bônus.
