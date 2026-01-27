@@ -241,6 +241,7 @@
                     <option value="Ladino">🗡️ Ladino</option>
                     <option value="Bardo">🎵 Bardo</option>
                     <option value="Caçador">🏹 Caçador</option>
+                    <option value="Animalista">🐾 Animalista</option>
                 </select>
                 <button class="btn btn-success" onclick="addPlayer()">Add Player</button>
             </div>
@@ -365,7 +366,7 @@
                 levelExpo: 1.5,
                 battleXpBase: 15,
                 captureModel: 'threshold_no_dice',
-                // Vantagens de Classe (conforme AGENTS.md)
+                // Vantagens de Classe (conforme GAME_RULES.md)
                 classAdvantages: {
                     'Guerreiro': { strong: 'Ladino', weak: 'Curandeiro' },
                     'Ladino': { strong: 'Mago', weak: 'Guerreiro' },
@@ -373,7 +374,8 @@
                     'Bárbaro': { strong: 'Caçador', weak: 'Mago' },
                     'Caçador': { strong: 'Bardo', weak: 'Bárbaro' },
                     'Bardo': { strong: 'Curandeiro', weak: 'Caçador' },
-                    'Curandeiro': { strong: 'Guerreiro', weak: 'Bardo' }
+                    'Curandeiro': { strong: 'Guerreiro', weak: 'Bardo' },
+                    'Animalista': { strong: null, weak: null } // Neutro
                 },
                 // Thresholds de captura por raridade (sem dado)
                 captureThreshold: {
@@ -518,7 +520,10 @@
                     afterlifeCurrency: 0,
                     team: [],
                     box: [],
-                    inventory: {}
+                    inventory: {
+                        'IT_CAP_01': 5, // Orbe de Captura inicial (5 unidades)
+                        'IT_HEAL_01': 3 // Petisco de Cura inicial (3 unidades)
+                    }
                 };
                 
                 GameState.players = GameState.players || [];
@@ -709,6 +714,13 @@
                         alert('Selected player has no monsters in team');
                         return;
                     }
+                    
+                    // GAME_RULES.md: Em batalha, só pode usar monstros da mesma classe do jogador
+                    const validMonsters = player.team.filter(m => m.class === player.class && m.status !== 'fainted');
+                    if (validMonsters.length === 0) {
+                        alert(`⚠️ ${player.name} não tem monstrinhos da classe ${player.class} disponíveis!\n\nREGRA: Em batalha, você só pode usar monstrinhos da SUA classe.\nTroque com outros jogadores para conseguir monstrinhos da sua classe!`);
+                        return;
+                    }
                 }
                 
                 const encounter = {
@@ -801,13 +813,16 @@
                             }
                         </div>
                         
-                        <h4>Choose Action:</h4>
+                         <h4>Choose Action:</h4>
                         <div class="flex-center" style="flex-direction: column;">
                             <div style="margin: 10px 0;">
                                 <label style="font-weight: bold; font-size: 18px;">🎲 Enter your d20 roll:</label>
                                 <input type="number" id="diceRoll" min="1" max="20" placeholder="1-20" 
                                        style="width: 120px; text-align: center; font-size: 24px; font-weight: bold; height: 60px; margin: 10px;">
                             </div>
+                            ${player ? `<div style="margin: 10px 0; background: #e8f5e9; padding: 10px; border-radius: 8px;">
+                                <strong>📦 Inventário:</strong> Orbes de Captura: ${player.inventory?.['IT_CAP_01'] || 0} | Petiscos de Cura: ${player.inventory?.['IT_HEAL_01'] || 0}
+                            </div>` : ''}
                             <div class="flex-center">
                                 <button class="btn btn-success btn-large" onclick="attemptCapture()">🎯 Capture</button>
                                 <button class="btn btn-danger btn-large" onclick="attackWild()">⚔️ Attack</button>
@@ -841,20 +856,47 @@
                     return;
                 }
                 
+                // Validação: HP > 0 obrigatório (GAME_RULES.md)
+                if (monster.hp <= 0) {
+                    alert('❌ Não pode capturar um monstrinho desmaiado! HP deve ser > 0.');
+                    return;
+                }
+                
+                // Validação: precisa ter item de captura (GAME_RULES.md)
+                player.inventory = player.inventory || {};
+                const captureItemId = 'IT_CAP_01'; // Orbe de Captura
+                const captureItemCount = player.inventory[captureItemId] || 0;
+                
+                if (captureItemCount <= 0) {
+                    alert('❌ Você não tem Orbes de Captura! Compre mais ou encontre em batalhas.');
+                    return;
+                }
+                
                 encounter.log = encounter.log || [];
                 
-                // Sistema de captura determinístico (SEM dado) conforme AGENTS.md
-                // HP% do alvo + raridade + bônus do item
+                // SEMPRE CONSOME 1 item (mesmo se falhar) - GAME_RULES.md
+                player.inventory[captureItemId]--;
+                encounter.log.push(`🎯 ${player.name} usou 1 Orbe de Captura! (Restam: ${player.inventory[captureItemId]})`);
+                
+                // Calcula threshold de captura
                 const hpPercent = monster.hp / monster.hpMax;
                 const baseThreshold = GameState.config?.captureThreshold?.[monster.rarity] || 0.35;
-                const itemBonus = 0; // TODO: adicionar sistema de itens de captura
+                
+                // Bônus se HP <= 25% (GAME_RULES.md)
+                let hpBonus = 0;
+                if (hpPercent <= 0.25) {
+                    hpBonus = 0.10;
+                    encounter.log.push(`✨ HP crítico! Bônus de +10% na captura!`);
+                }
+                
+                // Item bonus (Orbe de Captura base não tem bonus, mas Orbe Reforçado teria)
+                const itemBonus = 0;
                 const statusBonus = 0; // TODO: adicionar status effects
                 const captureMult = 1.0; // Master control
                 
-                const finalThreshold = Math.min(0.95, (baseThreshold + itemBonus + statusBonus) * captureMult);
+                const finalThreshold = Math.min(0.95, (baseThreshold + hpBonus + itemBonus + statusBonus) * captureMult);
                 
-                encounter.log.push(`🎯 Tentativa de captura!`);
-                encounter.log.push(`HP atual: ${Math.floor(hpPercent * 100)}% | Limite: ${Math.floor(finalThreshold * 100)}%`);
+                encounter.log.push(`HP atual: ${Math.floor(hpPercent * 100)}% | Threshold: ${Math.floor(finalThreshold * 100)}%`);
                 
                 // Captura bem-sucedida se HP% <= Threshold_final
                 if (hpPercent <= finalThreshold) {
@@ -879,17 +921,32 @@
                     encounter.active = false;
                     GameState.currentEncounter = null;
                 } else {
-                    encounter.log.push(`❌ ${monster.name} quebrou livre! HP muito alto para captura.`);
-                    encounter.log.push(`💡 Dica: Abaixe o HP para ${Math.floor(finalThreshold * 100)}% ou menos.`);
+                    // FALHA: Monstrinho realiza 1 ataque básico IMEDIATO (GAME_RULES.md)
+                    encounter.log.push(`❌ ${monster.name} quebrou livre!`);
                     
-                    // Monstrinho pode fugir se HP muito alto
-                    const fleeChance = GameState.config?.fleeBase?.[monster.rarity] || 10;
-                    const fleeRoll = Math.random() * 100;
-                    
-                    if (fleeRoll < fleeChance) {
-                        encounter.log.push(`💨 ${monster.name} fugiu da batalha!`);
-                        encounter.active = false;
-                        GameState.currentEncounter = null;
+                    const playerMonster = player.team?.[0];
+                    if (playerMonster && playerMonster.hp > 0) {
+                        encounter.log.push(`⚡ ${monster.name} contra-ataca!`);
+                        
+                        // Monstrinho selvagem ataca imediatamente
+                        const enemyRoll = Math.floor(Math.random() * 20) + 1;
+                        const enemyHit = checkHit(enemyRoll, monster, playerMonster);
+                        encounter.log.push(`🎲 ${monster.name} rola ${enemyRoll} (ATK: ${monster.atk})`);
+                        
+                        if (enemyHit) {
+                            const damage = calculateDamage(monster, playerMonster);
+                            playerMonster.hp = Math.max(0, playerMonster.hp - damage);
+                            encounter.log.push(`💥 ${monster.name} acerta! Causa ${damage} de dano!`);
+                            
+                            if (playerMonster.hp <= 0) {
+                                encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
+                                playerMonster.status = 'fainted';
+                                encounter.active = false;
+                                GameState.currentEncounter = null;
+                            }
+                        } else {
+                            encounter.log.push(`❌ ${monster.name} erra o ataque!`);
+                        }
                     }
                 }
                 
@@ -918,6 +975,12 @@
                     return;
                 }
                 
+                // GAME_RULES.md: Validar que monstrinho é da mesma classe do jogador
+                if (playerMonster.class !== player.class) {
+                    alert(`⚠️ Você só pode usar monstrinhos da classe ${player.class} em batalha!\n\nEste ${playerMonster.name} é da classe ${playerMonster.class}.\nTroque-o por um monstrinho da sua classe.`);
+                    return;
+                }
+                
                 // Get dice roll from input field
                 const diceInput = document.getElementById('diceRoll');
                 const playerRoll = parseInt(diceInput?.value || '0');
@@ -932,12 +995,48 @@
                 
                 encounter.log = encounter.log || [];
                 
+                // CRIT 20 ou FALHA 1 (GAME_RULES.md)
+                let isCrit20 = false;
+                let isFail1 = false;
+                let critBonus = null;
+                
+                if (playerRoll === 20) {
+                    isCrit20 = true;
+                    encounter.log.push(`⭐ CRÍTICO 20! ⭐`);
+                    // Escolher bônus aleatório
+                    const bonusRoll = Math.floor(Math.random() * 3);
+                    if (bonusRoll === 0) {
+                        critBonus = 'double_power';
+                        encounter.log.push(`💥 Poder dobrado neste ataque!`);
+                    } else if (bonusRoll === 1) {
+                        critBonus = 'item';
+                        player.inventory = player.inventory || {};
+                        player.inventory['IT_HEAL_01'] = (player.inventory['IT_HEAL_01'] || 0) + 1;
+                        encounter.log.push(`🎁 Ganhou 1 Petisco de Cura!`);
+                    } else {
+                        critBonus = 'money';
+                        const moneyGain = 20 + Math.floor(Math.random() * 31); // 20-50
+                        player.money = (player.money || 0) + moneyGain;
+                        encounter.log.push(`💰 Ganhou ${moneyGain} moedas!`);
+                    }
+                } else if (playerRoll === 1) {
+                    isFail1 = true;
+                }
+                
                 // Fase 1: Ataque do jogador
-                const playerHit = checkHit(playerRoll, playerMonster, encounter.wildMonster);
                 encounter.log.push(`🎲 ${player.name}'s ${playerMonster.name} rolls ${playerRoll} (ATK: ${playerMonster.atk})`);
                 
+                // d20=1 sempre erra, d20=20 sempre acerta
+                const playerHit = isFail1 ? false : (isCrit20 ? true : checkHit(playerRoll, playerMonster, encounter.wildMonster));
+                
                 if (playerHit) {
-                    const damage = calculateDamage(playerMonster, encounter.wildMonster);
+                    let damage = calculateDamage(playerMonster, encounter.wildMonster);
+                    
+                    // Se crit 20 com poder dobrado, multiplica dano por 2
+                    if (isCrit20 && critBonus === 'double_power') {
+                        damage *= 2;
+                    }
+                    
                     encounter.wildMonster.hp = Math.max(0, encounter.wildMonster.hp - damage);
                     encounter.log.push(`💥 ${playerMonster.name} hits! Deals ${damage} damage!`);
                     
@@ -953,7 +1052,11 @@
                         return;
                     }
                 } else {
-                    encounter.log.push(`❌ ${playerMonster.name} misses!`);
+                    if (isFail1) {
+                        encounter.log.push(`💀 FALHA CRÍTICA! Ataque erra automaticamente!`);
+                    } else {
+                        encounter.log.push(`❌ ${playerMonster.name} misses!`);
+                    }
                 }
                 
                 // Fase 2: Contra-ataque do monstrinho selvagem (se ainda vivo)
