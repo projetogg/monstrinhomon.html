@@ -422,6 +422,37 @@
             { id: 'MON_100', name: 'Rato-de-Lama', class: 'Guerreiro', rarity: 'Comum', baseHp: 20, baseAtk: 5, baseDef: 3, emoji: '🐀' }
         ];
 
+        // CLASTERORB TIERS (Sistema de captura em tiers)
+        const CLASTERORBS = {
+            'CLASTERORB_COMUM': { id: 'CLASTERORB_COMUM', name: 'ClasterOrb Comum', type: 'CAPTURE', capture_bonus_pp: 0, emoji: '⚪' },
+            'CLASTERORB_INCOMUM': { id: 'CLASTERORB_INCOMUM', name: 'ClasterOrb Incomum', type: 'CAPTURE', capture_bonus_pp: 5, emoji: '🔵' },
+            'CLASTERORB_RARA': { id: 'CLASTERORB_RARA', name: 'ClasterOrb Rara', type: 'CAPTURE', capture_bonus_pp: 10, emoji: '🟣' }
+        };
+
+        // SKILLS CATALOG (baseado em HABILIDADES.csv)
+        const SKILLS_CATALOG = [
+            { id: 'SK_WAR_01', name: 'Golpe de Escudo', class: 'Guerreiro', category: 'Controle', power: 6, accuracy: 0.9, energy_cost: 2, target: 'Inimigo', status: 'Atordoado', desc: 'Ataque curto com chance de atordoar.' },
+            { id: 'SK_WAR_02', name: 'Corte Pesado', class: 'Guerreiro', category: 'Ataque', power: 9, accuracy: 0.8, energy_cost: 3, target: 'Inimigo', status: '', desc: 'Dano alto, menos preciso.' },
+            { id: 'SK_MAG_01', name: 'Raio Místico', class: 'Mago', category: 'Ataque', power: 10, accuracy: 0.85, energy_cost: 4, target: 'Inimigo', status: '', desc: 'Dano mágico à distância.' },
+            { id: 'SK_MAG_02', name: 'Névoa Lenta', class: 'Mago', category: 'Controle', power: 4, accuracy: 0.9, energy_cost: 3, target: 'Área', status: 'Enraizado', desc: 'Reduz ação/movimento por 1 turno.' },
+            { id: 'SK_HEA_01', name: 'Sopro Calmante', class: 'Curandeiro', category: 'Cura', power: 0, accuracy: 1, energy_cost: 4, target: 'Aliado', status: '', desc: 'Cura moderada.' },
+            { id: 'SK_HEA_02', name: 'Barreira Suave', class: 'Curandeiro', category: 'Suporte', power: 0, accuracy: 1, energy_cost: 3, target: 'Aliado', status: 'Protegido', desc: 'Aumenta defesa por 2 turnos.' },
+            { id: 'SK_HUN_01', name: 'Flecha Rápida', class: 'Caçador', category: 'Ataque', power: 8, accuracy: 0.9, energy_cost: 2, target: 'Inimigo', status: '', desc: 'Dano consistente à distância.' },
+            { id: 'SK_BRD_01', name: 'Canção de Coragem', class: 'Bardo', category: 'Suporte', power: 0, accuracy: 1, energy_cost: 3, target: 'Área', status: 'Fortalecido', desc: 'Buff de ataque para aliados.' }
+        ];
+
+        // CLASS ENERGY REGEN (baseado em CLASSES.csv)
+        const CLASS_ENERGY_REGEN = {
+            'Guerreiro': { ene_regen_pct: 0.10, ene_regen_min: 2 },
+            'Mago': { ene_regen_pct: 0.25, ene_regen_min: 1 },
+            'Curandeiro': { ene_regen_pct: 0.20, ene_regen_min: 2 },
+            'Bárbaro': { ene_regen_pct: 0.10, ene_regen_min: 1 },
+            'Ladino': { ene_regen_pct: 0.15, ene_regen_min: 1 },
+            'Bardo': { ene_regen_pct: 0.18, ene_regen_min: 2 },
+            'Caçador': { ene_regen_pct: 0.12, ene_regen_min: 2 },
+            'Animalista': { ene_regen_pct: 0.15, ene_regen_min: 2 }
+        };
+
         // DEFAULT OBJECTIVES
         const DEFAULT_OBJECTIVES = [
             { id: 1, text: 'Followed group rules', weight: 2 },
@@ -462,6 +493,26 @@
                 if (data) {
                     const loaded = JSON.parse(data);
                     Object.assign(GameState, loaded);
+                    
+                    // Migrar inventários antigos
+                    if (GameState.players) {
+                        GameState.players.forEach(player => {
+                            migrateInventory(player);
+                            
+                            // Garantir que monstros tenham ENE
+                            if (player.team) {
+                                player.team.forEach(monster => {
+                                    if (!monster.eneMax) {
+                                        monster.eneMax = 10 + (monster.level || 1);
+                                        monster.ene = monster.eneMax;
+                                    }
+                                    if (monster.ene === undefined) {
+                                        monster.ene = monster.eneMax;
+                                    }
+                                });
+                            }
+                        });
+                    }
                 }
             } catch (error) {
                 console.warn('Failed to load saved data:', error);
@@ -521,8 +572,10 @@
                     team: [],
                     box: [],
                     inventory: {
-                        'IT_CAP_01': 5, // Orbe de Captura inicial (5 unidades)
-                        'IT_HEAL_01': 3 // Petisco de Cura inicial (3 unidades)
+                        'CLASTERORB_COMUM': 5,    // ClasterOrb Comum x5
+                        'CLASTERORB_INCOMUM': 2,  // ClasterOrb Incomum x2
+                        'CLASTERORB_RARA': 1,     // ClasterOrb Rara x1
+                        'IT_HEAL_01': 3           // Petisco de Cura x3
                     }
                 };
                 
@@ -580,6 +633,11 @@
                 const def = Math.floor((template.baseDef || 3) * levelMult * rarityMult);
                 const poder = Math.floor(atk * 0.5); // PODER é derivado de ATK
                 
+                // Calcular ENE (Sistema ENE)
+                const baseEne = template.baseEne || 10; // Fallback se não tiver no template
+                const eneGrowth = 2; // growth_ene padrão
+                const eneMax = Math.floor(baseEne + eneGrowth * (level - 1));
+                
                 return {
                     id: Date.now() + Math.random(),
                     ownerId: ownerId,
@@ -595,11 +653,56 @@
                     atk: atk,
                     def: def,
                     poder: poder,
-                    status: 'healthy'
+                    ene: eneMax,      // ENE atual (começa cheio)
+                    eneMax: eneMax,   // ENE máximo
+                    status: 'healthy',
+                    skill: null       // Será definido ao entrar em batalha
                 };
             } catch (error) {
                 console.error('Failed to create monster instance:', error);
                 return null;
+            }
+        }
+
+        // Função para obter habilidade do monstrinho
+        function getMonsterSkill(monster) {
+            try {
+                if (!monster) return null;
+                
+                // Buscar habilidade da mesma classe
+                const classSkills = SKILLS_CATALOG.filter(s => s.class === monster.class);
+                
+                if (classSkills.length > 0) {
+                    // Por enquanto, retorna a primeira habilidade da classe
+                    return classSkills[0];
+                }
+                
+                // Fallback: retorna primeira habilidade disponível
+                return SKILLS_CATALOG[0];
+            } catch (error) {
+                console.error('Failed to get monster skill:', error);
+                return null;
+            }
+        }
+
+        // Migrar inventário antigo para novo sistema ClasterOrb
+        function migrateInventory(player) {
+            try {
+                if (!player || !player.inventory) return;
+                
+                // Se tem IT_CAP_01 antigo, converter para CLASTERORB_COMUM
+                if (player.inventory['IT_CAP_01']) {
+                    const oldCount = player.inventory['IT_CAP_01'];
+                    player.inventory['CLASTERORB_COMUM'] = (player.inventory['CLASTERORB_COMUM'] || 0) + oldCount;
+                    delete player.inventory['IT_CAP_01'];
+                }
+                
+                // Garantir que novos itens existam
+                if (!player.inventory['CLASTERORB_COMUM']) player.inventory['CLASTERORB_COMUM'] = 0;
+                if (!player.inventory['CLASTERORB_INCOMUM']) player.inventory['CLASTERORB_INCOMUM'] = 0;
+                if (!player.inventory['CLASTERORB_RARA']) player.inventory['CLASTERORB_RARA'] = 0;
+            } catch (error) {
+                console.error('Failed to migrate inventory:', error);
             }
         }
 
@@ -813,18 +916,62 @@
                             }
                         </div>
                         
-                         <h4>Choose Action:</h4>
+                        <h4>Choose Action:</h4>
                         <div class="flex-center" style="flex-direction: column;">
                             <div style="margin: 10px 0;">
                                 <label style="font-weight: bold; font-size: 18px;">🎲 Enter your d20 roll:</label>
                                 <input type="number" id="diceRoll" min="1" max="20" placeholder="1-20" 
                                        style="width: 120px; text-align: center; font-size: 24px; font-weight: bold; height: 60px; margin: 10px;">
                             </div>
-                            ${player ? `<div style="margin: 10px 0; background: #e8f5e9; padding: 10px; border-radius: 8px;">
-                                <strong>📦 Inventário:</strong> Orbes de Captura: ${player.inventory?.['IT_CAP_01'] || 0} | Petiscos de Cura: ${player.inventory?.['IT_HEAL_01'] || 0}
-                            </div>` : ''}
+                            
+                            ${player ? (() => {
+                                const comum = player.inventory?.['CLASTERORB_COMUM'] || 0;
+                                const incomum = player.inventory?.['CLASTERORB_INCOMUM'] || 0;
+                                const rara = player.inventory?.['CLASTERORB_RARA'] || 0;
+                                const hasAnyOrb = comum > 0 || incomum > 0 || rara > 0;
+                                
+                                return `
+                                <div style="margin: 15px 0; background: #e3f2fd; padding: 15px; border-radius: 8px; border: 2px solid #1976d2;">
+                                    <strong style="font-size: 16px;">🎯 Sistema de Captura</strong>
+                                    <div style="margin-top: 10px;">
+                                        <div><strong>HP% Selvagem:</strong> ${Math.floor(hpPercent * 100)}%</div>
+                                        <div><strong>Base Threshold (${monster.rarity}):</strong> ${Math.floor(baseThreshold * 100)}%</div>
+                                        <div><strong>Bônus HP Baixo (≤25%):</strong> ${hpPercent <= 0.25 ? '+10%' : '0%'}</div>
+                                    </div>
+                                    
+                                    ${hasAnyOrb ? `
+                                    <div style="margin-top: 10px;">
+                                        <label style="font-weight: bold;">Escolha sua ClasterOrb:</label>
+                                        <select id="captureOrbSelect" onchange="updateCaptureThreshold()" style="width: 100%; padding: 8px; margin: 5px 0; font-size: 14px;">
+                                            ${comum > 0 ? `<option value="CLASTERORB_COMUM">⚪ Comum (${comum}x) - +0% bonus</option>` : ''}
+                                            ${incomum > 0 ? `<option value="CLASTERORB_INCOMUM">🔵 Incomum (${incomum}x) - +5% bonus</option>` : ''}
+                                            ${rara > 0 ? `<option value="CLASTERORB_RARA">🟣 Rara (${rara}x) - +10% bonus</option>` : ''}
+                                        </select>
+                                    </div>
+                                    <div id="captureThresholdDisplay" style="margin-top: 10px; padding: 10px; background: #fff; border-radius: 5px;">
+                                        <strong>Threshold Final:</strong> <span id="finalThresholdValue">Calculando...</span>
+                                    </div>
+                                    ` : `
+                                    <div style="margin-top: 10px; padding: 10px; background: #ffebee; color: #c62828; border-radius: 5px;">
+                                        <strong>❌ Sem ClasterOrbs!</strong><br>
+                                        Você não tem orbes de captura disponíveis.
+                                    </div>
+                                    `}
+                                    
+                                    <div style="margin-top: 10px;">
+                                        <strong>📦 Inventário:</strong> 
+                                        ⚪ ${comum} | 🔵 ${incomum} | 🟣 ${rara} | 
+                                        💚 Cura: ${player.inventory?.['IT_HEAL_01'] || 0}
+                                    </div>
+                                </div>
+                                `;
+                            })() : ''}
+                            
                             <div class="flex-center">
-                                <button class="btn btn-success btn-large" onclick="attemptCapture()">🎯 Capture</button>
+                                ${player && (player.inventory?.['CLASTERORB_COMUM'] > 0 || player.inventory?.['CLASTERORB_INCOMUM'] > 0 || player.inventory?.['CLASTERORB_RARA'] > 0) ? 
+                                    `<button class="btn btn-success btn-large" onclick="attemptCapture()">🎯 Tentar Capturar</button>` :
+                                    `<button class="btn btn-success btn-large" disabled style="opacity: 0.5;">🎯 Sem Orbes</button>`
+                                }
                                 <button class="btn btn-danger btn-large" onclick="attackWild()">⚔️ Attack</button>
                                 <button class="btn btn-warning btn-large" onclick="fleeEncounter()">🏃 Flee</button>
                             </div>
@@ -837,8 +984,52 @@
                 `;
                 
                 panel.innerHTML = html;
+                
+                // Atualizar threshold inicial
+                setTimeout(() => updateCaptureThreshold(), 100);
             } catch (error) {
                 showError('Failed to render wild encounter', error.stack);
+            }
+        }
+
+        // Atualizar cálculo de threshold de captura em tempo real
+        function updateCaptureThreshold() {
+            try {
+                const encounter = GameState.currentEncounter;
+                if (!encounter?.wildMonster) return;
+                
+                const monster = encounter.wildMonster;
+                const playerId = encounter.selectedPlayerId;
+                const player = GameState.players.find(p => p.id === playerId);
+                if (!player) return;
+                
+                const select = document.getElementById('captureOrbSelect');
+                const display = document.getElementById('finalThresholdValue');
+                if (!select || !display) return;
+                
+                const selectedOrbId = select.value;
+                const orbInfo = CLASTERORBS[selectedOrbId];
+                if (!orbInfo) return;
+                
+                // Calcular threshold
+                const hpPercent = monster.hp / monster.hpMax;
+                const baseThreshold = GameState.config?.captureThreshold?.[monster.rarity] || 0.35;
+                const orbBonus = orbInfo.capture_bonus_pp / 100; // Converter pp para decimal
+                const lowHpBonus = hpPercent <= 0.25 ? 0.10 : 0;
+                const thresholdFinal = Math.min(0.95, baseThreshold + orbBonus + lowHpBonus);
+                
+                // Atualizar display
+                display.innerHTML = `
+                    <span style="font-size: 18px; color: ${hpPercent <= thresholdFinal ? '#2e7d32' : '#c62828'}; font-weight: bold;">
+                        ${Math.floor(thresholdFinal * 100)}%
+                    </span>
+                    <br><small>
+                        (Base ${Math.floor(baseThreshold * 100)}% + Orb ${orbInfo.capture_bonus_pp}% + HP ${Math.floor(lowHpBonus * 100)}%)
+                        <br>${hpPercent <= thresholdFinal ? '✅ Captura provável!' : '❌ HP muito alto'}
+                    </small>
+                `;
+            } catch (error) {
+                console.error('Failed to update capture threshold:', error);
             }
         }
 
@@ -856,51 +1047,63 @@
                     return;
                 }
                 
-                // Validação: HP > 0 obrigatório (GAME_RULES.md)
+                // Validação: HP > 0 obrigatório
                 if (monster.hp <= 0) {
                     alert('❌ Não pode capturar um monstrinho desmaiado! HP deve ser > 0.');
                     return;
                 }
                 
-                // Validação: precisa ter item de captura (GAME_RULES.md)
-                player.inventory = player.inventory || {};
-                const captureItemId = 'IT_CAP_01'; // Orbe de Captura
-                const captureItemCount = player.inventory[captureItemId] || 0;
+                // Obter ClasterOrb selecionada
+                const select = document.getElementById('captureOrbSelect');
+                if (!select) {
+                    alert('❌ Erro ao ler seleção de ClasterOrb.');
+                    return;
+                }
                 
-                if (captureItemCount <= 0) {
-                    alert('❌ Você não tem Orbes de Captura! Compre mais ou encontre em batalhas.');
+                const selectedOrbId = select.value;
+                const orbInfo = CLASTERORBS[selectedOrbId];
+                if (!orbInfo) {
+                    alert('❌ ClasterOrb inválida.');
+                    return;
+                }
+                
+                // Validação: precisa ter a orb selecionada
+                player.inventory = player.inventory || {};
+                const orbCount = player.inventory[selectedOrbId] || 0;
+                
+                if (orbCount <= 0) {
+                    alert(`❌ Você não tem ${orbInfo.name}!`);
                     return;
                 }
                 
                 encounter.log = encounter.log || [];
                 
-                // SEMPRE CONSOME 1 item (mesmo se falhar) - GAME_RULES.md
-                player.inventory[captureItemId]--;
-                encounter.log.push(`🎯 ${player.name} usou 1 Orbe de Captura! (Restam: ${player.inventory[captureItemId]})`);
+                // SEMPRE CONSOME 1 item (mesmo se falhar)
+                player.inventory[selectedOrbId]--;
+                encounter.log.push(`${orbInfo.emoji} ${player.name} usou ${orbInfo.name}! (Restam: ${player.inventory[selectedOrbId]})`);
                 
-                // Calcula threshold de captura
+                // Calcular threshold de captura
                 const hpPercent = monster.hp / monster.hpMax;
                 const baseThreshold = GameState.config?.captureThreshold?.[monster.rarity] || 0.35;
                 
-                // Bônus se HP <= 25% (GAME_RULES.md)
-                let hpBonus = 0;
+                // Bônus se HP <= 25%
+                let lowHpBonus = 0;
                 if (hpPercent <= 0.25) {
-                    hpBonus = 0.10;
+                    lowHpBonus = 0.10;
                     encounter.log.push(`✨ HP crítico! Bônus de +10% na captura!`);
                 }
                 
-                // Item bonus (Orbe de Captura base não tem bonus, mas Orbe Reforçado teria)
-                const itemBonus = 0;
-                const statusBonus = 0; // TODO: adicionar status effects
-                const captureMult = 1.0; // Master control
+                // Bônus da orb (em decimal: 0, 0.05, 0.10)
+                const orbBonus = orbInfo.capture_bonus_pp / 100;
                 
-                const finalThreshold = Math.min(0.95, (baseThreshold + hpBonus + itemBonus + statusBonus) * captureMult);
+                const thresholdFinal = Math.min(0.95, baseThreshold + orbBonus + lowHpBonus);
                 
-                encounter.log.push(`HP atual: ${Math.floor(hpPercent * 100)}% | Threshold: ${Math.floor(finalThreshold * 100)}%`);
+                encounter.log.push(`HP: ${Math.floor(hpPercent * 100)}% | Base: ${Math.floor(baseThreshold * 100)}% | Orb: +${orbInfo.capture_bonus_pp}% | HP Bonus: +${Math.floor(lowHpBonus * 100)}%`);
+                encounter.log.push(`🎯 Threshold Final: ${Math.floor(thresholdFinal * 100)}%`);
                 
-                // Captura bem-sucedida se HP% <= Threshold_final
-                if (hpPercent <= finalThreshold) {
-                    encounter.log.push(`✅ ${monster.name} foi capturado!`);
+                // Captura determinística: sucesso se HP% <= Threshold_final
+                if (hpPercent <= thresholdFinal) {
+                    encounter.log.push(`✅ SUCESSO! ${monster.name} foi capturado!`);
                     
                     monster.ownerId = player.id;
                     
@@ -921,8 +1124,8 @@
                     encounter.active = false;
                     GameState.currentEncounter = null;
                 } else {
-                    // FALHA: Monstrinho realiza 1 ataque básico IMEDIATO (GAME_RULES.md)
-                    encounter.log.push(`❌ ${monster.name} quebrou livre!`);
+                    // FALHA: Monstrinho realiza 1 ataque básico IMEDIATO
+                    encounter.log.push(`❌ FALHA! ${monster.name} quebrou livre!`);
                     
                     const playerMonster = player.team?.[0];
                     if (playerMonster && playerMonster.hp > 0) {
