@@ -899,13 +899,6 @@
                 showError('Capture attempt failed', error.stack);
             }
         }
-                
-                saveToLocalStorage();
-                renderEncounter();
-            } catch (error) {
-                showError('Capture attempt failed', error.stack);
-            }
-        }
 
         function attackWild() {
             try {
@@ -1056,8 +1049,6 @@
             } catch (error) {
                 console.error('XP calculation failed:', error);
                 return 15;
-            }
-        }
             }
         }
 
