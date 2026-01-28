@@ -610,6 +610,7 @@
 
         // SKILLS CATALOG (baseado em HABILIDADES.csv)
         const SKILLS_CATALOG = [
+            // Tier I skills (original)
             { id: 'SK_WAR_01', name: 'Golpe de Escudo', class: 'Guerreiro', category: 'Controle', power: 6, accuracy: 0.9, energy_cost: 2, target: 'Inimigo', status: 'Atordoado', desc: 'Ataque curto com chance de atordoar.' },
             { id: 'SK_WAR_02', name: 'Corte Pesado', class: 'Guerreiro', category: 'Ataque', power: 9, accuracy: 0.8, energy_cost: 3, target: 'Inimigo', status: '', desc: 'Dano alto, menos preciso.' },
             { id: 'SK_MAG_01', name: 'Raio Místico', class: 'Mago', category: 'Ataque', power: 10, accuracy: 0.85, energy_cost: 4, target: 'Inimigo', status: '', desc: 'Dano mágico à distância.' },
@@ -617,7 +618,20 @@
             { id: 'SK_HEA_01', name: 'Sopro Calmante', class: 'Curandeiro', category: 'Cura', power: 0, accuracy: 1, energy_cost: 4, target: 'Aliado', status: '', desc: 'Cura moderada.' },
             { id: 'SK_HEA_02', name: 'Barreira Suave', class: 'Curandeiro', category: 'Suporte', power: 0, accuracy: 1, energy_cost: 3, target: 'Aliado', status: 'Protegido', desc: 'Aumenta defesa por 2 turnos.' },
             { id: 'SK_HUN_01', name: 'Flecha Rápida', class: 'Caçador', category: 'Ataque', power: 8, accuracy: 0.9, energy_cost: 2, target: 'Inimigo', status: '', desc: 'Dano consistente à distância.' },
-            { id: 'SK_BRD_01', name: 'Canção de Coragem', class: 'Bardo', category: 'Suporte', power: 0, accuracy: 1, energy_cost: 3, target: 'Área', status: 'Fortalecido', desc: 'Buff de ataque para aliados.' }
+            { id: 'SK_BRD_01', name: 'Canção de Coragem', class: 'Bardo', category: 'Suporte', power: 0, accuracy: 1, energy_cost: 3, target: 'Área', status: 'Fortalecido', desc: 'Buff de ataque para aliados.' },
+            
+            // Feature 3.6: Tier I/II/III variants for testing
+            { id: 'GOLPE_ESPADA_I', name: 'Golpe de Espada I', class: 'Guerreiro', category: 'Ataque', power: 8, accuracy: 0.85, energy_cost: 4, target: 'Inimigo', status: '', desc: 'Ataque de espada básico.' },
+            { id: 'GOLPE_ESPADA_II', name: 'Golpe de Espada II', class: 'Guerreiro', category: 'Ataque', power: 12, accuracy: 0.85, energy_cost: 5, target: 'Inimigo', status: '', desc: 'Ataque de espada aprimorado.' },
+            { id: 'GOLPE_ESPADA_III', name: 'Golpe de Espada III', class: 'Guerreiro', category: 'Ataque', power: 18, accuracy: 0.85, energy_cost: 6, target: 'Inimigo', status: '', desc: 'Ataque de espada mestre.' },
+            
+            { id: 'ESCUDO_I', name: 'Escudo I', class: 'Guerreiro', category: 'Suporte', power: 0, accuracy: 1, energy_cost: 4, target: 'Self', status: 'Protegido', desc: 'Defesa básica.' },
+            { id: 'ESCUDO_II', name: 'Escudo II', class: 'Guerreiro', category: 'Suporte', power: 0, accuracy: 1, energy_cost: 5, target: 'Self', status: 'Protegido', desc: 'Defesa aprimorada.' },
+            { id: 'ESCUDO_III', name: 'Escudo III', class: 'Guerreiro', category: 'Suporte', power: 0, accuracy: 1, energy_cost: 6, target: 'Self', status: 'Protegido', desc: 'Defesa mestre.' },
+            
+            { id: 'BOLA_FOGO_I', name: 'Bola de Fogo I', class: 'Mago', category: 'Ataque', power: 10, accuracy: 0.9, energy_cost: 5, target: 'Inimigo', status: '', desc: 'Ataque de fogo básico.' },
+            { id: 'BOLA_FOGO_II', name: 'Bola de Fogo II', class: 'Mago', category: 'Ataque', power: 15, accuracy: 0.9, energy_cost: 6, target: 'Inimigo', status: '', desc: 'Ataque de fogo aprimorado.' },
+            { id: 'BOLA_FOGO_III', name: 'Bola de Fogo III', class: 'Mago', category: 'Ataque', power: 22, accuracy: 0.9, energy_cost: 8, target: 'Inimigo', status: '', desc: 'Ataque de fogo mestre.' }
         ];
 
         // CLASS ENERGY REGEN (baseado em CLASSES.csv)
@@ -1965,6 +1979,9 @@
             
             // Verificar e aplicar evolução após level up (passa o HP% original)
             maybeEvolveAfterLevelUp(mon, log, hpPctBeforeLevelUp);
+            
+            // Verificar e aplicar upgrade de skills (Feature 3.6)
+            maybeUpgradeSkillsModelB(mon, log);
         }
         
         // Alias para compatibilidade
@@ -2122,6 +2139,9 @@
             if (Array.isArray(logArr)) {
                 logArr.push(`🌟 ${oldName} evoluiu para ${newName}!`);
             }
+            
+            // Verificar e aplicar upgrade de skills após evolução (Feature 3.6)
+            maybeUpgradeSkillsModelB(mon, logArr);
         }
 
         /**
@@ -2156,6 +2176,213 @@
          */
         function maybeEvolveAfterLevelUp(mon, logArr, hpPctOverride) {
             checkEvolution(mon, logArr, hpPctOverride);
+        }
+        
+        // =============================
+        // FEATURE 3.6 — SKILLS (MODEL B) AUTO UPGRADE I->II->III
+        // =============================
+
+        /**
+         * Determina o estágio do monstro baseado no nível
+         * @param {number} level - Nível do monstro
+         * @returns {string} - Estágio (S0, S1, S2, S3)
+         */
+        function getMonsterStage(level) {
+            const lv = Math.max(1, Number(level) || 1);
+            if (lv <= 9) return "S0";
+            if (lv <= 24) return "S1";
+            if (lv <= 44) return "S2";
+            return "S3";
+        }
+
+        /**
+         * Determina o tier de skill desejado baseado no estágio
+         * @param {string} stage - Estágio do monstro (S0, S1, S2, S3)
+         * @returns {number} - Tier desejado (1, 2, ou 3)
+         */
+        function getDesiredSkillTier(stage) {
+            // MVP mapping: S0/S1 => I, S2 => II, S3 => III
+            if (stage === "S2") return 2;
+            if (stage === "S3") return 3;
+            return 1;
+        }
+
+        /**
+         * Obtém array de skills do monstro (compatível com múltiplos formatos)
+         * @param {Object} mon - Monstro
+         * @returns {Array} - Array de skill IDs
+         */
+        function getSkillsArray(mon) {
+            if (!mon) return [];
+            // formatos comuns: mon.skills (array) ou mon.skillIds (array)
+            if (Array.isArray(mon.skills)) return mon.skills.slice();
+            if (Array.isArray(mon.skillIds)) return mon.skillIds.slice();
+            return [];
+        }
+
+        /**
+         * Define array de skills no monstro
+         * @param {Object} mon - Monstro
+         * @param {Array} arr - Array de skill IDs
+         */
+        function setSkillsArray(mon, arr) {
+            if (!mon) return;
+            // preferir mon.skills se já existe, senão criar
+            if (Array.isArray(mon.skills) || mon.skills == null) mon.skills = arr.slice();
+            else mon.skillIds = arr.slice();
+        }
+
+        /**
+         * Obtém catálogo de skills de múltiplas fontes possíveis
+         * @returns {Array} - Catálogo de skills
+         */
+        function getSkillCatalog() {
+            const candidates = [];
+            if (window.DB) {
+                if (Array.isArray(DB.SKILLS)) candidates.push(DB.SKILLS);
+                if (Array.isArray(DB.HABILIDADES)) candidates.push(DB.HABILIDADES);
+                if (Array.isArray(DB.ABILITIES)) candidates.push(DB.ABILITIES);
+            }
+            if (Array.isArray(window.SKILLS)) candidates.push(window.SKILLS);
+            if (Array.isArray(window.SKILLS_CATALOG)) candidates.push(window.SKILLS_CATALOG);
+            if (Array.isArray(window.ABILITIES)) candidates.push(window.ABILITIES);
+            return candidates.find(arr => Array.isArray(arr) && arr.length) || [];
+        }
+
+        /**
+         * Busca skill por ID no catálogo
+         * @param {string} id - ID da skill
+         * @returns {Object|null} - Objeto da skill ou null
+         */
+        function getSkillById(id) {
+            const sid = String(id || "");
+            if (!sid) return null;
+            const cat = getSkillCatalog();
+            return cat.find(s => String(s.id) === sid) || null;
+        }
+
+        /**
+         * Extrai a "família" de uma skill (remove sufixos de tier)
+         * @param {Object|string} skillOrId - Skill object ou ID
+         * @returns {string} - Chave da família
+         */
+        function getSkillFamilyKey(skillOrId) {
+            const skill = typeof skillOrId === "object" ? skillOrId : getSkillById(skillOrId);
+            const id = String(skill?.id ?? skillOrId ?? "");
+            const name = String(skill?.name ?? skill?.nome ?? "");
+
+            // 1) por ID (mais confiável)
+            if (id) {
+                // exemplos: FIREBALL_I, FIREBALL_II, FIREBALL_III
+                let base = id
+                    .replace(/(_I|_II|_III)$/i, "")
+                    .replace(/(-I|-II|-III)$/i, "");
+                if (base !== id) return base;
+            }
+
+            // 2) por nome
+            if (name) {
+                const baseName = name.replace(/\s+(I|II|III)$/i, "").trim();
+                if (baseName && baseName !== name) return baseName.toLowerCase();
+            }
+
+            // 3) fallback: o próprio id
+            return id || name.toLowerCase() || "";
+        }
+
+        /**
+         * Busca variante de skill pela família e tier desejado
+         * @param {string} familyKey - Chave da família da skill
+         * @param {number} tier - Tier desejado (1, 2, ou 3)
+         * @returns {Object|null} - Skill encontrada ou null
+         */
+        function findSkillVariantByFamily(familyKey, tier) {
+            const cat = getSkillCatalog();
+            if (!familyKey || !cat.length) return null;
+
+            const roman = tier === 3 ? "III" : tier === 2 ? "II" : "I";
+            const fk = String(familyKey);
+
+            // tentar padrões de ID
+            const idCandidates = [
+                `${fk}_${roman}`, `${fk}-${roman}`,
+                `${fk.toUpperCase()}_${roman}`, `${fk.toUpperCase()}-${roman}`,
+            ];
+
+            for (const cand of idCandidates) {
+                const hit = cat.find(s => String(s.id) === cand);
+                if (hit) return hit;
+            }
+
+            // tentar por família via getSkillFamilyKey + nome com sufixo
+            const romanNameSuffix = " " + roman;
+            const fkLower = fk.toLowerCase();
+
+            // primeira passada: família igual + nome termina com roman
+            for (const s of cat) {
+                const fam = getSkillFamilyKey(s);
+                const nm = String(s.name ?? s.nome ?? "");
+                if (fam && String(fam).toLowerCase() === fkLower && nm.endsWith(romanNameSuffix)) return s;
+            }
+
+            // segunda passada: nome base igual + roman
+            for (const s of cat) {
+                const nm = String(s.name ?? s.nome ?? "");
+                const base = nm.replace(/\s+(I|II|III)$/i, "").trim().toLowerCase();
+                if (base && base === fkLower && nm.endsWith(romanNameSuffix)) return s;
+            }
+
+            return null;
+        }
+
+        /**
+         * Tenta fazer upgrade automático das skills quando monstro muda de estágio
+         * @param {Object} mon - Monstro
+         * @param {Array} logArr - Array de log (opcional)
+         */
+        function maybeUpgradeSkillsModelB(mon, logArr) {
+            if (!mon) return;
+
+            const stageNow = getMonsterStage(mon.level);
+            const tierNow = getDesiredSkillTier(stageNow);
+
+            // dedupe: só roda quando estágio muda
+            if (mon._skillStage === stageNow) return;
+
+            const skills = getSkillsArray(mon);
+            if (!skills.length) {
+                // MVP: se não tem skills, não inventa. Apenas marca estágio para não spammar.
+                mon._skillStage = stageNow;
+                return;
+            }
+
+            let changed = false;
+            const newSkills = skills.map(oldId => {
+                const oldSkill = getSkillById(oldId);
+                const family = getSkillFamilyKey(oldSkill || oldId);
+                if (!family) return oldId;
+
+                const variant = findSkillVariantByFamily(family, tierNow);
+                if (!variant) return oldId;
+
+                const newId = String(variant.id);
+                if (newId && newId !== String(oldId)) {
+                    changed = true;
+
+                    const monName = mon.nickname || mon.name || mon.nome || "Monstrinho";
+                    const newName = variant.name || variant.nome || newId;
+
+                    if (Array.isArray(logArr)) {
+                        logArr.push(`🎓 ${monName} aprendeu ${newName}!`);
+                    }
+                    return newId;
+                }
+                return oldId;
+            });
+
+            if (changed) setSkillsArray(mon, newSkills);
+
+            mon._skillStage = stageNow;
         }
         
         /**
