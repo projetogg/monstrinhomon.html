@@ -234,10 +234,14 @@
                 <input type="text" id="playerName" placeholder="Player Name">
                 <select id="playerClass">
                     <option value="">Select Class</option>
-                    <option value="fire">🔥 Fire Trainer</option>
-                    <option value="water">💧 Water Trainer</option>
-                    <option value="plant">🌿 Plant Trainer</option>
-                    <option value="electric">⚡ Electric Trainer</option>
+                    <option value="Guerreiro">⚔️ Guerreiro</option>
+                    <option value="Mago">🔮 Mago</option>
+                    <option value="Curandeiro">💚 Curandeiro</option>
+                    <option value="Bárbaro">💪 Bárbaro</option>
+                    <option value="Ladino">🗡️ Ladino</option>
+                    <option value="Bardo">🎵 Bardo</option>
+                    <option value="Caçador">🏹 Caçador</option>
+                    <option value="Animalista">🐾 Animalista</option>
                 </select>
                 <button class="btn btn-success" onclick="addPlayer()">Add Player</button>
             </div>
@@ -250,12 +254,39 @@
             
             <div class="card">
                 <h3>Start New Encounter</h3>
-                <select id="encounterType">
-                    <option value="wild">🌟 Wild Monster (Capture)</option>
-                    <option value="trainer">👤 Trainer Battle</option>
-                    <option value="boss">👹 Boss Battle</option>
+                <select id="encounterType" onchange="updateEncounterUI()">
+                    <option value="wild">🌟 Wild Monster (Individual Capture)</option>
+                    <option value="trainer">👤 Trainer Battle (Group)</option>
+                    <option value="boss">👹 Boss Battle (Group)</option>
                     <option value="event">📖 Narrative Event</option>
                 </select>
+                
+                <!-- Para encontros individuais (wild) -->
+                <div id="playerSelectDiv" style="margin-top: 15px;">
+                    <label><strong>Select Player for Individual Encounter:</strong></label>
+                    <select id="encounterPlayer">
+                        <option value="">-- Select Player --</option>
+                    </select>
+                </div>
+                
+                <!-- Para encontros em grupo (trainer/boss) -->
+                <div id="groupSelectDiv" class="hidden" style="margin-top: 15px;">
+                    <label><strong>Select Participants (1-6):</strong></label>
+                    <div id="groupParticipantsList" style="margin-top: 10px;"></div>
+                    <div style="margin-top: 10px;">
+                        <label><strong>Enemy Level:</strong></label>
+                        <select id="enemyLevel">
+                            <option value="1">1</option>
+                            <option value="3">3</option>
+                            <option value="5" selected>5</option>
+                            <option value="7">7</option>
+                            <option value="10">10</option>
+                            <option value="15">15</option>
+                            <option value="20">20</option>
+                        </select>
+                    </div>
+                </div>
+                
                 <button class="btn btn-success" onclick="startEncounter()">Start Encounter</button>
             </div>
 
@@ -353,37 +384,232 @@
             config: {
                 maxTeamSize: 6,
                 maxLevel: 100,
-                baseDamageMultiplier: 10,
-                captureBaseChance: 50,
-                medalTiers: { bronze: 10, silver: 25, gold: 50 },
-                xpBonusPercent: 10,
+                levelExpo: 1.5,
+                battleXpBase: 15,
+                captureModel: 'threshold_no_dice',
+                // Vantagens de Classe (conforme GAME_RULES.md)
                 classAdvantages: {
-                    fire: { strong: 'plant', weak: 'water' },
-                    water: { strong: 'fire', weak: 'plant' },
-                    plant: { strong: 'water', weak: 'electric' },
-                    electric: { strong: 'plant', weak: 'fire' }
-                }
+                    'Guerreiro': { strong: 'Ladino', weak: 'Curandeiro' },
+                    'Ladino': { strong: 'Mago', weak: 'Guerreiro' },
+                    'Mago': { strong: 'Bárbaro', weak: 'Ladino' },
+                    'Bárbaro': { strong: 'Caçador', weak: 'Mago' },
+                    'Caçador': { strong: 'Bardo', weak: 'Bárbaro' },
+                    'Bardo': { strong: 'Curandeiro', weak: 'Caçador' },
+                    'Curandeiro': { strong: 'Guerreiro', weak: 'Bardo' },
+                    'Animalista': { strong: null, weak: null } // Neutro
+                },
+                // Thresholds de captura por raridade (sem dado)
+                captureThreshold: {
+                    'Comum': 0.35,
+                    'Incomum': 0.30,
+                    'Raro': 0.22,
+                    'Místico': 0.15,
+                    'Lendário': 0.08
+                },
+                // Multiplicadores de raridade
+                rarityPower: {
+                    'Comum': 1.00,
+                    'Incomum': 1.08,
+                    'Raro': 1.18,
+                    'Místico': 1.32,
+                    'Lendário': 1.50
+                },
+                rarityXP: {
+                    'Comum': 1.00,
+                    'Incomum': 1.05,
+                    'Raro': 1.10,
+                    'Místico': 1.15,
+                    'Lendário': 1.25
+                },
+                // Chance base de fuga por raridade
+                fleeBase: {
+                    'Comum': 10,
+                    'Incomum': 12,
+                    'Raro': 15,
+                    'Místico': 18,
+                    'Lendário': 25
+                },
+                medalTiers: { bronze: 5, silver: 12, gold: 25 }
             }
         };
 
-        // MONSTER CATALOG
+        // MONSTER CATALOG (baseado em MONSTROS.csv)
         const MONSTER_CATALOG = [
-            { id: 1, name: 'Flameo', class: 'fire', rarity: 'common', baseHp: 45, emoji: '🔥' },
-            { id: 2, name: 'Pyrozard', class: 'fire', rarity: 'rare', baseHp: 60, emoji: '🐉' },
-            { id: 3, name: 'Infernix', class: 'fire', rarity: 'legendary', baseHp: 100, emoji: '🦅' },
-            { id: 4, name: 'Aquafin', class: 'water', rarity: 'common', baseHp: 50, emoji: '💧' },
-            { id: 5, name: 'Hydroseal', class: 'water', rarity: 'rare', baseHp: 65, emoji: '🦭' },
-            { id: 6, name: 'Oceanus', class: 'water', rarity: 'epic', baseHp: 85, emoji: '🐋' },
-            { id: 7, name: 'Leafling', class: 'plant', rarity: 'common', baseHp: 42, emoji: '🌱' },
-            { id: 8, name: 'Vinewrap', class: 'plant', rarity: 'rare', baseHp: 58, emoji: '🌿' },
-            { id: 9, name: 'Treemor', class: 'plant', rarity: 'epic', baseHp: 80, emoji: '🌳' },
-            { id: 10, name: 'Sparkbit', class: 'electric', rarity: 'common', baseHp: 40, emoji: '⚡' },
-            { id: 11, name: 'Voltiger', class: 'electric', rarity: 'rare', baseHp: 62, emoji: '🐯' },
-            { id: 12, name: 'Thunderon', class: 'electric', rarity: 'legendary', baseHp: 95, emoji: '⚡' },
-            { id: 13, name: 'Magmole', class: 'fire', rarity: 'common', baseHp: 48, emoji: '🦔' },
-            { id: 14, name: 'Coralina', class: 'water', rarity: 'common', baseHp: 44, emoji: '🪸' },
-            { id: 15, name: 'Petalion', class: 'plant', rarity: 'legendary', baseHp: 98, emoji: '🌺' }
+            { id: 'MON_001', name: 'Cantapau', class: 'Bardo', rarity: 'Comum', baseHp: 28, baseAtk: 6, baseDef: 4, baseSpd: 6, emoji: '🎵' },
+            { id: 'MON_002', name: 'Pedrino', class: 'Guerreiro', rarity: 'Comum', baseHp: 32, baseAtk: 7, baseDef: 6, baseSpd: 5, emoji: '⚔️' },
+            { id: 'MON_003', name: 'Faíscari', class: 'Mago', rarity: 'Comum', baseHp: 26, baseAtk: 8, baseDef: 3, baseSpd: 7, emoji: '🔮' },
+            { id: 'MON_004', name: 'Ninfolha', class: 'Curandeiro', rarity: 'Comum', baseHp: 30, baseAtk: 4, baseDef: 4, baseSpd: 5, emoji: '💚' },
+            { id: 'MON_005', name: 'Garruncho', class: 'Caçador', rarity: 'Comum', baseHp: 29, baseAtk: 7, baseDef: 3, baseSpd: 8, emoji: '🏹' },
+            { id: 'MON_100', name: 'Rato-de-Lama', class: 'Guerreiro', rarity: 'Comum', baseHp: 20, baseAtk: 5, baseDef: 3, baseSpd: 4, emoji: '🐀' }
         ];
+
+        // ENE REGEN CONSTANTS por classe (fallback)
+        const ENE_REGEN_BY_CLASS = {
+            'Mago': { pct: 0.18, min: 3 },
+            'Curandeiro': { pct: 0.18, min: 3 },
+            'Bardo': { pct: 0.14, min: 2 },
+            'Caçador': { pct: 0.14, min: 2 },
+            'Ladino': { pct: 0.14, min: 2 },
+            'Animalista': { pct: 0.12, min: 2 },
+            'Bárbaro': { pct: 0.12, min: 2 },
+            'Guerreiro': { pct: 0.10, min: 1 }
+        };
+
+        // POWER BÁSICO por classe (ataque sem habilidade)
+        const BASIC_ATTACK_POWER = {
+            'Guerreiro': 12,
+            'Mago': 11,
+            'Curandeiro': 10,
+            'Bárbaro': 14,
+            'Ladino': 12,
+            'Bardo': 11,
+            'Caçador': 13,
+            'Animalista': 12
+        };
+
+        // SKILL DEFINITIONS (inline - por classe e estágio)
+        const SKILL_DEFS = {
+            // GUERREIRO
+            'Guerreiro': {
+                'Golpe de Espada': [
+                    { tier: 1, name: 'Golpe de Espada I', type: 'DAMAGE', cost: 4, power: 18, desc: 'Ataque com espada.' },
+                    { tier: 2, name: 'Golpe de Espada II', type: 'DAMAGE', cost: 6, power: 24, desc: 'Ataque forte com espada.' },
+                    { tier: 3, name: 'Golpe de Espada III', type: 'DAMAGE', cost: 8, power: 30, desc: 'Ataque devastador com espada.' }
+                ],
+                'Escudo': [
+                    { tier: 1, name: 'Escudo I', type: 'BUFF', cost: 4, power: 2, buffType: 'DEF', target: 'self', duration: 2, desc: 'Aumenta DEF temporariamente.' },
+                    { tier: 2, name: 'Escudo II', type: 'BUFF', cost: 6, power: 3, buffType: 'DEF', target: 'self', duration: 2, desc: 'Aumenta muito a DEF.' },
+                    { tier: 3, name: 'Escudo III', type: 'BUFF', cost: 8, power: 4, buffType: 'DEF', target: 'self', duration: 3, desc: 'Escudo poderoso.' }
+                ],
+                'Provocar': [
+                    null, // S0 não tem
+                    { tier: 2, name: 'Provocar I', type: 'TAUNT', cost: 4, power: 0, desc: 'Provoca o inimigo.' },
+                    { tier: 3, name: 'Provocar II', type: 'TAUNT', cost: 6, power: 0, desc: 'Provoca intensamente.' }
+                ]
+            },
+            // CURANDEIRO
+            'Curandeiro': {
+                'Cura': [
+                    { tier: 1, name: 'Cura I', type: 'HEAL', cost: 5, power: 15, target: 'ally', desc: 'Cura leve.' },
+                    { tier: 2, name: 'Cura II', type: 'HEAL', cost: 7, power: 25, target: 'ally', desc: 'Cura moderada.' },
+                    { tier: 3, name: 'Cura III', type: 'HEAL', cost: 10, power: 40, target: 'ally', desc: 'Cura poderosa.' }
+                ],
+                'Bênção': [
+                    { tier: 1, name: 'Bênção I', type: 'BUFF', cost: 4, power: 2, buffType: 'ATK', target: 'ally', duration: 2, desc: 'Aumenta ATK do aliado.' },
+                    { tier: 2, name: 'Bênção II', type: 'BUFF', cost: 6, power: 3, buffType: 'ATK', target: 'ally', duration: 2, desc: 'Aumenta muito o ATK.' },
+                    { tier: 3, name: 'Bênção III', type: 'BUFF', cost: 8, power: 4, buffType: 'DEF', target: 'ally', duration: 3, desc: 'Bênção poderosa (DEF).' }
+                ]
+            },
+            // MAGO
+            'Mago': {
+                'Magia Elemental': [
+                    { tier: 1, name: 'Magia Elemental I', type: 'DAMAGE', cost: 4, power: 20, desc: 'Magia elemental.' },
+                    { tier: 2, name: 'Magia Elemental II', type: 'DAMAGE', cost: 6, power: 26, desc: 'Magia elemental forte.' },
+                    { tier: 3, name: 'Magia Elemental III', type: 'DAMAGE', cost: 8, power: 32, desc: 'Magia elemental poderosa.' }
+                ],
+                'Explosão Elemental': [
+                    { tier: 1, name: 'Explosão Elemental I', type: 'DAMAGE', cost: 6, power: 24, desc: 'Explosão mágica.' },
+                    { tier: 2, name: 'Explosão Elemental II', type: 'DAMAGE', cost: 8, power: 32, desc: 'Explosão mágica forte.' },
+                    { tier: 3, name: 'Explosão Elemental III', type: 'DAMAGE', cost: 12, power: 38, desc: 'Explosão devastadora.' }
+                ]
+            },
+            // BÁRBARO
+            'Bárbaro': {
+                'Fúria': [
+                    { tier: 1, name: 'Fúria I', type: 'BUFF', cost: 4, power: 3, buffType: 'ATK', target: 'self', duration: 2, debuffType: 'DEF', debuffPower: -1, desc: 'Aumenta ATK, reduz DEF.' },
+                    { tier: 2, name: 'Fúria II', type: 'BUFF', cost: 6, power: 4, buffType: 'ATK', target: 'self', duration: 2, debuffType: 'DEF', debuffPower: -2, desc: 'Fúria intensa.' },
+                    { tier: 3, name: 'Fúria III', type: 'BUFF', cost: 8, power: 6, buffType: 'ATK', target: 'self', duration: 3, debuffType: 'DEF', debuffPower: -2, desc: 'Fúria selvagem.' }
+                ],
+                'Golpe Brutal': [
+                    { tier: 1, name: 'Golpe Brutal I', type: 'DAMAGE', cost: 6, power: 24, desc: 'Golpe brutal.' },
+                    { tier: 2, name: 'Golpe Brutal II', type: 'DAMAGE', cost: 8, power: 32, desc: 'Golpe muito brutal.' },
+                    { tier: 3, name: 'Golpe Brutal III', type: 'DAMAGE', cost: 12, power: 38, desc: 'Golpe devastador.' }
+                ]
+            },
+            // LADINO
+            'Ladino': {
+                'Ataque Preciso': [
+                    { tier: 1, name: 'Ataque Preciso I', type: 'DAMAGE', cost: 4, power: 19, desc: 'Ataque preciso.' },
+                    { tier: 2, name: 'Ataque Preciso II', type: 'DAMAGE', cost: 6, power: 24, desc: 'Ataque muito preciso.' },
+                    { tier: 3, name: 'Ataque Preciso III', type: 'DAMAGE', cost: 8, power: 30, desc: 'Ataque extremamente preciso.' }
+                ],
+                'Enfraquecer': [
+                    null, // S0 não tem
+                    { tier: 2, name: 'Enfraquecer I', type: 'BUFF', cost: 4, power: -2, buffType: 'ATK', target: 'enemy', duration: 1, desc: 'Reduz ATK do inimigo.' },
+                    { tier: 3, name: 'Enfraquecer II', type: 'BUFF', cost: 6, power: -3, buffType: 'ATK', target: 'enemy', duration: 2, desc: 'Enfraquece muito o inimigo.' }
+                ]
+            },
+            // BARDO
+            'Bardo': {
+                'Canção de Coragem': [
+                    { tier: 1, name: 'Canção de Coragem I', type: 'BUFF', cost: 4, power: 2, buffType: 'ATK', target: 'ally', duration: 2, desc: 'Aumenta ATK.' },
+                    { tier: 2, name: 'Canção de Coragem II', type: 'BUFF', cost: 6, power: 3, buffType: 'ATK', target: 'ally', duration: 2, desc: 'Aumenta muito o ATK.' },
+                    { tier: 3, name: 'Canção de Coragem III', type: 'BUFF', cost: 8, power: 4, buffType: 'ATK', target: 'ally', duration: 3, desc: 'Canção inspiradora.' }
+                ],
+                'Canção Calmante': [
+                    { tier: 1, name: 'Canção Calmante I', type: 'HEAL', cost: 5, power: 12, target: 'ally', desc: 'Cura leve.' },
+                    { tier: 2, name: 'Canção Calmante II', type: 'BUFF', cost: 6, power: 2, buffType: 'DEF', target: 'ally', duration: 2, desc: 'Aumenta DEF.' },
+                    { tier: 3, name: 'Canção Calmante III', type: 'BUFF', cost: 8, power: 3, buffType: 'DEF', target: 'ally', duration: 3, desc: 'Canção protetora.' }
+                ]
+            },
+            // CAÇADOR
+            'Caçador': {
+                'Flecha Poderosa': [
+                    { tier: 1, name: 'Flecha Poderosa I', type: 'DAMAGE', cost: 4, power: 19, desc: 'Flecha poderosa.' },
+                    { tier: 2, name: 'Flecha Poderosa II', type: 'DAMAGE', cost: 6, power: 24, desc: 'Flecha muito poderosa.' },
+                    { tier: 3, name: 'Flecha Poderosa III', type: 'DAMAGE', cost: 8, power: 30, desc: 'Flecha devastadora.' }
+                ],
+                'Armadilha': [
+                    null, // S0 não tem
+                    { tier: 2, name: 'Armadilha I', type: 'BUFF', cost: 4, power: -2, buffType: 'SPD', target: 'enemy', duration: 1, desc: 'Reduz SPD do inimigo.' },
+                    { tier: 3, name: 'Armadilha II', type: 'BUFF', cost: 6, power: -3, buffType: 'SPD', target: 'enemy', duration: 2, desc: 'Armadilha poderosa.' }
+                ]
+            },
+            // ANIMALISTA
+            'Animalista': {
+                'Investida Bestial': [
+                    { tier: 1, name: 'Investida Bestial I', type: 'DAMAGE', cost: 4, power: 19, desc: 'Investida feroz.' },
+                    { tier: 2, name: 'Investida Bestial II', type: 'DAMAGE', cost: 6, power: 24, desc: 'Investida muito feroz.' },
+                    { tier: 3, name: 'Investida Bestial III', type: 'DAMAGE', cost: 8, power: 30, desc: 'Investida selvagem.' }
+                ],
+                'Instinto Selvagem': [
+                    { tier: 1, name: 'Instinto Selvagem I', type: 'BUFF', cost: 4, power: 2, buffType: 'DEF', target: 'self', duration: 2, desc: 'Aumenta DEF.' },
+                    { tier: 2, name: 'Instinto Selvagem II', type: 'BUFF', cost: 6, power: 2, buffType: 'SPD', target: 'self', duration: 2, desc: 'Aumenta SPD.' },
+                    { tier: 3, name: 'Instinto Selvagem III', type: 'BUFF', cost: 8, power: 3, buffType: 'DEF', target: 'self', duration: 3, desc: 'Instinto aguçado.' }
+                ]
+            }
+        };
+
+        // CLASTERORB TIERS (Sistema de captura em tiers)
+        const CLASTERORBS = {
+            'CLASTERORB_COMUM': { id: 'CLASTERORB_COMUM', name: 'ClasterOrb Comum', type: 'CAPTURE', capture_bonus_pp: 0, emoji: '⚪' },
+            'CLASTERORB_INCOMUM': { id: 'CLASTERORB_INCOMUM', name: 'ClasterOrb Incomum', type: 'CAPTURE', capture_bonus_pp: 5, emoji: '🔵' },
+            'CLASTERORB_RARA': { id: 'CLASTERORB_RARA', name: 'ClasterOrb Rara', type: 'CAPTURE', capture_bonus_pp: 10, emoji: '🟣' }
+        };
+
+        // SKILLS CATALOG (baseado em HABILIDADES.csv)
+        const SKILLS_CATALOG = [
+            { id: 'SK_WAR_01', name: 'Golpe de Escudo', class: 'Guerreiro', category: 'Controle', power: 6, accuracy: 0.9, energy_cost: 2, target: 'Inimigo', status: 'Atordoado', desc: 'Ataque curto com chance de atordoar.' },
+            { id: 'SK_WAR_02', name: 'Corte Pesado', class: 'Guerreiro', category: 'Ataque', power: 9, accuracy: 0.8, energy_cost: 3, target: 'Inimigo', status: '', desc: 'Dano alto, menos preciso.' },
+            { id: 'SK_MAG_01', name: 'Raio Místico', class: 'Mago', category: 'Ataque', power: 10, accuracy: 0.85, energy_cost: 4, target: 'Inimigo', status: '', desc: 'Dano mágico à distância.' },
+            { id: 'SK_MAG_02', name: 'Névoa Lenta', class: 'Mago', category: 'Controle', power: 4, accuracy: 0.9, energy_cost: 3, target: 'Área', status: 'Enraizado', desc: 'Reduz ação/movimento por 1 turno.' },
+            { id: 'SK_HEA_01', name: 'Sopro Calmante', class: 'Curandeiro', category: 'Cura', power: 0, accuracy: 1, energy_cost: 4, target: 'Aliado', status: '', desc: 'Cura moderada.' },
+            { id: 'SK_HEA_02', name: 'Barreira Suave', class: 'Curandeiro', category: 'Suporte', power: 0, accuracy: 1, energy_cost: 3, target: 'Aliado', status: 'Protegido', desc: 'Aumenta defesa por 2 turnos.' },
+            { id: 'SK_HUN_01', name: 'Flecha Rápida', class: 'Caçador', category: 'Ataque', power: 8, accuracy: 0.9, energy_cost: 2, target: 'Inimigo', status: '', desc: 'Dano consistente à distância.' },
+            { id: 'SK_BRD_01', name: 'Canção de Coragem', class: 'Bardo', category: 'Suporte', power: 0, accuracy: 1, energy_cost: 3, target: 'Área', status: 'Fortalecido', desc: 'Buff de ataque para aliados.' }
+        ];
+
+        // CLASS ENERGY REGEN (baseado em CLASSES.csv)
+        const CLASS_ENERGY_REGEN = {
+            'Guerreiro': { ene_regen_pct: 0.10, ene_regen_min: 2 },
+            'Mago': { ene_regen_pct: 0.25, ene_regen_min: 1 },
+            'Curandeiro': { ene_regen_pct: 0.20, ene_regen_min: 2 },
+            'Bárbaro': { ene_regen_pct: 0.10, ene_regen_min: 1 },
+            'Ladino': { ene_regen_pct: 0.15, ene_regen_min: 1 },
+            'Bardo': { ene_regen_pct: 0.18, ene_regen_min: 2 },
+            'Caçador': { ene_regen_pct: 0.12, ene_regen_min: 2 },
+            'Animalista': { ene_regen_pct: 0.15, ene_regen_min: 2 }
+        };
 
         // DEFAULT OBJECTIVES
         const DEFAULT_OBJECTIVES = [
@@ -425,6 +651,30 @@
                 if (data) {
                     const loaded = JSON.parse(data);
                     Object.assign(GameState, loaded);
+                    
+                    // Migrar inventários antigos
+                    if (GameState.players) {
+                        GameState.players.forEach(player => {
+                            migrateInventory(player);
+                            
+                            // Garantir que monstros tenham ENE e campos de progressão (Feature 3.3)
+                            if (player.team) {
+                                player.team.forEach(monster => {
+                                    // ENE (Sistema ENE)
+                                    if (!monster.eneMax) {
+                                        monster.eneMax = 10 + (monster.level || 1);
+                                        monster.ene = monster.eneMax;
+                                    }
+                                    if (monster.ene === undefined) {
+                                        monster.ene = monster.eneMax;
+                                    }
+                                    
+                                    // Progressão (Feature 3.3) - compatibilidade com saves antigos
+                                    ensureMonsterProgressFields(monster);
+                                });
+                            }
+                        });
+                    }
                 }
             } catch (error) {
                 console.warn('Failed to load saved data:', error);
@@ -475,14 +725,20 @@
                 }
                 
                 const player = {
-                    id: Date.now(),
+                    id: Date.now().toString(),
                     name: name,
+                    class: playerClass, // Armazena a classe diretamente
                     playerClassId: playerClass,
                     money: 100,
                     afterlifeCurrency: 0,
                     team: [],
                     box: [],
-                    inventory: {}
+                    inventory: {
+                        'CLASTERORB_COMUM': 5,    // ClasterOrb Comum x5
+                        'CLASTERORB_INCOMUM': 2,  // ClasterOrb Incomum x2
+                        'CLASTERORB_RARA': 1,     // ClasterOrb Rara x1
+                        'IT_HEAL_01': 3           // Petisco de Cura x3
+                    }
                 };
                 
                 GameState.players = GameState.players || [];
@@ -502,13 +758,17 @@
 
         function giveStarterMonster(player) {
             try {
+                // Busca monstrinho inicial da mesma classe do jogador
                 const classMonsters = MONSTER_CATALOG.filter(m => 
-                    m?.class === player?.playerClassId && m?.rarity === 'common'
+                    m?.class === player?.class && m?.rarity === 'Comum'
                 );
                 
-                if (!classMonsters || classMonsters.length === 0) return;
+                // Se não encontrar da mesma classe, pega qualquer starter comum
+                const starterTemplate = classMonsters.length > 0 ? classMonsters[0] : 
+                    MONSTER_CATALOG.find(m => m?.rarity === 'Comum');
                 
-                const starterTemplate = classMonsters[0];
+                if (!starterTemplate) return;
+                
                 const monster = createMonsterInstance(starterTemplate, player.id, 5);
                 
                 if (monster) {
@@ -526,25 +786,266 @@
             try {
                 if (!template) return null;
                 
-                const hpMax = Math.floor((template.baseHp || 50) * (1 + (level - 1) * 0.1));
+                // Calcular stats baseados no nível
+                const rarityMult = GameState.config?.rarityPower?.[template.rarity] || 1.0;
+                const levelMult = (1 + (level - 1) * 0.1);
+                
+                const hpMax = Math.floor((template.baseHp || 30) * levelMult);
+                const atk = Math.floor((template.baseAtk || 5) * levelMult * rarityMult);
+                const def = Math.floor((template.baseDef || 3) * levelMult * rarityMult);
+                const spd = Math.floor((template.baseSpd || 5) * levelMult * rarityMult); // SPD adicionado
+                const poder = Math.floor(atk * 0.5); // PODER é derivado de ATK
+                
+                // Calcular ENE (Sistema ENE)
+                const baseEne = template.baseEne || 10; // Fallback se não tiver no template
+                const eneGrowth = 2; // growth_ene padrão
+                const eneMax = Math.floor(baseEne + eneGrowth * (level - 1));
+                
+                // Determinar stage baseado no nível (simplificado)
+                // S0: nível 1-9, S1: 10-24, S2: 25-44, S3: 45+
+                let stage = 0;
+                if (level >= 45) stage = 3;
+                else if (level >= 25) stage = 2;
+                else if (level >= 10) stage = 1;
                 
                 return {
                     id: Date.now() + Math.random(),
                     ownerId: ownerId,
                     monsterId: template.id,
                     name: template.name,
+                    nickname: template.name, // Nickname padrão
                     class: template.class,
                     rarity: template.rarity,
                     emoji: template.emoji,
                     level: level,
                     xp: 0,
+                    xpNeeded: calculateXPNeeded(level), // Feature 3.3
                     hp: hpMax,
                     hpMax: hpMax,
-                    status: 'healthy'
+                    atk: atk,
+                    def: def,
+                    spd: spd,           // SPD adicionado
+                    poder: poder,
+                    ene: eneMax,      // ENE atual (começa cheio)
+                    eneMax: eneMax,   // ENE máximo
+                    stage: stage,     // Estágio de evolução (0-3)
+                    status: 'healthy',
+                    buffs: []         // Array para buffs temporários
                 };
             } catch (error) {
                 console.error('Failed to create monster instance:', error);
                 return null;
+            }
+        }
+
+        // Função para obter habilidade do monstrinho
+        // Obter habilidades do monstrinho baseado em classe e estágio
+        function getMonsterSkills(monster) {
+            try {
+                if (!monster || !monster.class) return [];
+                
+                const classSkills = SKILL_DEFS[monster.class];
+                if (!classSkills) return [];
+                
+                const stage = monster.stage || 0;
+                const skillList = [];
+                
+                // Pegar as duas primeiras skills sempre disponíveis
+                const skillNames = Object.keys(classSkills);
+                for (let i = 0; i < Math.min(2, skillNames.length); i++) {
+                    const skillTiers = classSkills[skillNames[i]];
+                    const skill = skillTiers[stage];
+                    if (skill) {
+                        skillList.push(skill);
+                    }
+                }
+                
+                // Terceira skill (se existir e stage >= 1)
+                if (skillNames.length > 2 && stage >= 1) {
+                    const skillTiers = classSkills[skillNames[2]];
+                    const skill = skillTiers[stage];
+                    if (skill) {
+                        skillList.push(skill);
+                    }
+                }
+                
+                return skillList;
+            } catch (error) {
+                console.error('Failed to get monster skills:', error);
+                return [];
+            }
+        }
+
+        // Aplicar regeneração de ENE
+        function applyEneRegen(monster, encounter) {
+            try {
+                if (!monster || !monster.class) return;
+                
+                const regenData = ENE_REGEN_BY_CLASS[monster.class] || { pct: 0.10, min: 1 };
+                const eneGain = Math.max(regenData.min, Math.ceil(monster.eneMax * regenData.pct));
+                
+                monster.ene = Math.min(monster.eneMax, monster.ene + eneGain);
+                
+                if (encounter && encounter.log) {
+                    encounter.log.push(`⚡ ${monster.name} regenerou ${eneGain} ENE (${monster.ene}/${monster.eneMax})`);
+                }
+            } catch (error) {
+                console.error('Failed to apply ENE regen:', error);
+            }
+        }
+
+        // Usar habilidade
+        function useSkill(attacker, skill, defender, encounter) {
+            try {
+                if (!attacker || !skill || !defender) return false;
+                
+                // Verificar se tem ENE suficiente
+                if (attacker.ene < skill.cost) {
+                    return false;
+                }
+                
+                // Consumir ENE
+                attacker.ene -= skill.cost;
+                
+                encounter.log = encounter.log || [];
+                encounter.log.push(`✨ ${attacker.name} usa ${skill.name}! (-${skill.cost} ENE)`);
+                
+                // Aplicar efeito baseado no tipo
+                switch (skill.type) {
+                    case 'DAMAGE':
+                        // Calcular dano da habilidade com nova fórmula
+                        const atkMods = getBuffModifiers(attacker);
+                        const effectiveAtk = Math.max(1, attacker.atk + atkMods.atk);
+                        
+                        const defMods = getBuffModifiers(defender);
+                        const effectiveDef = Math.max(1, defender.def + defMods.def);
+                        
+                        // Vantagem de classe
+                        const classAdv = GameState.config?.classAdvantages?.[attacker.class];
+                        let damageMult = 1.0;
+                        if (classAdv?.strong === defender.class) {
+                            damageMult = 1.10;
+                        } else if (classAdv?.weak === defender.class) {
+                            damageMult = 0.90;
+                        }
+                        
+                        const skillDamage = calcDamage({
+                            atk: effectiveAtk,
+                            def: effectiveDef,
+                            power: skill.power,
+                            damageMult: damageMult
+                        });
+                        
+                        defender.hp = Math.max(0, defender.hp - skillDamage);
+                        encounter.log.push(`💥 ${defender.name} recebe ${skillDamage} de dano!`);
+                        break;
+                        
+                    case 'HEAL':
+                        // Curar (self ou ally)
+                        const healAmount = skill.power;
+                        const target = (skill.target === 'ally' || skill.target === 'self') ? attacker : defender;
+                        target.hp = Math.min(target.hpMax, target.hp + healAmount);
+                        encounter.log.push(`💚 ${target.name} recupera ${healAmount} HP!`);
+                        break;
+                        
+                    case 'BUFF':
+                        // Aplicar buff/debuff
+                        const buffTarget = skill.target === 'enemy' ? defender : attacker;
+                        buffTarget.buffs = buffTarget.buffs || [];
+                        
+                        const buff = {
+                            type: skill.buffType,
+                            power: skill.power,
+                            duration: skill.duration || 1,
+                            source: skill.name
+                        };
+                        buffTarget.buffs.push(buff);
+                        
+                        const buffDesc = skill.power > 0 ? `+${skill.power}` : skill.power;
+                        encounter.log.push(`🔮 ${buffTarget.name} recebe ${buff.type} ${buffDesc} por ${buff.duration} turnos!`);
+                        
+                        // Se for Fúria (Bárbaro), aplicar também o debuff
+                        if (skill.debuffType && skill.debuffPower) {
+                            const debuff = {
+                                type: skill.debuffType,
+                                power: skill.debuffPower,
+                                duration: skill.duration || 1,
+                                source: skill.name
+                            };
+                            attacker.buffs.push(debuff);
+                            encounter.log.push(`⚠️ ${attacker.name} recebe ${debuff.type} ${debuff.power} por ${debuff.duration} turnos!`);
+                        }
+                        break;
+                        
+                    case 'TAUNT':
+                        // Marcar alvo como provocado (flag simples)
+                        defender.taunted = true;
+                        encounter.log.push(`😠 ${defender.name} foi provocado!`);
+                        break;
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('Failed to use skill:', error);
+                return false;
+            }
+        }
+
+        // Atualizar buffs (reduzir duração, remover expirados)
+        function updateBuffs(monster) {
+            try {
+                if (!monster || !monster.buffs) return;
+                
+                monster.buffs = monster.buffs.filter(buff => {
+                    buff.duration--;
+                    return buff.duration > 0;
+                });
+            } catch (error) {
+                console.error('Failed to update buffs:', error);
+            }
+        }
+
+        // Calcular modificadores de buffs
+        function getBuffModifiers(monster) {
+            try {
+                if (!monster || !monster.buffs) return { atk: 0, def: 0, spd: 0 };
+                
+                const mods = { atk: 0, def: 0, spd: 0 };
+                
+                monster.buffs.forEach(buff => {
+                    const type = buff.type.toLowerCase();
+                    if (type === 'atk') mods.atk += buff.power;
+                    else if (type === 'def') mods.def += buff.power;
+                    else if (type === 'spd') mods.spd += buff.power;
+                });
+                
+                return mods;
+            } catch (error) {
+                console.error('Failed to get buff modifiers:', error);
+                return { atk: 0, def: 0, spd: 0 };
+            }
+        }
+
+        // Função antiga removida - usar getMonsterSkills acima
+
+        // Migrar inventário antigo para novo sistema ClasterOrb
+        function migrateInventory(player) {
+            try {
+                if (!player || !player.inventory) return;
+                
+                // Se tem IT_CAP_01 antigo, converter para CLASTERORB_COMUM
+                if (player.inventory['IT_CAP_01']) {
+                    const oldCount = player.inventory['IT_CAP_01'];
+                    player.inventory['CLASTERORB_COMUM'] = (player.inventory['CLASTERORB_COMUM'] || 0) + oldCount;
+                    delete player.inventory['IT_CAP_01'];
+                }
+                
+                // Garantir que novos itens existam
+                if (!player.inventory['CLASTERORB_COMUM']) player.inventory['CLASTERORB_COMUM'] = 0;
+                if (!player.inventory['CLASTERORB_INCOMUM']) player.inventory['CLASTERORB_INCOMUM'] = 0;
+                if (!player.inventory['CLASTERORB_RARA']) player.inventory['CLASTERORB_RARA'] = 0;
+            } catch (error) {
+                console.error('Failed to migrate inventory:', error);
             }
         }
 
@@ -646,11 +1147,56 @@
                     return;
                 }
                 
+                // Para encontros em grupo (trainer/boss), usar sistema de grupo
+                if (type === 'trainer' || type === 'boss') {
+                    // Coletar participantes selecionados
+                    const checkboxes = document.querySelectorAll('input[name="groupParticipant"]:checked');
+                    const selectedPlayerIds = Array.from(checkboxes).map(cb => cb.value);
+                    
+                    if (selectedPlayerIds.length === 0) {
+                        alert('Selecione pelo menos 1 jogador para a batalha em grupo');
+                        return;
+                    }
+                    
+                    if (selectedPlayerIds.length > 6) {
+                        alert('Máximo de 6 jogadores por batalha');
+                        return;
+                    }
+                    
+                    const enemyLevel = parseInt(document.getElementById('enemyLevel')?.value || '5');
+                    startGroupEncounter(selectedPlayerIds, type, enemyLevel);
+                    return;
+                }
+                
+                // Para encontros individuais (captura), precisa selecionar jogador
+                if (type === 'wild') {
+                    const selectedPlayerId = document.getElementById('encounterPlayer')?.value;
+                    if (!selectedPlayerId) {
+                        alert('Please select a player for individual encounter');
+                        return;
+                    }
+                    
+                    const player = GameState.players.find(p => p.id === selectedPlayerId);
+                    if (!player || !player.team || player.team.length === 0) {
+                        alert('Selected player has no monsters in team');
+                        return;
+                    }
+                    
+                    // GAME_RULES.md: Em batalha, só pode usar monstros da mesma classe do jogador
+                    const validMonsters = player.team.filter(m => m.class === player.class && m.status !== 'fainted');
+                    if (validMonsters.length === 0) {
+                        alert(`⚠️ ${player.name} não tem monstrinhos da classe ${player.class} disponíveis!\n\nREGRA: Em batalha, você só pode usar monstrinhos da SUA classe.\nTroque com outros jogadores para conseguir monstrinhos da sua classe!`);
+                        return;
+                    }
+                }
+                
                 const encounter = {
                     id: Date.now(),
                     type: type,
                     active: true,
-                    log: []
+                    log: [],
+                    selectedPlayerId: type === 'wild' ? document.getElementById('encounterPlayer')?.value : null,
+                    rewardsGranted: false  // Previne duplicação de XP
                 };
                 
                 if (type === 'wild') {
@@ -666,6 +1212,910 @@
                 renderEncounter();
             } catch (error) {
                 showError('Failed to start encounter', error.stack);
+            }
+        }
+
+        // GROUP BATTLE FUNCTIONS (Feature 3.2)
+        
+        function rollD20() {
+            return Math.floor(Math.random() * 20) + 1;
+        }
+        
+        function startGroupEncounter(selectedPlayerIds, encounterType, enemyLevel) {
+            try {
+                // Criar inimigo
+                const randomMonster = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
+                const enemy = createMonsterInstance(randomMonster, null, enemyLevel);
+                enemy.id = 'enemy_1';
+                
+                // Criar encounter de grupo
+                const encounter = {
+                    id: Date.now(),
+                    type: encounterType === 'boss' ? 'boss' : 'group_trainer',
+                    active: true,
+                    log: [],
+                    participants: selectedPlayerIds,
+                    enemies: [enemy],
+                    turnOrder: [],
+                    turnIndex: 0,
+                    currentActor: null,
+                    finished: false,
+                    result: null,
+                    rewardsGranted: false  // Previne duplicação de XP
+                };
+                
+                // Calcular ordem de turnos
+                encounter.turnOrder = calculateGroupTurnOrder(encounter);
+                encounter.turnIndex = 0;
+                encounter.currentActor = getCurrentActor(encounter);
+                
+                encounter.log.push('🎲 Ordem de turnos calculada!');
+                encounter.turnOrder.forEach((actor, idx) => {
+                    const tieInfo = actor._tiebreak ? ` (d20: ${actor._tiebreak})` : '';
+                    encounter.log.push(`   ${idx + 1}. ${actor.name} (${actor.side === 'player' ? 'Jogador' : 'Inimigo'}, SPD: ${actor.spd}${tieInfo})`);
+                });
+                
+                GameState.currentEncounter = encounter;
+                
+                saveToLocalStorage();
+                renderEncounter();
+            } catch (error) {
+                showError('Failed to start group encounter', error.stack);
+            }
+        }
+        
+        function calculateGroupTurnOrder(enc) {
+            const order = [];
+            
+            // Adicionar jogadores participantes
+            for (const pid of (enc.participants || [])) {
+                const p = GameState.players.find(x => x.id === pid);
+                if (!p) continue;
+                
+                const mon = p.team?.[0];
+                if (!mon) continue;
+                
+                const hp = Number(mon.hp) || 0;
+                if (hp <= 0) continue;
+                
+                order.push({
+                    side: "player",
+                    id: pid,
+                    name: p.name || p.nome || "Jogador",
+                    spd: Number(mon.spd) || 0,
+                    _tiebreak: null
+                });
+            }
+            
+            // Adicionar inimigos
+            for (let i = 0; i < (enc.enemies || []).length; i++) {
+                const e = enc.enemies[i];
+                if (!e) continue;
+                
+                const hp = Number(e.hp) || 0;
+                if (hp <= 0) continue;
+                
+                order.push({
+                    side: "enemy",
+                    id: i,
+                    name: e.name || e.nome || `Inimigo ${i + 1}`,
+                    spd: Number(e.spd) || 0,
+                    _tiebreak: null
+                });
+            }
+            
+            // Ordenar por SPD descendente
+            order.sort((a, b) => (b.spd - a.spd));
+            
+            // Desempate por grupos de mesmo SPD
+            let i = 0;
+            while (i < order.length) {
+                let j = i + 1;
+                while (j < order.length && order[j].spd === order[i].spd) j++;
+                
+                // [i, j) é o bloco empatado
+                if (j - i > 1) {
+                    for (let k = i; k < j; k++) {
+                        order[k]._tiebreak = rollD20();
+                    }
+                    const sortedBlock = order.slice(i, j).sort((a, b) => (b._tiebreak - a._tiebreak));
+                    for (let k = 0; k < sortedBlock.length; k++) {
+                        order[i + k] = sortedBlock[k];
+                    }
+                }
+                
+                i = j;
+            }
+            
+            return order;
+        }
+        
+        function getCurrentActor(enc) {
+            if (!enc || !enc.turnOrder || enc.turnOrder.length === 0) return null;
+            const idx = Number(enc.turnIndex) || 0;
+            return enc.turnOrder[idx] || null;
+        }
+        
+        function _hasAlivePlayers(enc) {
+            for (const pid of (enc.participants || [])) {
+                const p = GameState.players.find(x => x.id === pid);
+                const mon = p?.team?.[0];
+                if (mon && (Number(mon.hp) || 0) > 0) return true;
+            }
+            return false;
+        }
+        
+        function _hasAliveEnemies(enc) {
+            for (const e of (enc.enemies || [])) {
+                if ((Number(e?.hp) || 0) > 0) return true;
+            }
+            return false;
+        }
+        
+        function advanceTurn(enc) {
+            if (!enc || !enc.turnOrder || enc.turnOrder.length === 0) return;
+            
+            // Verificar condições de fim
+            const alivePlayers = _hasAlivePlayers(enc);
+            const aliveEnemies = _hasAliveEnemies(enc);
+            
+            if (!aliveEnemies) {
+                enc.finished = true;
+                enc.result = "victory";
+                enc.active = false;
+                enc.log = enc.log || [];
+                enc.log.push("🏁 Vitória! Todos os inimigos foram derrotados.");
+                
+                // Distribuir recompensas (XP) com idempotência
+                handleVictoryRewards(enc);
+                
+                return;
+            }
+            
+            if (!alivePlayers) {
+                enc.finished = true;
+                enc.result = "defeat";
+                enc.active = false;
+                enc.log = enc.log || [];
+                enc.log.push("💀 Derrota... Todos os participantes foram derrotados.");
+                return;
+            }
+            
+            // Avançar para próximo ator válido
+            const maxLoops = enc.turnOrder.length + 2;
+            let loops = 0;
+            
+            do {
+                enc.turnIndex = ((Number(enc.turnIndex) || 0) + 1) % enc.turnOrder.length;
+                loops++;
+                
+                const actor = getCurrentActor(enc);
+                if (!actor) break;
+                
+                // Validar se ator ainda está vivo
+                if (actor.side === "player") {
+                    const p = GameState.players.find(x => x.id === actor.id);
+                    const mon = p?.team?.[0];
+                    if (mon && (Number(mon.hp) || 0) > 0) break;
+                } else {
+                    const e = enc.enemies?.[actor.id];
+                    if (e && (Number(e.hp) || 0) > 0) break;
+                }
+                
+            } while (loops < maxLoops);
+            
+            // Atualizar currentActor
+            enc.currentActor = getCurrentActor(enc);
+            
+            // Auto-trigger turno do inimigo
+            const actorNow = getCurrentActor(enc);
+            if (actorNow && actorNow.side === "enemy" && !enc.finished) {
+                processEnemyTurnGroup(enc);
+            } else if (actorNow) {
+                enc.log = enc.log || [];
+                enc.log.push(`⏺️ Turno: ${actorNow.name}`);
+            }
+        }
+        
+        function groupPassTurn() {
+            try {
+                const enc = GameState.currentEncounter;
+                if (!enc) return;
+                
+                const actor = getCurrentActor(enc);
+                if (!actor) return;
+                
+                enc.log.push(`▶️ ${actor.name} passou o turno`);
+                
+                advanceTurn(enc);
+                saveToLocalStorage();
+                renderEncounter();
+            } catch (error) {
+                showError('Failed to pass turn', error.stack);
+            }
+        }
+
+        // ==================== FASE 3: Helper Functions ====================
+
+        function _getGroupEncounter() {
+            return GameState.currentEncounter;
+        }
+
+        function _getPlayerById(playerId) {
+            return GameState.players.find(p => p.id === playerId) || null;
+        }
+
+        function _getActiveMonsterOfPlayer(player) {
+            return player?.team?.[0] || null;
+        }
+
+        function _getEnemyByIndex(enc, idx) {
+            return enc?.enemies?.[idx] || null;
+        }
+
+        function _clamp(n, min, max) {
+            return Math.max(min, Math.min(max, n));
+        }
+
+        function _calcDamage(power, atk, def) {
+            const A = Number(atk) || 0;
+            const D = Number(def) || 0;
+            const P = Number(power) || 0;
+            const ratio = (A <= 0 && D <= 0) ? 0.5 : (A / (A + D));
+            const base = Math.floor(P * ratio);
+            return Math.max(1, base);
+        }
+
+        function _isAlive(entity) {
+            return (Number(entity?.hp) || 0) > 0;
+        }
+
+        function _log(enc, msg) {
+            enc.log = enc.log || [];
+            enc.log.push(msg);
+        }
+
+        function _chooseTargetPlayerId(enc) {
+            let best = null;
+            for (const pid of (enc.participants || [])) {
+                const p = _getPlayerById(pid);
+                const mon = _getActiveMonsterOfPlayer(p);
+                if (!mon || !_isAlive(mon)) continue;
+
+                const hp = Number(mon.hp) || 0;
+                const hpMax = Number(mon.hpMax) || 1;
+                const pct = hp / hpMax;
+
+                if (!best || pct < best.pct) best = { pid, pct };
+            }
+            return best ? best.pid : null;
+        }
+
+        // ==================== FASE 3.A: Player Attack ====================
+
+        function groupAttack() {
+            try {
+                const enc = _getGroupEncounter();
+                if (!enc || enc.finished) return;
+
+                const actor = getCurrentActor(enc);
+                if (!actor || actor.side !== 'player') return;
+
+                const player = _getPlayerById(actor.id);
+                const mon = _getActiveMonsterOfPlayer(player);
+                if (!player || !mon) return;
+
+                if (!_isAlive(mon)) {
+                    _log(enc, "⚠️ Seu monstrinho está desmaiado. Não pode atacar.");
+                    saveToLocalStorage();
+                    renderEncounter();
+                    return;
+                }
+
+                // Alvo: primeiro inimigo vivo
+                let enemyIndex = 0;
+                while (enemyIndex < (enc.enemies?.length || 0) && !_isAlive(enc.enemies[enemyIndex])) enemyIndex++;
+
+                const enemy = _getEnemyByIndex(enc, enemyIndex);
+                if (!enemy || !_isAlive(enemy)) {
+                    _log(enc, "ℹ️ Não há inimigos vivos para atacar.");
+                    saveToLocalStorage();
+                    renderEncounter();
+                    return;
+                }
+
+                const d20 = rollD20();
+                const atk = Number(mon.atk) || 0;
+                const def = Number(enemy.def) || 0;
+
+                const alwaysMiss = (d20 === 1);
+                const isCrit = (d20 === 20);
+                const hit = !alwaysMiss && (d20 + atk >= def);
+
+                const attackerName = player.name || player.nome || actor.name || "Jogador";
+                const monName = mon.nickname || mon.name || mon.nome || "Monstrinho";
+                const enemyName = enemy.name || enemy.nome || "Inimigo";
+
+                if (!hit) {
+                    _log(enc, `🎲 ${attackerName} (${monName}) rolou ${d20} e ERROU o ataque em ${enemyName}.`);
+                    advanceTurn(enc);
+                    saveToLocalStorage();
+                    renderEncounter();
+                    return;
+                }
+
+                // POWER básico
+                const basicPower = Number(mon.basicPower) || Number(mon.powerBasic) || 10;
+                let powerUsed = basicPower;
+
+                if (isCrit) {
+                    powerUsed = basicPower * 2;
+                    _log(enc, `💥 CRIT 20! ${monName} ativou Poder Duplo!`);
+                }
+
+                const dmg = _calcDamage(powerUsed, atk, def);
+                enemy.hp = _clamp((Number(enemy.hp) || 0) - dmg, 0, Number(enemy.hpMax) || 999999);
+
+                _log(enc, `🎲 ${attackerName} (${monName}) rolou ${d20} e acertou ${enemyName} causando ${dmg} de dano!`);
+
+                if (!_isAlive(enemy)) {
+                    _log(enc, `🏁 ${enemyName} foi derrotado!`);
+                }
+
+                advanceTurn(enc);
+                saveToLocalStorage();
+                renderEncounter();
+            } catch (error) {
+                showError('Failed to attack', error.stack);
+            }
+        }
+
+        // ==================== FASE 3.B: Enemy AI ====================
+
+        function processEnemyTurnGroup(enc) {
+            try {
+                if (!enc || enc.finished) return;
+
+                const actor = getCurrentActor(enc);
+                if (!actor || actor.side !== 'enemy') return;
+
+                const enemy = _getEnemyByIndex(enc, actor.id);
+                if (!enemy || !_isAlive(enemy)) {
+                    advanceTurn(enc);
+                    saveToLocalStorage();
+                    renderEncounter();
+                    return;
+                }
+
+                // Escolhe alvo (menor HP%)
+                const targetPid = _chooseTargetPlayerId(enc);
+                if (!targetPid) {
+                    advanceTurn(enc);
+                    saveToLocalStorage();
+                    renderEncounter();
+                    return;
+                }
+
+                const targetPlayer = _getPlayerById(targetPid);
+                const targetMon = _getActiveMonsterOfPlayer(targetPlayer);
+
+                const enemyName = enemy.name || actor.name || "Inimigo";
+                const targetName = targetPlayer?.name || targetPlayer?.nome || "Jogador";
+                const targetMonName = targetMon?.nickname || targetMon?.name || targetMon?.nome || "Monstrinho";
+
+                const d20 = rollD20();
+                const atk = Number(enemy.atk) || 0;
+                const def = Number(targetMon?.def) || 0;
+
+                const alwaysMiss = (d20 === 1);
+                const isCrit = (d20 === 20);
+                const hit = !alwaysMiss && (d20 + atk >= def);
+
+                if (!hit) {
+                    _log(enc, `🎲 ${enemyName} rolou ${d20} e ERROU o ataque em ${targetName} (${targetMonName}).`);
+                    advanceTurn(enc);
+                    saveToLocalStorage();
+                    renderEncounter();
+                    return;
+                }
+
+                // POWER básico do inimigo
+                const basicPower = Number(enemy.basicPower) || Number(enemy.powerBasic) || 10;
+                let powerUsed = basicPower;
+
+                if (isCrit) {
+                    powerUsed = basicPower * 2;
+                    _log(enc, `💥 CRIT 20! ${enemyName} ativou Poder Duplo!`);
+                }
+
+                const dmg = _calcDamage(powerUsed, atk, def);
+                targetMon.hp = _clamp((Number(targetMon.hp) || 0) - dmg, 0, Number(targetMon.hpMax) || 999999);
+
+                _log(enc, `🎲 ${enemyName} rolou ${d20} e acertou ${targetName} (${targetMonName}) causando ${dmg} de dano!`);
+
+                if (!_isAlive(targetMon)) {
+                    _log(enc, `💀 ${targetName} (${targetMonName}) foi derrotado!`);
+                }
+
+                advanceTurn(enc);
+                saveToLocalStorage();
+                renderEncounter();
+            } catch (error) {
+                showError('Failed to process enemy turn', error.stack);
+            }
+        }
+
+        // ==================== FASE 3.C: Skills and Items ====================
+
+        function groupUseSkill(skillIndex) {
+            try {
+                const enc = _getGroupEncounter();
+                if (!enc || enc.finished) return;
+
+                const actor = getCurrentActor(enc);
+                if (!actor || actor.side !== 'player') return;
+
+                const player = _getPlayerById(actor.id);
+                const mon = _getActiveMonsterOfPlayer(player);
+                if (!player || !mon || !_isAlive(mon)) return;
+
+                // Alvo: primeiro inimigo vivo
+                let enemyIndex = 0;
+                while (enemyIndex < (enc.enemies?.length || 0) && !_isAlive(enc.enemies[enemyIndex])) enemyIndex++;
+                const enemy = _getEnemyByIndex(enc, enemyIndex);
+                if (!enemy || !_isAlive(enemy)) return;
+
+                _log(enc, "ℹ️ (Ajuste) Sistema de habilidades será integrado na Feature 3.3");
+
+                advanceTurn(enc);
+                saveToLocalStorage();
+                renderEncounter();
+            } catch (error) {
+                showError('Failed to use skill', error.stack);
+            }
+        }
+
+        function groupUseItem(itemId) {
+            try {
+                const enc = _getGroupEncounter();
+                if (!enc || enc.finished) return;
+
+                const actor = getCurrentActor(enc);
+                if (!actor || actor.side !== 'player') return;
+
+                const player = _getPlayerById(actor.id);
+                const mon = _getActiveMonsterOfPlayer(player);
+                if (!player || !mon) return;
+
+                // Reutiliza lógica do 3.1
+                const hp = Number(mon.hp) || 0;
+                const hpMax = Number(mon.hpMax) || 1;
+
+                if (hp <= 0) {
+                    _log(enc, "⚠️ Monstrinho está desmaiado.");
+                    saveToLocalStorage();
+                    renderEncounter();
+                    return;
+                }
+
+                if (hp >= hpMax) {
+                    _log(enc, "ℹ️ HP já está cheio.");
+                    saveToLocalStorage();
+                    renderEncounter();
+                    return;
+                }
+
+                if (!itemId || itemId === 'IT_HEAL_01') {
+                    itemId = 'IT_HEAL_01';
+                }
+
+                const itemCount = Number(player.inventory?.[itemId]) || 0;
+                if (itemCount <= 0) {
+                    _log(enc, "⚠️ Você não tem esse item.");
+                    saveToLocalStorage();
+                    renderEncounter();
+                    return;
+                }
+
+                // Consumir item
+                player.inventory[itemId] = Math.max(0, itemCount - 1);
+
+                // Aplicar cura (mesmo do 3.1)
+                const healAmount = Math.max(30, Math.floor(hpMax * 0.30));
+                const newHp = Math.min(hpMax, hp + healAmount);
+                const healed = newHp - hp;
+                mon.hp = newHp;
+
+                const playerName = player.name || "Jogador";
+                const monName = mon.nickname || mon.name || "Monstrinho";
+
+                _log(enc, `💚 ${playerName} usou Petisco de Cura! (Restam: ${player.inventory[itemId]})`);
+                _log(enc, `✨ ${monName} recuperou ${healed} HP! (${mon.hp}/${hpMax})`);
+
+                advanceTurn(enc);
+                saveToLocalStorage();
+                renderEncounter();
+            } catch (error) {
+                showError('Failed to use item', error.stack);
+            }
+        }
+        
+        // ═════════════════════════════════════════════════════════════
+        // FEATURE 3.3 - SISTEMA DE XP E LEVEL UP (com idempotência)
+        // ═════════════════════════════════════════════════════════════
+        
+        /**
+         * Garante que um monstro tenha campos de progressão (compatibilidade com saves antigos)
+         */
+        function ensureMonsterProgressFields(mon) {
+            if (!mon) return;
+            mon.level = Math.max(1, Number(mon.level) || 1);
+            mon.xp = Math.max(0, Number(mon.xp) || 0);
+            mon.xpNeeded = Math.max(1, Number(mon.xpNeeded) || calcXpNeeded(mon.level));
+            // Fallback hpMax/maxHp
+            if (mon.hpMax == null && mon.maxHp != null) mon.hpMax = mon.maxHp;
+            if (mon.hp == null && mon.hpMax != null) mon.hp = mon.hpMax;
+        }
+        
+        /**
+         * Calcula XP necessário para próximo nível (curva suave)
+         */
+        function calcXpNeeded(level) {
+            const L = Math.max(1, Number(level) || 1);
+            return Math.round(40 + 6 * L + 0.6 * (L * L));
+        }
+        
+        // Alias para compatibilidade
+        function calculateXPNeeded(level) {
+            return calcXpNeeded(level);
+        }
+        
+        /**
+         * Calcula XP ganho de uma batalha
+         * @param {Object} defeatedEnemy - Inimigo derrotado
+         * @param {string} encounterType - Tipo do encontro ('wild', 'group_trainer', 'boss')
+         * @returns {number} - XP calculado
+         */
+        function calculateBattleXP(defeatedEnemy, encounterType) {
+            const base = 15;
+            const level = Math.max(1, Number(defeatedEnemy?.level) || 1);
+            const rarity = defeatedEnemy?.rarity || defeatedEnemy?.raridade || null;
+            
+            // Multiplicador de raridade (com fallback)
+            const rarityMult = Number(GameState.config.rarityXP?.[rarity]) || 1.0;
+            
+            let xp = Math.floor((base + level * 2) * rarityMult);
+            
+            // Boss bonus
+            if (String(encounterType).toLowerCase() === 'boss') {
+                xp = Math.floor(xp * 1.5);
+            }
+            
+            return Math.max(1, xp);
+        }
+        
+        /**
+         * Dá XP para um monstro e processa level ups
+         * @param {Object} mon - Monstro que receberá XP
+         * @param {number} amount - Quantidade de XP
+         * @param {Array} logArr - Array de log (opcional, usa encounter.log se não fornecido)
+         */
+        function giveXP(mon, amount, logArr) {
+            if (!mon) return;
+            
+            ensureMonsterProgressFields(mon);
+            
+            const xpGain = Math.max(0, Number(amount) || 0);
+            if (xpGain <= 0) return;
+            
+            const name = mon.nickname || mon.name || mon.nome || "Monstrinho";
+            mon.xp += xpGain;
+            
+            // Logar no array fornecido ou no encounter atual
+            const log = Array.isArray(logArr) ? logArr : (GameState.currentEncounter?.log || []);
+            if (Array.isArray(log)) {
+                log.push(`🧪 ${name} ganhou +${xpGain} XP.`);
+            }
+            
+            // Loop de level ups (pode subir múltiplos níveis de uma vez)
+            while (mon.xp >= mon.xpNeeded) {
+                mon.xp -= mon.xpNeeded;
+                levelUpMonster(mon, log);
+            }
+        }
+        
+        /**
+         * Processa um level up para o monstro
+         * @param {Object} mon - Monstro que vai subir de nível
+         * @param {Array} logArr - Array de log (opcional)
+         */
+        function levelUpMonster(mon, logArr) {
+            if (!mon) return;
+            
+            ensureMonsterProgressFields(mon);
+            
+            mon.level++;
+            
+            // Aumentar HP Max (fórmula oficial: hpMax * 1.04 + 2)
+            const hpMax = Number(mon.hpMax) || Number(mon.maxHp) || 1;
+            mon.hpMax = Math.floor(hpMax * 1.04 + 2);
+            
+            // Curar completamente ao subir de nível
+            mon.hp = mon.hpMax;
+            
+            // Recalcular stats baseado no novo nível
+            recalculateStatsFromTemplate(mon);
+            
+            // Próximo XP necessário
+            mon.xpNeeded = calcXpNeeded(mon.level);
+            
+            // Log com emoji especial
+            const log = Array.isArray(logArr) ? logArr : (GameState.currentEncounter?.log || []);
+            const name = mon.nickname || mon.name || mon.nome || "Monstrinho";
+            if (Array.isArray(log)) {
+                log.push(`✨ ${name} subiu para o nível ${mon.level}!`);
+            }
+        }
+        
+        // Alias para compatibilidade
+        function levelUp(mon) {
+            return levelUpMonster(mon, GameState.currentEncounter?.log);
+        }
+        
+        /**
+         * Recalcula stats do monstro baseado no nível e raridade (com fallbacks)
+         * @param {Object} mon - Monstro para recalcular
+         */
+        function recalculateStatsFromTemplate(mon) {
+            if (!mon) return;
+            
+            ensureMonsterProgressFields(mon);
+            
+            // Buscar template base do catálogo (com múltiplos fallbacks)
+            const catalog = MONSTER_CATALOG || (window.DB?.MONSTERS) || (window.DB?.MONSTER_CATALOG) || [];
+            const templateId = mon.monsterId || mon.idBase || mon.templateId;
+            const template = catalog.find(m => String(m.id) === String(templateId));
+            
+            if (!template) return; // Não quebra se não encontrar
+            
+            // Obter raridade (com fallback)
+            const rarity = template.rarity || template.raridade || mon.rarity || mon.raridade;
+            
+            // Multiplicadores
+            const rarityPowerMap = GameState.config.rarityPower || (window.DB?.RARITY_POWER) || {};
+            const rarityMult = Number(rarityPowerMap[rarity]) || 1.0;
+            const levelMult = 1 + (Math.max(1, mon.level) - 1) * 0.1;
+            
+            // Base stats (com múltiplos fallbacks)
+            const baseAtk = Number(template.baseAtk ?? template.atkBase ?? template.atk) || 0;
+            const baseDef = Number(template.baseDef ?? template.defBase ?? template.def) || 0;
+            const baseSpd = Number(template.baseSpd ?? template.spdBase ?? template.spd) || 0;
+            
+            // Recalcular stats (HP é tratado separadamente em levelUpMonster)
+            mon.atk = Math.floor(baseAtk * levelMult * rarityMult);
+            mon.def = Math.floor(baseDef * levelMult * rarityMult);
+            mon.spd = Math.floor(baseSpd * levelMult * rarityMult);
+        }
+        
+        // Alias para compatibilidade
+        function recalculateStats(mon) {
+            return recalculateStatsFromTemplate(mon);
+        }
+        
+        /**
+         * Distribui XP para todos participantes vivos de uma batalha em grupo
+         * @param {Object} enc - Encounter de grupo
+         */
+        function distributeGroupXP(enc) {
+            if (!enc || !enc.rewards || !enc.rewards.xp) return;
+            
+            const xp = enc.rewards.xp;
+            
+            enc.participants.forEach(pid => {
+                const player = _getPlayerById(pid);
+                const mon = _getActiveMonsterOfPlayer(player);
+                
+                // Só ganha XP se estiver vivo
+                if (!mon || mon.hp <= 0) return;
+                
+                giveXP(mon, xp);
+            });
+        }
+        
+        /**
+         * Distribui XP para o jogador de uma batalha wild (1v1)
+         * @param {Object} encounter - Encounter wild
+         */
+        function distributeWildXP(encounter) {
+            if (!encounter || !encounter.rewards || !encounter.rewards.xp) return;
+            
+            const player = GameState.players.find(p => p.id === encounter.selectedPlayerId);
+            const mon = player?.team?.[0];
+            
+            // Só ganha XP se estiver vivo
+            if (!mon || mon.hp <= 0) return;
+            
+            giveXP(mon, encounter.rewards.xp);
+        }
+        
+        /**
+         * Distribui recompensas de vitória de forma idempotente (XP + recompensas futuras)
+         * Previne duplicação via flag rewardsGranted
+         * @param {Object} enc - Encounter (wild ou group)
+         */
+        function handleVictoryRewards(enc) {
+            if (!enc || enc.rewardsGranted) return;
+            enc.rewardsGranted = true;
+            
+            enc.log = enc.log || [];
+            
+            // Determinar inimigo derrotado principal (primeiro inimigo)
+            const defeated = (enc.enemies && enc.enemies[0]) ? enc.enemies[0] : enc.wildMonster;
+            if (!defeated) {
+                enc.log.push("ℹ️ (XP) Não foi possível identificar inimigo derrotado.");
+                return;
+            }
+            
+            // Calcular XP
+            const xp = calculateBattleXP(defeated, enc.type);
+            enc.rewards = enc.rewards || {};
+            enc.rewards.xp = xp;
+            enc.log.push(`🏅 Recompensa: ${xp} XP.`);
+            
+            // Distribuir XP baseado no tipo de batalha
+            const isGroup = String(enc.type || '').includes("group") || 
+                           String(enc.type || '').toLowerCase() === "boss" ||
+                           enc.participants?.length > 0;
+            
+            if (isGroup) {
+                // Grupo: cada participante vivo recebe XP completo
+                for (const pid of (enc.participants || [])) {
+                    const p = GameState.players.find(x => x.id === pid);
+                    const mon = p?.team?.[0];
+                    if (!mon || (Number(mon.hp) || 0) <= 0) continue;
+                    giveXP(mon, xp, enc.log);
+                }
+            } else {
+                // 1v1: jogador atual (ou primeiro se não especificado)
+                let player = null;
+                if (enc.selectedPlayerId || enc.currentPlayerId) {
+                    player = GameState.players.find(p => 
+                        p.id === (enc.selectedPlayerId || enc.currentPlayerId)
+                    );
+                }
+                if (!player) player = GameState.players?.[0] || null;
+                
+                const mon = player?.team?.[0];
+                if (mon && (Number(mon.hp) || 0) > 0) {
+                    giveXP(mon, xp, enc.log);
+                }
+            }
+        }
+        
+        function renderGroupEncounter(panel, encounter) {
+            try {
+                if (!encounter) return;
+                
+                const actor = getCurrentActor(encounter);
+                const isPlayerTurn = actor && actor.side === 'player';
+                
+                let html = '<div class="encounter-panel">';
+                html += '<h3>⚔️ Batalha em Grupo</h3>';
+                
+                // Indicador de turno atual
+                if (actor) {
+                    const sideColor = actor.side === 'player' ? '#4CAF50' : '#f44336';
+                    html += `<div style="background: ${sideColor}; color: white; padding: 10px; margin: 10px 0; border-radius: 4px;">`;
+                    html += `<strong>⏺️ Turno: ${actor.name}</strong> (${actor.side === 'player' ? 'Jogador' : 'Inimigo'})`;
+                    html += `</div>`;
+                }
+                
+                // Participantes (jogadores)
+                html += '<div style="margin: 15px 0;">';
+                html += '<h4>👥 Participantes:</h4>';
+                for (const pid of (encounter.participants || [])) {
+                    const p = GameState.players.find(x => x.id === pid);
+                    if (!p) continue;
+                    
+                    const mon = p.team?.[0];
+                    if (!mon) continue;
+                    
+                    const hp = Number(mon.hp) || 0;
+                    const hpMax = Number(mon.hpMax) || 1;
+                    const hpPercent = Math.floor((hp / hpMax) * 100);
+                    const isCurrent = actor && actor.side === 'player' && actor.id === pid;
+                    
+                    const border = isCurrent ? '3px solid #4CAF50' : '1px solid #ddd';
+                    html += `<div style="background: #f5f5f5; padding: 10px; margin: 5px 0; border-radius: 4px; border: ${border};">`;
+                    html += `<strong>${p.name || p.nome}</strong> (${p.class})`;
+                    html += `<br>${mon.name || mon.nome} - Nv ${mon.level}`;
+                    html += `<br>HP: ${hp}/${hpMax} (${hpPercent}%)`;
+                    html += `</div>`;
+                }
+                html += '</div>';
+                
+                // Inimigos
+                html += '<div style="margin: 15px 0;">';
+                html += '<h4>👹 Inimigos:</h4>';
+                for (let i = 0; i < (encounter.enemies || []).length; i++) {
+                    const e = encounter.enemies[i];
+                    if (!e) continue;
+                    
+                    const hp = Number(e.hp) || 0;
+                    const hpMax = Number(e.hpMax) || 1;
+                    const hpPercent = Math.floor((hp / hpMax) * 100);
+                    const isCurrent = actor && actor.side === 'enemy' && actor.id === i;
+                    
+                    const border = isCurrent ? '3px solid #f44336' : '1px solid #ddd';
+                    html += `<div style="background: #ffebee; padding: 10px; margin: 5px 0; border-radius: 4px; border: ${border};">`;
+                    html += `<strong>${e.name || e.nome}</strong> - Nv ${e.level}`;
+                    html += `<br>HP: ${hp}/${hpMax} (${hpPercent}%)`;
+                    html += `<br>SPD: ${e.spd} | ATK: ${e.atk} | DEF: ${e.def}`;
+                    html += `</div>`;
+                }
+                html += '</div>';
+                
+                // Ações (apenas para turno do jogador)
+                if (isPlayerTurn && !encounter.finished) {
+                    html += '<div style="margin: 15px 0; padding: 15px; background: #f5f5f5; border-radius: 4px;">';
+                    html += '<h4>Ações:</h4>';
+                    html += '<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">';
+                    html += '<button class="btn btn-danger" onclick="groupAttack()">⚔️ Atacar</button>';
+                    html += '<button class="btn btn-primary" onclick="groupPassTurn()">⏭️ Passar</button>';
+                    html += '<button class="btn btn-info" onclick="groupUseSkill(0)" disabled title="Feature 3.3">✨ Habilidade</button>';
+                    html += '<button class="btn btn-success" onclick="groupUseItem(\'IT_HEAL_01\')" disabled title="Feature 3.3">💚 Item</button>';
+                    html += '</div>';
+                    html += '</div>';
+                }
+                
+                // Mensagem de fim com recompensas
+                if (encounter.finished) {
+                    const resultColor = encounter.result === 'victory' ? '#4CAF50' : '#f44336';
+                    html += `<div style="background: ${resultColor}; color: white; padding: 15px; margin: 15px 0; border-radius: 4px;">`;
+                    html += `<h3>${encounter.result === 'victory' ? '🏁 VITÓRIA!' : '💀 DERROTA'}</h3>`;
+                    
+                    // Recompensas na vitória
+                    if (encounter.result === 'victory') {
+                        html += '<div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.2); border-radius: 4px;">';
+                        html += '<strong>💰 Recompensas:</strong><br>';
+                        
+                        // Dinheiro dividido
+                        const totalCoins = Math.floor(Math.random() * 31) + 30; // 30-60
+                        const coinsPerPlayer = Math.floor(totalCoins / encounter.participants.length);
+                        
+                        for (const pid of encounter.participants) {
+                            const p = GameState.players.find(pl => pl.id === pid);
+                            if (p) {
+                                p.coins = (p.coins || 0) + coinsPerPlayer;
+                                html += `${p.name}: +${coinsPerPlayer} moedas<br>`;
+                            }
+                        }
+                        
+                        html += '<br><em>ℹ️ XP será implementado na Feature 3.3</em>';
+                        html += '</div>';
+                        saveToLocalStorage();
+                    }
+                    
+                    html += `</div>`;
+                    html += '<button class="btn btn-secondary" onclick="GameState.currentEncounter = null; saveToLocalStorage(); renderEncounter();">Fechar</button>';
+                }
+                
+                // Log de combate
+                html += '<div style="margin-top: 20px;">';
+                html += '<h4>📜 Log de Combate:</h4>';
+                html += '<div style="background: #f9f9f9; padding: 10px; border-radius: 4px; max-height: 300px; overflow-y: auto;">';
+                const logs = encounter.log || [];
+                for (let i = Math.max(0, logs.length - 20); i < logs.length; i++) {
+                    html += `<div>${logs[i]}</div>`;
+                }
+                html += '</div>';
+                html += '</div>';
+                
+                html += '</div>';
+                
+                panel.innerHTML = html;
+            } catch (error) {
+                showError('Failed to render group encounter', error.stack);
             }
         }
 
@@ -685,6 +2135,8 @@
                 
                 if (encounter.type === 'wild') {
                     renderWildEncounter(panel, encounter);
+                } else if (encounter.type === 'group_trainer' || encounter.type === 'boss') {
+                    renderGroupEncounter(panel, encounter);
                 } else {
                     panel.innerHTML = '<div class="encounter-panel"><h3>Encounter type not yet implemented</h3></div>';
                 }
@@ -698,19 +2150,48 @@
                 const monster = encounter.wildMonster;
                 if (!monster) return;
                 
+                // Buscar jogador selecionado
+                const playerId = encounter.selectedPlayerId;
+                const player = GameState.players.find(p => p.id === playerId);
+                const playerMonster = player?.team?.[0];
+                
+                // Calcular threshold de captura
+                const hpPercent = monster.hp / monster.hpMax;
+                const baseThreshold = GameState.config?.captureThreshold?.[monster.rarity] || 0.35;
+                const canCapture = hpPercent <= baseThreshold;
+                
                 const html = `
                     <div class="encounter-panel">
                         <h3>Wild ${monster.emoji} ${monster.name} appeared!</h3>
-                        <div class="monster-card ${monster.class}">
+                        ${player ? `<p><strong>Jogador:</strong> ${player.name} (${player.class})</p>` : ''}
+                        ${playerMonster ? `
+                        <div style="margin: 10px 0; padding: 10px; background: #e8f5e9; border-radius: 8px;">
+                            <p><strong>Seu Monstrinho:</strong> ${playerMonster.emoji} ${playerMonster.name} (Nv ${playerMonster.level})</p>
+                            <div><strong>HP:</strong> ${playerMonster.hp}/${playerMonster.hpMax}</div>
+                            <div><strong>⚡ ENE:</strong> ${playerMonster.ene || 0}/${playerMonster.eneMax || 0}</div>
+                        </div>
+                        ` : ''}
+                        
+                        <div class="monster-card ${monster.class}" style="display: inline-block; margin: 20px;">
                             <div style="font-size: 48px;">${monster.emoji}</div>
                             <strong>${monster.name}</strong>
                             <div class="badge badge-${monster.rarity}">${monster.rarity}</div>
-                            <div>Level ${monster.level}</div>
-                            <div class="progress-bar">
+                            <div><strong>Classe:</strong> ${monster.class}</div>
+                            <div><strong>Level:</strong> ${monster.level}</div>
+                            <div style="margin-top: 8px;">
+                                <div><strong>ATK:</strong> ${monster.atk} | <strong>DEF:</strong> ${monster.def}</div>
+                                <div><strong>PODER:</strong> ${monster.poder}</div>
+                                <div><strong>⚡ ENE:</strong> ${monster.ene || 0}/${monster.eneMax || 0}</div>
+                            </div>
+                            <div class="progress-bar" style="margin-top: 10px;">
                                 <div class="progress-fill hp" style="width: ${(monster.hp / monster.hpMax) * 100}%">
-                                    ${monster.hp}/${monster.hpMax} HP
+                                    ${monster.hp}/${monster.hpMax} HP (${Math.floor(hpPercent * 100)}%)
                                 </div>
                             </div>
+                            ${canCapture ? 
+                                '<div style="color: green; margin-top: 5px;">✅ HP baixo! Pode tentar captura!</div>' : 
+                                `<div style="color: orange; margin-top: 5px;">⚠️ Abaixe HP para ${Math.floor(baseThreshold * 100)}% para capturar</div>`
+                            }
                         </div>
                         
                         <h4>Choose Action:</h4>
@@ -720,22 +2201,167 @@
                                 <input type="number" id="diceRoll" min="1" max="20" placeholder="1-20" 
                                        style="width: 120px; text-align: center; font-size: 24px; font-weight: bold; height: 60px; margin: 10px;">
                             </div>
+                            
+                            ${player ? (() => {
+                                const comum = player.inventory?.['CLASTERORB_COMUM'] || 0;
+                                const incomum = player.inventory?.['CLASTERORB_INCOMUM'] || 0;
+                                const rara = player.inventory?.['CLASTERORB_RARA'] || 0;
+                                const hasAnyOrb = comum > 0 || incomum > 0 || rara > 0;
+                                
+                                return `
+                                <div style="margin: 15px 0; background: #e3f2fd; padding: 15px; border-radius: 8px; border: 2px solid #1976d2;">
+                                    <strong style="font-size: 16px;">🎯 Sistema de Captura</strong>
+                                    <div style="margin-top: 10px;">
+                                        <div><strong>HP% Selvagem:</strong> ${Math.floor(hpPercent * 100)}%</div>
+                                        <div><strong>Base Threshold (${monster.rarity}):</strong> ${Math.floor(baseThreshold * 100)}%</div>
+                                        <div><strong>Bônus HP Baixo (≤25%):</strong> ${hpPercent <= 0.25 ? '+10%' : '0%'}</div>
+                                    </div>
+                                    
+                                    ${hasAnyOrb ? `
+                                    <div style="margin-top: 10px;">
+                                        <label style="font-weight: bold;">Escolha sua ClasterOrb:</label>
+                                        <select id="captureOrbSelect" onchange="updateCaptureThreshold()" style="width: 100%; padding: 8px; margin: 5px 0; font-size: 14px;">
+                                            ${comum > 0 ? `<option value="CLASTERORB_COMUM">⚪ Comum (${comum}x) - +0% bonus</option>` : ''}
+                                            ${incomum > 0 ? `<option value="CLASTERORB_INCOMUM">🔵 Incomum (${incomum}x) - +5% bonus</option>` : ''}
+                                            ${rara > 0 ? `<option value="CLASTERORB_RARA">🟣 Rara (${rara}x) - +10% bonus</option>` : ''}
+                                        </select>
+                                    </div>
+                                    <div id="captureThresholdDisplay" style="margin-top: 10px; padding: 10px; background: #fff; border-radius: 5px;">
+                                        <strong>Threshold Final:</strong> <span id="finalThresholdValue">Calculando...</span>
+                                    </div>
+                                    ` : `
+                                    <div style="margin-top: 10px; padding: 10px; background: #ffebee; color: #c62828; border-radius: 5px;">
+                                        <strong>❌ Sem ClasterOrbs!</strong><br>
+                                        Você não tem orbes de captura disponíveis.
+                                    </div>
+                                    `}
+                                    
+                                    <div style="margin-top: 10px;">
+                                        <strong>📦 Inventário:</strong> 
+                                        ⚪ ${comum} | 🔵 ${incomum} | 🟣 ${rara} | 
+                                        💚 Cura: ${player.inventory?.['IT_HEAL_01'] || 0}
+                                    </div>
+                                </div>
+                                `;
+                            })() : ''}
+                            
                             <div class="flex-center">
-                                <button class="btn btn-success btn-large" onclick="attemptCapture()">🎯 Capture</button>
+                                ${player && (player.inventory?.['CLASTERORB_COMUM'] > 0 || player.inventory?.['CLASTERORB_INCOMUM'] > 0 || player.inventory?.['CLASTERORB_RARA'] > 0) ? 
+                                    `<button class="btn btn-success btn-large" onclick="attemptCapture()">🎯 Tentar Capturar</button>` :
+                                    `<button class="btn btn-success btn-large" disabled style="opacity: 0.5;">🎯 Sem Orbes</button>`
+                                }
                                 <button class="btn btn-danger btn-large" onclick="attackWild()">⚔️ Attack</button>
                                 <button class="btn btn-warning btn-large" onclick="fleeEncounter()">🏃 Flee</button>
                             </div>
+                            
+                            ${playerMonster && player ? (() => {
+                                const healItems = player.inventory?.['IT_HEAL_01'] || 0;
+                                const canUseItem = healItems > 0 && playerMonster.hp > 0 && playerMonster.hp < playerMonster.hpMax;
+                                
+                                return `
+                                <div style="margin: 15px 0; padding: 15px; background: #e8f5e9; border-radius: 8px; border: 2px solid #4caf50;">
+                                    <strong style="font-size: 16px;">💚 Usar Item de Cura</strong>
+                                    <div style="margin-top: 10px;">
+                                        <div><strong>Petisco de Cura disponível:</strong> ${healItems}x</div>
+                                        <div><strong>HP atual:</strong> ${playerMonster.hp}/${playerMonster.hpMax}</div>
+                                        ${!canUseItem && healItems === 0 ? 
+                                            `<div style="color: #c62828; margin-top: 5px;">❌ Sem itens de cura disponíveis</div>` : 
+                                            !canUseItem && playerMonster.hp <= 0 ? 
+                                            `<div style="color: #c62828; margin-top: 5px;">❌ Monstrinho desmaiado, não pode usar item</div>` :
+                                            !canUseItem && playerMonster.hp >= playerMonster.hpMax ?
+                                            `<div style="color: #f57c00; margin-top: 5px;">⚠️ HP já está cheio</div>` : ''
+                                        }
+                                    </div>
+                                    <button class="btn btn-primary" 
+                                            onclick="useItemInBattle('IT_HEAL_01')"
+                                            ${!canUseItem ? 'disabled style="opacity: 0.5;"' : ''}
+                                            style="margin-top: 10px; width: 100%;">
+                                        💚 Usar Petisco de Cura
+                                    </button>
+                                </div>
+                                `;
+                            })() : ''}
+                            
+                            ${playerMonster ? (() => {
+                                const skills = getMonsterSkills(playerMonster);
+                                if (!skills || skills.length === 0) return '';
+                                
+                                return `
+                                <div style="margin-top: 15px; padding: 10px; background: #f3e5f5; border-radius: 8px;">
+                                    <strong style="font-size: 16px;">✨ Habilidades</strong>
+                                    <div class="flex-center" style="margin-top: 10px; gap: 10px;">
+                                        ${skills.map((skill, idx) => {
+                                            if (!skill) return '';
+                                            const canUse = (playerMonster.ene || 0) >= skill.cost;
+                                            return `
+                                            <button class="btn btn-primary" 
+                                                    onclick="useSkillWild(${idx})" 
+                                                    ${!canUse ? 'disabled style="opacity: 0.5;"' : ''}
+                                                    title="${skill.desc}">
+                                                ${skill.name}<br>
+                                                <small>(-${skill.cost} ENE)</small>
+                                            </button>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                </div>
+                                `;
+                            })() : ''}
                         </div>
                         
-                        <div class="combat-log" id="combatLog">
-                            ${(encounter.log || []).map(entry => `<div>${entry}</div>`).join('')}
+                        <div class="combat-log" id="combatLog" style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 10px; max-height: 300px; overflow-y: auto;">
+                            ${(encounter.log || []).map(entry => `<div style="margin: 5px 0; padding: 5px; border-bottom: 1px solid #ddd;">${entry}</div>`).join('')}
                         </div>
                     </div>
                 `;
                 
                 panel.innerHTML = html;
+                
+                // Atualizar threshold inicial
+                setTimeout(() => updateCaptureThreshold(), 100);
             } catch (error) {
                 showError('Failed to render wild encounter', error.stack);
+            }
+        }
+
+        // Atualizar cálculo de threshold de captura em tempo real
+        function updateCaptureThreshold() {
+            try {
+                const encounter = GameState.currentEncounter;
+                if (!encounter?.wildMonster) return;
+                
+                const monster = encounter.wildMonster;
+                const playerId = encounter.selectedPlayerId;
+                const player = GameState.players.find(p => p.id === playerId);
+                if (!player) return;
+                
+                const select = document.getElementById('captureOrbSelect');
+                const display = document.getElementById('finalThresholdValue');
+                if (!select || !display) return;
+                
+                const selectedOrbId = select.value;
+                const orbInfo = CLASTERORBS[selectedOrbId];
+                if (!orbInfo) return;
+                
+                // Calcular threshold
+                const hpPercent = monster.hp / monster.hpMax;
+                const baseThreshold = GameState.config?.captureThreshold?.[monster.rarity] || 0.35;
+                const orbBonus = orbInfo.capture_bonus_pp / 100; // Converter pp para decimal
+                const lowHpBonus = hpPercent <= 0.25 ? 0.10 : 0;
+                const thresholdFinal = Math.min(0.95, baseThreshold + orbBonus + lowHpBonus);
+                
+                // Atualizar display
+                display.innerHTML = `
+                    <span style="font-size: 18px; color: ${hpPercent <= thresholdFinal ? '#2e7d32' : '#c62828'}; font-weight: bold;">
+                        ${Math.floor(thresholdFinal * 100)}%
+                    </span>
+                    <br><small>
+                        (Base ${Math.floor(baseThreshold * 100)}% + Orb ${orbInfo.capture_bonus_pp}% + HP ${Math.floor(lowHpBonus * 100)}%)
+                        <br>${hpPercent <= thresholdFinal ? '✅ Captura provável!' : '❌ HP muito alto'}
+                    </small>
+                `;
+            } catch (error) {
+                console.error('Failed to update capture threshold:', error);
             }
         }
 
@@ -745,47 +2371,118 @@
                 if (!encounter?.wildMonster) return;
                 
                 const monster = encounter.wildMonster;
+                const playerId = encounter.selectedPlayerId;
+                const player = GameState.players.find(p => p.id === playerId);
                 
-                const baseChance = GameState.config?.captureBaseChance || 50;
-                const levelMod = -monster.level * 2;
-                const rarityMod = { common: 10, rare: 0, epic: -10, legendary: -20 }[monster.rarity] || 0;
-                const hpMod = Math.floor(((monster.hpMax - monster.hp) / monster.hpMax) * 20);
+                if (!player) {
+                    alert('No player selected for this encounter');
+                    return;
+                }
                 
-                const totalChance = Math.max(5, Math.min(95, baseChance + levelMod + rarityMod + hpMod));
+                // Validação: HP > 0 obrigatório
+                if (monster.hp <= 0) {
+                    alert('❌ Não pode capturar um monstrinho desmaiado! HP deve ser > 0.');
+                    return;
+                }
                 
-                const roll = Math.floor(Math.random() * 100) + 1;
+                // Obter ClasterOrb selecionada
+                const select = document.getElementById('captureOrbSelect');
+                if (!select) {
+                    alert('❌ Erro ao ler seleção de ClasterOrb.');
+                    return;
+                }
+                
+                const selectedOrbId = select.value;
+                const orbInfo = CLASTERORBS[selectedOrbId];
+                if (!orbInfo) {
+                    alert('❌ ClasterOrb inválida.');
+                    return;
+                }
+                
+                // Validação: precisa ter a orb selecionada
+                player.inventory = player.inventory || {};
+                const orbCount = player.inventory[selectedOrbId] || 0;
+                
+                if (orbCount <= 0) {
+                    alert(`❌ Você não tem ${orbInfo.name}!`);
+                    return;
+                }
                 
                 encounter.log = encounter.log || [];
-                encounter.log.push(`Capture attempt! Chance: ${totalChance}%, Rolled: ${roll}`);
                 
-                if (roll <= totalChance) {
-                    encounter.log.push(`✅ ${monster.name} was captured!`);
+                // SEMPRE CONSOME 1 item (mesmo se falhar)
+                player.inventory[selectedOrbId]--;
+                encounter.log.push(`${orbInfo.emoji} ${player.name} usou ${orbInfo.name}! (Restam: ${player.inventory[selectedOrbId]})`);
+                
+                // Calcular threshold de captura
+                const hpPercent = monster.hp / monster.hpMax;
+                const baseThreshold = GameState.config?.captureThreshold?.[monster.rarity] || 0.35;
+                
+                // Bônus se HP <= 25%
+                let lowHpBonus = 0;
+                if (hpPercent <= 0.25) {
+                    lowHpBonus = 0.10;
+                    encounter.log.push(`✨ HP crítico! Bônus de +10% na captura!`);
+                }
+                
+                // Bônus da orb (em decimal: 0, 0.05, 0.10)
+                const orbBonus = orbInfo.capture_bonus_pp / 100;
+                
+                const thresholdFinal = Math.min(0.95, baseThreshold + orbBonus + lowHpBonus);
+                
+                encounter.log.push(`HP: ${Math.floor(hpPercent * 100)}% | Base: ${Math.floor(baseThreshold * 100)}% | Orb: +${orbInfo.capture_bonus_pp}% | HP Bonus: +${Math.floor(lowHpBonus * 100)}%`);
+                encounter.log.push(`🎯 Threshold Final: ${Math.floor(thresholdFinal * 100)}%`);
+                
+                // Captura determinística: sucesso se HP% <= Threshold_final
+                if (hpPercent <= thresholdFinal) {
+                    encounter.log.push(`✅ SUCESSO! ${monster.name} foi capturado!`);
                     
-                    const currentPlayer = getCurrentPlayer();
-                    if (currentPlayer) {
-                        monster.ownerId = currentPlayer.id;
-                        
-                        currentPlayer.team = currentPlayer.team || [];
-                        currentPlayer.box = currentPlayer.box || [];
-                        
-                        if (currentPlayer.team.length < (GameState.config?.maxTeamSize || 6)) {
-                            currentPlayer.team.push(monster);
-                        } else {
-                            currentPlayer.box.push(monster);
-                        }
-                        
-                        GameState.monsters = GameState.monsters || [];
-                        GameState.monsters.push(monster);
+                    monster.ownerId = player.id;
+                    
+                    player.team = player.team || [];
+                    player.box = player.box || [];
+                    
+                    if (player.team.length < (GameState.config?.maxTeamSize || 6)) {
+                        player.team.push(monster);
+                        encounter.log.push(`${monster.name} foi adicionado ao time de ${player.name}!`);
+                    } else {
+                        player.box.push(monster);
+                        encounter.log.push(`${monster.name} foi enviado para a caixa de ${player.name}!`);
                     }
                     
-                    encounter.active = false;
-                    GameState.currentEncounter = null;
-                } else if (roll > 90) {
-                    encounter.log.push(`❌ ${monster.name} broke free and fled!`);
+                    GameState.monsters = GameState.monsters || [];
+                    GameState.monsters.push(monster);
+                    
                     encounter.active = false;
                     GameState.currentEncounter = null;
                 } else {
-                    encounter.log.push(`❌ ${monster.name} broke free!`);
+                    // FALHA: Monstrinho realiza 1 ataque básico IMEDIATO
+                    encounter.log.push(`❌ FALHA! ${monster.name} quebrou livre!`);
+                    
+                    const playerMonster = player.team?.[0];
+                    if (playerMonster && playerMonster.hp > 0) {
+                        encounter.log.push(`⚡ ${monster.name} contra-ataca!`);
+                        
+                        // Monstrinho selvagem ataca imediatamente
+                        const enemyRoll = Math.floor(Math.random() * 20) + 1;
+                        const enemyHit = checkHit(enemyRoll, monster, playerMonster);
+                        encounter.log.push(`🎲 ${monster.name} rola ${enemyRoll} (ATK: ${monster.atk})`);
+                        
+                        if (enemyHit) {
+                            const damage = calculateDamage(monster, playerMonster);
+                            playerMonster.hp = Math.max(0, playerMonster.hp - damage);
+                            encounter.log.push(`💥 ${monster.name} acerta! Causa ${damage} de dano!`);
+                            
+                            if (playerMonster.hp <= 0) {
+                                encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
+                                playerMonster.status = 'fainted';
+                                encounter.active = false;
+                                GameState.currentEncounter = null;
+                            }
+                        } else {
+                            encounter.log.push(`❌ ${monster.name} erra o ataque!`);
+                        }
+                    }
                 }
                 
                 saveToLocalStorage();
@@ -795,27 +2492,179 @@
             }
         }
 
+        // Feature 3.1: Usar Item em Batalha
+        function useItemInBattle(itemId) {
+            try {
+                const encounter = GameState.currentEncounter;
+                if (!encounter?.wildMonster) return;
+                
+                const playerId = encounter.selectedPlayerId;
+                const player = GameState.players.find(p => p.id === playerId);
+                if (!player) {
+                    alert('Nenhum jogador selecionado para este encontro');
+                    return;
+                }
+                
+                const playerMonster = player.team?.[0];
+                if (!playerMonster) {
+                    alert('Jogador não tem monstrinhos no time');
+                    return;
+                }
+                
+                // VALIDAÇÕES (GAME_RULES.md)
+                
+                // 1. Validar HP > 0 (monstrinho não desmaiado)
+                if (playerMonster.hp <= 0) {
+                    alert('❌ Não pode usar item! Monstrinho está desmaiado (HP = 0).');
+                    return;
+                }
+                
+                // 2. Validar HP < HPMax (não usar se já está cheio)
+                if (playerMonster.hp >= playerMonster.hpMax) {
+                    alert('⚠️ HP já está no máximo! Não é necessário usar item de cura.');
+                    return;
+                }
+                
+                // 3. Validar item disponível no inventário
+                player.inventory = player.inventory || {};
+                const itemCount = player.inventory[itemId] || 0;
+                
+                if (itemCount <= 0) {
+                    alert('❌ Você não tem Petisco de Cura disponível!');
+                    return;
+                }
+                
+                encounter.log = encounter.log || [];
+                
+                // CONSUMIR 1 unidade do item
+                player.inventory[itemId]--;
+                encounter.log.push(`💚 ${player.name} usou Petisco de Cura! (Restam: ${player.inventory[itemId]})`);
+                
+                // APLICAR CURA
+                // Petisco de Cura: restaura 30 HP ou 30% do HP máximo (o que for maior)
+                const healAmount = Math.max(30, Math.floor(playerMonster.hpMax * 0.30));
+                const hpBefore = playerMonster.hp;
+                playerMonster.hp = Math.min(playerMonster.hpMax, playerMonster.hp + healAmount);
+                const actualHeal = playerMonster.hp - hpBefore;
+                
+                encounter.log.push(`✨ ${playerMonster.name} recuperou ${actualHeal} HP! (${playerMonster.hp}/${playerMonster.hpMax})`);
+                
+                // SALVAR ESTADO
+                saveToLocalStorage();
+                
+                // INIMIGO ATACA (contra-ataque automático após usar item)
+                if (encounter.wildMonster.hp > 0) {
+                    encounter.log.push(`⚔️ Vez do inimigo...`);
+                    
+                    const wildMonster = encounter.wildMonster;
+                    
+                    // Aplicar ENE regen do inimigo
+                    applyEneRegen(wildMonster, encounter);
+                    
+                    // Atualizar buffs do inimigo
+                    updateBuffs(wildMonster);
+                    
+                    // IA: 50% chance de usar habilidade se tiver ENE
+                    const wildSkills = getMonsterSkills(wildMonster);
+                    const canUseSkill = wildSkills && wildSkills.length > 0 && (wildMonster.ene || 0) >= wildSkills[0].cost;
+                    const shouldUseSkill = canUseSkill && Math.random() < 0.5;
+                    
+                    if (shouldUseSkill) {
+                        const skill = wildSkills[0];
+                        wildMonster.ene -= skill.cost;
+                        encounter.log.push(`✨ ${wildMonster.name} usa ${skill.name}! (-${skill.cost} ENE)`);
+                        
+                        // Usar habilidade
+                        useSkill(wildMonster, skill, playerMonster, encounter);
+                    } else {
+                        // Ataque básico
+                        const enemyRoll = Math.floor(Math.random() * 20) + 1;
+                        encounter.log.push(`🎲 ${wildMonster.name} rolls ${enemyRoll} (ATK: ${wildMonster.atk})`);
+                        
+                        const enemyHit = enemyRoll === 1 ? false : (enemyRoll === 20 ? true : checkHit(enemyRoll, wildMonster, playerMonster));
+                        
+                        if (enemyHit) {
+                            const power = BASIC_ATTACK_POWER[wildMonster.class] || 12;
+                            
+                            const atkMods = getBuffModifiers(wildMonster);
+                            const effectiveAtk = Math.max(1, wildMonster.atk + atkMods.atk);
+                            
+                            const defMods = getBuffModifiers(playerMonster);
+                            const effectiveDef = Math.max(1, playerMonster.def + defMods.def);
+                            
+                            const classAdv = GameState.config?.classAdvantages?.[wildMonster.class];
+                            let damageMult = 1.0;
+                            if (classAdv?.strong === playerMonster.class) {
+                                damageMult = 1.10;
+                            } else if (classAdv?.weak === playerMonster.class) {
+                                damageMult = 0.90;
+                            }
+                            
+                            const damage = calcDamage({
+                                atk: effectiveAtk,
+                                def: effectiveDef,
+                                power: power,
+                                damageMult: damageMult
+                            });
+                            
+                            playerMonster.hp = Math.max(0, playerMonster.hp - damage);
+                            encounter.log.push(`💥 ${wildMonster.name} hits! Deals ${damage} damage!`);
+                            
+                            // Verificar se jogador perdeu
+                            if (playerMonster.hp <= 0) {
+                                encounter.log.push(`💀 ${playerMonster.name} fainted! Defeat!`);
+                                encounter.active = false;
+                                GameState.currentEncounter = null;
+                                saveToLocalStorage();
+                                renderEncounter();
+                                return;
+                            }
+                        } else {
+                            if (enemyRoll === 1) {
+                                encounter.log.push(`💀 FALHA CRÍTICA! ${wildMonster.name} erra!`);
+                            } else {
+                                encounter.log.push(`❌ ${wildMonster.name} misses!`);
+                            }
+                        }
+                    }
+                }
+                
+                // RENDER atualizado
+                saveToLocalStorage();
+                renderEncounter();
+                
+            } catch (error) {
+                showError('Failed to use item in battle', error.stack);
+            }
+        }
+
         function attackWild() {
             try {
                 const encounter = GameState.currentEncounter;
                 if (!encounter?.wildMonster) return;
                 
-                const currentPlayer = getCurrentPlayer();
-                if (!currentPlayer) {
-                    alert('No current player');
+                const playerId = encounter.selectedPlayerId;
+                const player = GameState.players.find(p => p.id === playerId);
+                if (!player) {
+                    alert('No player selected for this encounter');
                     return;
                 }
                 
-                const playerMonster = currentPlayer.team?.[0];
+                const playerMonster = player.team?.[0];
                 if (!playerMonster) {
                     alert('Player has no monsters in team');
                     return;
                 }
                 
-                // Get dice roll from input field instead of prompt for better mobile UX
+                // GAME_RULES.md: Validar que monstrinho é da mesma classe do jogador
+                if (playerMonster.class !== player.class) {
+                    alert(`⚠️ Você só pode usar monstrinhos da classe ${player.class} em batalha!\n\nEste ${playerMonster.name} é da classe ${playerMonster.class}.\nTroque-o por um monstrinho da sua classe.`);
+                    return;
+                }
+                
+                // Get dice roll from input field
                 const diceInput = document.getElementById('diceRoll');
                 const playerRoll = parseInt(diceInput?.value || '0');
-                const enemyRoll = Math.floor(Math.random() * 20) + 1;
                 
                 if (playerRoll < 1 || playerRoll > 20) {
                     alert('Please enter a valid roll between 1 and 20');
@@ -826,30 +2675,151 @@
                 if (diceInput) diceInput.value = '';
                 
                 encounter.log = encounter.log || [];
-                encounter.log.push(`${playerMonster.name} rolled ${playerRoll}, ${encounter.wildMonster.name} rolled ${enemyRoll}`);
                 
-                if (playerRoll > enemyRoll) {
-                    const damage = calculateDamage(playerMonster, encounter.wildMonster, playerRoll - enemyRoll);
+                // ENE REGEN no início do turno do jogador
+                applyEneRegen(playerMonster, encounter);
+                
+                // Atualizar buffs (reduzir duração)
+                updateBuffs(playerMonster);
+                
+                // CRIT 20 ou FALHA 1 (GAME_RULES.md)
+                let isCrit20 = false;
+                let isFail1 = false;
+                let critBonus = null;
+                
+                if (playerRoll === 20) {
+                    isCrit20 = true;
+                    encounter.log.push(`⭐ CRÍTICO 20! ⭐`);
+                    // Escolher bônus aleatório
+                    const bonusRoll = Math.floor(Math.random() * 3);
+                    if (bonusRoll === 0) {
+                        critBonus = 'double_power';
+                        encounter.log.push(`💥 Poder dobrado neste ataque!`);
+                    } else if (bonusRoll === 1) {
+                        critBonus = 'item';
+                        player.inventory = player.inventory || {};
+                        player.inventory['IT_HEAL_01'] = (player.inventory['IT_HEAL_01'] || 0) + 1;
+                        encounter.log.push(`🎁 Ganhou 1 Petisco de Cura!`);
+                    } else {
+                        critBonus = 'money';
+                        const moneyGain = 20 + Math.floor(Math.random() * 31); // 20-50
+                        player.money = (player.money || 0) + moneyGain;
+                        encounter.log.push(`💰 Ganhou ${moneyGain} moedas!`);
+                    }
+                } else if (playerRoll === 1) {
+                    isFail1 = true;
+                }
+                
+                // Fase 1: Ataque do jogador
+                encounter.log.push(`🎲 ${player.name}'s ${playerMonster.name} rolls ${playerRoll} (ATK: ${playerMonster.atk})`);
+                
+                // d20=1 sempre erra, d20=20 sempre acerta
+                const playerHit = isFail1 ? false : (isCrit20 ? true : checkHit(playerRoll, playerMonster, encounter.wildMonster));
+                
+                if (playerHit) {
+                    // Calcular dano com power modificado se CRIT 20
+                    let power = BASIC_ATTACK_POWER[playerMonster.class] || 12;
+                    if (isCrit20 && critBonus === 'double_power') {
+                        power *= 2; // Dobrar POWER antes do cálculo
+                    }
+                    
+                    // Calcular dano com nova fórmula
+                    const atkMods = getBuffModifiers(playerMonster);
+                    const effectiveAtk = Math.max(1, playerMonster.atk + atkMods.atk);
+                    
+                    const defMods = getBuffModifiers(encounter.wildMonster);
+                    const effectiveDef = Math.max(1, encounter.wildMonster.def + defMods.def);
+                    
+                    const classAdv = GameState.config?.classAdvantages?.[playerMonster.class];
+                    let damageMult = 1.0;
+                    if (classAdv?.strong === encounter.wildMonster.class) {
+                        damageMult = 1.10;
+                    } else if (classAdv?.weak === encounter.wildMonster.class) {
+                        damageMult = 0.90;
+                    }
+                    
+                    const damage = calcDamage({
+                        atk: effectiveAtk,
+                        def: effectiveDef,
+                        power: power,
+                        damageMult: damageMult
+                    });
+                    
                     encounter.wildMonster.hp = Math.max(0, encounter.wildMonster.hp - damage);
-                    encounter.log.push(`💥 ${playerMonster.name} deals ${damage} damage!`);
+                    encounter.log.push(`💥 ${playerMonster.name} hits! Deals ${damage} damage!`);
                     
                     if (encounter.wildMonster.hp <= 0) {
                         encounter.log.push(`🏆 ${encounter.wildMonster.name} fainted! Victory!`);
-                        giveXp(playerMonster, encounter.wildMonster.level * 20);
+                        
+                        // Feature 3.3: Distribuir recompensas (XP) com idempotência
+                        handleVictoryRewards(encounter);
+                        
                         encounter.active = false;
                         GameState.currentEncounter = null;
-                    }
-                } else if (enemyRoll > playerRoll) {
-                    const damage = calculateDamage(encounter.wildMonster, playerMonster, enemyRoll - playerRoll);
-                    playerMonster.hp = Math.max(0, playerMonster.hp - damage);
-                    encounter.log.push(`💥 ${encounter.wildMonster.name} deals ${damage} damage!`);
-                    
-                    if (playerMonster.hp <= 0) {
-                        encounter.log.push(`😵 ${playerMonster.name} fainted!`);
-                        playerMonster.status = 'fainted';
+                        saveToLocalStorage();
+                        renderEncounter();
+                        return;
                     }
                 } else {
-                    encounter.log.push('⚔️ Both attacks miss!');
+                    if (isFail1) {
+                        encounter.log.push(`💀 FALHA CRÍTICA! Ataque erra automaticamente!`);
+                    } else {
+                        encounter.log.push(`❌ ${playerMonster.name} misses!`);
+                    }
+                }
+                
+                // Fase 2: Contra-ataque do monstrinho selvagem (se ainda vivo)
+                if (encounter.wildMonster.hp > 0) {
+                    const wildMonster = encounter.wildMonster;
+                    const wildSkill = wildMonster.skill;
+                    
+                    // IA: 50% chance de usar habilidade se tiver ENE
+                    const useSkill = wildSkill && (wildMonster.ene || 0) >= wildSkill.energy_cost && Math.random() < 0.5;
+                    
+                    if (useSkill) {
+                        wildMonster.ene -= wildSkill.energy_cost;
+                        encounter.log.push(`✨ ${wildMonster.name} usa ${wildSkill.name}! (-${wildSkill.energy_cost} ENE)`);
+                        
+                        const enemyRoll = Math.floor(Math.random() * 20) + 1;
+                        const enemyHit = checkHit(enemyRoll, wildMonster, playerMonster);
+                        encounter.log.push(`🎲 ${wildMonster.name} rolls ${enemyRoll}`);
+                        
+                        if (enemyHit) {
+                            const baseDamage = wildMonster.atk + wildSkill.power - playerMonster.def;
+                            const damage = Math.max(1, baseDamage);
+                            playerMonster.hp = Math.max(0, playerMonster.hp - damage);
+                            encounter.log.push(`💥 ${wildSkill.name} acerta! Causa ${damage} de dano!`);
+                            
+                            if (playerMonster.hp <= 0) {
+                                encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
+                                playerMonster.status = 'fainted';
+                                encounter.active = false;
+                                GameState.currentEncounter = null;
+                            }
+                        } else {
+                            encounter.log.push(`❌ ${wildSkill.name} erra!`);
+                        }
+                    } else {
+                        // Ataque básico
+                        const enemyRoll = Math.floor(Math.random() * 20) + 1;
+                        const enemyHit = checkHit(enemyRoll, wildMonster, playerMonster);
+                        encounter.log.push(`🎲 Wild ${wildMonster.name} rolls ${enemyRoll} (ATK: ${wildMonster.atk})`);
+                        
+                        if (enemyHit) {
+                            const damage = calculateDamage(wildMonster, playerMonster);
+                            playerMonster.hp = Math.max(0, playerMonster.hp - damage);
+                            encounter.log.push(`💥 ${wildMonster.name} hits! Deals ${damage} damage!`);
+                            
+                            if (playerMonster.hp <= 0) {
+                                encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
+                                playerMonster.status = 'fainted';
+                                encounter.active = false;
+                                GameState.currentEncounter = null;
+                            }
+                        } else {
+                            encounter.log.push(`❌ ${wildMonster.name} misses!`);
+                        }
+                    }
                 }
                 
                 saveToLocalStorage();
@@ -859,34 +2829,214 @@
             }
         }
 
-        function calculateDamage(attacker, defender, margin) {
+        // Usar habilidade contra o selvagem (por índice 0, 1, 2)
+        function useSkillWild(skillIndex) {
             try {
-                if (!attacker || !defender) return 0;
+                const encounter = GameState.currentEncounter;
+                if (!encounter?.wildMonster) return;
                 
-                // Level difference modifier: reduces damage significantly when levels are far apart
-                // Using power of 1.5 creates a steep curve to prevent unfair matchups:
-                // - 10 level difference ≈ 3% damage modifier (almost no damage)
-                // - 5 level difference ≈ 8% damage modifier
-                // - 3 level difference ≈ 17% damage modifier
-                // - Similar levels (0-1) ≈ 50-100% damage modifier (full effect)
-                // This ensures high-level monsters can't one-shot low-level ones
-                const levelDiff = Math.abs((attacker.level || 1) - (defender.level || 1));
-                const levelMod = 1 / (1 + Math.pow(levelDiff, 1.5));
+                const playerId = encounter.selectedPlayerId;
+                const player = GameState.players.find(p => p.id === playerId);
+                if (!player) return;
                 
-                const classAdv = GameState.config?.classAdvantages?.[attacker.class];
-                let classMult = 1;
-                if (classAdv?.strong === defender.class) {
-                    classMult = 1.5;
-                } else if (classAdv?.weak === defender.class) {
-                    classMult = 0.67;
+                const playerMonster = player.team?.[0];
+                if (!playerMonster) {
+                    alert('No monster available');
+                    return;
                 }
                 
-                const baseDamage = margin * (GameState.config?.baseDamageMultiplier || 10) * levelMod * classMult;
+                // Obter habilidades disponíveis
+                const skills = getMonsterSkills(playerMonster);
+                if (!skills || skillIndex >= skills.length || !skills[skillIndex]) {
+                    alert('Skill not available');
+                    return;
+                }
                 
-                return Math.max(1, Math.floor(baseDamage));
+                const skill = skills[skillIndex];
+                
+                // Validar ENE suficiente
+                if ((playerMonster.ene || 0) < skill.cost) {
+                    alert(`❌ ENE insuficiente! Precisa de ${skill.cost} ENE.`);
+                    return;
+                }
+                
+                encounter.log = encounter.log || [];
+                
+                // ENE REGEN no início do turno
+                applyEneRegen(playerMonster, encounter);
+                
+                // Atualizar buffs
+                updateBuffs(playerMonster);
+                
+                // Usar habilidade
+                const success = useSkill(playerMonster, skill, encounter.wildMonster, encounter);
+                
+                if (!success) {
+                    alert('Failed to use skill');
+                    return;
+                }
+                
+                // Verificar se o selvagem foi derrotado
+                if (encounter.wildMonster.hp <= 0) {
+                    encounter.log.push(`🏆 ${encounter.wildMonster.name} foi derrotado!`);
+                    const xpGained = calculateBattleXP(encounter.wildMonster);
+                    giveXp(playerMonster, xpGained);
+                    encounter.log.push(`✨ ${playerMonster.name} ganhou ${xpGained} XP!`);
+                    encounter.active = false;
+                    GameState.currentEncounter = null;
+                    saveToLocalStorage();
+                    renderEncounter();
+                    return;
+                }
+                
+                // Fase 2: Contra-ataque do selvagem
+                const wildMonster = encounter.wildMonster;
+                
+                // Atualizar buffs do selvagem
+                updateBuffs(wildMonster);
+                
+                // IA: 50% chance de usar habilidade se tiver ENE
+                const wildSkills = getMonsterSkills(wildMonster);
+                const canUseSkill = wildSkills.length > 0 && (wildMonster.ene || 0) >= wildSkills[0].cost;
+                const useWildSkill = canUseSkill && Math.random() < 0.5;
+                
+                if (useWildSkill) {
+                    // Selvagem usa habilidade
+                    useSkill(wildMonster, wildSkills[0], playerMonster, encounter);
+                    
+                    if (playerMonster.hp <= 0) {
+                        encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
+                        playerMonster.status = 'fainted';
+                        encounter.active = false;
+                        GameState.currentEncounter = null;
+                    }
+                } else {
+                    // Ataque básico do selvagem
+                    const enemyRoll = Math.floor(Math.random() * 20) + 1;
+                    const enemyHit = checkHit(enemyRoll, wildMonster, playerMonster);
+                    encounter.log.push(`🎲 ${wildMonster.name} rola ${enemyRoll} (ATK: ${wildMonster.atk})`);
+                    
+                    if (enemyHit) {
+                        const mods = getBuffModifiers(wildMonster);
+                        const effectiveAtk = wildMonster.atk + mods.atk;
+                        const damage = calculateDamage(wildMonster, playerMonster);
+                        playerMonster.hp = Math.max(0, playerMonster.hp - damage);
+                        encounter.log.push(`💥 ${wildMonster.name} acerta! Causa ${damage} de dano!`);
+                        
+                        if (playerMonster.hp <= 0) {
+                            encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
+                            playerMonster.status = 'fainted';
+                            encounter.active = false;
+                            GameState.currentEncounter = null;
+                        }
+                    } else {
+                        encounter.log.push(`❌ ${wildMonster.name} erra!`);
+                    }
+                }
+                
+                saveToLocalStorage();
+                renderEncounter();
+            } catch (error) {
+                showError('Skill use failed', error.stack);
+            }
+        }
+
+        // Verifica acerto: d20 + ATK >= DEF
+        function checkHit(d20Roll, attacker, defender) {
+            try {
+                if (!attacker || !defender) return false;
+                
+                const atkMod = attacker.atk || 5;
+                const defValue = defender.def || 3;
+                
+                // Vantagem de classe: +2 ATK se forte, -2 ATK se fraco
+                const classAdv = GameState.config?.classAdvantages?.[attacker.class];
+                let atkBonus = 0;
+                if (classAdv?.strong === defender.class) {
+                    atkBonus = 2;
+                } else if (classAdv?.weak === defender.class) {
+                    atkBonus = -2;
+                }
+                
+                const totalAtk = d20Roll + atkMod + atkBonus;
+                return totalAtk >= defValue;
+            } catch (error) {
+                console.error('Hit check failed:', error);
+                return false;
+            }
+        }
+
+        // Calcula dano: max(1, ATK + PODER - DEF) com modificadores de classe
+        // Nova fórmula de dano (v1)
+        function calcDamage({ atk, def, power, damageMult = 1.0 }) {
+            try {
+                // ratio = ATK / (ATK + DEF)
+                const ratio = atk / (atk + def);
+                
+                // danoBase = floor(POWER * ratio)
+                const baseD = Math.floor(power * ratio);
+                
+                // Aplicar multiplicador de classe
+                const finalD = Math.floor(baseD * damageMult);
+                
+                // Dano mínimo sempre 1
+                return Math.max(1, finalD);
             } catch (error) {
                 console.error('Damage calculation failed:', error);
                 return 1;
+            }
+        }
+
+        // Wrapper para compatibilidade - calcula dano com ataque básico
+        function calculateDamage(attacker, defender) {
+            try {
+                if (!attacker || !defender) return 1;
+                
+                const atkValue = attacker.atk || 5;
+                const defValue = defender.def || 3;
+                
+                // POWER básico por classe
+                const basicPower = BASIC_ATTACK_POWER[attacker.class] || 12;
+                
+                // Aplicar modificadores de buff
+                const atkMods = getBuffModifiers(attacker);
+                const effectiveAtk = Math.max(1, atkValue + atkMods.atk);
+                
+                const defMods = getBuffModifiers(defender);
+                const effectiveDef = Math.max(1, defValue + defMods.def);
+                
+                // Vantagem de classe: +10% dano se forte, -10% dano se fraco
+                const classAdv = GameState.config?.classAdvantages?.[attacker.class];
+                let damageMult = 1.0;
+                if (classAdv?.strong === defender.class) {
+                    damageMult = 1.10;
+                } else if (classAdv?.weak === defender.class) {
+                    damageMult = 0.90;
+                }
+                
+                return calcDamage({
+                    atk: effectiveAtk,
+                    def: effectiveDef,
+                    power: basicPower,
+                    damageMult: damageMult
+                });
+            } catch (error) {
+                console.error('Damage calculation failed:', error);
+                return 1;
+            }
+        }
+
+        // Calcula XP de batalha
+        function calculateBattleXP(defeatedMonster) {
+            try {
+                const baseXP = GameState.config?.battleXpBase || 15;
+                const levelMod = (defeatedMonster.level || 1) * 2;
+                const rarityMod = GameState.config?.rarityXP?.[defeatedMonster.rarity] || 1.0;
+                
+                return Math.floor((baseXP + levelMod) * rarityMod);
+            } catch (error) {
+                console.error('XP calculation failed:', error);
+                return 15;
             }
         }
 
@@ -896,16 +3046,30 @@
                 
                 monster.xp = (monster.xp || 0) + amount;
                 
-                const xpNeeded = (monster.level || 1) * 100;
+                // Fórmula de XP por nível conforme AGENTS.md: Math.round(40 + 6*L + 0.6*(L*L))
+                const xpNeeded = Math.round(40 + 6 * monster.level + 0.6 * (monster.level * monster.level));
                 
                 while (monster.xp >= xpNeeded && monster.level < (GameState.config?.maxLevel || 100)) {
                     monster.xp -= xpNeeded;
                     monster.level++;
                     
+                    // Recalcula stats baseado no novo nível
                     const template = MONSTER_CATALOG.find(m => m?.id === monster.monsterId);
                     if (template) {
-                        monster.hpMax = Math.floor((template.baseHp || 50) * (1 + (monster.level - 1) * 0.1));
-                        monster.hp = monster.hpMax;
+                        const rarityMult = GameState.config?.rarityPower?.[template.rarity] || 1.0;
+                        const levelMult = (1 + (monster.level - 1) * 0.1);
+                        
+                        // HP aumenta: hpMax * 1.04 + 2 conforme AGENTS.md
+                        const oldHpMax = monster.hpMax;
+                        monster.hpMax = Math.floor(monster.hpMax * 1.04 + 2);
+                        // HP atual aumenta proporcionalmente
+                        const hpRatio = monster.hp / oldHpMax;
+                        monster.hp = Math.floor(monster.hpMax * hpRatio);
+                        
+                        // Recalcula ATK, DEF, PODER
+                        monster.atk = Math.floor((template.baseAtk || 5) * levelMult * rarityMult);
+                        monster.def = Math.floor((template.baseDef || 3) * levelMult * rarityMult);
+                        monster.poder = Math.floor(monster.atk * 0.5);
                     }
                 }
                 
@@ -1042,9 +3206,93 @@
                 updateSessionView();
                 updateTherapyView();
                 updateReportView();
+                updateEncounterPlayerDropdown();
+                updateEncounterUI();
                 renderEncounter();
             } catch (error) {
                 console.error('Failed to update views:', error);
+            }
+        }
+
+        function updateEncounterPlayerDropdown() {
+            try {
+                const select = document.getElementById('encounterPlayer');
+                if (!select) return;
+                
+                select.innerHTML = '<option value="">-- Select Player --</option>';
+                
+                if (GameState.players && GameState.players.length > 0) {
+                    GameState.players.forEach(player => {
+                        const option = document.createElement('option');
+                        option.value = player.id;
+                        option.textContent = `${player.name} (${player.class || 'No class'})`;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to update encounter player dropdown:', error);
+            }
+        }
+        
+        function updateEncounterUI() {
+            try {
+                const type = document.getElementById('encounterType')?.value;
+                const playerSelectDiv = document.getElementById('playerSelectDiv');
+                const groupSelectDiv = document.getElementById('groupSelectDiv');
+                
+                if (!playerSelectDiv || !groupSelectDiv) return;
+                
+                if (type === 'wild') {
+                    playerSelectDiv.classList.remove('hidden');
+                    groupSelectDiv.classList.add('hidden');
+                } else if (type === 'trainer' || type === 'boss') {
+                    playerSelectDiv.classList.add('hidden');
+                    groupSelectDiv.classList.remove('hidden');
+                    updateGroupParticipantsList();
+                } else {
+                    playerSelectDiv.classList.add('hidden');
+                    groupSelectDiv.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error('Failed to update encounter UI:', error);
+            }
+        }
+        
+        function updateGroupParticipantsList() {
+            try {
+                const container = document.getElementById('groupParticipantsList');
+                if (!container) return;
+                
+                if (!GameState.players || GameState.players.length === 0) {
+                    container.innerHTML = '<p style="color: #666;">No players available. Add players first.</p>';
+                    return;
+                }
+                
+                let html = '';
+                GameState.players.forEach(player => {
+                    if (!player) return;
+                    
+                    const mon = player.team?.[0];
+                    const monName = mon ? (mon.name || mon.nome || 'No monster') : 'No monster';
+                    const hasValidMonster = mon && mon.hp > 0;
+                    
+                    html += `<div style="padding: 5px;">`;
+                    html += `<label style="cursor: pointer; display: flex; align-items: center;">`;
+                    html += `<input type="checkbox" name="groupParticipant" value="${player.id}" ${!hasValidMonster ? 'disabled' : ''}>`;
+                    html += `<span style="margin-left: 8px;">${player.name} (${player.class})`;
+                    if (hasValidMonster) {
+                        html += ` - ${monName} Nv${mon.level}`;
+                    } else {
+                        html += ` - <span style="color: #999;">No valid monster</span>`;
+                    }
+                    html += `</span>`;
+                    html += `</label>`;
+                    html += `</div>`;
+                });
+                
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Failed to update group participants list:', error);
             }
         }
 
