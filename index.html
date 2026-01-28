@@ -2391,6 +2391,48 @@
             mon._skillStage = stageNow;
         }
         
+        // =============================
+        // FEATURE 3.7 — SKILLS HUD UI
+        // =============================
+        
+        /**
+         * Formata o label de um botão de skill mostrando nome e custo ENE
+         * @param {Object} skill - Skill do catálogo
+         * @param {Object} mon - Monstro (para contexto futuro se necessário)
+         * @returns {string} - Label formatado
+         */
+        function formatSkillButtonLabel(skill, mon) {
+            if (!skill) return "Habilidade";
+            
+            const name = skill.name || skill.nome || String(skill.id);
+            const cost = Number(skill.energy_cost ?? skill.eneCost ?? skill.cost ?? skill.ene ?? 0) || 0;
+            const power = Number(skill.power ?? skill.POWER ?? skill.pwr ?? 0) || 0;
+            
+            // emoji opcional: se já tiver no dataset, usa
+            const icon = skill.icon || "";
+            
+            // MVP: nome + ENE (sem poluir)
+            const parts = [];
+            if (icon) parts.push(icon);
+            parts.push(name);
+            if (cost > 0) parts.push(`(ENE ${cost})`);
+            
+            return parts.join(" ");
+        }
+        
+        /**
+         * Verifica se o monstro tem ENE suficiente para usar a skill
+         * @param {Object} skill - Skill do catálogo
+         * @param {Object} mon - Monstro
+         * @returns {boolean} - true se pode usar
+         */
+        function canUseSkillNow(skill, mon) {
+            if (!skill || !mon) return false;
+            const cost = Number(skill.energy_cost ?? skill.eneCost ?? skill.cost ?? skill.ene ?? 0) || 0;
+            const ene = Number(mon.ene ?? mon.ENE ?? 0) || 0;
+            return ene >= cost;
+        }
+        
         /**
          * Distribui XP para todos participantes vivos de uma batalha em grupo
          * @param {Object} enc - Encounter de grupo
@@ -2563,9 +2605,43 @@
                     html += '<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">';
                     html += '<button class="btn btn-danger" onclick="groupAttack()">⚔️ Atacar</button>';
                     html += '<button class="btn btn-primary" onclick="groupPassTurn()">⏭️ Passar</button>';
-                    html += '<button class="btn btn-info" onclick="groupUseSkill(0)" disabled title="Feature 3.3">✨ Habilidade</button>';
-                    html += '<button class="btn btn-success" onclick="groupUseItem(\'IT_HEAL_01\')" disabled title="Feature 3.3">💚 Item</button>';
                     html += '</div>';
+                    
+                    // Feature 3.7: Skills buttons for current player
+                    if (actor && actor.side === 'player') {
+                        const player = GameState.players.find(p => p.id === actor.id);
+                        const mon = player?.team?.[0];
+                        if (mon) {
+                            const skillIds = getSkillsArray(mon);
+                            if (skillIds && skillIds.length > 0) {
+                                html += '<div style="margin-top: 15px; padding: 10px; background: #f3e5f5; border-radius: 8px;">';
+                                html += '<strong style="font-size: 16px;">✨ Habilidades</strong>';
+                                html += '<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">';
+                                
+                                skillIds.forEach((skillId, idx) => {
+                                    const skill = getSkillById(skillId);
+                                    if (!skill) return;
+                                    
+                                    const label = formatSkillButtonLabel(skill, mon);
+                                    const canUse = canUseSkillNow(skill, mon) && mon.hp > 0;
+                                    const tooltip = canUse ? (skill.desc || skill.descricao || '') : 'Sem ENE';
+                                    
+                                    html += `
+                                    <button class="btn btn-info" 
+                                            onclick="groupUseSkill(${idx})" 
+                                            ${!canUse ? 'disabled style="opacity: 0.5;"' : ''}
+                                            title="${tooltip}">
+                                        ${label}
+                                    </button>
+                                    `;
+                                });
+                                
+                                html += '</div>';
+                                html += '</div>';
+                            }
+                        }
+                    }
+                    
                     html += '</div>';
                 }
                 
@@ -2797,23 +2873,28 @@
                             })() : ''}
                             
                             ${playerMonster ? (() => {
-                                const skills = getMonsterSkills(playerMonster);
-                                if (!skills || skills.length === 0) return '';
+                                // Feature 3.7: Use skill catalog and getSkillsArray
+                                const skillIds = getSkillsArray(playerMonster);
+                                if (!skillIds || skillIds.length === 0) return '';
                                 
                                 return `
                                 <div style="margin-top: 15px; padding: 10px; background: #f3e5f5; border-radius: 8px;">
                                     <strong style="font-size: 16px;">✨ Habilidades</strong>
                                     <div class="flex-center" style="margin-top: 10px; gap: 10px;">
-                                        ${skills.map((skill, idx) => {
+                                        ${skillIds.map((skillId, idx) => {
+                                            const skill = getSkillById(skillId);
                                             if (!skill) return '';
-                                            const canUse = (playerMonster.ene || 0) >= skill.cost;
+                                            
+                                            const label = formatSkillButtonLabel(skill, playerMonster);
+                                            const canUse = canUseSkillNow(skill, playerMonster) && playerMonster.hp > 0;
+                                            const tooltip = canUse ? (skill.desc || skill.descricao || '') : 'Sem ENE';
+                                            
                                             return `
                                             <button class="btn btn-primary" 
                                                     onclick="useSkillWild(${idx})" 
                                                     ${!canUse ? 'disabled style="opacity: 0.5;"' : ''}
-                                                    title="${skill.desc}">
-                                                ${skill.name}<br>
-                                                <small>(-${skill.cost} ENE)</small>
+                                                    title="${tooltip}">
+                                                ${label}
                                             </button>
                                             `;
                                         }).join('')}
