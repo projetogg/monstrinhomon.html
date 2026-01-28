@@ -2238,6 +2238,12 @@
          */
         function getSkillCatalog() {
             const candidates = [];
+            
+            // Verificar SKILLS_CATALOG definido no escopo local
+            if (typeof SKILLS_CATALOG !== 'undefined' && Array.isArray(SKILLS_CATALOG)) {
+                candidates.push(SKILLS_CATALOG);
+            }
+            
             if (window.DB) {
                 if (Array.isArray(DB.SKILLS)) candidates.push(DB.SKILLS);
                 if (Array.isArray(DB.HABILIDADES)) candidates.push(DB.HABILIDADES);
