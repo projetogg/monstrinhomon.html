@@ -2318,13 +2318,23 @@
                     <div class="encounter-panel">
                         <h3>Wild ${monster.emoji} ${monster.name} appeared!</h3>
                         ${player ? `<p><strong>Jogador:</strong> ${player.name} (${player.class})</p>` : ''}
-                        ${playerMonster ? `
+                        ${playerMonster ? (() => {
+                            const xpCurrent = playerMonster.xp || 0;
+                            const xpNeeded = playerMonster.xpNeeded || calcXpNeeded(playerMonster.level);
+                            const xpPercent = (xpCurrent / xpNeeded) * 100;
+                            
+                            return `
                         <div style="margin: 10px 0; padding: 10px; background: #e8f5e9; border-radius: 8px;">
                             <p><strong>Seu Monstrinho:</strong> ${playerMonster.emoji} ${playerMonster.name} (Nv ${playerMonster.level})</p>
                             <div><strong>HP:</strong> ${playerMonster.hp}/${playerMonster.hpMax}</div>
                             <div><strong>⚡ ENE:</strong> ${playerMonster.ene || 0}/${playerMonster.eneMax || 0}</div>
+                            <div class="progress-bar" style="height: 15px; margin-top: 5px;">
+                                <div class="progress-fill xp" style="width: ${xpPercent}%"></div>
+                            </div>
+                            <small><strong>XP:</strong> ${xpCurrent}/${xpNeeded} (${Math.floor(xpPercent)}%)</small>
                         </div>
-                        ` : ''}
+                        `;
+                        })() : ''}
                         
                         <div class="monster-card ${monster.class}" style="display: inline-block; margin: 20px;">
                             <div style="font-size: 48px;">${monster.emoji}</div>
