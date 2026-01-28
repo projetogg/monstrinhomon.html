@@ -1220,6 +1220,9 @@
                     rewardsGranted: false  // Previne duplicação de XP
                 };
                 
+                // Inicializar campos de toast
+                initializeEncounterToast(encounter);
+                
                 if (type === 'wild') {
                     const randomMonster = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
                     const level = Math.floor(Math.random() * 10) + 1;
@@ -1264,6 +1267,9 @@
                     result: null,
                     rewardsGranted: false  // Previne duplicação de XP
                 };
+                
+                // Inicializar campos de toast
+                initializeEncounterToast(encounter);
                 
                 // Calcular ordem de turnos
                 encounter.turnOrder = calculateGroupTurnOrder(encounter);
@@ -1824,17 +1830,46 @@
         }
 
         /**
+         * Inicializa campos de toast para um encounter
+         * Garante que cada encounter tenha IDs únicos e cursor de toast resetado
+         */
+        function initializeEncounterToast(enc) {
+            if (!enc) return;
+            
+            // Garantir ID único do encounter
+            if (!enc.encounterId) {
+                enc.encounterId = "enc_" + Date.now() + "_" + Math.random().toString(16).slice(2);
+            }
+            
+            // Inicializar cursor de toast
+            enc._toastCursor = 0;
+            
+            // Opcional: tracking de mensagens já vistas (para futuro uso)
+            enc._toastSeen = {};
+        }
+        
+        /**
          * Verifica novas entradas no log e exibe toasts para eventos importantes
          * Usa cursor para evitar repetir toasts em re-render
+         * Detecta level up e evolução por emoji OU por texto
          */
         function maybeToastFromLog(enc) {
             if (!enc || !Array.isArray(enc.log)) return;
 
+            // Garantir inicialização do cursor (segurança para encounters antigos)
+            if (enc._toastCursor == null) enc._toastCursor = 0;
+
             const start = Number.isFinite(enc._toastCursor) ? enc._toastCursor : 0;
             for (let i = start; i < enc.log.length; i++) {
                 const line = String(enc.log[i] || "");
-                if (line.includes("✨")) showToast(line);
-                if (line.includes("🌟")) showToast(line);
+                
+                // Detectar level up: por emoji OU por texto
+                const isLevelUp = line.includes("✨") || /subiu para o nível/i.test(line);
+                if (isLevelUp) showToast(line);
+                
+                // Detectar evolução: por emoji OU por texto
+                const isEvo = line.includes("🌟") || /evoluiu para/i.test(line);
+                if (isEvo) showToast(line);
             }
             enc._toastCursor = enc.log.length;
         }
@@ -2403,7 +2438,7 @@
                         ${playerMonster ? (() => {
                             const xpCurrent = playerMonster.xp || 0;
                             const xpNeeded = playerMonster.xpNeeded || calcXpNeeded(playerMonster.level);
-                            const xpPercent = (xpCurrent / xpNeeded) * 100;
+                            const xpPercent = Math.max(0, Math.min(100, (xpCurrent / xpNeeded) * 100));
                             
                             return `
                         <div style="margin: 10px 0; padding: 10px; background: #e8f5e9; border-radius: 8px;">
