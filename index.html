@@ -1957,18 +1957,11 @@
             const evo = getEvolutionData(currentTemplate);
             if (!evo) return null;
 
-            // procura o template alvo em qualquer catálogo disponível
-            const candidates = [];
-            if (Array.isArray(window.MONSTER_CATALOG)) candidates.push(window.MONSTER_CATALOG);
-            if (Array.isArray(MONSTER_CATALOG)) candidates.push(MONSTER_CATALOG);
-            if (window.DB && Array.isArray(window.DB.MONSTERS)) candidates.push(window.DB.MONSTERS);
-            if (window.DB && Array.isArray(window.DB.MONSTER_CATALOG)) candidates.push(window.DB.MONSTER_CATALOG);
-
-            for (const arr of candidates) {
-                const t = arr.find(m => String(m.id) === String(evo.toId));
-                if (t) return { nextTemplate: t, evolvesAt: evo.atLv };
-            }
-
+            // Busca o template alvo no catálogo (usa MONSTER_CATALOG como fonte primária)
+            const catalog = MONSTER_CATALOG || (window.DB?.MONSTERS) || (window.DB?.MONSTER_CATALOG) || [];
+            const nextTemplate = catalog.find(m => String(m.id) === String(evo.toId));
+            
+            if (nextTemplate) return { nextTemplate, evolvesAt: evo.atLv };
             return null;
         }
 
@@ -2000,12 +1993,25 @@
             else if (mon.templateId != null) mon.templateId = String(nextTemplate.id);
             else mon.monsterId = String(nextTemplate.id);
 
-            // Atualiza campos visuais se existirem
+            // Atualiza campos visuais e de gameplay se existirem no template
             if (nextTemplate.name || nextTemplate.nome) mon.name = (nextTemplate.name || nextTemplate.nome);
             if (nextTemplate.emoji) mon.emoji = nextTemplate.emoji;
+            if (nextTemplate.class || nextTemplate.classe) mon.class = (nextTemplate.class || nextTemplate.classe);
+            if (nextTemplate.rarity || nextTemplate.raridade) mon.rarity = (nextTemplate.rarity || nextTemplate.raridade);
 
-            // Recalcula stats e hpMax com a nova forma
+            // Recalcula stats com a nova forma
             recalculateStatsFromTemplate(mon);
+            
+            // Recalcula hpMax baseado no novo baseHp do template
+            const baseHp = Number(nextTemplate.baseHp ?? nextTemplate.hpBase ?? nextTemplate.hp) || mon.hpMax || 1;
+            const level = Math.max(1, mon.level);
+            const rarity = nextTemplate.rarity || nextTemplate.raridade || mon.rarity;
+            const rarityPowerMap = GameState.config.rarityPower || (window.DB?.RARITY_POWER) || {};
+            const rarityMult = Number(rarityPowerMap[rarity]) || 1.0;
+            const levelMult = 1 + (level - 1) * 0.1;
+            
+            // Nova hpMax baseada no template da evolução
+            mon.hpMax = Math.floor(baseHp * levelMult * rarityMult);
 
             // Ajuste final de HP mantendo percentual
             const newHpMax = Math.max(1, Number(mon.hpMax) || 1);
