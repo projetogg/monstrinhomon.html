@@ -1393,18 +1393,10 @@
             // Atualizar currentActor
             enc.currentActor = getCurrentActor(enc);
             
-            // Auto-trigger turno do inimigo (placeholder)
+            // Auto-trigger turno do inimigo
             const actorNow = getCurrentActor(enc);
             if (actorNow && actorNow.side === "enemy" && !enc.finished) {
-                enc.log = enc.log || [];
-                enc.log.push(`⏺️ Turno: ${actorNow.name} (Inimigo)`);
-                enc.log.push("ℹ️ (Placeholder) IA do inimigo será implementada na Fase 3");
-                // Passar turno automaticamente para não travar
-                setTimeout(() => {
-                    advanceTurn(enc);
-                    saveToLocalStorage();
-                    renderEncounter();
-                }, 1000);
+                processEnemyTurnGroup(enc);
             } else if (actorNow) {
                 enc.log = enc.log || [];
                 enc.log.push(`⏺️ Turno: ${actorNow.name}`);
@@ -1426,6 +1418,311 @@
                 renderEncounter();
             } catch (error) {
                 showError('Failed to pass turn', error.stack);
+            }
+        }
+
+        // ==================== FASE 3: Helper Functions ====================
+
+        function _getGroupEncounter() {
+            return GameState.currentEncounter;
+        }
+
+        function _getPlayerById(playerId) {
+            return GameState.players.find(p => p.id === playerId) || null;
+        }
+
+        function _getActiveMonsterOfPlayer(player) {
+            return player?.team?.[0] || null;
+        }
+
+        function _getEnemyByIndex(enc, idx) {
+            return enc?.enemies?.[idx] || null;
+        }
+
+        function _clamp(n, min, max) {
+            return Math.max(min, Math.min(max, n));
+        }
+
+        function _calcDamage(power, atk, def) {
+            const A = Number(atk) || 0;
+            const D = Number(def) || 0;
+            const P = Number(power) || 0;
+            const ratio = (A <= 0 && D <= 0) ? 0.5 : (A / (A + D));
+            const base = Math.floor(P * ratio);
+            return Math.max(1, base);
+        }
+
+        function _isAlive(entity) {
+            return (Number(entity?.hp) || 0) > 0;
+        }
+
+        function _log(enc, msg) {
+            enc.log = enc.log || [];
+            enc.log.push(msg);
+        }
+
+        function _chooseTargetPlayerId(enc) {
+            let best = null;
+            for (const pid of (enc.participants || [])) {
+                const p = _getPlayerById(pid);
+                const mon = _getActiveMonsterOfPlayer(p);
+                if (!mon || !_isAlive(mon)) continue;
+
+                const hp = Number(mon.hp) || 0;
+                const hpMax = Number(mon.hpMax) || 1;
+                const pct = hp / hpMax;
+
+                if (!best || pct < best.pct) best = { pid, pct };
+            }
+            return best ? best.pid : null;
+        }
+
+        // ==================== FASE 3.A: Player Attack ====================
+
+        function groupAttack() {
+            try {
+                const enc = _getGroupEncounter();
+                if (!enc || enc.finished) return;
+
+                const actor = getCurrentActor(enc);
+                if (!actor || actor.side !== 'player') return;
+
+                const player = _getPlayerById(actor.id);
+                const mon = _getActiveMonsterOfPlayer(player);
+                if (!player || !mon) return;
+
+                if (!_isAlive(mon)) {
+                    _log(enc, "⚠️ Seu monstrinho está desmaiado. Não pode atacar.");
+                    saveToLocalStorage();
+                    renderEncounter();
+                    return;
+                }
+
+                // Alvo: primeiro inimigo vivo
+                let enemyIndex = 0;
+                while (enemyIndex < (enc.enemies?.length || 0) && !_isAlive(enc.enemies[enemyIndex])) enemyIndex++;
+
+                const enemy = _getEnemyByIndex(enc, enemyIndex);
+                if (!enemy || !_isAlive(enemy)) {
+                    _log(enc, "ℹ️ Não há inimigos vivos para atacar.");
+                    saveToLocalStorage();
+                    renderEncounter();
+                    return;
+                }
+
+                const d20 = rollD20();
+                const atk = Number(mon.atk) || 0;
+                const def = Number(enemy.def) || 0;
+
+                const alwaysMiss = (d20 === 1);
+                const isCrit = (d20 === 20);
+                const hit = !alwaysMiss && (d20 + atk >= def);
+
+                const attackerName = player.name || player.nome || actor.name || "Jogador";
+                const monName = mon.nickname || mon.name || mon.nome || "Monstrinho";
+                const enemyName = enemy.name || enemy.nome || "Inimigo";
+
+                if (!hit) {
+                    _log(enc, `🎲 ${attackerName} (${monName}) rolou ${d20} e ERROU o ataque em ${enemyName}.`);
+                    advanceTurn(enc);
+                    saveToLocalStorage();
+                    renderEncounter();
+                    return;
+                }
+
+                // POWER básico
+                const basicPower = Number(mon.basicPower) || Number(mon.powerBasic) || 10;
+                let powerUsed = basicPower;
+
+                if (isCrit) {
+                    powerUsed = basicPower * 2;
+                    _log(enc, `💥 CRIT 20! ${monName} ativou Poder Duplo!`);
+                }
+
+                const dmg = _calcDamage(powerUsed, atk, def);
+                enemy.hp = _clamp((Number(enemy.hp) || 0) - dmg, 0, Number(enemy.hpMax) || 999999);
+
+                _log(enc, `🎲 ${attackerName} (${monName}) rolou ${d20} e acertou ${enemyName} causando ${dmg} de dano!`);
+
+                if (!_isAlive(enemy)) {
+                    _log(enc, `🏁 ${enemyName} foi derrotado!`);
+                }
+
+                advanceTurn(enc);
+                saveToLocalStorage();
+                renderEncounter();
+            } catch (error) {
+                showError('Failed to attack', error.stack);
+            }
+        }
+
+        // ==================== FASE 3.B: Enemy AI ====================
+
+        function processEnemyTurnGroup(enc) {
+            try {
+                if (!enc || enc.finished) return;
+
+                const actor = getCurrentActor(enc);
+                if (!actor || actor.side !== 'enemy') return;
+
+                const enemy = _getEnemyByIndex(enc, actor.id);
+                if (!enemy || !_isAlive(enemy)) {
+                    advanceTurn(enc);
+                    saveToLocalStorage();
+                    renderEncounter();
+                    return;
+                }
+
+                // Escolhe alvo (menor HP%)
+                const targetPid = _chooseTargetPlayerId(enc);
+                if (!targetPid) {
+                    advanceTurn(enc);
+                    saveToLocalStorage();
+                    renderEncounter();
+                    return;
+                }
+
+                const targetPlayer = _getPlayerById(targetPid);
+                const targetMon = _getActiveMonsterOfPlayer(targetPlayer);
+
+                const enemyName = enemy.name || actor.name || "Inimigo";
+                const targetName = targetPlayer?.name || targetPlayer?.nome || "Jogador";
+                const targetMonName = targetMon?.nickname || targetMon?.name || targetMon?.nome || "Monstrinho";
+
+                const d20 = rollD20();
+                const atk = Number(enemy.atk) || 0;
+                const def = Number(targetMon?.def) || 0;
+
+                const alwaysMiss = (d20 === 1);
+                const isCrit = (d20 === 20);
+                const hit = !alwaysMiss && (d20 + atk >= def);
+
+                if (!hit) {
+                    _log(enc, `🎲 ${enemyName} rolou ${d20} e ERROU o ataque em ${targetName} (${targetMonName}).`);
+                    advanceTurn(enc);
+                    saveToLocalStorage();
+                    renderEncounter();
+                    return;
+                }
+
+                // POWER básico do inimigo
+                const basicPower = Number(enemy.basicPower) || Number(enemy.powerBasic) || 10;
+                let powerUsed = basicPower;
+
+                if (isCrit) {
+                    powerUsed = basicPower * 2;
+                    _log(enc, `💥 CRIT 20! ${enemyName} ativou Poder Duplo!`);
+                }
+
+                const dmg = _calcDamage(powerUsed, atk, def);
+                targetMon.hp = _clamp((Number(targetMon.hp) || 0) - dmg, 0, Number(targetMon.hpMax) || 999999);
+
+                _log(enc, `🎲 ${enemyName} rolou ${d20} e acertou ${targetName} (${targetMonName}) causando ${dmg} de dano!`);
+
+                if (!_isAlive(targetMon)) {
+                    _log(enc, `💀 ${targetName} (${targetMonName}) foi derrotado!`);
+                }
+
+                advanceTurn(enc);
+                saveToLocalStorage();
+                renderEncounter();
+            } catch (error) {
+                showError('Failed to process enemy turn', error.stack);
+            }
+        }
+
+        // ==================== FASE 3.C: Skills and Items ====================
+
+        function groupUseSkill(skillIndex) {
+            try {
+                const enc = _getGroupEncounter();
+                if (!enc || enc.finished) return;
+
+                const actor = getCurrentActor(enc);
+                if (!actor || actor.side !== 'player') return;
+
+                const player = _getPlayerById(actor.id);
+                const mon = _getActiveMonsterOfPlayer(player);
+                if (!player || !mon || !_isAlive(mon)) return;
+
+                // Alvo: primeiro inimigo vivo
+                let enemyIndex = 0;
+                while (enemyIndex < (enc.enemies?.length || 0) && !_isAlive(enc.enemies[enemyIndex])) enemyIndex++;
+                const enemy = _getEnemyByIndex(enc, enemyIndex);
+                if (!enemy || !_isAlive(enemy)) return;
+
+                _log(enc, "ℹ️ (Ajuste) Sistema de habilidades será integrado na Feature 3.3");
+
+                advanceTurn(enc);
+                saveToLocalStorage();
+                renderEncounter();
+            } catch (error) {
+                showError('Failed to use skill', error.stack);
+            }
+        }
+
+        function groupUseItem(itemId) {
+            try {
+                const enc = _getGroupEncounter();
+                if (!enc || enc.finished) return;
+
+                const actor = getCurrentActor(enc);
+                if (!actor || actor.side !== 'player') return;
+
+                const player = _getPlayerById(actor.id);
+                const mon = _getActiveMonsterOfPlayer(player);
+                if (!player || !mon) return;
+
+                // Reutiliza lógica do 3.1
+                const hp = Number(mon.hp) || 0;
+                const hpMax = Number(mon.hpMax) || 1;
+
+                if (hp <= 0) {
+                    _log(enc, "⚠️ Monstrinho está desmaiado.");
+                    saveToLocalStorage();
+                    renderEncounter();
+                    return;
+                }
+
+                if (hp >= hpMax) {
+                    _log(enc, "ℹ️ HP já está cheio.");
+                    saveToLocalStorage();
+                    renderEncounter();
+                    return;
+                }
+
+                if (!itemId || itemId === 'IT_HEAL_01') {
+                    itemId = 'IT_HEAL_01';
+                }
+
+                const itemCount = Number(player.inventory?.[itemId]) || 0;
+                if (itemCount <= 0) {
+                    _log(enc, "⚠️ Você não tem esse item.");
+                    saveToLocalStorage();
+                    renderEncounter();
+                    return;
+                }
+
+                // Consumir item
+                player.inventory[itemId] = Math.max(0, itemCount - 1);
+
+                // Aplicar cura (mesmo do 3.1)
+                const healAmount = Math.max(30, Math.floor(hpMax * 0.30));
+                const newHp = Math.min(hpMax, hp + healAmount);
+                const healed = newHp - hp;
+                mon.hp = newHp;
+
+                const playerName = player.name || "Jogador";
+                const monName = mon.nickname || mon.name || "Monstrinho";
+
+                _log(enc, `💚 ${playerName} usou Petisco de Cura! (Restam: ${player.inventory[itemId]})`);
+                _log(enc, `✨ ${monName} recuperou ${healed} HP! (${mon.hp}/${hpMax})`);
+
+                advanceTurn(enc);
+                saveToLocalStorage();
+                renderEncounter();
+            } catch (error) {
+                showError('Failed to use item', error.stack);
             }
         }
         
@@ -1494,18 +1791,45 @@
                 
                 // Ações (apenas para turno do jogador)
                 if (isPlayerTurn && !encounter.finished) {
-                    html += '<div style="margin: 15px 0;">';
+                    html += '<div style="margin: 15px 0; padding: 15px; background: #f5f5f5; border-radius: 4px;">';
                     html += '<h4>Ações:</h4>';
-                    html += '<button class="btn btn-primary" onclick="groupPassTurn()">⏭️ Passar Turno</button>';
-                    html += '<p style="color: #666; margin-top: 10px;">⚠️ Ações de ataque serão implementadas na Fase 3</p>';
+                    html += '<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">';
+                    html += '<button class="btn btn-danger" onclick="groupAttack()">⚔️ Atacar</button>';
+                    html += '<button class="btn btn-primary" onclick="groupPassTurn()">⏭️ Passar</button>';
+                    html += '<button class="btn btn-info" onclick="groupUseSkill(0)" disabled title="Feature 3.3">✨ Habilidade</button>';
+                    html += '<button class="btn btn-success" onclick="groupUseItem(\'IT_HEAL_01\')" disabled title="Feature 3.3">💚 Item</button>';
+                    html += '</div>';
                     html += '</div>';
                 }
                 
-                // Mensagem de fim
+                // Mensagem de fim com recompensas
                 if (encounter.finished) {
                     const resultColor = encounter.result === 'victory' ? '#4CAF50' : '#f44336';
-                    html += `<div style="background: ${resultColor}; color: white; padding: 15px; margin: 15px 0; border-radius: 4px; text-align: center;">`;
+                    html += `<div style="background: ${resultColor}; color: white; padding: 15px; margin: 15px 0; border-radius: 4px;">`;
                     html += `<h3>${encounter.result === 'victory' ? '🏁 VITÓRIA!' : '💀 DERROTA'}</h3>`;
+                    
+                    // Recompensas na vitória
+                    if (encounter.result === 'victory') {
+                        html += '<div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.2); border-radius: 4px;">';
+                        html += '<strong>💰 Recompensas:</strong><br>';
+                        
+                        // Dinheiro dividido
+                        const totalCoins = Math.floor(Math.random() * 31) + 30; // 30-60
+                        const coinsPerPlayer = Math.floor(totalCoins / encounter.participants.length);
+                        
+                        for (const pid of encounter.participants) {
+                            const p = GameState.players.find(pl => pl.id === pid);
+                            if (p) {
+                                p.coins = (p.coins || 0) + coinsPerPlayer;
+                                html += `${p.name}: +${coinsPerPlayer} moedas<br>`;
+                            }
+                        }
+                        
+                        html += '<br><em>ℹ️ XP será implementado na Feature 3.3</em>';
+                        html += '</div>';
+                        saveToLocalStorage();
+                    }
+                    
                     html += `</div>`;
                     html += '<button class="btn btn-secondary" onclick="GameState.currentEncounter = null; saveToLocalStorage(); renderEncounter();">Fechar</button>';
                 }
