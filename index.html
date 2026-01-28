@@ -436,7 +436,9 @@
         // MONSTER CATALOG (baseado em MONSTROS.csv)
         const MONSTER_CATALOG = [
             { id: 'MON_001', name: 'Cantapau', class: 'Bardo', rarity: 'Comum', baseHp: 28, baseAtk: 6, baseDef: 4, baseSpd: 6, emoji: '🎵' },
-            { id: 'MON_002', name: 'Pedrino', class: 'Guerreiro', rarity: 'Comum', baseHp: 32, baseAtk: 7, baseDef: 6, baseSpd: 5, emoji: '⚔️' },
+            { id: 'MON_002', name: 'Pedrino', class: 'Guerreiro', rarity: 'Comum', baseHp: 32, baseAtk: 7, baseDef: 6, baseSpd: 5, emoji: '⚔️', evolvesTo: 'MON_002B', evolvesAt: 12 },
+            { id: 'MON_002B', name: 'Pedronar', class: 'Guerreiro', rarity: 'Incomum', baseHp: 42, baseAtk: 10, baseDef: 8, baseSpd: 6, emoji: '⚔️', evolvesTo: 'MON_002C', evolvesAt: 25 },
+            { id: 'MON_002C', name: 'Pedragon', class: 'Guerreiro', rarity: 'Raro', baseHp: 56, baseAtk: 14, baseDef: 11, baseSpd: 8, emoji: '🗡️' },
             { id: 'MON_003', name: 'Faíscari', class: 'Mago', rarity: 'Comum', baseHp: 26, baseAtk: 8, baseDef: 3, baseSpd: 7, emoji: '🔮' },
             { id: 'MON_004', name: 'Ninfolha', class: 'Curandeiro', rarity: 'Comum', baseHp: 30, baseAtk: 4, baseDef: 4, baseSpd: 5, emoji: '💚' },
             { id: 'MON_005', name: 'Garruncho', class: 'Caçador', rarity: 'Comum', baseHp: 29, baseAtk: 7, baseDef: 3, baseSpd: 8, emoji: '🏹' },
@@ -1855,6 +1857,9 @@
             if (Array.isArray(log)) {
                 log.push(`✨ ${name} subiu para o nível ${mon.level}!`);
             }
+            
+            // Verificar e aplicar evolução após level up
+            maybeEvolveAfterLevelUp(mon, log);
         }
         
         // Alias para compatibilidade
@@ -1900,6 +1905,138 @@
         // Alias para compatibilidade
         function recalculateStats(mon) {
             return recalculateStatsFromTemplate(mon);
+        }
+        
+        // ═════════════════════════════════════════════════════════════
+        // FEATURE 3.4 — EVOLUTION (MVP)
+        // ═════════════════════════════════════════════════════════════
+        
+        /**
+         * Busca template base de um monstro no catálogo
+         * @param {Object} mon - Monstro
+         * @returns {Object|null} - Template encontrado ou null
+         */
+        function getMonsterTemplate(mon) {
+            if (!mon) return null;
+            
+            const catalog = MONSTER_CATALOG || (window.DB?.MONSTERS) || (window.DB?.MONSTER_CATALOG) || [];
+            const templateId = mon.monsterId || mon.idBase || mon.templateId;
+            const template = catalog.find(m => String(m.id) === String(templateId));
+            
+            return template || null;
+        }
+        
+        /**
+         * Extrai dados de evolução de um template (com fallbacks para múltiplos nomes)
+         * @param {Object} template - Template do monstro
+         * @returns {Object|null} - { toId, atLv } ou null se não evoluir
+         */
+        function getEvolutionData(template) {
+            if (!template) return null;
+
+            const evolvesTo = template.evolvesTo ?? template.evolve_to ?? template.evoluiPara ?? template.evolutionTo ?? null;
+            const evolvesAt = template.evolvesAt ?? template.evolve_at ?? template.evoluiNoNivel ?? template.evolutionAt ?? null;
+
+            const toId = evolvesTo != null ? String(evolvesTo) : "";
+            const atLv = evolvesAt != null ? Number(evolvesAt) : NaN;
+
+            if (!toId || !Number.isFinite(atLv) || atLv <= 0) return null;
+            return { toId, atLv };
+        }
+
+        /**
+         * Busca template do monstro evoluído
+         * @param {Object} mon - Monstro atual
+         * @returns {Object|null} - { nextTemplate, evolvesAt } ou null
+         */
+        function getEvolutionTargetTemplate(mon) {
+            const currentTemplate = getMonsterTemplate(mon);
+            const evo = getEvolutionData(currentTemplate);
+            if (!evo) return null;
+
+            // procura o template alvo em qualquer catálogo disponível
+            const candidates = [];
+            if (Array.isArray(window.MONSTER_CATALOG)) candidates.push(window.MONSTER_CATALOG);
+            if (Array.isArray(MONSTER_CATALOG)) candidates.push(MONSTER_CATALOG);
+            if (window.DB && Array.isArray(window.DB.MONSTERS)) candidates.push(window.DB.MONSTERS);
+            if (window.DB && Array.isArray(window.DB.MONSTER_CATALOG)) candidates.push(window.DB.MONSTER_CATALOG);
+
+            for (const arr of candidates) {
+                const t = arr.find(m => String(m.id) === String(evo.toId));
+                if (t) return { nextTemplate: t, evolvesAt: evo.atLv };
+            }
+
+            return null;
+        }
+
+        /**
+         * Aplica evolução no monstro (atualiza ID, nome, stats, preserva HP%)
+         * @param {Object} mon - Monstro que vai evoluir
+         * @param {Object} nextTemplate - Template da evolução
+         * @param {Array} logArr - Array de log (opcional)
+         */
+        function applyEvolution(mon, nextTemplate, logArr) {
+            if (!mon || !nextTemplate) return;
+
+            // preserva % de HP
+            const oldHp = Math.max(0, Number(mon.hp) || 0);
+            const oldHpMax = Math.max(1, Number(mon.hpMax) || 1);
+            const hpPct = oldHp / oldHpMax;
+
+            const oldName = mon.nickname || mon.name || mon.nome || "Monstrinho";
+            const newName = nextTemplate.name || nextTemplate.nome || oldName;
+
+            // Atualiza o ID base do monstro (tenta manter compatibilidade)
+            if (mon.monsterId != null) mon.monsterId = String(nextTemplate.id);
+            else if (mon.templateId != null) mon.templateId = String(nextTemplate.id);
+            else mon.monsterId = String(nextTemplate.id);
+
+            // Atualiza campos visuais se existirem
+            if (nextTemplate.name || nextTemplate.nome) mon.name = (nextTemplate.name || nextTemplate.nome);
+            if (nextTemplate.emoji) mon.emoji = nextTemplate.emoji;
+
+            // Recalcula stats e hpMax com a nova forma
+            recalculateStatsFromTemplate(mon);
+
+            // Ajuste final de HP mantendo percentual
+            const newHpMax = Math.max(1, Number(mon.hpMax) || 1);
+            mon.hp = Math.max(1, Math.floor(newHpMax * hpPct)); // mínimo 1 para não "morrer" ao evoluir
+
+            if (Array.isArray(logArr)) {
+                logArr.push(`🌟 ${oldName} evoluiu para ${newName}!`);
+            }
+        }
+
+        /**
+         * Verifica e aplica evolução se o monstro atingiu o nível necessário
+         * @param {Object} mon - Monstro a verificar
+         * @param {Array} logArr - Array de log (opcional)
+         * @returns {boolean} - true se evoluiu, false caso contrário
+         */
+        function checkEvolution(mon, logArr) {
+            if (!mon) return false;
+            ensureMonsterProgressFields(mon);
+
+            const currentTemplate = getMonsterTemplate(mon);
+            const evo = getEvolutionData(currentTemplate);
+            if (!evo) return false;
+
+            if (mon.level < evo.atLv) return false;
+
+            const target = getEvolutionTargetTemplate(mon);
+            if (!target?.nextTemplate) return false;
+
+            applyEvolution(mon, target.nextTemplate, logArr);
+            return true;
+        }
+
+        /**
+         * Tenta evoluir monstro após level up (no máximo 1 evolução por levelUp no MVP)
+         * @param {Object} mon - Monstro que acabou de subir de nível
+         * @param {Array} logArr - Array de log (opcional)
+         */
+        function maybeEvolveAfterLevelUp(mon, logArr) {
+            checkEvolution(mon, logArr);
         }
         
         /**
