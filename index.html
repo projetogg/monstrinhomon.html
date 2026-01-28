@@ -1836,6 +1836,9 @@
             
             ensureMonsterProgressFields(mon);
             
+            // Capturar HP% ANTES do level up para preservar na evolução
+            const hpPctBeforeLevelUp = Math.max(0, Number(mon.hp) || 0) / Math.max(1, Number(mon.hpMax) || 1);
+            
             mon.level++;
             
             // Aumentar HP Max (fórmula oficial: hpMax * 1.04 + 2)
@@ -1858,8 +1861,8 @@
                 log.push(`✨ ${name} subiu para o nível ${mon.level}!`);
             }
             
-            // Verificar e aplicar evolução após level up
-            maybeEvolveAfterLevelUp(mon, log);
+            // Verificar e aplicar evolução após level up (passa o HP% original)
+            maybeEvolveAfterLevelUp(mon, log, hpPctBeforeLevelUp);
         }
         
         // Alias para compatibilidade
@@ -1974,14 +1977,20 @@
          * @param {Object} mon - Monstro que vai evoluir
          * @param {Object} nextTemplate - Template da evolução
          * @param {Array} logArr - Array de log (opcional)
+         * @param {number} hpPctOverride - HP% para usar (opcional, se não fornecido usa HP% atual)
          */
-        function applyEvolution(mon, nextTemplate, logArr) {
+        function applyEvolution(mon, nextTemplate, logArr, hpPctOverride) {
             if (!mon || !nextTemplate) return;
 
-            // preserva % de HP
-            const oldHp = Math.max(0, Number(mon.hp) || 0);
-            const oldHpMax = Math.max(1, Number(mon.hpMax) || 1);
-            const hpPct = oldHp / oldHpMax;
+            // preserva % de HP (usa override se fornecido, senão usa o atual)
+            let hpPct;
+            if (hpPctOverride != null && Number.isFinite(hpPctOverride)) {
+                hpPct = hpPctOverride;
+            } else {
+                const oldHp = Math.max(0, Number(mon.hp) || 0);
+                const oldHpMax = Math.max(1, Number(mon.hpMax) || 1);
+                hpPct = oldHp / oldHpMax;
+            }
 
             const oldName = mon.nickname || mon.name || mon.nome || "Monstrinho";
             const newName = nextTemplate.name || nextTemplate.nome || oldName;
@@ -2011,9 +2020,10 @@
          * Verifica e aplica evolução se o monstro atingiu o nível necessário
          * @param {Object} mon - Monstro a verificar
          * @param {Array} logArr - Array de log (opcional)
+         * @param {number} hpPctOverride - HP% para usar (opcional)
          * @returns {boolean} - true se evoluiu, false caso contrário
          */
-        function checkEvolution(mon, logArr) {
+        function checkEvolution(mon, logArr, hpPctOverride) {
             if (!mon) return false;
             ensureMonsterProgressFields(mon);
 
@@ -2026,7 +2036,7 @@
             const target = getEvolutionTargetTemplate(mon);
             if (!target?.nextTemplate) return false;
 
-            applyEvolution(mon, target.nextTemplate, logArr);
+            applyEvolution(mon, target.nextTemplate, logArr, hpPctOverride);
             return true;
         }
 
@@ -2034,9 +2044,10 @@
          * Tenta evoluir monstro após level up (no máximo 1 evolução por levelUp no MVP)
          * @param {Object} mon - Monstro que acabou de subir de nível
          * @param {Array} logArr - Array de log (opcional)
+         * @param {number} hpPctOverride - HP% de antes do level up para preservar
          */
-        function maybeEvolveAfterLevelUp(mon, logArr) {
-            checkEvolution(mon, logArr);
+        function maybeEvolveAfterLevelUp(mon, logArr, hpPctOverride) {
+            checkEvolution(mon, logArr, hpPctOverride);
         }
         
         /**
