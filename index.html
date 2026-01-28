@@ -657,9 +657,10 @@
                         GameState.players.forEach(player => {
                             migrateInventory(player);
                             
-                            // Garantir que monstros tenham ENE
+                            // Garantir que monstros tenham ENE e campos de progressão (Feature 3.3)
                             if (player.team) {
                                 player.team.forEach(monster => {
+                                    // ENE (Sistema ENE)
                                     if (!monster.eneMax) {
                                         monster.eneMax = 10 + (monster.level || 1);
                                         monster.ene = monster.eneMax;
@@ -667,6 +668,9 @@
                                     if (monster.ene === undefined) {
                                         monster.ene = monster.eneMax;
                                     }
+                                    
+                                    // Progressão (Feature 3.3) - compatibilidade com saves antigos
+                                    ensureMonsterProgressFields(monster);
                                 });
                             }
                         });
@@ -1191,7 +1195,8 @@
                     type: type,
                     active: true,
                     log: [],
-                    selectedPlayerId: type === 'wild' ? document.getElementById('encounterPlayer')?.value : null
+                    selectedPlayerId: type === 'wild' ? document.getElementById('encounterPlayer')?.value : null,
+                    rewardsGranted: false  // Previne duplicação de XP
                 };
                 
                 if (type === 'wild') {
@@ -1235,7 +1240,8 @@
                     turnIndex: 0,
                     currentActor: null,
                     finished: false,
-                    result: null
+                    result: null,
+                    rewardsGranted: false  // Previne duplicação de XP
                 };
                 
                 // Calcular ordem de turnos
@@ -1360,10 +1366,8 @@
                 enc.log = enc.log || [];
                 enc.log.push("🏁 Vitória! Todos os inimigos foram derrotados.");
                 
-                // Calcular e distribuir XP (Feature 3.3)
-                enc.rewards = enc.rewards || {};
-                enc.rewards.xp = calculateBattleXP(enc.enemies[0], enc.type);
-                distributeGroupXP(enc);
+                // Distribuir recompensas (XP) com idempotência
+                handleVictoryRewards(enc);
                 
                 return;
             }
@@ -1737,8 +1741,34 @@
         }
         
         // ═════════════════════════════════════════════════════════════
-        // FEATURE 3.3 - SISTEMA DE XP E LEVEL UP
+        // FEATURE 3.3 - SISTEMA DE XP E LEVEL UP (com idempotência)
         // ═════════════════════════════════════════════════════════════
+        
+        /**
+         * Garante que um monstro tenha campos de progressão (compatibilidade com saves antigos)
+         */
+        function ensureMonsterProgressFields(mon) {
+            if (!mon) return;
+            mon.level = Math.max(1, Number(mon.level) || 1);
+            mon.xp = Math.max(0, Number(mon.xp) || 0);
+            mon.xpNeeded = Math.max(1, Number(mon.xpNeeded) || calcXpNeeded(mon.level));
+            // Fallback hpMax/maxHp
+            if (mon.hpMax == null && mon.maxHp != null) mon.hpMax = mon.maxHp;
+            if (mon.hp == null && mon.hpMax != null) mon.hp = mon.hpMax;
+        }
+        
+        /**
+         * Calcula XP necessário para próximo nível (curva suave)
+         */
+        function calcXpNeeded(level) {
+            const L = Math.max(1, Number(level) || 1);
+            return Math.round(40 + 6 * L + 0.6 * (L * L));
+        }
+        
+        // Alias para compatibilidade
+        function calculateXPNeeded(level) {
+            return calcXpNeeded(level);
+        }
         
         /**
          * Calcula XP ganho de uma batalha
@@ -1748,92 +1778,128 @@
          */
         function calculateBattleXP(defeatedEnemy, encounterType) {
             const base = 15;
-            const levelFactor = defeatedEnemy.level * 2;
-            const rarityMult = GameState.config.rarityXP[defeatedEnemy.rarity] || 1;
+            const level = Math.max(1, Number(defeatedEnemy?.level) || 1);
+            const rarity = defeatedEnemy?.rarity || defeatedEnemy?.raridade || null;
             
-            let xp = Math.floor((base + levelFactor) * rarityMult);
+            // Multiplicador de raridade (com fallback)
+            const rarityMult = Number(GameState.config.rarityXP?.[rarity]) || 1.0;
+            
+            let xp = Math.floor((base + level * 2) * rarityMult);
             
             // Boss bonus
-            if (encounterType === 'boss') {
+            if (String(encounterType).toLowerCase() === 'boss') {
                 xp = Math.floor(xp * 1.5);
             }
             
-            return xp;
-        }
-        
-        /**
-         * Calcula XP necessário para próximo nível
-         * @param {number} level - Nível atual
-         * @returns {number} - XP necessário
-         */
-        function calculateXPNeeded(level) {
-            // Fórmula: 40 + 6*L + 0.6*(L*L)
-            return Math.round(40 + 6 * level + 0.6 * (level * level));
+            return Math.max(1, xp);
         }
         
         /**
          * Dá XP para um monstro e processa level ups
          * @param {Object} mon - Monstro que receberá XP
          * @param {number} amount - Quantidade de XP
+         * @param {Array} logArr - Array de log (opcional, usa encounter.log se não fornecido)
          */
-        function giveXP(mon, amount) {
+        function giveXP(mon, amount, logArr) {
             if (!mon) return;
             
-            mon.xp = (Number(mon.xp) || 0) + amount;
-            _log(GameState.currentEncounter, `💎 ${mon.nickname || mon.name} ganhou ${amount} XP!`);
+            ensureMonsterProgressFields(mon);
+            
+            const xpGain = Math.max(0, Number(amount) || 0);
+            if (xpGain <= 0) return;
+            
+            const name = mon.nickname || mon.name || mon.nome || "Monstrinho";
+            mon.xp += xpGain;
+            
+            // Logar no array fornecido ou no encounter atual
+            const log = Array.isArray(logArr) ? logArr : (GameState.currentEncounter?.log || []);
+            if (Array.isArray(log)) {
+                log.push(`🧪 ${name} ganhou +${xpGain} XP.`);
+            }
             
             // Loop de level ups (pode subir múltiplos níveis de uma vez)
             while (mon.xp >= mon.xpNeeded) {
                 mon.xp -= mon.xpNeeded;
-                levelUp(mon);
+                levelUpMonster(mon, log);
             }
         }
         
         /**
          * Processa um level up para o monstro
          * @param {Object} mon - Monstro que vai subir de nível
+         * @param {Array} logArr - Array de log (opcional)
          */
-        function levelUp(mon) {
+        function levelUpMonster(mon, logArr) {
             if (!mon) return;
+            
+            ensureMonsterProgressFields(mon);
             
             mon.level++;
             
-            // Aumentar HP Max (fórmula: hpMax * 1.04 + 2)
-            mon.hpMax = Math.floor(mon.hpMax * 1.04 + 2);
+            // Aumentar HP Max (fórmula oficial: hpMax * 1.04 + 2)
+            const hpMax = Number(mon.hpMax) || Number(mon.maxHp) || 1;
+            mon.hpMax = Math.floor(hpMax * 1.04 + 2);
             
             // Curar completamente ao subir de nível
             mon.hp = mon.hpMax;
             
             // Recalcular stats baseado no novo nível
-            recalculateStats(mon);
+            recalculateStatsFromTemplate(mon);
             
             // Próximo XP necessário
-            mon.xpNeeded = calculateXPNeeded(mon.level);
+            mon.xpNeeded = calcXpNeeded(mon.level);
             
             // Log com emoji especial
-            _log(GameState.currentEncounter, 
-                `✨ ${mon.nickname || mon.name} subiu para o nível ${mon.level}!`);
+            const log = Array.isArray(logArr) ? logArr : (GameState.currentEncounter?.log || []);
+            const name = mon.nickname || mon.name || mon.nome || "Monstrinho";
+            if (Array.isArray(log)) {
+                log.push(`✨ ${name} subiu para o nível ${mon.level}!`);
+            }
+        }
+        
+        // Alias para compatibilidade
+        function levelUp(mon) {
+            return levelUpMonster(mon, GameState.currentEncounter?.log);
         }
         
         /**
-         * Recalcula stats do monstro baseado no nível e raridade
+         * Recalcula stats do monstro baseado no nível e raridade (com fallbacks)
          * @param {Object} mon - Monstro para recalcular
          */
-        function recalculateStats(mon) {
-            if (!mon || !mon.monsterId) return;
+        function recalculateStatsFromTemplate(mon) {
+            if (!mon) return;
             
-            // Buscar template base do catálogo
-            const template = MONSTER_CATALOG.find(m => m.id === mon.monsterId);
-            if (!template) return;
+            ensureMonsterProgressFields(mon);
+            
+            // Buscar template base do catálogo (com múltiplos fallbacks)
+            const catalog = MONSTER_CATALOG || (window.DB?.MONSTERS) || (window.DB?.MONSTER_CATALOG) || [];
+            const templateId = mon.monsterId || mon.idBase || mon.templateId;
+            const template = catalog.find(m => String(m.id) === String(templateId));
+            
+            if (!template) return; // Não quebra se não encontrar
+            
+            // Obter raridade (com fallback)
+            const rarity = template.rarity || template.raridade || mon.rarity || mon.raridade;
             
             // Multiplicadores
-            const rarityMult = GameState.config.rarityPower[template.rarity] || 1;
-            const levelMult = 1 + (mon.level - 1) * 0.1;
+            const rarityPowerMap = GameState.config.rarityPower || (window.DB?.RARITY_POWER) || {};
+            const rarityMult = Number(rarityPowerMap[rarity]) || 1.0;
+            const levelMult = 1 + (Math.max(1, mon.level) - 1) * 0.1;
             
-            // Recalcular stats (HP é tratado separadamente em levelUp)
-            mon.atk = Math.floor(template.baseAtk * levelMult * rarityMult);
-            mon.def = Math.floor(template.baseDef * levelMult * rarityMult);
-            mon.spd = Math.floor(template.baseSpd * levelMult * rarityMult);
+            // Base stats (com múltiplos fallbacks)
+            const baseAtk = Number(template.baseAtk ?? template.atkBase ?? template.atk) || 0;
+            const baseDef = Number(template.baseDef ?? template.defBase ?? template.def) || 0;
+            const baseSpd = Number(template.baseSpd ?? template.spdBase ?? template.spd) || 0;
+            
+            // Recalcular stats (HP é tratado separadamente em levelUpMonster)
+            mon.atk = Math.floor(baseAtk * levelMult * rarityMult);
+            mon.def = Math.floor(baseDef * levelMult * rarityMult);
+            mon.spd = Math.floor(baseSpd * levelMult * rarityMult);
+        }
+        
+        // Alias para compatibilidade
+        function recalculateStats(mon) {
+            return recalculateStatsFromTemplate(mon);
         }
         
         /**
@@ -1870,6 +1936,60 @@
             if (!mon || mon.hp <= 0) return;
             
             giveXP(mon, encounter.rewards.xp);
+        }
+        
+        /**
+         * Distribui recompensas de vitória de forma idempotente (XP + recompensas futuras)
+         * Previne duplicação via flag rewardsGranted
+         * @param {Object} enc - Encounter (wild ou group)
+         */
+        function handleVictoryRewards(enc) {
+            if (!enc || enc.rewardsGranted) return;
+            enc.rewardsGranted = true;
+            
+            enc.log = enc.log || [];
+            
+            // Determinar inimigo derrotado principal (primeiro inimigo)
+            const defeated = (enc.enemies && enc.enemies[0]) ? enc.enemies[0] : enc.wildMonster;
+            if (!defeated) {
+                enc.log.push("ℹ️ (XP) Não foi possível identificar inimigo derrotado.");
+                return;
+            }
+            
+            // Calcular XP
+            const xp = calculateBattleXP(defeated, enc.type);
+            enc.rewards = enc.rewards || {};
+            enc.rewards.xp = xp;
+            enc.log.push(`🏅 Recompensa: ${xp} XP.`);
+            
+            // Distribuir XP baseado no tipo de batalha
+            const isGroup = String(enc.type || '').includes("group") || 
+                           String(enc.type || '').toLowerCase() === "boss" ||
+                           enc.participants?.length > 0;
+            
+            if (isGroup) {
+                // Grupo: cada participante vivo recebe XP completo
+                for (const pid of (enc.participants || [])) {
+                    const p = GameState.players.find(x => x.id === pid);
+                    const mon = p?.team?.[0];
+                    if (!mon || (Number(mon.hp) || 0) <= 0) continue;
+                    giveXP(mon, xp, enc.log);
+                }
+            } else {
+                // 1v1: jogador atual (ou primeiro se não especificado)
+                let player = null;
+                if (enc.selectedPlayerId || enc.currentPlayerId) {
+                    player = GameState.players.find(p => 
+                        p.id === (enc.selectedPlayerId || enc.currentPlayerId)
+                    );
+                }
+                if (!player) player = GameState.players?.[0] || null;
+                
+                const mon = player?.team?.[0];
+                if (mon && (Number(mon.hp) || 0) > 0) {
+                    giveXP(mon, xp, enc.log);
+                }
+            }
         }
         
         function renderGroupEncounter(panel, encounter) {
@@ -2631,10 +2751,8 @@
                     if (encounter.wildMonster.hp <= 0) {
                         encounter.log.push(`🏆 ${encounter.wildMonster.name} fainted! Victory!`);
                         
-                        // Feature 3.3: Calcular e distribuir XP
-                        encounter.rewards = encounter.rewards || {};
-                        encounter.rewards.xp = calculateBattleXP(encounter.wildMonster, 'wild');
-                        distributeWildXP(encounter);
+                        // Feature 3.3: Distribuir recompensas (XP) com idempotência
+                        handleVictoryRewards(encounter);
                         
                         encounter.active = false;
                         GameState.currentEncounter = null;
