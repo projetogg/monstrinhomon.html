@@ -155,6 +155,25 @@
             border-radius: 10px; margin: 5px; font-weight: bold;
         }
         
+        #mmToastHost{
+          position:fixed;
+          top:12px;
+          right:12px;
+          z-index:9999;
+          display:flex;
+          flex-direction:column;
+          gap:8px;
+        }
+        .mm-toast{
+          background:rgba(20,20,20,0.92);
+          color:#fff;
+          padding:10px 12px;
+          border-radius:12px;
+          font-size:14px;
+          max-width:320px;
+          box-shadow:0 8px 24px rgba(0,0,0,0.25);
+        }
+        
         @media (max-width: 768px) {
             .header h1 { font-size: 1.8em; }
             .tab-button { padding: 12px 20px; font-size: 14px; }
@@ -1773,6 +1792,54 @@
         }
         
         /**
+         * Garante que um monstro tenha campos de XP preenchidos
+         */
+        function ensureXpFields(mon) {
+            if (!mon) return;
+            if (mon.level == null) mon.level = 1;
+            if (mon.xp == null) mon.xp = 0;
+            if (mon.xpNeeded == null) mon.xpNeeded = calcXpNeeded(mon.level);
+        }
+        
+        /**
+         * Exibe um toast notification temporário
+         */
+        function showToast(text) {
+            const host = document.getElementById("mmToastHost");
+            if (!host) return;
+
+            const el = document.createElement("div");
+            el.className = "mm-toast";
+            el.textContent = text;
+
+            host.appendChild(el);
+
+            setTimeout(() => {
+                el.style.opacity = "0";
+                el.style.transform = "translateY(-4px)";
+                el.style.transition = "opacity .2s ease, transform .2s ease";
+            }, 2600);
+
+            setTimeout(() => el.remove(), 3100);
+        }
+
+        /**
+         * Verifica novas entradas no log e exibe toasts para eventos importantes
+         * Usa cursor para evitar repetir toasts em re-render
+         */
+        function maybeToastFromLog(enc) {
+            if (!enc || !Array.isArray(enc.log)) return;
+
+            const start = Number.isFinite(enc._toastCursor) ? enc._toastCursor : 0;
+            for (let i = start; i < enc.log.length; i++) {
+                const line = String(enc.log[i] || "");
+                if (line.includes("✨")) showToast(line);
+                if (line.includes("🌟")) showToast(line);
+            }
+            enc._toastCursor = enc.log.length;
+        }
+        
+        /**
          * Calcula XP ganho de uma batalha
          * @param {Object} defeatedEnemy - Inimigo derrotado
          * @param {string} encounterType - Tipo do encontro ('wild', 'group_trainer', 'boss')
@@ -2174,9 +2241,17 @@
                     const mon = p.team?.[0];
                     if (!mon) continue;
                     
+                    // Garantir campos de XP
+                    ensureXpFields(mon);
+                    
                     const hp = Number(mon.hp) || 0;
                     const hpMax = Number(mon.hpMax) || 1;
                     const hpPercent = Math.floor((hp / hpMax) * 100);
+                    
+                    const xp = Math.max(0, Number(mon.xp) || 0);
+                    const xpNeeded = Math.max(1, Number(mon.xpNeeded) || calcXpNeeded(mon.level));
+                    const xpPct = Math.max(0, Math.min(100, Math.floor((xp / xpNeeded) * 100)));
+                    
                     const isCurrent = actor && actor.side === 'player' && actor.id === pid;
                     
                     const border = isCurrent ? '3px solid #4CAF50' : '1px solid #ddd';
@@ -2184,6 +2259,10 @@
                     html += `<strong>${p.name || p.nome}</strong> (${p.class})`;
                     html += `<br>${mon.name || mon.nome} - Nv ${mon.level}`;
                     html += `<br>HP: ${hp}/${hpMax} (${hpPercent}%)`;
+                    html += `<div class="progress-bar" style="margin-top:6px;">`;
+                    html += `<div class="progress-fill xp" style="width:${xpPct}%"></div>`;
+                    html += `</div>`;
+                    html += `<div class="small" style="margin-top:4px;">XP: ${xp}/${xpNeeded} (${xpPct}%)</div>`;
                     html += `</div>`;
                 }
                 html += '</div>';
@@ -2268,6 +2347,9 @@
                 html += '</div>';
                 
                 panel.innerHTML = html;
+                
+                // Exibir toasts para eventos importantes (level up, evolução)
+                maybeToastFromLog(encounter);
             } catch (error) {
                 showError('Failed to render group encounter', error.stack);
             }
@@ -2483,6 +2565,9 @@
                 
                 // Atualizar threshold inicial
                 setTimeout(() => updateCaptureThreshold(), 100);
+                
+                // Exibir toasts para eventos importantes (level up, evolução)
+                maybeToastFromLog(GameState.currentEncounter);
             } catch (error) {
                 showError('Failed to render wild encounter', error.stack);
             }
@@ -3767,5 +3852,6 @@
         // Initialize on load
         window.addEventListener('DOMContentLoaded', init);
     </script>
+    <div id="mmToastHost"></div>
 </body>
 </html>
