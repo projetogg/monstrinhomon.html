@@ -1924,13 +1924,17 @@
                 
                 if (!starterTemplate) return;
                 
-                const monster = createMonsterInstance(starterTemplate, player.id, 5);
+                // COMMIT 8 (Wave A): Use Award API for canonical monster creation
+                const monster = awardMonster(
+                    starterTemplate.id,  // templateId
+                    5,                   // level
+                    null,                // rarity (use template default)
+                    'party',             // destination
+                    player               // player object
+                );
                 
-                if (monster) {
-                    player.team = player.team || [];
-                    player.team.push(monster);
-                    GameState.monsters = GameState.monsters || [];
-                    GameState.monsters.push(monster);
+                if (!monster) {
+                    console.error('Failed to award starter monster via Award API');
                 }
             } catch (error) {
                 console.error('Failed to give starter monster:', error);
@@ -2111,6 +2115,217 @@
 
         // TODO (Commit 8): Substituir chamadas de createMonsterInstance() por createMonsterInstanceFromTemplate()
         // A função antiga ainda funciona para compatibilidade, mas a nova garante schema canônico.
+
+        // ============================================================================
+        // COMMIT 8: Award API - Single Official Path for Rewards
+        // ============================================================================
+
+        /**
+         * Awards XP to a monster and triggers level-ups automatically.
+         * @param {Object|number} target - Monster object or index in player's team
+         * @param {number} amount - XP amount to award (must be >= 1)
+         * @param {Object} player - Player object (optional, for index-based targeting)
+         * @returns {boolean} - true if successful, false otherwise
+         */
+        function awardXP(target, amount, player = null) {
+            try {
+                // Validate amount
+                const xpAmount = Math.max(1, Number(amount) || 0);
+                if (xpAmount < 1) {
+                    console.warn('[Award] Invalid XP amount:', amount);
+                    return false;
+                }
+
+                // Resolve target monster
+                let monster = null;
+                if (typeof target === 'object' && target !== null) {
+                    // Direct monster object
+                    monster = target;
+                } else if (typeof target === 'number' && player) {
+                    // Index in player's team
+                    if (!player.team || !Array.isArray(player.team)) {
+                        console.warn('[Award] Player has no team array');
+                        return false;
+                    }
+                    monster = player.team[target];
+                }
+
+                if (!monster) {
+                    console.warn('[Award] Target monster not found');
+                    return false;
+                }
+
+                // Use existing giveXP function (already handles level-ups)
+                const logArr = [];
+                giveXP(monster, xpAmount, logArr);
+
+                // Log to console if in therapist mode
+                if (typeof mmGetTherapistMode === 'function' && mmGetTherapistMode()) {
+                    console.log('[Award] Granted XP:', {
+                        monster: monster.name || monster.templateId,
+                        amount: xpAmount,
+                        newLevel: monster.level,
+                        log: logArr
+                    });
+                }
+
+                // Persist
+                saveGame();
+                return true;
+
+            } catch (error) {
+                console.error('[Award] awardXP failed:', error);
+                return false;
+            }
+        }
+
+        /**
+         * Awards an item to a player's inventory.
+         * @param {string} itemId - Item ID to award
+         * @param {number} qty - Quantity to award (must be >= 1)
+         * @param {Object} player - Player object
+         * @returns {boolean} - true if successful, false otherwise
+         */
+        function awardItem(itemId, qty, player) {
+            try {
+                // Validate inputs
+                if (!itemId || typeof itemId !== 'string') {
+                    console.warn('[Award] Invalid itemId:', itemId);
+                    return false;
+                }
+
+                const quantity = Math.max(1, Number(qty) || 1);
+                if (quantity < 1) {
+                    console.warn('[Award] Invalid quantity:', qty);
+                    return false;
+                }
+
+                if (!player || typeof player !== 'object') {
+                    console.warn('[Award] Invalid player object');
+                    return false;
+                }
+
+                // Ensure inventory exists
+                player.inventory = player.inventory || {};
+
+                // Add item (reuse existing inventory logic)
+                player.inventory[itemId] = (player.inventory[itemId] || 0) + quantity;
+
+                // Log to console if in therapist mode
+                if (typeof mmGetTherapistMode === 'function' && mmGetTherapistMode()) {
+                    console.log('[Award] Granted item:', {
+                        itemId: itemId,
+                        quantity: quantity,
+                        newTotal: player.inventory[itemId],
+                        player: player.name
+                    });
+                }
+
+                // Persist
+                saveGame();
+                return true;
+
+            } catch (error) {
+                console.error('[Award] awardItem failed:', error);
+                return false;
+            }
+        }
+
+        /**
+         * Awards a new monster to a player (party or box).
+         * @param {string} templateId - Monster template ID from catalog
+         * @param {number} level - Starting level
+         * @param {string|null} rarity - Rarity override (null = use template default)
+         * @param {string} destination - 'party', 'box', or 'auto' (auto respects team limit)
+         * @param {Object} player - Player object
+         * @param {Object} overrides - Optional field overrides
+         * @returns {Object|null} - Created monster or null if failed
+         */
+        function awardMonster(templateId, level, rarity, destination, player, overrides = {}) {
+            try {
+                // Validate inputs
+                if (!templateId || typeof templateId !== 'string') {
+                    console.warn('[Award] Invalid templateId:', templateId);
+                    return null;
+                }
+
+                if (!player || typeof player !== 'object') {
+                    console.warn('[Award] Invalid player object');
+                    return null;
+                }
+
+                const monsterLevel = Math.max(1, Number(level) || 1);
+                const dest = destination || 'auto';
+
+                // Create monster using factory (Commit 7)
+                const monster = createMonsterInstanceFromTemplate(templateId, monsterLevel, rarity, overrides);
+                
+                if (!monster) {
+                    console.warn('[Award] Failed to create monster from template:', templateId);
+                    return null;
+                }
+
+                // Set owner
+                if (player.id) {
+                    monster.ownerId = player.id;
+                }
+
+                // Ensure arrays exist
+                player.team = player.team || [];
+                player.box = player.box || [];
+
+                // Determine destination
+                let actualDest = dest;
+                if (dest === 'auto') {
+                    const maxTeamSize = GameState.config?.maxTeamSize || 6;
+                    actualDest = (player.team.length < maxTeamSize) ? 'party' : 'box';
+                }
+
+                // Add to destination
+                if (actualDest === 'party' || actualDest === 'team') {
+                    const maxTeamSize = GameState.config?.maxTeamSize || 6;
+                    if (player.team.length < maxTeamSize) {
+                        player.team.push(monster);
+                    } else {
+                        // Party full, add to box instead
+                        player.box.push(monster);
+                        actualDest = 'box';
+                        console.warn('[Award] Party full, monster sent to box');
+                    }
+                } else {
+                    // box
+                    player.box.push(monster);
+                }
+
+                // Add to global monsters list (for compatibility)
+                GameState.monsters = GameState.monsters || [];
+                GameState.monsters.push(monster);
+
+                // Log to console if in therapist mode
+                if (typeof mmGetTherapistMode === 'function' && mmGetTherapistMode()) {
+                    console.log('[Award] Granted monster:', {
+                        templateId: templateId,
+                        name: monster.name,
+                        level: monsterLevel,
+                        rarity: monster.rarity,
+                        destination: actualDest,
+                        player: player.name
+                    });
+                }
+
+                // Persist
+                saveGame();
+                return monster;
+
+            } catch (error) {
+                console.error('[Award] awardMonster failed:', error);
+                return null;
+            }
+        }
+
+        // ============================================================================
+        // End of Award API
+        // ============================================================================
 
         // Função para obter habilidade do monstrinho
         // Obter habilidades do monstrinho baseado em classe e estágio
@@ -6059,44 +6274,26 @@
             const player = GameState.players.find(p => p.id === pid);
             if (!player) return;
 
-            // Find monster template
-            const template = MONSTER_CATALOG.find(m => m.id === monId);
-            if (!template) {
-                alert("Monstro não encontrado no catálogo.");
-                return;
-            }
-
-            if (typeof createMonsterInstance !== "function") {
-                alert("createMonsterInstance() não encontrado no código.");
-                return;
-            }
-
-            const inst = createMonsterInstance(template, player.id, lv);
+            // COMMIT 8 (Wave A): Use Award API for canonical monster creation
+            const inst = awardMonster(
+                monId,      // templateId
+                lv,         // level
+                null,       // rarity (use template default)
+                dest,       // destination ('auto', 'team', or 'box')
+                player      // player object
+            );
+            
             if (!inst) {
-                alert("Erro ao criar instância do monstro.");
+                alert("❌ Erro ao conceder monstro via Award API.");
                 return;
             }
 
-            player.team = player.team || [];
-            player.box = player.box || [];
-
-            let where = dest;
-            if (dest === "auto") where = (player.team.length < 6 ? "team" : "box");
-
-            if (where === "team") {
-                if (player.team.length >= 6) {
-                    alert("Time cheio (6). Use Caixa.");
-                    return;
-                }
-                player.team.push(inst);
-            } else {
-                player.box.push(inst);
-            }
-
-            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
             if (typeof renderEncounter === "function") renderEncounter();
             
-            const destText = where === "team" ? "time" : "caixa";
+            // Determine where it actually went (Award API handles team limit)
+            const inTeam = player.team.some(m => m.instanceId === inst.instanceId);
+            const destText = inTeam ? "time" : "caixa";
+            
             if (typeof showToast === "function") {
                 showToast(`🐾 ${player.name} recebeu ${inst.name || monId} (Lv ${lv}) no ${destText}`);
             } else {
@@ -6286,14 +6483,12 @@
                         m.class && p.class && m.class.toLowerCase() === p.class.toLowerCase()
                     ) || MONSTER_CATALOG[0]; // Fallback to first monster if no match
                     
-                    // Create the starter monster instance
-                    const starterMonster = createMonsterInstance(starterTemplate, playerId, 1);
-                    
+                    // Create player first (Award API needs player object)
                     const player = {
                         id: playerId,
                         name: p.name,
                         class: p.class,
-                        team: starterMonster ? [starterMonster] : [],
+                        team: [],
                         box: [],
                         inventory: {
                             'Monstribola': 5,
@@ -6303,9 +6498,17 @@
                     
                     GameState.players.push(player);
                     
-                    // Also add to GameState.monsters for compatibility
-                    if (starterMonster) {
-                        GameState.monsters.push(starterMonster);
+                    // COMMIT 8 (Wave A): Use Award API for canonical monster creation
+                    const starterMonster = awardMonster(
+                        starterTemplate.id,  // templateId
+                        1,                   // level
+                        null,                // rarity (use template default)
+                        'party',             // destination
+                        player               // player object
+                    );
+                    
+                    if (!starterMonster) {
+                        console.error('Failed to award starter monster to new player:', p.name);
                     }
                 });
 
