@@ -3705,6 +3705,9 @@
 
         // ===== Feature 4.0: Menu / Flow =====
         const MM_SAVE_KEY = "monstrinhomon_state"; // Using the same key as the existing save system
+        const MM_MIN_PLAYERS = 1;
+        const MM_MAX_PLAYERS = 6;
+        const MM_MAX_PLAYER_NAME_LENGTH = 14;
 
         function mmEl(id){ return document.getElementById(id); }
 
@@ -3755,7 +3758,7 @@
                 updateAllViews();
             } catch(e){
                 console.warn("mmContinue failed", e);
-                alert("Erro ao carregar o save: " + e.message);
+                alert("Não foi possível carregar o jogo salvo. Por favor, tente novamente ou comece um novo jogo.");
             }
             mmCloseAllOverlays();
         }
@@ -3767,7 +3770,7 @@
                 localStorage.removeItem(MM_SAVE_KEY);
                 alert("Save apagado com sucesso!");
             } catch(e){
-                alert("Erro ao apagar save: " + e.message);
+                alert("Não foi possível apagar o save. Por favor, tente novamente.");
             }
             mmShowMainMenu();
         }
@@ -3831,7 +3834,7 @@
 
             // Step 2: players
             if (MM_NEW.step === 2) {
-                // garante array
+                // Ajusta o array de jogadores para corresponder ao número selecionado
                 while (MM_NEW.players.length < MM_NEW.numPlayers) {
                     MM_NEW.players.push({ name: "", class: MM_CLASSES[0] });
                 }
@@ -3844,7 +3847,7 @@
                         <div style="font-weight:900; margin-bottom:8px;">Jogador ${i+1}</div>
                         <div class="mm-field">
                             <label>Nome</label>
-                            <input id="mmPName_${i}" maxlength="14" placeholder="Ex.: Ana" value="${escapeHtml(p.name || "")}">
+                            <input id="mmPName_${i}" maxlength="${MM_MAX_PLAYER_NAME_LENGTH}" placeholder="Ex.: Ana" value="${escapeHtml(p.name || "")}">
                         </div>
                         <div class="mm-field">
                             <label>Classe</label>
@@ -3887,10 +3890,10 @@
         }
 
         function mmNewGameNext(){
-            // capturar inputs do step atual
+            // Captura inputs do passo atual
             if (MM_NEW.step === 0) {
-                const n = Number(mmEl("mmNumPlayers")?.value || 1);
-                MM_NEW.numPlayers = Math.max(1, Math.min(6, n));
+                const n = Number(mmEl("mmNumPlayers")?.value || MM_MIN_PLAYERS);
+                MM_NEW.numPlayers = Math.max(MM_MIN_PLAYERS, Math.min(MM_MAX_PLAYERS, n));
             }
             if (MM_NEW.step === 1) {
                 MM_NEW.difficulty = String(mmEl("mmDifficulty")?.value || "medium");
@@ -3898,8 +3901,8 @@
             if (MM_NEW.step === 2) {
                 for (let i=0;i<MM_NEW.players.length;i++){
                     const name = String(mmEl(`mmPName_${i}`)?.value || "").trim();
-                    const cls = String(mmEl(`mmPClass_${i}`)?.value || MM_CLASSES[0]);
-                    MM_NEW.players[i] = { name, class: cls };
+                    const playerClass = String(mmEl(`mmPClass_${i}`)?.value || MM_CLASSES[0]);
+                    MM_NEW.players[i] = { name, class: playerClass };
                 }
             }
 
@@ -3909,7 +3912,7 @@
 
         function mmFinishNewGame(){
             try {
-                // valida nomes (MVP: auto-preenche)
+                // Valida e auto-preenche nomes vazios com padrão 'Jogador N'
                 MM_NEW.players = MM_NEW.players.map((p, idx) => ({
                     name: p.name?.trim() ? p.name.trim() : `Jogador ${idx+1}`,
                     class: p.class || MM_CLASSES[0]
@@ -3926,10 +3929,15 @@
                 MM_NEW.players.forEach((p, idx) => {
                     const playerId = `p_${Date.now()}_${idx}`;
                     
-                    // Find a starter monster of the same class
+                    // Busca monstrinho inicial da mesma classe do jogador
+                    // Fallback: usa o primeiro monstrinho do catálogo se não encontrar match
                     const starterTemplate = MONSTER_CATALOG.find(m => 
                         m.class && p.class && m.class.toLowerCase() === p.class.toLowerCase()
-                    ) || MONSTER_CATALOG[0]; // Fallback to first monster if no match
+                    ) || MONSTER_CATALOG[0];
+                    
+                    if (!starterTemplate) {
+                        console.warn(`No starter monster found for player ${p.name} (${p.class})`);
+                    }
                     
                     // Create the starter monster instance
                     const starterMonster = createMonsterInstance(starterTemplate, playerId, 1);
@@ -3968,7 +3976,7 @@
                 
             } catch(e) {
                 console.error("mmFinishNewGame failed", e);
-                alert("Erro ao criar novo jogo: " + e.message);
+                alert("Não foi possível criar o jogo. Por favor, tente novamente.");
             }
 
             mmCloseAllOverlays();
