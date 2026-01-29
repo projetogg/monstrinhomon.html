@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Monstrinhomon - Therapeutic Game</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1292,9 +1292,13 @@
                                     if (!monster) return;
                                     
                                     // ENE (Sistema ENE)
+                                    // Migrar ENE para saves antigos (correção BC-04)
+                                    const baseEne = 10;
+                                    const eneGrowth = 2;
+                                    const monsterLevel = monster.level || 1;
+                                    
                                     if (!monster.eneMax) {
-                                        monster.eneMax = 10 + (monster.level || 1);
-                                        monster.ene = monster.eneMax;
+                                        monster.eneMax = Math.floor(baseEne + eneGrowth * (monsterLevel - 1));
                                     }
                                     if (monster.ene === undefined) {
                                         monster.ene = monster.eneMax;
@@ -1349,7 +1353,9 @@
         function mmIsTherapistMode() {
             try {
                 if (GameState && typeof GameState.therapistMode === "boolean") return GameState.therapistMode;
-            } catch (e) {}
+            } catch (e) {
+                console.warn('Failed to access GameState.therapistMode:', e);
+            }
             return localStorage.getItem("mm_therapist_mode") === "1";
         }
 
@@ -1357,7 +1363,9 @@
             const v = !!on;
             try { 
                 GameState.therapistMode = v; 
-            } catch (e) {}
+            } catch (e) {
+                console.warn('Failed to set GameState.therapistMode:', e);
+            }
             localStorage.setItem("mm_therapist_mode", v ? "1" : "0");
             if (typeof saveToLocalStorage === "function") saveToLocalStorage();
             // Update UI elements
