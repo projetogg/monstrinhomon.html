@@ -2161,9 +2161,7 @@
 
                 // GAME_RULES.md: Em batalha, só pode usar monstros da mesma classe do jogador
                 if (mon.class !== player.class) {
-                    _log(enc, `⚠️ ${mon.name} não é da classe ${player.class}! Não pode lutar.`);
-                    saveToLocalStorage();
-                    renderEncounter();
+                    alert(`⚠️ ${player.name}: Você só pode usar monstrinhos da classe ${player.class} em batalha!\n\nEste ${mon.name} é da classe ${mon.class}.\nREGRA: Em batalha, você só pode usar monstrinhos da SUA classe.`);
                     return;
                 }
 
