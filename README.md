@@ -159,9 +159,24 @@ Created for therapeutic use in clinical settings.
 
 For issues or questions, consult the error panel or check browser console for details.
 
+## 📚 Additional Documentation
+
+**New Technical Analysis (2026-01-29):**
+- **ANALISE_COMPLETA_SISTEMA.md** - Comprehensive system analysis with 17 critical bugs identified
+- **BUGFIXES_APPLIED.md** - Bug fixes applied to improve stability
+- **COMMIT_8_AWARD_API.md** - Award API implementation for unified XP/item/monster granting
+- **HARDENING_REPORT.md** - System hardening and robustness improvements
+- **REFACTORING_STATUS_REPORT.md** - Detailed refactoring status with 86 identified issues
+- **RESUMO_EXECUTIVO_ANALISE.md** - Executive summary of system state
+
+**Project Roadmap:**
+- **ANALISE_PROJETO_MELHORIAS.md** - Architectural improvements and modularization plan
+- **GUIA_IMPLEMENTACAO_PRATICO.md** - Practical implementation guide (5-week roadmap)
+- **RESPOSTA_ANALISE_PROJETO.md** - Direct answers to improvement questions
+
 ---
 
-**Note**: This is an MVP (Minimum Viable Product). Future enhancements can include:
+**Note**: This is an MVP (Minimum Viable Product) with identified technical debt. Future enhancements documented include:
 - Trainer battles
 - Boss battles  
 - Narrative events

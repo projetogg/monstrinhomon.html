@@ -15,11 +15,13 @@
 │  • Modo terapêutico                            │
 │  • Save/Load (3 slots)                         │
 │  • Tutorial interativo                         │
+│  • Award API (Commit 8)                        │
 │                                                 │
-│  ⚠️ Problema:                                   │
-│  • index.html com 6.471 linhas                 │
+│  ⚠️ Problema CRÍTICO:                           │
+│  • index.html com 7.274 linhas (+803)         │
 │  • Tudo em um arquivo único                    │
-│  • Difícil de manter/expandir                  │
+│  • 17 bugs críticos identificados              │
+│  • Dívida técnica significativa                │
 │                                                 │
 └─────────────────────────────────────────────────┘
 ```
@@ -178,7 +180,7 @@
 ```
 📁 monstrinhomon/
 │
-└── index.html (6.471 linhas)
+└── index.html (7.274 linhas)
     │
     ├─ HTML
     ├─ CSS
@@ -186,9 +188,10 @@
     └─ Dados
 
 ❌ Tudo misturado
-❌ Difícil manter
+❌ Difícil manter (crescendo constantemente)
 ❌ Sem testes
 ❌ Sem ferramentas
+❌ 17 bugs críticos (ANALISE_COMPLETA_SISTEMA.md)
 ```
 
 ### DEPOIS (Meta - 5 semanas)
@@ -259,11 +262,13 @@
 ### "Por que modularizar?"
 ```
 Projeto está crescendo:
-├── Hoje: 6.471 linhas
+├── Hoje: 7.274 linhas (+803 desde última análise)
 ├── Futuro: 10.000+ linhas
+├── Bugs: 17 críticos + 23 médios identificados
 └── Manutenção: IMPOSSÍVEL
 
 Solução: Dividir em 15+ módulos pequenos
+Ver: ANALISE_COMPLETA_SISTEMA.md para detalhes
 ```
 
 ### "Por que Vite?"

@@ -66,7 +66,7 @@ npm test            # Rodar testes
 **ANTES:**
 ```
 📁 projeto/
-└── index.html (6.471 linhas)
+└── index.html (7.274 linhas)
 ```
 
 **DEPOIS:**
@@ -104,12 +104,13 @@ npm test            # Rodar testes
 
 | Antes | Depois |
 |-------|--------|
-| ❌ 6.471 linhas em 1 arquivo | ✅ 15+ arquivos pequenos |
+| ❌ 7.274 linhas em 1 arquivo | ✅ 15+ arquivos pequenos |
 | ❌ Difícil manter | ✅ Fácil manter |
 | ❌ Sem testes | ✅ 80%+ cobertura |
 | ❌ Dados hardcoded | ✅ Dados em JSON |
 | ❌ Sem ferramentas | ✅ Editor + relatórios |
 | ❌ Só browser | ✅ PWA instalável |
+| ❌ 17 bugs críticos | ✅ Corrigidos + prevenção |
 
 ---
 

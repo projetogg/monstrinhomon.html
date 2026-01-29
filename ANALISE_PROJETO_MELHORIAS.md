@@ -12,11 +12,11 @@
 O Monstrinhomon é um **jogo terapêutico RPG** para crianças com TEA e TDAH, operado por terapeutas em iPads. O projeto está em **estado MVP completo**, com sistema de batalhas, captura, progressão e terapia funcional.
 
 **Métricas Atuais:**
-- **Arquivo principal:** `index.html` (6.471 linhas)
+- **Arquivo principal:** `index.html` (7.274 linhas - cresceu +803 linhas)
 - **Arquitetura:** Single Page Application (SPA) sem dependências
 - **Dados:** 11 monstros, 8 classes, 20+ habilidades
-- **Features:** 15+ sistemas implementados (batalha, XP, evolução, captura, terapia)
-- **Documentação:** 20+ arquivos MD (regras, roadmap, features)
+- **Features:** 15+ sistemas implementados (batalha, XP, evolução, captura, terapia, Award API)
+- **Documentação:** 20+ arquivos MD (regras, roadmap, features, análises técnicas)
 
 ### Pontos Fortes ✅
 1. **Portabilidade:** arquivo único, fácil de hospedar (GitHub Pages)
@@ -27,17 +27,18 @@ O Monstrinhomon é um **jogo terapêutico RPG** para crianças com TEA e TDAH, o
 6. **Save/Load:** 3 slots + export/import JSON
 
 ### Limitações Atuais ⚠️
-1. **Escalabilidade:** arquivo único de 6k+ linhas dificulta manutenção
-2. **Dados hardcoded:** monstros/skills no código, não em arquivos externos
+1. **Escalabilidade CRÍTICA:** arquivo único de 7.274 linhas (crescendo constantemente)
+2. **Dados hardcoded:** monstros/skills no código, CSVs não são usados
 3. **Sem assets visuais:** usa emojis, faltam sprites/imagens
 4. **Sem backend:** tudo no client, sem sincronização entre dispositivos
 5. **localStorage only:** não funciona em modo anônimo
+6. **Dívida técnica:** 17 bugs críticos, 23 bugs médios identificados (ver ANALISE_COMPLETA_SISTEMA.md)
 
 ---
 
 ## 🏗️ Arquitetura Recomendada - Modularização
 
-### Problema: Arquivo Único de 6k+ Linhas
+### Problema: Arquivo Único de 7k+ Linhas
 O `index.html` atual contém HTML + CSS + JavaScript inline. Isso funciona para MVP, mas dificulta:
 - Manutenção e debug
 - Trabalho em equipe (conflitos de merge)
@@ -772,12 +773,15 @@ describe('Dano', () => {
 
 ## 💬 Conclusão
 
-O projeto **Monstrinhomon** está em **excelente estado funcional**, com todas as mecânicas core implementadas. As melhorias sugeridas focam em:
+O projeto **Monstrinhomon** está em **excelente estado funcional**, com todas as mecânicas core implementadas e Award API unificada. As melhorias sugeridas focam em:
 
-1. **Organização do código** (modularização)
-2. **Ferramentas para terapeutas** (editor, relatórios)
-3. **Experiência visual** (sprites, animações)
-4. **Robustez técnica** (testes, CI/CD)
+1. **Organização do código** (modularização CRÍTICA - 7.274 linhas)
+2. **Correção de bugs** (17 críticos + 23 médios identificados)
+3. **Ferramentas para terapeutas** (editor, relatórios)
+4. **Experiência visual** (sprites, animações)
+5. **Robustez técnica** (testes, CI/CD)
+
+**Para análise técnica detalhada:** Ver `ANALISE_COMPLETA_SISTEMA.md`
 
 **Prioridade Máxima:**
 - ✅ Configurar build system (Vite)

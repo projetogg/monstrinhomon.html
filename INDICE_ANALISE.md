@@ -7,6 +7,22 @@
 
 ## 🎯 Começar Por Aqui
 
+### 🚨 NOVO: Análise Técnica Detalhada (2026-01-29)
+👉 **[ANALISE_COMPLETA_SISTEMA.md](ANALISE_COMPLETA_SISTEMA.md)** (60 min de leitura) 🔴 **CRÍTICO**
+- **17 bugs críticos** identificados (incluindo arquitetura monolítica de 7.274 linhas)
+- **23 bugs médios** que afetam funcionalidade
+- **31 melhorias de código** documentadas
+- Priorização clara e roadmap de correção
+
+👉 **[RESUMO_EXECUTIVO_ANALISE.md](RESUMO_EXECUTIVO_ANALISE.md)** (15 min de leitura)
+- Resumo executivo dos problemas encontrados
+- Métricas de qualidade do sistema
+- Top 5 bugs críticos priorizados
+
+---
+
+### Para Implementação de Melhorias:
+
 ### Quer uma resposta rápida?
 👉 **[QUICK_REFERENCE_ANALISE.md](QUICK_REFERENCE_ANALISE.md)** (3 min de leitura)
 - Tabela de arquivos necessários
@@ -45,7 +61,9 @@
 > "Faça uma análise geral sobre o projeto procurando melhorias e próximos passos, bem como que outras coisas criar além do 'index' e como criar e para que e se é necessário."
 
 ### Resposta Curta
-O projeto está **funcionalmente completo** como MVP, mas precisa de **reorganização do código** (6.471 linhas em um arquivo) para crescer de forma sustentável.
+O projeto está **funcionalmente completo** como MVP, mas precisa de **reorganização URGENTE do código** (7.274 linhas em um arquivo, cresceu +803) para crescer de forma sustentável.
+
+**Análise Técnica Completa:** Ver `ANALISE_COMPLETA_SISTEMA.md` - identifica 17 bugs críticos, 23 bugs médios e 31 melhorias de código.
 
 **Criar:**
 1. ✅ **editor.html** - CRUD de dados (NECESSÁRIO)
@@ -61,15 +79,26 @@ O projeto está **funcionalmente completo** como MVP, mas precisa de **reorganiz
 
 ## 📊 Documentos Criados
 
+### Análise de Arquitetura e Melhorias
 | Documento | Tamanho | Tempo | Propósito |
 |-----------|---------|-------|-----------|
 | [QUICK_REFERENCE_ANALISE.md](QUICK_REFERENCE_ANALISE.md) | 3 KB | 3 min | Referência rápida |
-| [RESUMO_VISUAL_ANALISE.md](RESUMO_VISUAL_ANALISE.md) | 8 KB | 5 min | Resumo visual |
-| [RESPOSTA_ANALISE_PROJETO.md](RESPOSTA_ANALISE_PROJETO.md) | 13 KB | 10 min | Resposta completa |
-| [GUIA_IMPLEMENTACAO_PRATICO.md](GUIA_IMPLEMENTACAO_PRATICO.md) | 24 KB | 30 min | Guia prático |
-| [ANALISE_PROJETO_MELHORIAS.md](ANALISE_PROJETO_MELHORIAS.md) | 20 KB | 45 min | Análise técnica |
+| [RESUMO_VISUAL_ANALISE.md](RESUMO_VISUAL_ANALISE.md) | 11 KB | 5 min | Resumo visual |
+| [RESPOSTA_ANALISE_PROJETO.md](RESPOSTA_ANALISE_PROJETO.md) | 14 KB | 10 min | Resposta completa |
+| [GUIA_IMPLEMENTACAO_PRATICO.md](GUIA_IMPLEMENTACAO_PRATICO.md) | 25 KB | 30 min | Guia prático |
+| [ANALISE_PROJETO_MELHORIAS.md](ANALISE_PROJETO_MELHORIAS.md) | 21 KB | 45 min | Análise técnica |
 
-**Total:** 68 KB de documentação organizada
+### Análise Técnica Detalhada do Sistema (NEW)
+| Documento | Tamanho | Tempo | Propósito |
+|-----------|---------|-------|-----------|
+| [ANALISE_COMPLETA_SISTEMA.md](ANALISE_COMPLETA_SISTEMA.md) | 26 KB | 60 min | **17 bugs críticos + 23 médios** |
+| [RESUMO_EXECUTIVO_ANALISE.md](RESUMO_EXECUTIVO_ANALISE.md) | 11 KB | 15 min | Resumo executivo técnico |
+| [REFACTORING_STATUS_REPORT.md](REFACTORING_STATUS_REPORT.md) | 30 KB | 90 min | Status completo de refatoração |
+| [BUGFIXES_APPLIED.md](BUGFIXES_APPLIED.md) | 7 KB | 10 min | Bugs corrigidos |
+| [HARDENING_REPORT.md](HARDENING_REPORT.md) | 15 KB | 20 min | Melhorias de robustez |
+| [COMMIT_8_AWARD_API.md](COMMIT_8_AWARD_API.md) | 16 KB | 20 min | Documentação Award API |
+
+**Total:** ~175 KB de documentação técnica organizada
 
 ---
 
@@ -81,14 +110,16 @@ O projeto está **funcionalmente completo** como MVP, mas precisa de **reorganiz
 3. Ignorar: Detalhes técnicos de modularização
 
 ### Se você é DESENVOLVEDOR
-1. Começar: [GUIA_IMPLEMENTACAO_PRATICO.md](GUIA_IMPLEMENTACAO_PRATICO.md)
-2. Consultar: [ANALISE_PROJETO_MELHORIAS.md](ANALISE_PROJETO_MELHORIAS.md)
-3. Implementar: Semana 1 → Setup Vite
+1. **URGENTE:** Ler [ANALISE_COMPLETA_SISTEMA.md](ANALISE_COMPLETA_SISTEMA.md) - 17 bugs críticos
+2. Começar: [GUIA_IMPLEMENTACAO_PRATICO.md](GUIA_IMPLEMENTACAO_PRATICO.md)
+3. Consultar: [ANALISE_PROJETO_MELHORIAS.md](ANALISE_PROJETO_MELHORIAS.md)
+4. Implementar: Semana 1 → Setup Vite
 
 ### Se você é GESTOR/PM
-1. Ler: [RESPOSTA_ANALISE_PROJETO.md](RESPOSTA_ANALISE_PROJETO.md)
-2. Focar em: Cronograma e prioridades
-3. Decidir: O que implementar primeiro
+1. **URGENTE:** Ler [RESUMO_EXECUTIVO_ANALISE.md](RESUMO_EXECUTIVO_ANALISE.md)
+2. Avaliar: 17 bugs críticos + 23 médios identificados
+3. Ler: [RESPOSTA_ANALISE_PROJETO.md](RESPOSTA_ANALISE_PROJETO.md)
+4. Decidir: Priorizar refatoração urgente
 
 ---
 
@@ -99,25 +130,39 @@ O projeto está **funcionalmente completo** como MVP, mas precisa de **reorganiz
 - Modo terapêutico funcional
 - Save/load robusto
 - Tutorial implementado
+- Award API unificada (Commit 8)
 
-### ⚠️ Áreas de Melhoria
-- Código em arquivo único (6.471 linhas)
-- Dados hardcoded (não em arquivos)
+### 🔴 Áreas CRÍTICAS (NOVO)
+- **BC-01:** Arquitetura monolítica - 7.274 linhas em 1 arquivo (+803 desde análise)
+- **BC-02:** Dados hardcoded - CSVs não são usados pelo sistema
+- **BC-03:** 74 try-catch blocks (2 vazios engolindo erros)
+- **BC-04:** Bugs em migração de saves antigos
+- **Ver completo:** ANALISE_COMPLETA_SISTEMA.md (17 bugs críticos)
+
+### ⚠️ Áreas de Melhoria Médias
+- Código em arquivo único (impossível manter)
 - Sem testes automatizados
 - Sem ferramentas para terapeutas
+- 23 bugs médios identificados
+- 31 melhorias de código recomendadas
 
 ### 🎯 Próximos Passos Recomendados
 
-**Prioridade ALTA (Começar esta semana):**
-1. Setup Vite (build system)
-2. Extrair CSS
-3. Modularizar JavaScript
-4. Adicionar testes
+**Prioridade CRÍTICA (URGENTE):**
+1. 🔴 Revisar ANALISE_COMPLETA_SISTEMA.md - entender 17 bugs críticos
+2. 🔴 Corrigir BC-01: Arquitetura monolítica (7.274 linhas)
+3. 🔴 Corrigir BC-02: Migrar dados hardcoded para CSVs
+4. 🔴 Setup Vite (build system) para modularização
+
+**Prioridade ALTA (Esta semana):**
+5. Extrair CSS
+6. Modularizar JavaScript
+7. Adicionar testes
 
 **Prioridade MÉDIA (Próximas 2 semanas):**
-5. Criar editor.html
-6. Criar relatorios.html
-7. PWA (manifest + service worker)
+8. Criar editor.html
+9. Criar relatorios.html
+10. PWA (manifest + service worker)
 
 **Prioridade BAIXA (Futuro):**
 8. Documentação interativa

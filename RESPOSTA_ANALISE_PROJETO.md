@@ -14,8 +14,9 @@ O **Monstrinhomon** está **funcionalmente completo** como MVP:
 - ✅ Modo terapêutico (objetivos, medalhas)
 - ✅ Save/load com 3 slots
 - ✅ Tutorial interativo
+- ✅ Award API (Commit 8) unificada
 
-**Problema:** Tudo em um único arquivo de **6.471 linhas**, dificultando manutenção.
+**Problema CRÍTICO:** Tudo em um único arquivo de **7.274 linhas** (+803 desde análise inicial), com 17 bugs críticos identificados (ver `ANALISE_COMPLETA_SISTEMA.md`).
 
 ---
 
@@ -23,7 +24,12 @@ O **Monstrinhomon** está **funcionalmente completo** como MVP:
 
 ### 1. **Modularizar o Código** (ALTA PRIORIDADE) ✅ NECESSÁRIO
 
-**Por que:** Arquivo único dificulta manutenção, colaboração e testes.
+**Por que:** Arquivo único de 7.274 linhas é CRÍTICO - dificulta manutenção, colaboração e testes.
+
+**Situação Agravada:** 
+- Cresceu +803 linhas desde a primeira análise
+- Identificados 17 bugs críticos relacionados à arquitetura monolítica
+- Ver `ANALISE_COMPLETA_SISTEMA.md` bug BC-01 para detalhes
 
 **O que fazer:**
 ```
