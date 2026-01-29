@@ -2640,7 +2640,7 @@
          * @returns {number} - XP calculado
          */
         function calculateBattleXP(defeatedEnemy, encounterType) {
-            const base = 15;
+            const base = GameState.config?.battleXpBase || 15;
             const level = Math.max(1, Number(defeatedEnemy?.level) || 1);
             const rarity = defeatedEnemy?.rarity || defeatedEnemy?.raridade || null;
             
@@ -2649,8 +2649,8 @@
             
             let xp = Math.floor((base + level * 2) * rarityMult);
             
-            // Boss bonus
-            if (String(encounterType).toLowerCase() === 'boss') {
+            // Boss bonus (se encounterType for fornecido)
+            if (encounterType && String(encounterType).toLowerCase() === 'boss') {
                 xp = Math.floor(xp * 1.5);
             }
             
@@ -4616,20 +4616,6 @@
             } catch (error) {
                 console.error('Damage calculation failed:', error);
                 return 1;
-            }
-        }
-
-        // Calcula XP de batalha
-        function calculateBattleXP(defeatedMonster) {
-            try {
-                const baseXP = GameState.config?.battleXpBase || 15;
-                const levelMod = (defeatedMonster.level || 1) * 2;
-                const rarityMod = GameState.config?.rarityXP?.[defeatedMonster.rarity] || 1.0;
-                
-                return Math.floor((baseXP + levelMod) * rarityMod);
-            } catch (error) {
-                console.error('XP calculation failed:', error);
-                return 15;
             }
         }
 
