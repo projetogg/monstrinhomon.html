@@ -12,6 +12,9 @@ body {
     color: var(--dark); min-height: 100vh; overflow-x: hidden;
 }
 
+/* =========================
+   COMPONENTS (menu / cards / tabs / overlays / battle)
+   ========================= */
 .app-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
 
 .error-panel {
@@ -388,7 +391,9 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     margin-top:12px; 
 }
 
-/* ===== Utility Classes ===== */
+/* =========================
+   UTILITIES (layout / spacing / text)
+   ========================= */
 /* Spacing utilities */
 .mt-5 { margin-top: 5px; }
 .mt-6 { margin-top: 6px; }
