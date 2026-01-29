@@ -5523,6 +5523,22 @@
         }
 
         function mmContinue(){
+            // Check if there's a last slot saved - if so, load from it
+            try {
+                const lastSlot = localStorage.getItem("mm_last_slot");
+                if (lastSlot) {
+                    const slotNum = parseInt(lastSlot, 10);
+                    if ([1, 2, 3].includes(slotNum)) {
+                        // Load from slot - this will call mmPostGameStartFlow()
+                        mmLoadFromSlot(slotNum);
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.warn("Failed to check last slot", e);
+            }
+
+            // Fallback: load from main localStorage
             try {
                 loadFromLocalStorage();
                 updateAllViews();
@@ -6363,21 +6379,40 @@
             } catch {}
         }
 
+        // Helper to get the active slot from multiple possible sources
+        function mmGetActiveSlot(){
+            return (
+                GameState?.ui?.activeSlot ??
+                GameState?.activeSaveSlot ??
+                GameState?.saveSlot ??
+                GameState?.currentSaveSlot ??
+                (function() {
+                    try {
+                        const lastSlot = localStorage.getItem("mm_last_slot");
+                        return lastSlot ? parseInt(lastSlot, 10) : null;
+                    } catch {
+                        return null;
+                    }
+                })() ??
+                null
+            );
+        }
+
         // Decide what to do after loading/creating a game
         function mmPostGameStartFlow(){
-            const slot = GameState?.saveSlot || null;
+            const slot = mmGetActiveSlot();
 
-            // 1) Slot pref wins
+            // 1) Slot-specific preference
             const slotPref = slot ? mmGetSlotTutorialPref(slot) : null;
             if (slotPref === "always") return mmStartTutorial();
             if (slotPref === "never")  return mmEnterGameUI();
 
-            // 2) Global pref (optional)
-            const globalPref = (GameState?.settings?.tutorialPreference) || localStorage.getItem("mm_pref_tutorial") || "ask";
+            // 2) Optional global fallback
+            const globalPref = localStorage.getItem("mm_pref_tutorial") || "ask";
             if (globalPref === "always") return mmStartTutorial();
             if (globalPref === "never")  return mmEnterGameUI();
 
-            // 3) Ask
+            // 3) Default: ask
             return mmShowStartChoiceOverlay(true);
         }
 
@@ -6409,7 +6444,7 @@
             const remember = !!document.getElementById("mmRememberTutorialChoice")?.checked;
             if (!remember) return;
 
-            const slot = GameState?.saveSlot || null;
+            const slot = mmGetActiveSlot();
             if (slot) {
                 mmSetSlotTutorialPref(slot, pref);
                 return;
