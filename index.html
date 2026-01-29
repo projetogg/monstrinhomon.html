@@ -450,6 +450,28 @@
             </div>
 
             <div class="card">
+                <h3>🎵 Audio Configuration</h3>
+                <div style="display:grid; gap:12px;">
+                    <div>
+                        <div style="margin-bottom:6px;">🎧 Volume SFX</div>
+                        <input id="mmSfxVol" type="range" min="0" max="100" value="70"
+                            oninput="Audio.setSfxVolume(Number(this.value)/100)">
+                    </div>
+
+                    <div>
+                        <div style="margin-bottom:6px;">🎵 Volume Música (preparado)</div>
+                        <input id="mmMusicVol" type="range" min="0" max="100" value="40"
+                            oninput="Audio.setMusicVolume(Number(this.value)/100)">
+                    </div>
+
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button id="mmMuteBtn" class="btn" style="width:auto;" onclick="Audio.toggleMute()">🔊 Som</button>
+                        <button class="btn" style="width:auto;" onclick="Audio.playSfx('ui_click')">✅ Testar som</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
                 <h3>Data Management</h3>
                 <button class="btn btn-success" onclick="exportData()">📥 Export All Data</button>
                 <button class="btn btn-warning" onclick="importData()">📤 Import Data</button>
@@ -489,6 +511,133 @@
             const text = document.getElementById('errorMessage').innerText;
             navigator.clipboard.writeText(text).catch(e => alert('Copy failed: ' + e));
         }
+
+        // ===== Feature 4.4: Audio (MVP without audio files) =====
+        const Audio = (() => {
+            let ctx = null;
+            let unlocked = false;
+
+            let sfxVol = clamp01(Number(localStorage.getItem("mm_audio_sfx") ?? 0.7));
+            let musVol = clamp01(Number(localStorage.getItem("mm_audio_music") ?? 0.4));
+            let muted = (localStorage.getItem("mm_audio_muted") === "1");
+
+            function clamp01(v){ return isFinite(v) ? Math.max(0, Math.min(1, v)) : 0; }
+
+            function init() {
+                // Don't create AudioContext until user gesture on iOS
+                syncUI();
+            }
+
+            function ensureCtx() {
+                if (!ctx) {
+                    const AC = window.AudioContext || window.webkitAudioContext;
+                    if (!AC) return null;
+                    ctx = new AC();
+                }
+                return ctx;
+            }
+
+            async function unlock() {
+                try {
+                    const c = ensureCtx();
+                    if (!c) return;
+                    if (c.state === "suspended") await c.resume();
+                    // iOS unlock: play a silent buffer
+                    const o = c.createOscillator();
+                    const g = c.createGain();
+                    g.gain.value = 0.0001;
+                    o.connect(g).connect(c.destination);
+                    o.start();
+                    o.stop(c.currentTime + 0.01);
+                    unlocked = true;
+                } catch {}
+            }
+
+            function setSfxVolume(v) {
+                sfxVol = clamp01(v);
+                localStorage.setItem("mm_audio_sfx", String(sfxVol));
+                syncUI();
+            }
+            function setMusicVolume(v) {
+                musVol = clamp01(v);
+                localStorage.setItem("mm_audio_music", String(musVol));
+                syncUI();
+            }
+            function toggleMute() {
+                muted = !muted;
+                localStorage.setItem("mm_audio_muted", muted ? "1" : "0");
+                syncUI();
+            }
+
+            function playTone(freq, durMs, vol, type="sine") {
+                try {
+                    if (muted) return;
+                    const c = ensureCtx();
+                    if (!c) return;
+                    if (c.state === "suspended") return; // not unlocked yet
+                    const o = c.createOscillator();
+                    const g = c.createGain();
+                    o.type = type;
+                    o.frequency.value = freq;
+                    g.gain.value = Math.max(0, vol) * sfxVol;
+
+                    o.connect(g).connect(c.destination);
+
+                    const now = c.currentTime;
+                    const dur = durMs / 1000;
+
+                    // quick attack/decay to avoid clicks
+                    g.gain.setValueAtTime(0.0001, now);
+                    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, g.gain.value), now + 0.01);
+                    g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+
+                    o.start(now);
+                    o.stop(now + dur + 0.02);
+                } catch {}
+            }
+
+            // Tiny "sound palette" (replace later with real mp3s if you want)
+            function playSfx(name) {
+                // If not unlocked yet, ignore silently (UI still works)
+                try {
+                    if (muted) return;
+                    // patterns: short distinctive beeps
+                    switch (name) {
+                        case "ui_click":   playTone(660, 60, 0.6, "square"); break;
+                        case "hit":        playTone(220, 80, 0.7, "sawtooth"); break;
+                        case "miss":       playTone(140, 120, 0.5, "triangle"); break;
+                        case "crit":       playTone(880, 80, 0.8, "square"); setTimeout(()=>playTone(990, 80, 0.7, "square"), 70); break;
+                        case "heal":       playTone(523, 80, 0.6, "sine"); setTimeout(()=>playTone(659, 80, 0.5, "sine"), 90); break;
+                        case "capture_ok": playTone(784, 70, 0.7, "sine"); setTimeout(()=>playTone(988, 90, 0.7, "sine"), 80); break;
+                        case "capture_fail": playTone(196, 90, 0.7, "sawtooth"); setTimeout(()=>playTone(164, 110, 0.6, "sawtooth"), 90); break;
+                        case "win":        playTone(659, 80, 0.6, "sine"); setTimeout(()=>playTone(784, 90, 0.6, "sine"), 90); setTimeout(()=>playTone(988, 120, 0.6, "sine"), 190); break;
+                        case "lose":       playTone(220, 120, 0.7, "triangle"); setTimeout(()=>playTone(196, 140, 0.6, "triangle"), 120); break;
+                        case "levelup":    playTone(740, 70, 0.6, "sine"); setTimeout(()=>playTone(880, 90, 0.7, "sine"), 80); break;
+                        case "evolve":     playTone(523, 80, 0.5, "sine"); setTimeout(()=>playTone(659, 90, 0.6, "sine"), 90); setTimeout(()=>playTone(784, 120, 0.7, "sine"), 190); break;
+                        default:           playTone(440, 60, 0.4, "sine");
+                    }
+                } catch {}
+            }
+
+            function syncUI() {
+                // Optional: only runs if elements exist
+                const sfx = document.getElementById("mmSfxVol");
+                const mus = document.getElementById("mmMusicVol");
+                const mute = document.getElementById("mmMuteBtn");
+                if (sfx) sfx.value = String(Math.round(sfxVol * 100));
+                if (mus) mus.value = String(Math.round(musVol * 100));
+                if (mute) mute.textContent = muted ? "🔇 Mudo" : "🔊 Som";
+            }
+
+            return { init, unlock, playSfx, setSfxVolume, setMusicVolume, toggleMute, syncUI };
+        })();
+
+        // Call once on boot
+        Audio.init();
+
+        // iOS unlock: first user gesture
+        window.addEventListener("pointerdown", () => Audio.unlock(), { once: true });
+        window.addEventListener("keydown", () => Audio.unlock(), { once: true });
 
         // STATE MANAGEMENT
         const GameState = {
@@ -1505,6 +1654,9 @@
                 enc.log = enc.log || [];
                 enc.log.push("🏁 Vitória! Todos os inimigos foram derrotados.");
                 
+                // Feature 4.4: Victory sound
+                Audio.playSfx("win");
+                
                 // Distribuir recompensas (XP) com idempotência
                 handleVictoryRewards(enc);
                 
@@ -1517,6 +1669,10 @@
                 enc.active = false;
                 enc.log = enc.log || [];
                 enc.log.push("💀 Derrota... Todos os participantes foram derrotados.");
+                
+                // Feature 4.4: Defeat sound
+                Audio.playSfx("lose");
+                
                 return;
             }
             
@@ -1678,6 +1834,15 @@
                 // Feature 3.8: Record d20 roll
                 const rollType = isCrit ? 'crit' : alwaysMiss ? 'fail' : 'normal';
                 recordD20Roll(enc, attackerName, d20, rollType);
+
+                // Feature 4.4: Play attack sound
+                if (isCrit) {
+                    Audio.playSfx("crit");
+                } else if (alwaysMiss || !hit) {
+                    Audio.playSfx("miss");
+                } else {
+                    Audio.playSfx("hit");
+                }
 
                 if (!hit) {
                     _log(enc, `🎲 ${attackerName} (${monName}) rolou ${d20} e ERROU o ataque em ${enemyName}.`);
@@ -1903,6 +2068,9 @@
 
                 _log(enc, `💚 ${playerName} usou Petisco de Cura! (Restam: ${player.inventory[itemId]})`);
                 _log(enc, `✨ ${monName} recuperou ${healed} HP! (${mon.hp}/${hpMax})`);
+                
+                // Feature 4.4: Heal sound
+                Audio.playSfx("heal");
 
                 advanceTurn(enc);
                 saveToLocalStorage();
@@ -2017,6 +2185,33 @@
                 if (isEvo) showToast(line);
             }
             enc._toastCursor = enc.log.length;
+        }
+        
+        /**
+         * Feature 4.4: Verifica novas entradas no log e toca sons para level up e evolução
+         * Usa cursor separado para evitar repetir sons em re-render
+         */
+        function maybeSfxFromLog(enc) {
+            if (!enc || !Array.isArray(enc.log)) return;
+            
+            // Garantir inicialização do cursor
+            if (enc._sfxCursor == null) enc._sfxCursor = 0;
+            
+            const start = Number.isFinite(enc._sfxCursor) ? enc._sfxCursor : 0;
+            for (let i = start; i < enc.log.length; i++) {
+                const line = String(enc.log[i] || "");
+                
+                // Detectar level up
+                if (line.includes("✨") || /subiu para o nível/i.test(line)) {
+                    Audio.playSfx("levelup");
+                }
+                
+                // Detectar evolução
+                if (line.includes("🌟") || /evoluiu para/i.test(line)) {
+                    Audio.playSfx("evolve");
+                }
+            }
+            enc._sfxCursor = enc.log.length;
         }
         
         /**
@@ -2897,6 +3092,9 @@
                 
                 // Exibir toasts para eventos importantes (level up, evolução)
                 maybeToastFromLog(encounter);
+                
+                // Feature 4.4: Tocar sons para level up e evolução
+                maybeSfxFromLog(encounter);
             } catch (error) {
                 showError('Failed to render group encounter', error.stack);
             }
@@ -3126,6 +3324,9 @@
                 
                 // Exibir toasts para eventos importantes (level up, evolução)
                 maybeToastFromLog(GameState.currentEncounter);
+                
+                // Feature 4.4: Tocar sons para level up e evolução
+                maybeSfxFromLog(GameState.currentEncounter);
             } catch (error) {
                 showError('Failed to render wild encounter', error.stack);
             }
@@ -3244,6 +3445,9 @@
                 if (hpPercent <= thresholdFinal) {
                     encounter.log.push(`✅ SUCESSO! ${monster.name} foi capturado!`);
                     
+                    // Feature 4.4: Capture success sound
+                    Audio.playSfx("capture_ok");
+                    
                     monster.ownerId = player.id;
                     
                     player.team = player.team || [];
@@ -3265,6 +3469,9 @@
                 } else {
                     // FALHA: Monstrinho realiza 1 ataque básico IMEDIATO
                     encounter.log.push(`❌ FALHA! ${monster.name} quebrou livre!`);
+                    
+                    // Feature 4.4: Capture fail sound
+                    Audio.playSfx("capture_fail");
                     
                     const playerMonster = player.team?.[0];
                     if (playerMonster && playerMonster.hp > 0) {
@@ -3356,6 +3563,9 @@
                 
                 encounter.log.push(`✨ ${playerMonster.name} recuperou ${actualHeal} HP! (${playerMonster.hp}/${playerMonster.hpMax})`);
                 
+                // Feature 4.4: Heal sound
+                Audio.playSfx("heal");
+                
                 // SALVAR ESTADO
                 saveToLocalStorage();
                 renderEncounter();
@@ -3426,6 +3636,10 @@
                             // Verificar se jogador perdeu
                             if (playerMonster.hp <= 0) {
                                 encounter.log.push(`💀 ${playerMonster.name} fainted! Defeat!`);
+                                
+                                // Feature 4.4: Defeat sound
+                                Audio.playSfx("lose");
+                                
                                 encounter.active = false;
                                 GameState.currentEncounter = null;
                                 saveToLocalStorage();
@@ -3533,6 +3747,15 @@
                 // d20=1 sempre erra, d20=20 sempre acerta
                 const playerHit = isFail1 ? false : (isCrit20 ? true : checkHit(playerRoll, playerMonster, encounter.wildMonster));
                 
+                // Feature 4.4: Play attack sound
+                if (isCrit20) {
+                    Audio.playSfx("crit");
+                } else if (isFail1 || !playerHit) {
+                    Audio.playSfx("miss");
+                } else {
+                    Audio.playSfx("hit");
+                }
+                
                 if (playerHit) {
                     // Calcular dano com power modificado se CRIT 20
                     let power = BASIC_ATTACK_POWER[playerMonster.class] || 12;
@@ -3575,6 +3798,9 @@
                     
                     if (encounter.wildMonster.hp <= 0) {
                         encounter.log.push(`🏆 ${encounter.wildMonster.name} fainted! Victory!`);
+                        
+                        // Feature 4.4: Victory sound
+                        Audio.playSfx("win");
                         
                         // Feature 3.3: Distribuir recompensas (XP) com idempotência
                         handleVictoryRewards(encounter);
@@ -4465,6 +4691,15 @@
                 console.error('Failed to toggle therapist mode:', error);
             }
         }
+
+        // Feature 4.4: Global click listener for button sounds
+        document.addEventListener("click", (e) => {
+            const btn = e.target.closest("button");
+            if (!btn) return;
+            // evita spam em botões desabilitados
+            if (btn.disabled) return;
+            Audio.playSfx("ui_click");
+        });
 
         // Initialize on load
         window.addEventListener('DOMContentLoaded', init);
