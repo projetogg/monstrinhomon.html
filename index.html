@@ -727,6 +727,24 @@
         </div>
     </div>
 
+    <!-- Feature 4.1.1: Start Choice Modal -->
+    <div id="mmStartChoice" class="mm-overlay hidden">
+        <div class="mm-card">
+            <h2 style="font-size: 28px; font-weight: 900; margin: 6px 0 8px;">🎮 Começar</h2>
+            <p style="opacity: 0.9; margin: 0 0 14px; line-height: 1.3;">Quer fazer o <b>Tutorial</b> agora?</p>
+
+            <label style="display:flex; gap:10px; align-items:center; margin:14px 0;">
+                <input type="checkbox" id="mmRememberTutorialChoice">
+                Lembrar minha escolha
+            </label>
+
+            <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+                <button class="mm-btn" onclick="mmStartTutorialFromChoice()">🎓 Fazer Tutorial</button>
+                <button class="mm-btn" style="opacity:0.9;" onclick="mmSkipTutorialFromChoice()">🚀 Pular</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // GLOBAL ERROR HANDLER
         window.addEventListener('error', function(event) {
@@ -6073,7 +6091,7 @@
         function mmEl(id){ return document.getElementById(id); }
 
         function mmCloseAllOverlays(){
-            ["mmIntro","mmMenu","mmNewGame","mmConfig","mmTherapist"].forEach(id => mmEl(id)?.classList.remove("show"));
+            ["mmIntro","mmMenu","mmNewGame","mmConfig","mmStartChoice"].forEach(id => mmEl(id)?.classList.remove("show"));
         }
 
         function mmShow(id){
@@ -6302,14 +6320,33 @@
         }
 
         function mmContinue(){
+            // Check if there's a last slot saved - if so, load from it
+            try {
+                const lastSlot = localStorage.getItem("mm_last_slot");
+                if (lastSlot) {
+                    const slotNum = parseInt(lastSlot, 10);
+                    if ([1, 2, 3].includes(slotNum)) {
+                        // Load from slot - this will call mmPostGameStartFlow()
+                        mmLoadFromSlot(slotNum);
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.warn("Failed to check last slot", e);
+            }
+
+            // Fallback: load from main localStorage
             try {
                 loadFromLocalStorage();
                 updateAllViews();
             } catch(e){
                 console.warn("mmContinue failed", e);
                 alert("Erro ao carregar o save: " + e.message);
+                mmCloseAllOverlays();
+                return;
             }
-            mmCloseAllOverlays();
+            // Feature 4.1.1: Show tutorial choice or go to game based on preference
+            mmPostGameStartFlow();
         }
 
         function mmResetSaveConfirm(){
@@ -6539,9 +6576,12 @@
             } catch(e) {
                 console.error("mmFinishNewGame failed", e);
                 alert("Erro ao criar novo jogo: " + e.message);
+                mmCloseAllOverlays();
+                return;
             }
 
-            mmCloseAllOverlays();
+            // Feature 4.1.1: Show tutorial choice instead of going directly to game
+            mmPostGameStartFlow();
         }
 
         // ===== Feature 4.3: Save Slots + Export/Import =====
@@ -6666,7 +6706,9 @@
                 
                 showToast(`📂 Carregado do Slot ${slot}!`);
                 mmCloseSaves();
-                mmCloseAllOverlays();
+                
+                // Feature 4.1.1: Show tutorial choice or go to game based on preference
+                mmPostGameStartFlow();
             } catch (e) {
                 console.error("Failed to load from slot", e);
                 alert("Erro ao carregar o slot.");
@@ -7121,6 +7163,104 @@
             if (typeof saveToLocalStorage === "function") saveToLocalStorage();
             if (typeof renderEncounter === "function") renderEncounter();
             if (typeof switchTab === "function") switchTab("encounter");
+        }
+
+        // ===== Feature 4.1.1: Start Choice (Tutorial Selection) =====
+        
+        function mmGetSlotTutorialPref(slotNum){
+            try {
+                const k = `mm_slot_pref_tutorial_${slotNum}`;
+                const v = localStorage.getItem(k);
+                return v || null; // "always" | "never"
+            } catch { return null; }
+        }
+
+        function mmSetSlotTutorialPref(slotNum, pref){
+            try {
+                const k = `mm_slot_pref_tutorial_${slotNum}`;
+                localStorage.setItem(k, pref);
+            } catch {}
+        }
+
+        // Helper to get the active slot from multiple possible sources
+        function mmGetActiveSlot(){
+            return (
+                GameState?.ui?.activeSlot ??
+                GameState?.activeSaveSlot ??
+                GameState?.saveSlot ??
+                GameState?.currentSaveSlot ??
+                (function() {
+                    try {
+                        const lastSlot = localStorage.getItem("mm_last_slot");
+                        return lastSlot ? parseInt(lastSlot, 10) : null;
+                    } catch {
+                        return null;
+                    }
+                })() ??
+                null
+            );
+        }
+
+        // Decide what to do after loading/creating a game
+        function mmPostGameStartFlow(){
+            const slot = mmGetActiveSlot();
+
+            // 1) Slot-specific preference
+            const slotPref = slot ? mmGetSlotTutorialPref(slot) : null;
+            if (slotPref === "always") return mmStartTutorial();
+            if (slotPref === "never")  return mmEnterGameUI();
+
+            // 2) Optional global fallback
+            const globalPref = localStorage.getItem("mm_pref_tutorial") || "ask";
+            if (globalPref === "always") return mmStartTutorial();
+            if (globalPref === "never")  return mmEnterGameUI();
+
+            // 3) Default: ask
+            return mmShowStartChoiceOverlay(true);
+        }
+
+        function mmShowStartChoiceOverlay(show){
+            const el = document.getElementById("mmStartChoice");
+            if (!el) return;
+            if (show) {
+                el.classList.add("show");
+                el.classList.remove("hidden");
+            } else {
+                el.classList.remove("show");
+                el.classList.add("hidden");
+            }
+        }
+
+        function mmStartTutorialFromChoice(){
+            mmPersistTutorialChoice("always");
+            mmShowStartChoiceOverlay(false);
+            mmStartTutorial();
+        }
+
+        function mmSkipTutorialFromChoice(){
+            mmPersistTutorialChoice("never");
+            mmShowStartChoiceOverlay(false);
+            mmEnterGameUI();
+        }
+
+        function mmPersistTutorialChoice(pref){
+            const remember = !!document.getElementById("mmRememberTutorialChoice")?.checked;
+            if (!remember) return;
+
+            const slot = mmGetActiveSlot();
+            if (slot) {
+                mmSetSlotTutorialPref(slot, pref);
+                return;
+            }
+            // fallback global
+            try { localStorage.setItem("mm_pref_tutorial", pref); } catch {}
+        }
+
+        // Make sure this brings user to the normal tabs/game screen
+        function mmEnterGameUI(){
+            mmCloseAllOverlays();
+            if (typeof updateAllViews === "function") updateAllViews();
+            if (typeof renderEncounter === "function") renderEncounter();
         }
 
         // Initialize on load
