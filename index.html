@@ -5279,13 +5279,13 @@
         }
 
         function mmHasSave(){
+            // Check if any slot has a valid save
             try {
-                const data = localStorage.getItem(MM_SAVE_KEY);
-                if (!data) return false;
-                const parsed = JSON.parse(data);
-                // Consider it a valid save if it has players or sessions
-                return (parsed.players && parsed.players.length > 0) || 
-                       (parsed.sessions && parsed.sessions.length > 0);
+                for (let slot = 1; slot <= 3; slot++) {
+                    const env = mmReadSlot(slot);
+                    if (env && env.state) return true;
+                }
+                return false;
             } catch(e){ 
                 return false; 
             }
@@ -5518,8 +5518,24 @@
 
         function mmContinue(){
             try {
-                loadFromLocalStorage();
-                updateAllViews();
+                // Load from the last used slot
+                const lastSlot = mmGetLastSlot();
+                const env = mmReadSlot(lastSlot);
+                
+                if (!env || !env.state) {
+                    alert("Nenhum save encontrado para continuar.");
+                    return;
+                }
+                
+                // Load the save from the slot
+                Object.assign(GameState, env.state);
+                GameState.saveSlot = lastSlot;
+                
+                // Update views
+                if (typeof updateAllViews === "function") updateAllViews();
+                if (typeof renderEncounter === "function") renderEncounter();
+                
+                showToast(`📂 Carregado do Slot ${lastSlot}!`);
             } catch(e){
                 console.warn("mmContinue failed", e);
                 alert("Erro ao carregar o save: " + e.message);
