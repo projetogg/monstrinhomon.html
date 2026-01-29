@@ -1307,7 +1307,6 @@
                         });
                     }
                     
-                    console.log('Save data loaded successfully');
                 }
             } catch (error) {
                 console.warn('Failed to load saved data:', error);
@@ -2221,6 +2220,12 @@
                 const mon = _getActiveMonsterOfPlayer(player);
                 if (!player || !mon) return;
 
+                // GAME_RULES.md: Em batalha, só pode usar monstros da mesma classe do jogador
+                if (mon.class !== player.class) {
+                    alert(`⚠️ ${player.name}: Você só pode usar monstrinhos da classe ${player.class} em batalha!\n\nEste ${mon.name} é da classe ${mon.class}.\nREGRA: Em batalha, você só pode usar monstrinhos da SUA classe.`);
+                    return;
+                }
+
                 if (!_isAlive(mon)) {
                     _log(enc, "⚠️ Seu monstrinho está desmaiado. Não pode atacar.");
                     saveToLocalStorage();
@@ -2384,6 +2389,15 @@
                 // Feature 3.8: Record d20 roll
                 const rollType = isCrit ? 'crit' : alwaysMiss ? 'fail' : 'normal';
                 recordD20Roll(enc, enemyName, d20, rollType);
+
+                // Feature 4.4: Enemy attack sound (group)
+                if (isCrit) {
+                    Audio.playSfx("crit");
+                } else if (alwaysMiss || !hit) {
+                    Audio.playSfx("miss");
+                } else {
+                    Audio.playSfx("hit");
+                }
 
                 if (!hit) {
                     _log(enc, `🎲 ${enemyName} rolou ${d20} e ERROU o ataque em ${targetName} (${targetMonName}).`);
@@ -2696,7 +2710,7 @@
          * @returns {number} - XP calculado
          */
         function calculateBattleXP(defeatedEnemy, encounterType) {
-            const base = 15;
+            const base = GameState.config?.battleXpBase || 15;
             const level = Math.max(1, Number(defeatedEnemy?.level) || 1);
             const rarity = defeatedEnemy?.rarity || defeatedEnemy?.raridade || null;
             
@@ -2705,8 +2719,8 @@
             
             let xp = Math.floor((base + level * 2) * rarityMult);
             
-            // Boss bonus
-            if (String(encounterType).toLowerCase() === 'boss') {
+            // Boss bonus (se encounterType for fornecido)
+            if (encounterType && String(encounterType).toLowerCase() === 'boss') {
                 xp = Math.floor(xp * 1.5);
             }
             
@@ -3967,8 +3981,19 @@
                         
                         // Monstrinho selvagem ataca imediatamente
                         const enemyRoll = Math.floor(Math.random() * 20) + 1;
-                        const enemyHit = checkHit(enemyRoll, monster, playerMonster);
+                        const enemyHit = enemyRoll === 1 ? false : (enemyRoll === 20 ? true : checkHit(enemyRoll, monster, playerMonster));
                         encounter.log.push(`🎲 ${monster.name} rola ${enemyRoll} (ATK: ${monster.atk})`);
+                        
+                        // Feature 4.4: Enemy counter-attack sound (wild - after failed capture)
+                        const enemyIsCrit = (enemyRoll === 20);
+                        const enemyIsFail = (enemyRoll === 1);
+                        if (enemyIsCrit) {
+                            Audio.playSfx("crit");
+                        } else if (enemyIsFail || !enemyHit) {
+                            Audio.playSfx("miss");
+                        } else {
+                            Audio.playSfx("hit");
+                        }
                         
                         if (enemyHit) {
                             const damage = calculateDamage(monster, playerMonster);
@@ -4097,6 +4122,17 @@
                         
                         const enemyHit = enemyRoll === 1 ? false : (enemyRoll === 20 ? true : checkHit(enemyRoll, wildMonster, playerMonster));
                         
+                        // Feature 4.4: Enemy counter-attack sound (wild - after item)
+                        const enemyIsCrit = (enemyRoll === 20);
+                        const enemyIsFail = (enemyRoll === 1);
+                        if (enemyIsCrit) {
+                            Audio.playSfx("crit");
+                        } else if (enemyIsFail || !enemyHit) {
+                            Audio.playSfx("miss");
+                        } else {
+                            Audio.playSfx("hit");
+                        }
+                        
                         if (enemyHit) {
                             const power = BASIC_ATTACK_POWER[wildMonster.class] || 12;
                             
@@ -4128,8 +4164,11 @@
                             if (playerMonster.hp <= 0) {
                                 encounter.log.push(`💀 ${playerMonster.name} fainted! Defeat!`);
                                 
-                                // Feature 4.4: Defeat sound
-                                Audio.playSfx("lose");
+                                // Feature 4.4: Defeat sound (com idempotência)
+                                if (!encounter._loseSfxPlayed) {
+                                    Audio.playSfx("lose");
+                                    encounter._loseSfxPlayed = true;
+                                }
                                 
                                 encounter.active = false;
                                 GameState.currentEncounter = null;
@@ -4293,8 +4332,11 @@
                     if (encounter.wildMonster.hp <= 0) {
                         encounter.log.push(`🏆 ${encounter.wildMonster.name} fainted! Victory!`);
                         
-                        // Feature 4.4: Victory sound
-                        Audio.playSfx("win");
+                        // Feature 4.4: Victory sound (com idempotência)
+                        if (!encounter._winSfxPlayed) {
+                            Audio.playSfx("win");
+                            encounter._winSfxPlayed = true;
+                        }
                         
                         // Feature 3.3: Distribuir recompensas (XP) com idempotência
                         handleVictoryRewards(encounter);
@@ -4475,8 +4517,7 @@
                 if (encounter.wildMonster.hp <= 0) {
                     encounter.log.push(`🏆 ${encounter.wildMonster.name} foi derrotado!`);
                     const xpGained = calculateBattleXP(encounter.wildMonster);
-                    giveXp(playerMonster, xpGained);
-                    encounter.log.push(`✨ ${playerMonster.name} ganhou ${xpGained} XP!`);
+                    giveXP(playerMonster, xpGained, encounter.log);
                     encounter.active = false;
                     GameState.currentEncounter = null;
                     saveToLocalStorage();
@@ -4673,65 +4714,6 @@
             } catch (error) {
                 console.error('Damage calculation failed:', error);
                 return 1;
-            }
-        }
-
-        // Calcula XP de batalha
-        function calculateBattleXP(defeatedMonster) {
-            try {
-                const baseXP = GameState.config?.battleXpBase || 15;
-                const levelMod = (defeatedMonster.level || 1) * 2;
-                const rarityMod = GameState.config?.rarityXP?.[defeatedMonster.rarity] || 1.0;
-                
-                return Math.floor((baseXP + levelMod) * rarityMod);
-            } catch (error) {
-                console.error('XP calculation failed:', error);
-                return 15;
-            }
-        }
-
-        function giveXp(monster, amount) {
-            try {
-                if (!monster) return;
-                
-                monster.xp = (monster.xp || 0) + amount;
-                
-                // Fórmula de XP por nível conforme AGENTS.md: Math.round(40 + 6*L + 0.6*(L*L))
-                const xpNeeded = Math.round(40 + 6 * monster.level + 0.6 * (monster.level * monster.level));
-                
-                while (monster.xp >= xpNeeded && monster.level < (GameState.config?.maxLevel || 100)) {
-                    monster.xp -= xpNeeded;
-                    monster.level++;
-                    
-                    // Recalcula stats baseado no novo nível
-                    const template = MONSTER_CATALOG.find(m => m?.id === monster.monsterId);
-                    if (template) {
-                        const rarityMult = GameState.config?.rarityPower?.[template.rarity] || 1.0;
-                        const levelMult = (1 + (monster.level - 1) * 0.1);
-                        
-                        // HP aumenta: hpMax * 1.04 + 2 conforme AGENTS.md
-                        const oldHpMax = monster.hpMax;
-                        monster.hpMax = Math.floor(monster.hpMax * 1.04 + 2);
-                        // HP atual aumenta proporcionalmente
-                        const hpRatio = monster.hp / oldHpMax;
-                        monster.hp = Math.floor(monster.hpMax * hpRatio);
-                        
-                        // Atualizar ENE Max
-                        const baseEne = 10;
-                        const eneGrowth = 2;
-                        monster.eneMax = Math.floor(baseEne + eneGrowth * (monster.level - 1));
-                        monster.ene = Math.min(monster.eneMax, monster.ene); // Não exceder novo max
-                        
-                        // Recalcula ATK, DEF, PODER
-                        monster.atk = Math.floor((template.baseAtk || 5) * levelMult * rarityMult);
-                        monster.def = Math.floor((template.baseDef || 3) * levelMult * rarityMult);
-                        monster.poder = Math.floor(monster.atk * 0.5);
-                    }
-                }
-                
-                saveToLocalStorage();
-            } catch (error) {
-                console.error('Failed to give XP:', error);
             }
         }
 
@@ -5750,8 +5732,6 @@
                 
                 // Update UI
                 updateAllViews();
-                
-                console.log('New game created successfully!', GameState);
                 
             } catch(e) {
                 console.error("mmFinishNewGame failed", e);
