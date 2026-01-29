@@ -408,6 +408,7 @@
         <div class="header">
             <h1>🎮 Monstrinhomon 🌟</h1>
             <div class="tabs">
+                <button class="tab-button" onclick="mmShowMainMenu()">📱 Menu</button>
                 <button class="tab-button active" onclick="switchTab('home')">🏠 Home</button>
                 <button class="tab-button" onclick="switchTab('session')">📋 Session</button>
                 <button class="tab-button" onclick="switchTab('players')">👥 Players</button>
@@ -617,6 +618,7 @@
     <div id="mmMenu" class="mm-overlay">
         <div class="mm-card">
             <div class="mm-title">Menu Principal</div>
+            <button id="mmBtnContinue" class="mm-btn" onclick="mmContinue()">📖 Continuar</button>
             <button class="mm-btn" onclick="mmOpenSaves()">📂 Gerenciar Saves</button>
             <button class="mm-btn" onclick="mmOpenSlotPickerForNewGame()">🎮 Novo Jogo</button>
             <button class="mm-btn" onclick="mmStartTutorial()">🎓 Tutorial</button>
@@ -5258,7 +5260,7 @@
         function mmEl(id){ return document.getElementById(id); }
 
         function mmCloseAllOverlays(){
-            ["mmIntro","mmMenu","mmNewGame","mmConfig","mmTherapist"].forEach(id => mmEl(id)?.classList.remove("show"));
+            ["mmIntro","mmMenu","mmNewGame","mmConfig","mmTherapist","mmSavesScreen","mmSlotPicker"].forEach(id => mmEl(id)?.classList.remove("show"));
         }
 
         function mmShow(id){
