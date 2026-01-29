@@ -4068,8 +4068,11 @@
                             if (playerMonster.hp <= 0) {
                                 encounter.log.push(`💀 ${playerMonster.name} fainted! Defeat!`);
                                 
-                                // Feature 4.4: Defeat sound
-                                Audio.playSfx("lose");
+                                // Feature 4.4: Defeat sound (com idempotência)
+                                if (!encounter._loseSfxPlayed) {
+                                    Audio.playSfx("lose");
+                                    encounter._loseSfxPlayed = true;
+                                }
                                 
                                 encounter.active = false;
                                 GameState.currentEncounter = null;
@@ -4233,8 +4236,11 @@
                     if (encounter.wildMonster.hp <= 0) {
                         encounter.log.push(`🏆 ${encounter.wildMonster.name} fainted! Victory!`);
                         
-                        // Feature 4.4: Victory sound
-                        Audio.playSfx("win");
+                        // Feature 4.4: Victory sound (com idempotência)
+                        if (!encounter._winSfxPlayed) {
+                            Audio.playSfx("win");
+                            encounter._winSfxPlayed = true;
+                        }
                         
                         // Feature 3.3: Distribuir recompensas (XP) com idempotência
                         handleVictoryRewards(encounter);
