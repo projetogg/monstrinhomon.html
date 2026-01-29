@@ -1429,6 +1429,109 @@
             return baseHp + (growthPerLevel * (lvl - 1));
         }
 
+        // COMMIT 6: normalizeGameState()
+        /**
+         * Garante estrutura e tipos do save carregado.
+         * 
+         * O QUE FAZ:
+         * - Valida que state é objeto
+         * - Garante meta, players, party, storage, inventory, flags existem com tipos corretos
+         * - Chama normalizeMonster() em todos os monstros
+         * 
+         * O QUE NÃO FAZ:
+         * - Não recalcula level, XP, stats, economia
+         * - Não sobrescreve meta existente (apenas garante tipo)
+         * - Não faz over-correction (normalizeMonster já faz)
+         * - Não é responsável por migração (migrateSaveIfNeeded já faz)
+         */
+        function normalizeGameState(state) {
+            // Se state não é objeto válido, retorna estado default seguro
+            if (!state || typeof state !== 'object' || Array.isArray(state)) {
+                console.warn('[System] Invalid state structure, using default');
+                return {
+                    players: [],
+                    monsters: [],
+                    sessions: [],
+                    currentSession: null,
+                    currentEncounter: null,
+                    objectives: [],
+                    therapistMode: false,
+                    meta: {
+                        saveVersion: 1
+                    },
+                    config: {} // Config will be merged from GameState defaults
+                };
+            }
+            
+            // Garantir meta é objeto (preservando keys existentes)
+            if (!state.meta || typeof state.meta !== 'object' || Array.isArray(state.meta)) {
+                console.warn('[System] Invalid meta, resetting to default');
+                state.meta = { saveVersion: 1 };
+            }
+            
+            // Garantir players é array
+            if (!Array.isArray(state.players)) {
+                console.warn('[System] Invalid players structure, resetting to []');
+                state.players = [];
+            }
+            
+            // Garantir monsters é array (global list)
+            if (!Array.isArray(state.monsters)) {
+                console.warn('[System] Invalid monsters structure, resetting to []');
+                state.monsters = [];
+            }
+            
+            // Garantir sessions é array
+            if (!Array.isArray(state.sessions)) {
+                state.sessions = [];
+            }
+            
+            // Garantir objectives é array
+            if (!Array.isArray(state.objectives)) {
+                state.objectives = [];
+            }
+            
+            // Normalizar cada jogador
+            if (state.players) {
+                state.players.forEach(player => {
+                    if (!player || typeof player !== 'object') return;
+                    
+                    // Garantir team é array
+                    if (!Array.isArray(player.team)) {
+                        player.team = [];
+                    }
+                    
+                    // Garantir box é array
+                    if (!Array.isArray(player.box)) {
+                        player.box = [];
+                    }
+                    
+                    // Garantir inventory é objeto
+                    if (!player.inventory || typeof player.inventory !== 'object' || Array.isArray(player.inventory)) {
+                        player.inventory = {};
+                    }
+                    
+                    // Normalizar monstros no team
+                    if (player.team) {
+                        player.team.forEach(monster => {
+                            if (!monster) return;
+                            normalizeMonster(monster);
+                        });
+                    }
+                    
+                    // Normalizar monstros no box
+                    if (player.box) {
+                        player.box.forEach(monster => {
+                            if (!monster) return;
+                            normalizeMonster(monster);
+                        });
+                    }
+                });
+            }
+            
+            return state;
+        }
+
         // COMMIT 3: Centralized Persistence Layer
         // All localStorage access must go through these functions
         
@@ -1449,6 +1552,8 @@
          * - Fail-safe: null save → retorna false, mantém GameState default
          * - Fail-safe: JSON inválido → backup + reset, retorna false
          * - Fail-safe: migration error → fallback seguro
+         * 
+         * COMMIT 6: Integrado normalizeGameState()
          */
         function loadGame() {
             try {
@@ -1481,20 +1586,14 @@
                 // 3. Migração em Escada (Safe Migration)
                 const migrated = migrateSaveIfNeeded(loaded);
                 
-                // Validar arrays essenciais após migração
-                if (migrated.players && !Array.isArray(migrated.players)) {
-                    console.warn('[System] Invalid players array, resetting');
-                    migrated.players = [];
-                }
-                if (migrated.monsters && !Array.isArray(migrated.monsters)) {
-                    console.warn('[System] Invalid monsters array, resetting');
-                    migrated.monsters = [];
-                }
+                // 4. Normalização de Estado (COMMIT 6)
+                // Garante estrutura e tipos corretos, chama normalizeMonster() em todos os monstros
+                const normalized = normalizeGameState(migrated);
                 
-                // 4. Merge Seguro (não substituir GameState inteiro)
-                Object.assign(GameState, migrated);
+                // 5. Merge Seguro (não substituir GameState inteiro)
+                Object.assign(GameState, normalized);
                 
-                // 5. Normalização Pós-Load
+                // 6. Pós-processamento específico
                 if (GameState.players) {
                     GameState.players.forEach(player => {
                         // Validar estrutura do jogador
@@ -1503,33 +1602,24 @@
                             return;
                         }
                         
-                        // Migrar inventários antigos
+                        // Migrar inventários antigos (se função existe)
                         if (typeof migrateInventory === 'function') {
                             migrateInventory(player);
                         }
                         
-                        // Garantir arrays
-                        player.team = Array.isArray(player.team) ? player.team : [];
-                        player.box = Array.isArray(player.box) ? player.box : [];
-                        player.inventory = player.inventory || {};
-                        
-                        // Normalizar monstros no team
+                        // Progressão (Feature 3.3) - se função existe
                         if (player.team) {
                             player.team.forEach(monster => {
                                 if (!monster) return;
-                                normalizeMonster(monster);
-                                // Progressão (Feature 3.3)
                                 if (typeof ensureMonsterProgressFields === 'function') {
                                     ensureMonsterProgressFields(monster);
                                 }
                             });
                         }
                         
-                        // Normalizar monstros no box
                         if (player.box) {
                             player.box.forEach(monster => {
                                 if (!monster) return;
-                                normalizeMonster(monster);
                                 if (typeof ensureMonsterProgressFields === 'function') {
                                     ensureMonsterProgressFields(monster);
                                 }
