@@ -1993,6 +1993,125 @@
             }
         }
 
+        // COMMIT 7: Factory Pattern - createMonsterInstanceFromTemplate()
+        /**
+         * Factory function para criar instâncias de monstros com schema canônico.
+         * 
+         * Esta é a função OFICIAL para criar novos monstros a partir do catálogo.
+         * Garante que todos os monstros nascam com estrutura canônica consistente.
+         * 
+         * @param {string} templateId - ID do template no MONSTER_CATALOG (ex: 'MON_001')
+         * @param {number} level - Nível do monstrinho (padrão: 1)
+         * @param {string|null} rarity - Raridade (se null, usa do template)
+         * @param {object} overrides - Campos opcionais para sobrescrever (ex: {nickname: 'Fofinho'})
+         * @returns {object|null} - Instância do monstrinho ou null se template não encontrado
+         * 
+         * SCHEMA CANÔNICO (Commit 5):
+         * - templateId: ID do template (não monsterId, baseId, idBase)
+         * - instanceId: ID único da instância (não id)
+         * - hp/hpMax: HP atual/máximo (não currentHp, maxHp)
+         * - ene/eneMax: ENE atual/máximo
+         * - level, xp, buffs, class, rarity
+         */
+        function createMonsterInstanceFromTemplate(templateId, level = 1, rarity = null, overrides = {}) {
+            try {
+                // 1. Buscar template no catálogo
+                const catalog = MONSTER_CATALOG || [];
+                const template = catalog.find(m => m && m.id === templateId);
+                
+                if (!template) {
+                    console.warn(`[Factory] Template not found: ${templateId}`);
+                    return null;
+                }
+                
+                // 2. Gerar instanceId único
+                // Formato: mi_timestamp_random (mi = monster instance)
+                const instanceId = `mi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                
+                // 3. Determinar raridade (parâmetro ou do template)
+                const finalRarity = rarity || template.rarity || 'Comum';
+                
+                // 4. Calcular stats baseados no nível
+                const rarityMult = GameState.config?.rarityPower?.[finalRarity] || 1.0;
+                const levelMult = (1 + (level - 1) * 0.1);
+                
+                const hpMax = Math.floor((template.baseHp || 30) * levelMult);
+                const atk = Math.floor((template.baseAtk || 5) * levelMult * rarityMult);
+                const def = Math.floor((template.baseDef || 3) * levelMult * rarityMult);
+                const spd = Math.floor((template.baseSpd || 5) * levelMult * rarityMult);
+                const poder = Math.floor(atk * 0.5);
+                
+                // 5. Calcular ENE usando fórmula canônica: floor(10 + 2*(level-1))
+                const eneMax = Math.floor(10 + 2 * (level - 1));
+                
+                // 6. Criar instância com campos canônicos
+                const instance = {
+                    // IDs (schema canônico)
+                    templateId: template.id,     // ✅ Canônico (não monsterId)
+                    instanceId: instanceId,       // ✅ Canônico (não id)
+                    
+                    // Info básica
+                    name: template.name,
+                    nickname: template.name,      // Padrão (pode ser sobrescrito)
+                    emoji: template.emoji || '👾',
+                    
+                    // Classe e raridade
+                    class: template.class || 'Neutro',
+                    rarity: finalRarity,
+                    
+                    // Progressão
+                    level: level,
+                    xp: 0,
+                    xpNeeded: calculateXPNeeded(level),
+                    
+                    // HP (schema canônico)
+                    hp: hpMax,          // ✅ Canônico (não currentHp)
+                    hpMax: hpMax,       // ✅ Canônico (não maxHp)
+                    
+                    // ENE (schema canônico)
+                    ene: eneMax,        // ✅ Começa cheio
+                    eneMax: eneMax,     // ✅ Canônico
+                    
+                    // Stats de combate
+                    atk: atk,
+                    def: def,
+                    spd: spd,
+                    poder: poder,
+                    
+                    // Estado
+                    status: 'healthy',
+                    buffs: [],          // ✅ Array vazio (não undefined)
+                    
+                    // Evolução
+                    stage: 0            // Sempre começa em stage 0
+                };
+                
+                // 7. Aplicar overrides (ex: nickname personalizado, ownerId, etc.)
+                if (overrides && typeof overrides === 'object') {
+                    Object.assign(instance, overrides);
+                }
+                
+                // 8. Normalizar usando função robusta do Commit 5
+                // Isso garante que mesmo com overrides, a estrutura fica canônica
+                const normalized = normalizeMonster(instance);
+                
+                if (!normalized) {
+                    console.error('[Factory] Normalization failed for template:', templateId);
+                    return null;
+                }
+                
+                console.log(`[Factory] Created ${normalized.name} (${templateId}) at level ${level}`);
+                return normalized;
+                
+            } catch (error) {
+                console.error('[Factory] Error creating monster instance:', error, { templateId, level, rarity });
+                return null;
+            }
+        }
+
+        // TODO (Commit 8): Substituir chamadas de createMonsterInstance() por createMonsterInstanceFromTemplate()
+        // A função antiga ainda funciona para compatibilidade, mas a nova garante schema canônico.
+
         // Função para obter habilidade do monstrinho
         // Obter habilidades do monstrinho baseado em classe e estágio
         function getMonsterSkills(monster) {
