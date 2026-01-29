@@ -1800,8 +1800,11 @@
                 enc.log = enc.log || [];
                 enc.log.push("🏁 Vitória! Todos os inimigos foram derrotados.");
                 
-                // Feature 4.4: Victory sound
-                Audio.playSfx("win");
+                // Feature 4.4: Victory sound (com idempotência)
+                if (!enc._winSfxPlayed) {
+                    Audio.playSfx("win");
+                    enc._winSfxPlayed = true;
+                }
                 
                 // Distribuir recompensas (XP) com idempotência
                 handleVictoryRewards(enc);
@@ -1816,8 +1819,11 @@
                 enc.log = enc.log || [];
                 enc.log.push("💀 Derrota... Todos os participantes foram derrotados.");
                 
-                // Feature 4.4: Defeat sound
-                Audio.playSfx("lose");
+                // Feature 4.4: Defeat sound (com idempotência)
+                if (!enc._loseSfxPlayed) {
+                    Audio.playSfx("lose");
+                    enc._loseSfxPlayed = true;
+                }
                 
                 return;
             }
