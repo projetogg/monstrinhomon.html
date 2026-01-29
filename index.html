@@ -5276,19 +5276,14 @@
                 
                 // Feature 4.3: Also save to chosen slot if specified
                 if (GameState.saveSlot) {
-                    const envelope = {
-                        version: "mm_slot_v1",
-                        timestamp: Date.now(),
-                        sessionName: GameState?.currentSession?.name || "Novo Jogo",
-                        playersCount: GameState.players.length,
-                        state: JSON.parse(JSON.stringify(GameState))
-                    };
+                    const envelope = mmBuildSaveEnvelope();
                     const key = MM_SAVE_KEYS[GameState.saveSlot];
                     if (key) {
                         try {
                             localStorage.setItem(key, JSON.stringify(envelope));
                         } catch (e) {
                             console.error("Failed to save to slot", e);
+                            alert(`⚠️ Jogo criado, mas falhou ao salvar no Slot ${GameState.saveSlot}`);
                         }
                     }
                 }
@@ -5372,14 +5367,19 @@
 
         function mmBuildSaveEnvelope() {
             // Create snapshot of current state
-            const payload = {
-                version: "mm_slot_v1",
-                timestamp: Date.now(),
-                sessionName: GameState?.currentSession?.name || "Sessão",
-                playersCount: Array.isArray(GameState?.players) ? GameState.players.length : 0,
-                state: JSON.parse(JSON.stringify(GameState)) // Deep copy
-            };
-            return payload;
+            try {
+                const payload = {
+                    version: "mm_slot_v1",
+                    timestamp: Date.now(),
+                    sessionName: GameState?.currentSession?.name || "Sessão",
+                    playersCount: Array.isArray(GameState?.players) ? GameState.players.length : 0,
+                    state: JSON.parse(JSON.stringify(GameState)) // Deep copy (requires serializable state)
+                };
+                return payload;
+            } catch (e) {
+                console.error("Failed to create save envelope (state may have non-serializable values)", e);
+                throw new Error("Falha ao criar envelope de save");
+            }
         }
 
         function mmSaveToSlot(slot) {
@@ -5402,7 +5402,13 @@
             if (!confirm(`Carregar Slot ${slot}? Isso substitui o estado atual.`)) return;
             
             try {
-                GameState = env.state;
+                // Update GameState properties instead of reassigning
+                Object.assign(GameState, env.state);
+                
+                // Update slot tracking
+                GameState.saveSlot = slot;
+                localStorage.setItem("mm_last_slot", String(slot));
+                
                 saveToLocalStorage();  // Update the main save too
                 
                 // Update all views
@@ -5419,9 +5425,9 @@
         }
 
         function mmDeleteSlot(slot) {
-            if (!confirm(`Deletar Slot ${slot}? Esta ação não pode ser desfeita.`)) return;
+            if (!confirm(`Apagar Slot ${slot}? Esta ação não pode ser desfeita.`)) return;
             localStorage.removeItem(MM_SAVE_KEYS[slot]);
-            showToast(`🗑️ Slot ${slot} deletado.`);
+            showToast(`🗑️ Slot ${slot} apagado.`);
             mmRenderSavesScreen();
         }
 
@@ -5440,6 +5446,7 @@
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
+                URL.revokeObjectURL(a.href); // Free memory
                 showToast(`⬇️ Exportado Slot ${slot}.`);
             } catch (e) {
                 console.error("Failed to export slot", e);
@@ -5463,6 +5470,11 @@
                         throw new Error("JSON inválido (sem state).");
                     }
                     
+                    // Basic validation of state structure
+                    if (typeof obj.state !== 'object') {
+                        throw new Error("State inválido.");
+                    }
+                    
                     if (mmWriteSlot(slot, obj)) {
                         showToast(`⬆️ Importado para Slot ${slot}!`);
                         mmRenderSavesScreen();
@@ -5471,9 +5483,10 @@
                     }
                 } catch (err) {
                     console.error("Import failed", err);
-                    alert("Falha ao importar: " + (err?.message || err));
+                    const msg = err?.message || "Arquivo inválido ou corrompido";
+                    alert("Falha ao importar: " + msg);
                 } finally {
-                    fileInput.value = ""; // Reset file input
+                    fileInput.value = ""; // Allow re-import of same file
                 }
             };
             reader.readAsText(file);
@@ -5504,7 +5517,7 @@
                             <button class="mm-btn" style="width:auto;" ${empty ? "disabled" : ""} onclick="mmLoadFromSlot(${slot})">📂 Carregar</button>
                             <button class="mm-btn" style="width:auto;" onclick="mmSaveToSlot(${slot})">💾 Salvar aqui</button>
                             <button class="mm-btn" style="width:auto;" ${empty ? "disabled" : ""} onclick="mmExportSlot(${slot})">⬇️ Exportar</button>
-                            <button class="mm-btn" style="width:auto;" ${empty ? "disabled" : ""} onclick="mmDeleteSlot(${slot})">🗑️ Deletar</button>
+                            <button class="mm-btn" style="width:auto;" ${empty ? "disabled" : ""} onclick="mmDeleteSlot(${slot})">🗑️ Apagar</button>
                         </div>
                     </div>
                 `;
@@ -5555,14 +5568,8 @@
                         <div class="mm-slot-actions">
                             <button class="mm-btn" style="width:auto;"
                                 onclick="mmChooseSlotAndStartNewGame(${slot})">
-                                ✅ Usar este slot
+                                ${empty ? "✅ Usar este slot" : "✅ Usar (sobrescrever)"}
                             </button>
-                            ${empty ? "" : `
-                                <button class="mm-btn" style="width:auto;"
-                                    onclick="mmChooseSlotAndStartNewGame(${slot}, true)">
-                                    🧨 Sobrescrever
-                                </button>
-                            `}
                         </div>
                     </div>
                 `;
@@ -5576,11 +5583,7 @@
             const occupied = !!(env && env.state);
 
             if (occupied && !force) {
-                alert("Este slot já tem um save. Clique em 'Sobrescrever' ou escolha outro slot.");
-                return;
-            }
-            if (occupied && force) {
-                const ok = confirm(`Sobrescrever o Slot ${slot}?`);
+                const ok = confirm(`Slot ${slot} já tem um save. Sobrescrever?`);
                 if (!ok) return;
             }
 
