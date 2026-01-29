@@ -490,6 +490,93 @@
             navigator.clipboard.writeText(text).catch(e => alert('Copy failed: ' + e));
         }
 
+        // AUDIO MANAGER
+        const Audio = {
+            _unlocked: false,
+            _sfxEnabled: true,
+            _musicEnabled: true,
+            _sfxVolume: 0.5,
+            _musicVolume: 0.3,
+            
+            // Mapeamento de sons (URLs podem ser substituídas por assets reais)
+            _sounds: {
+                hit: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=',
+                miss: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=',
+                crit: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=',
+                heal: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=',
+                capture_ok: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=',
+                capture_fail: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=',
+                win: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=',
+                lose: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=',
+                levelup: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=',
+                evolve: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=',
+                ui_click: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA='
+            },
+            
+            unlock() {
+                if (this._unlocked) return;
+                // Tenta desbloquear áudio no iOS/Safari
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const buffer = ctx.createBuffer(1, 1, 22050);
+                const source = ctx.createBufferSource();
+                source.buffer = buffer;
+                source.connect(ctx.destination);
+                source.start(0);
+                this._unlocked = true;
+                console.log('🔊 Audio unlocked');
+            },
+            
+            playSfx(name) {
+                if (!this._sfxEnabled || !this._unlocked) return;
+                const url = this._sounds[name];
+                if (!url) {
+                    console.warn(`SFX "${name}" not found`);
+                    return;
+                }
+                try {
+                    const audio = new window.Audio(url);
+                    audio.volume = this._sfxVolume;
+                    audio.play().catch(e => console.warn('Play failed:', e));
+                } catch (e) {
+                    console.warn('Audio error:', e);
+                }
+            },
+            
+            setSfxEnabled(enabled) {
+                this._sfxEnabled = enabled;
+                localStorage.setItem('mm_sfx_enabled', enabled ? '1' : '0');
+            },
+            
+            setSfxVolume(volume) {
+                this._sfxVolume = Math.max(0, Math.min(1, volume));
+                localStorage.setItem('mm_sfx_volume', this._sfxVolume);
+            },
+            
+            loadSettings() {
+                const sfxEnabled = localStorage.getItem('mm_sfx_enabled');
+                if (sfxEnabled !== null) this._sfxEnabled = sfxEnabled === '1';
+                
+                const sfxVolume = localStorage.getItem('mm_sfx_volume');
+                if (sfxVolume !== null) this._sfxVolume = parseFloat(sfxVolume);
+            }
+        };
+        
+        // Carregar configurações salvas
+        Audio.loadSettings();
+        
+        // Unlock global em qualquer toque (iOS compatibility)
+        window.addEventListener("pointerdown", () => Audio.unlock(), { once: true });
+        
+        // UI click sounds (global listener for buttons and interactive elements)
+        document.addEventListener("click", (e) => {
+            const target = e.target;
+            // Tocar som para botões, tabs e elementos clicáveis
+            if (target.matches("button, .tab-button, .btn, .monster-card") || 
+                target.closest("button, .tab-button, .btn, .monster-card")) {
+                Audio.playSfx("ui_click");
+            }
+        }, true);
+
         // STATE MANAGEMENT
         const GameState = {
             players: [],
@@ -1505,6 +1592,12 @@
                 enc.log = enc.log || [];
                 enc.log.push("🏁 Vitória! Todos os inimigos foram derrotados.");
                 
+                // SFX: vitória (idempotente)
+                if (!enc._winSfxPlayed) { 
+                    Audio.playSfx("win"); 
+                    enc._winSfxPlayed = true; 
+                }
+                
                 // Distribuir recompensas (XP) com idempotência
                 handleVictoryRewards(enc);
                 
@@ -1517,6 +1610,13 @@
                 enc.active = false;
                 enc.log = enc.log || [];
                 enc.log.push("💀 Derrota... Todos os participantes foram derrotados.");
+                
+                // SFX: derrota (idempotente)
+                if (!enc._loseSfxPlayed) { 
+                    Audio.playSfx("lose"); 
+                    enc._loseSfxPlayed = true; 
+                }
+                
                 return;
             }
             
@@ -1670,6 +1770,11 @@
                 const alwaysMiss = (d20 === 1);
                 const isCrit = (d20 === 20);
                 const hit = !alwaysMiss && (d20 + atk >= def);
+                
+                // SFX: roll result (group player attack)
+                if (d20 === 20) Audio.playSfx("crit");
+                else if (d20 === 1 || !hit) Audio.playSfx("miss");
+                else Audio.playSfx("hit");
 
                 const attackerName = player.name || player.nome || actor.name || "Jogador";
                 const monName = mon.nickname || mon.name || mon.nome || "Monstrinho";
@@ -1903,6 +2008,9 @@
 
                 _log(enc, `💚 ${playerName} usou Petisco de Cura! (Restam: ${player.inventory[itemId]})`);
                 _log(enc, `✨ ${monName} recuperou ${healed} HP! (${mon.hp}/${hpMax})`);
+                
+                // SFX: cura (grupo)
+                Audio.playSfx("heal");
 
                 advanceTurn(enc);
                 saveToLocalStorage();
@@ -2017,6 +2125,32 @@
                 if (isEvo) showToast(line);
             }
             enc._toastCursor = enc.log.length;
+        }
+        
+        /**
+         * Toca SFX baseado em eventos no log (idempotente)
+         */
+        function maybeSfxFromLog(enc) {
+            if (!enc || !Array.isArray(enc.log)) return;
+            
+            // Garantir inicialização do cursor (segurança para encounters antigos)
+            if (enc._sfxCursor == null) enc._sfxCursor = 0;
+            
+            const start = Number.isFinite(enc._sfxCursor) ? enc._sfxCursor : 0;
+            for (let i = start; i < enc.log.length; i++) {
+                const s = String(enc.log[i] || "");
+                
+                // Level up: ✨ ou texto "subiu para o nível"
+                if (s.includes("✨") && /subiu para o nível/i.test(s)) {
+                    Audio.playSfx("levelup");
+                }
+                
+                // Evolução: 🌟 ou texto "evoluiu para"
+                if (s.includes("🌟") && /evoluiu para/i.test(s)) {
+                    Audio.playSfx("evolve");
+                }
+            }
+            enc._sfxCursor = enc.log.length;
         }
         
         /**
@@ -2897,6 +3031,7 @@
                 
                 // Exibir toasts para eventos importantes (level up, evolução)
                 maybeToastFromLog(encounter);
+                maybeSfxFromLog(encounter);
             } catch (error) {
                 showError('Failed to render group encounter', error.stack);
             }
@@ -3126,6 +3261,7 @@
                 
                 // Exibir toasts para eventos importantes (level up, evolução)
                 maybeToastFromLog(GameState.currentEncounter);
+                maybeSfxFromLog(GameState.currentEncounter);
             } catch (error) {
                 showError('Failed to render wild encounter', error.stack);
             }
@@ -3244,6 +3380,9 @@
                 if (hpPercent <= thresholdFinal) {
                     encounter.log.push(`✅ SUCESSO! ${monster.name} foi capturado!`);
                     
+                    // SFX: captura bem-sucedida
+                    Audio.playSfx("capture_ok");
+                    
                     monster.ownerId = player.id;
                     
                     player.team = player.team || [];
@@ -3265,6 +3404,9 @@
                 } else {
                     // FALHA: Monstrinho realiza 1 ataque básico IMEDIATO
                     encounter.log.push(`❌ FALHA! ${monster.name} quebrou livre!`);
+                    
+                    // SFX: falha na captura
+                    Audio.playSfx("capture_fail");
                     
                     const playerMonster = player.team?.[0];
                     if (playerMonster && playerMonster.hp > 0) {
@@ -3355,6 +3497,9 @@
                 const actualHeal = playerMonster.hp - hpBefore;
                 
                 encounter.log.push(`✨ ${playerMonster.name} recuperou ${actualHeal} HP! (${playerMonster.hp}/${playerMonster.hpMax})`);
+                
+                // SFX: cura
+                Audio.playSfx("heal");
                 
                 // SALVAR ESTADO
                 saveToLocalStorage();
@@ -3533,6 +3678,11 @@
                 // d20=1 sempre erra, d20=20 sempre acerta
                 const playerHit = isFail1 ? false : (isCrit20 ? true : checkHit(playerRoll, playerMonster, encounter.wildMonster));
                 
+                // SFX: roll result (player attack)
+                if (playerRoll === 20) Audio.playSfx("crit");
+                else if (playerRoll === 1 || !playerHit) Audio.playSfx("miss");
+                else Audio.playSfx("hit");
+                
                 if (playerHit) {
                     // Calcular dano com power modificado se CRIT 20
                     let power = BASIC_ATTACK_POWER[playerMonster.class] || 12;
@@ -3575,6 +3725,9 @@
                     
                     if (encounter.wildMonster.hp <= 0) {
                         encounter.log.push(`🏆 ${encounter.wildMonster.name} fainted! Victory!`);
+                        
+                        // SFX: vitória
+                        Audio.playSfx("win");
                         
                         // Feature 3.3: Distribuir recompensas (XP) com idempotência
                         handleVictoryRewards(encounter);
@@ -3635,6 +3788,10 @@
                             if (playerMonster.hp <= 0) {
                                 encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
                                 playerMonster.status = 'fainted';
+                                
+                                // SFX: derrota
+                                Audio.playSfx("lose");
+                                
                                 encounter.active = false;
                                 GameState.currentEncounter = null;
                             }
@@ -3673,6 +3830,10 @@
                             if (playerMonster.hp <= 0) {
                                 encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
                                 playerMonster.status = 'fainted';
+                                
+                                // SFX: derrota
+                                Audio.playSfx("lose");
+                                
                                 encounter.active = false;
                                 GameState.currentEncounter = null;
                             }
