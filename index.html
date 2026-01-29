@@ -1266,13 +1266,20 @@
         // LOCAL STORAGE
         // COMMIT 4: Save Migration System
         // Version ladder: migrate old saves to current format
+        /**
+         * Aplica migrações sequenciais sem perder dados extras.
+         * HARDENED: Preserva campos existentes em meta (não sobrescreve).
+         */
         function migrateSaveIfNeeded(saveObj) {
             if (!saveObj || typeof saveObj !== 'object') {
                 return saveObj;
             }
             
+            // Garantir que meta exista sem apagar dados existentes
+            saveObj.meta = saveObj.meta || {};
+            
             // Determine current version (default to 0 for old saves)
-            const currentVersion = saveObj.meta?.saveVersion || 0;
+            const currentVersion = saveObj.meta.saveVersion || 0;
             const targetVersion = 1;  // Current version
             
             if (currentVersion >= targetVersion) {
@@ -1287,18 +1294,25 @@
             
             // Migrate from version 0 to 1
             if (currentVersion < 1) {
-                // Version 0 -> 1: Add meta object if missing
-                if (!migratedSave.meta) {
-                    migratedSave.meta = {};
-                }
+                // Version 0 -> 1: Update saveVersion (preserving other meta fields)
                 migratedSave.meta.saveVersion = 1;
+                
+                // Add timestamp if not present
+                if (!migratedSave.meta.lastSaveDate) {
+                    migratedSave.meta.lastSaveDate = new Date().toISOString();
+                }
                 
                 // Ensure therapistMode exists
                 if (migratedSave.therapistMode === undefined) {
                     migratedSave.therapistMode = false;
                 }
                 
-                console.log('[Migration] Applied v0->v1: Added meta.saveVersion');
+                // Garantir arrays essenciais
+                migratedSave.players = Array.isArray(migratedSave.players) ? migratedSave.players : [];
+                migratedSave.monsters = Array.isArray(migratedSave.monsters) ? migratedSave.monsters : [];
+                migratedSave.sessions = Array.isArray(migratedSave.sessions) ? migratedSave.sessions : [];
+                
+                console.log('[Migration] Applied v0->v1: Added meta.saveVersion (preserved existing meta fields)');
             }
             
             // Future migrations would go here:
@@ -1322,58 +1336,79 @@
          * - instanceId: unique instance ID (formerly id)
          * - class: monster class
          * - rarity: monster rarity
+         * 
+         * HARDENED (Bug-proof):
+         * - Uses ?? (nullish coalescing) to accept 0 as valid value
+         * - Prefers fields with valid values
+         * - Clamps hp/ene to max (prevents over-heal bugs)
+         * - Deletes legacy fields after migration
+         * - Idempotent: safe to run multiple times
          */
         function normalizeMonster(mon) {
-            if (!mon) return mon;
+            if (!mon || typeof mon !== 'object') return null;
             
-            // Normalize HP fields
-            if (mon.currentHp !== undefined && mon.hp === undefined) {
-                mon.hp = mon.currentHp;
-                delete mon.currentHp;
-            }
-            if (mon.hpCurrent !== undefined && mon.hp === undefined) {
-                mon.hp = mon.hpCurrent;
-                delete mon.hpCurrent;
-            }
-            if (mon.maxHp !== undefined && mon.hpMax === undefined) {
-                mon.hpMax = mon.maxHp;
-                delete mon.maxHp;
-            }
+            // --- 1. Identificadores ---
+            // Prioridade: templateId > monsterId > baseId > idBase
+            mon.templateId = mon.templateId ?? mon.monsterId ?? mon.baseId ?? mon.idBase ?? 'unknown';
+            // Remove campos legados para evitar confusão futura
+            delete mon.monsterId;
+            delete mon.baseId;
+            delete mon.idBase;
             
-            // Normalize ENE fields
-            if (mon.eneMax === undefined) {
-                const baseEne = 10;
-                const eneGrowth = 2;
-                const monsterLevel = mon.level || 1;
-                mon.eneMax = Math.floor(baseEne + eneGrowth * (monsterLevel - 1));
-            }
-            if (mon.ene === undefined) {
-                mon.ene = mon.eneMax;
-            }
-            
-            // Normalize ID fields (keep both for compatibility)
-            if (mon.monsterId !== undefined && mon.templateId === undefined) {
-                mon.templateId = mon.monsterId;
-            }
+            // instanceId (formerly just 'id')
             if (mon.id !== undefined && mon.instanceId === undefined) {
                 mon.instanceId = mon.id;
             }
-            if (mon.baseId !== undefined && mon.templateId === undefined) {
-                mon.templateId = mon.baseId;
+            
+            // --- 2. Stats Máximos (A âncora da verdade) ---
+            // Prioridade: hpMax > maxHp > cálculo fallback
+            if (mon.hpMax === undefined) {
+                mon.hpMax = mon.maxHp ?? calculateMaxHpFallback(mon.level);
             }
-            if (mon.idBase !== undefined && mon.templateId === undefined) {
-                mon.templateId = mon.idBase;
+            // Remove legado
+            delete mon.maxHp;
+            
+            // --- 3. Stats Atuais (Com clamping) ---
+            // Prioridade: hp > currentHp > hpCurrent > hpMax (full heal se perdido)
+            // Usa ?? para aceitar 0 como valor válido
+            let rawHp = mon.hp ?? mon.currentHp ?? mon.hpCurrent ?? mon.hpMax;
+            
+            // Regra de Ouro: HP nunca pode ser > hpMax nem < 0
+            const safeHpMax = Number(mon.hpMax) || 30;
+            mon.hp = Math.min(Math.max(0, Number(rawHp) || 0), safeHpMax);
+            
+            // Limpeza legado
+            delete mon.currentHp;
+            delete mon.hpCurrent;
+            
+            // --- 4. ENE (Energia) ---
+            // Calcular eneMax baseado em nível (se não existir)
+            if (mon.eneMax === undefined) {
+                const baseEne = 10;
+                const eneGrowth = 2;
+                const lvl = mon.level || 1;
+                mon.eneMax = Math.floor(baseEne + eneGrowth * (lvl - 1));
             }
             
+            // Prioridade: ene > currentEne > eneMax
+            let rawEne = mon.ene ?? mon.currentEne ?? mon.eneMax;
+            const safeEneMax = Number(mon.eneMax) || 10;
+            mon.ene = Math.min(Math.max(0, Number(rawEne) || 0), safeEneMax);
+            
+            // Limpeza legado
+            delete mon.currentEne;
+            
+            // --- 5. Garantias Estruturais ---
             // Ensure required fields exist
             if (mon.level === undefined) mon.level = 1;
             if (mon.xp === undefined) mon.xp = 0;
-            if (mon.hp === undefined && mon.hpMax) mon.hp = mon.hpMax;
-            if (mon.hpMax === undefined) mon.hpMax = 30; // Fallback
             
-            // Ensure buffs array exists
+            // Ensure arrays exist
             if (!Array.isArray(mon.buffs)) {
                 mon.buffs = [];
+            }
+            if (!Array.isArray(mon.statusEffects)) {
+                mon.statusEffects = [];
             }
             
             // Ensure class and rarity exist
@@ -1381,6 +1416,17 @@
             if (!mon.rarity) mon.rarity = 'Comum';
             
             return mon;
+        }
+        
+        /**
+         * Helper: Calcula HP máximo fallback baseado em nível
+         * (usado quando não temos acesso ao catalog)
+         */
+        function calculateMaxHpFallback(level) {
+            const baseHp = 30;
+            const growthPerLevel = 5;
+            const lvl = level || 1;
+            return baseHp + (growthPerLevel * (lvl - 1));
         }
 
         // COMMIT 3: Centralized Persistence Layer
@@ -1395,81 +1441,110 @@
             }
         }
         
+        /**
+         * Carrega o jogo de forma segura e transacional.
+         * Retorna verdadeiro se carregou com sucesso, falso se usou o estado padrão.
+         * 
+         * HARDENED (Bug-proof):
+         * - Fail-safe: null save → retorna false, mantém GameState default
+         * - Fail-safe: JSON inválido → backup + reset, retorna false
+         * - Fail-safe: migration error → fallback seguro
+         */
         function loadGame() {
             try {
-                const data = localStorage.getItem('monstrinhomon_state');
-                if (data) {
-                    const loaded = JSON.parse(data);
-                    
-                    // COMMIT 4: Apply migrations before using the save
-                    const migrated = migrateSaveIfNeeded(loaded);
-                    
-                    // Validação básica da estrutura
-                    if (typeof migrated !== 'object' || migrated === null) {
-                        console.warn('Invalid save data format, skipping load');
-                        return;
-                    }
-                    
-                    // Validar arrays essenciais
-                    if (migrated.players && !Array.isArray(migrated.players)) {
-                        console.warn('Invalid players array, resetting');
-                        migrated.players = [];
-                    }
-                    if (migrated.monsters && !Array.isArray(migrated.monsters)) {
-                        console.warn('Invalid monsters array, resetting');
-                        migrated.monsters = [];
-                    }
-                    
-                    Object.assign(GameState, migrated);
-                    
-                    // Migrar inventários antigos
-                    if (GameState.players) {
-                        GameState.players.forEach(player => {
-                            // Validar estrutura do jogador
-                            if (!player.id || !player.name) {
-                                console.warn('Invalid player detected:', player);
-                                return;
-                            }
-                            
-                            migrateInventory(player);
-                            
-                            // Garantir arrays
-                            player.team = Array.isArray(player.team) ? player.team : [];
-                            player.box = Array.isArray(player.box) ? player.box : [];
-                            player.inventory = player.inventory || {};
-                            
-                            // Garantir que monstros tenham ENE e campos de progressão (Feature 3.3)
-                            if (player.team) {
-                                player.team.forEach(monster => {
-                                    if (!monster) return;
-                                    
-                                    // COMMIT 5: Use normalized monster schema
-                                    normalizeMonster(monster);
-                                    
-                                    // Progressão (Feature 3.3) - compatibilidade com saves antigos
-                                    ensureMonsterProgressFields(monster);
-                                });
-                            }
-                            
-                            // Also normalize monsters in box
-                            if (player.box) {
-                                player.box.forEach(monster => {
-                                    if (!monster) return;
-                                    normalizeMonster(monster);
-                                    ensureMonsterProgressFields(monster);
-                                });
-                            }
-                        });
-                    }
-                    
+                const raw = localStorage.getItem('monstrinhomon_state');
+                
+                // 1. Fail-safe: Se não tem save, não faz nada (mantém GameState default)
+                if (raw === null) {
+                    console.log('[System] No save found. Starting new game.');
+                    return false;
                 }
-            } catch (error) {
-                console.warn('Failed to load saved data:', error);
-                // Resetar para estado seguro em caso de corrupção severa
-                if (error instanceof SyntaxError) {
-                    console.error('Save data is corrupted (JSON parse failed). Starting fresh.');
+                
+                // 2. Fail-safe: Parse JSON com tratamento de erro
+                let loaded;
+                try {
+                    loaded = JSON.parse(raw);
+                } catch (parseError) {
+                    // JSON corrompido: faz backup e reseta
+                    console.error('[System] Corrupted save detected. Creating backup and resetting.', parseError);
+                    localStorage.setItem('monstrinhomon_corrupted_backup', raw);
                     localStorage.removeItem('monstrinhomon_state');
+                    return false;
                 }
+                
+                // Validação estrutural mínima antes de tocar no GameState
+                if (!loaded || typeof loaded !== 'object') {
+                    console.warn('[System] Invalid save format (not an object). Resetting.');
+                    return false;
+                }
+                
+                // 3. Migração em Escada (Safe Migration)
+                const migrated = migrateSaveIfNeeded(loaded);
+                
+                // Validar arrays essenciais após migração
+                if (migrated.players && !Array.isArray(migrated.players)) {
+                    console.warn('[System] Invalid players array, resetting');
+                    migrated.players = [];
+                }
+                if (migrated.monsters && !Array.isArray(migrated.monsters)) {
+                    console.warn('[System] Invalid monsters array, resetting');
+                    migrated.monsters = [];
+                }
+                
+                // 4. Merge Seguro (não substituir GameState inteiro)
+                Object.assign(GameState, migrated);
+                
+                // 5. Normalização Pós-Load
+                if (GameState.players) {
+                    GameState.players.forEach(player => {
+                        // Validar estrutura do jogador
+                        if (!player || !player.id || !player.name) {
+                            console.warn('[System] Invalid player detected:', player);
+                            return;
+                        }
+                        
+                        // Migrar inventários antigos
+                        if (typeof migrateInventory === 'function') {
+                            migrateInventory(player);
+                        }
+                        
+                        // Garantir arrays
+                        player.team = Array.isArray(player.team) ? player.team : [];
+                        player.box = Array.isArray(player.box) ? player.box : [];
+                        player.inventory = player.inventory || {};
+                        
+                        // Normalizar monstros no team
+                        if (player.team) {
+                            player.team.forEach(monster => {
+                                if (!monster) return;
+                                normalizeMonster(monster);
+                                // Progressão (Feature 3.3)
+                                if (typeof ensureMonsterProgressFields === 'function') {
+                                    ensureMonsterProgressFields(monster);
+                                }
+                            });
+                        }
+                        
+                        // Normalizar monstros no box
+                        if (player.box) {
+                            player.box.forEach(monster => {
+                                if (!monster) return;
+                                normalizeMonster(monster);
+                                if (typeof ensureMonsterProgressFields === 'function') {
+                                    ensureMonsterProgressFields(monster);
+                                }
+                            });
+                        }
+                    });
+                }
+                
+                console.log(`[System] Game loaded successfully. Save version: ${GameState.meta?.saveVersion || 0}`);
+                return true;
+                
+            } catch (error) {
+                console.error('[System] Critical error in loadGame:', error);
+                alert('Error loading game. Check console for details.');
+                return false;
             }
         }
 

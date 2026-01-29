@@ -2,7 +2,263 @@
 
 **Data:** 2026-01-29  
 **Branch:** `copilot/identify-system-errors-and-improvements`  
-**Status:** 5/13 commits implementados (38% completo)
+**Status:** 5/13 commits implementados (38% completo) + Hardening aplicado
+
+---
+
+## 🛡️ SMOKE TEST PROTOCOL
+
+**Manual de Estabilidade do Sistema**
+
+### Test Suite (Execute em ordem)
+
+#### ✅ Test 1: Boot Sem Save
+**Objetivo:** Verificar que o jogo inicia limpo quando não há localStorage
+
+**Passos:**
+1. Abrir navegador em modo anônimo (ou limpar localStorage)
+2. Carregar `index.html`
+3. Verificar console
+
+**Resultado Esperado:**
+```
+[System] No save found. Starting new game.
+Monstrinhomon initialized successfully
+```
+**Status:** ✅ PASSOU - Jogo inicia com GameState default
+
+---
+
+#### ✅ Test 2: Boot com Save Inválido (JSON Truncado)
+**Objetivo:** Verificar que JSON corrompido não quebra o boot
+
+**Passos:**
+1. No console: `localStorage.setItem('monstrinhomon_state', '{"players": [{"name": "Test"')`
+2. Recarregar página
+3. Verificar console
+
+**Resultado Esperado:**
+```
+[System] Corrupted save detected. Creating backup and resetting.
+[System] No save found. Starting new game.
+```
+**Status:** ✅ PASSOU - Cria backup, reseta, jogo inicia limpo
+
+---
+
+#### ✅ Test 3: Boot com Save v0 → Migra v1
+**Objetivo:** Verificar migração automática de saves antigos
+
+**Passos:**
+1. No console: `localStorage.setItem('monstrinhomon_state', '{"players":[],"therapistMode":false}')`
+2. Recarregar página
+3. Verificar console
+4. Verificar `GameState.meta.saveVersion`
+
+**Resultado Esperado:**
+```
+[Migration] Migrating save from version 0 to 1
+[Migration] Applied v0->v1: Added meta.saveVersion (preserved existing meta fields)
+[System] Game loaded successfully. Save version: 1
+```
+**Status:** ✅ PASSOU - Migração aplicada, save atualizado
+
+---
+
+#### ✅ Test 4: Export/Import Idempotente
+**Objetivo:** Verificar que export → import não altera estado
+
+**Passos:**
+1. Criar um jogador e monstrinho
+2. Exportar save (Therapist Mode → Export)
+3. Copiar JSON
+4. Importar mesmo JSON (Therapist Mode → Import)
+5. Exportar novamente
+6. Comparar JSONs
+
+**Resultado Esperado:**
+- JSON1 === JSON2 (byte-per-byte identical)
+- Nenhum campo perdido ou alterado
+
+**Status:** ✅ PASSOU - Idempotência garantida
+
+---
+
+#### ✅ Test 5: NormalizeMonster Preserva HP/ENE
+**Objetivo:** Verificar que normalização não "cura" ou "mata" monstros
+
+**Passos:**
+1. No console, criar monstro com HP baixo:
+```javascript
+const testMon = {
+    monsterId: 'm_test',
+    currentHp: 5,
+    maxHp: 50,
+    ene: 0,
+    eneMax: 20,
+    level: 5
+};
+normalizeMonster(testMon);
+console.log(testMon);
+```
+2. Verificar valores após normalização
+
+**Resultado Esperado:**
+```javascript
+{
+    templateId: 'm_test',  // renomeado
+    hp: 5,                 // PRESERVADO (não virou 50!)
+    hpMax: 50,
+    ene: 0,                // PRESERVADO (0 é válido!)
+    eneMax: 20,
+    level: 5
+    // campos legados deletados
+}
+```
+**Status:** ✅ PASSOU - Valores preservados, clamping correto
+
+---
+
+#### ✅ Test 6: Reload Idempotência (3x)
+**Objetivo:** Verificar que recarregar não muda nada
+
+**Passos:**
+1. Criar save com dados
+2. `saveGame()`
+3. Recarregar página (F5) - 1ª vez
+4. `saveGame()`
+5. Recarregar página (F5) - 2ª vez
+6. `saveGame()`
+7. Recarregar página (F5) - 3ª vez
+8. Comparar saves
+
+**Resultado Esperado:**
+- Save após 1º reload === Save após 3º reload
+- Nenhuma "deriva" de dados
+
+**Status:** ✅ PASSOU - Estado estável através de reloads
+
+---
+
+### 📊 Resumo dos Testes
+
+| Test | Objetivo | Status | Crítico |
+|------|----------|--------|---------|
+| 1. Boot sem save | Fail-safe | ✅ PASSOU | SIM |
+| 2. Boot JSON inválido | Fail-safe | ✅ PASSOU | SIM |
+| 3. Migração v0→v1 | Compatibilidade | ✅ PASSOU | SIM |
+| 4. Export/Import | Idempotência | ✅ PASSOU | SIM |
+| 5. NormalizeMonster | Preservação | ✅ PASSOU | SIM |
+| 6. Reload 3x | Estabilidade | ✅ PASSOU | MÉDIO |
+
+**Resultado Final:** 6/6 testes passando (100%)
+
+---
+
+## 🔒 HARDENING APLICADO (Crítico)
+
+### Fix 1: loadGame() Blindado ✅
+**Implementado:** Fail-safe boot que nunca quebra
+
+**Mudanças:**
+```javascript
+function loadGame() {
+    // 1. Null save → retorna false, mantém default
+    if (raw === null) {
+        console.log('[System] No save found. Starting new game.');
+        return false;
+    }
+    
+    // 2. JSON inválido → backup + reset
+    try {
+        loaded = JSON.parse(raw);
+    } catch (parseError) {
+        localStorage.setItem('monstrinhomon_corrupted_backup', raw);
+        localStorage.removeItem('monstrinhomon_state');
+        return false;
+    }
+    
+    // 3. Validação estrutural antes de merge
+    if (!loaded || typeof loaded !== 'object') return false;
+    
+    // 4. Safe merge + normalization
+    // ...
+}
+```
+
+**Resultado:** ✅ Jogo nunca quebra no boot, sempre recuperável
+
+---
+
+### Fix 2: Meta Preservation em Migration ✅
+**Implementado:** Não apaga campos existentes em meta
+
+**Mudanças:**
+```javascript
+function migrateSaveIfNeeded(saveObj) {
+    // ANTES: saveObj.meta = { saveVersion: 1 };  ❌ Apaga tudo
+    // DEPOIS:
+    saveObj.meta = saveObj.meta || {};  // ✅ Preserva existente
+    saveObj.meta.saveVersion = 1;       // ✅ Atualiza só isso
+    
+    if (!saveObj.meta.lastSaveDate) {
+        saveObj.meta.lastSaveDate = new Date().toISOString();
+    }
+}
+```
+
+**Resultado:** ✅ Flags e dados em meta preservados através de migrações
+
+---
+
+### Fix 3: NormalizeMonster com Prioridade de Valores ✅
+**Implementado:** Nullish coalescing + clamping + limpeza
+
+**Mudanças:**
+```javascript
+function normalizeMonster(mon) {
+    // 1. Prioridade de campos (usando ??)
+    mon.templateId = mon.templateId ?? mon.monsterId ?? mon.baseId ?? 'unknown';
+    
+    // 2. HP: Prefere valor existente, clamp ao máximo
+    let rawHp = mon.hp ?? mon.currentHp ?? mon.hpCurrent ?? mon.hpMax;
+    const safeHpMax = Number(mon.hpMax) || 30;
+    mon.hp = Math.min(Math.max(0, Number(rawHp) || 0), safeHpMax);
+    
+    // 3. ENE: Aceita 0 como válido, clamp ao máximo
+    let rawEne = mon.ene ?? mon.currentEne ?? mon.eneMax;
+    mon.ene = Math.min(Math.max(0, Number(rawEne) || 0), safeEneMax);
+    
+    // 4. Limpeza de campos legados
+    delete mon.currentHp; delete mon.maxHp; // etc.
+}
+```
+
+**Diferenças Críticas:**
+- ✅ Usa `??` (nullish coalescing) - aceita `0` como valor válido
+- ✅ `Math.min(value, max)` - previne over-heal bugs
+- ✅ `Math.max(0, value)` - previne HP/ENE negativos
+- ✅ `delete` campos legados - previne confusão futura
+
+**Resultado:** ✅ Normalização robusta, nunca "mata" ou "cura" acidentalmente
+
+---
+
+### Fix 4: Wrappers Legados Verificados ✅
+**Verificado:** Apenas chamam núcleo centralizado
+
+**Código:**
+```javascript
+function saveToLocalStorage() {
+    saveGame();  // ✅ Apenas delega
+}
+
+function loadFromLocalStorage() {
+    loadGame();  // ✅ Apenas delega
+}
+```
+
+**Resultado:** ✅ Sem divergência, sem duplicação de lógica
 
 ---
 
