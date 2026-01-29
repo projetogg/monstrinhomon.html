@@ -621,6 +621,7 @@
             <button class="mm-btn" onclick="mmOpenSlotPickerForNewGame()">🎮 Novo Jogo</button>
             <button class="mm-btn" onclick="mmStartTutorial()">🎓 Tutorial</button>
             <button class="mm-btn" onclick="mmShowConfig()">⚙️ Configurações</button>
+            <button id="mmTherapistBtn" class="mm-btn" onclick="mmOpenTherapistPanel()" style="display:none;">🧑‍🏫 Mestre</button>
             <div class="mm-row">
                 <button class="mm-btn" onclick="mmCloseAllOverlays()">Fechar</button>
                 <button class="mm-btn" onclick="mmResetSaveConfirm()">🗑️ Apagar Save</button>
@@ -661,6 +662,18 @@
             <div class="mm-title">Configurações</div>
             <p class="mm-sub">MVP: placeholder. (Depois entra volume, modo terapeuta, etc.)</p>
             <button class="mm-btn" onclick="mmShowMainMenu()">Voltar</button>
+        </div>
+    </div>
+
+    <!-- Feature 4.6: Therapist Mode Panel -->
+    <div id="mmTherapist" class="mm-overlay">
+        <div class="mm-card">
+            <div class="mm-title">🧑‍🏫 Therapist Mode</div>
+            <div id="mmTherapistBody"></div>
+
+            <div class="mm-row" style="margin-top:12px;">
+                <button class="mm-btn" onclick="mmCloseAllOverlays()">Fechar</button>
+            </div>
         </div>
     </div>
 
@@ -958,6 +971,7 @@
             currentSession: null,
             currentEncounter: null,
             objectives: [],
+            therapistMode: false, // Feature 4.6: Therapist Mode
             config: {
                 maxTeamSize: 6,
                 maxLevel: 100,
@@ -1221,10 +1235,20 @@
         function init() {
             try {
                 loadFromLocalStorage();
+                
+                // Restore therapist mode state from localStorage
+                if (typeof GameState.therapistMode !== "boolean") {
+                    GameState.therapistMode = (localStorage.getItem("mm_therapist_mode") === "1");
+                }
+                
                 if (!GameState.objectives || GameState.objectives.length === 0) {
                     GameState.objectives = [...DEFAULT_OBJECTIVES];
                 }
+                
                 updateAllViews();
+                mmUpdateTherapistUI(); // Update therapist mode UI
+                
+                console.log('Monstrinhomon initialized successfully');
             } catch (error) {
                 showError('Initialization failed', error.stack);
             }
@@ -1337,6 +1361,43 @@
             } catch (error) {
                 showError('Tab switching failed', error.stack);
             }
+        }
+
+        // THERAPIST MODE HELPERS (Feature 4.6)
+        function mmIsTherapistMode() {
+            try {
+                if (GameState && typeof GameState.therapistMode === "boolean") return GameState.therapistMode;
+            } catch (e) {}
+            return localStorage.getItem("mm_therapist_mode") === "1";
+        }
+
+        function mmSetTherapistMode(on) {
+            const v = !!on;
+            try { 
+                GameState.therapistMode = v; 
+            } catch (e) {}
+            localStorage.setItem("mm_therapist_mode", v ? "1" : "0");
+            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
+            // Update UI elements
+            mmUpdateTherapistUI();
+        }
+
+        function mmRequireGameOrAlert() {
+            if (!GameState?.players || GameState.players.length === 0) {
+                alert("Crie um novo jogo primeiro!");
+                return false;
+            }
+            return true;
+        }
+
+        function mmUpdateTherapistUI() {
+            // Update therapist button visibility in menu
+            const btn = document.getElementById("mmTherapistBtn");
+            if (btn) btn.style.display = mmIsTherapistMode() ? "" : "none";
+            
+            // Update checkbox in settings
+            const checkbox = document.getElementById("therapistMode");
+            if (checkbox) checkbox.checked = mmIsTherapistMode();
         }
 
         // PLAYER MANAGEMENT
@@ -5182,6 +5243,9 @@
         function toggleTherapistMode() {
             try {
                 const checked = document.getElementById('therapistMode')?.checked;
+                mmSetTherapistMode(checked);
+                
+                // Also update the old config panel if it exists
                 const configPanel = document.getElementById('configPanel');
                 if (configPanel) {
                     if (checked) {
@@ -5246,10 +5310,216 @@
                 btn.disabled = !ok;
                 btn.textContent = ok ? "📖 Continuar" : "📖 Continuar (sem save)";
             }
+            // Update therapist button visibility
+            mmUpdateTherapistUI();
         }
 
         function mmShowConfig(){
             mmShow("mmConfig");
+        }
+
+        // Feature 4.6: Therapist Mode Panel Functions
+        function mmOpenTherapistPanel() {
+            if (!mmRequireGameOrAlert()) return;
+            mmShow("mmTherapist");
+            mmRenderTherapistPanel();
+        }
+
+        function mmRenderTherapistPanel() {
+            const host = document.getElementById("mmTherapistBody");
+            if (!host) return;
+            
+            if (!mmIsTherapistMode()) {
+                host.innerHTML = `<div style="opacity:.8;">Ative o Therapist Mode nas Configurações.</div>`;
+                return;
+            }
+            
+            if (!mmRequireGameOrAlert()) {
+                host.innerHTML = "";
+                return;
+            }
+
+            const players = GameState.players || [];
+            
+            // Build player options
+            const playerOptions = players.map(p => `<option value="${p.id}">${escapeHtml(p.name)} (${escapeHtml(p.class || 'N/A')})</option>`).join("");
+
+            // Build item options (ClasterOrbs + healing items)
+            const itemOptions = `
+                <option value="CLASTERORB_COMUM">⚪ ClasterOrb Comum</option>
+                <option value="CLASTERORB_INCOMUM">🔵 ClasterOrb Incomum</option>
+                <option value="CLASTERORB_RARA">🟣 ClasterOrb Rara</option>
+                <option value="IT_HEAL_01">💚 Petisco de Cura</option>
+            `;
+
+            // Build monster options from catalog
+            const monOptions = MONSTER_CATALOG.map(m => 
+                `<option value="${m.id}">${escapeHtml(m.name)} [${escapeHtml(m.class)}] (${escapeHtml(m.rarity)})</option>`
+            ).join("");
+
+            host.innerHTML = `
+                <div style="display:grid; gap:10px;">
+                    <div>
+                        <div style="font-weight:800; margin-bottom:6px;">Jogador alvo</div>
+                        <select id="mmTherPlayer" class="mm-input">${playerOptions}</select>
+                    </div>
+
+                    <div style="padding:10px; border:1px solid rgba(255,255,255,.12); border-radius:12px;">
+                        <div style="font-weight:800; margin-bottom:6px;">✨ Dar XP (monstro ativo)</div>
+                        <div class="mm-row">
+                            <input id="mmTherXp" class="mm-input" type="number" min="1" value="50" style="flex:1;">
+                            <button class="mm-btn" onclick="mmTherGiveXP()">+ XP</button>
+                        </div>
+                        <div style="opacity:.8; font-size:12px; margin-top:6px;">Aplica no player.team[0].</div>
+                    </div>
+
+                    <div style="padding:10px; border:1px solid rgba(255,255,255,.12); border-radius:12px;">
+                        <div style="font-weight:800; margin-bottom:6px;">🎒 Dar Item</div>
+                        <div class="mm-row">
+                            <select id="mmTherItem" class="mm-input" style="flex:1;">${itemOptions}</select>
+                            <input id="mmTherItemQty" class="mm-input" type="number" min="1" value="1" style="width:90px;">
+                            <button class="mm-btn" onclick="mmTherGiveItem()">Adicionar</button>
+                        </div>
+                    </div>
+
+                    <div style="padding:10px; border:1px solid rgba(255,255,255,.12); border-radius:12px;">
+                        <div style="font-weight:800; margin-bottom:6px;">🐾 Dar Monstrinhomon</div>
+                        <div class="mm-row">
+                            <select id="mmTherMon" class="mm-input" style="flex:1;">${monOptions}</select>
+                            <input id="mmTherMonLv" class="mm-input" type="number" min="1" value="5" style="width:90px;">
+                        </div>
+                        <div class="mm-row" style="margin-top:8px;">
+                            <select id="mmTherMonDest" class="mm-input" style="flex:1;">
+                                <option value="auto">Auto (Time se <6, senão Caixa)</option>
+                                <option value="team">Forçar Time</option>
+                                <option value="box">Forçar Caixa</option>
+                            </select>
+                            <button class="mm-btn" onclick="mmTherGiveMonster()">Adicionar</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Therapist action: Give XP
+        function mmTherGiveXP() {
+            if (!mmRequireGameOrAlert()) return;
+
+            const pid = document.getElementById("mmTherPlayer")?.value;
+            const amt = Math.max(1, parseInt(document.getElementById("mmTherXp")?.value || "0", 10));
+
+            const player = GameState.players.find(p => p.id === pid);
+            const mon = player?.team?.[0];
+            
+            if (!mon) {
+                alert("Jogador sem monstrinho ativo (team[0]).");
+                return;
+            }
+
+            const logArr = GameState.currentEncounter?.log || [];
+
+            // Use existing giveXP function
+            if (typeof giveXP === "function") {
+                giveXP(mon, amt, logArr);
+            } else {
+                // Fallback if giveXP doesn't exist
+                mon.xp = (mon.xp || 0) + amt;
+            }
+
+            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
+            if (typeof renderEncounter === "function") renderEncounter();
+            if (typeof showToast === "function") {
+                showToast(`✨ ${player.name} recebeu +${amt} XP!`);
+            } else {
+                alert(`✨ ${player.name} recebeu +${amt} XP!`);
+            }
+        }
+
+        // Therapist action: Give Item
+        function mmTherGiveItem() {
+            if (!mmRequireGameOrAlert()) return;
+
+            const pid = document.getElementById("mmTherPlayer")?.value;
+            const itemId = document.getElementById("mmTherItem")?.value;
+            const qty = Math.max(1, parseInt(document.getElementById("mmTherItemQty")?.value || "1", 10));
+
+            const player = GameState.players.find(p => p.id === pid);
+            if (!player) return;
+
+            player.inventory = player.inventory || {};
+            player.inventory[itemId] = (player.inventory[itemId] || 0) + qty;
+
+            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
+            if (typeof renderEncounter === "function") renderEncounter();
+            
+            // Get item name from CLASTERORBS or fallback to itemId
+            let itemName = itemId;
+            if (window.CLASTERORBS && window.CLASTERORBS[itemId]) {
+                itemName = window.CLASTERORBS[itemId].name;
+            }
+            
+            if (typeof showToast === "function") {
+                showToast(`🎒 ${player.name} recebeu ${qty}x ${itemName}`);
+            } else {
+                alert(`🎒 ${player.name} recebeu ${qty}x ${itemName}`);
+            }
+        }
+
+        // Therapist action: Give Monster
+        function mmTherGiveMonster() {
+            if (!mmRequireGameOrAlert()) return;
+
+            const pid = document.getElementById("mmTherPlayer")?.value;
+            const monId = document.getElementById("mmTherMon")?.value;
+            const lv = Math.max(1, parseInt(document.getElementById("mmTherMonLv")?.value || "1", 10));
+            const dest = document.getElementById("mmTherMonDest")?.value || "auto";
+
+            const player = GameState.players.find(p => p.id === pid);
+            if (!player) return;
+
+            // Find monster template
+            const template = MONSTER_CATALOG.find(m => m.id === monId);
+            if (!template) {
+                alert("Monstro não encontrado no catálogo.");
+                return;
+            }
+
+            if (typeof createMonsterInstance !== "function") {
+                alert("createMonsterInstance() não encontrado no código.");
+                return;
+            }
+
+            const inst = createMonsterInstance(template, player.id, lv);
+            if (!inst) {
+                alert("Erro ao criar instância do monstro.");
+                return;
+            }
+
+            player.team = player.team || [];
+            player.box = player.box || [];
+
+            let where = dest;
+            if (dest === "auto") where = (player.team.length < 6 ? "team" : "box");
+
+            if (where === "team") {
+                if (player.team.length >= 6) {
+                    alert("Time cheio (6). Use Caixa.");
+                    return;
+                }
+                player.team.push(inst);
+            } else {
+                player.box.push(inst);
+            }
+
+            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
+            if (typeof renderEncounter === "function") renderEncounter();
+            
+            const destText = where === "team" ? "time" : "caixa";
+            if (typeof showToast === "function") {
+                showToast(`🐾 ${player.name} recebeu ${inst.name || monId} (Lv ${lv}) no ${destText}`);
+            } else {
+                alert(`🐾 ${player.name} recebeu ${inst.name || monId} (Lv ${lv}) no ${destText}`);
+            }
         }
 
         function mmContinue(){
