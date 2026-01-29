@@ -4,398 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Monstrinhomon - Therapeutic Game</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        :root {
-            --fire-color: #ff6b35; --water-color: #4ecdc4; --plant-color: #95e06c; --electric-color: #ffe66d;
-            --primary: #6c5ce7; --secondary: #fd79a8; --success: #00b894; --warning: #fdcb6e;
-            --danger: #d63031; --dark: #2d3436; --light: #dfe6e9;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: var(--dark); min-height: 100vh; overflow-x: hidden;
-        }
-        
-        .app-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        
-        .error-panel {
-            position: fixed; top: 0; left: 0; right: 0; background: #d63031; color: white;
-            padding: 15px; z-index: 10000; display: none; font-family: monospace; font-size: 14px;
-        }
-        .error-panel.show { display: block; }
-        .error-panel button {
-            background: white; color: #d63031; border: none; padding: 8px 15px; margin: 5px;
-            border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold;
-        }
-        
-        .header {
-            background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        .header h1 { color: var(--primary); font-size: 2.5em; text-align: center; margin-bottom: 10px; }
-        
-        .tabs {
-            display: flex; gap: 10px; overflow-x: auto; padding: 10px 0;
-            -webkit-overflow-scrolling: touch;
-        }
-        
-        .tab-button {
-            background: var(--light); border: none; padding: 15px 25px; border-radius: 15px;
-            font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.3s;
-            white-space: nowrap; min-width: 100px; min-height: 44px;
-        }
-        .tab-button.active {
-            background: var(--primary); color: white; transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4);
-        }
-        
-        .tab-content {
-            display: none; background: white; border-radius: 20px; padding: 25px;
-            min-height: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        .tab-content.active { display: block; animation: fadeIn 0.3s; }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .btn {
-            background: var(--primary); color: white; border: none; padding: 15px 30px;
-            border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer;
-            transition: all 0.3s; min-height: 44px; min-width: 44px;
-        }
-        .btn:active { transform: scale(0.95); }
-        .btn-success { background: var(--success); }
-        .btn-danger { background: var(--danger); }
-        .btn-warning { background: var(--warning); color: var(--dark); }
-        .btn-secondary { background: var(--secondary); }
-        .btn-large { font-size: 20px; padding: 20px 40px; }
-        
-        input, select, textarea {
-            width: 100%; padding: 12px; border: 2px solid var(--light); border-radius: 10px;
-            font-size: 16px; margin: 8px 0; min-height: 44px;
-        }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); }
-        
-        .card {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            border-radius: 15px; padding: 20px; margin: 15px 0;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        
-        .monster-card {
-            display: inline-block; width: 150px; margin: 10px; padding: 15px;
-            border-radius: 15px; text-align: center; cursor: pointer; transition: all 0.3s;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        .monster-card:active { transform: scale(0.95); }
-        .monster-card.fire { background: linear-gradient(135deg, #ff6b35 0%, #ff8c61 100%); }
-        .monster-card.water { background: linear-gradient(135deg, #4ecdc4 0%, #7ee0d7 100%); }
-        .monster-card.plant { background: linear-gradient(135deg, #95e06c 0%, #b3eb93 100%); }
-        .monster-card.electric { background: linear-gradient(135deg, #ffe66d 0%, #fff09c 100%); }
-        
-        .progress-bar {
-            width: 100%; height: 30px; background: var(--light); border-radius: 15px;
-            overflow: hidden; position: relative; margin: 10px 0;
-        }
-        .progress-fill {
-            height: 100%; background: linear-gradient(90deg, var(--success) 0%, #00b894 100%);
-            transition: width 0.5s; display: flex; align-items: center; justify-content: center;
-            color: white; font-weight: bold; font-size: 14px;
-        }
-        .progress-fill.hp { background: linear-gradient(90deg, #d63031 0%, #ff7675 100%); }
-        .progress-fill.xp { background: linear-gradient(90deg, #6c5ce7 0%, #a29bfe 100%); }
-        
-        .badge {
-            display: inline-block; padding: 5px 12px; border-radius: 20px;
-            font-size: 12px; font-weight: bold; margin: 2px;
-        }
-        .badge-common { background: #95a5a6; color: white; }
-        .badge-rare { background: #3498db; color: white; }
-        .badge-epic { background: #9b59b6; color: white; }
-        .badge-legendary { background: #f39c12; color: white; }
-        .badge-fire { background: var(--fire-color); color: white; }
-        .badge-water { background: var(--water-color); color: white; }
-        .badge-plant { background: var(--plant-color); color: white; }
-        .badge-electric { background: var(--electric-color); color: var(--dark); }
-        
-        .encounter-panel {
-            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
-            border-radius: 20px; padding: 25px; margin: 20px 0;
-        }
-        
-        .combat-log {
-            background: white; border-radius: 15px; padding: 15px; max-height: 300px;
-            overflow-y: auto; font-family: monospace; font-size: 14px;
-        }
-        .combat-log div { padding: 5px 0; border-bottom: 1px solid var(--light); }
-        
-        .therapist-panel {
-            border: 3px dashed var(--warning); border-radius: 20px; padding: 20px;
-            margin: 20px 0; background: #fffbea;
-        }
-        
-        .objective-item {
-            display: flex; align-items: center; gap: 10px; padding: 15px;
-            background: white; border-radius: 10px; margin: 10px 0;
-        }
-        
-        .medal { font-size: 48px; display: inline-block; margin: 10px; }
-        .hidden { display: none !important; }
-        .flex { display: flex; gap: 15px; flex-wrap: wrap; }
-        .flex-center { display: flex; justify-content: center; align-items: center; gap: 15px; }
-        
-        .stat-box {
-            display: inline-block; padding: 10px 20px; background: var(--light);
-            border-radius: 10px; margin: 5px; font-weight: bold;
-        }
-        
-        #mmToastHost{
-          position:fixed;
-          top:12px;
-          right:12px;
-          z-index:9999;
-          display:flex;
-          flex-direction:column;
-          gap:8px;
-        }
-        .mm-toast{
-          background:rgba(20,20,20,0.92);
-          color:#fff;
-          padding:10px 12px;
-          border-radius:12px;
-          font-size:14px;
-          max-width:320px;
-          box-shadow:0 8px 24px rgba(0,0,0,0.25);
-        }
-        
-        /* ============================= */
-        /* FEATURE 3.8 — BATTLE POLISH */
-        /* ============================= */
-        
-        /* Floating damage/heal text */
-        .floating-text {
-            position: absolute;
-            font-size: 24px;
-            font-weight: bold;
-            pointer-events: none;
-            z-index: 1000;
-            animation: floatUp 1s ease-out forwards;
-        }
-        
-        .floating-text.damage {
-            color: #d32f2f;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-        }
-        
-        .floating-text.heal {
-            color: #2e7d32;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-        }
-        
-        .floating-text.crit {
-            color: #ff6f00;
-            font-size: 32px;
-            text-shadow: 0 0 10px rgba(255,193,7,0.8), 2px 2px 4px rgba(0,0,0,0.5);
-        }
-        
-        @keyframes floatUp {
-            0% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-            70% {
-                opacity: 1;
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-60px);
-            }
-        }
-        
-        /* Flash target effects */
-        .flash-crit {
-            animation: flashCrit 0.4s ease-out;
-        }
-        
-        .flash-fail {
-            animation: flashFail 0.4s ease-out;
-        }
-        
-        .flash-hit {
-            animation: flashHit 0.3s ease-out;
-        }
-        
-        @keyframes flashCrit {
-            0%, 100% { box-shadow: none; }
-            50% { box-shadow: 0 0 20px 5px rgba(255,193,7,0.8); background-color: rgba(255,193,7,0.2); }
-        }
-        
-        @keyframes flashFail {
-            0%, 100% { box-shadow: none; }
-            50% { box-shadow: 0 0 20px 5px rgba(211,47,47,0.8); background-color: rgba(211,47,47,0.2); }
-        }
-        
-        @keyframes flashHit {
-            0%, 100% { box-shadow: none; }
-            50% { box-shadow: 0 0 15px 3px rgba(66,66,66,0.6); background-color: rgba(66,66,66,0.1); }
-        }
-        
-        /* Last d20 roll badge */
-        .d20-badge {
-            display: inline-block;
-            padding: 8px 15px;
-            margin: 10px 0;
-            border-radius: 8px;
-            background: #f5f5f5;
-            border: 2px solid #ddd;
-            font-size: 16px;
-            font-weight: bold;
-        }
-        
-        .d20-badge.crit {
-            background: linear-gradient(135deg, #fff9c4 0%, #ffeb3b 100%);
-            border-color: #fbc02d;
-            color: #f57c00;
-            box-shadow: 0 2px 8px rgba(251,192,45,0.4);
-        }
-        
-        .d20-badge.fail {
-            background: linear-gradient(135deg, #ffcdd2 0%, #ef5350 100%);
-            border-color: #e53935;
-            color: #b71c1c;
-            box-shadow: 0 2px 8px rgba(229,57,53,0.4);
-        }
-        
-        @media (max-width: 768px) {
-            .header h1 { font-size: 1.8em; }
-            .tab-button { padding: 12px 20px; font-size: 14px; }
-        }
-        
-        /* Toast notifications */
-        .mm-toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(76, 175, 80, 0.95);
-            color: white;
-            padding: 15px 25px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            z-index: 10001;
-            transform: translateX(400px);
-            transition: transform 0.3s ease-out;
-        }
-        
-        .mm-toast.show {
-            transform: translateX(0);
-        }
-        
-        /* ===== Feature 4.0: Menu / Overlays ===== */
-        .mm-overlay {
-            position: fixed;
-            inset: 0;
-            background: radial-gradient(circle at 30% 20%, rgba(120,80,255,0.25), transparent 45%),
-                        radial-gradient(circle at 70% 70%, rgba(0,200,255,0.18), transparent 45%),
-                        rgba(10,10,14,0.92);
-            color: #fff;
-            z-index: 9999;
-            display: none;
-        }
-
-        .mm-overlay.show { display: flex; }
-
-        .mm-overlay .mm-card {
-            width: min(560px, calc(100vw - 24px));
-            margin: auto;
-            background: rgba(20,20,28,0.85);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 16px;
-            padding: 18px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.45);
-        }
-
-        .mm-title { font-size: 28px; font-weight: 900; margin: 6px 0 8px; }
-        .mm-sub { opacity: 0.9; margin: 0 0 14px; line-height: 1.3; }
-
-        .mm-btn {
-            width: 100%;
-            padding: 12px 14px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.15);
-            background: rgba(255,255,255,0.08);
-            color: #fff;
-            font-weight: 800;
-            font-size: 16px;
-            cursor: pointer;
-            margin: 8px 0;
-            min-height: 44px;
-        }
-        .mm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .mm-row { display: flex; gap: 10px; }
-        .mm-row .mm-btn { width: auto; flex: 1; }
-
-        .mm-field { margin: 10px 0; }
-        .mm-field label { display:block; font-size: 13px; opacity: 0.9; margin-bottom: 6px; }
-        .mm-field input, .mm-field select {
-            width: 100%;
-            padding: 10px 12px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.15);
-            background: rgba(0,0,0,0.25);
-            color: #fff;
-            outline: none;
-        }
-
-        .mm-hint { font-size: 12px; opacity: 0.75; margin-top: 6px; }
-
-        /* Feature 4.3: Save Slots */
-        .mm-input {
-            width: 100%;
-            padding: 10px 12px;
-            border-radius: 12px;
-            border:1px solid rgba(255,255,255,0.15); 
-            background: rgba(255,255,255,0.08); 
-            color:#fff; 
-        }
-        
-        .mm-slot { 
-            border-radius:14px; 
-            padding:14px; 
-            border:1px solid rgba(255,255,255,0.15); 
-            background: rgba(255,255,255,0.06); 
-        }
-        
-        .mm-slot h3 { 
-            margin:0 0 8px 0; 
-            font-size:18px;
-        }
-        
-        .mm-slot-meta { 
-            opacity:0.85; 
-            font-size:13px; 
-            line-height:1.4; 
-        }
-        
-        .mm-slot-meta > div {
-            margin:3px 0;
-        }
-        
-        .mm-slot-actions { 
-            display:flex; 
-            gap:8px; 
-            flex-wrap:wrap; 
-            margin-top:12px; 
-        }
-    </style>
+    <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
     <div id="errorPanel" class="error-panel">
@@ -421,7 +32,7 @@
 
         <div id="tabHome" class="tab-content active">
             <h2>Welcome to Monstrinhomon! 🎉</h2>
-            <p style="font-size: 18px; margin: 20px 0;">A therapeutic game for young trainers.</p>
+            <p class="intro-text">A therapeutic game for young trainers.</p>
             
             <div class="card">
                 <h3>Quick Stats</h3>
@@ -499,7 +110,7 @@
                 </select>
                 
                 <!-- Para encontros individuais (wild) -->
-                <div id="playerSelectDiv" style="margin-top: 15px;">
+                <div id="playerSelectDiv" class="mt-15">
                     <label><strong>Select Player for Individual Encounter:</strong></label>
                     <select id="encounterPlayer">
                         <option value="">-- Select Player --</option>
@@ -507,10 +118,10 @@
                 </div>
                 
                 <!-- Para encontros em grupo (trainer/boss) -->
-                <div id="groupSelectDiv" class="hidden" style="margin-top: 15px;">
+                <div id="groupSelectDiv" class="hidden mt-15">
                     <label><strong>Select Participants (1-6):</strong></label>
-                    <div id="groupParticipantsList" style="margin-top: 10px;"></div>
-                    <div style="margin-top: 10px;">
+                    <div id="groupParticipantsList" class="mt-10"></div>
+                    <div class="mt-10">
                         <label><strong>Enemy Level:</strong></label>
                         <select id="enemyLevel">
                             <option value="1">1</option>
@@ -521,6 +132,13 @@
                             <option value="15">15</option>
                             <option value="20">20</option>
                         </select>
+                    </div>
+                    
+                    <!-- Team Reorder UI -->
+                    <div style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px;">
+                        <h4 style="margin-top: 0;">⚔️ Organize Equipes</h4>
+                        <p style="font-size: 0.9em; color: #666;">Reordene o time de cada jogador. O primeiro monstrinho vivo será usado na batalha.</p>
+                        <div id="teamReorderContainer"></div>
                     </div>
                 </div>
                 
@@ -569,24 +187,46 @@
                 </label>
             </div>
 
+            <!-- Therapist Mode Panel - Commit 1 -->
+            <div id="therapistPanel" class="card therapist-header" style="display:none;">
+                <h3>🔬 Therapist Mode Tools</h3>
+                <p class="therapist-header-text">Advanced debugging and testing controls</p>
+                <div id="therapistPanelContent">
+                    <!-- Commit 2: Export/Import Save Tools -->
+                    <div class="save-management-box">
+                        <h4 class="save-management-title">💾 Save Management</h4>
+                        <div class="d-flex flex-gap-10 flex-wrap">
+                            <button class="btn btn-success flex-1 min-w-120" onclick="therapistExportSave()">📤 Export Save (JSON)</button>
+                            <button class="btn btn-warning flex-1 min-w-120" onclick="therapistImportSave()">📥 Import Save (JSON)</button>
+                        </div>
+                        <textarea id="therapistJsonArea" placeholder="Paste JSON here to import..." 
+                            class="json-textarea" style="display: none;"></textarea>
+                        <div class="d-flex flex-gap-10 mt-10 d-none" id="therapistJsonButtons">
+                            <button class="btn btn-success flex-1" onclick="therapistLoadJson()">✅ Load JSON</button>
+                            <button class="btn btn-danger flex-1" onclick="therapistCancelImport()">❌ Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card">
                 <h3>🎵 Audio Configuration</h3>
-                <div style="display:grid; gap:12px;">
+                <div class="d-grid grid-gap-12">
                     <div>
-                        <div style="margin-bottom:6px;">🎧 Volume SFX</div>
+                        <div class="mb-6">🎧 Volume SFX</div>
                         <input id="mmSfxVol" type="range" min="0" max="100" value="70"
                             oninput="Audio.setSfxVolume(Number(this.value)/100)">
                     </div>
 
                     <div>
-                        <div style="margin-bottom:6px;">🎵 Volume Música (preparado)</div>
+                        <div class="mb-6">🎵 Volume Música (preparado)</div>
                         <input id="mmMusicVol" type="range" min="0" max="100" value="40"
                             oninput="Audio.setMusicVolume(Number(this.value)/100)">
                     </div>
 
-                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                        <button id="mmMuteBtn" class="btn" style="width:auto;" onclick="Audio.toggleMute()">🔊 Som</button>
-                        <button class="btn" style="width:auto;" onclick="Audio.playSfx('ui_click')">✅ Testar som</button>
+                    <div class="d-flex flex-gap-10 flex-wrap">
+                        <button id="mmMuteBtn" class="btn w-auto" onclick="Audio.toggleMute()">🔊 Som</button>
+                        <button class="btn w-auto" onclick="Audio.playSfx('ui_click')">✅ Testar som</button>
                     </div>
                 </div>
             </div>
@@ -645,16 +285,16 @@
     </div>
 
     <div id="mmSlotPicker" class="mm-overlay hidden">
-        <div class="mm-card" style="max-width:640px;">
+        <div class="mm-card max-w-640">
             <div class="mm-title">💾 Escolher Slot</div>
-            <div style="opacity:0.9; margin-bottom:12px;">
+            <div class="opacity-90 mb-12">
                 Selecione onde salvar este <b>Novo Jogo</b>. (Você pode exportar/importar depois.)
             </div>
 
-            <div id="mmSlotPickerList" style="display:grid; gap:10px;"></div>
+            <div id="mmSlotPickerList" class="d-grid grid-gap-10"></div>
 
-            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
-                <button class="mm-btn" style="width:auto;" onclick="mmCancelSlotPicker()">↩️ Voltar</button>
+            <div class="d-flex flex-gap-10 flex-wrap mt-14">
+                <button class="mm-btn w-auto" onclick="mmCancelSlotPicker()">↩️ Voltar</button>
             </div>
         </div>
     </div>
@@ -673,7 +313,7 @@
             <div class="mm-title">🧑‍🏫 Therapist Mode</div>
             <div id="mmTherapistBody"></div>
 
-            <div class="mm-row" style="margin-top:12px;">
+            <div class="mm-row mt-12">
                 <button class="mm-btn" onclick="mmCloseAllOverlays()">Fechar</button>
             </div>
         </div>
@@ -681,26 +321,26 @@
 
     <!-- Feature 4.3: Save Slots Screen -->
     <div id="mmSavesScreen" class="mm-overlay hidden">
-        <div class="mm-card" style="max-width:820px;">
+        <div class="mm-card max-w-820">
             <div class="mm-title">📂 Gerenciar Saves</div>
-            <div id="mmSavesSlots" style="display:grid; grid-template-columns:1fr; gap:12px; margin-top:12px;"></div>
+            <div id="mmSavesSlots" class="d-grid grid-gap-12 mt-12 grid-cols-1"></div>
 
-            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
-                <label class="mm-btn" style="width:auto; display:inline-flex; align-items:center; gap:8px; cursor:pointer;">
+            <div class="d-flex flex-gap-10 flex-wrap mt-15">
+                <label class="mm-btn w-auto d-inline-flex align-center flex-gap-8 cursor-pointer">
                     ⬆️ Importar JSON
-                    <input id="mmImportFile" type="file" accept="application/json" style="display:none;">
+                    <input id="mmImportFile" type="file" accept="application/json" class="d-none">
                 </label>
 
-                <select id="mmImportSlotPick" class="mm-input" style="min-width:160px;">
+                <select id="mmImportSlotPick" class="mm-input min-w-160">
                     <option value="1">Importar para Slot 1</option>
                     <option value="2">Importar para Slot 2</option>
                     <option value="3">Importar para Slot 3</option>
                 </select>
 
-                <button class="mm-btn" style="width:auto;" onclick="mmCloseSaves()">↩️ Voltar</button>
+                <button class="mm-btn w-auto" onclick="mmCloseSaves()">↩️ Voltar</button>
             </div>
 
-            <div style="opacity:0.75; font-size:12px; margin-top:10px;">
+            <div class="opacity-75 font-size-12 mt-10">
                 Dica: Exportar/Importar é ideal para backup e trocar de dispositivo (iPad).
             </div>
         </div>
@@ -709,17 +349,17 @@
     <!-- Feature 4.1.1: Start Choice Modal -->
     <div id="mmStartChoice" class="mm-overlay hidden">
         <div class="mm-card">
-            <h2 style="font-size: 28px; font-weight: 900; margin: 6px 0 8px;">🎮 Começar</h2>
-            <p style="opacity: 0.9; margin: 0 0 14px; line-height: 1.3;">Quer fazer o <b>Tutorial</b> agora?</p>
+            <h2 class="intro-title">🎮 Começar</h2>
+            <p class="intro-subtitle">Quer fazer o <b>Tutorial</b> agora?</p>
 
-            <label style="display:flex; gap:10px; align-items:center; margin:14px 0;">
+            <label class="tutorial-choice-label">
                 <input type="checkbox" id="mmRememberTutorialChoice">
                 Lembrar minha escolha
             </label>
 
-            <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+            <div class="d-flex flex-gap-12 justify-center flex-wrap">
                 <button class="mm-btn" onclick="mmStartTutorialFromChoice()">🎓 Fazer Tutorial</button>
-                <button class="mm-btn" style="opacity:0.9;" onclick="mmSkipTutorialFromChoice()">🚀 Pular</button>
+                <button class="mm-btn opacity-90" onclick="mmSkipTutorialFromChoice()">🚀 Pular</button>
             </div>
         </div>
     </div>
@@ -974,6 +614,10 @@
             currentEncounter: null,
             objectives: [],
             therapistMode: false, // Feature 4.6: Therapist Mode
+            // COMMIT 4: Save versioning
+            meta: {
+                saveVersion: 1  // Current save format version
+            },
             config: {
                 maxTeamSize: 6,
                 maxLevel: 100,
@@ -1257,7 +901,278 @@
         }
 
         // LOCAL STORAGE
-        function saveToLocalStorage() {
+        // COMMIT 4: Save Migration System
+        // Version ladder: migrate old saves to current format
+        /**
+         * Aplica migrações sequenciais sem perder dados extras.
+         * HARDENED: Preserva campos existentes em meta (não sobrescreve).
+         */
+        function migrateSaveIfNeeded(saveObj) {
+            if (!saveObj || typeof saveObj !== 'object') {
+                return saveObj;
+            }
+            
+            // Garantir que meta exista sem apagar dados existentes
+            saveObj.meta = saveObj.meta || {};
+            
+            // Determine current version (default to 0 for old saves)
+            const currentVersion = saveObj.meta.saveVersion || 0;
+            const targetVersion = 1;  // Current version
+            
+            if (currentVersion >= targetVersion) {
+                // Already at current version
+                return saveObj;
+            }
+            
+            console.log(`[Migration] Migrating save from version ${currentVersion} to ${targetVersion}`);
+            
+            // Migration ladder
+            let migratedSave = saveObj;
+            
+            // Migrate from version 0 to 1
+            if (currentVersion < 1) {
+                // Version 0 -> 1: Update saveVersion (preserving other meta fields)
+                migratedSave.meta.saveVersion = 1;
+                
+                // Add timestamp if not present
+                if (!migratedSave.meta.lastSaveDate) {
+                    migratedSave.meta.lastSaveDate = new Date().toISOString();
+                }
+                
+                // Ensure therapistMode exists
+                if (migratedSave.therapistMode === undefined) {
+                    migratedSave.therapistMode = false;
+                }
+                
+                // Garantir arrays essenciais
+                migratedSave.players = Array.isArray(migratedSave.players) ? migratedSave.players : [];
+                migratedSave.monsters = Array.isArray(migratedSave.monsters) ? migratedSave.monsters : [];
+                migratedSave.sessions = Array.isArray(migratedSave.sessions) ? migratedSave.sessions : [];
+                
+                console.log('[Migration] Applied v0->v1: Added meta.saveVersion (preserved existing meta fields)');
+            }
+            
+            // Future migrations would go here:
+            // if (currentVersion < 2) { ... }
+            // if (currentVersion < 3) { ... }
+            
+            return migratedSave;
+        }
+
+        // COMMIT 5: Canonical Monster Schema + Normalization
+        /**
+         * Canonical monster fields (the ONE source of truth):
+         * - hp: current HP
+         * - hpMax: maximum HP
+         * - ene: current ENE
+         * - eneMax: maximum ENE
+         * - level: current level
+         * - xp: current XP
+         * - buffs: array of active buffs
+         * - templateId: ID from catalog (formerly monsterId)
+         * - instanceId: unique instance ID (formerly id)
+         * - class: monster class
+         * - rarity: monster rarity
+         * 
+         * HARDENED (Bug-proof):
+         * - Uses ?? (nullish coalescing) to accept 0 as valid value
+         * - Prefers fields with valid values
+         * - Clamps hp/ene to max (prevents over-heal bugs)
+         * - Deletes legacy fields after migration
+         * - Idempotent: safe to run multiple times
+         */
+        function normalizeMonster(mon) {
+            if (!mon || typeof mon !== 'object') return null;
+            
+            // --- 1. Identificadores ---
+            // Prioridade: templateId > monsterId > baseId > idBase
+            mon.templateId = mon.templateId ?? mon.monsterId ?? mon.baseId ?? mon.idBase ?? 'unknown';
+            // Remove campos legados para evitar confusão futura
+            delete mon.monsterId;
+            delete mon.baseId;
+            delete mon.idBase;
+            
+            // instanceId (formerly just 'id')
+            if (mon.id !== undefined && mon.instanceId === undefined) {
+                mon.instanceId = mon.id;
+            }
+            
+            // --- 2. Stats Máximos (A âncora da verdade) ---
+            // Prioridade: hpMax > maxHp > cálculo fallback
+            if (mon.hpMax === undefined) {
+                mon.hpMax = mon.maxHp ?? calculateMaxHpFallback(mon.level);
+            }
+            // Remove legado
+            delete mon.maxHp;
+            
+            // --- 3. Stats Atuais (Com clamping) ---
+            // Prioridade: hp > currentHp > hpCurrent > hpMax (full heal se perdido)
+            // Usa ?? para aceitar 0 como valor válido
+            let rawHp = mon.hp ?? mon.currentHp ?? mon.hpCurrent ?? mon.hpMax;
+            
+            // Regra de Ouro: HP nunca pode ser > hpMax nem < 0
+            const safeHpMax = Number(mon.hpMax) || 30;
+            mon.hp = Math.min(Math.max(0, Number(rawHp) || 0), safeHpMax);
+            
+            // Limpeza legado
+            delete mon.currentHp;
+            delete mon.hpCurrent;
+            
+            // --- 4. ENE (Energia) ---
+            // Calcular eneMax baseado em nível (se não existir)
+            if (mon.eneMax === undefined) {
+                const baseEne = 10;
+                const eneGrowth = 2;
+                const lvl = mon.level || 1;
+                mon.eneMax = Math.floor(baseEne + eneGrowth * (lvl - 1));
+            }
+            
+            // Prioridade: ene > currentEne > eneMax
+            let rawEne = mon.ene ?? mon.currentEne ?? mon.eneMax;
+            const safeEneMax = Number(mon.eneMax) || 10;
+            mon.ene = Math.min(Math.max(0, Number(rawEne) || 0), safeEneMax);
+            
+            // Limpeza legado
+            delete mon.currentEne;
+            
+            // --- 5. Garantias Estruturais ---
+            // Ensure required fields exist
+            if (mon.level === undefined) mon.level = 1;
+            if (mon.xp === undefined) mon.xp = 0;
+            
+            // Ensure arrays exist
+            if (!Array.isArray(mon.buffs)) {
+                mon.buffs = [];
+            }
+            if (!Array.isArray(mon.statusEffects)) {
+                mon.statusEffects = [];
+            }
+            
+            // Ensure class and rarity exist
+            if (!mon.class) mon.class = 'Neutro';
+            if (!mon.rarity) mon.rarity = 'Comum';
+            
+            return mon;
+        }
+        
+        /**
+         * Helper: Calcula HP máximo fallback baseado em nível
+         * (usado quando não temos acesso ao catalog)
+         */
+        function calculateMaxHpFallback(level) {
+            const baseHp = 30;
+            const growthPerLevel = 5;
+            const lvl = level || 1;
+            return baseHp + (growthPerLevel * (lvl - 1));
+        }
+
+        // COMMIT 6: normalizeGameState()
+        /**
+         * Garante estrutura e tipos do save carregado.
+         * 
+         * O QUE FAZ:
+         * - Valida que state é objeto
+         * - Garante meta, players, party, storage, inventory, flags existem com tipos corretos
+         * - Chama normalizeMonster() em todos os monstros
+         * 
+         * O QUE NÃO FAZ:
+         * - Não recalcula level, XP, stats, economia
+         * - Não sobrescreve meta existente (apenas garante tipo)
+         * - Não faz over-correction (normalizeMonster já faz)
+         * - Não é responsável por migração (migrateSaveIfNeeded já faz)
+         */
+        function normalizeGameState(state) {
+            // Se state não é objeto válido, retorna estado default seguro
+            if (!state || typeof state !== 'object' || Array.isArray(state)) {
+                console.warn('[System] Invalid state structure, using default');
+                return {
+                    players: [],
+                    monsters: [],
+                    sessions: [],
+                    currentSession: null,
+                    currentEncounter: null,
+                    objectives: [],
+                    therapistMode: false,
+                    meta: {
+                        saveVersion: 1
+                    },
+                    config: {} // Config will be merged from GameState defaults
+                };
+            }
+            
+            // Garantir meta é objeto (preservando keys existentes)
+            if (!state.meta || typeof state.meta !== 'object' || Array.isArray(state.meta)) {
+                console.warn('[System] Invalid meta, resetting to default');
+                state.meta = { saveVersion: 1 };
+            }
+            
+            // Garantir players é array
+            if (!Array.isArray(state.players)) {
+                console.warn('[System] Invalid players structure, resetting to []');
+                state.players = [];
+            }
+            
+            // Garantir monsters é array (global list)
+            if (!Array.isArray(state.monsters)) {
+                console.warn('[System] Invalid monsters structure, resetting to []');
+                state.monsters = [];
+            }
+            
+            // Garantir sessions é array
+            if (!Array.isArray(state.sessions)) {
+                state.sessions = [];
+            }
+            
+            // Garantir objectives é array
+            if (!Array.isArray(state.objectives)) {
+                state.objectives = [];
+            }
+            
+            // Normalizar cada jogador
+            if (state.players) {
+                state.players.forEach(player => {
+                    if (!player || typeof player !== 'object') return;
+                    
+                    // Garantir team é array
+                    if (!Array.isArray(player.team)) {
+                        player.team = [];
+                    }
+                    
+                    // Garantir box é array
+                    if (!Array.isArray(player.box)) {
+                        player.box = [];
+                    }
+                    
+                    // Garantir inventory é objeto
+                    if (!player.inventory || typeof player.inventory !== 'object' || Array.isArray(player.inventory)) {
+                        player.inventory = {};
+                    }
+                    
+                    // Normalizar monstros no team
+                    if (player.team) {
+                        player.team.forEach(monster => {
+                            if (!monster) return;
+                            normalizeMonster(monster);
+                        });
+                    }
+                    
+                    // Normalizar monstros no box
+                    if (player.box) {
+                        player.box.forEach(monster => {
+                            if (!monster) return;
+                            normalizeMonster(monster);
+                        });
+                    }
+                });
+            }
+            
+            return state;
+        }
+
+        // COMMIT 3: Centralized Persistence Layer
+        // All localStorage access must go through these functions
+        
+        function saveGame() {
             try {
                 const data = JSON.stringify(GameState);
                 localStorage.setItem('monstrinhomon_state', data);
@@ -1265,77 +1180,108 @@
                 showError('Failed to save data', error.stack);
             }
         }
+        
+        /**
+         * Carrega o jogo de forma segura e transacional.
+         * Retorna verdadeiro se carregou com sucesso, falso se usou o estado padrão.
+         * 
+         * HARDENED (Bug-proof):
+         * - Fail-safe: null save → retorna false, mantém GameState default
+         * - Fail-safe: JSON inválido → backup + reset, retorna false
+         * - Fail-safe: migration error → fallback seguro
+         * 
+         * COMMIT 6: Integrado normalizeGameState()
+         */
+        function loadGame() {
+            try {
+                const raw = localStorage.getItem('monstrinhomon_state');
+                
+                // 1. Fail-safe: Se não tem save, não faz nada (mantém GameState default)
+                if (raw === null) {
+                    console.log('[System] No save found. Starting new game.');
+                    return false;
+                }
+                
+                // 2. Fail-safe: Parse JSON com tratamento de erro
+                let loaded;
+                try {
+                    loaded = JSON.parse(raw);
+                } catch (parseError) {
+                    // JSON corrompido: faz backup e reseta
+                    console.error('[System] Corrupted save detected. Creating backup and resetting.', parseError);
+                    localStorage.setItem('monstrinhomon_corrupted_backup', raw);
+                    localStorage.removeItem('monstrinhomon_state');
+                    return false;
+                }
+                
+                // Validação estrutural mínima antes de tocar no GameState
+                if (!loaded || typeof loaded !== 'object') {
+                    console.warn('[System] Invalid save format (not an object). Resetting.');
+                    return false;
+                }
+                
+                // 3. Migração em Escada (Safe Migration)
+                const migrated = migrateSaveIfNeeded(loaded);
+                
+                // 4. Normalização de Estado (COMMIT 6)
+                // Garante estrutura e tipos corretos, chama normalizeMonster() em todos os monstros
+                const normalized = normalizeGameState(migrated);
+                
+                // 5. Merge Seguro (não substituir GameState inteiro)
+                Object.assign(GameState, normalized);
+                
+                // 6. Pós-processamento específico
+                if (GameState.players) {
+                    GameState.players.forEach(player => {
+                        // Validar estrutura do jogador
+                        if (!player || !player.id || !player.name) {
+                            console.warn('[System] Invalid player detected:', player);
+                            return;
+                        }
+                        
+                        // Migrar inventários antigos (se função existe)
+                        if (typeof migrateInventory === 'function') {
+                            migrateInventory(player);
+                        }
+                        
+                        // Progressão (Feature 3.3) - se função existe
+                        if (player.team) {
+                            player.team.forEach(monster => {
+                                if (!monster) return;
+                                if (typeof ensureMonsterProgressFields === 'function') {
+                                    ensureMonsterProgressFields(monster);
+                                }
+                            });
+                        }
+                        
+                        if (player.box) {
+                            player.box.forEach(monster => {
+                                if (!monster) return;
+                                if (typeof ensureMonsterProgressFields === 'function') {
+                                    ensureMonsterProgressFields(monster);
+                                }
+                            });
+                        }
+                    });
+                }
+                
+                console.log(`[System] Game loaded successfully. Save version: ${GameState.meta?.saveVersion || 0}`);
+                return true;
+                
+            } catch (error) {
+                console.error('[System] Critical error in loadGame:', error);
+                alert('Error loading game. Check console for details.');
+                return false;
+            }
+        }
+
+        // Legacy wrapper for backward compatibility (Commit 3)
+        function saveToLocalStorage() {
+            saveGame();
+        }
 
         function loadFromLocalStorage() {
-            try {
-                const data = localStorage.getItem('monstrinhomon_state');
-                if (data) {
-                    const loaded = JSON.parse(data);
-                    
-                    // Validação básica da estrutura
-                    if (typeof loaded !== 'object' || loaded === null) {
-                        console.warn('Invalid save data format, skipping load');
-                        return;
-                    }
-                    
-                    // Validar arrays essenciais
-                    if (loaded.players && !Array.isArray(loaded.players)) {
-                        console.warn('Invalid players array, resetting');
-                        loaded.players = [];
-                    }
-                    if (loaded.monsters && !Array.isArray(loaded.monsters)) {
-                        console.warn('Invalid monsters array, resetting');
-                        loaded.monsters = [];
-                    }
-                    
-                    Object.assign(GameState, loaded);
-                    
-                    // Migrar inventários antigos
-                    if (GameState.players) {
-                        GameState.players.forEach(player => {
-                            // Validar estrutura do jogador
-                            if (!player.id || !player.name) {
-                                console.warn('Invalid player detected:', player);
-                                return;
-                            }
-                            
-                            migrateInventory(player);
-                            
-                            // Garantir arrays
-                            player.team = Array.isArray(player.team) ? player.team : [];
-                            player.box = Array.isArray(player.box) ? player.box : [];
-                            player.inventory = player.inventory || {};
-                            
-                            // Garantir que monstros tenham ENE e campos de progressão (Feature 3.3)
-                            if (player.team) {
-                                player.team.forEach(monster => {
-                                    if (!monster) return;
-                                    
-                                    // ENE (Sistema ENE)
-                                    if (!monster.eneMax) {
-                                        monster.eneMax = 10 + (monster.level || 1);
-                                        monster.ene = monster.eneMax;
-                                    }
-                                    if (monster.ene === undefined) {
-                                        monster.ene = monster.eneMax;
-                                    }
-                                    
-                                    // Progressão (Feature 3.3) - compatibilidade com saves antigos
-                                    ensureMonsterProgressFields(monster);
-                                });
-                            }
-                        });
-                    }
-                    
-                }
-            } catch (error) {
-                console.warn('Failed to load saved data:', error);
-                // Resetar para estado seguro em caso de corrupção severa
-                if (error instanceof SyntaxError) {
-                    console.error('Save data is corrupted (JSON parse failed). Starting fresh.');
-                    localStorage.removeItem('monstrinhomon_state');
-                }
-            }
+            loadGame();
         }
 
         // TAB SWITCHING
@@ -1369,7 +1315,9 @@
         function mmIsTherapistMode() {
             try {
                 if (GameState && typeof GameState.therapistMode === "boolean") return GameState.therapistMode;
-            } catch (e) {}
+            } catch (e) {
+                console.warn('Failed to access GameState.therapistMode:', e);
+            }
             return localStorage.getItem("mm_therapist_mode") === "1";
         }
 
@@ -1377,7 +1325,9 @@
             const v = !!on;
             try { 
                 GameState.therapistMode = v; 
-            } catch (e) {}
+            } catch (e) {
+                console.warn('Failed to set GameState.therapistMode:', e);
+            }
             localStorage.setItem("mm_therapist_mode", v ? "1" : "0");
             if (typeof saveToLocalStorage === "function") saveToLocalStorage();
             // Update UI elements
@@ -1400,6 +1350,154 @@
             // Update checkbox in settings
             const checkbox = document.getElementById("therapistMode");
             if (checkbox) checkbox.checked = mmIsTherapistMode();
+            
+            // Update therapist panel visibility (Commit 1)
+            const panel = document.getElementById("therapistPanel");
+            if (panel) panel.style.display = mmIsTherapistMode() ? "" : "none";
+        }
+
+        // COMMIT 2: Therapist Export/Import Save Tools
+        function therapistExportSave() {
+            try {
+                const saveData = JSON.stringify(GameState, null, 2);
+                
+                // Copy to clipboard
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(saveData).then(() => {
+                        alert('✅ Save data copied to clipboard!\n\nYou can also download it as a file.');
+                    }).catch(() => {
+                        alert('⚠️ Could not copy to clipboard, but you can download the file.');
+                    });
+                }
+                
+                // Also download as file
+                const blob = new Blob([saveData], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `monstrinhomon_save_${Date.now()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                console.log('[Therapist] Save exported successfully');
+            } catch (error) {
+                console.error('[Therapist] Export failed:', error);
+                alert('❌ Export failed: ' + error.message);
+            }
+        }
+
+        function therapistImportSave() {
+            try {
+                // Show textarea and buttons for JSON paste
+                const textarea = document.getElementById('therapistJsonArea');
+                const buttons = document.getElementById('therapistJsonButtons');
+                
+                if (textarea && buttons) {
+                    textarea.style.display = 'block';
+                    buttons.style.display = 'flex';
+                    textarea.value = '';
+                    textarea.focus();
+                }
+                
+                console.log('[Therapist] Ready to import save - paste JSON and click Load');
+            } catch (error) {
+                console.error('[Therapist] Import UI failed:', error);
+                alert('❌ Import failed: ' + error.message);
+            }
+        }
+
+        function therapistLoadJson() {
+            try {
+                const textarea = document.getElementById('therapistJsonArea');
+                const jsonText = textarea?.value?.trim();
+                
+                if (!jsonText) {
+                    alert('⚠️ Please paste JSON data first');
+                    return;
+                }
+                
+                // Validate JSON
+                let saveData;
+                try {
+                    saveData = JSON.parse(jsonText);
+                } catch (parseError) {
+                    console.error('[Therapist] Invalid JSON:', parseError);
+                    alert('❌ Invalid JSON format:\n' + parseError.message);
+                    return;
+                }
+                
+                // Basic validation
+                if (typeof saveData !== 'object' || saveData === null) {
+                    alert('❌ Invalid save data: must be an object');
+                    return;
+                }
+                
+                // Load through existing safe load routine
+                Object.assign(GameState, saveData);
+                
+                // Re-run load validation and migrations
+                if (GameState.players && Array.isArray(GameState.players)) {
+                    GameState.players.forEach(player => {
+                        if (!player) return;
+                        
+                        // Ensure arrays
+                        player.team = Array.isArray(player.team) ? player.team : [];
+                        player.box = Array.isArray(player.box) ? player.box : [];
+                        player.inventory = player.inventory || {};
+                        
+                        // ENE migration for monsters
+                        if (player.team) {
+                            player.team.forEach(monster => {
+                                if (!monster) return;
+                                // COMMIT 5: Use normalizeMonster instead of manual migration
+                                normalizeMonster(monster);
+                            });
+                        }
+                        
+                        if (player.box) {
+                            player.box.forEach(monster => {
+                                if (!monster) return;
+                                normalizeMonster(monster);
+                            });
+                        }
+                    });
+                }
+                
+                // Save to localStorage using centralized function (Commit 3)
+                saveGame();
+                
+                // Update all views
+                if (typeof updateAllViews === 'function') updateAllViews();
+                
+                // Hide import UI
+                therapistCancelImport();
+                
+                alert('✅ Save data loaded successfully!');
+                console.log('[Therapist] Save imported and loaded successfully');
+                
+            } catch (error) {
+                console.error('[Therapist] Load failed:', error);
+                alert('❌ Load failed: ' + error.message);
+            }
+        }
+
+        function therapistCancelImport() {
+            try {
+                const textarea = document.getElementById('therapistJsonArea');
+                const buttons = document.getElementById('therapistJsonButtons');
+                
+                if (textarea) {
+                    textarea.style.display = 'none';
+                    textarea.value = '';
+                }
+                if (buttons) {
+                    buttons.style.display = 'none';
+                }
+                
+                console.log('[Therapist] Import cancelled');
+            } catch (error) {
+                console.error('[Therapist] Cancel failed:', error);
+            }
         }
 
         // PLAYER MANAGEMENT
@@ -1463,13 +1561,17 @@
                 
                 if (!starterTemplate) return;
                 
-                const monster = createMonsterInstance(starterTemplate, player.id, 5);
+                // COMMIT 8 (Wave A): Use Award API for canonical monster creation
+                const monster = awardMonster(
+                    starterTemplate.id,  // templateId
+                    5,                   // level
+                    null,                // rarity (use template default)
+                    'party',             // destination
+                    player               // player object
+                );
                 
-                if (monster) {
-                    player.team = player.team || [];
-                    player.team.push(monster);
-                    GameState.monsters = GameState.monsters || [];
-                    GameState.monsters.push(monster);
+                if (!monster) {
+                    console.error('Failed to award starter monster via Award API');
                 }
             } catch (error) {
                 console.error('Failed to give starter monster:', error);
@@ -1531,6 +1633,336 @@
                 return null;
             }
         }
+
+        // COMMIT 7: Factory Pattern - createMonsterInstanceFromTemplate()
+        /**
+         * Factory function para criar instâncias de monstros com schema canônico.
+         * 
+         * Esta é a função OFICIAL para criar novos monstros a partir do catálogo.
+         * Garante que todos os monstros nascam com estrutura canônica consistente.
+         * 
+         * @param {string} templateId - ID do template no MONSTER_CATALOG (ex: 'MON_001')
+         * @param {number} level - Nível do monstrinho (padrão: 1)
+         * @param {string|null} rarity - Raridade (se null, usa do template)
+         * @param {object} overrides - Campos opcionais para sobrescrever (ex: {nickname: 'Fofinho'})
+         * @returns {object|null} - Instância do monstrinho ou null se template não encontrado
+         * 
+         * SCHEMA CANÔNICO (Commit 5):
+         * - templateId: ID do template (não monsterId, baseId, idBase)
+         * - instanceId: ID único da instância (não id)
+         * - hp/hpMax: HP atual/máximo (não currentHp, maxHp)
+         * - ene/eneMax: ENE atual/máximo
+         * - level, xp, buffs, class, rarity
+         */
+        function createMonsterInstanceFromTemplate(templateId, level = 1, rarity = null, overrides = {}) {
+            try {
+                // 1. Buscar template no catálogo
+                const catalog = MONSTER_CATALOG || [];
+                const template = catalog.find(m => m && m.id === templateId);
+                
+                if (!template) {
+                    console.warn(`[Factory] Template not found: ${templateId}`);
+                    return null;
+                }
+                
+                // 2. Gerar instanceId único
+                // Formato: mi_timestamp_random (mi = monster instance)
+                const instanceId = `mi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                
+                // 3. Determinar raridade (parâmetro ou do template)
+                const finalRarity = rarity || template.rarity || 'Comum';
+                
+                // 4. Calcular stats baseados no nível
+                const rarityMult = GameState.config?.rarityPower?.[finalRarity] || 1.0;
+                const levelMult = (1 + (level - 1) * 0.1);
+                
+                const hpMax = Math.floor((template.baseHp || 30) * levelMult);
+                const atk = Math.floor((template.baseAtk || 5) * levelMult * rarityMult);
+                const def = Math.floor((template.baseDef || 3) * levelMult * rarityMult);
+                const spd = Math.floor((template.baseSpd || 5) * levelMult * rarityMult);
+                const poder = Math.floor(atk * 0.5);
+                
+                // 5. Calcular ENE usando fórmula canônica: floor(10 + 2*(level-1))
+                const eneMax = Math.floor(10 + 2 * (level - 1));
+                
+                // 6. Criar instância com campos canônicos
+                const instance = {
+                    // IDs (schema canônico)
+                    templateId: template.id,     // ✅ Canônico (não monsterId)
+                    instanceId: instanceId,       // ✅ Canônico (não id)
+                    
+                    // Info básica
+                    name: template.name,
+                    nickname: template.name,      // Padrão (pode ser sobrescrito)
+                    emoji: template.emoji || '👾',
+                    
+                    // Classe e raridade
+                    class: template.class || 'Neutro',
+                    rarity: finalRarity,
+                    
+                    // Progressão
+                    level: level,
+                    xp: 0,
+                    xpNeeded: calculateXPNeeded(level),
+                    
+                    // HP (schema canônico)
+                    hp: hpMax,          // ✅ Canônico (não currentHp)
+                    hpMax: hpMax,       // ✅ Canônico (não maxHp)
+                    
+                    // ENE (schema canônico)
+                    ene: eneMax,        // ✅ Começa cheio
+                    eneMax: eneMax,     // ✅ Canônico
+                    
+                    // Stats de combate
+                    atk: atk,
+                    def: def,
+                    spd: spd,
+                    poder: poder,
+                    
+                    // Estado
+                    status: 'healthy',
+                    buffs: [],          // ✅ Array vazio (não undefined)
+                    
+                    // Evolução
+                    stage: 0            // Sempre começa em stage 0
+                };
+                
+                // 7. Aplicar overrides (ex: nickname personalizado, ownerId, etc.)
+                if (overrides && typeof overrides === 'object') {
+                    Object.assign(instance, overrides);
+                }
+                
+                // 8. Normalizar usando função robusta do Commit 5
+                // Isso garante que mesmo com overrides, a estrutura fica canônica
+                const normalized = normalizeMonster(instance);
+                
+                if (!normalized) {
+                    console.error('[Factory] Normalization failed for template:', templateId);
+                    return null;
+                }
+                
+                console.log(`[Factory] Created ${normalized.name} (${templateId}) at level ${level}`);
+                return normalized;
+                
+            } catch (error) {
+                console.error('[Factory] Error creating monster instance:', error, { templateId, level, rarity });
+                return null;
+            }
+        }
+
+        // TODO (Commit 8): Substituir chamadas de createMonsterInstance() por createMonsterInstanceFromTemplate()
+        // A função antiga ainda funciona para compatibilidade, mas a nova garante schema canônico.
+
+        // ============================================================================
+        // COMMIT 8: Award API - Single Official Path for Rewards
+        // ============================================================================
+
+        /**
+         * Awards XP to a monster and triggers level-ups automatically.
+         * @param {Object|number} target - Monster object or index in player's team
+         * @param {number} amount - XP amount to award (must be >= 1)
+         * @param {Object} player - Player object (optional, for index-based targeting)
+         * @returns {boolean} - true if successful, false otherwise
+         */
+        function awardXP(target, amount, player = null) {
+            try {
+                // Validate amount
+                const xpAmount = Math.max(1, Number(amount) || 0);
+                if (xpAmount < 1) {
+                    console.warn('[Award] Invalid XP amount:', amount);
+                    return false;
+                }
+
+                // Resolve target monster
+                let monster = null;
+                if (typeof target === 'object' && target !== null) {
+                    // Direct monster object
+                    monster = target;
+                } else if (typeof target === 'number' && player) {
+                    // Index in player's team
+                    if (!player.team || !Array.isArray(player.team)) {
+                        console.warn('[Award] Player has no team array');
+                        return false;
+                    }
+                    monster = player.team[target];
+                }
+
+                if (!monster) {
+                    console.warn('[Award] Target monster not found');
+                    return false;
+                }
+
+                // Use existing giveXP function (already handles level-ups)
+                const logArr = [];
+                giveXP(monster, xpAmount, logArr);
+
+                // Log to console if in therapist mode
+                if (typeof mmGetTherapistMode === 'function' && mmGetTherapistMode()) {
+                    console.log('[Award] Granted XP:', {
+                        monster: monster.name || monster.templateId,
+                        amount: xpAmount,
+                        newLevel: monster.level,
+                        log: logArr
+                    });
+                }
+
+                // Persist
+                saveGame();
+                return true;
+
+            } catch (error) {
+                console.error('[Award] awardXP failed:', error);
+                return false;
+            }
+        }
+
+        /**
+         * Awards an item to a player's inventory.
+         * @param {string} itemId - Item ID to award
+         * @param {number} qty - Quantity to award (must be >= 1)
+         * @param {Object} player - Player object
+         * @returns {boolean} - true if successful, false otherwise
+         */
+        function awardItem(itemId, qty, player) {
+            try {
+                // Validate inputs
+                if (!itemId || typeof itemId !== 'string') {
+                    console.warn('[Award] Invalid itemId:', itemId);
+                    return false;
+                }
+
+                const quantity = Math.max(1, Number(qty) || 1);
+                if (quantity < 1) {
+                    console.warn('[Award] Invalid quantity:', qty);
+                    return false;
+                }
+
+                if (!player || typeof player !== 'object') {
+                    console.warn('[Award] Invalid player object');
+                    return false;
+                }
+
+                // Ensure inventory exists
+                player.inventory = player.inventory || {};
+
+                // Add item (reuse existing inventory logic)
+                player.inventory[itemId] = (player.inventory[itemId] || 0) + quantity;
+
+                // Log to console if in therapist mode
+                if (typeof mmGetTherapistMode === 'function' && mmGetTherapistMode()) {
+                    console.log('[Award] Granted item:', {
+                        itemId: itemId,
+                        quantity: quantity,
+                        newTotal: player.inventory[itemId],
+                        player: player.name
+                    });
+                }
+
+                // Persist
+                saveGame();
+                return true;
+
+            } catch (error) {
+                console.error('[Award] awardItem failed:', error);
+                return false;
+            }
+        }
+
+        /**
+         * Awards a new monster to a player (party or box).
+         * @param {string} templateId - Monster template ID from catalog
+         * @param {number} level - Starting level
+         * @param {string|null} rarity - Rarity override (null = use template default)
+         * @param {string} destination - 'party', 'box', or 'auto' (auto respects team limit)
+         * @param {Object} player - Player object
+         * @param {Object} overrides - Optional field overrides
+         * @returns {Object|null} - Created monster or null if failed
+         */
+        function awardMonster(templateId, level, rarity, destination, player, overrides = {}) {
+            try {
+                // Validate inputs
+                if (!templateId || typeof templateId !== 'string') {
+                    console.warn('[Award] Invalid templateId:', templateId);
+                    return null;
+                }
+
+                if (!player || typeof player !== 'object') {
+                    console.warn('[Award] Invalid player object');
+                    return null;
+                }
+
+                const monsterLevel = Math.max(1, Number(level) || 1);
+                const dest = destination || 'auto';
+
+                // Create monster using factory (Commit 7)
+                const monster = createMonsterInstanceFromTemplate(templateId, monsterLevel, rarity, overrides);
+                
+                if (!monster) {
+                    console.warn('[Award] Failed to create monster from template:', templateId);
+                    return null;
+                }
+
+                // Set owner
+                if (player.id) {
+                    monster.ownerId = player.id;
+                }
+
+                // Ensure arrays exist
+                player.team = player.team || [];
+                player.box = player.box || [];
+
+                // Determine destination
+                let actualDest = dest;
+                if (dest === 'auto') {
+                    const maxTeamSize = GameState.config?.maxTeamSize || 6;
+                    actualDest = (player.team.length < maxTeamSize) ? 'party' : 'box';
+                }
+
+                // Add to destination
+                if (actualDest === 'party' || actualDest === 'team') {
+                    const maxTeamSize = GameState.config?.maxTeamSize || 6;
+                    if (player.team.length < maxTeamSize) {
+                        player.team.push(monster);
+                    } else {
+                        // Party full, add to box instead
+                        player.box.push(monster);
+                        actualDest = 'box';
+                        console.warn('[Award] Party full, monster sent to box');
+                    }
+                } else {
+                    // box
+                    player.box.push(monster);
+                }
+
+                // Add to global monsters list (for compatibility)
+                GameState.monsters = GameState.monsters || [];
+                GameState.monsters.push(monster);
+
+                // Log to console if in therapist mode
+                if (typeof mmGetTherapistMode === 'function' && mmGetTherapistMode()) {
+                    console.log('[Award] Granted monster:', {
+                        templateId: templateId,
+                        name: monster.name,
+                        level: monsterLevel,
+                        rarity: monster.rarity,
+                        destination: actualDest,
+                        player: player.name
+                    });
+                }
+
+                // Persist
+                saveGame();
+                return monster;
+
+            } catch (error) {
+                console.error('[Award] awardMonster failed:', error);
+                return null;
+            }
+        }
+
+        // ============================================================================
+        // End of Award API
+        // ============================================================================
 
         // Função para obter habilidade do monstrinho
         // Obter habilidades do monstrinho baseado em classe e estágio
@@ -1930,6 +2362,18 @@
         
         function startGroupEncounter(selectedPlayerIds, encounterType, enemyLevel) {
             try {
+                // Initialize activeIndex for all participating players
+                for (const pid of selectedPlayerIds) {
+                    const player = GameState.players.find(p => p.id === pid);
+                    if (!player) continue;
+                    
+                    // Ensure player has valid starter
+                    if (!autoSelectStarter(player)) {
+                        alert(`⚠️ ${player.name || player.nome} não tem monstrinhos vivos! Não pode participar da batalha.`);
+                        return;
+                    }
+                }
+                
                 // Limpar buffs dos monstrinhos dos jogadores participantes
                 for (const pid of selectedPlayerIds) {
                     const player = GameState.players.find(p => p.id === pid);
@@ -2061,8 +2505,9 @@
         function _hasAlivePlayers(enc) {
             for (const pid of (enc.participants || [])) {
                 const p = GameState.players.find(x => x.id === pid);
-                const mon = p?.team?.[0];
-                if (mon && (Number(mon.hp) || 0) > 0) return true;
+                if (!p || !Array.isArray(p.team)) continue;
+                // Check if player has any alive monster in team
+                if (firstAliveIndex(p.team) >= 0) return true;
             }
             return false;
         }
@@ -2181,7 +2626,15 @@
         }
 
         function _getActiveMonsterOfPlayer(player) {
-            return player?.team?.[0] || null;
+            if (!player || !Array.isArray(player.team)) return null;
+            
+            // Initialize activeIndex if not set
+            if (typeof player.activeIndex !== 'number') {
+                player.activeIndex = firstAliveIndex(player.team);
+            }
+            
+            // Return the active monster (or null if index is invalid)
+            return player.team[player.activeIndex] || null;
         }
 
         function _getEnemyByIndex(enc, idx) {
@@ -2208,6 +2661,104 @@
         function _log(enc, msg) {
             enc.log = enc.log || [];
             enc.log.push(msg);
+        }
+
+        // ==================== Team Management Helpers ====================
+        
+        /**
+         * Returns the index of the first alive monster in the team (hp > 0).
+         * Returns -1 if no alive monsters found.
+         */
+        function firstAliveIndex(team) {
+            if (!Array.isArray(team)) return -1;
+            for (let i = 0; i < team.length; i++) {
+                if (_isAlive(team[i])) return i;
+            }
+            return -1;
+        }
+
+        /**
+         * Moves a team member from one position to another.
+         * Updates the player's team array and saves.
+         */
+        function moveTeamMember(player, fromIdx, toIdx) {
+            if (!player || !Array.isArray(player.team)) return;
+            if (fromIdx < 0 || fromIdx >= player.team.length) return;
+            if (toIdx < 0 || toIdx >= player.team.length) return;
+            if (fromIdx === toIdx) return;
+
+            const monster = player.team[fromIdx];
+            player.team.splice(fromIdx, 1);
+            player.team.splice(toIdx, 0, monster);
+
+            // Update activeIndex if player has one
+            if (typeof player.activeIndex === 'number') {
+                if (player.activeIndex === fromIdx) {
+                    player.activeIndex = toIdx;
+                } else if (fromIdx < toIdx) {
+                    if (player.activeIndex > fromIdx && player.activeIndex <= toIdx) {
+                        player.activeIndex--;
+                    }
+                } else {
+                    if (player.activeIndex >= toIdx && player.activeIndex < fromIdx) {
+                        player.activeIndex++;
+                    }
+                }
+            }
+
+            saveToLocalStorage();
+        }
+
+        /**
+         * Auto-selects the starter for encounter.
+         * Sets player.activeIndex to the first alive monster.
+         * Returns true if a valid starter was found, false otherwise.
+         */
+        function autoSelectStarter(player) {
+            if (!player || !Array.isArray(player.team)) return false;
+            const idx = firstAliveIndex(player.team);
+            if (idx >= 0) {
+                player.activeIndex = idx;
+                return true;
+            }
+            player.activeIndex = -1;
+            return false;
+        }
+
+        /**
+         * Ensures the active monster is alive.
+         * - Outside battle: auto-switches to first alive
+         * - During battle: opens modal for manual selection (if inBattle is true)
+         */
+        function ensureActiveAlive(player, options = {}) {
+            if (!player || !Array.isArray(player.team)) return false;
+            
+            // Initialize activeIndex if not set
+            if (typeof player.activeIndex !== 'number') {
+                player.activeIndex = 0;
+            }
+
+            const currentMon = player.team[player.activeIndex];
+            
+            // If current is alive, we're good
+            if (_isAlive(currentMon)) return true;
+
+            // Current is fainted
+            if (options.inBattle) {
+                // In battle: need to open modal for replacement
+                return false; // Caller should handle modal
+            } else {
+                // Outside battle: auto-switch to first alive
+                const idx = firstAliveIndex(player.team);
+                if (idx >= 0) {
+                    player.activeIndex = idx;
+                    saveToLocalStorage();
+                    return true;
+                }
+                // No alive monsters
+                player.activeIndex = -1;
+                return false;
+            }
         }
 
         function _chooseTargetPlayerId(enc) {
@@ -2477,6 +3028,24 @@
 
                 if (!_isAlive(targetMon)) {
                     _log(enc, `💀 ${targetName} (${targetMonName}) foi derrotado!`);
+                    
+                    // Check if player has other alive monsters
+                    const aliveIdx = firstAliveIndex(targetPlayer.team);
+                    if (aliveIdx >= 0) {
+                        // Player has other monsters - need to switch
+                        // Save state and open modal
+                        saveToLocalStorage();
+                        renderEncounter();
+                        
+                        // Open modal for replacement (async)
+                        setTimeout(() => {
+                            openSwitchMonsterModal(targetPlayer, enc);
+                        }, 100);
+                        return; // Don't advance turn yet - modal will handle it
+                    } else {
+                        // Player has no more monsters - they're out
+                        _log(enc, `⚠️ ${targetName} não tem mais monstrinhos vivos!`);
+                    }
                 }
 
                 advanceTurn(enc);
@@ -2484,6 +3053,83 @@
                 renderEncounter();
             } catch (error) {
                 showError('Failed to process enemy turn', error.stack);
+            }
+        }
+
+        // ==================== Switch Monster Modal ====================
+
+        function openSwitchMonsterModal(player, enc) {
+            if (!player || !Array.isArray(player.team)) return;
+            
+            // Get alive monsters (excluding current active)
+            const aliveMonsters = [];
+            player.team.forEach((mon, idx) => {
+                if (_isAlive(mon) && idx !== player.activeIndex) {
+                    aliveMonsters.push({ monster: mon, index: idx });
+                }
+            });
+            
+            if (aliveMonsters.length === 0) {
+                alert('Sem monstrinhos vivos para substituir!');
+                // Continue battle
+                advanceTurn(enc);
+                saveToLocalStorage();
+                renderEncounter();
+                return;
+            }
+            
+            // Build modal HTML
+            let html = '<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 9999;" id="switchMonsterModal">';
+            html += '<div style="background: white; padding: 20px; border-radius: 8px; max-width: 500px; max-height: 80vh; overflow-y: auto;">';
+            html += `<h3>💀 ${player.name || player.nome}: Escolha um Substituto</h3>`;
+            html += '<p>Seu monstrinho foi derrotado! Escolha um substituto:</p>';
+            html += '<div style="margin: 15px 0;">';
+            
+            aliveMonsters.forEach(({ monster, index }) => {
+                const hpPercent = Math.floor((monster.hp / monster.hpMax) * 100);
+                html += `<div style="border: 1px solid #ddd; padding: 10px; margin: 5px 0; border-radius: 4px; cursor: pointer; background: #f5f5f5;" onclick="selectReplacementMonster('${player.id}', ${index}, '${enc.id}')">`;
+                html += `<strong>${monster.emoji || ''} ${monster.name || monster.nome}</strong> - Nv ${monster.level}`;
+                html += `<br>HP: ${monster.hp}/${monster.hpMax} (${hpPercent}%)`;
+                html += `<br>Classe: ${monster.class}`;
+                html += `</div>`;
+            });
+            
+            html += '</div>';
+            html += '</div>';
+            html += '</div>';
+            
+            // Add modal to body
+            const modalDiv = document.createElement('div');
+            modalDiv.innerHTML = html;
+            document.body.appendChild(modalDiv);
+        }
+
+        function selectReplacementMonster(playerId, newActiveIndex, encounterId) {
+            try {
+                const player = _getPlayerById(playerId);
+                const enc = GameState.currentEncounter;
+                
+                if (!player || !enc || enc.id !== encounterId) {
+                    console.error('Invalid state for monster replacement');
+                    return;
+                }
+                
+                // Set new active index
+                player.activeIndex = newActiveIndex;
+                
+                const newMon = player.team[newActiveIndex];
+                _log(enc, `🔄 ${player.name || player.nome} trocou para ${newMon.name || newMon.nome}!`);
+                
+                // Close modal
+                const modal = document.getElementById('switchMonsterModal');
+                if (modal) modal.remove();
+                
+                // Continue battle
+                advanceTurn(enc);
+                saveToLocalStorage();
+                renderEncounter();
+            } catch (error) {
+                showError('Failed to select replacement monster', error.stack);
             }
         }
 
@@ -3450,13 +4096,13 @@
                 // Indicador de turno atual
                 if (actor) {
                     const sideColor = actor.side === 'player' ? '#4CAF50' : '#f44336';
-                    html += `<div style="background: ${sideColor}; color: white; padding: 10px; margin: 10px 0; border-radius: 4px;">`;
+                    html += `<div class="battle-result" style="background: ${sideColor};">`;
                     html += `<strong>⏺️ Turno: ${actor.name}</strong> (${actor.side === 'player' ? 'Jogador' : 'Inimigo'})`;
                     html += `</div>`;
                 }
                 
                 // Participantes (jogadores)
-                html += '<div style="margin: 15px 0;">';
+                html += '<div class="my-15">';
                 html += '<h4>👥 Participantes:</h4>';
                 for (const pid of (encounter.participants || [])) {
                     const p = GameState.players.find(x => x.id === pid);
@@ -3479,20 +4125,20 @@
                     const isCurrent = actor && actor.side === 'player' && actor.id === pid;
                     
                     const border = isCurrent ? '3px solid #4CAF50' : '1px solid #ddd';
-                    html += `<div id="grpP_${pid}" style="background: #f5f5f5; padding: 10px; margin: 5px 0; border-radius: 4px; border: ${border}; position: relative;">`;
+                    html += `<div id="grpP_${pid}" class="group-participant-box" style="border: ${border};">`;
                     html += `<strong>${p.name || p.nome}</strong> (${p.class})`;
                     html += `<br>${mon.name || mon.nome} - Nv ${mon.level}`;
                     html += `<br>HP: ${hp}/${hpMax} (${hpPercent}%)`;
-                    html += `<div class="progress-bar" style="margin-top:6px;">`;
+                    html += `<div class="progress-bar mt-6">`;
                     html += `<div class="progress-fill xp" style="width:${xpPct}%"></div>`;
                     html += `</div>`;
-                    html += `<div class="small" style="margin-top:4px;">XP: ${xp}/${xpNeeded} (${xpPct}%)</div>`;
+                    html += `<div class="small mt-5">XP: ${xp}/${xpNeeded} (${xpPct}%)</div>`;
                     html += `</div>`;
                 }
                 html += '</div>';
                 
                 // Inimigos
-                html += '<div style="margin: 15px 0;">';
+                html += '<div class="my-15">';
                 html += '<h4>👹 Inimigos:</h4>';
                 for (let i = 0; i < (encounter.enemies || []).length; i++) {
                     const e = encounter.enemies[i];
@@ -3504,7 +4150,7 @@
                     const isCurrent = actor && actor.side === 'enemy' && actor.id === i;
                     
                     const border = isCurrent ? '3px solid #f44336' : '1px solid #ddd';
-                    html += `<div id="grpE_${i}" style="background: #ffebee; padding: 10px; margin: 5px 0; border-radius: 4px; border: ${border}; position: relative;">`;
+                    html += `<div id="grpE_${i}" class="enemy-participant-box" style="border: ${border};">`;
                     html += `<strong>${e.name || e.nome}</strong> - Nv ${e.level}`;
                     html += `<br>HP: ${hp}/${hpMax} (${hpPercent}%)`;
                     html += `<br>SPD: ${e.spd} | ATK: ${e.atk} | DEF: ${e.def}`;
@@ -3514,9 +4160,9 @@
                 
                 // Ações (apenas para turno do jogador)
                 if (isPlayerTurn && !encounter.finished) {
-                    html += '<div style="margin: 15px 0; padding: 15px; background: #f5f5f5; border-radius: 4px;">';
+                    html += '<div class="my-15 p-15 bg-light-gray border-radius-5">';
                     html += '<h4>Ações:</h4>';
-                    html += '<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">';
+                    html += '<div class="d-flex flex-gap-10 flex-wrap mt-10">';
                     html += '<button class="btn btn-danger" onclick="groupAttack()">⚔️ Atacar</button>';
                     html += '<button class="btn btn-primary" onclick="groupPassTurn()">⏭️ Passar</button>';
                     html += '</div>';
@@ -3528,9 +4174,9 @@
                         if (mon) {
                             const skillIds = getSkillsArray(mon);
                             if (skillIds && skillIds.length > 0) {
-                                html += '<div style="margin-top: 15px; padding: 10px; background: #f3e5f5; border-radius: 8px;">';
-                                html += '<strong style="font-size: 16px;">✨ Habilidades</strong>';
-                                html += '<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">';
+                                html += '<div class="skills-box">';
+                                html += '<strong class="skills-title">✨ Habilidades</strong>';
+                                html += '<div class="d-flex flex-gap-10 flex-wrap mt-10">';
                                 
                                 skillIds.forEach((skillId, idx) => {
                                     const skill = getSkillById(skillId);
@@ -3543,7 +4189,7 @@
                                     html += `
                                     <button class="btn btn-info" 
                                             onclick="groupUseSkill(${idx})" 
-                                            ${!canUse ? 'disabled style="opacity: 0.5;"' : ''}
+                                            ${!canUse ? 'disabled class="opacity-50"' : ''}
                                             title="${tooltip}">
                                         ${label}
                                     </button>
@@ -3562,12 +4208,12 @@
                 // Mensagem de fim com recompensas
                 if (encounter.finished) {
                     const resultColor = encounter.result === 'victory' ? '#4CAF50' : '#f44336';
-                    html += `<div style="background: ${resultColor}; color: white; padding: 15px; margin: 15px 0; border-radius: 4px;">`;
+                    html += `<div class="battle-result" style="background: ${resultColor};">`;
                     html += `<h3>${encounter.result === 'victory' ? '🏁 VITÓRIA!' : '💀 DERROTA'}</h3>`;
                     
                     // Recompensas na vitória
                     if (encounter.result === 'victory') {
-                        html += '<div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.2); border-radius: 4px;">';
+                        html += '<div class="mt-10 p-10 border-radius-5 bg-white-20">';
                         html += '<strong>💰 Recompensas:</strong><br>';
                         
                         // Dinheiro dividido
@@ -3592,9 +4238,9 @@
                 }
                 
                 // Log de combate
-                html += '<div style="margin-top: 20px;">';
+                html += '<div class="mt-20">';
                 html += '<h4>📜 Log de Combate:</h4>';
-                html += '<div style="background: #f9f9f9; padding: 10px; border-radius: 4px; max-height: 300px; overflow-y: auto;">';
+                html += '<div class="bg-gray p-10 border-radius-5 max-h-300 overflow-auto">';
                 const logs = encounter.log || [];
                 for (let i = Math.max(0, logs.length - 20); i < logs.length; i++) {
                     html += `<div>${logs[i]}</div>`;
@@ -3674,11 +4320,11 @@
                             const xpPercent = Math.max(0, Math.min(100, (xpCurrent / xpNeeded) * 100));
                             
                             return `
-                        <div id="wildPlayerBox" style="margin: 10px 0; padding: 10px; background: #e8f5e9; border-radius: 8px; position: relative;">
+                        <div id="wildPlayerBox" class="player-select-box">
                             <p><strong>Seu Monstrinho:</strong> ${playerMonster.emoji} ${playerMonster.name} (Nv ${playerMonster.level})</p>
                             <div><strong>HP:</strong> ${playerMonster.hp}/${playerMonster.hpMax}</div>
                             <div><strong>⚡ ENE:</strong> ${playerMonster.ene || 0}/${playerMonster.eneMax || 0}</div>
-                            <div class="progress-bar" style="height: 15px; margin-top: 5px;">
+                            <div class="progress-bar h-15 mt-5">
                                 <div class="progress-fill xp" style="width: ${xpPercent}%"></div>
                             </div>
                             <small><strong>XP:</strong> ${xpCurrent}/${xpNeeded} (${Math.floor(xpPercent)}%)</small>
@@ -3686,34 +4332,34 @@
                         `;
                         })() : ''}
                         
-                        <div id="wildEnemyBox" class="monster-card ${monster.class}" style="display: inline-block; margin: 20px; position: relative;">
-                            <div style="font-size: 48px;">${monster.emoji}</div>
+                        <div id="wildEnemyBox" class="monster-card enemy-box ${monster.class}">
+                            <div class="font-size-48">${monster.emoji}</div>
                             <strong>${monster.name}</strong>
                             <div class="badge badge-${monster.rarity}">${monster.rarity}</div>
                             <div><strong>Classe:</strong> ${monster.class}</div>
                             <div><strong>Level:</strong> ${monster.level}</div>
-                            <div style="margin-top: 8px;">
+                            <div class="mt-8">
                                 <div><strong>ATK:</strong> ${monster.atk} | <strong>DEF:</strong> ${monster.def}</div>
                                 <div><strong>PODER:</strong> ${monster.poder}</div>
                                 <div><strong>⚡ ENE:</strong> ${monster.ene || 0}/${monster.eneMax || 0}</div>
                             </div>
-                            <div class="progress-bar" style="margin-top: 10px;">
+                            <div class="progress-bar mt-10">
                                 <div class="progress-fill hp" style="width: ${(monster.hp / monster.hpMax) * 100}%">
                                     ${monster.hp}/${monster.hpMax} HP (${Math.floor(hpPercent * 100)}%)
                                 </div>
                             </div>
                             ${canCapture ? 
-                                '<div style="color: green; margin-top: 5px;">✅ HP baixo! Pode tentar captura!</div>' : 
-                                `<div style="color: orange; margin-top: 5px;">⚠️ Abaixe HP para ${Math.floor(baseThreshold * 100)}% para capturar</div>`
+                                '<div class="color-success mt-5">✅ HP baixo! Pode tentar captura!</div>' : 
+                                `<div class="color-warning mt-5">⚠️ Abaixe HP para ${Math.floor(baseThreshold * 100)}% para capturar</div>`
                             }
                         </div>
                         
                         <h4>Choose Action:</h4>
-                        <div class="flex-center" style="flex-direction: column;">
-                            <div style="margin: 10px 0;">
-                                <label style="font-weight: bold; font-size: 18px;">🎲 Enter your d20 roll:</label>
+                        <div class="flex-center-col">
+                            <div class="my-10">
+                                <label class="d20-label">🎲 Enter your d20 roll:</label>
                                 <input type="number" id="diceRoll" min="1" max="20" placeholder="1-20" 
-                                       style="width: 120px; text-align: center; font-size: 24px; font-weight: bold; height: 60px; margin: 10px;">
+                                       class="d20-input">
                             </div>
                             
                             ${player ? (() => {
@@ -3723,34 +4369,34 @@
                                 const hasAnyOrb = comum > 0 || incomum > 0 || rara > 0;
                                 
                                 return `
-                                <div style="margin: 15px 0; background: #e3f2fd; padding: 15px; border-radius: 8px; border: 2px solid #1976d2;">
-                                    <strong style="font-size: 16px;">🎯 Sistema de Captura</strong>
-                                    <div style="margin-top: 10px;">
+                                <div class="capture-system-box">
+                                    <strong class="capture-system-title">🎯 Sistema de Captura</strong>
+                                    <div class="mt-10">
                                         <div><strong>HP% Selvagem:</strong> ${Math.floor(hpPercent * 100)}%</div>
                                         <div><strong>Base Threshold (${monster.rarity}):</strong> ${Math.floor(baseThreshold * 100)}%</div>
                                         <div><strong>Bônus HP Baixo (≤25%):</strong> ${hpPercent <= 0.25 ? '+10%' : '0%'}</div>
                                     </div>
                                     
                                     ${hasAnyOrb ? `
-                                    <div style="margin-top: 10px;">
-                                        <label style="font-weight: bold;">Escolha sua ClasterOrb:</label>
-                                        <select id="captureOrbSelect" onchange="updateCaptureThreshold()" style="width: 100%; padding: 8px; margin: 5px 0; font-size: 14px;">
+                                    <div class="mt-10">
+                                        <label class="text-bold">Escolha sua ClasterOrb:</label>
+                                        <select id="captureOrbSelect" onchange="updateCaptureThreshold()" class="orb-select">
                                             ${comum > 0 ? `<option value="CLASTERORB_COMUM">⚪ Comum (${comum}x) - +0% bonus</option>` : ''}
                                             ${incomum > 0 ? `<option value="CLASTERORB_INCOMUM">🔵 Incomum (${incomum}x) - +5% bonus</option>` : ''}
                                             ${rara > 0 ? `<option value="CLASTERORB_RARA">🟣 Rara (${rara}x) - +10% bonus</option>` : ''}
                                         </select>
                                     </div>
-                                    <div id="captureThresholdDisplay" style="margin-top: 10px; padding: 10px; background: #fff; border-radius: 5px;">
+                                    <div id="captureThresholdDisplay" class="capture-threshold-box">
                                         <strong>Threshold Final:</strong> <span id="finalThresholdValue">Calculando...</span>
                                     </div>
                                     ` : `
-                                    <div style="margin-top: 10px; padding: 10px; background: #ffebee; color: #c62828; border-radius: 5px;">
+                                    <div class="capture-warning">
                                         <strong>❌ Sem ClasterOrbs!</strong><br>
                                         Você não tem orbes de captura disponíveis.
                                     </div>
                                     `}
                                     
-                                    <div style="margin-top: 10px;">
+                                    <div class="mt-10">
                                         <strong>📦 Inventário:</strong> 
                                         ⚪ ${comum} | 🔵 ${incomum} | 🟣 ${rara} | 
                                         💚 Cura: ${player.inventory?.['IT_HEAL_01'] || 0}
@@ -3762,7 +4408,7 @@
                             <div class="flex-center">
                                 ${player && (player.inventory?.['CLASTERORB_COMUM'] > 0 || player.inventory?.['CLASTERORB_INCOMUM'] > 0 || player.inventory?.['CLASTERORB_RARA'] > 0) ? 
                                     `<button class="btn btn-success btn-large" onclick="attemptCapture()" ${tutorialAllows("capture") ? "" : "disabled title='Tutorial: ainda não liberado'"}>🎯 Tentar Capturar</button>` :
-                                    `<button class="btn btn-success btn-large" disabled style="opacity: 0.5;">🎯 Sem Orbes</button>`
+                                    `<button class="btn btn-success btn-large opacity-50" disabled>🎯 Sem Orbes</button>`
                                 }
                                 <button class="btn btn-danger btn-large" onclick="attackWild()" ${tutorialAllows("attack") ? "" : "disabled title='Tutorial: ainda não liberado'"}>⚔️ Attack</button>
                                 <button class="btn btn-warning btn-large" onclick="fleeEncounter()" ${tutorialAllows("flee") ? "" : "disabled title='Tutorial: ainda não liberado'"}>🏃 Flee</button>
@@ -3773,24 +4419,23 @@
                                 const canUseItem = healItems > 0 && playerMonster.hp > 0 && playerMonster.hp < playerMonster.hpMax;
                                 
                                 return `
-                                <div style="margin: 15px 0; padding: 15px; background: #e8f5e9; border-radius: 8px; border: 2px solid #4caf50;">
-                                    <strong style="font-size: 16px;">💚 Usar Item de Cura</strong>
-                                    <div style="margin-top: 10px;">
+                                <div class="heal-box">
+                                    <strong class="font-size-16 text-bold">💚 Usar Item de Cura</strong>
+                                    <div class="mt-10">
                                         <div><strong>Petisco de Cura disponível:</strong> ${healItems}x</div>
                                         <div><strong>HP atual:</strong> ${playerMonster.hp}/${playerMonster.hpMax}</div>
                                         ${!canUseItem && healItems === 0 ? 
-                                            `<div style="color: #c62828; margin-top: 5px;">❌ Sem itens de cura disponíveis</div>` : 
+                                            `<div class="color-error mt-5">❌ Sem itens de cura disponíveis</div>` : 
                                             !canUseItem && playerMonster.hp <= 0 ? 
-                                            `<div style="color: #c62828; margin-top: 5px;">❌ Monstrinho desmaiado, não pode usar item</div>` :
+                                            `<div class="color-error mt-5">❌ Monstrinho desmaiado, não pode usar item</div>` :
                                             !canUseItem && playerMonster.hp >= playerMonster.hpMax ?
-                                            `<div style="color: #f57c00; margin-top: 5px;">⚠️ HP já está cheio</div>` : ''
+                                            `<div class="color-warning mt-5">⚠️ HP já está cheio</div>` : ''
                                         }
                                     </div>
-                                    <button class="btn btn-primary" 
+                                    <button class="btn btn-primary mt-10 w-100" 
                                             onclick="useItemInBattle('IT_HEAL_01')"
-                                            ${!canUseItem || !tutorialAllows("item") ? 'disabled style="opacity: 0.5;"' : ''}
-                                            ${!tutorialAllows("item") ? 'title="Tutorial: ainda não liberado"' : ''}
-                                            style="margin-top: 10px; width: 100%;">
+                                            ${!canUseItem || !tutorialAllows("item") ? 'disabled class="opacity-50"' : ''}
+                                            ${!tutorialAllows("item") ? 'title="Tutorial: ainda não liberado"' : ''}>
                                         💚 Usar Petisco de Cura
                                     </button>
                                 </div>
@@ -3803,9 +4448,9 @@
                                 if (!skillIds || skillIds.length === 0) return '';
                                 
                                 return `
-                                <div style="margin-top: 15px; padding: 10px; background: #f3e5f5; border-radius: 8px;">
-                                    <strong style="font-size: 16px;">✨ Habilidades</strong>
-                                    <div class="flex-center" style="margin-top: 10px; gap: 10px;">
+                                <div class="skills-box">
+                                    <strong class="skills-title">✨ Habilidades</strong>
+                                    <div class="flex-center flex-gap-10 mt-10">
                                         ${skillIds.map((skillId, idx) => {
                                             const skill = getSkillById(skillId);
                                             if (!skill) return '';
@@ -3818,7 +4463,7 @@
                                             return `
                                             <button class="btn btn-primary" 
                                                     onclick="useSkillWild(${idx})" 
-                                                    ${!canUse || !tutAllows ? 'disabled style="opacity: 0.5;"' : ''}
+                                                    ${!canUse || !tutAllows ? 'disabled class="opacity-50"' : ''}
                                                     title="${tooltip}">
                                                 ${label}
                                             </button>
@@ -3830,8 +4475,8 @@
                             })() : ''}
                         </div>
                         
-                        <div class="combat-log" id="combatLog" style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 10px; max-height: 300px; overflow-y: auto;">
-                            ${(encounter.log || []).map(entry => `<div style="margin: 5px 0; padding: 5px; border-bottom: 1px solid #ddd;">${entry}</div>`).join('')}
+                        <div class="combat-log mt-20 p-15 bg-light-gray border-radius-12 max-h-300 overflow-auto" id="combatLog">
+                            ${(encounter.log || []).map(entry => `<div class="py-8" style="border-bottom: 1px solid #ddd;">${entry}</div>`).join('')}
                         </div>
                     </div>
                 `;
@@ -3879,7 +4524,7 @@
                 
                 // Atualizar display
                 display.innerHTML = `
-                    <span style="font-size: 18px; color: ${hpPercent <= thresholdFinal ? '#2e7d32' : '#c62828'}; font-weight: bold;">
+                    <span class="hp-threshold-text" style="color: ${hpPercent <= thresholdFinal ? '#2e7d32' : '#c62828'};">
                         ${Math.floor(thresholdFinal * 100)}%
                     </span>
                     <br><small>
@@ -4922,7 +5567,7 @@
                 if (!container) return;
                 
                 if (!GameState.players || GameState.players.length === 0) {
-                    container.innerHTML = '<p style="color: #666;">No players available. Add players first.</p>';
+                    container.innerHTML = '<p class="opacity-80">No players available. Add players first.</p>';
                     return;
                 }
                 
@@ -4930,18 +5575,23 @@
                 GameState.players.forEach(player => {
                     if (!player) return;
                     
-                    const mon = player.team?.[0];
+                    // Initialize activeIndex if not set
+                    if (typeof player.activeIndex !== 'number') {
+                        player.activeIndex = firstAliveIndex(player.team);
+                    }
+                    
+                    const mon = _getActiveMonsterOfPlayer(player);
                     const monName = mon ? (mon.name || mon.nome || 'No monster') : 'No monster';
                     const hasValidMonster = mon && mon.hp > 0;
                     
-                    html += `<div style="padding: 5px;">`;
-                    html += `<label style="cursor: pointer; display: flex; align-items: center;">`;
+                    html += `<div class="py-8">`;
+                    html += `<label class="cursor-pointer d-flex align-center">`;
                     html += `<input type="checkbox" name="groupParticipant" value="${player.id}" ${!hasValidMonster ? 'disabled' : ''}>`;
-                    html += `<span style="margin-left: 8px;">${player.name} (${player.class})`;
+                    html += `<span class="ml-8">${player.name} (${player.class})`;
                     if (hasValidMonster) {
                         html += ` - ${monName} Nv${mon.level}`;
                     } else {
-                        html += ` - <span style="color: #999;">No valid monster</span>`;
+                        html += ` - <span class="opacity-80">No valid monster</span>`;
                     }
                     html += `</span>`;
                     html += `</label>`;
@@ -4949,8 +5599,80 @@
                 });
                 
                 container.innerHTML = html;
+                
+                // Also update team reorder UI
+                updateTeamReorderUI();
             } catch (error) {
                 console.error('Failed to update group participants list:', error);
+            }
+        }
+
+        function updateTeamReorderUI() {
+            try {
+                const container = document.getElementById('teamReorderContainer');
+                if (!container) return;
+                
+                if (!GameState.players || GameState.players.length === 0) {
+                    container.innerHTML = '<p style="color: #666;">No players available.</p>';
+                    return;
+                }
+                
+                let html = '';
+                GameState.players.forEach(player => {
+                    if (!player || !Array.isArray(player.team) || player.team.length === 0) return;
+                    
+                    html += `<div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 4px; background: white;">`;
+                    html += `<strong>${player.name || player.nome}</strong> (${player.class})<br>`;
+                    html += `<small style="color: #666;">Posição 0 = Líder (primeiro a lutar se vivo)</small>`;
+                    html += `<div style="margin-top: 8px;">`;
+                    
+                    player.team.forEach((monster, idx) => {
+                        if (!monster) return;
+                        
+                        const isAlive = _isAlive(monster);
+                        const hpPercent = Math.floor((monster.hp / monster.hpMax) * 100);
+                        const isActive = idx === player.activeIndex;
+                        
+                        html += `<div style="display: flex; align-items: center; padding: 5px; margin: 3px 0; background: ${isActive ? '#e8f5e9' : '#fafafa'}; border: ${isActive ? '2px solid #4CAF50' : '1px solid #ddd'}; border-radius: 4px;">`;
+                        html += `<span style="font-weight: bold; margin-right: 8px;">${idx}</span>`;
+                        html += `<div style="flex: 1;">`;
+                        html += `${monster.emoji || ''} ${monster.name || monster.nome} - Nv${monster.level}`;
+                        html += `<br><small>HP: ${monster.hp}/${monster.hpMax} (${hpPercent}%)`;
+                        if (!isAlive) html += ` <strong style="color: red;">💀 DESMAIADO</strong>`;
+                        if (isActive) html += ` <strong style="color: green;">⚡ ATIVO</strong>`;
+                        html += `</small>`;
+                        html += `</div>`;
+                        html += `<div style="display: flex; flex-direction: column; gap: 2px;">`;
+                        if (idx > 0) {
+                            html += `<button onclick="movePlayerTeamMember('${player.id}', ${idx}, ${idx - 1})" style="padding: 2px 8px; font-size: 12px;">⬆️</button>`;
+                        }
+                        if (idx < player.team.length - 1) {
+                            html += `<button onclick="movePlayerTeamMember('${player.id}', ${idx}, ${idx + 1})" style="padding: 2px 8px; font-size: 12px;">⬇️</button>`;
+                        }
+                        html += `</div>`;
+                        html += `</div>`;
+                    });
+                    
+                    html += `</div>`;
+                    html += `</div>`;
+                });
+                
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Failed to update team reorder UI:', error);
+            }
+        }
+
+        function movePlayerTeamMember(playerId, fromIdx, toIdx) {
+            try {
+                const player = _getPlayerById(playerId);
+                if (!player) return;
+                
+                moveTeamMember(player, fromIdx, toIdx);
+                updateTeamReorderUI();
+                updateGroupParticipantsList();
+            } catch (error) {
+                showError('Failed to move team member', error.stack);
             }
         }
 
@@ -5016,15 +5738,15 @@
                 
                 return `
                     <div class="monster-card ${monster.class || 'common'}">
-                        <div style="font-size: 36px;">${monster.emoji || '🔮'}</div>
+                        <div class="font-size-36">${monster.emoji || '🔮'}</div>
                         <strong>${monster.name || 'Unknown'}</strong>
                         <div class="badge badge-${monster.rarity || 'common'}">${monster.rarity || 'common'}</div>
                         <div>Lv ${monster.level || 1}</div>
-                        <div class="progress-bar" style="height: 20px;">
+                        <div class="progress-bar h-30">
                             <div class="progress-fill hp" style="width: ${hpPercent}%"></div>
                         </div>
                         <small>${monster.hp || 0}/${monster.hpMax || 0} HP</small>
-                        <div class="progress-bar" style="height: 15px;">
+                        <div class="progress-bar h-15">
                             <div class="progress-fill xp" style="width: ${xpPercent}%"></div>
                         </div>
                         <small>${monster.xp || 0}/${xpNeeded} XP</small>
@@ -5125,7 +5847,7 @@
                                         <input type="checkbox" 
                                                ${completed ? 'checked' : ''}
                                                onchange="toggleObjectiveForPlayer(${player.id}, ${obj.id})"
-                                               style="width: 30px; height: 30px; cursor: pointer;">
+                                               class="small-icon">
                                         <span>${obj.text} (${obj.weight} PM)</span>
                                     </div>
                                 `;
@@ -5167,7 +5889,7 @@
                             if (!therapy) return '';
                             
                             return `
-                                <div style="margin: 15px 0; padding: 15px; background: white; border-radius: 10px;">
+                                <div class="my-15 p-15 bg-white border-radius-12">
                                     <h4>${player.name}</h4>
                                     <p>PM Earned: ${therapy.pm || 0}</p>
                                     <p>Medals: ${(therapy.medals || []).join(', ') || 'None yet'}</p>
@@ -5342,7 +6064,7 @@
             if (!host) return;
             
             if (!mmIsTherapistMode()) {
-                host.innerHTML = `<div style="opacity:.8;">Ative o Therapist Mode nas Configurações.</div>`;
+                host.innerHTML = `<div class="opacity-80">Ative o Therapist Mode nas Configurações.</div>`;
                 return;
             }
             
@@ -5370,38 +6092,38 @@
             ).join("");
 
             host.innerHTML = `
-                <div style="display:grid; gap:10px;">
+                <div class="d-grid grid-gap-10">
                     <div>
-                        <div style="font-weight:800; margin-bottom:6px;">Jogador alvo</div>
+                        <div class="therapist-field-title">Jogador alvo</div>
                         <select id="mmTherPlayer" class="mm-input">${playerOptions}</select>
                     </div>
 
-                    <div style="padding:10px; border:1px solid rgba(255,255,255,.12); border-radius:12px;">
-                        <div style="font-weight:800; margin-bottom:6px;">✨ Dar XP (monstro ativo)</div>
+                    <div class="therapist-mestre-box">
+                        <div class="therapist-field-title">✨ Dar XP (monstro ativo)</div>
                         <div class="mm-row">
-                            <input id="mmTherXp" class="mm-input" type="number" min="1" value="50" style="flex:1;">
+                            <input id="mmTherXp" class="mm-input flex-1" type="number" min="1" value="50">
                             <button class="mm-btn" onclick="mmTherGiveXP()">+ XP</button>
                         </div>
-                        <div style="opacity:.8; font-size:12px; margin-top:6px;">Aplica no player.team[0].</div>
+                        <div class="opacity-80 font-size-12 mt-6">Aplica no player.team[0].</div>
                     </div>
 
-                    <div style="padding:10px; border:1px solid rgba(255,255,255,.12); border-radius:12px;">
-                        <div style="font-weight:800; margin-bottom:6px;">🎒 Dar Item</div>
+                    <div class="therapist-mestre-box">
+                        <div class="therapist-field-title">🎒 Dar Item</div>
                         <div class="mm-row">
-                            <select id="mmTherItem" class="mm-input" style="flex:1;">${itemOptions}</select>
-                            <input id="mmTherItemQty" class="mm-input" type="number" min="1" value="1" style="width:90px;">
+                            <select id="mmTherItem" class="mm-input flex-1">${itemOptions}</select>
+                            <input id="mmTherItemQty" class="mm-input w-90" type="number" min="1" value="1">
                             <button class="mm-btn" onclick="mmTherGiveItem()">Adicionar</button>
                         </div>
                     </div>
 
-                    <div style="padding:10px; border:1px solid rgba(255,255,255,.12); border-radius:12px;">
-                        <div style="font-weight:800; margin-bottom:6px;">🐾 Dar Monstrinhomon</div>
+                    <div class="therapist-mestre-box">
+                        <div class="therapist-field-title">🐾 Dar Monstrinhomon</div>
                         <div class="mm-row">
-                            <select id="mmTherMon" class="mm-input" style="flex:1;">${monOptions}</select>
-                            <input id="mmTherMonLv" class="mm-input" type="number" min="1" value="5" style="width:90px;">
+                            <select id="mmTherMon" class="mm-input flex-1">${monOptions}</select>
+                            <input id="mmTherMonLv" class="mm-input w-90" type="number" min="1" value="5">
                         </div>
-                        <div class="mm-row" style="margin-top:8px;">
-                            <select id="mmTherMonDest" class="mm-input" style="flex:1;">
+                        <div class="mm-row mt-8">
+                            <select id="mmTherMonDest" class="mm-input flex-1">
                                 <option value="auto">Auto (Time se <6, senão Caixa)</option>
                                 <option value="team">Forçar Time</option>
                                 <option value="box">Forçar Caixa</option>
@@ -5489,44 +6211,26 @@
             const player = GameState.players.find(p => p.id === pid);
             if (!player) return;
 
-            // Find monster template
-            const template = MONSTER_CATALOG.find(m => m.id === monId);
-            if (!template) {
-                alert("Monstro não encontrado no catálogo.");
-                return;
-            }
-
-            if (typeof createMonsterInstance !== "function") {
-                alert("createMonsterInstance() não encontrado no código.");
-                return;
-            }
-
-            const inst = createMonsterInstance(template, player.id, lv);
+            // COMMIT 8 (Wave A): Use Award API for canonical monster creation
+            const inst = awardMonster(
+                monId,      // templateId
+                lv,         // level
+                null,       // rarity (use template default)
+                dest,       // destination ('auto', 'team', or 'box')
+                player      // player object
+            );
+            
             if (!inst) {
-                alert("Erro ao criar instância do monstro.");
+                alert("❌ Erro ao conceder monstro via Award API.");
                 return;
             }
 
-            player.team = player.team || [];
-            player.box = player.box || [];
-
-            let where = dest;
-            if (dest === "auto") where = (player.team.length < 6 ? "team" : "box");
-
-            if (where === "team") {
-                if (player.team.length >= 6) {
-                    alert("Time cheio (6). Use Caixa.");
-                    return;
-                }
-                player.team.push(inst);
-            } else {
-                player.box.push(inst);
-            }
-
-            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
             if (typeof renderEncounter === "function") renderEncounter();
             
-            const destText = where === "team" ? "time" : "caixa";
+            // Determine where it actually went (Award API handles team limit)
+            const inTeam = player.team.some(m => m.instanceId === inst.instanceId);
+            const destText = inTeam ? "time" : "caixa";
+            
             if (typeof showToast === "function") {
                 showToast(`🐾 ${player.name} recebeu ${inst.name || monId} (Lv ${lv}) no ${destText}`);
             } else {
@@ -5535,22 +6239,6 @@
         }
 
         function mmContinue(){
-            // Check if there's a last slot saved - if so, load from it
-            try {
-                const lastSlot = localStorage.getItem("mm_last_slot");
-                if (lastSlot) {
-                    const slotNum = parseInt(lastSlot, 10);
-                    if ([1, 2, 3].includes(slotNum)) {
-                        // Load from slot - this will call mmPostGameStartFlow()
-                        mmLoadFromSlot(slotNum);
-                        return;
-                    }
-                }
-            } catch (e) {
-                console.warn("Failed to check last slot", e);
-            }
-
-            // Fallback: load from main localStorage
             try {
                 // Load from the last used slot
                 const lastSlot = mmGetLastSlot();
@@ -5573,9 +6261,8 @@
             } catch(e){
                 console.warn("mmContinue failed", e);
                 alert("Erro ao carregar o save: " + e.message);
-                mmCloseAllOverlays();
-                return;
             }
+            mmCloseAllOverlays();
             // Feature 4.1.1: Show tutorial choice or go to game based on preference
             mmPostGameStartFlow();
         }
@@ -5660,8 +6347,8 @@
                 }
 
                 const rows = MM_NEW.players.map((p, i) => `
-                    <div style="border:1px solid rgba(255,255,255,0.12); border-radius:14px; padding:12px; margin:10px 0;">
-                        <div style="font-weight:900; margin-bottom:8px;">Jogador ${i+1}</div>
+                    <div class="border-pale border-radius-14 p-10-12 my-10">
+                        <div class="text-900 mb-8">Jogador ${i+1}</div>
                         <div class="mm-field">
                             <label>Nome</label>
                             <input id="mmPName_${i}" maxlength="14" placeholder="Ex.: Ana" value="${escapeHtml(p.name || "")}">
@@ -5687,10 +6374,10 @@
             if (MM_NEW.step === 3) {
                 host.innerHTML = `
                     <p class="mm-sub">Tudo pronto!</p>
-                    <div style="opacity:0.9; line-height:1.45;">
+                    <div class="opacity-90 line-height-145">
                         <div><b>Jogadores:</b> ${MM_NEW.numPlayers}</div>
                         <div><b>Dificuldade:</b> ${escapeHtml(MM_NEW.difficulty)}</div>
-                        <div style="margin-top:8px;">
+                        <div class="mt-8">
                             ${MM_NEW.players.map(p => `• ${escapeHtml(p.name || "Sem nome")} — ${escapeHtml(p.class)}`).join("<br/>")}
                         </div>
                     </div>
@@ -5751,14 +6438,12 @@
                         m.class && p.class && m.class.toLowerCase() === p.class.toLowerCase()
                     ) || MONSTER_CATALOG[0]; // Fallback to first monster if no match
                     
-                    // Create the starter monster instance
-                    const starterMonster = createMonsterInstance(starterTemplate, playerId, 1);
-                    
+                    // Create player first (Award API needs player object)
                     const player = {
                         id: playerId,
                         name: p.name,
                         class: p.class,
-                        team: starterMonster ? [starterMonster] : [],
+                        team: [],
                         box: [],
                         inventory: {
                             'Monstribola': 5,
@@ -5768,9 +6453,17 @@
                     
                     GameState.players.push(player);
                     
-                    // Also add to GameState.monsters for compatibility
-                    if (starterMonster) {
-                        GameState.monsters.push(starterMonster);
+                    // COMMIT 8 (Wave A): Use Award API for canonical monster creation
+                    const starterMonster = awardMonster(
+                        starterTemplate.id,  // templateId
+                        1,                   // level
+                        null,                // rarity (use template default)
+                        'party',             // destination
+                        player               // player object
+                    );
+                    
+                    if (!starterMonster) {
+                        console.error('Failed to award starter monster to new player:', p.name);
                     }
                 });
 
@@ -6030,10 +6723,10 @@
                         <h3>Slot ${slot}</h3>
                         ${meta}
                         <div class="mm-slot-actions">
-                            <button class="mm-btn" style="width:auto;" ${empty ? "disabled" : ""} onclick="mmLoadFromSlot(${slot})">📂 Carregar</button>
-                            <button class="mm-btn" style="width:auto;" onclick="mmSaveToSlot(${slot})">💾 Salvar aqui</button>
-                            <button class="mm-btn" style="width:auto;" ${empty ? "disabled" : ""} onclick="mmExportSlot(${slot})">⬇️ Exportar</button>
-                            <button class="mm-btn" style="width:auto;" ${empty ? "disabled" : ""} onclick="mmDeleteSlot(${slot})">🗑️ Apagar</button>
+                            <button class="mm-btn w-auto" ${empty ? "disabled" : ""} onclick="mmLoadFromSlot(${slot})">📂 Carregar</button>
+                            <button class="mm-btn w-auto" onclick="mmSaveToSlot(${slot})">💾 Salvar aqui</button>
+                            <button class="mm-btn w-auto" ${empty ? "disabled" : ""} onclick="mmExportSlot(${slot})">⬇️ Exportar</button>
+                            <button class="mm-btn w-auto" ${empty ? "disabled" : ""} onclick="mmDeleteSlot(${slot})">🗑️ Apagar</button>
                         </div>
                     </div>
                 `;
@@ -6078,11 +6771,11 @@
                        </div>`;
 
                 return `
-                    <div class="mm-slot" style="${slot === last ? "outline:2px solid rgba(160,120,255,0.8);" : ""}">
-                        <h3 style="margin:0 0 6px 0;">Slot ${slot} ${slot === last ? "⭐" : ""}</h3>
+                    <div class="mm-slot ${slot === last ? "slot-outline" : ""}">
+                        <h3 class="my-0 mb-6">Slot ${slot} ${slot === last ? "⭐" : ""}</h3>
                         ${meta}
                         <div class="mm-slot-actions">
-                            <button class="mm-btn" style="width:auto;"
+                            <button class="mm-btn w-auto"
                                 onclick="mmChooseSlotAndStartNewGame(${slot})">
                                 ${empty ? "✅ Usar este slot" : "✅ Usar (sobrescrever)"}
                             </button>
@@ -6241,13 +6934,13 @@
             }).join("<br/>");
 
             return `
-                <div style="padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.06); margin-bottom:10px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-                        <div style="font-weight:900;">🎓 ${step.title}</div>
-                        <button class="btn" style="width:auto; margin:0; padding:8px 10px;" onclick="exitTutorial()">Sair</button>
+                <div class="tutorial-step-box">
+                    <div class="tutorial-step-header">
+                        <div class="tutorial-step-title">🎓 ${step.title}</div>
+                        <button class="btn w-auto m-0 py-8 px-10" onclick="exitTutorial()">Sair</button>
                     </div>
-                    <div style="opacity:0.9; margin-top:6px;">${step.instructions}</div>
-                    <div style="opacity:0.8; margin-top:6px; font-size:12px;">${lines}</div>
+                    <div class="opacity-90 mt-6">${step.instructions}</div>
+                    <div class="opacity-80 mt-6 font-size-12">${lines}</div>
                 </div>
             `;
         }
