@@ -6,23 +6,21 @@
 
 ## ✅ Correções Implementadas
 
-### 1. BC-12: Audio Context Warning (CORRIGIDO)
-**Problema:** Console mostrava warning sobre meta tag deprecated do iOS
+### 1. BC-12: Browser Compatibility Meta Tags (MELHORADO)
+**Problema:** Console mostrava warning sobre compatibilidade iOS
 ```
 [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated
 ```
 
 **Correção:**
 ```html
-<!-- ANTES -->
+<!-- Mantido tag iOS + adicionado tag genérica -->
 <meta name="apple-mobile-web-app-capable" content="yes">
-
-<!-- DEPOIS -->
 <meta name="mobile-web-app-capable" content="yes">
 ```
 
-**Localização:** Linha 6 do `index.html`  
-**Resultado:** ✅ Warning removido, console limpo
+**Localização:** Linhas 6-7 do `index.html`  
+**Resultado:** ✅ Compatibilidade iOS + cross-platform garantida
 
 ---
 
