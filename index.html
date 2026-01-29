@@ -1754,7 +1754,7 @@
                 }
 
                 // POWER básico
-                const basicPower = Number(mon.basicPower) || Number(mon.powerBasic) || 10;
+                const basicPower = BASIC_ATTACK_POWER[mon.class] || 12;
                 let powerUsed = basicPower;
 
                 if (isCrit) {
@@ -1860,7 +1860,7 @@
                 }
 
                 // POWER básico do inimigo
-                const basicPower = Number(enemy.basicPower) || Number(enemy.powerBasic) || 10;
+                const basicPower = BASIC_ATTACK_POWER[enemy.class] || 12;
                 let powerUsed = basicPower;
 
                 if (isCrit) {
@@ -2184,6 +2184,12 @@
             
             // Curar completamente ao subir de nível
             mon.hp = mon.hpMax;
+            
+            // Atualizar ENE Max (cresce com level)
+            const baseEne = 10; // base padrão
+            const eneGrowth = 2; // crescimento por nível
+            mon.eneMax = Math.floor(baseEne + eneGrowth * (mon.level - 1));
+            mon.ene = mon.eneMax; // Restaurar ENE ao subir de nível
             
             // Recalcular stats baseado no novo nível
             recalculateStatsFromTemplate(mon);
@@ -4082,6 +4088,12 @@
                         // HP atual aumenta proporcionalmente
                         const hpRatio = monster.hp / oldHpMax;
                         monster.hp = Math.floor(monster.hpMax * hpRatio);
+                        
+                        // Atualizar ENE Max
+                        const baseEne = 10;
+                        const eneGrowth = 2;
+                        monster.eneMax = Math.floor(baseEne + eneGrowth * (monster.level - 1));
+                        monster.ene = Math.min(monster.eneMax, monster.ene); // Não exceder novo max
                         
                         // Recalcula ATK, DEF, PODER
                         monster.atk = Math.floor((template.baseAtk || 5) * levelMult * rarityMult);
