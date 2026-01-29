@@ -1610,7 +1610,7 @@
                 
                 if (type === 'wild') {
                     // Limpar buffs do monstrinho do jogador antes da batalha
-                    const player = GameState.players.find(p => p.id === selectedPlayerId);
+                    const player = GameState.players.find(p => p.id === encounter.selectedPlayerId);
                     if (player && player.team) {
                         for (const mon of player.team) {
                             if (mon && mon.buffs) {
