@@ -31,7 +31,7 @@
 
         <div id="tabHome" class="tab-content active">
             <h2>Welcome to Monstrinhomon! 🎉</h2>
-            <p style="font-size: 18px; margin: 20px 0;">A therapeutic game for young trainers.</p>
+            <p class="intro-text">A therapeutic game for young trainers.</p>
             
             <div class="card">
                 <h3>Quick Stats</h3>
@@ -109,7 +109,7 @@
                 </select>
                 
                 <!-- Para encontros individuais (wild) -->
-                <div id="playerSelectDiv" style="margin-top: 15px;">
+                <div id="playerSelectDiv" class="mt-15">
                     <label><strong>Select Player for Individual Encounter:</strong></label>
                     <select id="encounterPlayer">
                         <option value="">-- Select Player --</option>
@@ -117,10 +117,10 @@
                 </div>
                 
                 <!-- Para encontros em grupo (trainer/boss) -->
-                <div id="groupSelectDiv" class="hidden" style="margin-top: 15px;">
+                <div id="groupSelectDiv" class="hidden mt-15">
                     <label><strong>Select Participants (1-6):</strong></label>
-                    <div id="groupParticipantsList" style="margin-top: 10px;"></div>
-                    <div style="margin-top: 10px;">
+                    <div id="groupParticipantsList" class="mt-10"></div>
+                    <div class="mt-10">
                         <label><strong>Enemy Level:</strong></label>
                         <select id="enemyLevel">
                             <option value="1">1</option>
@@ -180,22 +180,22 @@
             </div>
 
             <!-- Therapist Mode Panel - Commit 1 -->
-            <div id="therapistPanel" class="card" style="display:none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <div id="therapistPanel" class="card therapist-header" style="display:none;">
                 <h3>🔬 Therapist Mode Tools</h3>
-                <p style="font-size: 0.9em; opacity: 0.9;">Advanced debugging and testing controls</p>
+                <p class="therapist-header-text">Advanced debugging and testing controls</p>
                 <div id="therapistPanelContent">
                     <!-- Commit 2: Export/Import Save Tools -->
-                    <div style="margin-top: 15px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px;">
-                        <h4 style="margin-bottom: 10px;">💾 Save Management</h4>
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            <button class="btn btn-success" onclick="therapistExportSave()" style="flex: 1; min-width: 120px;">📤 Export Save (JSON)</button>
-                            <button class="btn btn-warning" onclick="therapistImportSave()" style="flex: 1; min-width: 120px;">📥 Import Save (JSON)</button>
+                    <div class="save-management-box">
+                        <h4 class="save-management-title">💾 Save Management</h4>
+                        <div class="d-flex flex-gap-10 flex-wrap">
+                            <button class="btn btn-success flex-1 min-w-120" onclick="therapistExportSave()">📤 Export Save (JSON)</button>
+                            <button class="btn btn-warning flex-1 min-w-120" onclick="therapistImportSave()">📥 Import Save (JSON)</button>
                         </div>
                         <textarea id="therapistJsonArea" placeholder="Paste JSON here to import..." 
-                            style="width: 100%; min-height: 100px; margin-top: 10px; padding: 8px; font-family: monospace; font-size: 12px; border-radius: 5px; display: none;"></textarea>
-                        <div style="display: flex; gap: 10px; margin-top: 10px; display: none;" id="therapistJsonButtons">
-                            <button class="btn btn-success" onclick="therapistLoadJson()" style="flex: 1;">✅ Load JSON</button>
-                            <button class="btn btn-danger" onclick="therapistCancelImport()" style="flex: 1;">❌ Cancel</button>
+                            class="json-textarea" style="display: none;"></textarea>
+                        <div class="d-flex flex-gap-10 mt-10" style="display: none;" id="therapistJsonButtons">
+                            <button class="btn btn-success flex-1" onclick="therapistLoadJson()">✅ Load JSON</button>
+                            <button class="btn btn-danger flex-1" onclick="therapistCancelImport()">❌ Cancel</button>
                         </div>
                     </div>
                 </div>
@@ -203,22 +203,22 @@
 
             <div class="card">
                 <h3>🎵 Audio Configuration</h3>
-                <div style="display:grid; gap:12px;">
+                <div class="d-grid grid-gap-12">
                     <div>
-                        <div style="margin-bottom:6px;">🎧 Volume SFX</div>
+                        <div class="mb-6">🎧 Volume SFX</div>
                         <input id="mmSfxVol" type="range" min="0" max="100" value="70"
                             oninput="Audio.setSfxVolume(Number(this.value)/100)">
                     </div>
 
                     <div>
-                        <div style="margin-bottom:6px;">🎵 Volume Música (preparado)</div>
+                        <div class="mb-6">🎵 Volume Música (preparado)</div>
                         <input id="mmMusicVol" type="range" min="0" max="100" value="40"
                             oninput="Audio.setMusicVolume(Number(this.value)/100)">
                     </div>
 
-                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                        <button id="mmMuteBtn" class="btn" style="width:auto;" onclick="Audio.toggleMute()">🔊 Som</button>
-                        <button class="btn" style="width:auto;" onclick="Audio.playSfx('ui_click')">✅ Testar som</button>
+                    <div class="d-flex flex-gap-10 flex-wrap">
+                        <button id="mmMuteBtn" class="btn w-auto" onclick="Audio.toggleMute()">🔊 Som</button>
+                        <button class="btn w-auto" onclick="Audio.playSfx('ui_click')">✅ Testar som</button>
                     </div>
                 </div>
             </div>
@@ -276,16 +276,16 @@
     </div>
 
     <div id="mmSlotPicker" class="mm-overlay hidden">
-        <div class="mm-card" style="max-width:640px;">
+        <div class="mm-card max-w-640">
             <div class="mm-title">💾 Escolher Slot</div>
-            <div style="opacity:0.9; margin-bottom:12px;">
+            <div class="opacity-90 mb-12">
                 Selecione onde salvar este <b>Novo Jogo</b>. (Você pode exportar/importar depois.)
             </div>
 
-            <div id="mmSlotPickerList" style="display:grid; gap:10px;"></div>
+            <div id="mmSlotPickerList" class="d-grid grid-gap-10"></div>
 
-            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
-                <button class="mm-btn" style="width:auto;" onclick="mmCancelSlotPicker()">↩️ Voltar</button>
+            <div class="d-flex flex-gap-10 flex-wrap mt-14">
+                <button class="mm-btn w-auto" onclick="mmCancelSlotPicker()">↩️ Voltar</button>
             </div>
         </div>
     </div>
@@ -304,7 +304,7 @@
             <div class="mm-title">🧑‍🏫 Therapist Mode</div>
             <div id="mmTherapistBody"></div>
 
-            <div class="mm-row" style="margin-top:12px;">
+            <div class="mm-row mt-12">
                 <button class="mm-btn" onclick="mmCloseAllOverlays()">Fechar</button>
             </div>
         </div>
@@ -312,26 +312,26 @@
 
     <!-- Feature 4.3: Save Slots Screen -->
     <div id="mmSavesScreen" class="mm-overlay hidden">
-        <div class="mm-card" style="max-width:820px;">
+        <div class="mm-card max-w-820">
             <div class="mm-title">📂 Gerenciar Saves</div>
-            <div id="mmSavesSlots" style="display:grid; grid-template-columns:1fr; gap:12px; margin-top:12px;"></div>
+            <div id="mmSavesSlots" class="d-grid grid-gap-12 mt-12 grid-cols-1"></div>
 
-            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
-                <label class="mm-btn" style="width:auto; display:inline-flex; align-items:center; gap:8px; cursor:pointer;">
+            <div class="d-flex flex-gap-10 flex-wrap mt-15">
+                <label class="mm-btn w-auto d-inline-flex align-center flex-gap-8 cursor-pointer">
                     ⬆️ Importar JSON
-                    <input id="mmImportFile" type="file" accept="application/json" style="display:none;">
+                    <input id="mmImportFile" type="file" accept="application/json" class="d-none">
                 </label>
 
-                <select id="mmImportSlotPick" class="mm-input" style="min-width:160px;">
+                <select id="mmImportSlotPick" class="mm-input w-160">
                     <option value="1">Importar para Slot 1</option>
                     <option value="2">Importar para Slot 2</option>
                     <option value="3">Importar para Slot 3</option>
                 </select>
 
-                <button class="mm-btn" style="width:auto;" onclick="mmCloseSaves()">↩️ Voltar</button>
+                <button class="mm-btn w-auto" onclick="mmCloseSaves()">↩️ Voltar</button>
             </div>
 
-            <div style="opacity:0.75; font-size:12px; margin-top:10px;">
+            <div class="opacity-75 font-size-12 mt-10">
                 Dica: Exportar/Importar é ideal para backup e trocar de dispositivo (iPad).
             </div>
         </div>
@@ -340,17 +340,17 @@
     <!-- Feature 4.1.1: Start Choice Modal -->
     <div id="mmStartChoice" class="mm-overlay hidden">
         <div class="mm-card">
-            <h2 style="font-size: 28px; font-weight: 900; margin: 6px 0 8px;">🎮 Começar</h2>
-            <p style="opacity: 0.9; margin: 0 0 14px; line-height: 1.3;">Quer fazer o <b>Tutorial</b> agora?</p>
+            <h2 class="intro-title">🎮 Começar</h2>
+            <p class="intro-subtitle">Quer fazer o <b>Tutorial</b> agora?</p>
 
-            <label style="display:flex; gap:10px; align-items:center; margin:14px 0;">
+            <label class="tutorial-choice-label">
                 <input type="checkbox" id="mmRememberTutorialChoice">
                 Lembrar minha escolha
             </label>
 
-            <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+            <div class="d-flex flex-gap-12 justify-center flex-wrap">
                 <button class="mm-btn" onclick="mmStartTutorialFromChoice()">🎓 Fazer Tutorial</button>
-                <button class="mm-btn" style="opacity:0.9;" onclick="mmSkipTutorialFromChoice()">🚀 Pular</button>
+                <button class="mm-btn opacity-90" onclick="mmSkipTutorialFromChoice()">🚀 Pular</button>
             </div>
         </div>
     </div>
@@ -3873,13 +3873,13 @@
                 // Indicador de turno atual
                 if (actor) {
                     const sideColor = actor.side === 'player' ? '#4CAF50' : '#f44336';
-                    html += `<div style="background: ${sideColor}; color: white; padding: 10px; margin: 10px 0; border-radius: 4px;">`;
+                    html += `<div class="battle-result" style="background: ${sideColor};">`;
                     html += `<strong>⏺️ Turno: ${actor.name}</strong> (${actor.side === 'player' ? 'Jogador' : 'Inimigo'})`;
                     html += `</div>`;
                 }
                 
                 // Participantes (jogadores)
-                html += '<div style="margin: 15px 0;">';
+                html += '<div class="my-15">';
                 html += '<h4>👥 Participantes:</h4>';
                 for (const pid of (encounter.participants || [])) {
                     const p = GameState.players.find(x => x.id === pid);
@@ -3902,20 +3902,20 @@
                     const isCurrent = actor && actor.side === 'player' && actor.id === pid;
                     
                     const border = isCurrent ? '3px solid #4CAF50' : '1px solid #ddd';
-                    html += `<div id="grpP_${pid}" style="background: #f5f5f5; padding: 10px; margin: 5px 0; border-radius: 4px; border: ${border}; position: relative;">`;
+                    html += `<div id="grpP_${pid}" class="group-participant-box" style="border: ${border};">`;
                     html += `<strong>${p.name || p.nome}</strong> (${p.class})`;
                     html += `<br>${mon.name || mon.nome} - Nv ${mon.level}`;
                     html += `<br>HP: ${hp}/${hpMax} (${hpPercent}%)`;
-                    html += `<div class="progress-bar" style="margin-top:6px;">`;
+                    html += `<div class="progress-bar mt-6">`;
                     html += `<div class="progress-fill xp" style="width:${xpPct}%"></div>`;
                     html += `</div>`;
-                    html += `<div class="small" style="margin-top:4px;">XP: ${xp}/${xpNeeded} (${xpPct}%)</div>`;
+                    html += `<div class="small mt-5">XP: ${xp}/${xpNeeded} (${xpPct}%)</div>`;
                     html += `</div>`;
                 }
                 html += '</div>';
                 
                 // Inimigos
-                html += '<div style="margin: 15px 0;">';
+                html += '<div class="my-15">';
                 html += '<h4>👹 Inimigos:</h4>';
                 for (let i = 0; i < (encounter.enemies || []).length; i++) {
                     const e = encounter.enemies[i];
@@ -3927,7 +3927,7 @@
                     const isCurrent = actor && actor.side === 'enemy' && actor.id === i;
                     
                     const border = isCurrent ? '3px solid #f44336' : '1px solid #ddd';
-                    html += `<div id="grpE_${i}" style="background: #ffebee; padding: 10px; margin: 5px 0; border-radius: 4px; border: ${border}; position: relative;">`;
+                    html += `<div id="grpE_${i}" class="enemy-participant-box" style="border: ${border};">`;
                     html += `<strong>${e.name || e.nome}</strong> - Nv ${e.level}`;
                     html += `<br>HP: ${hp}/${hpMax} (${hpPercent}%)`;
                     html += `<br>SPD: ${e.spd} | ATK: ${e.atk} | DEF: ${e.def}`;
@@ -3937,9 +3937,9 @@
                 
                 // Ações (apenas para turno do jogador)
                 if (isPlayerTurn && !encounter.finished) {
-                    html += '<div style="margin: 15px 0; padding: 15px; background: #f5f5f5; border-radius: 4px;">';
+                    html += '<div class="my-15 p-15 bg-light-gray border-radius-5">';
                     html += '<h4>Ações:</h4>';
-                    html += '<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">';
+                    html += '<div class="d-flex flex-gap-10 flex-wrap mt-10">';
                     html += '<button class="btn btn-danger" onclick="groupAttack()">⚔️ Atacar</button>';
                     html += '<button class="btn btn-primary" onclick="groupPassTurn()">⏭️ Passar</button>';
                     html += '</div>';
@@ -3951,9 +3951,9 @@
                         if (mon) {
                             const skillIds = getSkillsArray(mon);
                             if (skillIds && skillIds.length > 0) {
-                                html += '<div style="margin-top: 15px; padding: 10px; background: #f3e5f5; border-radius: 8px;">';
-                                html += '<strong style="font-size: 16px;">✨ Habilidades</strong>';
-                                html += '<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">';
+                                html += '<div class="skills-box">';
+                                html += '<strong class="skills-title">✨ Habilidades</strong>';
+                                html += '<div class="d-flex flex-gap-10 flex-wrap mt-10">';
                                 
                                 skillIds.forEach((skillId, idx) => {
                                     const skill = getSkillById(skillId);
@@ -3966,7 +3966,7 @@
                                     html += `
                                     <button class="btn btn-info" 
                                             onclick="groupUseSkill(${idx})" 
-                                            ${!canUse ? 'disabled style="opacity: 0.5;"' : ''}
+                                            ${!canUse ? 'disabled class="opacity-50"' : ''}
                                             title="${tooltip}">
                                         ${label}
                                     </button>
@@ -3985,12 +3985,12 @@
                 // Mensagem de fim com recompensas
                 if (encounter.finished) {
                     const resultColor = encounter.result === 'victory' ? '#4CAF50' : '#f44336';
-                    html += `<div style="background: ${resultColor}; color: white; padding: 15px; margin: 15px 0; border-radius: 4px;">`;
+                    html += `<div class="battle-result" style="background: ${resultColor};">`;
                     html += `<h3>${encounter.result === 'victory' ? '🏁 VITÓRIA!' : '💀 DERROTA'}</h3>`;
                     
                     // Recompensas na vitória
                     if (encounter.result === 'victory') {
-                        html += '<div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.2); border-radius: 4px;">';
+                        html += '<div class="mt-10 p-10 border-radius-5 bg-white-20">';
                         html += '<strong>💰 Recompensas:</strong><br>';
                         
                         // Dinheiro dividido
@@ -4015,9 +4015,9 @@
                 }
                 
                 // Log de combate
-                html += '<div style="margin-top: 20px;">';
+                html += '<div class="mt-20">';
                 html += '<h4>📜 Log de Combate:</h4>';
-                html += '<div style="background: #f9f9f9; padding: 10px; border-radius: 4px; max-height: 300px; overflow-y: auto;">';
+                html += '<div class="bg-gray p-10 border-radius-5 max-h-300 overflow-auto">';
                 const logs = encounter.log || [];
                 for (let i = Math.max(0, logs.length - 20); i < logs.length; i++) {
                     html += `<div>${logs[i]}</div>`;
@@ -4097,11 +4097,11 @@
                             const xpPercent = Math.max(0, Math.min(100, (xpCurrent / xpNeeded) * 100));
                             
                             return `
-                        <div id="wildPlayerBox" style="margin: 10px 0; padding: 10px; background: #e8f5e9; border-radius: 8px; position: relative;">
+                        <div id="wildPlayerBox" class="player-select-box">
                             <p><strong>Seu Monstrinho:</strong> ${playerMonster.emoji} ${playerMonster.name} (Nv ${playerMonster.level})</p>
                             <div><strong>HP:</strong> ${playerMonster.hp}/${playerMonster.hpMax}</div>
                             <div><strong>⚡ ENE:</strong> ${playerMonster.ene || 0}/${playerMonster.eneMax || 0}</div>
-                            <div class="progress-bar" style="height: 15px; margin-top: 5px;">
+                            <div class="progress-bar h-15 mt-5">
                                 <div class="progress-fill xp" style="width: ${xpPercent}%"></div>
                             </div>
                             <small><strong>XP:</strong> ${xpCurrent}/${xpNeeded} (${Math.floor(xpPercent)}%)</small>
@@ -4109,34 +4109,34 @@
                         `;
                         })() : ''}
                         
-                        <div id="wildEnemyBox" class="monster-card ${monster.class}" style="display: inline-block; margin: 20px; position: relative;">
-                            <div style="font-size: 48px;">${monster.emoji}</div>
+                        <div id="wildEnemyBox" class="monster-card enemy-box ${monster.class}">
+                            <div class="font-size-48">${monster.emoji}</div>
                             <strong>${monster.name}</strong>
                             <div class="badge badge-${monster.rarity}">${monster.rarity}</div>
                             <div><strong>Classe:</strong> ${monster.class}</div>
                             <div><strong>Level:</strong> ${monster.level}</div>
-                            <div style="margin-top: 8px;">
+                            <div class="mt-8">
                                 <div><strong>ATK:</strong> ${monster.atk} | <strong>DEF:</strong> ${monster.def}</div>
                                 <div><strong>PODER:</strong> ${monster.poder}</div>
                                 <div><strong>⚡ ENE:</strong> ${monster.ene || 0}/${monster.eneMax || 0}</div>
                             </div>
-                            <div class="progress-bar" style="margin-top: 10px;">
+                            <div class="progress-bar mt-10">
                                 <div class="progress-fill hp" style="width: ${(monster.hp / monster.hpMax) * 100}%">
                                     ${monster.hp}/${monster.hpMax} HP (${Math.floor(hpPercent * 100)}%)
                                 </div>
                             </div>
                             ${canCapture ? 
-                                '<div style="color: green; margin-top: 5px;">✅ HP baixo! Pode tentar captura!</div>' : 
-                                `<div style="color: orange; margin-top: 5px;">⚠️ Abaixe HP para ${Math.floor(baseThreshold * 100)}% para capturar</div>`
+                                '<div class="color-success mt-5">✅ HP baixo! Pode tentar captura!</div>' : 
+                                `<div class="color-warning mt-5">⚠️ Abaixe HP para ${Math.floor(baseThreshold * 100)}% para capturar</div>`
                             }
                         </div>
                         
                         <h4>Choose Action:</h4>
-                        <div class="flex-center" style="flex-direction: column;">
-                            <div style="margin: 10px 0;">
-                                <label style="font-weight: bold; font-size: 18px;">🎲 Enter your d20 roll:</label>
+                        <div class="flex-center-col">
+                            <div class="my-10">
+                                <label class="d20-label">🎲 Enter your d20 roll:</label>
                                 <input type="number" id="diceRoll" min="1" max="20" placeholder="1-20" 
-                                       style="width: 120px; text-align: center; font-size: 24px; font-weight: bold; height: 60px; margin: 10px;">
+                                       class="d20-input">
                             </div>
                             
                             ${player ? (() => {
@@ -4146,34 +4146,34 @@
                                 const hasAnyOrb = comum > 0 || incomum > 0 || rara > 0;
                                 
                                 return `
-                                <div style="margin: 15px 0; background: #e3f2fd; padding: 15px; border-radius: 8px; border: 2px solid #1976d2;">
-                                    <strong style="font-size: 16px;">🎯 Sistema de Captura</strong>
-                                    <div style="margin-top: 10px;">
+                                <div class="capture-system-box">
+                                    <strong class="capture-system-title">🎯 Sistema de Captura</strong>
+                                    <div class="mt-10">
                                         <div><strong>HP% Selvagem:</strong> ${Math.floor(hpPercent * 100)}%</div>
                                         <div><strong>Base Threshold (${monster.rarity}):</strong> ${Math.floor(baseThreshold * 100)}%</div>
                                         <div><strong>Bônus HP Baixo (≤25%):</strong> ${hpPercent <= 0.25 ? '+10%' : '0%'}</div>
                                     </div>
                                     
                                     ${hasAnyOrb ? `
-                                    <div style="margin-top: 10px;">
-                                        <label style="font-weight: bold;">Escolha sua ClasterOrb:</label>
-                                        <select id="captureOrbSelect" onchange="updateCaptureThreshold()" style="width: 100%; padding: 8px; margin: 5px 0; font-size: 14px;">
+                                    <div class="mt-10">
+                                        <label class="text-bold">Escolha sua ClasterOrb:</label>
+                                        <select id="captureOrbSelect" onchange="updateCaptureThreshold()" class="orb-select">
                                             ${comum > 0 ? `<option value="CLASTERORB_COMUM">⚪ Comum (${comum}x) - +0% bonus</option>` : ''}
                                             ${incomum > 0 ? `<option value="CLASTERORB_INCOMUM">🔵 Incomum (${incomum}x) - +5% bonus</option>` : ''}
                                             ${rara > 0 ? `<option value="CLASTERORB_RARA">🟣 Rara (${rara}x) - +10% bonus</option>` : ''}
                                         </select>
                                     </div>
-                                    <div id="captureThresholdDisplay" style="margin-top: 10px; padding: 10px; background: #fff; border-radius: 5px;">
+                                    <div id="captureThresholdDisplay" class="capture-threshold-box">
                                         <strong>Threshold Final:</strong> <span id="finalThresholdValue">Calculando...</span>
                                     </div>
                                     ` : `
-                                    <div style="margin-top: 10px; padding: 10px; background: #ffebee; color: #c62828; border-radius: 5px;">
+                                    <div class="capture-warning">
                                         <strong>❌ Sem ClasterOrbs!</strong><br>
                                         Você não tem orbes de captura disponíveis.
                                     </div>
                                     `}
                                     
-                                    <div style="margin-top: 10px;">
+                                    <div class="mt-10">
                                         <strong>📦 Inventário:</strong> 
                                         ⚪ ${comum} | 🔵 ${incomum} | 🟣 ${rara} | 
                                         💚 Cura: ${player.inventory?.['IT_HEAL_01'] || 0}
@@ -4185,7 +4185,7 @@
                             <div class="flex-center">
                                 ${player && (player.inventory?.['CLASTERORB_COMUM'] > 0 || player.inventory?.['CLASTERORB_INCOMUM'] > 0 || player.inventory?.['CLASTERORB_RARA'] > 0) ? 
                                     `<button class="btn btn-success btn-large" onclick="attemptCapture()" ${tutorialAllows("capture") ? "" : "disabled title='Tutorial: ainda não liberado'"}>🎯 Tentar Capturar</button>` :
-                                    `<button class="btn btn-success btn-large" disabled style="opacity: 0.5;">🎯 Sem Orbes</button>`
+                                    `<button class="btn btn-success btn-large opacity-50" disabled>🎯 Sem Orbes</button>`
                                 }
                                 <button class="btn btn-danger btn-large" onclick="attackWild()" ${tutorialAllows("attack") ? "" : "disabled title='Tutorial: ainda não liberado'"}>⚔️ Attack</button>
                                 <button class="btn btn-warning btn-large" onclick="fleeEncounter()" ${tutorialAllows("flee") ? "" : "disabled title='Tutorial: ainda não liberado'"}>🏃 Flee</button>
@@ -4196,24 +4196,23 @@
                                 const canUseItem = healItems > 0 && playerMonster.hp > 0 && playerMonster.hp < playerMonster.hpMax;
                                 
                                 return `
-                                <div style="margin: 15px 0; padding: 15px; background: #e8f5e9; border-radius: 8px; border: 2px solid #4caf50;">
-                                    <strong style="font-size: 16px;">💚 Usar Item de Cura</strong>
-                                    <div style="margin-top: 10px;">
+                                <div class="heal-box">
+                                    <strong class="font-size-16 text-bold">💚 Usar Item de Cura</strong>
+                                    <div class="mt-10">
                                         <div><strong>Petisco de Cura disponível:</strong> ${healItems}x</div>
                                         <div><strong>HP atual:</strong> ${playerMonster.hp}/${playerMonster.hpMax}</div>
                                         ${!canUseItem && healItems === 0 ? 
-                                            `<div style="color: #c62828; margin-top: 5px;">❌ Sem itens de cura disponíveis</div>` : 
+                                            `<div class="color-error mt-5">❌ Sem itens de cura disponíveis</div>` : 
                                             !canUseItem && playerMonster.hp <= 0 ? 
-                                            `<div style="color: #c62828; margin-top: 5px;">❌ Monstrinho desmaiado, não pode usar item</div>` :
+                                            `<div class="color-error mt-5">❌ Monstrinho desmaiado, não pode usar item</div>` :
                                             !canUseItem && playerMonster.hp >= playerMonster.hpMax ?
-                                            `<div style="color: #f57c00; margin-top: 5px;">⚠️ HP já está cheio</div>` : ''
+                                            `<div class="color-warning mt-5">⚠️ HP já está cheio</div>` : ''
                                         }
                                     </div>
-                                    <button class="btn btn-primary" 
+                                    <button class="btn btn-primary mt-10 w-100" 
                                             onclick="useItemInBattle('IT_HEAL_01')"
-                                            ${!canUseItem || !tutorialAllows("item") ? 'disabled style="opacity: 0.5;"' : ''}
-                                            ${!tutorialAllows("item") ? 'title="Tutorial: ainda não liberado"' : ''}
-                                            style="margin-top: 10px; width: 100%;">
+                                            ${!canUseItem || !tutorialAllows("item") ? 'disabled class="opacity-50"' : ''}
+                                            ${!tutorialAllows("item") ? 'title="Tutorial: ainda não liberado"' : ''}>
                                         💚 Usar Petisco de Cura
                                     </button>
                                 </div>
@@ -4226,9 +4225,9 @@
                                 if (!skillIds || skillIds.length === 0) return '';
                                 
                                 return `
-                                <div style="margin-top: 15px; padding: 10px; background: #f3e5f5; border-radius: 8px;">
-                                    <strong style="font-size: 16px;">✨ Habilidades</strong>
-                                    <div class="flex-center" style="margin-top: 10px; gap: 10px;">
+                                <div class="skills-box">
+                                    <strong class="skills-title">✨ Habilidades</strong>
+                                    <div class="flex-center flex-gap-10 mt-10">
                                         ${skillIds.map((skillId, idx) => {
                                             const skill = getSkillById(skillId);
                                             if (!skill) return '';
@@ -4241,7 +4240,7 @@
                                             return `
                                             <button class="btn btn-primary" 
                                                     onclick="useSkillWild(${idx})" 
-                                                    ${!canUse || !tutAllows ? 'disabled style="opacity: 0.5;"' : ''}
+                                                    ${!canUse || !tutAllows ? 'disabled class="opacity-50"' : ''}
                                                     title="${tooltip}">
                                                 ${label}
                                             </button>
@@ -4253,8 +4252,8 @@
                             })() : ''}
                         </div>
                         
-                        <div class="combat-log" id="combatLog" style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 10px; max-height: 300px; overflow-y: auto;">
-                            ${(encounter.log || []).map(entry => `<div style="margin: 5px 0; padding: 5px; border-bottom: 1px solid #ddd;">${entry}</div>`).join('')}
+                        <div class="combat-log mt-20 p-15 bg-light-gray border-radius-12 max-h-300 overflow-auto" id="combatLog">
+                            ${(encounter.log || []).map(entry => `<div class="py-8" style="border-bottom: 1px solid #ddd;">${entry}</div>`).join('')}
                         </div>
                     </div>
                 `;
@@ -4302,7 +4301,7 @@
                 
                 // Atualizar display
                 display.innerHTML = `
-                    <span style="font-size: 18px; color: ${hpPercent <= thresholdFinal ? '#2e7d32' : '#c62828'}; font-weight: bold;">
+                    <span class="hp-threshold-text" style="color: ${hpPercent <= thresholdFinal ? '#2e7d32' : '#c62828'};">
                         ${Math.floor(thresholdFinal * 100)}%
                     </span>
                     <br><small>
@@ -5345,7 +5344,7 @@
                 if (!container) return;
                 
                 if (!GameState.players || GameState.players.length === 0) {
-                    container.innerHTML = '<p style="color: #666;">No players available. Add players first.</p>';
+                    container.innerHTML = '<p class="opacity-80">No players available. Add players first.</p>';
                     return;
                 }
                 
@@ -5357,14 +5356,14 @@
                     const monName = mon ? (mon.name || mon.nome || 'No monster') : 'No monster';
                     const hasValidMonster = mon && mon.hp > 0;
                     
-                    html += `<div style="padding: 5px;">`;
-                    html += `<label style="cursor: pointer; display: flex; align-items: center;">`;
+                    html += `<div class="py-8">`;
+                    html += `<label class="cursor-pointer d-flex align-center">`;
                     html += `<input type="checkbox" name="groupParticipant" value="${player.id}" ${!hasValidMonster ? 'disabled' : ''}>`;
-                    html += `<span style="margin-left: 8px;">${player.name} (${player.class})`;
+                    html += `<span class="px-10">${player.name} (${player.class})`;
                     if (hasValidMonster) {
                         html += ` - ${monName} Nv${mon.level}`;
                     } else {
-                        html += ` - <span style="color: #999;">No valid monster</span>`;
+                        html += ` - <span class="opacity-80">No valid monster</span>`;
                     }
                     html += `</span>`;
                     html += `</label>`;
@@ -5439,15 +5438,15 @@
                 
                 return `
                     <div class="monster-card ${monster.class || 'common'}">
-                        <div style="font-size: 36px;">${monster.emoji || '🔮'}</div>
+                        <div class="font-size-36">${monster.emoji || '🔮'}</div>
                         <strong>${monster.name || 'Unknown'}</strong>
                         <div class="badge badge-${monster.rarity || 'common'}">${monster.rarity || 'common'}</div>
                         <div>Lv ${monster.level || 1}</div>
-                        <div class="progress-bar" style="height: 20px;">
+                        <div class="progress-bar h-30">
                             <div class="progress-fill hp" style="width: ${hpPercent}%"></div>
                         </div>
                         <small>${monster.hp || 0}/${monster.hpMax || 0} HP</small>
-                        <div class="progress-bar" style="height: 15px;">
+                        <div class="progress-bar h-15">
                             <div class="progress-fill xp" style="width: ${xpPercent}%"></div>
                         </div>
                         <small>${monster.xp || 0}/${xpNeeded} XP</small>
@@ -5548,7 +5547,7 @@
                                         <input type="checkbox" 
                                                ${completed ? 'checked' : ''}
                                                onchange="toggleObjectiveForPlayer(${player.id}, ${obj.id})"
-                                               style="width: 30px; height: 30px; cursor: pointer;">
+                                               class="small-icon">
                                         <span>${obj.text} (${obj.weight} PM)</span>
                                     </div>
                                 `;
@@ -5590,7 +5589,7 @@
                             if (!therapy) return '';
                             
                             return `
-                                <div style="margin: 15px 0; padding: 15px; background: white; border-radius: 10px;">
+                                <div class="my-15 p-15 bg-white border-radius-12">
                                     <h4>${player.name}</h4>
                                     <p>PM Earned: ${therapy.pm || 0}</p>
                                     <p>Medals: ${(therapy.medals || []).join(', ') || 'None yet'}</p>
@@ -5755,7 +5754,7 @@
             if (!host) return;
             
             if (!mmIsTherapistMode()) {
-                host.innerHTML = `<div style="opacity:.8;">Ative o Therapist Mode nas Configurações.</div>`;
+                host.innerHTML = `<div class="opacity-80">Ative o Therapist Mode nas Configurações.</div>`;
                 return;
             }
             
@@ -5783,38 +5782,38 @@
             ).join("");
 
             host.innerHTML = `
-                <div style="display:grid; gap:10px;">
+                <div class="d-grid grid-gap-10">
                     <div>
-                        <div style="font-weight:800; margin-bottom:6px;">Jogador alvo</div>
+                        <div class="therapist-field-title">Jogador alvo</div>
                         <select id="mmTherPlayer" class="mm-input">${playerOptions}</select>
                     </div>
 
-                    <div style="padding:10px; border:1px solid rgba(255,255,255,.12); border-radius:12px;">
-                        <div style="font-weight:800; margin-bottom:6px;">✨ Dar XP (monstro ativo)</div>
+                    <div class="therapist-mestre-box">
+                        <div class="therapist-field-title">✨ Dar XP (monstro ativo)</div>
                         <div class="mm-row">
-                            <input id="mmTherXp" class="mm-input" type="number" min="1" value="50" style="flex:1;">
+                            <input id="mmTherXp" class="mm-input flex-1" type="number" min="1" value="50">
                             <button class="mm-btn" onclick="mmTherGiveXP()">+ XP</button>
                         </div>
-                        <div style="opacity:.8; font-size:12px; margin-top:6px;">Aplica no player.team[0].</div>
+                        <div class="opacity-80 font-size-12 mt-6">Aplica no player.team[0].</div>
                     </div>
 
-                    <div style="padding:10px; border:1px solid rgba(255,255,255,.12); border-radius:12px;">
-                        <div style="font-weight:800; margin-bottom:6px;">🎒 Dar Item</div>
+                    <div class="therapist-mestre-box">
+                        <div class="therapist-field-title">🎒 Dar Item</div>
                         <div class="mm-row">
-                            <select id="mmTherItem" class="mm-input" style="flex:1;">${itemOptions}</select>
-                            <input id="mmTherItemQty" class="mm-input" type="number" min="1" value="1" style="width:90px;">
+                            <select id="mmTherItem" class="mm-input flex-1">${itemOptions}</select>
+                            <input id="mmTherItemQty" class="mm-input w-90" type="number" min="1" value="1">
                             <button class="mm-btn" onclick="mmTherGiveItem()">Adicionar</button>
                         </div>
                     </div>
 
-                    <div style="padding:10px; border:1px solid rgba(255,255,255,.12); border-radius:12px;">
-                        <div style="font-weight:800; margin-bottom:6px;">🐾 Dar Monstrinhomon</div>
+                    <div class="therapist-mestre-box">
+                        <div class="therapist-field-title">🐾 Dar Monstrinhomon</div>
                         <div class="mm-row">
-                            <select id="mmTherMon" class="mm-input" style="flex:1;">${monOptions}</select>
-                            <input id="mmTherMonLv" class="mm-input" type="number" min="1" value="5" style="width:90px;">
+                            <select id="mmTherMon" class="mm-input flex-1">${monOptions}</select>
+                            <input id="mmTherMonLv" class="mm-input w-90" type="number" min="1" value="5">
                         </div>
-                        <div class="mm-row" style="margin-top:8px;">
-                            <select id="mmTherMonDest" class="mm-input" style="flex:1;">
+                        <div class="mm-row mt-8">
+                            <select id="mmTherMonDest" class="mm-input flex-1">
                                 <option value="auto">Auto (Time se <6, senão Caixa)</option>
                                 <option value="team">Forçar Time</option>
                                 <option value="box">Forçar Caixa</option>
@@ -6039,8 +6038,8 @@
                 }
 
                 const rows = MM_NEW.players.map((p, i) => `
-                    <div style="border:1px solid rgba(255,255,255,0.12); border-radius:14px; padding:12px; margin:10px 0;">
-                        <div style="font-weight:900; margin-bottom:8px;">Jogador ${i+1}</div>
+                    <div class="border-pale border-radius-14 p-12 my-10">
+                        <div class="text-900 mb-8">Jogador ${i+1}</div>
                         <div class="mm-field">
                             <label>Nome</label>
                             <input id="mmPName_${i}" maxlength="14" placeholder="Ex.: Ana" value="${escapeHtml(p.name || "")}">
@@ -6066,10 +6065,10 @@
             if (MM_NEW.step === 3) {
                 host.innerHTML = `
                     <p class="mm-sub">Tudo pronto!</p>
-                    <div style="opacity:0.9; line-height:1.45;">
+                    <div class="opacity-90 line-height-145">
                         <div><b>Jogadores:</b> ${MM_NEW.numPlayers}</div>
                         <div><b>Dificuldade:</b> ${escapeHtml(MM_NEW.difficulty)}</div>
-                        <div style="margin-top:8px;">
+                        <div class="mt-8">
                             ${MM_NEW.players.map(p => `• ${escapeHtml(p.name || "Sem nome")} — ${escapeHtml(p.class)}`).join("<br/>")}
                         </div>
                     </div>
@@ -6415,10 +6414,10 @@
                         <h3>Slot ${slot}</h3>
                         ${meta}
                         <div class="mm-slot-actions">
-                            <button class="mm-btn" style="width:auto;" ${empty ? "disabled" : ""} onclick="mmLoadFromSlot(${slot})">📂 Carregar</button>
-                            <button class="mm-btn" style="width:auto;" onclick="mmSaveToSlot(${slot})">💾 Salvar aqui</button>
-                            <button class="mm-btn" style="width:auto;" ${empty ? "disabled" : ""} onclick="mmExportSlot(${slot})">⬇️ Exportar</button>
-                            <button class="mm-btn" style="width:auto;" ${empty ? "disabled" : ""} onclick="mmDeleteSlot(${slot})">🗑️ Apagar</button>
+                            <button class="mm-btn w-auto" ${empty ? "disabled" : ""} onclick="mmLoadFromSlot(${slot})">📂 Carregar</button>
+                            <button class="mm-btn w-auto" onclick="mmSaveToSlot(${slot})">💾 Salvar aqui</button>
+                            <button class="mm-btn w-auto" ${empty ? "disabled" : ""} onclick="mmExportSlot(${slot})">⬇️ Exportar</button>
+                            <button class="mm-btn w-auto" ${empty ? "disabled" : ""} onclick="mmDeleteSlot(${slot})">🗑️ Apagar</button>
                         </div>
                     </div>
                 `;
@@ -6463,11 +6462,11 @@
                        </div>`;
 
                 return `
-                    <div class="mm-slot" style="${slot === last ? "outline:2px solid rgba(160,120,255,0.8);" : ""}">
-                        <h3 style="margin:0 0 6px 0;">Slot ${slot} ${slot === last ? "⭐" : ""}</h3>
+                    <div class="mm-slot ${slot === last ? "slot-outline" : ""}">
+                        <h3 class="my-0 mb-6">Slot ${slot} ${slot === last ? "⭐" : ""}</h3>
                         ${meta}
                         <div class="mm-slot-actions">
-                            <button class="mm-btn" style="width:auto;"
+                            <button class="mm-btn w-auto"
                                 onclick="mmChooseSlotAndStartNewGame(${slot})">
                                 ${empty ? "✅ Usar este slot" : "✅ Usar (sobrescrever)"}
                             </button>
@@ -6626,13 +6625,13 @@
             }).join("<br/>");
 
             return `
-                <div style="padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.06); margin-bottom:10px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-                        <div style="font-weight:900;">🎓 ${step.title}</div>
-                        <button class="btn" style="width:auto; margin:0; padding:8px 10px;" onclick="exitTutorial()">Sair</button>
+                <div class="tutorial-step-box">
+                    <div class="tutorial-step-header">
+                        <div class="tutorial-step-title">🎓 ${step.title}</div>
+                        <button class="btn w-auto m-0 py-8 px-10" onclick="exitTutorial()">Sair</button>
                     </div>
-                    <div style="opacity:0.9; margin-top:6px;">${step.instructions}</div>
-                    <div style="opacity:0.8; margin-top:6px; font-size:12px;">${lines}</div>
+                    <div class="opacity-90 mt-6">${step.instructions}</div>
+                    <div class="opacity-80 mt-6 font-size-12">${lines}</div>
                 </div>
             `;
         }
