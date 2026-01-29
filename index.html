@@ -159,6 +159,65 @@
             .header h1 { font-size: 1.8em; }
             .tab-button { padding: 12px 20px; font-size: 14px; }
         }
+        
+        /* ===== Feature 4.0: Menu / Overlays ===== */
+        .mm-overlay {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 30% 20%, rgba(120,80,255,0.25), transparent 45%),
+                        radial-gradient(circle at 70% 70%, rgba(0,200,255,0.18), transparent 45%),
+                        rgba(10,10,14,0.92);
+            color: #fff;
+            z-index: 9999;
+            display: none;
+        }
+
+        .mm-overlay.show { display: flex; }
+
+        .mm-overlay .mm-card {
+            width: min(560px, calc(100vw - 24px));
+            margin: auto;
+            background: rgba(20,20,28,0.85);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+        }
+
+        .mm-title { font-size: 28px; font-weight: 900; margin: 6px 0 8px; }
+        .mm-sub { opacity: 0.9; margin: 0 0 14px; line-height: 1.3; }
+
+        .mm-btn {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            font-weight: 800;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 8px 0;
+            min-height: 44px;
+        }
+        .mm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .mm-row { display: flex; gap: 10px; }
+        .mm-row .mm-btn { width: auto; flex: 1; }
+
+        .mm-field { margin: 10px 0; }
+        .mm-field label { display:block; font-size: 13px; opacity: 0.9; margin-bottom: 6px; }
+        .mm-field input, .mm-field select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(0,0,0,0.25);
+            color: #fff;
+            outline: none;
+        }
+
+        .mm-hint { font-size: 12px; opacity: 0.75; margin-top: 6px; }
     </style>
 </head>
 <body>
@@ -343,6 +402,50 @@
                 <h3>Advanced Configuration</h3>
                 <div id="configEditor"></div>
             </div>
+        </div>
+    </div>
+
+    <!-- ===== Feature 4.0 Overlays ===== -->
+    <div id="mmIntro" class="mm-overlay">
+        <div class="mm-card">
+            <div class="mm-title">🎮 Monstrinhomon</div>
+            <p class="mm-sub">RPG terapêutico infantil (Pokémon + RPG).<br/>Clique para começar.</p>
+            <button class="mm-btn" onclick="mmShowMainMenu()">✨ Iniciar</button>
+            <p class="mm-hint">Dica: o jogo salva automaticamente em seu navegador.</p>
+        </div>
+    </div>
+
+    <div id="mmMenu" class="mm-overlay">
+        <div class="mm-card">
+            <div class="mm-title">Menu Principal</div>
+            <button id="mmBtnContinue" class="mm-btn" onclick="mmContinue()">📖 Continuar</button>
+            <button class="mm-btn" onclick="mmStartNewGame()">🎮 Novo Jogo</button>
+            <button class="mm-btn" onclick="mmShowConfig()">⚙️ Configurações</button>
+            <div class="mm-row">
+                <button class="mm-btn" onclick="mmCloseAllOverlays()">Fechar</button>
+                <button class="mm-btn" onclick="mmResetSaveConfirm()">🗑️ Apagar Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mmNewGame" class="mm-overlay">
+        <div class="mm-card">
+            <div class="mm-title">Novo Jogo</div>
+
+            <div id="mmNewGameStep"></div>
+
+            <div class="mm-row">
+                <button class="mm-btn" onclick="mmNewGameBack()">⬅️ Voltar</button>
+                <button class="mm-btn" onclick="mmNewGameNext()">➡️ Próximo</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mmConfig" class="mm-overlay">
+        <div class="mm-card">
+            <div class="mm-title">Configurações</div>
+            <p class="mm-sub">MVP: placeholder. (Depois entra volume, modo terapeuta, etc.)</p>
+            <button class="mm-btn" onclick="mmShowMainMenu()">Voltar</button>
         </div>
     </div>
 
@@ -3600,8 +3703,282 @@
             }
         }
 
+        // ===== Feature 4.0: Menu / Flow =====
+        const MM_SAVE_KEY = "monstrinhomon_state"; // Using the same key as the existing save system
+
+        function mmEl(id){ return document.getElementById(id); }
+
+        function mmCloseAllOverlays(){
+            ["mmIntro","mmMenu","mmNewGame","mmConfig"].forEach(id => mmEl(id)?.classList.remove("show"));
+        }
+
+        function mmShow(id){
+            mmCloseAllOverlays();
+            mmEl(id)?.classList.add("show");
+        }
+
+        function mmHasSave(){
+            try {
+                const data = localStorage.getItem(MM_SAVE_KEY);
+                if (!data) return false;
+                const parsed = JSON.parse(data);
+                // Consider it a valid save if it has players or sessions
+                return (parsed.players && parsed.players.length > 0) || 
+                       (parsed.sessions && parsed.sessions.length > 0);
+            } catch(e){ 
+                return false; 
+            }
+        }
+
+        function mmBoot(){
+            // Show intro on boot
+            mmShow("mmIntro");
+        }
+
+        function mmShowMainMenu(){
+            mmShow("mmMenu");
+            const btn = mmEl("mmBtnContinue");
+            const ok = mmHasSave();
+            if (btn) {
+                btn.disabled = !ok;
+                btn.textContent = ok ? "📖 Continuar" : "📖 Continuar (sem save)";
+            }
+        }
+
+        function mmShowConfig(){
+            mmShow("mmConfig");
+        }
+
+        function mmContinue(){
+            try {
+                loadFromLocalStorage();
+                updateAllViews();
+            } catch(e){
+                console.warn("mmContinue failed", e);
+                alert("Erro ao carregar o save: " + e.message);
+            }
+            mmCloseAllOverlays();
+        }
+
+        function mmResetSaveConfirm(){
+            const ok = confirm("Apagar o save do navegador? Isso não pode ser desfeito.");
+            if (!ok) return;
+            try {
+                localStorage.removeItem(MM_SAVE_KEY);
+                alert("Save apagado com sucesso!");
+            } catch(e){
+                alert("Erro ao apagar save: " + e.message);
+            }
+            mmShowMainMenu();
+        }
+
+        // ---- New Game Wizard (MVP) ----
+        const MM_NEW = {
+            step: 0,
+            numPlayers: 1,
+            difficulty: "medium",
+            players: [] // {name, class}
+        };
+
+        const MM_CLASSES = ["Guerreiro","Mago","Curandeiro","Bárbaro","Ladino","Bardo","Caçador","Animalista"];
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function mmStartNewGame(){
+            MM_NEW.step = 0;
+            MM_NEW.numPlayers = 1;
+            MM_NEW.difficulty = "medium";
+            MM_NEW.players = [];
+            mmShow("mmNewGame");
+            mmRenderNewGameStep();
+        }
+
+        function mmRenderNewGameStep(){
+            const host = mmEl("mmNewGameStep");
+            if (!host) return;
+
+            if (MM_NEW.step === 0) {
+                host.innerHTML = `
+                    <p class="mm-sub">Quantos jogadores?</p>
+                    <div class="mm-field">
+                        <label>Número de jogadores (1–6)</label>
+                        <input id="mmNumPlayers" type="number" min="1" max="6" value="${MM_NEW.numPlayers}">
+                        <div class="mm-hint">Dica: em grupo, cada jogador usa monstrinhos da própria classe.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            if (MM_NEW.step === 1) {
+                host.innerHTML = `
+                    <p class="mm-sub">Selecione a dificuldade</p>
+                    <div class="mm-field">
+                        <label>Dificuldade</label>
+                        <select id="mmDifficulty">
+                            <option value="easy" ${MM_NEW.difficulty==="easy"?"selected":""}>Fácil</option>
+                            <option value="medium" ${MM_NEW.difficulty==="medium"?"selected":""}>Médio</option>
+                            <option value="hard" ${MM_NEW.difficulty==="hard"?"selected":""}>Difícil</option>
+                        </select>
+                        <div class="mm-hint">MVP: afeta encontros futuros conforme seu sistema de difficulty.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Step 2: players
+            if (MM_NEW.step === 2) {
+                // garante array
+                while (MM_NEW.players.length < MM_NEW.numPlayers) {
+                    MM_NEW.players.push({ name: "", class: MM_CLASSES[0] });
+                }
+                while (MM_NEW.players.length > MM_NEW.numPlayers) {
+                    MM_NEW.players.pop();
+                }
+
+                const rows = MM_NEW.players.map((p, i) => `
+                    <div style="border:1px solid rgba(255,255,255,0.12); border-radius:14px; padding:12px; margin:10px 0;">
+                        <div style="font-weight:900; margin-bottom:8px;">Jogador ${i+1}</div>
+                        <div class="mm-field">
+                            <label>Nome</label>
+                            <input id="mmPName_${i}" maxlength="14" placeholder="Ex.: Ana" value="${escapeHtml(p.name || "")}">
+                        </div>
+                        <div class="mm-field">
+                            <label>Classe</label>
+                            <select id="mmPClass_${i}">
+                                ${MM_CLASSES.map(c => `<option value="${escapeHtml(c)}" ${p.class===c?"selected":""}>${escapeHtml(c)}</option>`).join("")}
+                            </select>
+                        </div>
+                    </div>
+                `).join("");
+
+                host.innerHTML = `
+                    <p class="mm-sub">Crie os jogadores</p>
+                    ${rows}
+                    <p class="mm-hint">O monstrinho inicial deve seguir a classe do jogador (MVP).</p>
+                `;
+                return;
+            }
+
+            // Step 3: confirm
+            if (MM_NEW.step === 3) {
+                host.innerHTML = `
+                    <p class="mm-sub">Tudo pronto!</p>
+                    <div style="opacity:0.9; line-height:1.45;">
+                        <div><b>Jogadores:</b> ${MM_NEW.numPlayers}</div>
+                        <div><b>Dificuldade:</b> ${escapeHtml(MM_NEW.difficulty)}</div>
+                        <div style="margin-top:8px;">
+                            ${MM_NEW.players.map(p => `• ${escapeHtml(p.name || "Sem nome")} — ${escapeHtml(p.class)}`).join("<br/>")}
+                        </div>
+                    </div>
+                    <button class="mm-btn" onclick="mmFinishNewGame()">🚀 Começar Aventura</button>
+                    <p class="mm-hint">Isso criará uma nova sessão e sobrescreverá o save atual.</p>
+                `;
+            }
+        }
+
+        function mmNewGameBack(){
+            if (MM_NEW.step === 0) { mmShowMainMenu(); return; }
+            MM_NEW.step = Math.max(0, MM_NEW.step - 1);
+            mmRenderNewGameStep();
+        }
+
+        function mmNewGameNext(){
+            // capturar inputs do step atual
+            if (MM_NEW.step === 0) {
+                const n = Number(mmEl("mmNumPlayers")?.value || 1);
+                MM_NEW.numPlayers = Math.max(1, Math.min(6, n));
+            }
+            if (MM_NEW.step === 1) {
+                MM_NEW.difficulty = String(mmEl("mmDifficulty")?.value || "medium");
+            }
+            if (MM_NEW.step === 2) {
+                for (let i=0;i<MM_NEW.players.length;i++){
+                    const name = String(mmEl(`mmPName_${i}`)?.value || "").trim();
+                    const cls = String(mmEl(`mmPClass_${i}`)?.value || MM_CLASSES[0]);
+                    MM_NEW.players[i] = { name, class: cls };
+                }
+            }
+
+            MM_NEW.step = Math.min(3, MM_NEW.step + 1);
+            mmRenderNewGameStep();
+        }
+
+        function mmFinishNewGame(){
+            try {
+                // valida nomes (MVP: auto-preenche)
+                MM_NEW.players = MM_NEW.players.map((p, idx) => ({
+                    name: p.name?.trim() ? p.name.trim() : `Jogador ${idx+1}`,
+                    class: p.class || MM_CLASSES[0]
+                }));
+
+                // Clear existing state
+                GameState.players = [];
+                GameState.monsters = [];
+                GameState.sessions = [];
+                GameState.currentSession = null;
+                GameState.currentEncounter = null;
+
+                // Create players
+                MM_NEW.players.forEach((p, idx) => {
+                    const playerId = `p_${Date.now()}_${idx}`;
+                    
+                    // Find a starter monster of the same class
+                    const starterTemplate = MONSTER_CATALOG.find(m => 
+                        m.class && p.class && m.class.toLowerCase() === p.class.toLowerCase()
+                    ) || MONSTER_CATALOG[0]; // Fallback to first monster if no match
+                    
+                    // Create the starter monster instance
+                    const starterMonster = createMonsterInstance(starterTemplate, playerId, 1);
+                    
+                    const player = {
+                        id: playerId,
+                        name: p.name,
+                        class: p.class,
+                        team: starterMonster ? [starterMonster] : [],
+                        box: [],
+                        inventory: {
+                            'Monstribola': 5,
+                            'Poção': 3
+                        }
+                    };
+                    
+                    GameState.players.push(player);
+                    
+                    // Also add to GameState.monsters for compatibility
+                    if (starterMonster) {
+                        GameState.monsters.push(starterMonster);
+                    }
+                });
+
+                // Save difficulty
+                if (!GameState.config) GameState.config = {};
+                GameState.config.difficulty = MM_NEW.difficulty;
+
+                // Save to localStorage
+                saveToLocalStorage();
+                
+                // Update UI
+                updateAllViews();
+                
+                console.log('New game created successfully!', GameState);
+                
+            } catch(e) {
+                console.error("mmFinishNewGame failed", e);
+                alert("Erro ao criar novo jogo: " + e.message);
+            }
+
+            mmCloseAllOverlays();
+        }
+
         // Initialize on load
-        window.addEventListener('DOMContentLoaded', init);
+        window.addEventListener('DOMContentLoaded', function() {
+            init(); // Call the existing init function
+            mmBoot(); // Show the intro overlay
+        });
     </script>
 </body>
 </html>
