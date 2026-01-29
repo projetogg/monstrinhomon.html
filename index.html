@@ -277,6 +277,27 @@
             .tab-button { padding: 12px 20px; font-size: 14px; }
         }
         
+        /* Toast notifications */
+        .mm-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(76, 175, 80, 0.95);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 10001;
+            transform: translateX(400px);
+            transition: transform 0.3s ease-out;
+        }
+        
+        .mm-toast.show {
+            transform: translateX(0);
+        }
+        
         /* ===== Feature 4.0: Menu / Overlays ===== */
         .mm-overlay {
             position: fixed;
@@ -559,6 +580,7 @@
             <div class="mm-title">Menu Principal</div>
             <button id="mmBtnContinue" class="mm-btn" onclick="mmContinue()">📖 Continuar</button>
             <button class="mm-btn" onclick="mmStartNewGame()">🎮 Novo Jogo</button>
+            <button class="mm-btn" onclick="mmStartTutorial()">🎓 Tutorial</button>
             <button class="mm-btn" onclick="mmShowConfig()">⚙️ Configurações</button>
             <div class="mm-row">
                 <button class="mm-btn" onclick="mmCloseAllOverlays()">Fechar</button>
@@ -3115,6 +3137,7 @@
                 const isPlayerTurn = actor && actor.side === 'player';
                 
                 let html = '<div class="encounter-panel">';
+                html += renderTutorialBanner(encounter);
                 html += '<h3>⚔️ Batalha em Grupo</h3>';
                 
                 // Last d20 roll badge
@@ -3337,6 +3360,7 @@
                 
                 const html = `
                     <div class="encounter-panel">
+                        ${renderTutorialBanner(encounter)}
                         <h3>Wild ${monster.emoji} ${monster.name} appeared!</h3>
                         ${encounter.lastRoll ? (() => {
                             const lr = encounter.lastRoll;
@@ -3438,11 +3462,11 @@
                             
                             <div class="flex-center">
                                 ${player && (player.inventory?.['CLASTERORB_COMUM'] > 0 || player.inventory?.['CLASTERORB_INCOMUM'] > 0 || player.inventory?.['CLASTERORB_RARA'] > 0) ? 
-                                    `<button class="btn btn-success btn-large" onclick="attemptCapture()">🎯 Tentar Capturar</button>` :
+                                    `<button class="btn btn-success btn-large" onclick="attemptCapture()" ${tutorialAllows("capture") ? "" : "disabled title='Tutorial: ainda não liberado'"}>🎯 Tentar Capturar</button>` :
                                     `<button class="btn btn-success btn-large" disabled style="opacity: 0.5;">🎯 Sem Orbes</button>`
                                 }
-                                <button class="btn btn-danger btn-large" onclick="attackWild()">⚔️ Attack</button>
-                                <button class="btn btn-warning btn-large" onclick="fleeEncounter()">🏃 Flee</button>
+                                <button class="btn btn-danger btn-large" onclick="attackWild()" ${tutorialAllows("attack") ? "" : "disabled title='Tutorial: ainda não liberado'"}>⚔️ Attack</button>
+                                <button class="btn btn-warning btn-large" onclick="fleeEncounter()" ${tutorialAllows("flee") ? "" : "disabled title='Tutorial: ainda não liberado'"}>🏃 Flee</button>
                             </div>
                             
                             ${playerMonster && player ? (() => {
@@ -3465,7 +3489,8 @@
                                     </div>
                                     <button class="btn btn-primary" 
                                             onclick="useItemInBattle('IT_HEAL_01')"
-                                            ${!canUseItem ? 'disabled style="opacity: 0.5;"' : ''}
+                                            ${!canUseItem || !tutorialAllows("item") ? 'disabled style="opacity: 0.5;"' : ''}
+                                            ${!tutorialAllows("item") ? 'title="Tutorial: ainda não liberado"' : ''}
                                             style="margin-top: 10px; width: 100%;">
                                         💚 Usar Petisco de Cura
                                     </button>
@@ -3488,12 +3513,13 @@
                                             
                                             const label = formatSkillButtonLabel(skill, playerMonster);
                                             const canUse = canUseSkillNow(skill, playerMonster) && playerMonster.hp > 0;
-                                            const tooltip = canUse ? (skill.desc || skill.descricao || '') : 'Sem ENE';
+                                            const tutAllows = tutorialAllows("skill");
+                                            const tooltip = !tutAllows ? 'Tutorial: ainda não liberado' : (canUse ? (skill.desc || skill.descricao || '') : 'Sem ENE');
                                             
                                             return `
                                             <button class="btn btn-primary" 
                                                     onclick="useSkillWild(${idx})" 
-                                                    ${!canUse ? 'disabled style="opacity: 0.5;"' : ''}
+                                                    ${!canUse || !tutAllows ? 'disabled style="opacity: 0.5;"' : ''}
                                                     title="${tooltip}">
                                                 ${label}
                                             </button>
@@ -3658,6 +3684,9 @@
                     GameState.monsters = GameState.monsters || [];
                     GameState.monsters.push(monster);
                     
+                    // Feature 4.2: Tutorial hook
+                    tutorialOnAction("capture");
+                    
                     encounter.active = false;
                     GameState.currentEncounter = null;
                 } else {
@@ -3756,6 +3785,9 @@
                 const actualHeal = playerMonster.hp - hpBefore;
                 
                 encounter.log.push(`✨ ${playerMonster.name} recuperou ${actualHeal} HP! (${playerMonster.hp}/${playerMonster.hpMax})`);
+                
+                // Feature 4.2: Tutorial hook
+                tutorialOnAction("item");
                 
                 // Feature 4.4: Heal sound
                 Audio.playSfx("heal");
@@ -3982,6 +4014,9 @@
                     encounter.wildMonster.hp = Math.max(0, encounter.wildMonster.hp - damage);
                     encounter.log.push(`💥 ${playerMonster.name} hits! Deals ${damage} damage!`);
                     
+                    // Feature 4.2: Tutorial hook
+                    tutorialOnAction("attack");
+                    
                     // Feature 3.8: Visual feedback
                     saveToLocalStorage();
                     renderEncounter();
@@ -4161,6 +4196,9 @@
                     alert('Failed to use skill');
                     return;
                 }
+                
+                // Feature 4.2: Tutorial hook
+                tutorialOnAction("skill");
                 
                 // Verificar se o selvagem foi derrotado
                 if (encounter.wildMonster.hp <= 0) {
@@ -5166,6 +5204,242 @@
             }
 
             mmCloseAllOverlays();
+        }
+
+        // ===== Feature 4.2: Tutorial (Optional) =====
+        const TUTORIAL_STEPS = [
+            {
+                id: "tut_attack",
+                title: "Tutorial 1/3 — Ataque básico",
+                instructions: "Clique em ATACAR 2 vezes para vencer.",
+                required: { attack: 2 },
+                lock: { attack:true, skill:false, item:false, capture:false, flee:false, pass:false },
+                start: () => startTutorialEncounter_Attack()
+            },
+            {
+                id: "tut_skill",
+                title: "Tutorial 2/3 — Habilidades",
+                instructions: "Use 1 habilidade (gasta ENE) para vencer.",
+                required: { skill: 1 },
+                lock: { attack:true, skill:true, item:false, capture:false, flee:false, pass:false },
+                start: () => startTutorialEncounter_Skill()
+            },
+            {
+                id: "tut_capture",
+                title: "Tutorial 3/3 — Captura",
+                instructions: "Abaixe o HP do inimigo até ficar baixo e capture com ClasterOrb.",
+                required: { capture: 1 },
+                lock: { attack:true, skill:true, item:false, capture:true, flee:false, pass:false },
+                start: () => startTutorialEncounter_Capture()
+            }
+        ];
+
+        function ensureTutorialState() {
+            if (!window.GameState) window.GameState = {};
+            if (!GameState.tutorial) GameState.tutorial = { active:false, stepIndex:0, done:{} };
+            if (!GameState.tutorial.done) GameState.tutorial.done = {};
+            return GameState.tutorial;
+        }
+
+        function getTutorialStep() {
+            const tut = ensureTutorialState();
+            if (!tut.active) return null;
+            return TUTORIAL_STEPS[tut.stepIndex] || null;
+        }
+
+        function mmStartTutorial() {
+            const tut = ensureTutorialState();
+            
+            // Se não há jogadores, precisa criar um jogo primeiro
+            if (!GameState.players || GameState.players.length === 0) {
+                alert("Por favor, crie um novo jogo primeiro!");
+                return;
+            }
+            
+            const restart = !tut.active ? true : confirm("Continuar tutorial atual? (OK = continuar / Cancelar = reiniciar)");
+            if (!restart) {
+                tut.active = false;
+                tut.stepIndex = 0;
+                tut.done = {};
+            }
+            tut.active = true;
+            
+            // Inicia step atual
+            const step = TUTORIAL_STEPS[tut.stepIndex] || TUTORIAL_STEPS[0];
+            mmCloseAllOverlays();
+            step.start();
+            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
+            if (typeof renderEncounter === "function") renderEncounter();
+        }
+
+        function exitTutorial() {
+            const tut = ensureTutorialState();
+            tut.active = false;
+            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
+            if (typeof renderEncounter === "function") renderEncounter();
+            showToast("👋 Tutorial encerrado!");
+        }
+
+        function renderTutorialBanner(enc) {
+            const step = getTutorialStep();
+            if (!step) return "";
+            const tut = ensureTutorialState();
+            const done = tut.done || {};
+            const req = step.required || {};
+            const lines = Object.keys(req).map(k => {
+                const v = req[k];
+                const cur = done[k] || 0;
+                return `• ${k}: ${cur}/${v}`;
+            }).join("<br/>");
+
+            return `
+                <div style="padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.06); margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                        <div style="font-weight:900;">🎓 ${step.title}</div>
+                        <button class="btn" style="width:auto; margin:0; padding:8px 10px;" onclick="exitTutorial()">Sair</button>
+                    </div>
+                    <div style="opacity:0.9; margin-top:6px;">${step.instructions}</div>
+                    <div style="opacity:0.8; margin-top:6px; font-size:12px;">${lines}</div>
+                </div>
+            `;
+        }
+
+        function tutorialAllows(actionKey) {
+            const step = getTutorialStep();
+            if (!step) return true;
+            const lock = step.lock || {};
+            // Se não definido, permite
+            if (typeof lock[actionKey] === "undefined") return true;
+            return !!lock[actionKey];
+        }
+
+        function tutorialOnAction(type) {
+            const step = getTutorialStep();
+            if (!step) return;
+
+            const tut = ensureTutorialState();
+            tut.done[type] = (tut.done[type] || 0) + 1;
+
+            // Checa se completou
+            const req = step.required || {};
+            const ok = Object.keys(req).every(k => (tut.done[k] || 0) >= req[k]);
+
+            if (ok) {
+                showToast("🎉 Passo concluído!");
+                
+                // Se é o último step
+                if (tut.stepIndex === TUTORIAL_STEPS.length - 1) {
+                    tut.active = false;
+                    showToast("🏁 Tutorial completo!");
+                    if (typeof saveToLocalStorage === "function") saveToLocalStorage();
+                    return;
+                }
+                
+                // Avança para próximo step
+                tut.stepIndex = Math.min(TUTORIAL_STEPS.length - 1, tut.stepIndex + 1);
+                tut.done = {}; // Reseta contadores do próximo step
+
+                const next = getTutorialStep();
+                if (next) {
+                    setTimeout(() => {
+                        next.start();
+                    }, 1500); // Pequeno delay para o usuário ver a mensagem
+                }
+            }
+
+            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
+        }
+
+        function createTutorialEnemy(level) {
+            // Tenta pegar um template real do catálogo
+            const cat = MONSTER_CATALOG || [];
+            const t = cat[0];
+            if (typeof createMonsterInstance === "function" && t) {
+                const m = createMonsterInstance(t, null, level);
+                // Deixa mais fácil
+                m.hpMax = Math.max(20, Math.floor(m.hpMax * 0.6));
+                m.hp = m.hpMax;
+                return m;
+            }
+            // Fallback mínimo
+            return { 
+                id: Date.now() + Math.random(),
+                name:"Treinomon", 
+                level, 
+                hpMax: 25+level*5, 
+                hp: 25+level*5, 
+                atk: 4+level, 
+                def: 3+level, 
+                spd: 5, 
+                ene: 0, 
+                eneMax: 0,
+                class: "Guerreiro",
+                rarity: "Comum",
+                emoji: "🐾",
+                poder: 6
+            };
+        }
+
+        function startTutorialEncounter_Attack() {
+            const player = GameState.players?.[0];
+            if (!player) {
+                alert("Nenhum jogador disponível para o tutorial!");
+                return;
+            }
+            
+            GameState.currentEncounter = {
+                type: "wild",
+                selectedPlayerId: player.id,
+                wildMonster: createTutorialEnemy(1),
+                log: ["🎓 Tutorial: Encontro de Ataque", "Ataque 2 vezes para vencer!"],
+                rewardsGranted: false,
+                active: true
+            };
+            
+            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
+            if (typeof renderEncounter === "function") renderEncounter();
+            if (typeof switchTab === "function") switchTab("encounter");
+        }
+
+        function startTutorialEncounter_Skill() {
+            const player = GameState.players?.[0];
+            if (!player) return;
+            
+            GameState.currentEncounter = {
+                type: "wild",
+                selectedPlayerId: player.id,
+                wildMonster: createTutorialEnemy(2),
+                log: ["🎓 Tutorial: Encontro de Habilidades", "Use 1 habilidade para vencer!"],
+                rewardsGranted: false,
+                active: true
+            };
+            
+            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
+            if (typeof renderEncounter === "function") renderEncounter();
+            if (typeof switchTab === "function") switchTab("encounter");
+        }
+
+        function startTutorialEncounter_Capture() {
+            const player = GameState.players?.[0];
+            if (!player) return;
+
+            // Garante 1 orb no inventário (para não travar tutorial)
+            player.inventory = player.inventory || {};
+            const orbId = "CLASTERORB_COMUM";
+            player.inventory[orbId] = Math.max(1, Number(player.inventory[orbId] || 0));
+
+            GameState.currentEncounter = {
+                type: "wild",
+                selectedPlayerId: player.id,
+                wildMonster: createTutorialEnemy(3),
+                log: ["🎓 Tutorial: Encontro de Captura", "Abaixe o HP e capture o monstrinho!"],
+                rewardsGranted: false,
+                active: true
+            };
+
+            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
+            if (typeof renderEncounter === "function") renderEncounter();
+            if (typeof switchTab === "function") switchTab("encounter");
         }
 
         // Initialize on load
