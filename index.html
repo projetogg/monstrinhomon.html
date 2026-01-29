@@ -239,6 +239,48 @@
         .mm-toast.show {
             transform: translateX(0);
         }
+        
+        /* Feature 4.3: Save Slots */
+        .mm-overlay.hidden { 
+            display: none; 
+        }
+        
+        .mm-input { 
+            border-radius:10px; 
+            padding:10px 12px; 
+            border:1px solid rgba(255,255,255,0.15); 
+            background: rgba(255,255,255,0.08); 
+            color:#fff; 
+        }
+        
+        .mm-slot { 
+            border-radius:14px; 
+            padding:14px; 
+            border:1px solid rgba(255,255,255,0.15); 
+            background: rgba(255,255,255,0.06); 
+        }
+        
+        .mm-slot h3 { 
+            margin:0 0 8px 0; 
+            font-size:18px;
+        }
+        
+        .mm-slot-meta { 
+            opacity:0.85; 
+            font-size:13px; 
+            line-height:1.4; 
+        }
+        
+        .mm-slot-meta > div {
+            margin:3px 0;
+        }
+        
+        .mm-slot-actions { 
+            display:flex; 
+            gap:8px; 
+            flex-wrap:wrap; 
+            margin-top:12px; 
+        }
     </style>
 </head>
 <body>
@@ -439,8 +481,8 @@
     <div id="mmMenu" class="mm-overlay">
         <div class="mm-card">
             <div class="mm-title">Menu Principal</div>
-            <button id="mmBtnContinue" class="mm-btn" onclick="mmContinue()">📖 Continuar</button>
-            <button class="mm-btn" onclick="mmStartNewGame()">🎮 Novo Jogo</button>
+            <button class="mm-btn" onclick="mmOpenSaves()">📂 Gerenciar Saves</button>
+            <button class="mm-btn" onclick="mmOpenSlotPickerForNewGame()">🎮 Novo Jogo</button>
             <button class="mm-btn" onclick="mmStartTutorial()">🎓 Tutorial</button>
             <button class="mm-btn" onclick="mmShowConfig()">⚙️ Configurações</button>
             <div class="mm-row">
@@ -463,11 +505,54 @@
         </div>
     </div>
 
+    <!-- Feature 4.3: Slot Picker for New Game -->
+    <div id="mmSlotPicker" class="mm-overlay hidden">
+        <div class="mm-card" style="max-width:640px;">
+            <div class="mm-title">💾 Escolher Slot</div>
+            <div style="opacity:0.9; margin-bottom:12px;">
+                Selecione onde salvar este <b>Novo Jogo</b>. (Você pode exportar/importar depois.)
+            </div>
+
+            <div id="mmSlotPickerList" style="display:grid; gap:10px;"></div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+                <button class="mm-btn" style="width:auto;" onclick="mmCancelSlotPicker()">↩️ Voltar</button>
+            </div>
+        </div>
+    </div>
+
     <div id="mmConfig" class="mm-overlay">
         <div class="mm-card">
             <div class="mm-title">Configurações</div>
             <p class="mm-sub">MVP: placeholder. (Depois entra volume, modo terapeuta, etc.)</p>
             <button class="mm-btn" onclick="mmShowMainMenu()">Voltar</button>
+        </div>
+    </div>
+
+    <!-- Feature 4.3: Save Slots Screen -->
+    <div id="mmSavesScreen" class="mm-overlay hidden">
+        <div class="mm-card" style="max-width:820px;">
+            <div class="mm-title">📂 Gerenciar Saves</div>
+            <div id="mmSavesSlots" style="display:grid; grid-template-columns:1fr; gap:12px; margin-top:12px;"></div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
+                <label class="mm-btn" style="width:auto; display:inline-flex; align-items:center; gap:8px; cursor:pointer;">
+                    ⬆️ Importar JSON
+                    <input id="mmImportFile" type="file" accept="application/json" style="display:none;">
+                </label>
+
+                <select id="mmImportSlotPick" class="mm-input" style="min-width:160px;">
+                    <option value="1">Importar para Slot 1</option>
+                    <option value="2">Importar para Slot 2</option>
+                    <option value="3">Importar para Slot 3</option>
+                </select>
+
+                <button class="mm-btn" style="width:auto;" onclick="mmCloseSaves()">↩️ Voltar</button>
+            </div>
+
+            <div style="opacity:0.75; font-size:12px; margin-top:10px;">
+                Dica: Exportar/Importar é ideal para backup e trocar de dispositivo (iPad).
+            </div>
         </div>
     </div>
 
@@ -4004,8 +4089,17 @@
                 if (!GameState.config) GameState.config = {};
                 GameState.config.difficulty = MM_NEW.difficulty;
 
-                // Save to localStorage
+                // Save to localStorage (main save system)
                 saveToLocalStorage();
+                
+                // Feature 4.3: Auto-save to chosen slot
+                const slot = Number(GameState?.saveSlot || localStorage.getItem("mm_last_slot") || 1);
+                if (typeof mmWriteSlot === "function" && typeof mmBuildSaveEnvelope === "function") {
+                    mmWriteSlot(slot, mmBuildSaveEnvelope());
+                    showToast(`💾 Novo jogo salvo no Slot ${slot}!`);
+                } else {
+                    showToast("✅ Novo jogo criado!");
+                }
                 
                 // Update UI
                 updateAllViews();
@@ -4275,6 +4369,335 @@
                 toast.classList.remove('show');
                 setTimeout(() => toast.remove(), 300);
             }, duration);
+        }
+
+        // ===== Feature 4.3: Save Slots + Export/Import =====
+        const MM_SAVE_KEYS = {
+            1: "mm_save_slot_1",
+            2: "mm_save_slot_2",
+            3: "mm_save_slot_3",
+        };
+        const MM_LEGACY_KEYS = [
+            "monstrinhomon_state", "mm_save", "GameState", "mm_state"
+        ];
+        const MM_MIGRATED_FLAG = "mm_slots_migrated_v1";
+
+        function mmOpenSaves() {
+            mmMigrateLegacySaveToSlot1();
+            mmHideOverlay("mmMenu");
+            mmShowOverlay("mmSavesScreen");
+            mmRenderSavesScreen();
+            
+            // Bind import file input once
+            const fileInput = document.getElementById("mmImportFile");
+            if (fileInput && !fileInput._bound) {
+                fileInput._bound = true;
+                fileInput.addEventListener("change", (e) => mmHandleImportFile(e));
+            }
+        }
+
+        function mmCloseSaves() {
+            mmHideOverlay("mmSavesScreen");
+            mmShowMainMenu();
+        }
+
+        function mmShowOverlay(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove("hidden");
+        }
+
+        function mmHideOverlay(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.add("hidden");
+        }
+
+        function mmReadSlot(slot) {
+            const key = MM_SAVE_KEYS[slot];
+            if (!key) return null;
+            const raw = localStorage.getItem(key);
+            if (!raw) return null;
+            try { 
+                return JSON.parse(raw); 
+            } catch { 
+                return null; 
+            }
+        }
+
+        function mmWriteSlot(slot, saveObj) {
+            const key = MM_SAVE_KEYS[slot];
+            if (!key) return false;
+            try {
+                localStorage.setItem(key, JSON.stringify(saveObj));
+                return true;
+            } catch (e) {
+                console.error("Failed to write slot", slot, e);
+                return false;
+            }
+        }
+
+        function mmBuildSaveEnvelope() {
+            // Create snapshot of current state
+            const payload = {
+                version: "mm_slot_v1",
+                timestamp: Date.now(),
+                sessionName: GameState?.currentSession?.name || "Sessão",
+                playersCount: Array.isArray(GameState?.players) ? GameState.players.length : 0,
+                state: JSON.parse(JSON.stringify(GameState)) // Deep copy
+            };
+            return payload;
+        }
+
+        function mmSaveToSlot(slot) {
+            if (!confirm(`Salvar o jogo atual no Slot ${slot}? Isso vai sobrescrever.`)) return;
+            const env = mmBuildSaveEnvelope();
+            if (mmWriteSlot(slot, env)) {
+                showToast(`💾 Salvo no Slot ${slot}!`);
+                mmRenderSavesScreen();
+            } else {
+                alert("Falha ao salvar no slot.");
+            }
+        }
+
+        function mmLoadFromSlot(slot) {
+            const env = mmReadSlot(slot);
+            if (!env || !env.state) {
+                alert("Slot vazio ou inválido.");
+                return;
+            }
+            if (!confirm(`Carregar Slot ${slot}? Isso substitui o estado atual.`)) return;
+            
+            try {
+                GameState = env.state;
+                saveToLocalStorage();  // Update the main save too
+                
+                // Update all views
+                if (typeof updateAllViews === "function") updateAllViews();
+                if (typeof renderEncounter === "function") renderEncounter();
+                
+                showToast(`📂 Carregado do Slot ${slot}!`);
+                mmCloseSaves();
+                mmCloseAllOverlays();
+            } catch (e) {
+                console.error("Failed to load from slot", e);
+                alert("Erro ao carregar o slot.");
+            }
+        }
+
+        function mmDeleteSlot(slot) {
+            if (!confirm(`Deletar Slot ${slot}? Esta ação não pode ser desfeita.`)) return;
+            localStorage.removeItem(MM_SAVE_KEYS[slot]);
+            showToast(`🗑️ Slot ${slot} deletado.`);
+            mmRenderSavesScreen();
+        }
+
+        function mmExportSlot(slot) {
+            const env = mmReadSlot(slot);
+            if (!env) { 
+                alert("Slot vazio."); 
+                return; 
+            }
+            
+            try {
+                const blob = new Blob([JSON.stringify(env, null, 2)], { type: "application/json" });
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = `monstrinhomon_slot_${slot}_${Date.now()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                showToast(`⬇️ Exportado Slot ${slot}.`);
+            } catch (e) {
+                console.error("Failed to export slot", e);
+                alert("Erro ao exportar o slot.");
+            }
+        }
+
+        function mmHandleImportFile(e) {
+            const fileInput = e.target;
+            const file = fileInput.files?.[0];
+            if (!file) return;
+
+            const slotPick = document.getElementById("mmImportSlotPick");
+            const slot = Number(slotPick?.value || 1);
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const obj = JSON.parse(String(reader.result || ""));
+                    if (!obj || !obj.state) {
+                        throw new Error("JSON inválido (sem state).");
+                    }
+                    
+                    if (mmWriteSlot(slot, obj)) {
+                        showToast(`⬆️ Importado para Slot ${slot}!`);
+                        mmRenderSavesScreen();
+                    } else {
+                        throw new Error("Falha ao gravar no slot.");
+                    }
+                } catch (err) {
+                    console.error("Import failed", err);
+                    alert("Falha ao importar: " + (err?.message || err));
+                } finally {
+                    fileInput.value = ""; // Reset file input
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function mmRenderSavesScreen() {
+            const host = document.getElementById("mmSavesSlots");
+            if (!host) return;
+
+            const slotHtml = [1, 2, 3].map(slot => {
+                const env = mmReadSlot(slot);
+                const empty = !env || !env.state;
+                const date = env?.timestamp ? new Date(env.timestamp).toLocaleString('pt-BR') : "";
+                
+                const meta = empty
+                    ? `<div class="mm-slot-meta">Vazio</div>`
+                    : `<div class="mm-slot-meta">
+                         <div><b>Sessão:</b> ${escapeHtml(env.sessionName || "Sessão")}</div>
+                         <div><b>Jogadores:</b> ${env.playersCount ?? "?"}</div>
+                         <div><b>Data:</b> ${date}</div>
+                       </div>`;
+
+                return `
+                    <div class="mm-slot">
+                        <h3>Slot ${slot}</h3>
+                        ${meta}
+                        <div class="mm-slot-actions">
+                            <button class="mm-btn" style="width:auto;" ${empty ? "disabled" : ""} onclick="mmLoadFromSlot(${slot})">📂 Carregar</button>
+                            <button class="mm-btn" style="width:auto;" onclick="mmSaveToSlot(${slot})">💾 Salvar aqui</button>
+                            <button class="mm-btn" style="width:auto;" ${empty ? "disabled" : ""} onclick="mmExportSlot(${slot})">⬇️ Exportar</button>
+                            <button class="mm-btn" style="width:auto;" ${empty ? "disabled" : ""} onclick="mmDeleteSlot(${slot})">🗑️ Deletar</button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            host.innerHTML = slotHtml;
+        }
+
+        // Slot Picker functions for New Game flow
+        function mmGetLastSlot() {
+            const n = Number(localStorage.getItem("mm_last_slot") || "1");
+            return [1, 2, 3].includes(n) ? n : 1;
+        }
+
+        function mmOpenSlotPickerForNewGame() {
+            mmMigrateLegacySaveToSlot1(); // Ensure migration happens first
+            mmHideOverlay("mmMenu");
+            mmShowOverlay("mmSlotPicker");
+            mmRenderSlotPicker();
+        }
+
+        function mmCancelSlotPicker() {
+            mmHideOverlay("mmSlotPicker");
+            mmShowMainMenu();
+        }
+
+        function mmRenderSlotPicker() {
+            const host = document.getElementById("mmSlotPickerList");
+            if (!host) return;
+
+            const last = mmGetLastSlot();
+            const cards = [1, 2, 3].map(slot => {
+                const env = mmReadSlot(slot);
+                const empty = !env || !env.state;
+                const date = env?.timestamp ? new Date(env.timestamp).toLocaleString('pt-BR') : "";
+                const meta = empty
+                    ? `<div class="mm-slot-meta">Vazio</div>`
+                    : `<div class="mm-slot-meta">
+                         <div><b>Sessão:</b> ${escapeHtml(env.sessionName || "Sessão")}</div>
+                         <div><b>Jogadores:</b> ${env.playersCount ?? "?"}</div>
+                         <div><b>Data:</b> ${date}</div>
+                       </div>`;
+
+                return `
+                    <div class="mm-slot" style="${slot === last ? "outline:2px solid rgba(160,120,255,0.8);" : ""}">
+                        <h3 style="margin:0 0 6px 0;">Slot ${slot} ${slot === last ? "⭐" : ""}</h3>
+                        ${meta}
+                        <div class="mm-slot-actions">
+                            <button class="mm-btn" style="width:auto;"
+                                onclick="mmChooseSlotAndStartNewGame(${slot})">
+                                ✅ Usar este slot
+                            </button>
+                            ${empty ? "" : `
+                                <button class="mm-btn" style="width:auto;"
+                                    onclick="mmChooseSlotAndStartNewGame(${slot}, true)">
+                                    🧨 Sobrescrever
+                                </button>
+                            `}
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            host.innerHTML = cards;
+        }
+
+        function mmChooseSlotAndStartNewGame(slot, force = false) {
+            const env = mmReadSlot(slot);
+            const occupied = !!(env && env.state);
+
+            if (occupied && !force) {
+                alert("Este slot já tem um save. Clique em 'Sobrescrever' ou escolha outro slot.");
+                return;
+            }
+            if (occupied && force) {
+                const ok = confirm(`Sobrescrever o Slot ${slot}?`);
+                if (!ok) return;
+            }
+
+            // Store chosen slot
+            if (!window.GameState) window.GameState = {};
+            GameState.saveSlot = slot;
+            localStorage.setItem("mm_last_slot", String(slot));
+
+            mmHideOverlay("mmSlotPicker");
+            // Call existing wizard from Feature 4.0
+            mmStartNewGame();
+        }
+
+        function mmMigrateLegacySaveToSlot1() {
+            // Migrate once: legacy save -> slot1 if slot1 is empty
+            if (localStorage.getItem(MM_MIGRATED_FLAG) === "1") return;
+
+            const slot1 = mmReadSlot(1);
+            if (slot1 && slot1.state) {
+                // Slot 1 already has data, mark as migrated
+                localStorage.setItem(MM_MIGRATED_FLAG, "1");
+                return;
+            }
+
+            // Try to find legacy save
+            for (const key of MM_LEGACY_KEYS) {
+                const raw = localStorage.getItem(key);
+                if (!raw) continue;
+
+                try {
+                    const parsed = JSON.parse(raw);
+                    
+                    // Check if it's already an envelope or raw GameState
+                    const env = (parsed && parsed.state) ? parsed : {
+                        version: "mm_slot_v1",
+                        timestamp: Date.now(),
+                        sessionName: parsed?.currentSession?.name || "Sessão",
+                        playersCount: Array.isArray(parsed?.players) ? parsed.players.length : 0,
+                        state: parsed
+                    };
+                    
+                    if (mmWriteSlot(1, env)) {
+                        showToast("✅ Save antigo migrado para Slot 1!");
+                        break;
+                    }
+                } catch (e) {
+                    console.warn("Failed to migrate legacy save from key:", key, e);
+                    // Continue to next key
+                }
+            }
+
+            localStorage.setItem(MM_MIGRATED_FLAG, "1");
         }
 
         // Initialize on load
