@@ -276,6 +276,125 @@
             .header h1 { font-size: 1.8em; }
             .tab-button { padding: 12px 20px; font-size: 14px; }
         }
+        
+        /* Toast notifications */
+        .mm-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(76, 175, 80, 0.95);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 10001;
+            transform: translateX(400px);
+            transition: transform 0.3s ease-out;
+        }
+        
+        .mm-toast.show {
+            transform: translateX(0);
+        }
+        
+        /* ===== Feature 4.0: Menu / Overlays ===== */
+        .mm-overlay {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 30% 20%, rgba(120,80,255,0.25), transparent 45%),
+                        radial-gradient(circle at 70% 70%, rgba(0,200,255,0.18), transparent 45%),
+                        rgba(10,10,14,0.92);
+            color: #fff;
+            z-index: 9999;
+            display: none;
+        }
+
+        .mm-overlay.show { display: flex; }
+
+        .mm-overlay .mm-card {
+            width: min(560px, calc(100vw - 24px));
+            margin: auto;
+            background: rgba(20,20,28,0.85);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+        }
+
+        .mm-title { font-size: 28px; font-weight: 900; margin: 6px 0 8px; }
+        .mm-sub { opacity: 0.9; margin: 0 0 14px; line-height: 1.3; }
+
+        .mm-btn {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            font-weight: 800;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 8px 0;
+            min-height: 44px;
+        }
+        .mm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .mm-row { display: flex; gap: 10px; }
+        .mm-row .mm-btn { width: auto; flex: 1; }
+
+        .mm-field { margin: 10px 0; }
+        .mm-field label { display:block; font-size: 13px; opacity: 0.9; margin-bottom: 6px; }
+        .mm-field input, .mm-field select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(0,0,0,0.25);
+            color: #fff;
+            outline: none;
+        }
+
+        .mm-hint { font-size: 12px; opacity: 0.75; margin-top: 6px; }
+
+        /* Feature 4.3: Save Slots */
+        .mm-input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border:1px solid rgba(255,255,255,0.15); 
+            background: rgba(255,255,255,0.08); 
+            color:#fff; 
+        }
+        
+        .mm-slot { 
+            border-radius:14px; 
+            padding:14px; 
+            border:1px solid rgba(255,255,255,0.15); 
+            background: rgba(255,255,255,0.06); 
+        }
+        
+        .mm-slot h3 { 
+            margin:0 0 8px 0; 
+            font-size:18px;
+        }
+        
+        .mm-slot-meta { 
+            opacity:0.85; 
+            font-size:13px; 
+            line-height:1.4; 
+        }
+        
+        .mm-slot-meta > div {
+            margin:3px 0;
+        }
+        
+        .mm-slot-actions { 
+            display:flex; 
+            gap:8px; 
+            flex-wrap:wrap; 
+            margin-top:12px; 
+        }
     </style>
 </head>
 <body>
@@ -481,6 +600,93 @@
             <div id="configPanel" class="card hidden">
                 <h3>Advanced Configuration</h3>
                 <div id="configEditor"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Feature 4.0 Overlays ===== -->
+    <div id="mmIntro" class="mm-overlay">
+        <div class="mm-card">
+            <div class="mm-title">🎮 Monstrinhomon</div>
+            <p class="mm-sub">RPG terapêutico infantil (Pokémon + RPG).<br/>Clique para começar.</p>
+            <button class="mm-btn" onclick="mmShowMainMenu()">✨ Iniciar</button>
+            <p class="mm-hint">Dica: o jogo salva automaticamente em seu navegador.</p>
+        </div>
+    </div>
+
+    <div id="mmMenu" class="mm-overlay">
+        <div class="mm-card">
+            <div class="mm-title">Menu Principal</div>
+            <button class="mm-btn" onclick="mmOpenSaves()">📂 Gerenciar Saves</button>
+            <button class="mm-btn" onclick="mmOpenSlotPickerForNewGame()">🎮 Novo Jogo</button>
+            <button class="mm-btn" onclick="mmStartTutorial()">🎓 Tutorial</button>
+            <button class="mm-btn" onclick="mmShowConfig()">⚙️ Configurações</button>
+            <div class="mm-row">
+                <button class="mm-btn" onclick="mmCloseAllOverlays()">Fechar</button>
+                <button class="mm-btn" onclick="mmResetSaveConfirm()">🗑️ Apagar Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mmNewGame" class="mm-overlay">
+        <div class="mm-card">
+            <div class="mm-title">Novo Jogo</div>
+
+            <div id="mmNewGameStep"></div>
+
+            <div class="mm-row">
+                <button class="mm-btn" onclick="mmNewGameBack()">⬅️ Voltar</button>
+                <button class="mm-btn" onclick="mmNewGameNext()">➡️ Próximo</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mmSlotPicker" class="mm-overlay hidden">
+        <div class="mm-card" style="max-width:640px;">
+            <div class="mm-title">💾 Escolher Slot</div>
+            <div style="opacity:0.9; margin-bottom:12px;">
+                Selecione onde salvar este <b>Novo Jogo</b>. (Você pode exportar/importar depois.)
+            </div>
+
+            <div id="mmSlotPickerList" style="display:grid; gap:10px;"></div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+                <button class="mm-btn" style="width:auto;" onclick="mmCancelSlotPicker()">↩️ Voltar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mmConfig" class="mm-overlay">
+        <div class="mm-card">
+            <div class="mm-title">Configurações</div>
+            <p class="mm-sub">MVP: placeholder. (Depois entra volume, modo terapeuta, etc.)</p>
+            <button class="mm-btn" onclick="mmShowMainMenu()">Voltar</button>
+        </div>
+    </div>
+
+    <!-- Feature 4.3: Save Slots Screen -->
+    <div id="mmSavesScreen" class="mm-overlay hidden">
+        <div class="mm-card" style="max-width:820px;">
+            <div class="mm-title">📂 Gerenciar Saves</div>
+            <div id="mmSavesSlots" style="display:grid; grid-template-columns:1fr; gap:12px; margin-top:12px;"></div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
+                <label class="mm-btn" style="width:auto; display:inline-flex; align-items:center; gap:8px; cursor:pointer;">
+                    ⬆️ Importar JSON
+                    <input id="mmImportFile" type="file" accept="application/json" style="display:none;">
+                </label>
+
+                <select id="mmImportSlotPick" class="mm-input" style="min-width:160px;">
+                    <option value="1">Importar para Slot 1</option>
+                    <option value="2">Importar para Slot 2</option>
+                    <option value="3">Importar para Slot 3</option>
+                </select>
+
+                <button class="mm-btn" style="width:auto;" onclick="mmCloseSaves()">↩️ Voltar</button>
+            </div>
+
+            <div style="opacity:0.75; font-size:12px; margin-top:10px;">
+                Dica: Exportar/Importar é ideal para backup e trocar de dispositivo (iPad).
             </div>
         </div>
     </div>
@@ -3133,6 +3339,7 @@
                 const isPlayerTurn = actor && actor.side === 'player';
                 
                 let html = '<div class="encounter-panel">';
+                html += renderTutorialBanner(encounter);
                 html += '<h3>⚔️ Batalha em Grupo</h3>';
                 
                 // Last d20 roll badge
@@ -3355,6 +3562,7 @@
                 
                 const html = `
                     <div class="encounter-panel">
+                        ${renderTutorialBanner(encounter)}
                         <h3>Wild ${monster.emoji} ${monster.name} appeared!</h3>
                         ${encounter.lastRoll ? (() => {
                             const lr = encounter.lastRoll;
@@ -3456,11 +3664,11 @@
                             
                             <div class="flex-center">
                                 ${player && (player.inventory?.['CLASTERORB_COMUM'] > 0 || player.inventory?.['CLASTERORB_INCOMUM'] > 0 || player.inventory?.['CLASTERORB_RARA'] > 0) ? 
-                                    `<button class="btn btn-success btn-large" onclick="attemptCapture()">🎯 Tentar Capturar</button>` :
+                                    `<button class="btn btn-success btn-large" onclick="attemptCapture()" ${tutorialAllows("capture") ? "" : "disabled title='Tutorial: ainda não liberado'"}>🎯 Tentar Capturar</button>` :
                                     `<button class="btn btn-success btn-large" disabled style="opacity: 0.5;">🎯 Sem Orbes</button>`
                                 }
-                                <button class="btn btn-danger btn-large" onclick="attackWild()">⚔️ Attack</button>
-                                <button class="btn btn-warning btn-large" onclick="fleeEncounter()">🏃 Flee</button>
+                                <button class="btn btn-danger btn-large" onclick="attackWild()" ${tutorialAllows("attack") ? "" : "disabled title='Tutorial: ainda não liberado'"}>⚔️ Attack</button>
+                                <button class="btn btn-warning btn-large" onclick="fleeEncounter()" ${tutorialAllows("flee") ? "" : "disabled title='Tutorial: ainda não liberado'"}>🏃 Flee</button>
                             </div>
                             
                             ${playerMonster && player ? (() => {
@@ -3483,7 +3691,8 @@
                                     </div>
                                     <button class="btn btn-primary" 
                                             onclick="useItemInBattle('IT_HEAL_01')"
-                                            ${!canUseItem ? 'disabled style="opacity: 0.5;"' : ''}
+                                            ${!canUseItem || !tutorialAllows("item") ? 'disabled style="opacity: 0.5;"' : ''}
+                                            ${!tutorialAllows("item") ? 'title="Tutorial: ainda não liberado"' : ''}
                                             style="margin-top: 10px; width: 100%;">
                                         💚 Usar Petisco de Cura
                                     </button>
@@ -3506,12 +3715,13 @@
                                             
                                             const label = formatSkillButtonLabel(skill, playerMonster);
                                             const canUse = canUseSkillNow(skill, playerMonster) && playerMonster.hp > 0;
-                                            const tooltip = canUse ? (skill.desc || skill.descricao || '') : 'Sem ENE';
+                                            const tutAllows = tutorialAllows("skill");
+                                            const tooltip = !tutAllows ? 'Tutorial: ainda não liberado' : (canUse ? (skill.desc || skill.descricao || '') : 'Sem ENE');
                                             
                                             return `
                                             <button class="btn btn-primary" 
                                                     onclick="useSkillWild(${idx})" 
-                                                    ${!canUse ? 'disabled style="opacity: 0.5;"' : ''}
+                                                    ${!canUse || !tutAllows ? 'disabled style="opacity: 0.5;"' : ''}
                                                     title="${tooltip}">
                                                 ${label}
                                             </button>
@@ -3676,6 +3886,9 @@
                     GameState.monsters = GameState.monsters || [];
                     GameState.monsters.push(monster);
                     
+                    // Feature 4.2: Tutorial hook
+                    tutorialOnAction("capture");
+                    
                     encounter.active = false;
                     GameState.currentEncounter = null;
                 } else {
@@ -3774,6 +3987,9 @@
                 const actualHeal = playerMonster.hp - hpBefore;
                 
                 encounter.log.push(`✨ ${playerMonster.name} recuperou ${actualHeal} HP! (${playerMonster.hp}/${playerMonster.hpMax})`);
+                
+                // Feature 4.2: Tutorial hook
+                tutorialOnAction("item");
                 
                 // Feature 4.4: Heal sound
                 Audio.playSfx("heal");
@@ -4000,6 +4216,9 @@
                     encounter.wildMonster.hp = Math.max(0, encounter.wildMonster.hp - damage);
                     encounter.log.push(`💥 ${playerMonster.name} hits! Deals ${damage} damage!`);
                     
+                    // Feature 4.2: Tutorial hook
+                    tutorialOnAction("attack");
+                    
                     // Feature 3.8: Visual feedback
                     saveToLocalStorage();
                     renderEncounter();
@@ -4185,6 +4404,9 @@
                     alert('Failed to use skill');
                     return;
                 }
+                
+                // Feature 4.2: Tutorial hook
+                tutorialOnAction("skill");
                 
                 // Verificar se o selvagem foi derrotado
                 if (encounter.wildMonster.hp <= 0) {
@@ -4982,8 +5204,875 @@
             Audio.playSfx("ui_click");
         });
 
+        // ===== Feature 4.0: Menu / Flow =====
+        const MM_SAVE_KEY = "monstrinhomon_state"; // Using the same key as the existing save system
+
+        function mmEl(id){ return document.getElementById(id); }
+
+        function mmCloseAllOverlays(){
+            ["mmIntro","mmMenu","mmNewGame","mmConfig"].forEach(id => mmEl(id)?.classList.remove("show"));
+        }
+
+        function mmShow(id){
+            mmCloseAllOverlays();
+            mmEl(id)?.classList.add("show");
+        }
+
+        function mmHasSave(){
+            try {
+                const data = localStorage.getItem(MM_SAVE_KEY);
+                if (!data) return false;
+                const parsed = JSON.parse(data);
+                // Consider it a valid save if it has players or sessions
+                return (parsed.players && parsed.players.length > 0) || 
+                       (parsed.sessions && parsed.sessions.length > 0);
+            } catch(e){ 
+                return false; 
+            }
+        }
+
+        function mmBoot(){
+            // Show intro on boot
+            mmShow("mmIntro");
+        }
+
+        function mmShowMainMenu(){
+            mmShow("mmMenu");
+            const btn = mmEl("mmBtnContinue");
+            const ok = mmHasSave();
+            if (btn) {
+                btn.disabled = !ok;
+                btn.textContent = ok ? "📖 Continuar" : "📖 Continuar (sem save)";
+            }
+        }
+
+        function mmShowConfig(){
+            mmShow("mmConfig");
+        }
+
+        function mmContinue(){
+            try {
+                loadFromLocalStorage();
+                updateAllViews();
+            } catch(e){
+                console.warn("mmContinue failed", e);
+                alert("Erro ao carregar o save: " + e.message);
+            }
+            mmCloseAllOverlays();
+        }
+
+        function mmResetSaveConfirm(){
+            const ok = confirm("Apagar o save do navegador? Isso não pode ser desfeito.");
+            if (!ok) return;
+            try {
+                localStorage.removeItem(MM_SAVE_KEY);
+                alert("Save apagado com sucesso!");
+            } catch(e){
+                alert("Erro ao apagar save: " + e.message);
+            }
+            mmShowMainMenu();
+        }
+
+        // ---- New Game Wizard (MVP) ----
+        const MM_NEW = {
+            step: 0,
+            numPlayers: 1,
+            difficulty: "medium",
+            players: [] // {name, class}
+        };
+
+        const MM_CLASSES = ["Guerreiro","Mago","Curandeiro","Bárbaro","Ladino","Bardo","Caçador","Animalista"];
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function mmStartNewGame(){
+            MM_NEW.step = 0;
+            MM_NEW.numPlayers = 1;
+            MM_NEW.difficulty = "medium";
+            MM_NEW.players = [];
+            mmShow("mmNewGame");
+            mmRenderNewGameStep();
+        }
+
+        function mmRenderNewGameStep(){
+            const host = mmEl("mmNewGameStep");
+            if (!host) return;
+
+            if (MM_NEW.step === 0) {
+                host.innerHTML = `
+                    <p class="mm-sub">Quantos jogadores?</p>
+                    <div class="mm-field">
+                        <label>Número de jogadores (1–6)</label>
+                        <input id="mmNumPlayers" type="number" min="1" max="6" value="${MM_NEW.numPlayers}">
+                        <div class="mm-hint">Dica: em grupo, cada jogador usa monstrinhos da própria classe.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            if (MM_NEW.step === 1) {
+                host.innerHTML = `
+                    <p class="mm-sub">Selecione a dificuldade</p>
+                    <div class="mm-field">
+                        <label>Dificuldade</label>
+                        <select id="mmDifficulty">
+                            <option value="easy" ${MM_NEW.difficulty==="easy"?"selected":""}>Fácil</option>
+                            <option value="medium" ${MM_NEW.difficulty==="medium"?"selected":""}>Médio</option>
+                            <option value="hard" ${MM_NEW.difficulty==="hard"?"selected":""}>Difícil</option>
+                        </select>
+                        <div class="mm-hint">MVP: afeta encontros futuros conforme seu sistema de difficulty.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Step 2: players
+            if (MM_NEW.step === 2) {
+                // garante array
+                while (MM_NEW.players.length < MM_NEW.numPlayers) {
+                    MM_NEW.players.push({ name: "", class: MM_CLASSES[0] });
+                }
+                while (MM_NEW.players.length > MM_NEW.numPlayers) {
+                    MM_NEW.players.pop();
+                }
+
+                const rows = MM_NEW.players.map((p, i) => `
+                    <div style="border:1px solid rgba(255,255,255,0.12); border-radius:14px; padding:12px; margin:10px 0;">
+                        <div style="font-weight:900; margin-bottom:8px;">Jogador ${i+1}</div>
+                        <div class="mm-field">
+                            <label>Nome</label>
+                            <input id="mmPName_${i}" maxlength="14" placeholder="Ex.: Ana" value="${escapeHtml(p.name || "")}">
+                        </div>
+                        <div class="mm-field">
+                            <label>Classe</label>
+                            <select id="mmPClass_${i}">
+                                ${MM_CLASSES.map(c => `<option value="${escapeHtml(c)}" ${p.class===c?"selected":""}>${escapeHtml(c)}</option>`).join("")}
+                            </select>
+                        </div>
+                    </div>
+                `).join("");
+
+                host.innerHTML = `
+                    <p class="mm-sub">Crie os jogadores</p>
+                    ${rows}
+                    <p class="mm-hint">O monstrinho inicial deve seguir a classe do jogador (MVP).</p>
+                `;
+                return;
+            }
+
+            // Step 3: confirm
+            if (MM_NEW.step === 3) {
+                host.innerHTML = `
+                    <p class="mm-sub">Tudo pronto!</p>
+                    <div style="opacity:0.9; line-height:1.45;">
+                        <div><b>Jogadores:</b> ${MM_NEW.numPlayers}</div>
+                        <div><b>Dificuldade:</b> ${escapeHtml(MM_NEW.difficulty)}</div>
+                        <div style="margin-top:8px;">
+                            ${MM_NEW.players.map(p => `• ${escapeHtml(p.name || "Sem nome")} — ${escapeHtml(p.class)}`).join("<br/>")}
+                        </div>
+                    </div>
+                    <button class="mm-btn" onclick="mmFinishNewGame()">🚀 Começar Aventura</button>
+                    <p class="mm-hint">Isso criará uma nova sessão e sobrescreverá o save atual.</p>
+                `;
+            }
+        }
+
+        function mmNewGameBack(){
+            if (MM_NEW.step === 0) { mmShowMainMenu(); return; }
+            MM_NEW.step = Math.max(0, MM_NEW.step - 1);
+            mmRenderNewGameStep();
+        }
+
+        function mmNewGameNext(){
+            // capturar inputs do step atual
+            if (MM_NEW.step === 0) {
+                const n = Number(mmEl("mmNumPlayers")?.value || 1);
+                MM_NEW.numPlayers = Math.max(1, Math.min(6, n));
+            }
+            if (MM_NEW.step === 1) {
+                MM_NEW.difficulty = String(mmEl("mmDifficulty")?.value || "medium");
+            }
+            if (MM_NEW.step === 2) {
+                for (let i=0;i<MM_NEW.players.length;i++){
+                    const name = String(mmEl(`mmPName_${i}`)?.value || "").trim();
+                    const cls = String(mmEl(`mmPClass_${i}`)?.value || MM_CLASSES[0]);
+                    MM_NEW.players[i] = { name, class: cls };
+                }
+            }
+
+            MM_NEW.step = Math.min(3, MM_NEW.step + 1);
+            mmRenderNewGameStep();
+        }
+
+        function mmFinishNewGame(){
+            try {
+                // valida nomes (MVP: auto-preenche)
+                MM_NEW.players = MM_NEW.players.map((p, idx) => ({
+                    name: p.name?.trim() ? p.name.trim() : `Jogador ${idx+1}`,
+                    class: p.class || MM_CLASSES[0]
+                }));
+
+                // Clear existing state
+                GameState.players = [];
+                GameState.monsters = [];
+                GameState.sessions = [];
+                GameState.currentSession = null;
+                GameState.currentEncounter = null;
+
+                // Create players
+                MM_NEW.players.forEach((p, idx) => {
+                    const playerId = `p_${Date.now()}_${idx}`;
+                    
+                    // Find a starter monster of the same class
+                    const starterTemplate = MONSTER_CATALOG.find(m => 
+                        m.class && p.class && m.class.toLowerCase() === p.class.toLowerCase()
+                    ) || MONSTER_CATALOG[0]; // Fallback to first monster if no match
+                    
+                    // Create the starter monster instance
+                    const starterMonster = createMonsterInstance(starterTemplate, playerId, 1);
+                    
+                    const player = {
+                        id: playerId,
+                        name: p.name,
+                        class: p.class,
+                        team: starterMonster ? [starterMonster] : [],
+                        box: [],
+                        inventory: {
+                            'Monstribola': 5,
+                            'Poção': 3
+                        }
+                    };
+                    
+                    GameState.players.push(player);
+                    
+                    // Also add to GameState.monsters for compatibility
+                    if (starterMonster) {
+                        GameState.monsters.push(starterMonster);
+                    }
+                });
+
+                // Save difficulty
+                if (!GameState.config) GameState.config = {};
+                GameState.config.difficulty = MM_NEW.difficulty;
+
+                // Save to localStorage
+                saveToLocalStorage();
+                
+                // Feature 4.3: Also save to chosen slot if specified
+                if (GameState.saveSlot) {
+                    const envelope = mmBuildSaveEnvelope();
+                    const key = MM_SAVE_KEYS[GameState.saveSlot];
+                    if (key) {
+                        try {
+                            localStorage.setItem(key, JSON.stringify(envelope));
+                        } catch (e) {
+                            console.error("Failed to save to slot", e);
+                            alert(`⚠️ Jogo criado, mas falhou ao salvar no Slot ${GameState.saveSlot}`);
+                        }
+                    }
+                }
+                
+                // Update UI
+                updateAllViews();
+                
+                console.log('New game created successfully!', GameState);
+                
+            } catch(e) {
+                console.error("mmFinishNewGame failed", e);
+                alert("Erro ao criar novo jogo: " + e.message);
+            }
+
+            mmCloseAllOverlays();
+        }
+
+        // ===== Feature 4.3: Save Slots + Export/Import =====
+        const MM_SAVE_KEYS = {
+            1: "mm_save_slot_1",
+            2: "mm_save_slot_2",
+            3: "mm_save_slot_3",
+        };
+        const MM_LEGACY_KEYS = [
+            "monstrinhomon_state", "mm_save", "GameState", "mm_state"
+        ];
+        const MM_MIGRATED_FLAG = "mm_slots_migrated_v1";
+
+        function mmOpenSaves() {
+            mmMigrateLegacySaveToSlot1();
+            mmHideOverlay("mmMenu");
+            mmShowOverlay("mmSavesScreen");
+            mmRenderSavesScreen();
+            
+            // Bind import file input once
+            const fileInput = document.getElementById("mmImportFile");
+            if (fileInput && !fileInput._bound) {
+                fileInput._bound = true;
+                fileInput.addEventListener("change", (e) => mmHandleImportFile(e));
+            }
+        }
+
+        function mmCloseSaves() {
+            mmHideOverlay("mmSavesScreen");
+            mmShowMainMenu();
+        }
+
+        function mmShowOverlay(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.remove("hidden");
+                el.classList.add("show");
+            }
+        }
+
+        function mmHideOverlay(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.add("hidden");
+                el.classList.remove("show");
+            }
+        }
+
+        function mmReadSlot(slot) {
+            const key = MM_SAVE_KEYS[slot];
+            if (!key) return null;
+            const raw = localStorage.getItem(key);
+            if (!raw) return null;
+            try { 
+                return JSON.parse(raw); 
+            } catch { 
+                return null; 
+            }
+        }
+
+        function mmWriteSlot(slot, saveObj) {
+            const key = MM_SAVE_KEYS[slot];
+            if (!key) return false;
+            try {
+                localStorage.setItem(key, JSON.stringify(saveObj));
+                return true;
+            } catch (e) {
+                console.error("Failed to write slot", slot, e);
+                return false;
+            }
+        }
+
+        function mmBuildSaveEnvelope() {
+            // Create snapshot of current state
+            try {
+                const payload = {
+                    version: "mm_slot_v1",
+                    timestamp: Date.now(),
+                    sessionName: GameState?.currentSession?.name || "Sessão",
+                    playersCount: Array.isArray(GameState?.players) ? GameState.players.length : 0,
+                    state: JSON.parse(JSON.stringify(GameState)) // Deep copy (requires serializable state)
+                };
+                return payload;
+            } catch (e) {
+                console.error("Failed to create save envelope (state may have non-serializable values)", e);
+                throw new Error("Falha ao criar envelope de save");
+            }
+        }
+
+        function mmSaveToSlot(slot) {
+            if (!confirm(`Salvar o jogo atual no Slot ${slot}? Isso vai sobrescrever.`)) return;
+            const env = mmBuildSaveEnvelope();
+            if (mmWriteSlot(slot, env)) {
+                showToast(`💾 Salvo no Slot ${slot}!`);
+                mmRenderSavesScreen();
+            } else {
+                alert("Falha ao salvar no slot.");
+            }
+        }
+
+        function mmLoadFromSlot(slot) {
+            const env = mmReadSlot(slot);
+            if (!env || !env.state) {
+                alert("Slot vazio ou inválido.");
+                return;
+            }
+            if (!confirm(`Carregar Slot ${slot}? Isso substitui o estado atual.`)) return;
+            
+            try {
+                // Update GameState properties instead of reassigning
+                Object.assign(GameState, env.state);
+                
+                // Update slot tracking
+                GameState.saveSlot = slot;
+                localStorage.setItem("mm_last_slot", String(slot));
+                
+                saveToLocalStorage();  // Update the main save too
+                
+                // Update all views
+                if (typeof updateAllViews === "function") updateAllViews();
+                if (typeof renderEncounter === "function") renderEncounter();
+                
+                showToast(`📂 Carregado do Slot ${slot}!`);
+                mmCloseSaves();
+                mmCloseAllOverlays();
+            } catch (e) {
+                console.error("Failed to load from slot", e);
+                alert("Erro ao carregar o slot.");
+            }
+        }
+
+        function mmDeleteSlot(slot) {
+            if (!confirm(`Apagar Slot ${slot}? Esta ação não pode ser desfeita.`)) return;
+            localStorage.removeItem(MM_SAVE_KEYS[slot]);
+            showToast(`🗑️ Slot ${slot} apagado.`);
+            mmRenderSavesScreen();
+        }
+
+        function mmExportSlot(slot) {
+            const env = mmReadSlot(slot);
+            if (!env) { 
+                alert("Slot vazio."); 
+                return; 
+            }
+            
+            try {
+                const blob = new Blob([JSON.stringify(env, null, 2)], { type: "application/json" });
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = `monstrinhomon_slot_${slot}_${Date.now()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(a.href); // Free memory
+                showToast(`⬇️ Exportado Slot ${slot}.`);
+            } catch (e) {
+                console.error("Failed to export slot", e);
+                alert("Erro ao exportar o slot.");
+            }
+        }
+
+        function mmHandleImportFile(e) {
+            const fileInput = e.target;
+            const file = fileInput.files?.[0];
+            if (!file) return;
+
+            const slotPick = document.getElementById("mmImportSlotPick");
+            const slot = Number(slotPick?.value || 1);
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const obj = JSON.parse(String(reader.result || ""));
+                    if (!obj || !obj.state) {
+                        throw new Error("JSON inválido (sem state).");
+                    }
+                    
+                    // Basic validation of state structure
+                    if (typeof obj.state !== 'object') {
+                        throw new Error("State inválido.");
+                    }
+                    
+                    if (mmWriteSlot(slot, obj)) {
+                        showToast(`⬆️ Importado para Slot ${slot}!`);
+                        mmRenderSavesScreen();
+                    } else {
+                        throw new Error("Falha ao gravar no slot.");
+                    }
+                } catch (err) {
+                    console.error("Import failed", err);
+                    const msg = err?.message || "Arquivo inválido ou corrompido";
+                    alert("Falha ao importar: " + msg);
+                } finally {
+                    fileInput.value = ""; // Allow re-import of same file
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function mmRenderSavesScreen() {
+            const host = document.getElementById("mmSavesSlots");
+            if (!host) return;
+
+            const slotHtml = [1, 2, 3].map(slot => {
+                const env = mmReadSlot(slot);
+                const empty = !env || !env.state;
+                const date = env?.timestamp ? new Date(env.timestamp).toLocaleString('pt-BR') : "";
+                
+                const meta = empty
+                    ? `<div class="mm-slot-meta">Vazio</div>`
+                    : `<div class="mm-slot-meta">
+                         <div><b>Sessão:</b> ${escapeHtml(env.sessionName || "Sessão")}</div>
+                         <div><b>Jogadores:</b> ${env.playersCount ?? "?"}</div>
+                         <div><b>Data:</b> ${date}</div>
+                       </div>`;
+
+                return `
+                    <div class="mm-slot">
+                        <h3>Slot ${slot}</h3>
+                        ${meta}
+                        <div class="mm-slot-actions">
+                            <button class="mm-btn" style="width:auto;" ${empty ? "disabled" : ""} onclick="mmLoadFromSlot(${slot})">📂 Carregar</button>
+                            <button class="mm-btn" style="width:auto;" onclick="mmSaveToSlot(${slot})">💾 Salvar aqui</button>
+                            <button class="mm-btn" style="width:auto;" ${empty ? "disabled" : ""} onclick="mmExportSlot(${slot})">⬇️ Exportar</button>
+                            <button class="mm-btn" style="width:auto;" ${empty ? "disabled" : ""} onclick="mmDeleteSlot(${slot})">🗑️ Apagar</button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            host.innerHTML = slotHtml;
+        }
+
+        // Slot Picker functions for New Game flow
+        function mmGetLastSlot() {
+            const n = Number(localStorage.getItem("mm_last_slot") || "1");
+            return [1, 2, 3].includes(n) ? n : 1;
+        }
+
+        function mmOpenSlotPickerForNewGame() {
+            mmMigrateLegacySaveToSlot1(); // Ensure migration happens first
+            mmHideOverlay("mmMenu");
+            mmShowOverlay("mmSlotPicker");
+            mmRenderSlotPicker();
+        }
+
+        function mmCancelSlotPicker() {
+            mmHideOverlay("mmSlotPicker");
+            mmShowMainMenu();
+        }
+
+        function mmRenderSlotPicker() {
+            const host = document.getElementById("mmSlotPickerList");
+            if (!host) return;
+
+            const last = mmGetLastSlot();
+            const cards = [1, 2, 3].map(slot => {
+                const env = mmReadSlot(slot);
+                const empty = !env || !env.state;
+                const date = env?.timestamp ? new Date(env.timestamp).toLocaleString('pt-BR') : "";
+                const meta = empty
+                    ? `<div class="mm-slot-meta">Vazio</div>`
+                    : `<div class="mm-slot-meta">
+                         <div><b>Sessão:</b> ${escapeHtml(env.sessionName || "Sessão")}</div>
+                         <div><b>Jogadores:</b> ${env.playersCount ?? "?"}</div>
+                         <div><b>Data:</b> ${date}</div>
+                       </div>`;
+
+                return `
+                    <div class="mm-slot" style="${slot === last ? "outline:2px solid rgba(160,120,255,0.8);" : ""}">
+                        <h3 style="margin:0 0 6px 0;">Slot ${slot} ${slot === last ? "⭐" : ""}</h3>
+                        ${meta}
+                        <div class="mm-slot-actions">
+                            <button class="mm-btn" style="width:auto;"
+                                onclick="mmChooseSlotAndStartNewGame(${slot})">
+                                ${empty ? "✅ Usar este slot" : "✅ Usar (sobrescrever)"}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            host.innerHTML = cards;
+        }
+
+        function mmChooseSlotAndStartNewGame(slot, force = false) {
+            const env = mmReadSlot(slot);
+            const occupied = !!(env && env.state);
+
+            if (occupied && !force) {
+                const ok = confirm(`Slot ${slot} já tem um save. Sobrescrever?`);
+                if (!ok) return;
+            }
+
+            // Store chosen slot
+            if (!window.GameState) window.GameState = {};
+            GameState.saveSlot = slot;
+            localStorage.setItem("mm_last_slot", String(slot));
+
+            mmHideOverlay("mmSlotPicker");
+            // Call existing wizard from Feature 4.0
+            mmStartNewGame();
+        }
+
+        function mmMigrateLegacySaveToSlot1() {
+            // Migrate once: legacy save -> slot1 if slot1 is empty
+            if (localStorage.getItem(MM_MIGRATED_FLAG) === "1") return;
+
+            const slot1 = mmReadSlot(1);
+            if (slot1 && slot1.state) {
+                // Slot 1 already has data, mark as migrated
+                localStorage.setItem(MM_MIGRATED_FLAG, "1");
+                return;
+            }
+
+            // Try to find legacy save
+            for (const key of MM_LEGACY_KEYS) {
+                const raw = localStorage.getItem(key);
+                if (!raw) continue;
+
+                try {
+                    const parsed = JSON.parse(raw);
+                    
+                    // Check if it's already an envelope or raw GameState
+                    const env = (parsed && parsed.state) ? parsed : {
+                        version: "mm_slot_v1",
+                        timestamp: Date.now(),
+                        sessionName: parsed?.currentSession?.name || "Sessão",
+                        playersCount: Array.isArray(parsed?.players) ? parsed.players.length : 0,
+                        state: parsed
+                    };
+                    
+                    if (mmWriteSlot(1, env)) {
+                        showToast("✅ Save antigo migrado para Slot 1!");
+                        break;
+                    }
+                } catch (e) {
+                    console.warn("Failed to migrate legacy save from key:", key, e);
+                    // Continue to next key
+                }
+            }
+
+            localStorage.setItem(MM_MIGRATED_FLAG, "1");
+        }
+
+        // ===== Feature 4.2: Tutorial (Optional) =====
+        const TUTORIAL_STEPS = [
+            {
+                id: "tut_attack",
+                title: "Tutorial 1/3 — Ataque básico",
+                instructions: "Clique em ATACAR 2 vezes para vencer.",
+                required: { attack: 2 },
+                lock: { attack:true, skill:false, item:false, capture:false, flee:false, pass:false },
+                start: () => startTutorialEncounter_Attack()
+            },
+            {
+                id: "tut_skill",
+                title: "Tutorial 2/3 — Habilidades",
+                instructions: "Use 1 habilidade (gasta ENE) para vencer.",
+                required: { skill: 1 },
+                lock: { attack:true, skill:true, item:false, capture:false, flee:false, pass:false },
+                start: () => startTutorialEncounter_Skill()
+            },
+            {
+                id: "tut_capture",
+                title: "Tutorial 3/3 — Captura",
+                instructions: "Abaixe o HP do inimigo até ficar baixo e capture com ClasterOrb.",
+                required: { capture: 1 },
+                lock: { attack:true, skill:true, item:false, capture:true, flee:false, pass:false },
+                start: () => startTutorialEncounter_Capture()
+            }
+        ];
+
+        function ensureTutorialState() {
+            if (!window.GameState) window.GameState = {};
+            if (!GameState.tutorial) GameState.tutorial = { active:false, stepIndex:0, done:{} };
+            if (!GameState.tutorial.done) GameState.tutorial.done = {};
+            return GameState.tutorial;
+        }
+
+        function getTutorialStep() {
+            const tut = ensureTutorialState();
+            if (!tut.active) return null;
+            return TUTORIAL_STEPS[tut.stepIndex] || null;
+        }
+
+        function mmStartTutorial() {
+            const tut = ensureTutorialState();
+            
+            // Se não há jogadores, precisa criar um jogo primeiro
+            if (!GameState.players || GameState.players.length === 0) {
+                alert("Por favor, crie um novo jogo primeiro!");
+                return;
+            }
+            
+            const restart = !tut.active ? true : confirm("Continuar tutorial atual? (OK = continuar / Cancelar = reiniciar)");
+            if (!restart) {
+                tut.active = false;
+                tut.stepIndex = 0;
+                tut.done = {};
+            }
+            tut.active = true;
+            
+            // Inicia step atual
+            const step = TUTORIAL_STEPS[tut.stepIndex] || TUTORIAL_STEPS[0];
+            mmCloseAllOverlays();
+            step.start();
+            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
+            if (typeof renderEncounter === "function") renderEncounter();
+        }
+
+        function exitTutorial() {
+            const tut = ensureTutorialState();
+            tut.active = false;
+            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
+            if (typeof renderEncounter === "function") renderEncounter();
+            showToast("👋 Tutorial encerrado!");
+        }
+
+        function renderTutorialBanner(enc) {
+            const step = getTutorialStep();
+            if (!step) return "";
+            const tut = ensureTutorialState();
+            const done = tut.done || {};
+            const req = step.required || {};
+            const lines = Object.keys(req).map(k => {
+                const v = req[k];
+                const cur = done[k] || 0;
+                return `• ${k}: ${cur}/${v}`;
+            }).join("<br/>");
+
+            return `
+                <div style="padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.06); margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                        <div style="font-weight:900;">🎓 ${step.title}</div>
+                        <button class="btn" style="width:auto; margin:0; padding:8px 10px;" onclick="exitTutorial()">Sair</button>
+                    </div>
+                    <div style="opacity:0.9; margin-top:6px;">${step.instructions}</div>
+                    <div style="opacity:0.8; margin-top:6px; font-size:12px;">${lines}</div>
+                </div>
+            `;
+        }
+
+        function tutorialAllows(actionKey) {
+            const step = getTutorialStep();
+            if (!step) return true;
+            const lock = step.lock || {};
+            // Se não definido, permite
+            if (typeof lock[actionKey] === "undefined") return true;
+            return !!lock[actionKey];
+        }
+
+        function tutorialOnAction(type) {
+            const step = getTutorialStep();
+            if (!step) return;
+
+            const tut = ensureTutorialState();
+            tut.done[type] = (tut.done[type] || 0) + 1;
+
+            // Checa se completou
+            const req = step.required || {};
+            const ok = Object.keys(req).every(k => (tut.done[k] || 0) >= req[k]);
+
+            if (ok) {
+                showToast("🎉 Passo concluído!");
+                
+                // Se é o último step
+                if (tut.stepIndex === TUTORIAL_STEPS.length - 1) {
+                    tut.active = false;
+                    showToast("🏁 Tutorial completo!");
+                    if (typeof saveToLocalStorage === "function") saveToLocalStorage();
+                    return;
+                }
+                
+                // Avança para próximo step
+                tut.stepIndex = Math.min(TUTORIAL_STEPS.length - 1, tut.stepIndex + 1);
+                tut.done = {}; // Reseta contadores do próximo step
+
+                const next = getTutorialStep();
+                if (next) {
+                    setTimeout(() => {
+                        next.start();
+                    }, 1500); // Pequeno delay para o usuário ver a mensagem
+                }
+            }
+
+            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
+        }
+
+        function createTutorialEnemy(level) {
+            // Tenta pegar um template real do catálogo
+            const cat = MONSTER_CATALOG || [];
+            const t = cat[0];
+            if (typeof createMonsterInstance === "function" && t) {
+                const m = createMonsterInstance(t, null, level);
+                // Deixa mais fácil
+                m.hpMax = Math.max(20, Math.floor(m.hpMax * 0.6));
+                m.hp = m.hpMax;
+                return m;
+            }
+            // Fallback mínimo
+            return { 
+                id: Date.now() + Math.random(),
+                name:"Treinomon", 
+                level, 
+                hpMax: 25+level*5, 
+                hp: 25+level*5, 
+                atk: 4+level, 
+                def: 3+level, 
+                spd: 5, 
+                ene: 0, 
+                eneMax: 0,
+                class: "Guerreiro",
+                rarity: "Comum",
+                emoji: "🐾",
+                poder: 6
+            };
+        }
+
+        function startTutorialEncounter_Attack() {
+            const player = GameState.players?.[0];
+            if (!player) {
+                alert("Nenhum jogador disponível para o tutorial!");
+                return;
+            }
+            
+            GameState.currentEncounter = {
+                type: "wild",
+                selectedPlayerId: player.id,
+                wildMonster: createTutorialEnemy(1),
+                log: ["🎓 Tutorial: Encontro de Ataque", "Ataque 2 vezes para vencer!"],
+                rewardsGranted: false,
+                active: true
+            };
+            
+            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
+            if (typeof renderEncounter === "function") renderEncounter();
+            if (typeof switchTab === "function") switchTab("encounter");
+        }
+
+        function startTutorialEncounter_Skill() {
+            const player = GameState.players?.[0];
+            if (!player) return;
+            
+            GameState.currentEncounter = {
+                type: "wild",
+                selectedPlayerId: player.id,
+                wildMonster: createTutorialEnemy(2),
+                log: ["🎓 Tutorial: Encontro de Habilidades", "Use 1 habilidade para vencer!"],
+                rewardsGranted: false,
+                active: true
+            };
+            
+            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
+            if (typeof renderEncounter === "function") renderEncounter();
+            if (typeof switchTab === "function") switchTab("encounter");
+        }
+
+        function startTutorialEncounter_Capture() {
+            const player = GameState.players?.[0];
+            if (!player) return;
+
+            // Garante 1 orb no inventário (para não travar tutorial)
+            player.inventory = player.inventory || {};
+            const orbId = "CLASTERORB_COMUM";
+            player.inventory[orbId] = Math.max(1, Number(player.inventory[orbId] || 0));
+
+            GameState.currentEncounter = {
+                type: "wild",
+                selectedPlayerId: player.id,
+                wildMonster: createTutorialEnemy(3),
+                log: ["🎓 Tutorial: Encontro de Captura", "Abaixe o HP e capture o monstrinho!"],
+                rewardsGranted: false,
+                active: true
+            };
+
+            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
+            if (typeof renderEncounter === "function") renderEncounter();
+            if (typeof switchTab === "function") switchTab("encounter");
+        }
+
         // Initialize on load
-        window.addEventListener('DOMContentLoaded', init);
+        window.addEventListener('DOMContentLoaded', function() {
+            init(); // Call the existing init function
+            mmBoot(); // Show the intro overlay
+        });
     </script>
     <div id="mmToastHost"></div>
 </body>
