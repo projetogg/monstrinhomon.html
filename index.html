@@ -1260,7 +1260,10 @@
         }
 
         // LOCAL STORAGE
-        function saveToLocalStorage() {
+        // COMMIT 3: Centralized Persistence Layer
+        // All localStorage access must go through these functions
+        
+        function saveGame() {
             try {
                 const data = JSON.stringify(GameState);
                 localStorage.setItem('monstrinhomon_state', data);
@@ -1268,8 +1271,8 @@
                 showError('Failed to save data', error.stack);
             }
         }
-
-        function loadFromLocalStorage() {
+        
+        function loadGame() {
             try {
                 const data = localStorage.getItem('monstrinhomon_state');
                 if (data) {
@@ -1343,6 +1346,15 @@
                     localStorage.removeItem('monstrinhomon_state');
                 }
             }
+        }
+
+        // Legacy wrapper for backward compatibility (Commit 3)
+        function saveToLocalStorage() {
+            saveGame();
+        }
+
+        function loadFromLocalStorage() {
+            loadGame();
         }
 
         // TAB SWITCHING
@@ -1524,8 +1536,8 @@
                     });
                 }
                 
-                // Save to localStorage
-                saveToLocalStorage();
+                // Save to localStorage using centralized function (Commit 3)
+                saveGame();
                 
                 // Update all views
                 if (typeof updateAllViews === 'function') updateAllViews();
