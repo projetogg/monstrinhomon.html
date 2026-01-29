@@ -783,16 +783,46 @@
                 const data = localStorage.getItem('monstrinhomon_state');
                 if (data) {
                     const loaded = JSON.parse(data);
+                    
+                    // Validação básica da estrutura
+                    if (typeof loaded !== 'object' || loaded === null) {
+                        console.warn('Invalid save data format, skipping load');
+                        return;
+                    }
+                    
+                    // Validar arrays essenciais
+                    if (loaded.players && !Array.isArray(loaded.players)) {
+                        console.warn('Invalid players array, resetting');
+                        loaded.players = [];
+                    }
+                    if (loaded.monsters && !Array.isArray(loaded.monsters)) {
+                        console.warn('Invalid monsters array, resetting');
+                        loaded.monsters = [];
+                    }
+                    
                     Object.assign(GameState, loaded);
                     
                     // Migrar inventários antigos
                     if (GameState.players) {
                         GameState.players.forEach(player => {
+                            // Validar estrutura do jogador
+                            if (!player.id || !player.name) {
+                                console.warn('Invalid player detected:', player);
+                                return;
+                            }
+                            
                             migrateInventory(player);
+                            
+                            // Garantir arrays
+                            player.team = Array.isArray(player.team) ? player.team : [];
+                            player.box = Array.isArray(player.box) ? player.box : [];
+                            player.inventory = player.inventory || {};
                             
                             // Garantir que monstros tenham ENE e campos de progressão (Feature 3.3)
                             if (player.team) {
                                 player.team.forEach(monster => {
+                                    if (!monster) return;
+                                    
                                     // ENE (Sistema ENE)
                                     if (!monster.eneMax) {
                                         monster.eneMax = 10 + (monster.level || 1);
@@ -808,9 +838,16 @@
                             }
                         });
                     }
+                    
+                    console.log('Save data loaded successfully');
                 }
             } catch (error) {
                 console.warn('Failed to load saved data:', error);
+                // Resetar para estado seguro em caso de corrupção severa
+                if (error instanceof SyntaxError) {
+                    console.error('Save data is corrupted (JSON parse failed). Starting fresh.');
+                    localStorage.removeItem('monstrinhomon_state');
+                }
             }
         }
 
@@ -3866,7 +3903,27 @@
             }
         }
 
-        // Verifica acerto: d20 + ATK >= DEF
+        // ═══════════════════════════════════════════════════════════════════════
+        // SISTEMA DE DANO - Fórmulas Oficiais (GAME_RULES.md)
+        // ═══════════════════════════════════════════════════════════════════════
+        
+        /**
+         * Verifica se um ataque acerta o alvo
+         * FÓRMULA: d20 + ATK + ClassBonus >= DEF
+         * 
+         * @param {number} d20Roll - Resultado do dado d20 (1-20)
+         * @param {object} attacker - Monstrinho atacante
+         * @param {object} defender - Monstrinho defensor
+         * @returns {boolean} true se acertou, false se errou
+         * 
+         * VANTAGEM DE CLASSE (Acerto):
+         * - Vantagem: +2 ATK
+         * - Desvantagem: -2 ATK
+         * 
+         * REGRAS ESPECIAIS:
+         * - d20 = 1: sempre erra (falha crítica)
+         * - d20 = 20: sempre acerta (acerto crítico)
+         */
         function checkHit(d20Roll, attacker, defender) {
             try {
                 if (!attacker || !defender) return false;
@@ -3891,8 +3948,29 @@
             }
         }
 
-        // Calcula dano: max(1, ATK + PODER - DEF) com modificadores de classe
-        // Nova fórmula de dano (v1)
+        /**
+         * Calcula dano de um ataque
+         * FÓRMULA BASE: floor(POWER * (ATK / (ATK + DEF))) * damageMult
+         * DANO MÍNIMO: sempre 1
+         * 
+         * @param {object} params - Parâmetros de dano
+         * @param {number} params.atk - Ataque efetivo (com buffs)
+         * @param {number} params.def - Defesa efetiva (com buffs)
+         * @param {number} params.power - Poder da habilidade/ataque
+         * @param {number} params.damageMult - Multiplicador (1.0 padrão, 1.10 vantagem, 0.90 desvantagem)
+         * @returns {number} Dano final (mínimo 1)
+         * 
+         * VANTAGEM DE CLASSE (Dano):
+         * - Vantagem: 1.10 (110% do dano base)
+         * - Desvantagem: 0.90 (90% do dano base)
+         * - Neutro: 1.0 (100% do dano base)
+         * 
+         * EXEMPLO:
+         * ATK=10, DEF=5, POWER=15
+         * ratio = 10/(10+5) = 0.666
+         * baseD = floor(15 * 0.666) = floor(9.99) = 9
+         * finalD = floor(9 * 1.0) = 9
+         */
         function calcDamage({ atk, def, power, damageMult = 1.0 }) {
             try {
                 // ratio = ATK / (ATK + DEF)
@@ -3912,7 +3990,21 @@
             }
         }
 
-        // Wrapper para compatibilidade - calcula dano com ataque básico
+        /**
+         * Wrapper de compatibilidade - calcula dano com ataque básico
+         * Aplica automaticamente buffs e vantagens de classe
+         * 
+         * @param {object} attacker - Monstrinho atacante
+         * @param {object} defender - Monstrinho defensor
+         * @returns {number} Dano final
+         * 
+         * FLUXO:
+         * 1. Obtém stats base (atk, def)
+         * 2. Aplica modificadores de buffs
+         * 3. Obtém POWER básico da classe
+         * 4. Calcula multiplicador de classe
+         * 5. Chama calcDamage() com todos os parâmetros
+         */
         function calculateDamage(attacker, defender) {
             try {
                 if (!attacker || !defender) return 1;
