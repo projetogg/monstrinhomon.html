@@ -977,6 +977,10 @@
             currentEncounter: null,
             objectives: [],
             therapistMode: false, // Feature 4.6: Therapist Mode
+            // COMMIT 4: Save versioning
+            meta: {
+                saveVersion: 1  // Current save format version
+            },
             config: {
                 maxTeamSize: 6,
                 maxLevel: 100,
@@ -1260,6 +1264,50 @@
         }
 
         // LOCAL STORAGE
+        // COMMIT 4: Save Migration System
+        // Version ladder: migrate old saves to current format
+        function migrateSaveIfNeeded(saveObj) {
+            if (!saveObj || typeof saveObj !== 'object') {
+                return saveObj;
+            }
+            
+            // Determine current version (default to 0 for old saves)
+            const currentVersion = saveObj.meta?.saveVersion || 0;
+            const targetVersion = 1;  // Current version
+            
+            if (currentVersion >= targetVersion) {
+                // Already at current version
+                return saveObj;
+            }
+            
+            console.log(`[Migration] Migrating save from version ${currentVersion} to ${targetVersion}`);
+            
+            // Migration ladder
+            let migratedSave = saveObj;
+            
+            // Migrate from version 0 to 1
+            if (currentVersion < 1) {
+                // Version 0 -> 1: Add meta object if missing
+                if (!migratedSave.meta) {
+                    migratedSave.meta = {};
+                }
+                migratedSave.meta.saveVersion = 1;
+                
+                // Ensure therapistMode exists
+                if (migratedSave.therapistMode === undefined) {
+                    migratedSave.therapistMode = false;
+                }
+                
+                console.log('[Migration] Applied v0->v1: Added meta.saveVersion');
+            }
+            
+            // Future migrations would go here:
+            // if (currentVersion < 2) { ... }
+            // if (currentVersion < 3) { ... }
+            
+            return migratedSave;
+        }
+
         // COMMIT 3: Centralized Persistence Layer
         // All localStorage access must go through these functions
         
@@ -1278,23 +1326,26 @@
                 if (data) {
                     const loaded = JSON.parse(data);
                     
+                    // COMMIT 4: Apply migrations before using the save
+                    const migrated = migrateSaveIfNeeded(loaded);
+                    
                     // Validação básica da estrutura
-                    if (typeof loaded !== 'object' || loaded === null) {
+                    if (typeof migrated !== 'object' || migrated === null) {
                         console.warn('Invalid save data format, skipping load');
                         return;
                     }
                     
                     // Validar arrays essenciais
-                    if (loaded.players && !Array.isArray(loaded.players)) {
+                    if (migrated.players && !Array.isArray(migrated.players)) {
                         console.warn('Invalid players array, resetting');
-                        loaded.players = [];
+                        migrated.players = [];
                     }
-                    if (loaded.monsters && !Array.isArray(loaded.monsters)) {
+                    if (migrated.monsters && !Array.isArray(migrated.monsters)) {
                         console.warn('Invalid monsters array, resetting');
-                        loaded.monsters = [];
+                        migrated.monsters = [];
                     }
                     
-                    Object.assign(GameState, loaded);
+                    Object.assign(GameState, migrated);
                     
                     // Migrar inventários antigos
                     if (GameState.players) {
