@@ -407,16 +407,17 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .my-10 { margin-top: 10px; margin-bottom: 10px; }
 .my-15 { margin: 15px 0; }
 .my-20 { margin: 20px 0; }
+.ml-8 { margin-left: 8px; }
 .mx-0 { margin-left: 0; margin-right: 0; }
 .m-0 { margin: 0; }
 
 .p-10 { padding: 10px; }
-.p-12 { padding: 10px 12px; }
+.p-10-12 { padding: 10px 12px; }
 .p-14 { padding: 14px; }
 .p-15 { padding: 15px; }
 .px-10 { padding-left: 10px; padding-right: 10px; }
 .px-12 { padding-left: 12px; padding-right: 12px; }
-.py-8 { padding-top: 8px; padding-bottom: 10px; }
+.py-8 { padding-top: 8px; padding-bottom: 8px; }
 
 /* Display utilities */
 .d-none { display: none; }
@@ -446,11 +447,11 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .w-90 { width: 90px; }
 .w-100 { width: 100%; }
 .w-120 { width: 120px; }
-.w-160 { min-width: 160px; }
 .h-15 { height: 15px; }
 .h-30 { height: 30px; }
 .h-60 { height: 60px; }
 .min-w-120 { min-width: 120px; }
+.min-w-160 { min-width: 160px; }
 .min-h-100 { min-height: 100px; }
 .max-h-300 { max-height: 300px; }
 .max-w-640 { max-width: 640px; }

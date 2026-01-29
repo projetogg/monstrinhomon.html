@@ -193,7 +193,7 @@
                         </div>
                         <textarea id="therapistJsonArea" placeholder="Paste JSON here to import..." 
                             class="json-textarea" style="display: none;"></textarea>
-                        <div class="d-flex flex-gap-10 mt-10" style="display: none;" id="therapistJsonButtons">
+                        <div class="d-flex flex-gap-10 mt-10 d-none" id="therapistJsonButtons">
                             <button class="btn btn-success flex-1" onclick="therapistLoadJson()">✅ Load JSON</button>
                             <button class="btn btn-danger flex-1" onclick="therapistCancelImport()">❌ Cancel</button>
                         </div>
@@ -322,7 +322,7 @@
                     <input id="mmImportFile" type="file" accept="application/json" class="d-none">
                 </label>
 
-                <select id="mmImportSlotPick" class="mm-input w-160">
+                <select id="mmImportSlotPick" class="mm-input min-w-160">
                     <option value="1">Importar para Slot 1</option>
                     <option value="2">Importar para Slot 2</option>
                     <option value="3">Importar para Slot 3</option>
@@ -5359,7 +5359,7 @@
                     html += `<div class="py-8">`;
                     html += `<label class="cursor-pointer d-flex align-center">`;
                     html += `<input type="checkbox" name="groupParticipant" value="${player.id}" ${!hasValidMonster ? 'disabled' : ''}>`;
-                    html += `<span class="px-10">${player.name} (${player.class})`;
+                    html += `<span class="ml-8">${player.name} (${player.class})`;
                     if (hasValidMonster) {
                         html += ` - ${monName} Nv${mon.level}`;
                     } else {
@@ -6038,7 +6038,7 @@
                 }
 
                 const rows = MM_NEW.players.map((p, i) => `
-                    <div class="border-pale border-radius-14 p-12 my-10">
+                    <div class="border-pale border-radius-14 p-10-12 my-10">
                         <div class="text-900 mb-8">Jogador ${i+1}</div>
                         <div class="mm-field">
                             <label>Nome</label>
