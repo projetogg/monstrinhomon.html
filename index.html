@@ -1336,6 +1336,16 @@
                 initializeEncounterToast(encounter);
                 
                 if (type === 'wild') {
+                    // Limpar buffs do monstrinho do jogador antes da batalha
+                    const player = GameState.players.find(p => p.id === selectedPlayerId);
+                    if (player && player.team) {
+                        for (const mon of player.team) {
+                            if (mon && mon.buffs) {
+                                mon.buffs = [];
+                            }
+                        }
+                    }
+                    
                     const randomMonster = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
                     const level = Math.floor(Math.random() * 10) + 1;
                     encounter.wildMonster = createMonsterInstance(randomMonster, null, level);
@@ -1359,6 +1369,18 @@
         
         function startGroupEncounter(selectedPlayerIds, encounterType, enemyLevel) {
             try {
+                // Limpar buffs dos monstrinhos dos jogadores participantes
+                for (const pid of selectedPlayerIds) {
+                    const player = GameState.players.find(p => p.id === pid);
+                    if (player && player.team) {
+                        for (const mon of player.team) {
+                            if (mon && mon.buffs) {
+                                mon.buffs = [];
+                            }
+                        }
+                    }
+                }
+                
                 // Criar inimigo
                 const randomMonster = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
                 const enemy = createMonsterInstance(randomMonster, null, enemyLevel);
@@ -1700,7 +1722,21 @@
                     _log(enc, `💥 CRIT 20! ${monName} ativou Poder Duplo!`);
                 }
 
-                const dmg = _calcDamage(powerUsed, atk, def);
+                // Calcular vantagem de classe
+                const classAdv = GameState.config?.classAdvantages?.[mon.class];
+                let damageMult = 1.0;
+                if (classAdv?.strong === enemy.class) {
+                    damageMult = 1.10;
+                } else if (classAdv?.weak === enemy.class) {
+                    damageMult = 0.90;
+                }
+
+                const dmg = calcDamage({
+                    atk: atk,
+                    def: def,
+                    power: powerUsed,
+                    damageMult: damageMult
+                });
                 enemy.hp = _clamp((Number(enemy.hp) || 0) - dmg, 0, Number(enemy.hpMax) || 999999);
 
                 _log(enc, `🎲 ${attackerName} (${monName}) rolou ${d20} e acertou ${enemyName} causando ${dmg} de dano!`);
@@ -1792,7 +1828,21 @@
                     _log(enc, `💥 CRIT 20! ${enemyName} ativou Poder Duplo!`);
                 }
 
-                const dmg = _calcDamage(powerUsed, atk, def);
+                // Calcular vantagem de classe
+                const classAdv = GameState.config?.classAdvantages?.[enemy.class];
+                let damageMult = 1.0;
+                if (classAdv?.strong === targetMon?.class) {
+                    damageMult = 1.10;
+                } else if (classAdv?.weak === targetMon?.class) {
+                    damageMult = 0.90;
+                }
+
+                const dmg = calcDamage({
+                    atk: atk,
+                    def: def,
+                    power: powerUsed,
+                    damageMult: damageMult
+                });
                 targetMon.hp = _clamp((Number(targetMon.hp) || 0) - dmg, 0, Number(targetMon.hpMax) || 999999);
 
                 _log(enc, `🎲 ${enemyName} rolou ${d20} e acertou ${targetName} (${targetMonName}) causando ${dmg} de dano!`);
