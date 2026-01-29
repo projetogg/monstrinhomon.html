@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Monstrinhomon - Therapeutic Game</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -568,6 +569,28 @@
                 </label>
             </div>
 
+            <!-- Therapist Mode Panel - Commit 1 -->
+            <div id="therapistPanel" class="card" style="display:none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h3>🔬 Therapist Mode Tools</h3>
+                <p style="font-size: 0.9em; opacity: 0.9;">Advanced debugging and testing controls</p>
+                <div id="therapistPanelContent">
+                    <!-- Commit 2: Export/Import Save Tools -->
+                    <div style="margin-top: 15px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px;">
+                        <h4 style="margin-bottom: 10px;">💾 Save Management</h4>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="btn btn-success" onclick="therapistExportSave()" style="flex: 1; min-width: 120px;">📤 Export Save (JSON)</button>
+                            <button class="btn btn-warning" onclick="therapistImportSave()" style="flex: 1; min-width: 120px;">📥 Import Save (JSON)</button>
+                        </div>
+                        <textarea id="therapistJsonArea" placeholder="Paste JSON here to import..." 
+                            style="width: 100%; min-height: 100px; margin-top: 10px; padding: 8px; font-family: monospace; font-size: 12px; border-radius: 5px; display: none;"></textarea>
+                        <div style="display: flex; gap: 10px; margin-top: 10px; display: none;" id="therapistJsonButtons">
+                            <button class="btn btn-success" onclick="therapistLoadJson()" style="flex: 1;">✅ Load JSON</button>
+                            <button class="btn btn-danger" onclick="therapistCancelImport()" style="flex: 1;">❌ Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card">
                 <h3>🎵 Audio Configuration</h3>
                 <div style="display:grid; gap:12px;">
@@ -972,6 +995,10 @@
             currentEncounter: null,
             objectives: [],
             therapistMode: false, // Feature 4.6: Therapist Mode
+            // COMMIT 4: Save versioning
+            meta: {
+                saveVersion: 1  // Current save format version
+            },
             config: {
                 maxTeamSize: 6,
                 maxLevel: 100,
@@ -1255,7 +1282,278 @@
         }
 
         // LOCAL STORAGE
-        function saveToLocalStorage() {
+        // COMMIT 4: Save Migration System
+        // Version ladder: migrate old saves to current format
+        /**
+         * Aplica migrações sequenciais sem perder dados extras.
+         * HARDENED: Preserva campos existentes em meta (não sobrescreve).
+         */
+        function migrateSaveIfNeeded(saveObj) {
+            if (!saveObj || typeof saveObj !== 'object') {
+                return saveObj;
+            }
+            
+            // Garantir que meta exista sem apagar dados existentes
+            saveObj.meta = saveObj.meta || {};
+            
+            // Determine current version (default to 0 for old saves)
+            const currentVersion = saveObj.meta.saveVersion || 0;
+            const targetVersion = 1;  // Current version
+            
+            if (currentVersion >= targetVersion) {
+                // Already at current version
+                return saveObj;
+            }
+            
+            console.log(`[Migration] Migrating save from version ${currentVersion} to ${targetVersion}`);
+            
+            // Migration ladder
+            let migratedSave = saveObj;
+            
+            // Migrate from version 0 to 1
+            if (currentVersion < 1) {
+                // Version 0 -> 1: Update saveVersion (preserving other meta fields)
+                migratedSave.meta.saveVersion = 1;
+                
+                // Add timestamp if not present
+                if (!migratedSave.meta.lastSaveDate) {
+                    migratedSave.meta.lastSaveDate = new Date().toISOString();
+                }
+                
+                // Ensure therapistMode exists
+                if (migratedSave.therapistMode === undefined) {
+                    migratedSave.therapistMode = false;
+                }
+                
+                // Garantir arrays essenciais
+                migratedSave.players = Array.isArray(migratedSave.players) ? migratedSave.players : [];
+                migratedSave.monsters = Array.isArray(migratedSave.monsters) ? migratedSave.monsters : [];
+                migratedSave.sessions = Array.isArray(migratedSave.sessions) ? migratedSave.sessions : [];
+                
+                console.log('[Migration] Applied v0->v1: Added meta.saveVersion (preserved existing meta fields)');
+            }
+            
+            // Future migrations would go here:
+            // if (currentVersion < 2) { ... }
+            // if (currentVersion < 3) { ... }
+            
+            return migratedSave;
+        }
+
+        // COMMIT 5: Canonical Monster Schema + Normalization
+        /**
+         * Canonical monster fields (the ONE source of truth):
+         * - hp: current HP
+         * - hpMax: maximum HP
+         * - ene: current ENE
+         * - eneMax: maximum ENE
+         * - level: current level
+         * - xp: current XP
+         * - buffs: array of active buffs
+         * - templateId: ID from catalog (formerly monsterId)
+         * - instanceId: unique instance ID (formerly id)
+         * - class: monster class
+         * - rarity: monster rarity
+         * 
+         * HARDENED (Bug-proof):
+         * - Uses ?? (nullish coalescing) to accept 0 as valid value
+         * - Prefers fields with valid values
+         * - Clamps hp/ene to max (prevents over-heal bugs)
+         * - Deletes legacy fields after migration
+         * - Idempotent: safe to run multiple times
+         */
+        function normalizeMonster(mon) {
+            if (!mon || typeof mon !== 'object') return null;
+            
+            // --- 1. Identificadores ---
+            // Prioridade: templateId > monsterId > baseId > idBase
+            mon.templateId = mon.templateId ?? mon.monsterId ?? mon.baseId ?? mon.idBase ?? 'unknown';
+            // Remove campos legados para evitar confusão futura
+            delete mon.monsterId;
+            delete mon.baseId;
+            delete mon.idBase;
+            
+            // instanceId (formerly just 'id')
+            if (mon.id !== undefined && mon.instanceId === undefined) {
+                mon.instanceId = mon.id;
+            }
+            
+            // --- 2. Stats Máximos (A âncora da verdade) ---
+            // Prioridade: hpMax > maxHp > cálculo fallback
+            if (mon.hpMax === undefined) {
+                mon.hpMax = mon.maxHp ?? calculateMaxHpFallback(mon.level);
+            }
+            // Remove legado
+            delete mon.maxHp;
+            
+            // --- 3. Stats Atuais (Com clamping) ---
+            // Prioridade: hp > currentHp > hpCurrent > hpMax (full heal se perdido)
+            // Usa ?? para aceitar 0 como valor válido
+            let rawHp = mon.hp ?? mon.currentHp ?? mon.hpCurrent ?? mon.hpMax;
+            
+            // Regra de Ouro: HP nunca pode ser > hpMax nem < 0
+            const safeHpMax = Number(mon.hpMax) || 30;
+            mon.hp = Math.min(Math.max(0, Number(rawHp) || 0), safeHpMax);
+            
+            // Limpeza legado
+            delete mon.currentHp;
+            delete mon.hpCurrent;
+            
+            // --- 4. ENE (Energia) ---
+            // Calcular eneMax baseado em nível (se não existir)
+            if (mon.eneMax === undefined) {
+                const baseEne = 10;
+                const eneGrowth = 2;
+                const lvl = mon.level || 1;
+                mon.eneMax = Math.floor(baseEne + eneGrowth * (lvl - 1));
+            }
+            
+            // Prioridade: ene > currentEne > eneMax
+            let rawEne = mon.ene ?? mon.currentEne ?? mon.eneMax;
+            const safeEneMax = Number(mon.eneMax) || 10;
+            mon.ene = Math.min(Math.max(0, Number(rawEne) || 0), safeEneMax);
+            
+            // Limpeza legado
+            delete mon.currentEne;
+            
+            // --- 5. Garantias Estruturais ---
+            // Ensure required fields exist
+            if (mon.level === undefined) mon.level = 1;
+            if (mon.xp === undefined) mon.xp = 0;
+            
+            // Ensure arrays exist
+            if (!Array.isArray(mon.buffs)) {
+                mon.buffs = [];
+            }
+            if (!Array.isArray(mon.statusEffects)) {
+                mon.statusEffects = [];
+            }
+            
+            // Ensure class and rarity exist
+            if (!mon.class) mon.class = 'Neutro';
+            if (!mon.rarity) mon.rarity = 'Comum';
+            
+            return mon;
+        }
+        
+        /**
+         * Helper: Calcula HP máximo fallback baseado em nível
+         * (usado quando não temos acesso ao catalog)
+         */
+        function calculateMaxHpFallback(level) {
+            const baseHp = 30;
+            const growthPerLevel = 5;
+            const lvl = level || 1;
+            return baseHp + (growthPerLevel * (lvl - 1));
+        }
+
+        // COMMIT 6: normalizeGameState()
+        /**
+         * Garante estrutura e tipos do save carregado.
+         * 
+         * O QUE FAZ:
+         * - Valida que state é objeto
+         * - Garante meta, players, party, storage, inventory, flags existem com tipos corretos
+         * - Chama normalizeMonster() em todos os monstros
+         * 
+         * O QUE NÃO FAZ:
+         * - Não recalcula level, XP, stats, economia
+         * - Não sobrescreve meta existente (apenas garante tipo)
+         * - Não faz over-correction (normalizeMonster já faz)
+         * - Não é responsável por migração (migrateSaveIfNeeded já faz)
+         */
+        function normalizeGameState(state) {
+            // Se state não é objeto válido, retorna estado default seguro
+            if (!state || typeof state !== 'object' || Array.isArray(state)) {
+                console.warn('[System] Invalid state structure, using default');
+                return {
+                    players: [],
+                    monsters: [],
+                    sessions: [],
+                    currentSession: null,
+                    currentEncounter: null,
+                    objectives: [],
+                    therapistMode: false,
+                    meta: {
+                        saveVersion: 1
+                    },
+                    config: {} // Config will be merged from GameState defaults
+                };
+            }
+            
+            // Garantir meta é objeto (preservando keys existentes)
+            if (!state.meta || typeof state.meta !== 'object' || Array.isArray(state.meta)) {
+                console.warn('[System] Invalid meta, resetting to default');
+                state.meta = { saveVersion: 1 };
+            }
+            
+            // Garantir players é array
+            if (!Array.isArray(state.players)) {
+                console.warn('[System] Invalid players structure, resetting to []');
+                state.players = [];
+            }
+            
+            // Garantir monsters é array (global list)
+            if (!Array.isArray(state.monsters)) {
+                console.warn('[System] Invalid monsters structure, resetting to []');
+                state.monsters = [];
+            }
+            
+            // Garantir sessions é array
+            if (!Array.isArray(state.sessions)) {
+                state.sessions = [];
+            }
+            
+            // Garantir objectives é array
+            if (!Array.isArray(state.objectives)) {
+                state.objectives = [];
+            }
+            
+            // Normalizar cada jogador
+            if (state.players) {
+                state.players.forEach(player => {
+                    if (!player || typeof player !== 'object') return;
+                    
+                    // Garantir team é array
+                    if (!Array.isArray(player.team)) {
+                        player.team = [];
+                    }
+                    
+                    // Garantir box é array
+                    if (!Array.isArray(player.box)) {
+                        player.box = [];
+                    }
+                    
+                    // Garantir inventory é objeto
+                    if (!player.inventory || typeof player.inventory !== 'object' || Array.isArray(player.inventory)) {
+                        player.inventory = {};
+                    }
+                    
+                    // Normalizar monstros no team
+                    if (player.team) {
+                        player.team.forEach(monster => {
+                            if (!monster) return;
+                            normalizeMonster(monster);
+                        });
+                    }
+                    
+                    // Normalizar monstros no box
+                    if (player.box) {
+                        player.box.forEach(monster => {
+                            if (!monster) return;
+                            normalizeMonster(monster);
+                        });
+                    }
+                });
+            }
+            
+            return state;
+        }
+
+        // COMMIT 3: Centralized Persistence Layer
+        // All localStorage access must go through these functions
+        
+        function saveGame() {
             try {
                 const data = JSON.stringify(GameState);
                 localStorage.setItem('monstrinhomon_state', data);
@@ -1263,77 +1561,108 @@
                 showError('Failed to save data', error.stack);
             }
         }
+        
+        /**
+         * Carrega o jogo de forma segura e transacional.
+         * Retorna verdadeiro se carregou com sucesso, falso se usou o estado padrão.
+         * 
+         * HARDENED (Bug-proof):
+         * - Fail-safe: null save → retorna false, mantém GameState default
+         * - Fail-safe: JSON inválido → backup + reset, retorna false
+         * - Fail-safe: migration error → fallback seguro
+         * 
+         * COMMIT 6: Integrado normalizeGameState()
+         */
+        function loadGame() {
+            try {
+                const raw = localStorage.getItem('monstrinhomon_state');
+                
+                // 1. Fail-safe: Se não tem save, não faz nada (mantém GameState default)
+                if (raw === null) {
+                    console.log('[System] No save found. Starting new game.');
+                    return false;
+                }
+                
+                // 2. Fail-safe: Parse JSON com tratamento de erro
+                let loaded;
+                try {
+                    loaded = JSON.parse(raw);
+                } catch (parseError) {
+                    // JSON corrompido: faz backup e reseta
+                    console.error('[System] Corrupted save detected. Creating backup and resetting.', parseError);
+                    localStorage.setItem('monstrinhomon_corrupted_backup', raw);
+                    localStorage.removeItem('monstrinhomon_state');
+                    return false;
+                }
+                
+                // Validação estrutural mínima antes de tocar no GameState
+                if (!loaded || typeof loaded !== 'object') {
+                    console.warn('[System] Invalid save format (not an object). Resetting.');
+                    return false;
+                }
+                
+                // 3. Migração em Escada (Safe Migration)
+                const migrated = migrateSaveIfNeeded(loaded);
+                
+                // 4. Normalização de Estado (COMMIT 6)
+                // Garante estrutura e tipos corretos, chama normalizeMonster() em todos os monstros
+                const normalized = normalizeGameState(migrated);
+                
+                // 5. Merge Seguro (não substituir GameState inteiro)
+                Object.assign(GameState, normalized);
+                
+                // 6. Pós-processamento específico
+                if (GameState.players) {
+                    GameState.players.forEach(player => {
+                        // Validar estrutura do jogador
+                        if (!player || !player.id || !player.name) {
+                            console.warn('[System] Invalid player detected:', player);
+                            return;
+                        }
+                        
+                        // Migrar inventários antigos (se função existe)
+                        if (typeof migrateInventory === 'function') {
+                            migrateInventory(player);
+                        }
+                        
+                        // Progressão (Feature 3.3) - se função existe
+                        if (player.team) {
+                            player.team.forEach(monster => {
+                                if (!monster) return;
+                                if (typeof ensureMonsterProgressFields === 'function') {
+                                    ensureMonsterProgressFields(monster);
+                                }
+                            });
+                        }
+                        
+                        if (player.box) {
+                            player.box.forEach(monster => {
+                                if (!monster) return;
+                                if (typeof ensureMonsterProgressFields === 'function') {
+                                    ensureMonsterProgressFields(monster);
+                                }
+                            });
+                        }
+                    });
+                }
+                
+                console.log(`[System] Game loaded successfully. Save version: ${GameState.meta?.saveVersion || 0}`);
+                return true;
+                
+            } catch (error) {
+                console.error('[System] Critical error in loadGame:', error);
+                alert('Error loading game. Check console for details.');
+                return false;
+            }
+        }
+
+        // Legacy wrapper for backward compatibility (Commit 3)
+        function saveToLocalStorage() {
+            saveGame();
+        }
 
         function loadFromLocalStorage() {
-            try {
-                const data = localStorage.getItem('monstrinhomon_state');
-                if (data) {
-                    const loaded = JSON.parse(data);
-                    
-                    // Validação básica da estrutura
-                    if (typeof loaded !== 'object' || loaded === null) {
-                        console.warn('Invalid save data format, skipping load');
-                        return;
-                    }
-                    
-                    // Validar arrays essenciais
-                    if (loaded.players && !Array.isArray(loaded.players)) {
-                        console.warn('Invalid players array, resetting');
-                        loaded.players = [];
-                    }
-                    if (loaded.monsters && !Array.isArray(loaded.monsters)) {
-                        console.warn('Invalid monsters array, resetting');
-                        loaded.monsters = [];
-                    }
-                    
-                    Object.assign(GameState, loaded);
-                    
-                    // Migrar inventários antigos
-                    if (GameState.players) {
-                        GameState.players.forEach(player => {
-                            // Validar estrutura do jogador
-                            if (!player.id || !player.name) {
-                                console.warn('Invalid player detected:', player);
-                                return;
-                            }
-                            
-                            migrateInventory(player);
-                            
-                            // Garantir arrays
-                            player.team = Array.isArray(player.team) ? player.team : [];
-                            player.box = Array.isArray(player.box) ? player.box : [];
-                            player.inventory = player.inventory || {};
-                            
-                            // Garantir que monstros tenham ENE e campos de progressão (Feature 3.3)
-                            if (player.team) {
-                                player.team.forEach(monster => {
-                                    if (!monster) return;
-                                    
-                                    // ENE (Sistema ENE)
-                                    if (!monster.eneMax) {
-                                        monster.eneMax = 10 + (monster.level || 1);
-                                        monster.ene = monster.eneMax;
-                                    }
-                                    if (monster.ene === undefined) {
-                                        monster.ene = monster.eneMax;
-                                    }
-                                    
-                                    // Progressão (Feature 3.3) - compatibilidade com saves antigos
-                                    ensureMonsterProgressFields(monster);
-                                });
-                            }
-                        });
-                    }
-                    
-                }
-            } catch (error) {
-                console.warn('Failed to load saved data:', error);
-                // Resetar para estado seguro em caso de corrupção severa
-                if (error instanceof SyntaxError) {
-                    console.error('Save data is corrupted (JSON parse failed). Starting fresh.');
-                    localStorage.removeItem('monstrinhomon_state');
-                }
-            }
+            loadGame();
         }
 
         // TAB SWITCHING
@@ -1367,7 +1696,9 @@
         function mmIsTherapistMode() {
             try {
                 if (GameState && typeof GameState.therapistMode === "boolean") return GameState.therapistMode;
-            } catch (e) {}
+            } catch (e) {
+                console.warn('Failed to access GameState.therapistMode:', e);
+            }
             return localStorage.getItem("mm_therapist_mode") === "1";
         }
 
@@ -1375,7 +1706,9 @@
             const v = !!on;
             try { 
                 GameState.therapistMode = v; 
-            } catch (e) {}
+            } catch (e) {
+                console.warn('Failed to set GameState.therapistMode:', e);
+            }
             localStorage.setItem("mm_therapist_mode", v ? "1" : "0");
             if (typeof saveToLocalStorage === "function") saveToLocalStorage();
             // Update UI elements
@@ -1398,6 +1731,154 @@
             // Update checkbox in settings
             const checkbox = document.getElementById("therapistMode");
             if (checkbox) checkbox.checked = mmIsTherapistMode();
+            
+            // Update therapist panel visibility (Commit 1)
+            const panel = document.getElementById("therapistPanel");
+            if (panel) panel.style.display = mmIsTherapistMode() ? "" : "none";
+        }
+
+        // COMMIT 2: Therapist Export/Import Save Tools
+        function therapistExportSave() {
+            try {
+                const saveData = JSON.stringify(GameState, null, 2);
+                
+                // Copy to clipboard
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(saveData).then(() => {
+                        alert('✅ Save data copied to clipboard!\n\nYou can also download it as a file.');
+                    }).catch(() => {
+                        alert('⚠️ Could not copy to clipboard, but you can download the file.');
+                    });
+                }
+                
+                // Also download as file
+                const blob = new Blob([saveData], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `monstrinhomon_save_${Date.now()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                console.log('[Therapist] Save exported successfully');
+            } catch (error) {
+                console.error('[Therapist] Export failed:', error);
+                alert('❌ Export failed: ' + error.message);
+            }
+        }
+
+        function therapistImportSave() {
+            try {
+                // Show textarea and buttons for JSON paste
+                const textarea = document.getElementById('therapistJsonArea');
+                const buttons = document.getElementById('therapistJsonButtons');
+                
+                if (textarea && buttons) {
+                    textarea.style.display = 'block';
+                    buttons.style.display = 'flex';
+                    textarea.value = '';
+                    textarea.focus();
+                }
+                
+                console.log('[Therapist] Ready to import save - paste JSON and click Load');
+            } catch (error) {
+                console.error('[Therapist] Import UI failed:', error);
+                alert('❌ Import failed: ' + error.message);
+            }
+        }
+
+        function therapistLoadJson() {
+            try {
+                const textarea = document.getElementById('therapistJsonArea');
+                const jsonText = textarea?.value?.trim();
+                
+                if (!jsonText) {
+                    alert('⚠️ Please paste JSON data first');
+                    return;
+                }
+                
+                // Validate JSON
+                let saveData;
+                try {
+                    saveData = JSON.parse(jsonText);
+                } catch (parseError) {
+                    console.error('[Therapist] Invalid JSON:', parseError);
+                    alert('❌ Invalid JSON format:\n' + parseError.message);
+                    return;
+                }
+                
+                // Basic validation
+                if (typeof saveData !== 'object' || saveData === null) {
+                    alert('❌ Invalid save data: must be an object');
+                    return;
+                }
+                
+                // Load through existing safe load routine
+                Object.assign(GameState, saveData);
+                
+                // Re-run load validation and migrations
+                if (GameState.players && Array.isArray(GameState.players)) {
+                    GameState.players.forEach(player => {
+                        if (!player) return;
+                        
+                        // Ensure arrays
+                        player.team = Array.isArray(player.team) ? player.team : [];
+                        player.box = Array.isArray(player.box) ? player.box : [];
+                        player.inventory = player.inventory || {};
+                        
+                        // ENE migration for monsters
+                        if (player.team) {
+                            player.team.forEach(monster => {
+                                if (!monster) return;
+                                // COMMIT 5: Use normalizeMonster instead of manual migration
+                                normalizeMonster(monster);
+                            });
+                        }
+                        
+                        if (player.box) {
+                            player.box.forEach(monster => {
+                                if (!monster) return;
+                                normalizeMonster(monster);
+                            });
+                        }
+                    });
+                }
+                
+                // Save to localStorage using centralized function (Commit 3)
+                saveGame();
+                
+                // Update all views
+                if (typeof updateAllViews === 'function') updateAllViews();
+                
+                // Hide import UI
+                therapistCancelImport();
+                
+                alert('✅ Save data loaded successfully!');
+                console.log('[Therapist] Save imported and loaded successfully');
+                
+            } catch (error) {
+                console.error('[Therapist] Load failed:', error);
+                alert('❌ Load failed: ' + error.message);
+            }
+        }
+
+        function therapistCancelImport() {
+            try {
+                const textarea = document.getElementById('therapistJsonArea');
+                const buttons = document.getElementById('therapistJsonButtons');
+                
+                if (textarea) {
+                    textarea.style.display = 'none';
+                    textarea.value = '';
+                }
+                if (buttons) {
+                    buttons.style.display = 'none';
+                }
+                
+                console.log('[Therapist] Import cancelled');
+            } catch (error) {
+                console.error('[Therapist] Cancel failed:', error);
+            }
         }
 
         // PLAYER MANAGEMENT
@@ -1461,13 +1942,17 @@
                 
                 if (!starterTemplate) return;
                 
-                const monster = createMonsterInstance(starterTemplate, player.id, 5);
+                // COMMIT 8 (Wave A): Use Award API for canonical monster creation
+                const monster = awardMonster(
+                    starterTemplate.id,  // templateId
+                    5,                   // level
+                    null,                // rarity (use template default)
+                    'party',             // destination
+                    player               // player object
+                );
                 
-                if (monster) {
-                    player.team = player.team || [];
-                    player.team.push(monster);
-                    GameState.monsters = GameState.monsters || [];
-                    GameState.monsters.push(monster);
+                if (!monster) {
+                    console.error('Failed to award starter monster via Award API');
                 }
             } catch (error) {
                 console.error('Failed to give starter monster:', error);
@@ -1529,6 +2014,336 @@
                 return null;
             }
         }
+
+        // COMMIT 7: Factory Pattern - createMonsterInstanceFromTemplate()
+        /**
+         * Factory function para criar instâncias de monstros com schema canônico.
+         * 
+         * Esta é a função OFICIAL para criar novos monstros a partir do catálogo.
+         * Garante que todos os monstros nascam com estrutura canônica consistente.
+         * 
+         * @param {string} templateId - ID do template no MONSTER_CATALOG (ex: 'MON_001')
+         * @param {number} level - Nível do monstrinho (padrão: 1)
+         * @param {string|null} rarity - Raridade (se null, usa do template)
+         * @param {object} overrides - Campos opcionais para sobrescrever (ex: {nickname: 'Fofinho'})
+         * @returns {object|null} - Instância do monstrinho ou null se template não encontrado
+         * 
+         * SCHEMA CANÔNICO (Commit 5):
+         * - templateId: ID do template (não monsterId, baseId, idBase)
+         * - instanceId: ID único da instância (não id)
+         * - hp/hpMax: HP atual/máximo (não currentHp, maxHp)
+         * - ene/eneMax: ENE atual/máximo
+         * - level, xp, buffs, class, rarity
+         */
+        function createMonsterInstanceFromTemplate(templateId, level = 1, rarity = null, overrides = {}) {
+            try {
+                // 1. Buscar template no catálogo
+                const catalog = MONSTER_CATALOG || [];
+                const template = catalog.find(m => m && m.id === templateId);
+                
+                if (!template) {
+                    console.warn(`[Factory] Template not found: ${templateId}`);
+                    return null;
+                }
+                
+                // 2. Gerar instanceId único
+                // Formato: mi_timestamp_random (mi = monster instance)
+                const instanceId = `mi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                
+                // 3. Determinar raridade (parâmetro ou do template)
+                const finalRarity = rarity || template.rarity || 'Comum';
+                
+                // 4. Calcular stats baseados no nível
+                const rarityMult = GameState.config?.rarityPower?.[finalRarity] || 1.0;
+                const levelMult = (1 + (level - 1) * 0.1);
+                
+                const hpMax = Math.floor((template.baseHp || 30) * levelMult);
+                const atk = Math.floor((template.baseAtk || 5) * levelMult * rarityMult);
+                const def = Math.floor((template.baseDef || 3) * levelMult * rarityMult);
+                const spd = Math.floor((template.baseSpd || 5) * levelMult * rarityMult);
+                const poder = Math.floor(atk * 0.5);
+                
+                // 5. Calcular ENE usando fórmula canônica: floor(10 + 2*(level-1))
+                const eneMax = Math.floor(10 + 2 * (level - 1));
+                
+                // 6. Criar instância com campos canônicos
+                const instance = {
+                    // IDs (schema canônico)
+                    templateId: template.id,     // ✅ Canônico (não monsterId)
+                    instanceId: instanceId,       // ✅ Canônico (não id)
+                    
+                    // Info básica
+                    name: template.name,
+                    nickname: template.name,      // Padrão (pode ser sobrescrito)
+                    emoji: template.emoji || '👾',
+                    
+                    // Classe e raridade
+                    class: template.class || 'Neutro',
+                    rarity: finalRarity,
+                    
+                    // Progressão
+                    level: level,
+                    xp: 0,
+                    xpNeeded: calculateXPNeeded(level),
+                    
+                    // HP (schema canônico)
+                    hp: hpMax,          // ✅ Canônico (não currentHp)
+                    hpMax: hpMax,       // ✅ Canônico (não maxHp)
+                    
+                    // ENE (schema canônico)
+                    ene: eneMax,        // ✅ Começa cheio
+                    eneMax: eneMax,     // ✅ Canônico
+                    
+                    // Stats de combate
+                    atk: atk,
+                    def: def,
+                    spd: spd,
+                    poder: poder,
+                    
+                    // Estado
+                    status: 'healthy',
+                    buffs: [],          // ✅ Array vazio (não undefined)
+                    
+                    // Evolução
+                    stage: 0            // Sempre começa em stage 0
+                };
+                
+                // 7. Aplicar overrides (ex: nickname personalizado, ownerId, etc.)
+                if (overrides && typeof overrides === 'object') {
+                    Object.assign(instance, overrides);
+                }
+                
+                // 8. Normalizar usando função robusta do Commit 5
+                // Isso garante que mesmo com overrides, a estrutura fica canônica
+                const normalized = normalizeMonster(instance);
+                
+                if (!normalized) {
+                    console.error('[Factory] Normalization failed for template:', templateId);
+                    return null;
+                }
+                
+                console.log(`[Factory] Created ${normalized.name} (${templateId}) at level ${level}`);
+                return normalized;
+                
+            } catch (error) {
+                console.error('[Factory] Error creating monster instance:', error, { templateId, level, rarity });
+                return null;
+            }
+        }
+
+        // TODO (Commit 8): Substituir chamadas de createMonsterInstance() por createMonsterInstanceFromTemplate()
+        // A função antiga ainda funciona para compatibilidade, mas a nova garante schema canônico.
+
+        // ============================================================================
+        // COMMIT 8: Award API - Single Official Path for Rewards
+        // ============================================================================
+
+        /**
+         * Awards XP to a monster and triggers level-ups automatically.
+         * @param {Object|number} target - Monster object or index in player's team
+         * @param {number} amount - XP amount to award (must be >= 1)
+         * @param {Object} player - Player object (optional, for index-based targeting)
+         * @returns {boolean} - true if successful, false otherwise
+         */
+        function awardXP(target, amount, player = null) {
+            try {
+                // Validate amount
+                const xpAmount = Math.max(1, Number(amount) || 0);
+                if (xpAmount < 1) {
+                    console.warn('[Award] Invalid XP amount:', amount);
+                    return false;
+                }
+
+                // Resolve target monster
+                let monster = null;
+                if (typeof target === 'object' && target !== null) {
+                    // Direct monster object
+                    monster = target;
+                } else if (typeof target === 'number' && player) {
+                    // Index in player's team
+                    if (!player.team || !Array.isArray(player.team)) {
+                        console.warn('[Award] Player has no team array');
+                        return false;
+                    }
+                    monster = player.team[target];
+                }
+
+                if (!monster) {
+                    console.warn('[Award] Target monster not found');
+                    return false;
+                }
+
+                // Use existing giveXP function (already handles level-ups)
+                const logArr = [];
+                giveXP(monster, xpAmount, logArr);
+
+                // Log to console if in therapist mode
+                if (typeof mmGetTherapistMode === 'function' && mmGetTherapistMode()) {
+                    console.log('[Award] Granted XP:', {
+                        monster: monster.name || monster.templateId,
+                        amount: xpAmount,
+                        newLevel: monster.level,
+                        log: logArr
+                    });
+                }
+
+                // Persist
+                saveGame();
+                return true;
+
+            } catch (error) {
+                console.error('[Award] awardXP failed:', error);
+                return false;
+            }
+        }
+
+        /**
+         * Awards an item to a player's inventory.
+         * @param {string} itemId - Item ID to award
+         * @param {number} qty - Quantity to award (must be >= 1)
+         * @param {Object} player - Player object
+         * @returns {boolean} - true if successful, false otherwise
+         */
+        function awardItem(itemId, qty, player) {
+            try {
+                // Validate inputs
+                if (!itemId || typeof itemId !== 'string') {
+                    console.warn('[Award] Invalid itemId:', itemId);
+                    return false;
+                }
+
+                const quantity = Math.max(1, Number(qty) || 1);
+                if (quantity < 1) {
+                    console.warn('[Award] Invalid quantity:', qty);
+                    return false;
+                }
+
+                if (!player || typeof player !== 'object') {
+                    console.warn('[Award] Invalid player object');
+                    return false;
+                }
+
+                // Ensure inventory exists
+                player.inventory = player.inventory || {};
+
+                // Add item (reuse existing inventory logic)
+                player.inventory[itemId] = (player.inventory[itemId] || 0) + quantity;
+
+                // Log to console if in therapist mode
+                if (typeof mmGetTherapistMode === 'function' && mmGetTherapistMode()) {
+                    console.log('[Award] Granted item:', {
+                        itemId: itemId,
+                        quantity: quantity,
+                        newTotal: player.inventory[itemId],
+                        player: player.name
+                    });
+                }
+
+                // Persist
+                saveGame();
+                return true;
+
+            } catch (error) {
+                console.error('[Award] awardItem failed:', error);
+                return false;
+            }
+        }
+
+        /**
+         * Awards a new monster to a player (party or box).
+         * @param {string} templateId - Monster template ID from catalog
+         * @param {number} level - Starting level
+         * @param {string|null} rarity - Rarity override (null = use template default)
+         * @param {string} destination - 'party', 'box', or 'auto' (auto respects team limit)
+         * @param {Object} player - Player object
+         * @param {Object} overrides - Optional field overrides
+         * @returns {Object|null} - Created monster or null if failed
+         */
+        function awardMonster(templateId, level, rarity, destination, player, overrides = {}) {
+            try {
+                // Validate inputs
+                if (!templateId || typeof templateId !== 'string') {
+                    console.warn('[Award] Invalid templateId:', templateId);
+                    return null;
+                }
+
+                if (!player || typeof player !== 'object') {
+                    console.warn('[Award] Invalid player object');
+                    return null;
+                }
+
+                const monsterLevel = Math.max(1, Number(level) || 1);
+                const dest = destination || 'auto';
+
+                // Create monster using factory (Commit 7)
+                const monster = createMonsterInstanceFromTemplate(templateId, monsterLevel, rarity, overrides);
+                
+                if (!monster) {
+                    console.warn('[Award] Failed to create monster from template:', templateId);
+                    return null;
+                }
+
+                // Set owner
+                if (player.id) {
+                    monster.ownerId = player.id;
+                }
+
+                // Ensure arrays exist
+                player.team = player.team || [];
+                player.box = player.box || [];
+
+                // Determine destination
+                let actualDest = dest;
+                if (dest === 'auto') {
+                    const maxTeamSize = GameState.config?.maxTeamSize || 6;
+                    actualDest = (player.team.length < maxTeamSize) ? 'party' : 'box';
+                }
+
+                // Add to destination
+                if (actualDest === 'party' || actualDest === 'team') {
+                    const maxTeamSize = GameState.config?.maxTeamSize || 6;
+                    if (player.team.length < maxTeamSize) {
+                        player.team.push(monster);
+                    } else {
+                        // Party full, add to box instead
+                        player.box.push(monster);
+                        actualDest = 'box';
+                        console.warn('[Award] Party full, monster sent to box');
+                    }
+                } else {
+                    // box
+                    player.box.push(monster);
+                }
+
+                // Add to global monsters list (for compatibility)
+                GameState.monsters = GameState.monsters || [];
+                GameState.monsters.push(monster);
+
+                // Log to console if in therapist mode
+                if (typeof mmGetTherapistMode === 'function' && mmGetTherapistMode()) {
+                    console.log('[Award] Granted monster:', {
+                        templateId: templateId,
+                        name: monster.name,
+                        level: monsterLevel,
+                        rarity: monster.rarity,
+                        destination: actualDest,
+                        player: player.name
+                    });
+                }
+
+                // Persist
+                saveGame();
+                return monster;
+
+            } catch (error) {
+                console.error('[Award] awardMonster failed:', error);
+                return null;
+            }
+        }
+
+        // ============================================================================
+        // End of Award API
+        // ============================================================================
 
         // Função para obter habilidade do monstrinho
         // Obter habilidades do monstrinho baseado em classe e estágio
@@ -5477,44 +6292,26 @@
             const player = GameState.players.find(p => p.id === pid);
             if (!player) return;
 
-            // Find monster template
-            const template = MONSTER_CATALOG.find(m => m.id === monId);
-            if (!template) {
-                alert("Monstro não encontrado no catálogo.");
-                return;
-            }
-
-            if (typeof createMonsterInstance !== "function") {
-                alert("createMonsterInstance() não encontrado no código.");
-                return;
-            }
-
-            const inst = createMonsterInstance(template, player.id, lv);
+            // COMMIT 8 (Wave A): Use Award API for canonical monster creation
+            const inst = awardMonster(
+                monId,      // templateId
+                lv,         // level
+                null,       // rarity (use template default)
+                dest,       // destination ('auto', 'team', or 'box')
+                player      // player object
+            );
+            
             if (!inst) {
-                alert("Erro ao criar instância do monstro.");
+                alert("❌ Erro ao conceder monstro via Award API.");
                 return;
             }
 
-            player.team = player.team || [];
-            player.box = player.box || [];
-
-            let where = dest;
-            if (dest === "auto") where = (player.team.length < 6 ? "team" : "box");
-
-            if (where === "team") {
-                if (player.team.length >= 6) {
-                    alert("Time cheio (6). Use Caixa.");
-                    return;
-                }
-                player.team.push(inst);
-            } else {
-                player.box.push(inst);
-            }
-
-            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
             if (typeof renderEncounter === "function") renderEncounter();
             
-            const destText = where === "team" ? "time" : "caixa";
+            // Determine where it actually went (Award API handles team limit)
+            const inTeam = player.team.some(m => m.instanceId === inst.instanceId);
+            const destText = inTeam ? "time" : "caixa";
+            
             if (typeof showToast === "function") {
                 showToast(`🐾 ${player.name} recebeu ${inst.name || monId} (Lv ${lv}) no ${destText}`);
             } else {
@@ -5723,14 +6520,12 @@
                         m.class && p.class && m.class.toLowerCase() === p.class.toLowerCase()
                     ) || MONSTER_CATALOG[0]; // Fallback to first monster if no match
                     
-                    // Create the starter monster instance
-                    const starterMonster = createMonsterInstance(starterTemplate, playerId, 1);
-                    
+                    // Create player first (Award API needs player object)
                     const player = {
                         id: playerId,
                         name: p.name,
                         class: p.class,
-                        team: starterMonster ? [starterMonster] : [],
+                        team: [],
                         box: [],
                         inventory: {
                             'Monstribola': 5,
@@ -5740,9 +6535,17 @@
                     
                     GameState.players.push(player);
                     
-                    // Also add to GameState.monsters for compatibility
-                    if (starterMonster) {
-                        GameState.monsters.push(starterMonster);
+                    // COMMIT 8 (Wave A): Use Award API for canonical monster creation
+                    const starterMonster = awardMonster(
+                        starterTemplate.id,  // templateId
+                        1,                   // level
+                        null,                // rarity (use template default)
+                        'party',             // destination
+                        player               // player object
+                    );
+                    
+                    if (!starterMonster) {
+                        console.error('Failed to award starter monster to new player:', p.name);
                     }
                 });
 
