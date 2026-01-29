@@ -522,6 +522,13 @@
                             <option value="20">20</option>
                         </select>
                     </div>
+                    
+                    <!-- Team Reorder UI -->
+                    <div style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px;">
+                        <h4 style="margin-top: 0;">⚔️ Organize Equipes</h4>
+                        <p style="font-size: 0.9em; color: #666;">Reordene o time de cada jogador. O primeiro monstrinho vivo será usado na batalha.</p>
+                        <div id="teamReorderContainer"></div>
+                    </div>
                 </div>
                 
                 <button class="btn btn-success" onclick="startEncounter()">Start Encounter</button>
@@ -2743,6 +2750,18 @@
         
         function startGroupEncounter(selectedPlayerIds, encounterType, enemyLevel) {
             try {
+                // Initialize activeIndex for all participating players
+                for (const pid of selectedPlayerIds) {
+                    const player = GameState.players.find(p => p.id === pid);
+                    if (!player) continue;
+                    
+                    // Ensure player has valid starter
+                    if (!autoSelectStarter(player)) {
+                        alert(`⚠️ ${player.name || player.nome} não tem monstrinhos vivos! Não pode participar da batalha.`);
+                        return;
+                    }
+                }
+                
                 // Limpar buffs dos monstrinhos dos jogadores participantes
                 for (const pid of selectedPlayerIds) {
                     const player = GameState.players.find(p => p.id === pid);
@@ -2874,8 +2893,9 @@
         function _hasAlivePlayers(enc) {
             for (const pid of (enc.participants || [])) {
                 const p = GameState.players.find(x => x.id === pid);
-                const mon = p?.team?.[0];
-                if (mon && (Number(mon.hp) || 0) > 0) return true;
+                if (!p || !Array.isArray(p.team)) continue;
+                // Check if player has any alive monster in team
+                if (firstAliveIndex(p.team) >= 0) return true;
             }
             return false;
         }
@@ -2994,7 +3014,15 @@
         }
 
         function _getActiveMonsterOfPlayer(player) {
-            return player?.team?.[0] || null;
+            if (!player || !Array.isArray(player.team)) return null;
+            
+            // Initialize activeIndex if not set
+            if (typeof player.activeIndex !== 'number') {
+                player.activeIndex = firstAliveIndex(player.team);
+            }
+            
+            // Return the active monster (or null if index is invalid)
+            return player.team[player.activeIndex] || null;
         }
 
         function _getEnemyByIndex(enc, idx) {
@@ -3021,6 +3049,104 @@
         function _log(enc, msg) {
             enc.log = enc.log || [];
             enc.log.push(msg);
+        }
+
+        // ==================== Team Management Helpers ====================
+        
+        /**
+         * Returns the index of the first alive monster in the team (hp > 0).
+         * Returns -1 if no alive monsters found.
+         */
+        function firstAliveIndex(team) {
+            if (!Array.isArray(team)) return -1;
+            for (let i = 0; i < team.length; i++) {
+                if (_isAlive(team[i])) return i;
+            }
+            return -1;
+        }
+
+        /**
+         * Moves a team member from one position to another.
+         * Updates the player's team array and saves.
+         */
+        function moveTeamMember(player, fromIdx, toIdx) {
+            if (!player || !Array.isArray(player.team)) return;
+            if (fromIdx < 0 || fromIdx >= player.team.length) return;
+            if (toIdx < 0 || toIdx >= player.team.length) return;
+            if (fromIdx === toIdx) return;
+
+            const monster = player.team[fromIdx];
+            player.team.splice(fromIdx, 1);
+            player.team.splice(toIdx, 0, monster);
+
+            // Update activeIndex if player has one
+            if (typeof player.activeIndex === 'number') {
+                if (player.activeIndex === fromIdx) {
+                    player.activeIndex = toIdx;
+                } else if (fromIdx < toIdx) {
+                    if (player.activeIndex > fromIdx && player.activeIndex <= toIdx) {
+                        player.activeIndex--;
+                    }
+                } else {
+                    if (player.activeIndex >= toIdx && player.activeIndex < fromIdx) {
+                        player.activeIndex++;
+                    }
+                }
+            }
+
+            saveToLocalStorage();
+        }
+
+        /**
+         * Auto-selects the starter for encounter.
+         * Sets player.activeIndex to the first alive monster.
+         * Returns true if a valid starter was found, false otherwise.
+         */
+        function autoSelectStarter(player) {
+            if (!player || !Array.isArray(player.team)) return false;
+            const idx = firstAliveIndex(player.team);
+            if (idx >= 0) {
+                player.activeIndex = idx;
+                return true;
+            }
+            player.activeIndex = -1;
+            return false;
+        }
+
+        /**
+         * Ensures the active monster is alive.
+         * - Outside battle: auto-switches to first alive
+         * - During battle: opens modal for manual selection (if inBattle is true)
+         */
+        function ensureActiveAlive(player, options = {}) {
+            if (!player || !Array.isArray(player.team)) return false;
+            
+            // Initialize activeIndex if not set
+            if (typeof player.activeIndex !== 'number') {
+                player.activeIndex = 0;
+            }
+
+            const currentMon = player.team[player.activeIndex];
+            
+            // If current is alive, we're good
+            if (_isAlive(currentMon)) return true;
+
+            // Current is fainted
+            if (options.inBattle) {
+                // In battle: need to open modal for replacement
+                return false; // Caller should handle modal
+            } else {
+                // Outside battle: auto-switch to first alive
+                const idx = firstAliveIndex(player.team);
+                if (idx >= 0) {
+                    player.activeIndex = idx;
+                    saveToLocalStorage();
+                    return true;
+                }
+                // No alive monsters
+                player.activeIndex = -1;
+                return false;
+            }
         }
 
         function _chooseTargetPlayerId(enc) {
@@ -3290,6 +3416,24 @@
 
                 if (!_isAlive(targetMon)) {
                     _log(enc, `💀 ${targetName} (${targetMonName}) foi derrotado!`);
+                    
+                    // Check if player has other alive monsters
+                    const aliveIdx = firstAliveIndex(targetPlayer.team);
+                    if (aliveIdx >= 0) {
+                        // Player has other monsters - need to switch
+                        // Save state and open modal
+                        saveToLocalStorage();
+                        renderEncounter();
+                        
+                        // Open modal for replacement (async)
+                        setTimeout(() => {
+                            openSwitchMonsterModal(targetPlayer, enc);
+                        }, 100);
+                        return; // Don't advance turn yet - modal will handle it
+                    } else {
+                        // Player has no more monsters - they're out
+                        _log(enc, `⚠️ ${targetName} não tem mais monstrinhos vivos!`);
+                    }
                 }
 
                 advanceTurn(enc);
@@ -3297,6 +3441,83 @@
                 renderEncounter();
             } catch (error) {
                 showError('Failed to process enemy turn', error.stack);
+            }
+        }
+
+        // ==================== Switch Monster Modal ====================
+
+        function openSwitchMonsterModal(player, enc) {
+            if (!player || !Array.isArray(player.team)) return;
+            
+            // Get alive monsters (excluding current active)
+            const aliveMonsters = [];
+            player.team.forEach((mon, idx) => {
+                if (_isAlive(mon) && idx !== player.activeIndex) {
+                    aliveMonsters.push({ monster: mon, index: idx });
+                }
+            });
+            
+            if (aliveMonsters.length === 0) {
+                alert('Sem monstrinhos vivos para substituir!');
+                // Continue battle
+                advanceTurn(enc);
+                saveToLocalStorage();
+                renderEncounter();
+                return;
+            }
+            
+            // Build modal HTML
+            let html = '<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 9999;" id="switchMonsterModal">';
+            html += '<div style="background: white; padding: 20px; border-radius: 8px; max-width: 500px; max-height: 80vh; overflow-y: auto;">';
+            html += `<h3>💀 ${player.name || player.nome}: Escolha um Substituto</h3>`;
+            html += '<p>Seu monstrinho foi derrotado! Escolha um substituto:</p>';
+            html += '<div style="margin: 15px 0;">';
+            
+            aliveMonsters.forEach(({ monster, index }) => {
+                const hpPercent = Math.floor((monster.hp / monster.hpMax) * 100);
+                html += `<div style="border: 1px solid #ddd; padding: 10px; margin: 5px 0; border-radius: 4px; cursor: pointer; background: #f5f5f5;" onclick="selectReplacementMonster('${player.id}', ${index}, '${enc.id}')">`;
+                html += `<strong>${monster.emoji || ''} ${monster.name || monster.nome}</strong> - Nv ${monster.level}`;
+                html += `<br>HP: ${monster.hp}/${monster.hpMax} (${hpPercent}%)`;
+                html += `<br>Classe: ${monster.class}`;
+                html += `</div>`;
+            });
+            
+            html += '</div>';
+            html += '</div>';
+            html += '</div>';
+            
+            // Add modal to body
+            const modalDiv = document.createElement('div');
+            modalDiv.innerHTML = html;
+            document.body.appendChild(modalDiv);
+        }
+
+        function selectReplacementMonster(playerId, newActiveIndex, encounterId) {
+            try {
+                const player = _getPlayerById(playerId);
+                const enc = GameState.currentEncounter;
+                
+                if (!player || !enc || enc.id !== encounterId) {
+                    console.error('Invalid state for monster replacement');
+                    return;
+                }
+                
+                // Set new active index
+                player.activeIndex = newActiveIndex;
+                
+                const newMon = player.team[newActiveIndex];
+                _log(enc, `🔄 ${player.name || player.nome} trocou para ${newMon.name || newMon.nome}!`);
+                
+                // Close modal
+                const modal = document.getElementById('switchMonsterModal');
+                if (modal) modal.remove();
+                
+                // Continue battle
+                advanceTurn(enc);
+                saveToLocalStorage();
+                renderEncounter();
+            } catch (error) {
+                showError('Failed to select replacement monster', error.stack);
             }
         }
 
@@ -5743,7 +5964,12 @@
                 GameState.players.forEach(player => {
                     if (!player) return;
                     
-                    const mon = player.team?.[0];
+                    // Initialize activeIndex if not set
+                    if (typeof player.activeIndex !== 'number') {
+                        player.activeIndex = firstAliveIndex(player.team);
+                    }
+                    
+                    const mon = _getActiveMonsterOfPlayer(player);
                     const monName = mon ? (mon.name || mon.nome || 'No monster') : 'No monster';
                     const hasValidMonster = mon && mon.hp > 0;
                     
@@ -5762,8 +5988,80 @@
                 });
                 
                 container.innerHTML = html;
+                
+                // Also update team reorder UI
+                updateTeamReorderUI();
             } catch (error) {
                 console.error('Failed to update group participants list:', error);
+            }
+        }
+
+        function updateTeamReorderUI() {
+            try {
+                const container = document.getElementById('teamReorderContainer');
+                if (!container) return;
+                
+                if (!GameState.players || GameState.players.length === 0) {
+                    container.innerHTML = '<p style="color: #666;">No players available.</p>';
+                    return;
+                }
+                
+                let html = '';
+                GameState.players.forEach(player => {
+                    if (!player || !Array.isArray(player.team) || player.team.length === 0) return;
+                    
+                    html += `<div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 4px; background: white;">`;
+                    html += `<strong>${player.name || player.nome}</strong> (${player.class})<br>`;
+                    html += `<small style="color: #666;">Posição 0 = Líder (primeiro a lutar se vivo)</small>`;
+                    html += `<div style="margin-top: 8px;">`;
+                    
+                    player.team.forEach((monster, idx) => {
+                        if (!monster) return;
+                        
+                        const isAlive = _isAlive(monster);
+                        const hpPercent = Math.floor((monster.hp / monster.hpMax) * 100);
+                        const isActive = idx === player.activeIndex;
+                        
+                        html += `<div style="display: flex; align-items: center; padding: 5px; margin: 3px 0; background: ${isActive ? '#e8f5e9' : '#fafafa'}; border: ${isActive ? '2px solid #4CAF50' : '1px solid #ddd'}; border-radius: 4px;">`;
+                        html += `<span style="font-weight: bold; margin-right: 8px;">${idx}</span>`;
+                        html += `<div style="flex: 1;">`;
+                        html += `${monster.emoji || ''} ${monster.name || monster.nome} - Nv${monster.level}`;
+                        html += `<br><small>HP: ${monster.hp}/${monster.hpMax} (${hpPercent}%)`;
+                        if (!isAlive) html += ` <strong style="color: red;">💀 DESMAIADO</strong>`;
+                        if (isActive) html += ` <strong style="color: green;">⚡ ATIVO</strong>`;
+                        html += `</small>`;
+                        html += `</div>`;
+                        html += `<div style="display: flex; flex-direction: column; gap: 2px;">`;
+                        if (idx > 0) {
+                            html += `<button onclick="movePlayerTeamMember('${player.id}', ${idx}, ${idx - 1})" style="padding: 2px 8px; font-size: 12px;">⬆️</button>`;
+                        }
+                        if (idx < player.team.length - 1) {
+                            html += `<button onclick="movePlayerTeamMember('${player.id}', ${idx}, ${idx + 1})" style="padding: 2px 8px; font-size: 12px;">⬇️</button>`;
+                        }
+                        html += `</div>`;
+                        html += `</div>`;
+                    });
+                    
+                    html += `</div>`;
+                    html += `</div>`;
+                });
+                
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Failed to update team reorder UI:', error);
+            }
+        }
+
+        function movePlayerTeamMember(playerId, fromIdx, toIdx) {
+            try {
+                const player = _getPlayerById(playerId);
+                if (!player) return;
+                
+                moveTeamMember(player, fromIdx, toIdx);
+                updateTeamReorderUI();
+                updateGroupParticipantsList();
+            } catch (error) {
+                showError('Failed to move team member', error.stack);
             }
         }
 
