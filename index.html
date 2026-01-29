@@ -1308,6 +1308,81 @@
             return migratedSave;
         }
 
+        // COMMIT 5: Canonical Monster Schema + Normalization
+        /**
+         * Canonical monster fields (the ONE source of truth):
+         * - hp: current HP
+         * - hpMax: maximum HP
+         * - ene: current ENE
+         * - eneMax: maximum ENE
+         * - level: current level
+         * - xp: current XP
+         * - buffs: array of active buffs
+         * - templateId: ID from catalog (formerly monsterId)
+         * - instanceId: unique instance ID (formerly id)
+         * - class: monster class
+         * - rarity: monster rarity
+         */
+        function normalizeMonster(mon) {
+            if (!mon) return mon;
+            
+            // Normalize HP fields
+            if (mon.currentHp !== undefined && mon.hp === undefined) {
+                mon.hp = mon.currentHp;
+                delete mon.currentHp;
+            }
+            if (mon.hpCurrent !== undefined && mon.hp === undefined) {
+                mon.hp = mon.hpCurrent;
+                delete mon.hpCurrent;
+            }
+            if (mon.maxHp !== undefined && mon.hpMax === undefined) {
+                mon.hpMax = mon.maxHp;
+                delete mon.maxHp;
+            }
+            
+            // Normalize ENE fields
+            if (mon.eneMax === undefined) {
+                const baseEne = 10;
+                const eneGrowth = 2;
+                const monsterLevel = mon.level || 1;
+                mon.eneMax = Math.floor(baseEne + eneGrowth * (monsterLevel - 1));
+            }
+            if (mon.ene === undefined) {
+                mon.ene = mon.eneMax;
+            }
+            
+            // Normalize ID fields (keep both for compatibility)
+            if (mon.monsterId !== undefined && mon.templateId === undefined) {
+                mon.templateId = mon.monsterId;
+            }
+            if (mon.id !== undefined && mon.instanceId === undefined) {
+                mon.instanceId = mon.id;
+            }
+            if (mon.baseId !== undefined && mon.templateId === undefined) {
+                mon.templateId = mon.baseId;
+            }
+            if (mon.idBase !== undefined && mon.templateId === undefined) {
+                mon.templateId = mon.idBase;
+            }
+            
+            // Ensure required fields exist
+            if (mon.level === undefined) mon.level = 1;
+            if (mon.xp === undefined) mon.xp = 0;
+            if (mon.hp === undefined && mon.hpMax) mon.hp = mon.hpMax;
+            if (mon.hpMax === undefined) mon.hpMax = 30; // Fallback
+            
+            // Ensure buffs array exists
+            if (!Array.isArray(mon.buffs)) {
+                mon.buffs = [];
+            }
+            
+            // Ensure class and rarity exist
+            if (!mon.class) mon.class = 'Neutro';
+            if (!mon.rarity) mon.rarity = 'Comum';
+            
+            return mon;
+        }
+
         // COMMIT 3: Centralized Persistence Layer
         // All localStorage access must go through these functions
         
@@ -1368,20 +1443,19 @@
                                 player.team.forEach(monster => {
                                     if (!monster) return;
                                     
-                                    // ENE (Sistema ENE)
-                                    // Migrar ENE para saves antigos (correção BC-04)
-                                    const baseEne = 10;
-                                    const eneGrowth = 2;
-                                    const monsterLevel = monster.level || 1;
-                                    
-                                    if (!monster.eneMax) {
-                                        monster.eneMax = Math.floor(baseEne + eneGrowth * (monsterLevel - 1));
-                                    }
-                                    if (monster.ene === undefined) {
-                                        monster.ene = monster.eneMax;
-                                    }
+                                    // COMMIT 5: Use normalized monster schema
+                                    normalizeMonster(monster);
                                     
                                     // Progressão (Feature 3.3) - compatibilidade com saves antigos
+                                    ensureMonsterProgressFields(monster);
+                                });
+                            }
+                            
+                            // Also normalize monsters in box
+                            if (player.box) {
+                                player.box.forEach(monster => {
+                                    if (!monster) return;
+                                    normalizeMonster(monster);
                                     ensureMonsterProgressFields(monster);
                                 });
                             }
@@ -1573,15 +1647,15 @@
                         if (player.team) {
                             player.team.forEach(monster => {
                                 if (!monster) return;
-                                const baseEne = 10;
-                                const eneGrowth = 2;
-                                const monsterLevel = monster.level || 1;
-                                if (!monster.eneMax) {
-                                    monster.eneMax = Math.floor(baseEne + eneGrowth * (monsterLevel - 1));
-                                }
-                                if (monster.ene === undefined) {
-                                    monster.ene = monster.eneMax;
-                                }
+                                // COMMIT 5: Use normalizeMonster instead of manual migration
+                                normalizeMonster(monster);
+                            });
+                        }
+                        
+                        if (player.box) {
+                            player.box.forEach(monster => {
+                                if (!monster) return;
+                                normalizeMonster(monster);
                             });
                         }
                     });
