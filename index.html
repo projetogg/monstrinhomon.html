@@ -2325,6 +2325,15 @@
                 const rollType = isCrit ? 'crit' : alwaysMiss ? 'fail' : 'normal';
                 recordD20Roll(enc, enemyName, d20, rollType);
 
+                // Feature 4.4: Enemy attack sound (group)
+                if (isCrit) {
+                    Audio.playSfx("crit");
+                } else if (alwaysMiss || !hit) {
+                    Audio.playSfx("miss");
+                } else {
+                    Audio.playSfx("hit");
+                }
+
                 if (!hit) {
                     _log(enc, `🎲 ${enemyName} rolou ${d20} e ERROU o ataque em ${targetName} (${targetMonName}).`);
                     
@@ -3910,6 +3919,17 @@
                         const enemyHit = checkHit(enemyRoll, monster, playerMonster);
                         encounter.log.push(`🎲 ${monster.name} rola ${enemyRoll} (ATK: ${monster.atk})`);
                         
+                        // Feature 4.4: Enemy counter-attack sound (wild - after failed capture)
+                        const enemyIsCrit = (enemyRoll === 20);
+                        const enemyIsFail = (enemyRoll === 1);
+                        if (enemyIsCrit) {
+                            Audio.playSfx("crit");
+                        } else if (enemyIsFail || !enemyHit) {
+                            Audio.playSfx("miss");
+                        } else {
+                            Audio.playSfx("hit");
+                        }
+                        
                         if (enemyHit) {
                             const damage = calculateDamage(monster, playerMonster);
                             playerMonster.hp = Math.max(0, playerMonster.hp - damage);
@@ -4036,6 +4056,17 @@
                         encounter.log.push(`🎲 ${wildMonster.name} rolls ${enemyRoll} (ATK: ${wildMonster.atk})`);
                         
                         const enemyHit = enemyRoll === 1 ? false : (enemyRoll === 20 ? true : checkHit(enemyRoll, wildMonster, playerMonster));
+                        
+                        // Feature 4.4: Enemy counter-attack sound (wild - after item)
+                        const enemyIsCrit = (enemyRoll === 20);
+                        const enemyIsFail = (enemyRoll === 1);
+                        if (enemyIsCrit) {
+                            Audio.playSfx("crit");
+                        } else if (enemyIsFail || !enemyHit) {
+                            Audio.playSfx("miss");
+                        } else {
+                            Audio.playSfx("hit");
+                        }
                         
                         if (enemyHit) {
                             const power = BASIC_ATTACK_POWER[wildMonster.class] || 12;
