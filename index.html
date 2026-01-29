@@ -1673,6 +1673,9 @@
                     return;
                 }
 
+                // Aplicar ENE REGEN no início do turno do jogador
+                applyEneRegen(mon, enc);
+
                 // Alvo: primeiro inimigo vivo
                 let enemyIndex = 0;
                 while (enemyIndex < (enc.enemies?.length || 0) && !_isAlive(enc.enemies[enemyIndex])) enemyIndex++;
@@ -3758,6 +3761,12 @@
                 const playerMonster = player.team?.[0];
                 if (!playerMonster) {
                     alert('No monster available');
+                    return;
+                }
+                
+                // GAME_RULES.md: Validar que monstrinho é da mesma classe do jogador
+                if (playerMonster.class !== player.class) {
+                    alert(`⚠️ Você só pode usar monstrinhos da classe ${player.class} em batalha!\n\nEste ${playerMonster.name} é da classe ${playerMonster.class}.\nTroque-o por um monstrinho da sua classe.`);
                     return;
                 }
                 
