@@ -506,7 +506,7 @@
     </div>
 
     <!-- Feature 4.3: Slot Picker for New Game -->
-    <div id="mmSlotPicker" class="mm-overlay hidden">
+    <div id="mmSlotPicker" class="mm-overlay">
         <div class="mm-card" style="max-width:640px;">
             <div class="mm-title">💾 Escolher Slot</div>
             <div style="opacity:0.9; margin-bottom:12px;">
@@ -530,7 +530,7 @@
     </div>
 
     <!-- Feature 4.3: Save Slots Screen -->
-    <div id="mmSavesScreen" class="mm-overlay hidden">
+    <div id="mmSavesScreen" class="mm-overlay">
         <div class="mm-card" style="max-width:820px;">
             <div class="mm-title">📂 Gerenciar Saves</div>
             <div id="mmSavesSlots" style="display:grid; grid-template-columns:1fr; gap:12px; margin-top:12px;"></div>
@@ -4403,12 +4403,12 @@
 
         function mmShowOverlay(id) {
             const el = document.getElementById(id);
-            if (el) el.classList.remove("hidden");
+            if (el) el.classList.add("show");
         }
 
         function mmHideOverlay(id) {
             const el = document.getElementById(id);
-            if (el) el.classList.add("hidden");
+            if (el) el.classList.remove("show");
         }
 
         function mmReadSlot(slot) {
