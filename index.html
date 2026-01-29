@@ -569,6 +569,15 @@
                 </label>
             </div>
 
+            <!-- Therapist Mode Panel - Commit 1 -->
+            <div id="therapistPanel" class="card" style="display:none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h3>🔬 Therapist Mode Tools</h3>
+                <p style="font-size: 0.9em; opacity: 0.9;">Advanced debugging and testing controls</p>
+                <div id="therapistPanelContent">
+                    <!-- Tools will be added in subsequent commits -->
+                </div>
+            </div>
+
             <div class="card">
                 <h3>🎵 Audio Configuration</h3>
                 <div style="display:grid; gap:12px;">
@@ -1389,6 +1398,10 @@
             // Update checkbox in settings
             const checkbox = document.getElementById("therapistMode");
             if (checkbox) checkbox.checked = mmIsTherapistMode();
+            
+            // Update therapist panel visibility (Commit 1)
+            const panel = document.getElementById("therapistPanel");
+            if (panel) panel.style.display = mmIsTherapistMode() ? "" : "none";
         }
 
         // PLAYER MANAGEMENT
