@@ -660,16 +660,7 @@
     <div id="mmConfig" class="mm-overlay">
         <div class="mm-card">
             <div class="mm-title">Configurações</div>
-            
-            <div style="margin-bottom: 20px;">
-                <h4 style="margin-bottom: 10px;">🎮 Configuração do Jogo</h4>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                    <input type="checkbox" id="therapistModeMenu" onchange="mmToggleTherapistMode()" 
-                           style="width: auto; min-height: 20px; cursor: pointer;">
-                    <span>🧑‍🏫 Modo Terapeuta (Controles avançados)</span>
-                </label>
-            </div>
-            
+            <p class="mm-sub">MVP: placeholder. (Depois entra volume, modo terapeuta, etc.)</p>
             <button class="mm-btn" onclick="mmShowMainMenu()">Voltar</button>
         </div>
     </div>
@@ -1386,13 +1377,9 @@
             const btn = document.getElementById("mmTherapistBtn");
             if (btn) btn.style.display = mmIsTherapistMode() ? "" : "none";
             
-            // Update checkbox in settings tab
+            // Update checkbox in settings
             const checkbox = document.getElementById("therapistMode");
             if (checkbox) checkbox.checked = mmIsTherapistMode();
-            
-            // Update checkbox in menu config overlay
-            const checkboxMenu = document.getElementById("therapistModeMenu");
-            if (checkboxMenu) checkboxMenu.checked = mmIsTherapistMode();
         }
 
         // PLAYER MANAGEMENT
@@ -5311,14 +5298,6 @@
 
         function mmShowConfig(){
             mmShow("mmConfig");
-            // Update therapist mode checkbox when opening config
-            mmUpdateTherapistUI();
-        }
-        
-        // Toggle therapist mode from menu config
-        function mmToggleTherapistMode() {
-            const checked = document.getElementById('therapistModeMenu')?.checked;
-            mmSetTherapistMode(checked);
         }
 
         // Feature 4.6: Therapist Mode Panel Functions
