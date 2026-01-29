@@ -1225,16 +1225,46 @@
                 const data = localStorage.getItem('monstrinhomon_state');
                 if (data) {
                     const loaded = JSON.parse(data);
+                    
+                    // Validação básica da estrutura
+                    if (typeof loaded !== 'object' || loaded === null) {
+                        console.warn('Invalid save data format, skipping load');
+                        return;
+                    }
+                    
+                    // Validar arrays essenciais
+                    if (loaded.players && !Array.isArray(loaded.players)) {
+                        console.warn('Invalid players array, resetting');
+                        loaded.players = [];
+                    }
+                    if (loaded.monsters && !Array.isArray(loaded.monsters)) {
+                        console.warn('Invalid monsters array, resetting');
+                        loaded.monsters = [];
+                    }
+                    
                     Object.assign(GameState, loaded);
                     
                     // Migrar inventários antigos
                     if (GameState.players) {
                         GameState.players.forEach(player => {
+                            // Validar estrutura do jogador
+                            if (!player.id || !player.name) {
+                                console.warn('Invalid player detected:', player);
+                                return;
+                            }
+                            
                             migrateInventory(player);
+                            
+                            // Garantir arrays
+                            player.team = Array.isArray(player.team) ? player.team : [];
+                            player.box = Array.isArray(player.box) ? player.box : [];
+                            player.inventory = player.inventory || {};
                             
                             // Garantir que monstros tenham ENE e campos de progressão (Feature 3.3)
                             if (player.team) {
                                 player.team.forEach(monster => {
+                                    if (!monster) return;
+                                    
                                     // ENE (Sistema ENE)
                                     if (!monster.eneMax) {
                                         monster.eneMax = 10 + (monster.level || 1);
@@ -1250,9 +1280,16 @@
                             }
                         });
                     }
+                    
+                    console.log('Save data loaded successfully');
                 }
             } catch (error) {
                 console.warn('Failed to load saved data:', error);
+                // Resetar para estado seguro em caso de corrupção severa
+                if (error instanceof SyntaxError) {
+                    console.error('Save data is corrupted (JSON parse failed). Starting fresh.');
+                    localStorage.removeItem('monstrinhomon_state');
+                }
             }
         }
 
@@ -1778,6 +1815,16 @@
                 initializeEncounterToast(encounter);
                 
                 if (type === 'wild') {
+                    // Limpar buffs do monstrinho do jogador antes da batalha
+                    const player = GameState.players.find(p => p.id === encounter.selectedPlayerId);
+                    if (player && player.team) {
+                        for (const mon of player.team) {
+                            if (mon && mon.buffs) {
+                                mon.buffs = [];
+                            }
+                        }
+                    }
+                    
                     const randomMonster = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
                     const level = Math.floor(Math.random() * 10) + 1;
                     encounter.wildMonster = createMonsterInstance(randomMonster, null, level);
@@ -1801,6 +1848,18 @@
         
         function startGroupEncounter(selectedPlayerIds, encounterType, enemyLevel) {
             try {
+                // Limpar buffs dos monstrinhos dos jogadores participantes
+                for (const pid of selectedPlayerIds) {
+                    const player = GameState.players.find(p => p.id === pid);
+                    if (player && player.team) {
+                        for (const mon of player.team) {
+                            if (mon && mon.buffs) {
+                                mon.buffs = [];
+                            }
+                        }
+                    }
+                }
+                
                 // Criar inimigo
                 const randomMonster = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
                 const enemy = createMonsterInstance(randomMonster, null, enemyLevel);
@@ -1947,8 +2006,11 @@
                 enc.log = enc.log || [];
                 enc.log.push("🏁 Vitória! Todos os inimigos foram derrotados.");
                 
-                // Feature 4.4: Victory sound
-                Audio.playSfx("win");
+                // Feature 4.4: Victory sound (com idempotência)
+                if (!enc._winSfxPlayed) {
+                    Audio.playSfx("win");
+                    enc._winSfxPlayed = true;
+                }
                 
                 // Distribuir recompensas (XP) com idempotência
                 handleVictoryRewards(enc);
@@ -1963,8 +2025,11 @@
                 enc.log = enc.log || [];
                 enc.log.push("💀 Derrota... Todos os participantes foram derrotados.");
                 
-                // Feature 4.4: Defeat sound
-                Audio.playSfx("lose");
+                // Feature 4.4: Defeat sound (com idempotência)
+                if (!enc._loseSfxPlayed) {
+                    Audio.playSfx("lose");
+                    enc._loseSfxPlayed = true;
+                }
                 
                 return;
             }
@@ -2100,6 +2165,12 @@
                     return;
                 }
 
+                // Aplicar ENE REGEN no início do turno do jogador
+                applyEneRegen(mon, enc);
+                
+                // Atualizar buffs (reduzir duração)
+                updateBuffs(mon);
+
                 // Alvo: primeiro inimigo vivo
                 let enemyIndex = 0;
                 while (enemyIndex < (enc.enemies?.length || 0) && !_isAlive(enc.enemies[enemyIndex])) enemyIndex++;
@@ -2113,12 +2184,10 @@
                 }
 
                 const d20 = rollD20();
-                const atk = Number(mon.atk) || 0;
-                const def = Number(enemy.def) || 0;
-
+                
                 const alwaysMiss = (d20 === 1);
                 const isCrit = (d20 === 20);
-                const hit = !alwaysMiss && (d20 + atk >= def);
+                const hit = !alwaysMiss && (isCrit || checkHit(d20, mon, enemy));
 
                 const attackerName = player.name || player.nome || actor.name || "Jogador";
                 const monName = mon.nickname || mon.name || mon.nome || "Monstrinho";
@@ -2150,7 +2219,7 @@
                 }
 
                 // POWER básico
-                const basicPower = Number(mon.basicPower) || Number(mon.powerBasic) || 10;
+                const basicPower = BASIC_ATTACK_POWER[mon.class] || 12;
                 let powerUsed = basicPower;
 
                 if (isCrit) {
@@ -2158,7 +2227,28 @@
                     _log(enc, `💥 CRIT 20! ${monName} ativou Poder Duplo!`);
                 }
 
-                const dmg = _calcDamage(powerUsed, atk, def);
+                // Aplicar modificadores de buff
+                const atkMods = getBuffModifiers(mon);
+                const effectiveAtk = Math.max(1, (Number(mon.atk) || 0) + atkMods.atk);
+                
+                const defMods = getBuffModifiers(enemy);
+                const effectiveDef = Math.max(1, (Number(enemy.def) || 0) + defMods.def);
+
+                // Calcular vantagem de classe
+                const classAdv = GameState.config?.classAdvantages?.[mon.class];
+                let damageMult = 1.0;
+                if (classAdv?.strong === enemy.class) {
+                    damageMult = 1.10;
+                } else if (classAdv?.weak === enemy.class) {
+                    damageMult = 0.90;
+                }
+
+                const dmg = calcDamage({
+                    atk: effectiveAtk,
+                    def: effectiveDef,
+                    power: powerUsed,
+                    damageMult: damageMult
+                });
                 enemy.hp = _clamp((Number(enemy.hp) || 0) - dmg, 0, Number(enemy.hpMax) || 999999);
 
                 _log(enc, `🎲 ${attackerName} (${monName}) rolou ${d20} e acertou ${enemyName} causando ${dmg} de dano!`);
@@ -2200,6 +2290,12 @@
                     return;
                 }
 
+                // Aplicar ENE REGEN no início do turno do inimigo
+                applyEneRegen(enemy, enc);
+                
+                // Atualizar buffs (reduzir duração)
+                updateBuffs(enemy);
+
                 // Escolhe alvo (menor HP%)
                 const targetPid = _chooseTargetPlayerId(enc);
                 if (!targetPid) {
@@ -2217,12 +2313,10 @@
                 const targetMonName = targetMon?.nickname || targetMon?.name || targetMon?.nome || "Monstrinho";
 
                 const d20 = rollD20();
-                const atk = Number(enemy.atk) || 0;
-                const def = Number(targetMon?.def) || 0;
 
                 const alwaysMiss = (d20 === 1);
                 const isCrit = (d20 === 20);
-                const hit = !alwaysMiss && (d20 + atk >= def);
+                const hit = !alwaysMiss && (isCrit || checkHit(d20, enemy, targetMon));
                 
                 // Feature 3.8: Record d20 roll
                 const rollType = isCrit ? 'crit' : alwaysMiss ? 'fail' : 'normal';
@@ -2242,7 +2336,7 @@
                 }
 
                 // POWER básico do inimigo
-                const basicPower = Number(enemy.basicPower) || Number(enemy.powerBasic) || 10;
+                const basicPower = BASIC_ATTACK_POWER[enemy.class] || 12;
                 let powerUsed = basicPower;
 
                 if (isCrit) {
@@ -2250,7 +2344,28 @@
                     _log(enc, `💥 CRIT 20! ${enemyName} ativou Poder Duplo!`);
                 }
 
-                const dmg = _calcDamage(powerUsed, atk, def);
+                // Aplicar modificadores de buff
+                const atkMods = getBuffModifiers(enemy);
+                const effectiveAtk = Math.max(1, (Number(enemy.atk) || 0) + atkMods.atk);
+                
+                const defMods = getBuffModifiers(targetMon);
+                const effectiveDef = Math.max(1, (Number(targetMon?.def) || 0) + defMods.def);
+
+                // Calcular vantagem de classe
+                const classAdv = GameState.config?.classAdvantages?.[enemy.class];
+                let damageMult = 1.0;
+                if (classAdv?.strong === targetMon?.class) {
+                    damageMult = 1.10;
+                } else if (classAdv?.weak === targetMon?.class) {
+                    damageMult = 0.90;
+                }
+
+                const dmg = calcDamage({
+                    atk: effectiveAtk,
+                    def: effectiveDef,
+                    power: powerUsed,
+                    damageMult: damageMult
+                });
                 targetMon.hp = _clamp((Number(targetMon.hp) || 0) - dmg, 0, Number(targetMon.hpMax) || 999999);
 
                 _log(enc, `🎲 ${enemyName} rolou ${d20} e acertou ${targetName} (${targetMonName}) causando ${dmg} de dano!`);
@@ -2586,6 +2701,12 @@
             
             // Curar completamente ao subir de nível
             mon.hp = mon.hpMax;
+            
+            // Atualizar ENE Max (cresce com level)
+            const baseEne = 10; // base padrão
+            const eneGrowth = 2; // crescimento por nível
+            mon.eneMax = Math.floor(baseEne + eneGrowth * (mon.level - 1));
+            mon.ene = mon.eneMax; // Restaurar ENE ao subir de nível
             
             // Recalcular stats baseado no novo nível
             recalculateStatsFromTemplate(mon);
@@ -4247,6 +4368,12 @@
                     return;
                 }
                 
+                // GAME_RULES.md: Validar que monstrinho é da mesma classe do jogador
+                if (playerMonster.class !== player.class) {
+                    alert(`⚠️ Você só pode usar monstrinhos da classe ${player.class} em batalha!\n\nEste ${playerMonster.name} é da classe ${playerMonster.class}.\nTroque-o por um monstrinho da sua classe.`);
+                    return;
+                }
+                
                 // Obter habilidades disponíveis
                 const skills = getMonsterSkills(playerMonster);
                 if (!skills || skillIndex >= skills.length || !skills[skillIndex]) {
@@ -4346,7 +4473,27 @@
             }
         }
 
-        // Verifica acerto: d20 + ATK >= DEF
+        // ═══════════════════════════════════════════════════════════════════════
+        // SISTEMA DE DANO - Fórmulas Oficiais (GAME_RULES.md)
+        // ═══════════════════════════════════════════════════════════════════════
+        
+        /**
+         * Verifica se um ataque acerta o alvo
+         * FÓRMULA: d20 + ATK + ClassBonus >= DEF
+         * 
+         * @param {number} d20Roll - Resultado do dado d20 (1-20)
+         * @param {object} attacker - Monstrinho atacante
+         * @param {object} defender - Monstrinho defensor
+         * @returns {boolean} true se acertou, false se errou
+         * 
+         * VANTAGEM DE CLASSE (Acerto):
+         * - Vantagem: +2 ATK
+         * - Desvantagem: -2 ATK
+         * 
+         * REGRAS ESPECIAIS:
+         * - d20 = 1: sempre erra (falha crítica)
+         * - d20 = 20: sempre acerta (acerto crítico)
+         */
         function checkHit(d20Roll, attacker, defender) {
             try {
                 if (!attacker || !defender) return false;
@@ -4371,8 +4518,29 @@
             }
         }
 
-        // Calcula dano: max(1, ATK + PODER - DEF) com modificadores de classe
-        // Nova fórmula de dano (v1)
+        /**
+         * Calcula dano de um ataque
+         * FÓRMULA BASE: floor(POWER * (ATK / (ATK + DEF))) * damageMult
+         * DANO MÍNIMO: sempre 1
+         * 
+         * @param {object} params - Parâmetros de dano
+         * @param {number} params.atk - Ataque efetivo (com buffs)
+         * @param {number} params.def - Defesa efetiva (com buffs)
+         * @param {number} params.power - Poder da habilidade/ataque
+         * @param {number} params.damageMult - Multiplicador (1.0 padrão, 1.10 vantagem, 0.90 desvantagem)
+         * @returns {number} Dano final (mínimo 1)
+         * 
+         * VANTAGEM DE CLASSE (Dano):
+         * - Vantagem: 1.10 (110% do dano base)
+         * - Desvantagem: 0.90 (90% do dano base)
+         * - Neutro: 1.0 (100% do dano base)
+         * 
+         * EXEMPLO:
+         * ATK=10, DEF=5, POWER=15
+         * ratio = 10/(10+5) = 0.666
+         * baseD = floor(15 * 0.666) = floor(9.99) = 9
+         * finalD = floor(9 * 1.0) = 9
+         */
         function calcDamage({ atk, def, power, damageMult = 1.0 }) {
             try {
                 // ratio = ATK / (ATK + DEF)
@@ -4392,7 +4560,21 @@
             }
         }
 
-        // Wrapper para compatibilidade - calcula dano com ataque básico
+        /**
+         * Wrapper de compatibilidade - calcula dano com ataque básico
+         * Aplica automaticamente buffs e vantagens de classe
+         * 
+         * @param {object} attacker - Monstrinho atacante
+         * @param {object} defender - Monstrinho defensor
+         * @returns {number} Dano final
+         * 
+         * FLUXO:
+         * 1. Obtém stats base (atk, def)
+         * 2. Aplica modificadores de buffs
+         * 3. Obtém POWER básico da classe
+         * 4. Calcula multiplicador de classe
+         * 5. Chama calcDamage() com todos os parâmetros
+         */
         function calculateDamage(attacker, defender) {
             try {
                 if (!attacker || !defender) return 1;
@@ -4470,6 +4652,12 @@
                         // HP atual aumenta proporcionalmente
                         const hpRatio = monster.hp / oldHpMax;
                         monster.hp = Math.floor(monster.hpMax * hpRatio);
+                        
+                        // Atualizar ENE Max
+                        const baseEne = 10;
+                        const eneGrowth = 2;
+                        monster.eneMax = Math.floor(baseEne + eneGrowth * (monster.level - 1));
+                        monster.ene = Math.min(monster.eneMax, monster.ene); // Não exceder novo max
                         
                         // Recalcula ATK, DEF, PODER
                         monster.atk = Math.floor((template.baseAtk || 5) * levelMult * rarityMult);
