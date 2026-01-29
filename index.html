@@ -799,16 +799,16 @@
             { id: 'MON_100', name: 'Rato-de-Lama', class: 'Guerreiro', rarity: 'Comum', baseHp: 20, baseAtk: 5, baseDef: 3, baseSpd: 4, emoji: '🐀' }
         ];
 
-        // ENE REGEN CONSTANTS por classe (fallback)
+        // ENE REGEN CONSTANTS por classe (baseado em CLASSES.csv - valores oficiais)
         const ENE_REGEN_BY_CLASS = {
-            'Mago': { pct: 0.18, min: 3 },
-            'Curandeiro': { pct: 0.18, min: 3 },
-            'Bardo': { pct: 0.14, min: 2 },
-            'Caçador': { pct: 0.14, min: 2 },
-            'Ladino': { pct: 0.14, min: 2 },
-            'Animalista': { pct: 0.12, min: 2 },
-            'Bárbaro': { pct: 0.12, min: 2 },
-            'Guerreiro': { pct: 0.10, min: 1 }
+            'Guerreiro': { pct: 0.10, min: 2 },
+            'Mago': { pct: 0.25, min: 1 },
+            'Curandeiro': { pct: 0.20, min: 2 },
+            'Bárbaro': { pct: 0.10, min: 1 },
+            'Ladino': { pct: 0.15, min: 1 },
+            'Bardo': { pct: 0.18, min: 2 },
+            'Caçador': { pct: 0.12, min: 2 },
+            'Animalista': { pct: 0.15, min: 2 }
         };
 
         // POWER BÁSICO por classe (ataque sem habilidade)
@@ -968,18 +968,6 @@
             { id: 'BOLA_FOGO_II', name: 'Bola de Fogo II', class: 'Mago', category: 'Ataque', power: 15, accuracy: 0.9, energy_cost: 6, target: 'Inimigo', status: '', desc: 'Ataque de fogo aprimorado.' },
             { id: 'BOLA_FOGO_III', name: 'Bola de Fogo III', class: 'Mago', category: 'Ataque', power: 22, accuracy: 0.9, energy_cost: 8, target: 'Inimigo', status: '', desc: 'Ataque de fogo mestre.' }
         ];
-
-        // CLASS ENERGY REGEN (baseado em CLASSES.csv)
-        const CLASS_ENERGY_REGEN = {
-            'Guerreiro': { ene_regen_pct: 0.10, ene_regen_min: 2 },
-            'Mago': { ene_regen_pct: 0.25, ene_regen_min: 1 },
-            'Curandeiro': { ene_regen_pct: 0.20, ene_regen_min: 2 },
-            'Bárbaro': { ene_regen_pct: 0.10, ene_regen_min: 1 },
-            'Ladino': { ene_regen_pct: 0.15, ene_regen_min: 1 },
-            'Bardo': { ene_regen_pct: 0.18, ene_regen_min: 2 },
-            'Caçador': { ene_regen_pct: 0.12, ene_regen_min: 2 },
-            'Animalista': { ene_regen_pct: 0.15, ene_regen_min: 2 }
-        };
 
         // DEFAULT OBJECTIVES
         const DEFAULT_OBJECTIVES = [
