@@ -574,7 +574,20 @@
                 <h3>🔬 Therapist Mode Tools</h3>
                 <p style="font-size: 0.9em; opacity: 0.9;">Advanced debugging and testing controls</p>
                 <div id="therapistPanelContent">
-                    <!-- Tools will be added in subsequent commits -->
+                    <!-- Commit 2: Export/Import Save Tools -->
+                    <div style="margin-top: 15px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px;">
+                        <h4 style="margin-bottom: 10px;">💾 Save Management</h4>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="btn btn-success" onclick="therapistExportSave()" style="flex: 1; min-width: 120px;">📤 Export Save (JSON)</button>
+                            <button class="btn btn-warning" onclick="therapistImportSave()" style="flex: 1; min-width: 120px;">📥 Import Save (JSON)</button>
+                        </div>
+                        <textarea id="therapistJsonArea" placeholder="Paste JSON here to import..." 
+                            style="width: 100%; min-height: 100px; margin-top: 10px; padding: 8px; font-family: monospace; font-size: 12px; border-radius: 5px; display: none;"></textarea>
+                        <div style="display: flex; gap: 10px; margin-top: 10px; display: none;" id="therapistJsonButtons">
+                            <button class="btn btn-success" onclick="therapistLoadJson()" style="flex: 1;">✅ Load JSON</button>
+                            <button class="btn btn-danger" onclick="therapistCancelImport()" style="flex: 1;">❌ Cancel</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1402,6 +1415,150 @@
             // Update therapist panel visibility (Commit 1)
             const panel = document.getElementById("therapistPanel");
             if (panel) panel.style.display = mmIsTherapistMode() ? "" : "none";
+        }
+
+        // COMMIT 2: Therapist Export/Import Save Tools
+        function therapistExportSave() {
+            try {
+                const saveData = JSON.stringify(GameState, null, 2);
+                
+                // Copy to clipboard
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(saveData).then(() => {
+                        alert('✅ Save data copied to clipboard!\n\nYou can also download it as a file.');
+                    }).catch(() => {
+                        alert('⚠️ Could not copy to clipboard, but you can download the file.');
+                    });
+                }
+                
+                // Also download as file
+                const blob = new Blob([saveData], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `monstrinhomon_save_${Date.now()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                console.log('[Therapist] Save exported successfully');
+            } catch (error) {
+                console.error('[Therapist] Export failed:', error);
+                alert('❌ Export failed: ' + error.message);
+            }
+        }
+
+        function therapistImportSave() {
+            try {
+                // Show textarea and buttons for JSON paste
+                const textarea = document.getElementById('therapistJsonArea');
+                const buttons = document.getElementById('therapistJsonButtons');
+                
+                if (textarea && buttons) {
+                    textarea.style.display = 'block';
+                    buttons.style.display = 'flex';
+                    textarea.value = '';
+                    textarea.focus();
+                }
+                
+                console.log('[Therapist] Ready to import save - paste JSON and click Load');
+            } catch (error) {
+                console.error('[Therapist] Import UI failed:', error);
+                alert('❌ Import failed: ' + error.message);
+            }
+        }
+
+        function therapistLoadJson() {
+            try {
+                const textarea = document.getElementById('therapistJsonArea');
+                const jsonText = textarea?.value?.trim();
+                
+                if (!jsonText) {
+                    alert('⚠️ Please paste JSON data first');
+                    return;
+                }
+                
+                // Validate JSON
+                let saveData;
+                try {
+                    saveData = JSON.parse(jsonText);
+                } catch (parseError) {
+                    console.error('[Therapist] Invalid JSON:', parseError);
+                    alert('❌ Invalid JSON format:\n' + parseError.message);
+                    return;
+                }
+                
+                // Basic validation
+                if (typeof saveData !== 'object' || saveData === null) {
+                    alert('❌ Invalid save data: must be an object');
+                    return;
+                }
+                
+                // Load through existing safe load routine
+                Object.assign(GameState, saveData);
+                
+                // Re-run load validation and migrations
+                if (GameState.players && Array.isArray(GameState.players)) {
+                    GameState.players.forEach(player => {
+                        if (!player) return;
+                        
+                        // Ensure arrays
+                        player.team = Array.isArray(player.team) ? player.team : [];
+                        player.box = Array.isArray(player.box) ? player.box : [];
+                        player.inventory = player.inventory || {};
+                        
+                        // ENE migration for monsters
+                        if (player.team) {
+                            player.team.forEach(monster => {
+                                if (!monster) return;
+                                const baseEne = 10;
+                                const eneGrowth = 2;
+                                const monsterLevel = monster.level || 1;
+                                if (!monster.eneMax) {
+                                    monster.eneMax = Math.floor(baseEne + eneGrowth * (monsterLevel - 1));
+                                }
+                                if (monster.ene === undefined) {
+                                    monster.ene = monster.eneMax;
+                                }
+                            });
+                        }
+                    });
+                }
+                
+                // Save to localStorage
+                saveToLocalStorage();
+                
+                // Update all views
+                if (typeof updateAllViews === 'function') updateAllViews();
+                
+                // Hide import UI
+                therapistCancelImport();
+                
+                alert('✅ Save data loaded successfully!');
+                console.log('[Therapist] Save imported and loaded successfully');
+                
+            } catch (error) {
+                console.error('[Therapist] Load failed:', error);
+                alert('❌ Load failed: ' + error.message);
+            }
+        }
+
+        function therapistCancelImport() {
+            try {
+                const textarea = document.getElementById('therapistJsonArea');
+                const buttons = document.getElementById('therapistJsonButtons');
+                
+                if (textarea) {
+                    textarea.style.display = 'none';
+                    textarea.value = '';
+                }
+                if (buttons) {
+                    buttons.style.display = 'none';
+                }
+                
+                console.log('[Therapist] Import cancelled');
+            } catch (error) {
+                console.error('[Therapist] Cancel failed:', error);
+            }
         }
 
         // PLAYER MANAGEMENT
