@@ -3916,7 +3916,7 @@
                         
                         // Monstrinho selvagem ataca imediatamente
                         const enemyRoll = Math.floor(Math.random() * 20) + 1;
-                        const enemyHit = checkHit(enemyRoll, monster, playerMonster);
+                        const enemyHit = enemyRoll === 1 ? false : (enemyRoll === 20 ? true : checkHit(enemyRoll, monster, playerMonster));
                         encounter.log.push(`🎲 ${monster.name} rola ${enemyRoll} (ATK: ${monster.atk})`);
                         
                         // Feature 4.4: Enemy counter-attack sound (wild - after failed capture)
