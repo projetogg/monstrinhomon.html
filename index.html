@@ -524,11 +524,12 @@
             function clamp01(v){ return isFinite(v) ? Math.max(0, Math.min(1, v)) : 0; }
 
             function init() {
-                // Don't create AudioContext until user gesture on iOS
+                // Initialize UI with saved settings
                 syncUI();
             }
 
             function ensureCtx() {
+                // Lazy AudioContext creation - delays until first audio interaction
                 if (!ctx) {
                     const AC = window.AudioContext || window.webkitAudioContext;
                     if (!AC) return null;
@@ -579,16 +580,20 @@
                     const g = c.createGain();
                     o.type = type;
                     o.frequency.value = freq;
-                    g.gain.value = Math.max(0, vol) * sfxVol;
+                    
+                    // Clamp vol parameter to valid range
+                    const clampedVol = Math.max(0, Math.min(1, vol));
+                    g.gain.value = clampedVol * sfxVol;
 
                     o.connect(g).connect(c.destination);
 
                     const now = c.currentTime;
                     const dur = durMs / 1000;
 
-                    // quick attack/decay to avoid clicks
+                    // Envelope to avoid clicks
+                    const safeGain = Math.max(0.0001, g.gain.value);
                     g.gain.setValueAtTime(0.0001, now);
-                    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, g.gain.value), now + 0.01);
+                    g.gain.exponentialRampToValueAtTime(safeGain, now + 0.01);
                     g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
 
                     o.start(now);
@@ -596,25 +601,107 @@
                 } catch {}
             }
 
-            // Tiny "sound palette" (replace later with real mp3s if you want)
-            function playSfx(name) {
-                // If not unlocked yet, ignore silently (UI still works)
+            // Helper to schedule multi-tone sounds using AudioContext timeline
+            function playMultiTone(tones) {
                 try {
                     if (muted) return;
-                    // patterns: short distinctive beeps
+                    const c = ensureCtx();
+                    if (!c) return;
+                    if (c.state === "suspended") return;
+                    
+                    const now = c.currentTime;
+                    
+                    for (const tone of tones) {
+                        const startTime = now + (tone.delay || 0) / 1000;
+                        const o = c.createOscillator();
+                        const g = c.createGain();
+                        o.type = tone.type || "sine";
+                        o.frequency.value = tone.freq;
+                        
+                        const clampedVol = Math.max(0, Math.min(1, tone.vol));
+                        const targetGain = clampedVol * sfxVol;
+                        const safeGain = Math.max(0.0001, targetGain);
+                        
+                        o.connect(g).connect(c.destination);
+                        
+                        const dur = tone.durMs / 1000;
+                        g.gain.setValueAtTime(0.0001, startTime);
+                        g.gain.exponentialRampToValueAtTime(safeGain, startTime + 0.01);
+                        g.gain.exponentialRampToValueAtTime(0.0001, startTime + dur);
+                        
+                        o.start(startTime);
+                        o.stop(startTime + dur + 0.02);
+                    }
+                } catch {}
+            }
+
+            // Sound palette using synthesized tones (can be replaced with audio files in the future)
+            function playSfx(name) {
+                try {
+                    if (muted) return;
+                    // Each event uses distinct frequency/waveform combinations for audio differentiation
                     switch (name) {
-                        case "ui_click":   playTone(660, 60, 0.6, "square"); break;
-                        case "hit":        playTone(220, 80, 0.7, "sawtooth"); break;
-                        case "miss":       playTone(140, 120, 0.5, "triangle"); break;
-                        case "crit":       playTone(880, 80, 0.8, "square"); setTimeout(()=>playTone(990, 80, 0.7, "square"), 70); break;
-                        case "heal":       playTone(523, 80, 0.6, "sine"); setTimeout(()=>playTone(659, 80, 0.5, "sine"), 90); break;
-                        case "capture_ok": playTone(784, 70, 0.7, "sine"); setTimeout(()=>playTone(988, 90, 0.7, "sine"), 80); break;
-                        case "capture_fail": playTone(196, 90, 0.7, "sawtooth"); setTimeout(()=>playTone(164, 110, 0.6, "sawtooth"), 90); break;
-                        case "win":        playTone(659, 80, 0.6, "sine"); setTimeout(()=>playTone(784, 90, 0.6, "sine"), 90); setTimeout(()=>playTone(988, 120, 0.6, "sine"), 190); break;
-                        case "lose":       playTone(220, 120, 0.7, "triangle"); setTimeout(()=>playTone(196, 140, 0.6, "triangle"), 120); break;
-                        case "levelup":    playTone(740, 70, 0.6, "sine"); setTimeout(()=>playTone(880, 90, 0.7, "sine"), 80); break;
-                        case "evolve":     playTone(523, 80, 0.5, "sine"); setTimeout(()=>playTone(659, 90, 0.6, "sine"), 90); setTimeout(()=>playTone(784, 120, 0.7, "sine"), 190); break;
-                        default:           playTone(440, 60, 0.4, "sine");
+                        case "ui_click":   
+                            playTone(660, 60, 0.6, "square"); 
+                            break;
+                        case "hit":        
+                            playTone(220, 80, 0.7, "sawtooth"); 
+                            break;
+                        case "miss":       
+                            playTone(140, 120, 0.5, "triangle"); 
+                            break;
+                        case "crit":       
+                            playMultiTone([
+                                { freq: 880, durMs: 80, vol: 0.8, type: "square", delay: 0 },
+                                { freq: 990, durMs: 80, vol: 0.7, type: "square", delay: 70 }
+                            ]);
+                            break;
+                        case "heal":       
+                            playMultiTone([
+                                { freq: 523, durMs: 80, vol: 0.6, type: "sine", delay: 0 },
+                                { freq: 659, durMs: 80, vol: 0.5, type: "sine", delay: 90 }
+                            ]);
+                            break;
+                        case "capture_ok": 
+                            playMultiTone([
+                                { freq: 784, durMs: 70, vol: 0.7, type: "sine", delay: 0 },
+                                { freq: 988, durMs: 90, vol: 0.7, type: "sine", delay: 80 }
+                            ]);
+                            break;
+                        case "capture_fail": 
+                            playMultiTone([
+                                { freq: 196, durMs: 90, vol: 0.7, type: "sawtooth", delay: 0 },
+                                { freq: 164, durMs: 110, vol: 0.6, type: "sawtooth", delay: 90 }
+                            ]);
+                            break;
+                        case "win":        
+                            playMultiTone([
+                                { freq: 659, durMs: 80, vol: 0.6, type: "sine", delay: 0 },
+                                { freq: 784, durMs: 90, vol: 0.6, type: "sine", delay: 90 },
+                                { freq: 988, durMs: 120, vol: 0.6, type: "sine", delay: 190 }
+                            ]);
+                            break;
+                        case "lose":       
+                            playMultiTone([
+                                { freq: 220, durMs: 120, vol: 0.7, type: "triangle", delay: 0 },
+                                { freq: 196, durMs: 140, vol: 0.6, type: "triangle", delay: 120 }
+                            ]);
+                            break;
+                        case "levelup":    
+                            playMultiTone([
+                                { freq: 740, durMs: 70, vol: 0.6, type: "sine", delay: 0 },
+                                { freq: 880, durMs: 90, vol: 0.7, type: "sine", delay: 80 }
+                            ]);
+                            break;
+                        case "evolve":     
+                            playMultiTone([
+                                { freq: 523, durMs: 80, vol: 0.5, type: "sine", delay: 0 },
+                                { freq: 659, durMs: 90, vol: 0.6, type: "sine", delay: 90 },
+                                { freq: 784, durMs: 120, vol: 0.7, type: "sine", delay: 190 }
+                            ]);
+                            break;
+                        default:           
+                            playTone(440, 60, 0.4, "sine");
                     }
                 } catch {}
             }
@@ -2188,26 +2275,30 @@
         }
         
         /**
-         * Feature 4.4: Verifica novas entradas no log e toca sons para level up e evolução
-         * Usa cursor separado para evitar repetir sons em re-render
+         * Feature 4.4: Plays sounds for level up and evolution events from log
+         * Uses cursor to prevent repeating sounds on re-render
          */
         function maybeSfxFromLog(enc) {
             if (!enc || !Array.isArray(enc.log)) return;
             
-            // Garantir inicialização do cursor
+            // Guarantee cursor initialization
             if (enc._sfxCursor == null) enc._sfxCursor = 0;
             
             const start = Number.isFinite(enc._sfxCursor) ? enc._sfxCursor : 0;
             for (let i = start; i < enc.log.length; i++) {
                 const line = String(enc.log[i] || "");
                 
-                // Detectar level up
-                if (line.includes("✨") || /subiu para o nível/i.test(line)) {
+                // Detect level up - check emoji first to avoid double-trigger
+                if (line.includes("✨")) {
+                    Audio.playSfx("levelup");
+                } else if (/subiu para o nível/i.test(line)) {
                     Audio.playSfx("levelup");
                 }
                 
-                // Detectar evolução
-                if (line.includes("🌟") || /evoluiu para/i.test(line)) {
+                // Detect evolution - check emoji first to avoid double-trigger
+                if (line.includes("🌟")) {
+                    Audio.playSfx("evolve");
+                } else if (/evoluiu para/i.test(line)) {
                     Audio.playSfx("evolve");
                 }
             }
@@ -4696,8 +4787,10 @@
         document.addEventListener("click", (e) => {
             const btn = e.target.closest("button");
             if (!btn) return;
-            // evita spam em botões desabilitados
+            // Avoid spam on disabled buttons
             if (btn.disabled) return;
+            // Avoid double-sound on audio control buttons
+            if (btn.id === "mmMuteBtn" || btn.textContent.includes("Testar som")) return;
             Audio.playSfx("ui_click");
         });
 
