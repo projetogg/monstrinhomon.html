@@ -6239,6 +6239,22 @@
         }
 
         function mmContinue(){
+            // Check if there's a last slot saved - if so, load from it
+            try {
+                const lastSlot = localStorage.getItem("mm_last_slot");
+                if (lastSlot) {
+                    const slotNum = parseInt(lastSlot, 10);
+                    if ([1, 2, 3].includes(slotNum)) {
+                        // Load from slot - this will call mmPostGameStartFlow()
+                        mmLoadFromSlot(slotNum);
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.warn("Failed to check last slot", e);
+            }
+
+            // Fallback: load from main localStorage
             try {
                 // Load from the last used slot
                 const lastSlot = mmGetLastSlot();
@@ -6261,6 +6277,8 @@
             } catch(e){
                 console.warn("mmContinue failed", e);
                 alert("Erro ao carregar o save: " + e.message);
+                mmCloseAllOverlays();
+                return;
             }
             mmCloseAllOverlays();
             // Feature 4.1.1: Show tutorial choice or go to game based on preference
