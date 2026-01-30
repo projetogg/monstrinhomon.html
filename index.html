@@ -43,6 +43,18 @@
                 </div>
             </div>
 
+            <!-- FASE 1 POKEMON: Monstródex -->
+            <div class="card">
+                <h3>📖 Monstródex</h3>
+                <div id="monstrodexStats"></div>
+            </div>
+
+            <!-- FASE 1 POKEMON: Livro de Conquistas -->
+            <div class="card">
+                <h3>🏆 Livro de Conquistas</h3>
+                <div id="achievementsStats"></div>
+            </div>
+
             <div class="card">
                 <h3>Quick Actions</h3>
                 <div class="flex">
@@ -617,6 +629,22 @@
             // COMMIT 4: Save versioning
             meta: {
                 saveVersion: 1  // Current save format version
+            },
+            // FASE 1 POKEMON: Monstródex (Catálogo de Progresso)
+            monstrodex: {
+                seen: [],      // IDs de monstrinhos vistos
+                captured: []   // IDs de monstrinhos capturados
+            },
+            // FASE 1 POKEMON: Livro de Conquistas (Estatísticas)
+            stats: {
+                battlesWon: 0,
+                battlesLost: 0,
+                captureAttempts: 0,
+                capturesSuccessful: 0,
+                totalXpGained: 0,
+                totalMoneyEarned: 0,
+                currentWinStreak: 0,
+                highestWinStreak: 0
             },
             config: {
                 maxTeamSize: 6,
@@ -1526,6 +1554,144 @@
             }
         }
 
+        // ============================================================================
+        // FASE 1 POKEMON: Funções de Sistema
+        // ============================================================================
+
+        /**
+         * FASE 1.1: Indicador Visual de Vantagem de Classe
+         * Calcula vantagem de classe entre atacante e defensor
+         * @param {string} attackerClass - Classe do atacante
+         * @param {string} defenderClass - Classe do defensor
+         * @returns {object} - { multiplier, bonus, text, cssClass }
+         */
+        function getClassAdvantage(attackerClass, defenderClass) {
+            try {
+                const advantages = GameState.config?.classAdvantages || {};
+                const adv = advantages[attackerClass];
+                
+                if (!adv) {
+                    return { multiplier: 1.0, bonus: 0, text: '➡️ Efetividade normal', cssClass: 'neutral' };
+                }
+                
+                // Vantagem: atacante forte contra defensor
+                if (adv.strong === defenderClass) {
+                    return { 
+                        multiplier: 1.1, 
+                        bonus: 2, 
+                        text: '✅ Super efetivo! (+2 ATK, +10% DMG)', 
+                        cssClass: 'advantage' 
+                    };
+                }
+                
+                // Desvantagem: atacante fraco contra defensor
+                if (adv.weak === defenderClass) {
+                    return { 
+                        multiplier: 0.9, 
+                        bonus: -2, 
+                        text: '⚠️ Pouco efetivo... (-2 ATK, -10% DMG)', 
+                        cssClass: 'disadvantage' 
+                    };
+                }
+                
+                // Neutro
+                return { 
+                    multiplier: 1.0, 
+                    bonus: 0, 
+                    text: '➡️ Efetividade normal', 
+                    cssClass: 'neutral' 
+                };
+            } catch (error) {
+                console.error('Error calculating class advantage:', error);
+                return { multiplier: 1.0, bonus: 0, text: '', cssClass: 'neutral' };
+            }
+        }
+
+        /**
+         * FASE 1.2: Monstródex - Atualiza progresso de monstrinhos vistos/capturados
+         * @param {string} action - 'see' ou 'capture'
+         * @param {string} monsterId - ID do monstrinho (templateId)
+         */
+        function updateMonstrodex(action, monsterId) {
+            try {
+                if (!monsterId) return;
+                
+                // Inicializar monstrodex se não existir
+                if (!GameState.monstrodex) {
+                    GameState.monstrodex = { seen: [], captured: [] };
+                }
+                
+                // Marcar como visto
+                if (action === 'see' && !GameState.monstrodex.seen.includes(monsterId)) {
+                    GameState.monstrodex.seen.push(monsterId);
+                }
+                
+                // Marcar como capturado (também marca como visto)
+                if (action === 'capture') {
+                    if (!GameState.monstrodex.seen.includes(monsterId)) {
+                        GameState.monstrodex.seen.push(monsterId);
+                    }
+                    if (!GameState.monstrodex.captured.includes(monsterId)) {
+                        GameState.monstrodex.captured.push(monsterId);
+                    }
+                }
+                
+                saveGame();
+            } catch (error) {
+                console.error('Error updating monstrodex:', error);
+            }
+        }
+
+        /**
+         * FASE 1.3: Livro de Conquistas - Atualiza estatísticas do jogo
+         * @param {string} stat - Nome da estatística (ex: 'battlesWon', 'captureAttempts')
+         * @param {number} value - Valor a adicionar (padrão: 1)
+         */
+        function updateStats(stat, value = 1) {
+            try {
+                // Inicializar stats se não existir
+                if (!GameState.stats) {
+                    GameState.stats = {
+                        battlesWon: 0,
+                        battlesLost: 0,
+                        captureAttempts: 0,
+                        capturesSuccessful: 0,
+                        totalXpGained: 0,
+                        totalMoneyEarned: 0,
+                        currentWinStreak: 0,
+                        highestWinStreak: 0
+                    };
+                }
+                
+                // Incrementar estatística
+                if (stat in GameState.stats) {
+                    GameState.stats[stat] = (GameState.stats[stat] || 0) + value;
+                }
+                
+                // Atualizar streak de vitórias
+                if (stat === 'battlesWon') {
+                    GameState.stats.currentWinStreak = (GameState.stats.currentWinStreak || 0) + 1;
+                    if (GameState.stats.currentWinStreak > (GameState.stats.highestWinStreak || 0)) {
+                        GameState.stats.highestWinStreak = GameState.stats.currentWinStreak;
+                    }
+                } else if (stat === 'battlesLost') {
+                    GameState.stats.currentWinStreak = 0;
+                }
+                
+                saveGame();
+            } catch (error) {
+                console.error('Error updating stats:', error);
+            }
+        }
+
+        /**
+         * FASE 1.4: Shiny - Gera chance de monstrinho shiny
+         * @returns {boolean} - true se deve ser shiny (1% chance)
+         */
+        function generateShinyChance() {
+            return Math.random() < 0.01; // 1% chance
+        }
+
         // PLAYER MANAGEMENT
         function addPlayer() {
             try {
@@ -1750,7 +1916,10 @@
                     buffs: [],          // ✅ Array vazio (não undefined)
                     
                     // Evolução
-                    stage: 0            // Sempre começa em stage 0
+                    stage: 0,           // Sempre começa em stage 0
+                    
+                    // FASE 1 POKEMON: Shiny (1% chance se selvagem)
+                    isShiny: false      // Padrão false, será sobrescrito se necessário
                 };
                 
                 // 7. Aplicar overrides (ex: nickname personalizado, ownerId, etc.)
@@ -2369,6 +2538,12 @@
                     const level = Math.floor(Math.random() * 10) + 1;
                     encounter.wildMonster = createMonsterInstance(randomMonster, null, level);
                     encounter.wildMonster.id = 'wild_' + Date.now();
+                    
+                    // FASE 1 POKEMON: Gerar shiny (1% chance)
+                    encounter.wildMonster.isShiny = generateShinyChance();
+                    
+                    // FASE 1 POKEMON: Marcar como visto no Monstródex
+                    updateMonstrodex('see', randomMonster.id);
                 }
                 
                 GameState.currentEncounter = encounter;
@@ -4064,11 +4239,17 @@
                 return;
             }
             
+            // FASE 1 POKEMON: Rastrear vitória
+            updateStats('battlesWon', 1);
+            
             // Calcular XP
             const xp = calculateBattleXP(defeated, enc.type);
             enc.rewards = enc.rewards || {};
             enc.rewards.xp = xp;
             enc.log.push(`🏅 Recompensa: ${xp} XP.`);
+            
+            // FASE 1 POKEMON: Rastrear XP total ganho
+            updateStats('totalXpGained', xp);
             
             // Distribuir XP baseado no tipo de batalha
             const isGroup = String(enc.type || '').includes("group") || 
@@ -4361,6 +4542,7 @@
                         <div id="wildEnemyBox" class="monster-card enemy-box ${monster.class}">
                             <div class="font-size-48">${monster.emoji}</div>
                             <strong>${monster.name}</strong>
+                            ${monster.isShiny ? '<div class="badge badge-shiny" style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000;">⭐ SHINY ⭐</div>' : ''}
                             <div class="badge badge-${monster.rarity}">${monster.rarity}</div>
                             <div><strong>Classe:</strong> ${monster.class}</div>
                             <div><strong>Level:</strong> ${monster.level}</div>
@@ -4436,7 +4618,17 @@
                                     `<button class="btn btn-success btn-large" onclick="attemptCapture()" ${tutorialAllows("capture") ? "" : "disabled title='Tutorial: ainda não liberado'"}>🎯 Tentar Capturar</button>` :
                                     `<button class="btn btn-success btn-large opacity-50" disabled>🎯 Sem Orbes</button>`
                                 }
-                                <button class="btn btn-danger btn-large" onclick="attackWild()" ${tutorialAllows("attack") ? "" : "disabled title='Tutorial: ainda não liberado'"}>⚔️ Attack</button>
+                                ${playerMonster && monster ? (() => {
+                                    // FASE 1 POKEMON: Indicador Visual de Vantagem de Classe
+                                    const advantage = getClassAdvantage(playerMonster.class, monster.class);
+                                    const advantageHtml = advantage.cssClass !== 'neutral' ? 
+                                        `<div class="class-advantage-indicator ${advantage.cssClass}" style="margin: 5px 0; font-size: 12px;">${advantage.text}</div>` : '';
+                                    
+                                    return `
+                                        ${advantageHtml}
+                                        <button class="btn btn-danger btn-large" onclick="attackWild()" ${tutorialAllows("attack") ? "" : "disabled title='Tutorial: ainda não liberado'"}>⚔️ Attack</button>
+                                    `;
+                                })() : '<button class="btn btn-danger btn-large" onclick="attackWild()">⚔️ Attack</button>'}
                                 <button class="btn btn-warning btn-large" onclick="fleeEncounter()" ${tutorialAllows("flee") ? "" : "disabled title='Tutorial: ainda não liberado'"}>🏃 Flee</button>
                             </div>
                             
@@ -4631,6 +4823,9 @@
                 encounter.log.push(`HP: ${Math.floor(hpPercent * 100)}% | Base: ${Math.floor(baseThreshold * 100)}% | Orb: +${orbInfo.capture_bonus_pp}% | HP Bonus: +${Math.floor(lowHpBonus * 100)}%`);
                 encounter.log.push(`🎯 Threshold Final: ${Math.floor(thresholdFinal * 100)}%`);
                 
+                // FASE 1 POKEMON: Rastrear tentativa de captura
+                updateStats('captureAttempts', 1);
+                
                 // Captura determinística: sucesso se HP% <= Threshold_final
                 if (hpPercent <= thresholdFinal) {
                     encounter.log.push(`✅ SUCESSO! ${monster.name} foi capturado!`);
@@ -4653,6 +4848,14 @@
                     
                     GameState.monsters = GameState.monsters || [];
                     GameState.monsters.push(monster);
+                    
+                    // FASE 1 POKEMON: Rastrear captura bem-sucedida
+                    updateStats('capturesSuccessful', 1);
+                    
+                    // FASE 1 POKEMON: Adicionar ao Monstródex como capturado
+                    if (monster.monsterId || monster.templateId) {
+                        updateMonstrodex('capture', monster.monsterId || monster.templateId);
+                    }
                     
                     // Feature 4.2: Tutorial hook
                     tutorialOnAction("capture");
@@ -5088,6 +5291,10 @@
                             if (playerMonster.hp <= 0) {
                                 encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
                                 playerMonster.status = 'fainted';
+                                
+                                // FASE 1 POKEMON: Rastrear derrota
+                                updateStats('battlesLost', 1);
+                                
                                 encounter.active = false;
                                 GameState.currentEncounter = null;
                             }
@@ -5712,8 +5919,148 @@
                 if (statPlayers) statPlayers.textContent = GameState.players?.length || 0;
                 if (statMonsters) statMonsters.textContent = GameState.monsters?.length || 0;
                 if (statSession) statSession.textContent = GameState.currentSession ? 'Yes' : 'No';
+                
+                // FASE 1 POKEMON: Renderizar Monstródex
+                renderMonstrodex();
+                
+                // FASE 1 POKEMON: Renderizar Estatísticas
+                renderAchievements();
             } catch (error) {
                 console.error('Failed to update home stats:', error);
+            }
+        }
+
+        /**
+         * FASE 1 POKEMON: Renderiza seção de Monstródex
+         */
+        function renderMonstrodex() {
+            try {
+                const container = document.getElementById('monstrodexStats');
+                if (!container) return;
+                
+                const monstrodex = GameState.monstrodex || { seen: [], captured: [] };
+                const totalMonsters = MONSTER_CATALOG.length;
+                const seenCount = monstrodex.seen.length;
+                const capturedCount = monstrodex.captured.length;
+                
+                const seenPercent = totalMonsters > 0 ? Math.floor((seenCount / totalMonsters) * 100) : 0;
+                const capturedPercent = totalMonsters > 0 ? Math.floor((capturedCount / totalMonsters) * 100) : 0;
+                
+                // Estatísticas por classe
+                const classCounts = {};
+                MONSTER_CATALOG.forEach(mon => {
+                    const cls = mon.class || 'Unknown';
+                    if (!classCounts[cls]) {
+                        classCounts[cls] = { total: 0, seen: 0, captured: 0 };
+                    }
+                    classCounts[cls].total++;
+                    if (monstrodex.seen.includes(mon.id)) classCounts[cls].seen++;
+                    if (monstrodex.captured.includes(mon.id)) classCounts[cls].captured++;
+                });
+                
+                let html = `
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                        <div class="stat-box">
+                            <strong>👁️ Vistos:</strong> ${seenCount}/${totalMonsters} (${seenPercent}%)
+                            <div class="progress-bar" style="margin-top: 5px;">
+                                <div class="progress-fill" style="width: ${seenPercent}%; background: #2196F3;"></div>
+                            </div>
+                        </div>
+                        <div class="stat-box">
+                            <strong>✅ Capturados:</strong> ${capturedCount}/${totalMonsters} (${capturedPercent}%)
+                            <div class="progress-bar" style="margin-top: 5px;">
+                                <div class="progress-fill" style="width: ${capturedPercent}%; background: #4CAF50;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <details style="margin-top: 10px;">
+                        <summary style="cursor: pointer; font-weight: bold; padding: 5px;">📊 Progresso por Classe</summary>
+                        <div style="margin-top: 10px;">
+                            ${Object.entries(classCounts).map(([cls, counts]) => {
+                                const pct = counts.total > 0 ? Math.floor((counts.captured / counts.total) * 100) : 0;
+                                return `
+                                    <div style="margin-bottom: 8px;">
+                                        <strong>${cls}:</strong> ${counts.captured}/${counts.total}
+                                        <div class="progress-bar" style="margin-top: 3px;">
+                                            <div class="progress-fill" style="width: ${pct}%; background: #9C27B0;"></div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </details>
+                `;
+                
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error rendering monstrodex:', error);
+            }
+        }
+
+        /**
+         * FASE 1 POKEMON: Renderiza seção de Conquistas
+         */
+        function renderAchievements() {
+            try {
+                const container = document.getElementById('achievementsStats');
+                if (!container) return;
+                
+                const stats = GameState.stats || {
+                    battlesWon: 0,
+                    battlesLost: 0,
+                    captureAttempts: 0,
+                    capturesSuccessful: 0,
+                    totalXpGained: 0,
+                    totalMoneyEarned: 0,
+                    currentWinStreak: 0,
+                    highestWinStreak: 0
+                };
+                
+                const totalBattles = stats.battlesWon + stats.battlesLost;
+                const winRate = totalBattles > 0 ? Math.floor((stats.battlesWon / totalBattles) * 100) : 0;
+                const captureRate = stats.captureAttempts > 0 ? Math.floor((stats.capturesSuccessful / stats.captureAttempts) * 100) : 0;
+                
+                let html = `
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+                        <div class="stat-box">
+                            <div style="font-size: 24px; font-weight: bold; color: #4CAF50;">⚔️ ${stats.battlesWon}</div>
+                            <div style="font-size: 12px;">Vitórias</div>
+                        </div>
+                        <div class="stat-box">
+                            <div style="font-size: 24px; font-weight: bold; color: #f44336;">💀 ${stats.battlesLost}</div>
+                            <div style="font-size: 12px;">Derrotas</div>
+                        </div>
+                        <div class="stat-box">
+                            <div style="font-size: 24px; font-weight: bold; color: #2196F3;">📊 ${winRate}%</div>
+                            <div style="font-size: 12px;">Taxa de Vitória</div>
+                        </div>
+                        <div class="stat-box">
+                            <div style="font-size: 24px; font-weight: bold; color: #FF9800;">🔥 ${stats.currentWinStreak}</div>
+                            <div style="font-size: 12px;">Sequência Atual</div>
+                        </div>
+                        <div class="stat-box">
+                            <div style="font-size: 24px; font-weight: bold; color: #9C27B0;">🏆 ${stats.highestWinStreak}</div>
+                            <div style="font-size: 12px;">Melhor Sequência</div>
+                        </div>
+                        <div class="stat-box">
+                            <div style="font-size: 24px; font-weight: bold; color: #4CAF50;">🎯 ${captureRate}%</div>
+                            <div style="font-size: 12px;">Taxa de Captura</div>
+                        </div>
+                        <div class="stat-box">
+                            <div style="font-size: 24px; font-weight: bold; color: #673AB7;">✨ ${stats.totalXpGained}</div>
+                            <div style="font-size: 12px;">XP Total</div>
+                        </div>
+                        <div class="stat-box">
+                            <div style="font-size: 24px; font-weight: bold; color: #FFD700;">💰 ${stats.totalMoneyEarned}</div>
+                            <div style="font-size: 12px;">Moedas Ganhas</div>
+                        </div>
+                    </div>
+                `;
+                
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error rendering achievements:', error);
             }
         }
 
@@ -5767,6 +6114,7 @@
                     <div class="monster-card ${monster.class || 'common'}">
                         <div class="font-size-36">${monster.emoji || '🔮'}</div>
                         <strong>${monster.name || 'Unknown'}</strong>
+                        ${monster.isShiny ? '<div class="badge badge-shiny" style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; margin: 2px 0;">⭐ SHINY</div>' : ''}
                         <div class="badge badge-${monster.rarity || 'common'}">${monster.rarity || 'common'}</div>
                         <div>Lv ${monster.level || 1}</div>
                         <div class="progress-bar h-30">
