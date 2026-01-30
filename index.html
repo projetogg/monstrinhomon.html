@@ -135,9 +135,9 @@
                     </div>
                     
                     <!-- Team Reorder UI -->
-                    <div style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px;">
-                        <h4 style="margin-top: 0;">⚔️ Organize Equipes</h4>
-                        <p style="font-size: 0.9em; color: #666;">Reordene o time de cada jogador. O primeiro monstrinho vivo será usado na batalha.</p>
+                    <div class="team-reorder-section">
+                        <h4 class="m-0">⚔️ Organize Equipes</h4>
+                        <p class="text-small text-muted">Reordene o time de cada jogador. O primeiro monstrinho vivo será usado na batalha.</p>
                         <div id="teamReorderContainer"></div>
                     </div>
                 </div>
@@ -188,7 +188,7 @@
             </div>
 
             <!-- Therapist Mode Panel - Commit 1 -->
-            <div id="therapistPanel" class="card therapist-header" style="display:none;">
+            <div id="therapistPanel" class="card therapist-header is-hidden">
                 <h3>🔬 Therapist Mode Tools</h3>
                 <p class="therapist-header-text">Advanced debugging and testing controls</p>
                 <div id="therapistPanelContent">
@@ -200,7 +200,7 @@
                             <button class="btn btn-warning flex-1 min-w-120" onclick="therapistImportSave()">📥 Import Save (JSON)</button>
                         </div>
                         <textarea id="therapistJsonArea" placeholder="Paste JSON here to import..." 
-                            class="json-textarea" style="display: none;"></textarea>
+                            class="json-textarea is-hidden"></textarea>
                         <div class="d-flex flex-gap-10 mt-10 d-none" id="therapistJsonButtons">
                             <button class="btn btn-success flex-1" onclick="therapistLoadJson()">✅ Load JSON</button>
                             <button class="btn btn-danger flex-1" onclick="therapistCancelImport()">❌ Cancel</button>
@@ -263,7 +263,7 @@
             <button class="mm-btn" onclick="mmOpenSlotPickerForNewGame()">🎮 Novo Jogo</button>
             <button class="mm-btn" onclick="mmStartTutorial()">🎓 Tutorial</button>
             <button class="mm-btn" onclick="mmShowConfig()">⚙️ Configurações</button>
-            <button id="mmTherapistBtn" class="mm-btn" onclick="mmOpenTherapistPanel()" style="display:none;">🧑‍🏫 Mestre</button>
+            <button id="mmTherapistBtn" class="mm-btn is-hidden" onclick="mmOpenTherapistPanel()">🧑‍🏫 Mestre</button>
             <div class="mm-row">
                 <button class="mm-btn" onclick="mmCloseAllOverlays()">Fechar</button>
                 <button class="mm-btn" onclick="mmResetSaveConfirm()">🗑️ Apagar Save</button>
@@ -1312,6 +1312,18 @@
         }
 
         // THERAPIST MODE HELPERS (Feature 4.6)
+        
+        // Helper functions for show/hide elements using CSS classes
+        function showEl(el) {
+            if (!el) return;
+            el.classList.remove('is-hidden');
+        }
+        
+        function hideEl(el) {
+            if (!el) return;
+            el.classList.add('is-hidden');
+        }
+        
         function mmIsTherapistMode() {
             try {
                 if (GameState && typeof GameState.therapistMode === "boolean") return GameState.therapistMode;
@@ -1345,7 +1357,13 @@
         function mmUpdateTherapistUI() {
             // Update therapist button visibility in menu
             const btn = document.getElementById("mmTherapistBtn");
-            if (btn) btn.style.display = mmIsTherapistMode() ? "" : "none";
+            if (btn) {
+                if (mmIsTherapistMode()) {
+                    showEl(btn);
+                } else {
+                    hideEl(btn);
+                }
+            }
             
             // Update checkbox in settings
             const checkbox = document.getElementById("therapistMode");
@@ -1353,7 +1371,13 @@
             
             // Update therapist panel visibility (Commit 1)
             const panel = document.getElementById("therapistPanel");
-            if (panel) panel.style.display = mmIsTherapistMode() ? "" : "none";
+            if (panel) {
+                if (mmIsTherapistMode()) {
+                    showEl(panel);
+                } else {
+                    hideEl(panel);
+                }
+            }
         }
 
         // COMMIT 2: Therapist Export/Import Save Tools
@@ -1393,8 +1417,9 @@
                 const buttons = document.getElementById('therapistJsonButtons');
                 
                 if (textarea && buttons) {
-                    textarea.style.display = 'block';
-                    buttons.style.display = 'flex';
+                    showEl(textarea);
+                    buttons.classList.remove('d-none');
+                    buttons.classList.add('d-flex');
                     textarea.value = '';
                     textarea.focus();
                 }
@@ -1487,11 +1512,12 @@
                 const buttons = document.getElementById('therapistJsonButtons');
                 
                 if (textarea) {
-                    textarea.style.display = 'none';
+                    hideEl(textarea);
                     textarea.value = '';
                 }
                 if (buttons) {
-                    buttons.style.display = 'none';
+                    buttons.classList.remove('d-flex');
+                    buttons.classList.add('d-none');
                 }
                 
                 console.log('[Therapist] Import cancelled');
@@ -3079,15 +3105,15 @@
             }
             
             // Build modal HTML
-            let html = '<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 9999;" id="switchMonsterModal">';
-            html += '<div style="background: white; padding: 20px; border-radius: 8px; max-width: 500px; max-height: 80vh; overflow-y: auto;">';
+            let html = '<div class="modal-overlay-fixed" id="switchMonsterModal">';
+            html += '<div class="modal-content-card">';
             html += `<h3>💀 ${player.name || player.nome}: Escolha um Substituto</h3>`;
             html += '<p>Seu monstrinho foi derrotado! Escolha um substituto:</p>';
-            html += '<div style="margin: 15px 0;">';
+            html += '<div class="modal-items-container">';
             
             aliveMonsters.forEach(({ monster, index }) => {
                 const hpPercent = Math.floor((monster.hp / monster.hpMax) * 100);
-                html += `<div style="border: 1px solid #ddd; padding: 10px; margin: 5px 0; border-radius: 4px; cursor: pointer; background: #f5f5f5;" onclick="selectReplacementMonster('${player.id}', ${index}, '${enc.id}')">`;
+                html += `<div class="modal-item-card cursor-pointer" onclick="selectReplacementMonster('${player.id}', ${index}, '${enc.id}')">`;
                 html += `<strong>${monster.emoji || ''} ${monster.name || monster.nome}</strong> - Nv ${monster.level}`;
                 html += `<br>HP: ${monster.hp}/${monster.hpMax} (${hpPercent}%)`;
                 html += `<br>Classe: ${monster.class}`;
@@ -4476,7 +4502,7 @@
                         </div>
                         
                         <div class="combat-log mt-20 p-15 bg-light-gray border-radius-12 max-h-300 overflow-auto" id="combatLog">
-                            ${(encounter.log || []).map(entry => `<div class="py-8" style="border-bottom: 1px solid #ddd;">${entry}</div>`).join('')}
+                            ${(encounter.log || []).map(entry => `<div class="py-8 border-bottom-gray">${entry}</div>`).join('')}
                         </div>
                     </div>
                 `;
@@ -5613,7 +5639,7 @@
                 if (!container) return;
                 
                 if (!GameState.players || GameState.players.length === 0) {
-                    container.innerHTML = '<p style="color: #666;">No players available.</p>';
+                    container.innerHTML = '<p class="text-muted">No players available.</p>';
                     return;
                 }
                 
@@ -5621,10 +5647,10 @@
                 GameState.players.forEach(player => {
                     if (!player || !Array.isArray(player.team) || player.team.length === 0) return;
                     
-                    html += `<div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 4px; background: white;">`;
+                    html += `<div class="team-reorder-container">`;
                     html += `<strong>${player.name || player.nome}</strong> (${player.class})<br>`;
-                    html += `<small style="color: #666;">Posição 0 = Líder (primeiro a lutar se vivo)</small>`;
-                    html += `<div style="margin-top: 8px;">`;
+                    html += `<small class="text-muted">Posição 0 = Líder (primeiro a lutar se vivo)</small>`;
+                    html += `<div class="mt-8">`;
                     
                     player.team.forEach((monster, idx) => {
                         if (!monster) return;
@@ -5633,21 +5659,22 @@
                         const hpPercent = Math.floor((monster.hp / monster.hpMax) * 100);
                         const isActive = idx === player.activeIndex;
                         
-                        html += `<div style="display: flex; align-items: center; padding: 5px; margin: 3px 0; background: ${isActive ? '#e8f5e9' : '#fafafa'}; border: ${isActive ? '2px solid #4CAF50' : '1px solid #ddd'}; border-radius: 4px;">`;
-                        html += `<span style="font-weight: bold; margin-right: 8px;">${idx}</span>`;
-                        html += `<div style="flex: 1;">`;
+                        const cardClass = isActive ? 'team-member-card-active' : 'team-member-card-inactive';
+                        html += `<div class="team-member-card ${cardClass}">`;
+                        html += `<span class="team-member-index">${idx}</span>`;
+                        html += `<div class="team-member-info">`;
                         html += `${monster.emoji || ''} ${monster.name || monster.nome} - Nv${monster.level}`;
                         html += `<br><small>HP: ${monster.hp}/${monster.hpMax} (${hpPercent}%)`;
-                        if (!isAlive) html += ` <strong style="color: red;">💀 DESMAIADO</strong>`;
-                        if (isActive) html += ` <strong style="color: green;">⚡ ATIVO</strong>`;
+                        if (!isAlive) html += ` <strong class="color-red">💀 DESMAIADO</strong>`;
+                        if (isActive) html += ` <strong class="color-green">⚡ ATIVO</strong>`;
                         html += `</small>`;
                         html += `</div>`;
-                        html += `<div style="display: flex; flex-direction: column; gap: 2px;">`;
+                        html += `<div class="team-member-buttons">`;
                         if (idx > 0) {
-                            html += `<button onclick="movePlayerTeamMember('${player.id}', ${idx}, ${idx - 1})" style="padding: 2px 8px; font-size: 12px;">⬆️</button>`;
+                            html += `<button onclick="movePlayerTeamMember('${player.id}', ${idx}, ${idx - 1})" class="btn-sm-arrow">⬆️</button>`;
                         }
                         if (idx < player.team.length - 1) {
-                            html += `<button onclick="movePlayerTeamMember('${player.id}', ${idx}, ${idx + 1})" style="padding: 2px 8px; font-size: 12px;">⬇️</button>`;
+                            html += `<button onclick="movePlayerTeamMember('${player.id}', ${idx}, ${idx + 1})" class="btn-sm-arrow">⬇️</button>`;
                         }
                         html += `</div>`;
                         html += `</div>`;
