@@ -5741,9 +5741,10 @@
                             <p>💰 Money: ${player.money || 0} | ⭐ Afterlife: ${player.afterlifeCurrency || 0}</p>
                             <p>👥 Team: ${teamCount}/${GameState.config?.maxTeamSize || 6} | 📦 Box: ${boxCount}</p>
                             
-                            <h4>Team:</h4>
-                            <div class="flex">
-                                ${(player.team || []).map(m => renderMonsterCard(m)).join('')}
+                            <h4>Team Order (${teamCount}):</h4>
+                            <div class="team-reorder-section">
+                                <p class="text-small text-muted mb-10">First alive monster will be your starter in battle. Use arrows to reorder.</p>
+                                ${renderTeamReorderList(player)}
                             </div>
                         </div>
                     `;
@@ -5782,6 +5783,102 @@
             } catch (error) {
                 console.error('Failed to render monster card:', error);
                 return '<div class="monster-card">Error</div>';
+            }
+        }
+
+        function renderTeamReorderList(player) {
+            try {
+                if (!player || !player.team || player.team.length === 0) {
+                    return '<p class="text-muted">No monsters in team.</p>';
+                }
+
+                let html = '<div class="team-reorder-container">';
+                
+                player.team.forEach((monster, index) => {
+                    if (!monster) return;
+                    
+                    const isActive = index === (player.activeIndex ?? 0);
+                    const isAlive = _isAlive(monster);
+                    const hpPercent = ((monster.hp || 0) / (monster.hpMax || 1)) * 100;
+                    
+                    html += `
+                        <div class="team-member-card ${isActive ? 'team-member-card-active' : 'team-member-card-inactive'}">
+                            <span class="team-member-index">${index + 1}.</span>
+                            <div class="team-member-info">
+                                <strong>${monster.name || 'Unknown'}</strong>
+                                <span class="badge badge-${monster.rarity || 'common'}">${monster.rarity || 'Comum'}</span>
+                                Lv${monster.level || 1}
+                                ${!isAlive ? '<span class="color-error text-bold"> (Fainted)</span>' : ''}
+                                <div class="progress-bar h-15 mt-5">
+                                    <div class="progress-fill hp" style="width: ${hpPercent}%"></div>
+                                </div>
+                                <small>${monster.hp || 0}/${monster.hpMax || 0} HP</small>
+                            </div>
+                            <div class="team-member-buttons">
+                                ${index > 0 ? `<button class="btn btn-sm-arrow" onclick="moveTeamMemberUp('${player.id}', ${index})">▲</button>` : '<span style="height:20px;display:block;"></span>'}
+                                ${index < player.team.length - 1 ? `<button class="btn btn-sm-arrow" onclick="moveTeamMemberDown('${player.id}', ${index})">▼</button>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                return html;
+            } catch (error) {
+                console.error('Failed to render team reorder list:', error);
+                return '<p class="color-error">Error rendering team list</p>';
+            }
+        }
+
+        function moveTeamMemberUp(playerId, index) {
+            try {
+                const player = GameState.players?.find(p => p?.id === playerId);
+                if (!player || !player.team || index <= 0 || index >= player.team.length) return;
+                
+                // Swap with previous
+                const temp = player.team[index - 1];
+                player.team[index - 1] = player.team[index];
+                player.team[index] = temp;
+                
+                // Update activeIndex if needed
+                if (player.activeIndex === index) {
+                    player.activeIndex = index - 1;
+                } else if (player.activeIndex === index - 1) {
+                    player.activeIndex = index;
+                }
+                
+                saveGame();
+                updatePlayersList();
+                showToast('Team order updated!');
+            } catch (error) {
+                console.error('Failed to move team member up:', error);
+                showToast('Error reordering team');
+            }
+        }
+
+        function moveTeamMemberDown(playerId, index) {
+            try {
+                const player = GameState.players?.find(p => p?.id === playerId);
+                if (!player || !player.team || index < 0 || index >= player.team.length - 1) return;
+                
+                // Swap with next
+                const temp = player.team[index + 1];
+                player.team[index + 1] = player.team[index];
+                player.team[index] = temp;
+                
+                // Update activeIndex if needed
+                if (player.activeIndex === index) {
+                    player.activeIndex = index + 1;
+                } else if (player.activeIndex === index + 1) {
+                    player.activeIndex = index;
+                }
+                
+                saveGame();
+                updatePlayersList();
+                showToast('Team order updated!');
+            } catch (error) {
+                console.error('Failed to move team member down:', error);
+                showToast('Error reordering team');
             }
         }
 
