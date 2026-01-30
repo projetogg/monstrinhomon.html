@@ -3079,15 +3079,15 @@
             }
             
             // Build modal HTML
-            let html = '<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 9999;" id="switchMonsterModal">';
-            html += '<div style="background: white; padding: 20px; border-radius: 8px; max-width: 500px; max-height: 80vh; overflow-y: auto;">';
+            let html = '<div class="modal-overlay-fixed" id="switchMonsterModal">';
+            html += '<div class="modal-content-card">';
             html += `<h3>💀 ${player.name || player.nome}: Escolha um Substituto</h3>`;
             html += '<p>Seu monstrinho foi derrotado! Escolha um substituto:</p>';
-            html += '<div style="margin: 15px 0;">';
+            html += '<div class="modal-items-container">';
             
             aliveMonsters.forEach(({ monster, index }) => {
                 const hpPercent = Math.floor((monster.hp / monster.hpMax) * 100);
-                html += `<div style="border: 1px solid #ddd; padding: 10px; margin: 5px 0; border-radius: 4px; cursor: pointer; background: #f5f5f5;" onclick="selectReplacementMonster('${player.id}', ${index}, '${enc.id}')">`;
+                html += `<div class="modal-item-card cursor-pointer" onclick="selectReplacementMonster('${player.id}', ${index}, '${enc.id}')">`;
                 html += `<strong>${monster.emoji || ''} ${monster.name || monster.nome}</strong> - Nv ${monster.level}`;
                 html += `<br>HP: ${monster.hp}/${monster.hpMax} (${hpPercent}%)`;
                 html += `<br>Classe: ${monster.class}`;
@@ -5613,7 +5613,7 @@
                 if (!container) return;
                 
                 if (!GameState.players || GameState.players.length === 0) {
-                    container.innerHTML = '<p style="color: #666;">No players available.</p>';
+                    container.innerHTML = '<p class="text-muted">No players available.</p>';
                     return;
                 }
                 
@@ -5621,10 +5621,10 @@
                 GameState.players.forEach(player => {
                     if (!player || !Array.isArray(player.team) || player.team.length === 0) return;
                     
-                    html += `<div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 4px; background: white;">`;
+                    html += `<div class="team-reorder-container">`;
                     html += `<strong>${player.name || player.nome}</strong> (${player.class})<br>`;
-                    html += `<small style="color: #666;">Posição 0 = Líder (primeiro a lutar se vivo)</small>`;
-                    html += `<div style="margin-top: 8px;">`;
+                    html += `<small class="text-muted">Posição 0 = Líder (primeiro a lutar se vivo)</small>`;
+                    html += `<div class="mt-8">`;
                     
                     player.team.forEach((monster, idx) => {
                         if (!monster) return;
@@ -5633,21 +5633,22 @@
                         const hpPercent = Math.floor((monster.hp / monster.hpMax) * 100);
                         const isActive = idx === player.activeIndex;
                         
-                        html += `<div style="display: flex; align-items: center; padding: 5px; margin: 3px 0; background: ${isActive ? '#e8f5e9' : '#fafafa'}; border: ${isActive ? '2px solid #4CAF50' : '1px solid #ddd'}; border-radius: 4px;">`;
-                        html += `<span style="font-weight: bold; margin-right: 8px;">${idx}</span>`;
-                        html += `<div style="flex: 1;">`;
+                        const cardClass = isActive ? 'team-member-card-active' : 'team-member-card-inactive';
+                        html += `<div class="team-member-card ${cardClass}">`;
+                        html += `<span class="team-member-index">${idx}</span>`;
+                        html += `<div class="team-member-info">`;
                         html += `${monster.emoji || ''} ${monster.name || monster.nome} - Nv${monster.level}`;
                         html += `<br><small>HP: ${monster.hp}/${monster.hpMax} (${hpPercent}%)`;
-                        if (!isAlive) html += ` <strong style="color: red;">💀 DESMAIADO</strong>`;
-                        if (isActive) html += ` <strong style="color: green;">⚡ ATIVO</strong>`;
+                        if (!isAlive) html += ` <strong class="color-red">💀 DESMAIADO</strong>`;
+                        if (isActive) html += ` <strong class="color-green">⚡ ATIVO</strong>`;
                         html += `</small>`;
                         html += `</div>`;
-                        html += `<div style="display: flex; flex-direction: column; gap: 2px;">`;
+                        html += `<div class="team-member-buttons">`;
                         if (idx > 0) {
-                            html += `<button onclick="movePlayerTeamMember('${player.id}', ${idx}, ${idx - 1})" style="padding: 2px 8px; font-size: 12px;">⬆️</button>`;
+                            html += `<button onclick="movePlayerTeamMember('${player.id}', ${idx}, ${idx - 1})" class="btn-sm-arrow">⬆️</button>`;
                         }
                         if (idx < player.team.length - 1) {
-                            html += `<button onclick="movePlayerTeamMember('${player.id}', ${idx}, ${idx + 1})" style="padding: 2px 8px; font-size: 12px;">⬇️</button>`;
+                            html += `<button onclick="movePlayerTeamMember('${player.id}', ${idx}, ${idx + 1})" class="btn-sm-arrow">⬇️</button>`;
                         }
                         html += `</div>`;
                         html += `</div>`;
