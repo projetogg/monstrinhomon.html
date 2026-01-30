@@ -1689,7 +1689,8 @@
          * @returns {boolean} - true se deve ser shiny (1% chance)
          */
         function generateShinyChance() {
-            return Math.random() < 0.01; // 1% chance
+            const SHINY_CHANCE_RATE = 0.01; // 1% chance
+            return Math.random() < SHINY_CHANCE_RATE;
         }
 
         // PLAYER MANAGEMENT
@@ -4542,7 +4543,7 @@
                         <div id="wildEnemyBox" class="monster-card enemy-box ${monster.class}">
                             <div class="font-size-48">${monster.emoji}</div>
                             <strong>${monster.name}</strong>
-                            ${monster.isShiny ? '<div class="badge badge-shiny" style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000;">⭐ SHINY ⭐</div>' : ''}
+                            ${monster.isShiny ? '<div class="badge badge-shiny">⭐ SHINY ⭐</div>' : ''}
                             <div class="badge badge-${monster.rarity}">${monster.rarity}</div>
                             <div><strong>Classe:</strong> ${monster.class}</div>
                             <div><strong>Level:</strong> ${monster.level}</div>
@@ -6114,7 +6115,7 @@
                     <div class="monster-card ${monster.class || 'common'}">
                         <div class="font-size-36">${monster.emoji || '🔮'}</div>
                         <strong>${monster.name || 'Unknown'}</strong>
-                        ${monster.isShiny ? '<div class="badge badge-shiny" style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; margin: 2px 0;">⭐ SHINY</div>' : ''}
+                        ${monster.isShiny ? '<div class="badge badge-shiny">⭐ SHINY ⭐</div>' : ''}
                         <div class="badge badge-${monster.rarity || 'common'}">${monster.rarity || 'common'}</div>
                         <div>Lv ${monster.level || 1}</div>
                         <div class="progress-bar h-30">
