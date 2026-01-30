@@ -438,6 +438,8 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .d-grid { display: grid; }
 .d-inline-block { display: inline-block; }
 .d-inline-flex { display: inline-flex; }
+.is-hidden { display: none !important; }
+.is-visible { display: block !important; }
 
 /* Flex utilities */
 .flex-1 { flex: 1; }

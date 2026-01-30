@@ -188,7 +188,7 @@
             </div>
 
             <!-- Therapist Mode Panel - Commit 1 -->
-            <div id="therapistPanel" class="card therapist-header" style="display:none;">
+            <div id="therapistPanel" class="card therapist-header is-hidden">
                 <h3>🔬 Therapist Mode Tools</h3>
                 <p class="therapist-header-text">Advanced debugging and testing controls</p>
                 <div id="therapistPanelContent">
@@ -200,7 +200,7 @@
                             <button class="btn btn-warning flex-1 min-w-120" onclick="therapistImportSave()">📥 Import Save (JSON)</button>
                         </div>
                         <textarea id="therapistJsonArea" placeholder="Paste JSON here to import..." 
-                            class="json-textarea" style="display: none;"></textarea>
+                            class="json-textarea is-hidden"></textarea>
                         <div class="d-flex flex-gap-10 mt-10 d-none" id="therapistJsonButtons">
                             <button class="btn btn-success flex-1" onclick="therapistLoadJson()">✅ Load JSON</button>
                             <button class="btn btn-danger flex-1" onclick="therapistCancelImport()">❌ Cancel</button>
@@ -263,7 +263,7 @@
             <button class="mm-btn" onclick="mmOpenSlotPickerForNewGame()">🎮 Novo Jogo</button>
             <button class="mm-btn" onclick="mmStartTutorial()">🎓 Tutorial</button>
             <button class="mm-btn" onclick="mmShowConfig()">⚙️ Configurações</button>
-            <button id="mmTherapistBtn" class="mm-btn" onclick="mmOpenTherapistPanel()" style="display:none;">🧑‍🏫 Mestre</button>
+            <button id="mmTherapistBtn" class="mm-btn is-hidden" onclick="mmOpenTherapistPanel()">🧑‍🏫 Mestre</button>
             <div class="mm-row">
                 <button class="mm-btn" onclick="mmCloseAllOverlays()">Fechar</button>
                 <button class="mm-btn" onclick="mmResetSaveConfirm()">🗑️ Apagar Save</button>
@@ -1312,6 +1312,18 @@
         }
 
         // THERAPIST MODE HELPERS (Feature 4.6)
+        
+        // Helper functions for show/hide elements using CSS classes
+        function showEl(el) {
+            if (!el) return;
+            el.classList.remove('is-hidden');
+        }
+        
+        function hideEl(el) {
+            if (!el) return;
+            el.classList.add('is-hidden');
+        }
+        
         function mmIsTherapistMode() {
             try {
                 if (GameState && typeof GameState.therapistMode === "boolean") return GameState.therapistMode;
@@ -1345,7 +1357,13 @@
         function mmUpdateTherapistUI() {
             // Update therapist button visibility in menu
             const btn = document.getElementById("mmTherapistBtn");
-            if (btn) btn.style.display = mmIsTherapistMode() ? "" : "none";
+            if (btn) {
+                if (mmIsTherapistMode()) {
+                    showEl(btn);
+                } else {
+                    hideEl(btn);
+                }
+            }
             
             // Update checkbox in settings
             const checkbox = document.getElementById("therapistMode");
@@ -1353,7 +1371,13 @@
             
             // Update therapist panel visibility (Commit 1)
             const panel = document.getElementById("therapistPanel");
-            if (panel) panel.style.display = mmIsTherapistMode() ? "" : "none";
+            if (panel) {
+                if (mmIsTherapistMode()) {
+                    showEl(panel);
+                } else {
+                    hideEl(panel);
+                }
+            }
         }
 
         // COMMIT 2: Therapist Export/Import Save Tools
@@ -1393,8 +1417,9 @@
                 const buttons = document.getElementById('therapistJsonButtons');
                 
                 if (textarea && buttons) {
-                    textarea.style.display = 'block';
-                    buttons.style.display = 'flex';
+                    showEl(textarea);
+                    buttons.classList.remove('d-none');
+                    buttons.classList.add('d-flex');
                     textarea.value = '';
                     textarea.focus();
                 }
@@ -1487,11 +1512,12 @@
                 const buttons = document.getElementById('therapistJsonButtons');
                 
                 if (textarea) {
-                    textarea.style.display = 'none';
+                    hideEl(textarea);
                     textarea.value = '';
                 }
                 if (buttons) {
-                    buttons.style.display = 'none';
+                    buttons.classList.remove('d-flex');
+                    buttons.classList.add('d-none');
                 }
                 
                 console.log('[Therapist] Import cancelled');
