@@ -141,7 +141,6 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 }
 
 .medal { font-size: 48px; display: inline-block; margin: 10px; }
-.hidden { display: none !important; }
 .flex { display: flex; gap: 15px; flex-wrap: wrap; }
 .flex-center { display: flex; justify-content: center; align-items: center; gap: 15px; }
 
@@ -439,7 +438,6 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .d-inline-block { display: inline-block; }
 .d-inline-flex { display: inline-flex; }
 .is-hidden { display: none !important; }
-.is-visible { display: block !important; }
 
 /* Flex utilities */
 .flex-1 { flex: 1; }
