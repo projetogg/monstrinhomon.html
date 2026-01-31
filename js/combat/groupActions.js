@@ -8,8 +8,9 @@
  * Recebem dependências por parâmetro (dependency injection)
  */
 
-// Reutiliza funções de wildActions.js (já implementadas no PR4)
-export { applyEneRegen, updateBuffs, recordD20Roll } from './wildActions.js';
+// NOTA: applyEneRegen, updateBuffs, recordD20Roll ainda estão em index.html
+// Serão movidos para módulo compartilhado em PR futuro
+// Por enquanto, as funções de grupo no index.html chamam diretamente essas funções
 
 /**
  * STUB: Inicializa encounter de grupo/boss
