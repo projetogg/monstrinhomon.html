@@ -838,6 +838,238 @@
             'CLASTERORB_RARA': { id: 'CLASTERORB_RARA', name: 'ClasterOrb Rara', type: 'CAPTURE', capture_bonus_pp: 10, emoji: '🟣' }
         };
 
+        // ============================================================================
+        // Commit 12 (Wave C12.3): Centralized Auxiliary Tables - Single Source of Truth
+        // ============================================================================
+
+        /**
+         * MM_TABLES - Central repository for all enums, constants, and lookup helpers
+         * 
+         * Purpose:
+         * - Eliminate hardcoded arrays/values scattered throughout code
+         * - Provide single source of truth for UI labels, enums, and lookups
+         * - Enable easy validation and consistent behavior
+         * 
+         * Structure:
+         * - ENUMS: Arrays of valid values (classes, rarities, states)
+         * - UI_MAPS: Visual representations (emojis, colors, labels)
+         * - LOOKUPS: Helper functions referencing GameState.config
+         * - VALIDATORS: Validation functions for enums
+         */
+        const MM_TABLES = {
+            // ========================================================================
+            // ENUMS - Definitive lists of valid values
+            // ========================================================================
+            
+            CLASSES: [
+                'Guerreiro',
+                'Mago', 
+                'Curandeiro',
+                'Bárbaro',
+                'Ladino',
+                'Bardo',
+                'Caçador',
+                'Animalista'
+            ],
+            
+            RARITIES: [
+                'Comum',
+                'Incomum',
+                'Raro',
+                'Místico',
+                'Lendário'
+            ],
+            
+            MONSTER_STATES: [
+                'healthy',
+                'fainted',
+                'poisoned',
+                'paralyzed',
+                'asleep',
+                'confused'
+            ],
+            
+            // ========================================================================
+            // UI MAPS - Visual representations and labels
+            // ========================================================================
+            
+            CLASS_EMOJI: {
+                'Guerreiro': '⚔️',
+                'Mago': '🔮',
+                'Curandeiro': '💚',
+                'Bárbaro': '⚡',
+                'Ladino': '🌑',
+                'Bardo': '🎵',
+                'Caçador': '🏹',
+                'Animalista': '🐺'
+            },
+            
+            RARITY_EMOJI: {
+                'Comum': '⚪',
+                'Incomum': '🔵',
+                'Raro': '🟣',
+                'Místico': '✨',
+                'Lendário': '👑'
+            },
+            
+            RARITY_COLOR: {
+                'Comum': '#808080',      // Gray
+                'Incomum': '#1E90FF',    // Blue
+                'Raro': '#9370DB',       // Purple
+                'Místico': '#FFD700',    // Gold
+                'Lendário': '#FF4500'    // Red-Orange
+            },
+            
+            // ========================================================================
+            // COMBAT CONSTANTS - Moved from scattered locations
+            // ========================================================================
+            
+            BASIC_ATTACK_POWER: {
+                'Guerreiro': 12,
+                'Mago': 11,
+                'Curandeiro': 10,
+                'Bárbaro': 14,
+                'Ladino': 12,
+                'Bardo': 11,
+                'Caçador': 13,
+                'Animalista': 12
+            },
+            
+            ENERGY_REGEN: {
+                'Mago': { pct: 0.18, min: 3 },
+                'Curandeiro': { pct: 0.18, min: 3 },
+                'Bardo': { pct: 0.14, min: 2 },
+                'Caçador': { pct: 0.14, min: 2 },
+                'Ladino': { pct: 0.14, min: 2 },
+                'Animalista': { pct: 0.12, min: 2 },
+                'Bárbaro': { pct: 0.12, min: 2 },
+                'Guerreiro': { pct: 0.10, min: 1 }
+            },
+            
+            // ========================================================================
+            // LOOKUP HELPERS - Access GameState.config with fallbacks
+            // ========================================================================
+            
+            /**
+             * Get class advantage info (strong/weak matchups)
+             */
+            getClassAdvantage: function(attackerClass) {
+                if (!attackerClass) return null;
+                return GameState.config?.classAdvantages?.[attackerClass] || null;
+            },
+            
+            /**
+             * Get rarity multiplier (power, XP, etc.)
+             */
+            getRarityMultiplier: function(rarity, type = 'power') {
+                if (!rarity) return 1.0;
+                
+                const config = GameState.config;
+                if (type === 'power') {
+                    return config?.rarityPower?.[rarity] || 1.0;
+                } else if (type === 'xp') {
+                    return config?.rarityXP?.[rarity] || 1.0;
+                }
+                return 1.0;
+            },
+            
+            /**
+             * Get basic attack power for a class
+             */
+            getBasicAttackPower: function(monsterClass) {
+                if (!monsterClass) return 12; // Default fallback
+                return this.BASIC_ATTACK_POWER[monsterClass] || 12;
+            },
+            
+            /**
+             * Get energy regeneration config for a class
+             */
+            getEnergyRegen: function(monsterClass) {
+                if (!monsterClass) return { pct: 0.10, min: 1 };
+                return this.ENERGY_REGEN[monsterClass] || { pct: 0.10, min: 1 };
+            },
+            
+            /**
+             * Get capture threshold for a rarity
+             */
+            getCaptureThreshold: function(rarity) {
+                if (!rarity) return 0.35; // Default to Comum
+                return GameState.config?.captureThreshold?.[rarity] || 0.35;
+            },
+            
+            /**
+             * Get flee chance base for a rarity
+             */
+            getFleeBase: function(rarity) {
+                if (!rarity) return 10; // Default to Comum
+                return GameState.config?.fleeBase?.[rarity] || 10;
+            },
+            
+            // ========================================================================
+            // VALIDATORS - Check if values are valid
+            // ========================================================================
+            
+            /**
+             * Validate class name
+             */
+            validateClass: function(className) {
+                if (!className) return false;
+                return this.CLASSES.includes(className);
+            },
+            
+            /**
+             * Validate rarity name
+             */
+            validateRarity: function(rarityName) {
+                if (!rarityName) return false;
+                return this.RARITIES.includes(rarityName);
+            },
+            
+            /**
+             * Validate monster state
+             */
+            validateState: function(stateName) {
+                if (!stateName) return false;
+                return this.MONSTER_STATES.includes(stateName);
+            },
+            
+            /**
+             * Get class emoji with fallback
+             */
+            getClassEmoji: function(className) {
+                return this.CLASS_EMOJI[className] || '👾';
+            },
+            
+            /**
+             * Get rarity emoji with fallback
+             */
+            getRarityEmoji: function(rarityName) {
+                return this.RARITY_EMOJI[rarityName] || '⚪';
+            },
+            
+            /**
+             * Get rarity color with fallback
+             */
+            getRarityColor: function(rarityName) {
+                return this.RARITY_COLOR[rarityName] || '#808080';
+            }
+        };
+
+        // ============================================================================
+        // Legacy constants (deprecated - use MM_TABLES instead)
+        // TODO: Remove these after all references are migrated to MM_TABLES
+        // ============================================================================
+        
+        // @deprecated - Use MM_TABLES.BASIC_ATTACK_POWER
+        const BASIC_ATTACK_POWER = MM_TABLES.BASIC_ATTACK_POWER;
+        
+        // @deprecated - Use MM_TABLES.ENERGY_REGEN
+        const ENE_REGEN_BY_CLASS = MM_TABLES.ENERGY_REGEN;
+
+        // ============================================================================
+        // End of Commit 12 (Wave C12.3)
+        // ============================================================================
+
         // SKILLS CATALOG (baseado em HABILIDADES.csv)
         const SKILLS_CATALOG = [
             // Tier I skills (original)
