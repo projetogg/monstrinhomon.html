@@ -1,0 +1,17 @@
+{
+  "name": "monstrinhomon",
+  "version": "1.0.0",
+  "description": "Therapeutic game for children with ASD and ADHD",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "keywords": ["game", "therapy", "monsters"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "vitest": "^1.2.0"
+  }
+}
