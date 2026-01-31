@@ -7,6 +7,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <title>Monstrinhomon - Therapeutic Game</title>
     <link rel="stylesheet" href="css/main.css">
+    <script src="js/storage.js"></script>
 </head>
 <body>
     <div id="errorPanel" class="error-panel">
@@ -417,9 +418,10 @@
             let ctx = null;
             let unlocked = false;
 
-            let sfxVol = clamp01(Number(localStorage.getItem("mm_audio_sfx") ?? 0.7));
-            let musVol = clamp01(Number(localStorage.getItem("mm_audio_music") ?? 0.4));
-            let muted = (localStorage.getItem("mm_audio_muted") === "1");
+            // PR3: Load audio prefs via StorageManager
+            let sfxVol = StorageManager.getAudioSfxVolume();
+            let musVol = StorageManager.getAudioMusicVolume();
+            let muted = StorageManager.getAudioMuted();
 
             function clamp01(v){ return isFinite(v) ? Math.max(0, Math.min(1, v)) : 0; }
 
@@ -456,17 +458,17 @@
 
             function setSfxVolume(v) {
                 sfxVol = clamp01(v);
-                localStorage.setItem("mm_audio_sfx", String(sfxVol));
+                StorageManager.setAudioSfxVolume(sfxVol); // PR3
                 syncUI();
             }
             function setMusicVolume(v) {
                 musVol = clamp01(v);
-                localStorage.setItem("mm_audio_music", String(musVol));
+                StorageManager.setAudioMusicVolume(musVol); // PR3
                 syncUI();
             }
             function toggleMute() {
                 muted = !muted;
-                localStorage.setItem("mm_audio_muted", muted ? "1" : "0");
+                StorageManager.setAudioMuted(muted); // PR3
                 syncUI();
             }
 
@@ -1245,9 +1247,9 @@
             try {
                 loadFromLocalStorage();
                 
-                // Restore therapist mode state from localStorage
+                // PR3: Restore therapist mode state via StorageManager
                 if (typeof GameState.therapistMode !== "boolean") {
-                    GameState.therapistMode = (localStorage.getItem("mm_therapist_mode") === "1");
+                    GameState.therapistMode = StorageManager.getTherapistMode();
                 }
                 
                 if (!GameState.objectives || GameState.objectives.length === 0) {
@@ -1678,12 +1680,14 @@
         }
 
         // COMMIT 3: Centralized Persistence Layer
-        // All localStorage access must go through these functions
+        // PR3: All localStorage access now goes through StorageManager
         
         function saveGame() {
             try {
-                const data = JSON.stringify(GameState);
-                localStorage.setItem('monstrinhomon_state', data);
+                const success = StorageManager.saveState(GameState);
+                if (!success) {
+                    showError('Failed to save data', 'StorageManager returned false');
+                }
             } catch (error) {
                 showError('Failed to save data', error.stack);
             }
@@ -1699,28 +1703,20 @@
          * - Fail-safe: migration error → fallback seguro
          * 
          * COMMIT 6: Integrado normalizeGameState()
+         * PR3: Uses StorageManager for all localStorage access
          */
         function loadGame() {
             try {
-                const raw = localStorage.getItem('monstrinhomon_state');
+                // PR3: Load via StorageManager
+                const result = StorageManager.loadState();
                 
                 // 1. Fail-safe: Se não tem save, não faz nada (mantém GameState default)
-                if (raw === null) {
+                if (!result.loaded || result.state === null) {
                     console.log('[System] No save found. Starting new game.');
                     return false;
                 }
                 
-                // 2. Fail-safe: Parse JSON com tratamento de erro
-                let loaded;
-                try {
-                    loaded = JSON.parse(raw);
-                } catch (parseError) {
-                    // JSON corrompido: faz backup e reseta
-                    console.error('[System] Corrupted save detected. Creating backup and resetting.', parseError);
-                    localStorage.setItem('monstrinhomon_corrupted_backup', raw);
-                    localStorage.removeItem('monstrinhomon_state');
-                    return false;
-                }
+                const loaded = result.state;
                 
                 // Validação estrutural mínima antes de tocar no GameState
                 if (!loaded || typeof loaded !== 'object') {
@@ -1838,7 +1834,7 @@
             } catch (e) {
                 console.warn('Failed to access GameState.therapistMode:', e);
             }
-            return localStorage.getItem("mm_therapist_mode") === "1";
+            return StorageManager.getTherapistMode(); // PR3
         }
 
         function mmSetTherapistMode(on) {
@@ -1848,7 +1844,7 @@
             } catch (e) {
                 console.warn('Failed to set GameState.therapistMode:', e);
             }
-            localStorage.setItem("mm_therapist_mode", v ? "1" : "0");
+            StorageManager.setTherapistMode(v); // PR3
             if (typeof saveToLocalStorage === "function") saveToLocalStorage();
             // Update UI elements
             mmUpdateTherapistUI();
@@ -7296,7 +7292,7 @@
             try {
                 if (confirm('Are you sure? This will delete ALL data!')) {
                     if (confirm('Really sure? This cannot be undone!')) {
-                        localStorage.removeItem('monstrinhomon_state');
+                        StorageManager.remove(StorageManager.StorageKeys.STATE); // PR3
                         location.reload();
                     }
                 }
@@ -7718,7 +7714,7 @@
         function mmContinue(){
             // Check if there's a last slot saved - if so, load from it
             try {
-                const lastSlot = localStorage.getItem("mm_last_slot");
+                const lastSlot = StorageManager.getLastSlot(); // PR3
                 if (lastSlot) {
                     const slotNum = parseInt(lastSlot, 10);
                     if ([1, 2, 3].includes(slotNum)) {
@@ -7766,7 +7762,7 @@
             const ok = confirm("Apagar o save do navegador? Isso não pode ser desfeito.");
             if (!ok) return;
             try {
-                localStorage.removeItem(MM_SAVE_KEY);
+                StorageManager.remove(MM_SAVE_KEY); // PR3
                 alert("Save apagado com sucesso!");
             } catch(e){
                 alert("Erro ao apagar save: " + e.message);
@@ -7977,7 +7973,8 @@
                     const key = MM_SAVE_KEYS[GameState.saveSlot];
                     if (key) {
                         try {
-                            localStorage.setItem(key, JSON.stringify(envelope));
+                            // PR3: Save via StorageManager with auto-backup
+                            StorageManager.saveSlot(GameState.saveSlot, envelope);
                         } catch (e) {
                             console.error("Failed to save to slot", e);
                             alert(`⚠️ Jogo criado, mas falhou ao salvar no Slot ${GameState.saveSlot}`);
@@ -8046,27 +8043,14 @@
         }
 
         function mmReadSlot(slot) {
-            const key = MM_SAVE_KEYS[slot];
-            if (!key) return null;
-            const raw = localStorage.getItem(key);
-            if (!raw) return null;
-            try { 
-                return JSON.parse(raw); 
-            } catch { 
-                return null; 
-            }
+            // PR3: Load via StorageManager
+            const result = StorageManager.loadSlot(slot);
+            return result.loaded ? result.data : null;
         }
 
         function mmWriteSlot(slot, saveObj) {
-            const key = MM_SAVE_KEYS[slot];
-            if (!key) return false;
-            try {
-                localStorage.setItem(key, JSON.stringify(saveObj));
-                return true;
-            } catch (e) {
-                console.error("Failed to write slot", slot, e);
-                return false;
-            }
+            // PR3: Save via StorageManager with auto-backup
+            return StorageManager.saveSlot(slot, saveObj);
         }
 
         function mmBuildSaveEnvelope() {
@@ -8111,7 +8095,7 @@
                 
                 // Update slot tracking
                 GameState.saveSlot = slot;
-                localStorage.setItem("mm_last_slot", String(slot));
+                StorageManager.setLastSlot(slot); // PR3
                 
                 saveToLocalStorage();  // Update the main save too
                 
@@ -8132,7 +8116,7 @@
 
         function mmDeleteSlot(slot) {
             if (!confirm(`Apagar Slot ${slot}? Esta ação não pode ser desfeita.`)) return;
-            localStorage.removeItem(MM_SAVE_KEYS[slot]);
+            StorageManager.deleteSlot(slot); // PR3
             showToast(`🗑️ Slot ${slot} apagado.`);
             mmRenderSavesScreen();
         }
@@ -8234,8 +8218,9 @@
 
         // Slot Picker functions for New Game flow
         function mmGetLastSlot() {
-            const n = Number(localStorage.getItem("mm_last_slot") || "1");
-            return [1, 2, 3].includes(n) ? n : 1;
+            // PR3: Use StorageManager
+            const slot = StorageManager.getLastSlot();
+            return slot !== null ? slot : 1;
         }
 
         function mmOpenSlotPickerForNewGame() {
@@ -8296,7 +8281,7 @@
             // Store chosen slot
             if (!window.GameState) window.GameState = {};
             GameState.saveSlot = slot;
-            localStorage.setItem("mm_last_slot", String(slot));
+            StorageManager.setLastSlot(slot); // PR3
 
             mmHideOverlay("mmSlotPicker");
             // Call existing wizard from Feature 4.0
@@ -8304,23 +8289,23 @@
         }
 
         function mmMigrateLegacySaveToSlot1() {
-            // Migrate once: legacy save -> slot1 if slot1 is empty
-            if (localStorage.getItem(MM_MIGRATED_FLAG) === "1") return;
+            // PR3: Use StorageManager for migration flag
+            if (StorageManager.isSlotsMigrated()) return;
 
             const slot1 = mmReadSlot(1);
             if (slot1 && slot1.state) {
                 // Slot 1 already has data, mark as migrated
-                localStorage.setItem(MM_MIGRATED_FLAG, "1");
+                StorageManager.markSlotsMigrated();
                 return;
             }
 
             // Try to find legacy save
             for (const key of MM_LEGACY_KEYS) {
-                const raw = localStorage.getItem(key);
+                const raw = StorageManager.loadJSON(key, null); // PR3
                 if (!raw) continue;
 
                 try {
-                    const parsed = JSON.parse(raw);
+                    const parsed = raw;
                     
                     // Check if it's already an envelope or raw GameState
                     const env = (parsed && parsed.state) ? parsed : {
@@ -8341,7 +8326,7 @@
                 }
             }
 
-            localStorage.setItem(MM_MIGRATED_FLAG, "1");
+            StorageManager.markSlotsMigrated();
         }
 
         // ===== Feature 4.2: Tutorial (Optional) =====
@@ -8586,18 +8571,13 @@
         // ===== Feature 4.1.1: Start Choice (Tutorial Selection) =====
         
         function mmGetSlotTutorialPref(slotNum){
-            try {
-                const k = `mm_slot_pref_tutorial_${slotNum}`;
-                const v = localStorage.getItem(k);
-                return v || null; // "always" | "never"
-            } catch { return null; }
+            // PR3: Use StorageManager
+            return StorageManager.getTutorialPrefSlot(slotNum);
         }
 
         function mmSetSlotTutorialPref(slotNum, pref){
-            try {
-                const k = `mm_slot_pref_tutorial_${slotNum}`;
-                localStorage.setItem(k, pref);
-            } catch {}
+            // PR3: Use StorageManager
+            StorageManager.setTutorialPrefSlot(slotNum, pref);
         }
 
         // Helper to get the active slot from multiple possible sources
@@ -8607,14 +8587,7 @@
                 GameState?.activeSaveSlot ??
                 GameState?.saveSlot ??
                 GameState?.currentSaveSlot ??
-                (function() {
-                    try {
-                        const lastSlot = localStorage.getItem("mm_last_slot");
-                        return lastSlot ? parseInt(lastSlot, 10) : null;
-                    } catch {
-                        return null;
-                    }
-                })() ??
+                StorageManager.getLastSlot() ?? // PR3
                 null
             );
         }
@@ -8629,7 +8602,7 @@
             if (slotPref === "never")  return mmEnterGameUI();
 
             // 2) Optional global fallback
-            const globalPref = localStorage.getItem("mm_pref_tutorial") || "ask";
+            const globalPref = StorageManager.getTutorialPrefGlobal(); // PR3
             if (globalPref === "always") return mmStartTutorial();
             if (globalPref === "never")  return mmEnterGameUI();
 
@@ -8670,8 +8643,8 @@
                 mmSetSlotTutorialPref(slot, pref);
                 return;
             }
-            // fallback global
-            try { localStorage.setItem("mm_pref_tutorial", pref); } catch {}
+            // PR3: fallback to global via StorageManager
+            StorageManager.setTutorialPrefGlobal(pref);
         }
 
         // Make sure this brings user to the normal tabs/game screen
