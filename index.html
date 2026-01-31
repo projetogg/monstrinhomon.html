@@ -3764,7 +3764,7 @@
             
             // SISTEMA DE AMIZADE: Aplicar multiplicador de XP baseado em amizade
             const friendshipBonuses = getFriendshipBonuses(mon.friendship || DEFAULT_FRIENDSHIP);
-            const xpGain = Math.floor(baseXpGain * friendshipBonuses.xpMultiplier);
+            const xpGain = Math.round(baseXpGain * friendshipBonuses.xpMultiplier);
             
             const name = mon.nickname || mon.name || mon.nome || "Monstrinho";
             mon.xp += xpGain;
@@ -6295,19 +6295,19 @@
                 const friendshipLevel = getFriendshipLevel(friendship);
                 const friendshipBonuses = getFriendshipBonuses(friendship);
                 
-                // Tooltip de bônus
-                let bonusesTooltip = `Nível de Amizade: ${friendshipLevel}/5`;
+                // Tooltip com informações completas de amizade
+                let friendshipTooltip = `Nível de Amizade: ${friendshipLevel}/5`;
                 if (friendshipBonuses.xpMultiplier > 1.0) {
-                    bonusesTooltip += `\nBônus XP: +${Math.round((friendshipBonuses.xpMultiplier - 1) * 100)}%`;
+                    friendshipTooltip += `\nBônus XP: +${Math.round((friendshipBonuses.xpMultiplier - 1) * 100)}%`;
                 }
                 if (friendshipBonuses.critChance > 0) {
-                    bonusesTooltip += `\nChance Crítico: +${friendshipBonuses.critChance * 100}%`;
+                    friendshipTooltip += `\nChance Crítico: +${friendshipBonuses.critChance * 100}%`;
                 }
                 if (friendshipBonuses.statBonus > 0) {
-                    bonusesTooltip += `\nBônus Stats: +${friendshipBonuses.statBonus}`;
+                    friendshipTooltip += `\nBônus Stats: +${friendshipBonuses.statBonus}`;
                 }
                 if (friendshipBonuses.surviveChance > 0) {
-                    bonusesTooltip += `\n[EM BREVE] Chance Sobreviver: ${friendshipBonuses.surviveChance * 100}%`;
+                    friendshipTooltip += `\n[EM BREVE] Chance Sobreviver: ${friendshipBonuses.surviveChance * 100}%`;
                 }
                 
                 return `
@@ -6326,7 +6326,7 @@
                         </div>
                         <small>${monster.xp || 0}/${xpNeeded} XP</small>
                         
-                        <div class="friendship-indicator" title="${bonusesTooltip}">
+                        <div class="friendship-indicator" title="${friendshipTooltip}">
                             ${friendshipIcon} <span class="friendship-text">${friendship}/100</span>
                             <div class="friendship-bar">
                                 <div class="friendship-fill" style="width: ${friendship}%"></div>
