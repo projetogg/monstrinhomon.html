@@ -1111,11 +1111,15 @@
         }
 
         // ============================================================================
-        // SISTEMA DE AMIZADE (FRIENDSHIP)
+        // SISTEMA DE AMIZADE (FRIENDSHIP) - Constantes
         // ============================================================================
+        
+        // Valor padrão de amizade (neutro)
+        const DEFAULT_FRIENDSHIP = 50;
 
-        // Constantes do sistema de amizade
-        const DEFAULT_FRIENDSHIP = 50; // Valor inicial neutro
+        // ============================================================================
+        // SISTEMA DE AMIZADE (FRIENDSHIP) - Funções
+        // ============================================================================
 
         /**
          * Atualiza o nível de amizade de um monstrinho
@@ -1225,14 +1229,15 @@
                 bonuses.xpMultiplier = 1.05; // +5% XP
             }
             if (level >= 3) {
-                bonuses.critChance = 0.05;   // +5% crítico (mantém +5% XP)
+                bonuses.critChance = 0.05;   // +5% crítico
             }
             if (level >= 4) {
-                bonuses.xpMultiplier = 1.10; // +10% XP (upgrade)
+                bonuses.xpMultiplier = 1.10; // +10% XP (upgrade do nível 2)
                 bonuses.statBonus = 1;       // +1 stats
             }
             if (level >= 5) {
-                bonuses.surviveChance = 0.10; // 10% sobreviver (mantém tudo)
+                // TODO: Implementar mecânica de sobrevivência com 1 HP
+                bonuses.surviveChance = 0.10; // 10% sobreviver (não implementado ainda)
             }
             
             return bonuses;
@@ -3754,12 +3759,12 @@
             
             ensureMonsterProgressFields(mon);
             
-            let xpGain = Math.max(0, Number(amount) || 0);
-            if (xpGain <= 0) return;
+            const baseXpGain = Math.max(0, Number(amount) || 0);
+            if (baseXpGain <= 0) return;
             
             // SISTEMA DE AMIZADE: Aplicar multiplicador de XP baseado em amizade
             const friendshipBonuses = getFriendshipBonuses(mon.friendship || DEFAULT_FRIENDSHIP);
-            xpGain = Math.floor(xpGain * friendshipBonuses.xpMultiplier);
+            const xpGain = Math.floor(baseXpGain * friendshipBonuses.xpMultiplier);
             
             const name = mon.nickname || mon.name || mon.nome || "Monstrinho";
             mon.xp += xpGain;
@@ -6290,7 +6295,7 @@
                 const friendshipLevel = getFriendshipLevel(friendship);
                 const friendshipBonuses = getFriendshipBonuses(friendship);
                 
-                // Tooltip de bônus (usando \n para quebras de linha)
+                // Tooltip de bônus
                 let bonusesTooltip = `Nível de Amizade: ${friendshipLevel}/5`;
                 if (friendshipBonuses.xpMultiplier > 1.0) {
                     bonusesTooltip += `\nBônus XP: +${Math.round((friendshipBonuses.xpMultiplier - 1) * 100)}%`;
@@ -6302,7 +6307,7 @@
                     bonusesTooltip += `\nBônus Stats: +${friendshipBonuses.statBonus}`;
                 }
                 if (friendshipBonuses.surviveChance > 0) {
-                    bonusesTooltip += `\nChance Sobreviver: ${friendshipBonuses.surviveChance * 100}%`;
+                    bonusesTooltip += `\n[EM BREVE] Chance Sobreviver: ${friendshipBonuses.surviveChance * 100}%`;
                 }
                 
                 return `
