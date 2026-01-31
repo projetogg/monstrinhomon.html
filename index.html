@@ -2365,10 +2365,15 @@
                         }
                     }
                     
+                    // Wave B1: enemy instances now use factory
                     const randomMonster = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
                     const level = Math.floor(Math.random() * 10) + 1;
-                    encounter.wildMonster = createMonsterInstance(randomMonster, null, level);
-                    encounter.wildMonster.id = 'wild_' + Date.now();
+                    encounter.wildMonster = createMonsterInstanceFromTemplate(
+                        randomMonster.id, 
+                        level, 
+                        null, // Use template's default rarity
+                        { id: 'wild_' + Date.now() } // Override with wild encounter ID
+                    );
                 }
                 
                 GameState.currentEncounter = encounter;
