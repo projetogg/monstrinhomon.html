@@ -3857,18 +3857,18 @@
             const ev = String(event || "EVENT_UNSPECIFIED").trim() || "EVENT_UNSPECIFIED";
             const det = (details && typeof details === "object") ? details : { value: details };
 
-            // Enrich payload with context
+            // Enrich payload with context (det first, then override with standard fields)
             const payload = {
+                ...det,
                 ts: mmNowISO(),
                 level: lvl,
                 event: ev,
                 context: det.context || det.fn || det.source || "unknown",
-                saveSlot: (window.GameState && GameState.saveSlot) ? GameState.saveSlot : null,
-                ...det
+                saveSlot: (window.GameState && GameState.saveSlot) ? GameState.saveSlot : null
             };
 
             // 1) Console output with standard format
-            const tag = `[MM:${payload.level.toUpperCase()}] ${payload.event}`;
+            const tag = `[MM:${String(payload.level).toUpperCase()}] ${payload.event}`;
             if (payload.level === "error") {
                 console.error(tag, payload);
             } else if (payload.level === "warn") {
