@@ -1,11 +1,13 @@
 /**
  * GROUP COMBAT CORE - Funções Puras
  * 
- * STUB para PR5A - não contém lógica real ainda
- * Implementação real será feita em PR posterior
+ * PR5B: Implementação real das funções puras do combate em grupo/boss
  * 
- * Todas as funções aqui devem ser 100% determinísticas e testáveis
+ * Todas as funções aqui são 100% determinísticas e testáveis
  * ZERO side effects (sem DOM, sem state mutation, sem I/O)
+ * 
+ * Dependency Injection: todas as dependências externas (GameState, players, rollD20)
+ * são passadas como parâmetros
  */
 
 // Re-export shared combat mechanics from Wild 1v1 combat module (PR4)
@@ -13,98 +15,176 @@
 // checkHit: verifica se ataque acerta baseado em d20 + ATK vs DEF
 // calcDamage: calcula dano final com fórmula ATK + POWER - DEF
 // getBuffModifiers: retorna modificadores de buffs ativos (+ATK, +DEF, +SPD)
-export { checkHit, calcDamage, getBuffModifiers } from './wildCore.js';
+export { checkHit, calcDamage, getBuffModifiers, getClassAdvantageModifiers } from './wildCore.js';
 
 /**
- * STUB: Retorna ator atual do encounter baseado em turnIndex
+ * Retorna ator atual do encounter baseado em turnIndex
  * 
- * Implementação real: index.html linha 3272-3276
+ * PURE: Sem side effects, apenas leitura de dados
  * 
  * @param {object} enc - Encounter de grupo
  * @returns {object|null} Ator atual ou null
  */
 export function getCurrentActor(enc) {
-    // TODO PR5B: Mover lógica de index.html para cá
-    throw new Error('getCurrentActor - STUB not implemented yet');
+    if (!enc || !enc.turnOrder || enc.turnOrder.length === 0) return null;
+    const idx = Number(enc.turnIndex) || 0;
+    return enc.turnOrder[idx] || null;
 }
 
 /**
- * STUB: Verifica se há jogadores vivos no encounter
+ * Verifica se há jogadores vivos no encounter
  * 
- * Implementação real: index.html linha 3278-3286
+ * PURE: Sem side effects, recebe dados por parâmetro (dependency injection)
  * 
  * @param {object} enc - Encounter de grupo
- * @param {array} players - Lista de jogadores do GameState
+ * @param {array} playersData - Array com dados dos jogadores: [{ id, team: [monsters] }]
  * @returns {boolean} true se algum jogador tem monstrinho vivo
  */
-export function hasAlivePlayers(enc, players) {
-    // TODO PR5B: Mover lógica de index.html para cá
-    // Recebe players por parâmetro (dependency injection)
-    throw new Error('hasAlivePlayers - STUB not implemented yet');
+export function hasAlivePlayers(enc, playersData) {
+    for (const pid of (enc.participants || [])) {
+        const player = playersData.find(p => p.id === pid);
+        if (!player || !Array.isArray(player.team)) continue;
+        
+        // Check if player has any alive monster in team
+        for (const monster of player.team) {
+            if (isAlive(monster)) return true;
+        }
+    }
+    return false;
 }
 
 /**
- * STUB: Verifica se há inimigos vivos no encounter
+ * Verifica se há inimigos vivos no encounter
  * 
- * Implementação real: index.html linha 3288-3293
+ * PURE: Sem side effects, apenas leitura de dados
  * 
  * @param {object} enc - Encounter de grupo
  * @returns {boolean} true se algum inimigo tem HP > 0
  */
 export function hasAliveEnemies(enc) {
-    // TODO PR5B: Mover lógica de index.html para cá
-    throw new Error('hasAliveEnemies - STUB not implemented yet');
+    for (const e of (enc.enemies || [])) {
+        if (isAlive(e)) return true;
+    }
+    return false;
 }
 
 /**
- * STUB: IA - escolhe jogador alvo com menor HP%
+ * IA - escolhe alvo com menor HP%
  * 
- * Implementação real: index.html linha 3571-3585
+ * PURE: Recebe array de targets já preparado (sem acessar GameState)
  * 
- * @param {object} enc - Encounter de grupo
- * @param {array} players - Lista de jogadores
- * @param {object} helpers - Helpers necessários (_getPlayerById, _getActiveMonsterOfPlayer, _isAlive)
- * @returns {string|null} PlayerId do alvo escolhido ou null
+ * @param {array} targets - Array de targets: [{ id, hp, hpMax }]
+ * @returns {string|null} ID do alvo escolhido ou null
  */
-export function chooseTargetPlayerId(enc, players, helpers) {
-    // TODO PR5B: Mover lógica de index.html para cá
-    // Recebe helpers por parâmetro (dependency injection)
-    throw new Error('chooseTargetPlayerId - STUB not implemented yet');
+export function chooseTargetByLowestHP(targets) {
+    if (!targets || targets.length === 0) return null;
+    
+    let best = null;
+    for (const target of targets) {
+        const hp = Number(target.hp) || 0;
+        const hpMax = Number(target.hpMax) || 1;
+        const pct = hp / hpMax;
+        
+        if (!best || pct < best.pct) {
+            best = { id: target.id, pct };
+        }
+    }
+    
+    return best ? best.id : null;
 }
 
 /**
- * STUB: Calcula ordem de turnos baseada em SPD
+ * Calcula ordem de turnos baseada em SPD
  * 
- * Implementação real: index.html linha 3206-3270
+ * PURE: Recebe rollD20Fn por parâmetro para permitir testes determinísticos
  * 
  * @param {object} enc - Encounter de grupo
- * @param {array} players - Lista de jogadores
+ * @param {array} playersData - Array com dados dos jogadores: [{ id, name, team: [monsters] }]
  * @param {function} rollD20Fn - Função para rolar d20 (dependency injection)
  * @returns {array} Array de atores ordenados por SPD + tiebreak
  */
-export function calculateTurnOrder(enc, players, rollD20Fn) {
-    // TODO PR5B: Mover lógica de index.html para cá
-    // Recebe rollD20 por parâmetro para permitir testes determinísticos
-    throw new Error('calculateTurnOrder - STUB not implemented yet');
+export function calculateTurnOrder(enc, playersData, rollD20Fn) {
+    const order = [];
+    
+    // Adicionar jogadores participantes
+    for (const pid of (enc.participants || [])) {
+        const p = playersData.find(x => x.id === pid);
+        if (!p) continue;
+        
+        const mon = p.team?.[0];
+        if (!mon) continue;
+        
+        const hp = Number(mon.hp) || 0;
+        if (hp <= 0) continue;
+        
+        order.push({
+            side: "player",
+            id: pid,
+            name: p.name || p.nome || "Jogador",
+            spd: Number(mon.spd) || 0,
+            _tiebreak: null
+        });
+    }
+    
+    // Adicionar inimigos
+    for (let i = 0; i < (enc.enemies || []).length; i++) {
+        const e = enc.enemies[i];
+        if (!e) continue;
+        
+        const hp = Number(e.hp) || 0;
+        if (hp <= 0) continue;
+        
+        order.push({
+            side: "enemy",
+            id: i,
+            name: e.name || e.nome || `Inimigo ${i + 1}`,
+            spd: Number(e.spd) || 0,
+            _tiebreak: null
+        });
+    }
+    
+    // Ordenar por SPD descendente
+    order.sort((a, b) => (b.spd - a.spd));
+    
+    // Desempate por grupos de mesmo SPD
+    let i = 0;
+    while (i < order.length) {
+        let j = i + 1;
+        while (j < order.length && order[j].spd === order[i].spd) j++;
+        
+        // [i, j) é o bloco empatado
+        if (j - i > 1) {
+            for (let k = i; k < j; k++) {
+                order[k]._tiebreak = rollD20Fn();
+            }
+            const sortedBlock = order.slice(i, j).sort((a, b) => (b._tiebreak - a._tiebreak));
+            for (let k = 0; k < sortedBlock.length; k++) {
+                order[i + k] = sortedBlock[k];
+            }
+        }
+        
+        i = j;
+    }
+    
+    return order;
 }
 
 /**
- * STUB: Verifica se entidade está viva (HP > 0)
+ * Verifica se entidade está viva (HP > 0)
  * 
- * Implementação real: index.html linha 3464-3466
+ * PURE: Sem side effects, apenas leitura de dados
  * 
  * @param {object} entity - Monstrinho ou inimigo
  * @returns {boolean} true se HP > 0
  */
 export function isAlive(entity) {
-    // TODO PR5B: Mover lógica de index.html para cá
-    throw new Error('isAlive - STUB not implemented yet');
+    return (Number(entity?.hp) || 0) > 0;
 }
 
 /**
- * STUB: Clamp de número entre min e max
+ * Clamp de número entre min e max
  * 
- * Implementação real: index.html linha 3417-3419
+ * PURE: Sem side effects, matemática pura
  * 
  * @param {number} n - Número a clampar
  * @param {number} min - Valor mínimo
@@ -112,6 +192,5 @@ export function isAlive(entity) {
  * @returns {number} Número clampado
  */
 export function clamp(n, min, max) {
-    // TODO PR5B: Mover lógica de index.html para cá
-    throw new Error('clamp - STUB not implemented yet');
+    return Math.max(min, Math.min(max, n));
 }

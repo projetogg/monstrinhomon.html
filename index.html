@@ -393,6 +393,9 @@
         // Make Combat available globally for the wrapper
         window.Combat = Combat;
         
+        // Destructure groupCore for easier access
+        const GroupCore = Combat.Group.Core;
+        
         // GLOBAL ERROR HANDLER
         window.addEventListener('error', function(event) {
             showError(event.error || event.message, event.error?.stack || '');
@@ -3213,92 +3216,23 @@
         }
         
         function calculateGroupTurnOrder(enc) {
-            const order = [];
-            
-            // Adicionar jogadores participantes
-            for (const pid of (enc.participants || [])) {
-                const p = GameState.players.find(x => x.id === pid);
-                if (!p) continue;
-                
-                const mon = p.team?.[0];
-                if (!mon) continue;
-                
-                const hp = Number(mon.hp) || 0;
-                if (hp <= 0) continue;
-                
-                order.push({
-                    side: "player",
-                    id: pid,
-                    name: p.name || p.nome || "Jogador",
-                    spd: Number(mon.spd) || 0,
-                    _tiebreak: null
-                });
-            }
-            
-            // Adicionar inimigos
-            for (let i = 0; i < (enc.enemies || []).length; i++) {
-                const e = enc.enemies[i];
-                if (!e) continue;
-                
-                const hp = Number(e.hp) || 0;
-                if (hp <= 0) continue;
-                
-                order.push({
-                    side: "enemy",
-                    id: i,
-                    name: e.name || e.nome || `Inimigo ${i + 1}`,
-                    spd: Number(e.spd) || 0,
-                    _tiebreak: null
-                });
-            }
-            
-            // Ordenar por SPD descendente
-            order.sort((a, b) => (b.spd - a.spd));
-            
-            // Desempate por grupos de mesmo SPD
-            let i = 0;
-            while (i < order.length) {
-                let j = i + 1;
-                while (j < order.length && order[j].spd === order[i].spd) j++;
-                
-                // [i, j) é o bloco empatado
-                if (j - i > 1) {
-                    for (let k = i; k < j; k++) {
-                        order[k]._tiebreak = rollD20();
-                    }
-                    const sortedBlock = order.slice(i, j).sort((a, b) => (b._tiebreak - a._tiebreak));
-                    for (let k = 0; k < sortedBlock.length; k++) {
-                        order[i + k] = sortedBlock[k];
-                    }
-                }
-                
-                i = j;
-            }
-            
-            return order;
+            // PR5B: Use pure function from groupCore
+            return GroupCore.calculateTurnOrder(enc, GameState.players, rollD20);
         }
         
         function getCurrentActor(enc) {
-            if (!enc || !enc.turnOrder || enc.turnOrder.length === 0) return null;
-            const idx = Number(enc.turnIndex) || 0;
-            return enc.turnOrder[idx] || null;
+            // PR5B: Use pure function from groupCore
+            return GroupCore.getCurrentActor(enc);
         }
         
         function _hasAlivePlayers(enc) {
-            for (const pid of (enc.participants || [])) {
-                const p = GameState.players.find(x => x.id === pid);
-                if (!p || !Array.isArray(p.team)) continue;
-                // Check if player has any alive monster in team
-                if (firstAliveIndex(p.team) >= 0) return true;
-            }
-            return false;
+            // PR5B: Use pure function from groupCore
+            return GroupCore.hasAlivePlayers(enc, GameState.players);
         }
         
         function _hasAliveEnemies(enc) {
-            for (const e of (enc.enemies || [])) {
-                if ((Number(e?.hp) || 0) > 0) return true;
-            }
-            return false;
+            // PR5B: Use pure function from groupCore
+            return GroupCore.hasAliveEnemies(enc);
         }
         
         function advanceTurn(enc) {
@@ -3429,7 +3363,8 @@
         }
 
         function _clamp(n, min, max) {
-            return Math.max(min, Math.min(max, n));
+            // PR5B: Use pure function from groupCore
+            return GroupCore.clamp(n, min, max);
         }
 
         /**
@@ -3476,7 +3411,8 @@
         }
 
         function _isAlive(entity) {
-            return (Number(entity?.hp) || 0) > 0;
+            // PR5B: Use pure function from groupCore
+            return GroupCore.isAlive(entity);
         }
 
         function _log(enc, msg) {
@@ -3583,19 +3519,22 @@
         }
 
         function _chooseTargetPlayerId(enc) {
-            let best = null;
+            // PR5B: Use pure function from groupCore
+            // Prepare targets data array for pure function
+            const targets = [];
             for (const pid of (enc.participants || [])) {
                 const p = _getPlayerById(pid);
                 const mon = _getActiveMonsterOfPlayer(p);
                 if (!mon || !_isAlive(mon)) continue;
-
-                const hp = Number(mon.hp) || 0;
-                const hpMax = Number(mon.hpMax) || 1;
-                const pct = hp / hpMax;
-
-                if (!best || pct < best.pct) best = { pid, pct };
+                
+                targets.push({
+                    id: pid,
+                    hp: Number(mon.hp) || 0,
+                    hpMax: Number(mon.hpMax) || 1
+                });
             }
-            return best ? best.pid : null;
+            
+            return GroupCore.chooseTargetByLowestHP(targets);
         }
 
         // ==================== FASE 3.A: Player Attack ====================
