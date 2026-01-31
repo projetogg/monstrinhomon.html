@@ -4059,6 +4059,40 @@
         }
         
         /**
+         * PR8B: FACTORY - Create dependencies for Progression.Actions
+         * Cria objeto de dependências para injetar nas funções de progressão
+         */
+        function createProgressionDeps() {
+            return {
+                state: GameState,
+                constants: {
+                    DEFAULT_FRIENDSHIP: DEFAULT_FRIENDSHIP
+                },
+                helpers: {
+                    // Progression helpers
+                    ensureMonsterProgressFields: ensureMonsterProgressFields,
+                    calcXpNeeded: calcXpNeeded,
+                    recalculateStatsFromTemplate: recalculateStatsFromTemplate,
+                    
+                    // Friendship helpers
+                    getFriendshipBonuses: getFriendshipBonuses,
+                    formatFriendshipBonusPercent: formatFriendshipBonusPercent,
+                    updateFriendship: updateFriendship,
+                    
+                    // Evolution and skills
+                    maybeEvolveAfterLevelUp: maybeEvolveAfterLevelUp,
+                    maybeUpgradeSkillsModelB: maybeUpgradeSkillsModelB,
+                    
+                    // Stats tracking
+                    updateStats: updateStats,
+                    
+                    // XP calculation (wrapped)
+                    calculateBattleXP: calculateBattleXP
+                }
+            };
+        }
+        
+        /**
          * Calcula XP ganho de uma batalha
          * @param {Object} defeatedEnemy - Inimigo derrotado
          * @param {string} encounterType - Tipo do encontro ('wild', 'group_trainer', 'boss')
@@ -4077,91 +4111,24 @@
         }
         
         /**
-         * Dá XP para um monstro e processa level ups
+         * PR8B: WRAPPER - Progression.Actions.giveXP()
+         * Dá XP para um monstro e processa level ups (wrapper para manter compatibilidade)
          * @param {Object} mon - Monstro que receberá XP
          * @param {number} amount - Quantidade de XP
          * @param {Array} logArr - Array de log (opcional, usa encounter.log se não fornecido)
          */
         function giveXP(mon, amount, logArr) {
-            if (!mon) return;
-            
-            ensureMonsterProgressFields(mon);
-            
-            const baseXpGain = Math.max(0, Number(amount) || 0);
-            if (baseXpGain <= 0) return;
-            
-            // SISTEMA DE AMIZADE: Aplicar multiplicador de XP baseado em amizade
-            const friendshipBonuses = getFriendshipBonuses(mon.friendship || DEFAULT_FRIENDSHIP);
-            const xpGain = Math.round(baseXpGain * friendshipBonuses.xpMultiplier);
-            
-            const name = mon.nickname || mon.name || mon.nome || "Monstrinho";
-            mon.xp += xpGain;
-            
-            // Logar no array fornecido ou no encounter atual
-            const log = Array.isArray(logArr) ? logArr : (GameState.currentEncounter?.log || []);
-            if (Array.isArray(log)) {
-                const bonusText = friendshipBonuses.xpMultiplier > 1.0 
-                    ? ` (Bônus Amizade: +${formatFriendshipBonusPercent(friendshipBonuses.xpMultiplier)}%)`
-                    : '';
-                log.push(`🧪 ${name} ganhou +${xpGain} XP.${bonusText}`);
-            }
-            
-            // Loop de level ups (pode subir múltiplos níveis de uma vez)
-            while (mon.xp >= mon.xpNeeded) {
-                mon.xp -= mon.xpNeeded;
-                levelUpMonster(mon, log);
-            }
+            return Progression.Actions.giveXP(createProgressionDeps(), mon, amount, logArr);
         }
         
         /**
-         * Processa um level up para o monstro
+         * PR8B: WRAPPER - Progression.Actions.levelUpMonster()
+         * Processa um level up para o monstro (wrapper para manter compatibilidade)
          * @param {Object} mon - Monstro que vai subir de nível
          * @param {Array} logArr - Array de log (opcional)
          */
         function levelUpMonster(mon, logArr) {
-            if (!mon) return;
-            
-            ensureMonsterProgressFields(mon);
-            
-            // Capturar HP% ANTES do level up para preservar na evolução
-            const hpPctBeforeLevelUp = Math.max(0, Number(mon.hp) || 0) / Math.max(1, Number(mon.hpMax) || 1);
-            
-            mon.level++;
-            
-            // Aumentar HP Max (fórmula oficial: hpMax * 1.04 + 2)
-            const hpMax = Number(mon.hpMax) || Number(mon.maxHp) || 1;
-            mon.hpMax = Math.floor(hpMax * 1.04 + 2);
-            
-            // Curar completamente ao subir de nível
-            mon.hp = mon.hpMax;
-            
-            // Atualizar ENE Max (cresce com level)
-            const baseEne = 10; // base padrão
-            const eneGrowth = 2; // crescimento por nível
-            mon.eneMax = Math.floor(baseEne + eneGrowth * (mon.level - 1));
-            mon.ene = mon.eneMax; // Restaurar ENE ao subir de nível
-            
-            // Recalcular stats baseado no novo nível
-            recalculateStatsFromTemplate(mon);
-            
-            // Próximo XP necessário
-            mon.xpNeeded = calcXpNeeded(mon.level);
-            
-            // Log com emoji especial
-            const log = Array.isArray(logArr) ? logArr : (GameState.currentEncounter?.log || []);
-            const name = mon.nickname || mon.name || mon.nome || "Monstrinho";
-            if (Array.isArray(log)) {
-                log.push(`✨ ${name} subiu para o nível ${mon.level}!`);
-            }
-            
-            // SISTEMA DE AMIZADE: Ganhar amizade ao subir de nível
-            updateFriendship(mon, 'levelUp');
-            
-            // Verificar e aplicar evolução após level up (passa o HP% original)
-            maybeEvolveAfterLevelUp(mon, log, hpPctBeforeLevelUp);
-            
-            // Verificar e aplicar upgrade de skills (Feature 3.6)
-            maybeUpgradeSkillsModelB(mon, log);
+            return Progression.Actions.levelUpMonster(createProgressionDeps(), mon, logArr);
         }
         
         // Alias para compatibilidade
@@ -4714,63 +4681,13 @@
         }
         
         /**
+         * PR8B: WRAPPER - Progression.Actions.handleVictoryRewards()
          * Distribui recompensas de vitória de forma idempotente (XP + recompensas futuras)
          * Previne duplicação via flag rewardsGranted
          * @param {Object} enc - Encounter (wild ou group)
          */
         function handleVictoryRewards(enc) {
-            if (!enc || enc.rewardsGranted) return;
-            enc.rewardsGranted = true;
-            
-            enc.log = enc.log || [];
-            
-            // Determinar inimigo derrotado principal (primeiro inimigo)
-            const defeated = (enc.enemies && enc.enemies[0]) ? enc.enemies[0] : enc.wildMonster;
-            if (!defeated) {
-                enc.log.push("ℹ️ (XP) Não foi possível identificar inimigo derrotado.");
-                return;
-            }
-            
-            // FASE 1 POKEMON: Rastrear vitória
-            updateStats('battlesWon', 1);
-            
-            // Calcular XP
-            const xp = calculateBattleXP(defeated, enc.type);
-            enc.rewards = enc.rewards || {};
-            enc.rewards.xp = xp;
-            enc.log.push(`🏅 Recompensa: ${xp} XP.`);
-            
-            // FASE 1 POKEMON: Rastrear XP total ganho
-            updateStats('totalXpGained', xp);
-            
-            // Distribuir XP baseado no tipo de batalha
-            const isGroup = String(enc.type || '').includes("group") || 
-                           String(enc.type || '').toLowerCase() === "boss" ||
-                           enc.participants?.length > 0;
-            
-            if (isGroup) {
-                // Grupo: cada participante vivo recebe XP completo
-                for (const pid of (enc.participants || [])) {
-                    const p = GameState.players.find(x => x.id === pid);
-                    const mon = p?.team?.[0];
-                    if (!mon || (Number(mon.hp) || 0) <= 0) continue;
-                    giveXP(mon, xp, enc.log);
-                }
-            } else {
-                // 1v1: jogador atual (ou primeiro se não especificado)
-                let player = null;
-                if (enc.selectedPlayerId || enc.currentPlayerId) {
-                    player = GameState.players.find(p => 
-                        p.id === (enc.selectedPlayerId || enc.currentPlayerId)
-                    );
-                }
-                if (!player) player = GameState.players?.[0] || null;
-                
-                const mon = player?.team?.[0];
-                if (mon && (Number(mon.hp) || 0) > 0) {
-                    giveXP(mon, xp, enc.log);
-                }
-            }
+            return Progression.Actions.handleVictoryRewards(createProgressionDeps(), enc);
         }
         
         /**
