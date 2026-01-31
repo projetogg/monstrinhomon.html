@@ -8,9 +8,14 @@
  * Recebem dependências por parâmetro (dependency injection)
  */
 
-// NOTA: applyEneRegen, updateBuffs, recordD20Roll ainda estão em index.html
-// Serão movidos para módulo compartilhado em PR futuro
-// Por enquanto, as funções de grupo no index.html chamam diretamente essas funções
+// NOTA: Funções auxiliares ainda estão em index.html (não foram modularizadas no PR4)
+// - applyEneRegen: linhas 2766-2776 em index.html
+// - updateBuffs: linhas 2881-2887 em index.html
+// - recordD20Roll: linhas 4952+ em index.html
+//
+// RAZÃO: No PR4, wild combat usou estas funções via wrapper, mas não as exportou como módulos.
+// FUTURO: Em PR posterior, criar js/combat/sharedHelpers.js para estas funções compartilhadas
+//         entre wild e group combat. Por enquanto, código de grupo em index.html chama diretamente.
 
 /**
  * STUB: Inicializa encounter de grupo/boss

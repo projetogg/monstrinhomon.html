@@ -8,7 +8,11 @@
  * ZERO side effects (sem DOM, sem state mutation, sem I/O)
  */
 
-// Reutiliza funções de wildCore.js (já implementadas no PR4)
+// Re-export shared combat mechanics from Wild 1v1 combat module (PR4)
+// Estas funções são reutilizadas tanto em wild quanto em group/boss combat
+// checkHit: verifica se ataque acerta baseado em d20 + ATK vs DEF
+// calcDamage: calcula dano final com fórmula ATK + POWER - DEF
+// getBuffModifiers: retorna modificadores de buffs ativos (+ATK, +DEF, +SPD)
 export { checkHit, calcDamage, getBuffModifiers } from './wildCore.js';
 
 /**
