@@ -6300,18 +6300,34 @@
                     </div>
 
                     <div class="therapist-mestre-box">
-                        <div class="therapist-field-title">🐾 Dar Monstrinhomon</div>
-                        <div class="mm-row">
+                        <div class="therapist-field-title">🎁 Conceder Monstrinhomon</div>
+                        <div class="mm-row mb-8">
                             <select id="mmTherMon" class="mm-input flex-1">${monOptions}</select>
-                            <input id="mmTherMonLv" class="mm-input w-90" type="number" min="1" value="5">
                         </div>
-                        <div class="mm-row mt-8">
+                        <div class="mm-row mb-8">
+                            <div class="flex-1">
+                                <label class="therapist-label">Nível (1-100)</label>
+                                <input id="mmTherMonLv" class="mm-input" type="number" min="1" max="100" value="5">
+                            </div>
+                            <div class="flex-1">
+                                <label class="therapist-label">Raridade</label>
+                                <select id="mmTherMonRarity" class="mm-input">
+                                    <option value="">Padrão do Template</option>
+                                    <option value="Comum">Comum</option>
+                                    <option value="Incomum">Incomum</option>
+                                    <option value="Raro">Raro</option>
+                                    <option value="Místico">Místico</option>
+                                    <option value="Lendário">Lendário</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mm-row">
                             <select id="mmTherMonDest" class="mm-input flex-1">
-                                <option value="auto">Auto (Time se <6, senão Caixa)</option>
+                                <option value="auto">Auto (Time se &lt;6, senão Caixa)</option>
                                 <option value="team">Forçar Time</option>
                                 <option value="box">Forçar Caixa</option>
                             </select>
-                            <button class="mm-btn" onclick="mmTherGiveMonster()">Adicionar</button>
+                            <button class="mm-btn" onclick="mmTherGiveMonster()">Conceder</button>
                         </div>
                     </div>
                 </div>
@@ -6468,23 +6484,47 @@
 
             const pid = document.getElementById("mmTherPlayer")?.value;
             const monId = document.getElementById("mmTherMon")?.value;
-            const lv = Math.max(1, parseInt(document.getElementById("mmTherMonLv")?.value || "1", 10));
+            const lv = parseInt(document.getElementById("mmTherMonLv")?.value || "1", 10);
+            const rarityInput = document.getElementById("mmTherMonRarity")?.value;
             const dest = document.getElementById("mmTherMonDest")?.value || "auto";
 
             const player = GameState.players.find(p => p.id === pid);
-            if (!player) return;
+            if (!player) {
+                showToast("Jogador não encontrado.", 'error');
+                therapistLog("❌ awardMonster failed: player not found");
+                return;
+            }
+
+            // Validate templateId
+            const template = MONSTER_CATALOG.find(m => m.id === monId);
+            if (!template) {
+                showToast("Template de monstro inválido.", 'error');
+                therapistLog(`❌ awardMonster failed: invalid templateId ${monId}`);
+                return;
+            }
+
+            // Clamp level between 1 and 100
+            const clampedLevel = Math.max(1, Math.min(100, lv));
+
+            // Use template rarity if not specified (empty string means use template default)
+            const rarity = rarityInput || null;
+
+            // Track team size before to detect if it went to box
+            const teamSizeBefore = player.team?.length || 0;
+            const requestedTeam = (dest === 'team' || dest === 'auto');
 
             // COMMIT 8 (Wave A): Use Award API for canonical monster creation
             const inst = awardMonster(
-                monId,      // templateId
-                lv,         // level
-                null,       // rarity (use template default)
-                dest,       // destination ('auto', 'team', or 'box')
-                player      // player object
+                monId,          // templateId
+                clampedLevel,   // level (clamped)
+                rarity,         // rarity (null = use template default)
+                dest,           // destination ('auto', 'team', or 'box')
+                player          // player object
             );
             
             if (!inst) {
-                alert("❌ Erro ao conceder monstro via Award API.");
+                showToast("Falha ao conceder monstro.", 'error');
+                therapistLog("❌ awardMonster failed: creation error");
                 return;
             }
 
@@ -6492,13 +6532,20 @@
             
             // Determine where it actually went (Award API handles team limit)
             const inTeam = player.team.some(m => m.instanceId === inst.instanceId);
-            const destText = inTeam ? "time" : "caixa";
+            const actualDest = inTeam ? "time" : "caixa";
             
-            if (typeof showToast === "function") {
-                showToast(`🐾 ${player.name} recebeu ${inst.name || monId} (Lv ${lv}) no ${destText}`);
-            } else {
-                alert(`🐾 ${player.name} recebeu ${inst.name || monId} (Lv ${lv}) no ${destText}`);
+            // Check if it was redirected to box due to team being full
+            const wasRedirected = requestedTeam && !inTeam && teamSizeBefore >= 6;
+            
+            // Build toast message
+            const rarityText = inst.rarity || 'Comum';
+            let toastMsg = `🎁 Concedido ${inst.name} Lv${clampedLevel} (${rarityText}) → ${actualDest}`;
+            if (wasRedirected) {
+                toastMsg += ` (time cheio)`;
             }
+            
+            showToast(toastMsg, 'success');
+            therapistLog(`✅ awardMonster ${monId} Lv${clampedLevel} ${rarityText} → ${actualDest}${wasRedirected ? ' (redirected from team)' : ''}`);
         }
 
         function mmContinue(){
