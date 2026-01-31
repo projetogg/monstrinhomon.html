@@ -886,6 +886,96 @@
             { id: 6, text: 'Shared materials/ideas', weight: 2 }
         ];
 
+        // ============================================================================
+        // Commit 12 (Wave C12.1): Catalog Lookup Helpers - Single Source of Truth
+        // ============================================================================
+
+        /**
+         * Get monster template from MONSTER_CATALOG
+         * @param {string} templateId - Monster template ID (e.g., 'MON_001')
+         * @returns {Object|null} Monster template or null if not found
+         */
+        function getMonsterTemplate(templateId) {
+            if (!templateId) return null;
+            return MONSTER_CATALOG.find(m => m.id === templateId) || null;
+        }
+
+        /**
+         * Require monster template from catalog with validation and logging
+         * @param {string} templateId - Monster template ID
+         * @param {string} context - Context string for logging (e.g., 'awardMonster', 'encounterSpawn')
+         * @returns {Object|null} Monster template or null if not found (logs warning)
+         */
+        function requireMonsterTemplate(templateId, context = 'unknown') {
+            const template = getMonsterTemplate(templateId);
+            
+            if (!template) {
+                const errorMsg = `[Catalog] Missing monster template: ${templateId} (context: ${context})`;
+                console.warn(errorMsg);
+                
+                // Log to therapist if in therapist mode
+                if (typeof mmIsTherapistMode === 'function' && mmIsTherapistMode()) {
+                    if (typeof therapistLog === 'function') {
+                        therapistLog(`❌ ${errorMsg}`);
+                    }
+                }
+            }
+            
+            return template;
+        }
+
+        /**
+         * Get item definition from catalogs (CLASTERORBS, healing items, etc.)
+         * @param {string} itemId - Item ID (e.g., 'CLASTERORB_COMUM', 'IT_HEAL_01')
+         * @returns {Object|null} Item definition or null if not found
+         */
+        function getItemDef(itemId) {
+            if (!itemId) return null;
+            
+            // Check CLASTERORBS first
+            if (CLASTERORBS[itemId]) {
+                return CLASTERORBS[itemId];
+            }
+            
+            // Fallback for legacy healing items
+            if (itemId === 'IT_HEAL_01') {
+                return {
+                    id: 'IT_HEAL_01',
+                    name: 'Petisco de Cura',
+                    type: 'HEAL',
+                    heal_pct: 0.30,
+                    emoji: '💚'
+                };
+            }
+            
+            return null;
+        }
+
+        /**
+         * Require item definition from catalog with validation and logging
+         * @param {string} itemId - Item ID
+         * @param {string} context - Context string for logging
+         * @returns {Object|null} Item definition or null if not found (logs warning)
+         */
+        function requireItemDef(itemId, context = 'unknown') {
+            const itemDef = getItemDef(itemId);
+            
+            if (!itemDef) {
+                const errorMsg = `[Catalog] Missing item definition: ${itemId} (context: ${context})`;
+                console.warn(errorMsg);
+                
+                // Log to therapist if in therapist mode
+                if (typeof mmIsTherapistMode === 'function' && mmIsTherapistMode()) {
+                    if (typeof therapistLog === 'function') {
+                        therapistLog(`❌ ${errorMsg}`);
+                    }
+                }
+            }
+            
+            return itemDef;
+        }
+
+        // ============================================================================
         // INITIALIZATION
         function init() {
             try {
@@ -1860,6 +1950,13 @@
          */
         function awardItem(itemId, qty, player) {
             try {
+                // Commit 12 (Wave C12.2): Validate itemId against catalog
+                const itemDef = requireItemDef(itemId, 'awardItem');
+                if (!itemDef) {
+                    console.error('[Award] Invalid itemId:', itemId);
+                    return false;
+                }
+
                 // Validate inputs
                 if (!itemId || typeof itemId !== 'string') {
                     console.warn('[Award] Invalid itemId:', itemId);
@@ -1915,6 +2012,13 @@
          */
         function awardMonster(templateId, level, rarity, destination, player, overrides = {}) {
             try {
+                // Commit 12 (Wave C12.2): Validate templateId against catalog
+                const template = requireMonsterTemplate(templateId, 'awardMonster');
+                if (!template) {
+                    console.error('[Award] Invalid templateId:', templateId);
+                    return null;
+                }
+
                 // Validate inputs
                 if (!templateId || typeof templateId !== 'string') {
                     console.warn('[Award] Invalid templateId:', templateId);
@@ -6494,17 +6598,22 @@
                 return;
             }
 
+            // Commit 12 (Wave C12.2): Validate itemId using catalog helper
+            const itemDef = requireItemDef(itemId, 'therapist-UI');
+            if (!itemDef) {
+                showToast("Item inválido.", 'error');
+                therapistLog(`❌ awardItem failed: invalid itemId ${itemId}`);
+                return;
+            }
+
             // Use Award API
             const success = awardItem(itemId, qty, player);
             
             if (success) {
                 if (typeof renderEncounter === "function") renderEncounter();
                 
-                // Get item name from CLASTERORBS or fallback to itemId
-                let itemName = itemId;
-                if (window.CLASTERORBS && window.CLASTERORBS[itemId]) {
-                    itemName = window.CLASTERORBS[itemId].name;
-                }
+                // Use item name from catalog
+                const itemName = itemDef.name || itemId;
                 
                 showToast(`🎒 ${player.name} recebeu ${qty}x ${itemName}`);
                 therapistLog(`✅ awardItem ${itemId} x${qty} → ${player.name}`);
@@ -6531,8 +6640,8 @@
                 return;
             }
 
-            // Validate templateId
-            const template = MONSTER_CATALOG.find(m => m.id === monId);
+            // Commit 12 (Wave C12.2): Validate templateId using catalog helper
+            const template = requireMonsterTemplate(monId, 'therapist-UI');
             if (!template) {
                 showToast("Template de monstro inválido.", 'error');
                 therapistLog(`❌ awardMonster failed: invalid templateId ${monId}`);
