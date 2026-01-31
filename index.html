@@ -1614,6 +1614,9 @@
             if (!state.meta || typeof state.meta !== 'object' || Array.isArray(state.meta)) {
                 console.warn('[System] Invalid meta, resetting to default');
                 state.meta = { saveVersion: 1 };
+            } else if (state.meta.saveVersion === undefined) {
+                // Only set version if missing (don't overwrite existing version)
+                state.meta.saveVersion = 1;
             }
             
             // Garantir players é array

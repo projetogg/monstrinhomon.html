@@ -258,13 +258,14 @@ const StorageManager = (() => {
             // Parse JSON
             const parsed = safeJSONParse(raw, null);
             if (parsed === null) {
-                // Corrupted save: backup and reset
-                notes.push('Corrupted save detected. Creating backup and resetting.');
+                // Corrupted save: backup but DON'T auto-delete (user may want to recover)
+                notes.push('Corrupted save detected. Creating backup. Data preserved.');
                 console.error('[StorageManager]', notes[0]);
+                console.error('[StorageManager] Corrupted data preserved at key:', StorageKeys.STATE);
+                console.error('[StorageManager] User can manually clear if needed.');
                 
                 try {
                     localStorage.setItem(StorageKeys.STATE_CORRUPTED_BACKUP, raw);
-                    localStorage.removeItem(StorageKeys.STATE);
                     notes.push('Backup created at: ' + StorageKeys.STATE_CORRUPTED_BACKUP);
                 } catch (backupErr) {
                     console.error('[StorageManager] Failed to backup corrupted save:', backupErr);
