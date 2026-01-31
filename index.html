@@ -696,12 +696,18 @@
                 },
                 medalTiers: { bronze: 5, silver: 12, gold: 25 },
                 // Sistema de Amizade (Friendship)
+                // Valores balanceados para progressão saudável:
+                // - Vitórias modestas (+2) para incentivar jogo ativo
+                // - Derrotas penalizantes (-5) para criar stakes
+                // - Cura generosa (+5) para recompensar cuidado
+                // - Level up moderado (+3) para progressão natural
+                // - Faint punitivo (-3) para ensinar cautela
                 friendshipConfig: {
-                    battleWin: 2,
-                    battleLoss: -5,
-                    useHealItem: 5,
-                    levelUp: 3,
-                    faint: -3
+                    battleWin: 2,       // Ganhar batalha (moderado)
+                    battleLoss: -5,     // Perder batalha (alto para ensinar cautela)
+                    useHealItem: 5,     // Usar item de cura (alto para recompensar cuidado)
+                    levelUp: 3,         // Subir de nível (moderado, progressão natural)
+                    faint: -3           // Desmaiar (punitivo)
                 }
             }
         };
@@ -1236,11 +1242,22 @@
                 bonuses.statBonus = 1;       // +1 stats
             }
             if (level >= 5) {
-                // TODO: Implementar mecânica de sobrevivência com 1 HP
-                bonuses.surviveChance = 0.10; // 10% sobreviver (não implementado ainda)
+                // Nota: Mecânica de sobrevivência não implementada ainda.
+                // Quando implementar, verificar surviveChance no momento do faint
+                // e dar 10% de chance de sobreviver com 1 HP.
+                bonuses.surviveChance = 0; // Desabilitado até implementação
             }
             
             return bonuses;
+        }
+
+        /**
+         * Helper: Formata percentual de bônus de amizade para exibição
+         * @param {number} multiplier - Multiplicador de XP (ex: 1.05)
+         * @returns {number} - Percentual arredondado (ex: 5)
+         */
+        function formatFriendshipBonusPercent(multiplier) {
+            return Math.round((multiplier - 1) * 100);
         }
 
         // COMMIT 6: normalizeGameState()
@@ -3773,7 +3790,7 @@
             const log = Array.isArray(logArr) ? logArr : (GameState.currentEncounter?.log || []);
             if (Array.isArray(log)) {
                 const bonusText = friendshipBonuses.xpMultiplier > 1.0 
-                    ? ` (Bônus Amizade: +${Math.round((friendshipBonuses.xpMultiplier - 1) * 100)}%)`
+                    ? ` (Bônus Amizade: +${formatFriendshipBonusPercent(friendshipBonuses.xpMultiplier)}%)`
                     : '';
                 log.push(`🧪 ${name} ganhou +${xpGain} XP.${bonusText}`);
             }
@@ -6298,7 +6315,7 @@
                 // Tooltip com informações completas de amizade
                 let friendshipTooltip = `Nível de Amizade: ${friendshipLevel}/5`;
                 if (friendshipBonuses.xpMultiplier > 1.0) {
-                    friendshipTooltip += `\nBônus XP: +${Math.round((friendshipBonuses.xpMultiplier - 1) * 100)}%`;
+                    friendshipTooltip += `\nBônus XP: +${formatFriendshipBonusPercent(friendshipBonuses.xpMultiplier)}%`;
                 }
                 if (friendshipBonuses.critChance > 0) {
                     friendshipTooltip += `\nChance Crítico: +${friendshipBonuses.critChance * 100}%`;
@@ -6306,9 +6323,10 @@
                 if (friendshipBonuses.statBonus > 0) {
                     friendshipTooltip += `\nBônus Stats: +${friendshipBonuses.statBonus}`;
                 }
-                if (friendshipBonuses.surviveChance > 0) {
-                    friendshipTooltip += `\n[EM BREVE] Chance Sobreviver: ${friendshipBonuses.surviveChance * 100}%`;
-                }
+                // Nota: surviveChance removido do tooltip até implementação
+                // if (friendshipBonuses.surviveChance > 0) {
+                //     friendshipTooltip += `\n[EM BREVE] Chance Sobreviver: ${friendshipBonuses.surviveChance * 100}%`;
+                // }
                 
                 return `
                     <div class="monster-card ${monster.class || 'common'}">
