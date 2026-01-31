@@ -706,6 +706,13 @@
             }
         };
 
+        // ============================================================================
+        // CONSTANTES DO SISTEMA DE AMIZADE
+        // ============================================================================
+        // Valor padrão de amizade (neutro) - Declarado aqui para estar disponível
+        // para todas as funções que o utilizam
+        const DEFAULT_FRIENDSHIP = 50;
+
         // MONSTER CATALOG (baseado em MONSTROS.csv)
         const MONSTER_CATALOG = [
             { id: 'MON_001', name: 'Cantapau', class: 'Bardo', rarity: 'Comum', baseHp: 28, baseAtk: 6, baseDef: 4, baseSpd: 6, baseEne: 8, emoji: '🎵' },
@@ -1109,13 +1116,6 @@
             const lvl = level || 1;
             return baseHp + (growthPerLevel * (lvl - 1));
         }
-
-        // ============================================================================
-        // SISTEMA DE AMIZADE (FRIENDSHIP) - Constantes
-        // ============================================================================
-        
-        // Valor padrão de amizade (neutro)
-        const DEFAULT_FRIENDSHIP = 50;
 
         // ============================================================================
         // SISTEMA DE AMIZADE (FRIENDSHIP) - Funções
