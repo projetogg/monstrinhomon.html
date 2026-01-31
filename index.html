@@ -1131,15 +1131,12 @@
             const template = getMonsterTemplate(templateId);
             
             if (!template) {
-                const errorMsg = `[Catalog] Missing monster template: ${templateId} (context: ${context})`;
-                console.warn(errorMsg);
-                
-                // Log to therapist if in therapist mode
-                if (typeof mmIsTherapistMode === 'function' && mmIsTherapistMode()) {
-                    if (typeof therapistLog === 'function') {
-                        therapistLog(`❌ ${errorMsg}`);
-                    }
-                }
+                // Commit 13 (Wave 13.2): Use mmDebugLog for standardized logging
+                mmDebugLog("CATALOG_ID_INVALID", {
+                    context,
+                    templateId,
+                    catalogType: 'MONSTER_CATALOG'
+                }, "warn");
             }
             
             return template;
@@ -1182,15 +1179,12 @@
             const itemDef = getItemDef(itemId);
             
             if (!itemDef) {
-                const errorMsg = `[Catalog] Missing item definition: ${itemId} (context: ${context})`;
-                console.warn(errorMsg);
-                
-                // Log to therapist if in therapist mode
-                if (typeof mmIsTherapistMode === 'function' && mmIsTherapistMode()) {
-                    if (typeof therapistLog === 'function') {
-                        therapistLog(`❌ ${errorMsg}`);
-                    }
-                }
+                // Commit 13 (Wave 13.2): Use mmDebugLog for standardized logging
+                mmDebugLog("ITEM_INVALID", {
+                    context,
+                    itemId,
+                    catalogType: 'ITEMS'
+                }, "warn");
             }
             
             return itemDef;
@@ -2174,24 +2168,44 @@
                 // Commit 12 (Wave C12.2): Validate itemId against catalog
                 const itemDef = requireItemDef(itemId, 'awardItem');
                 if (!itemDef) {
-                    console.error('[Award] Invalid itemId:', itemId);
+                    // Commit 13 (Wave 13.2): Use mmDebugLog
+                    mmDebugLog("AWARD_ITEM", {
+                        context: 'awardItem',
+                        itemId,
+                        error: 'Invalid itemId',
+                        success: false
+                    }, "error");
                     return false;
                 }
 
                 // Validate inputs
                 if (!itemId || typeof itemId !== 'string') {
-                    console.warn('[Award] Invalid itemId:', itemId);
+                    mmDebugLog("AWARD_ITEM", {
+                        context: 'awardItem',
+                        itemId,
+                        error: 'Invalid itemId type',
+                        success: false
+                    }, "warn");
                     return false;
                 }
 
                 const quantity = Math.max(1, Number(qty) || 1);
                 if (quantity < 1) {
-                    console.warn('[Award] Invalid quantity:', qty);
+                    mmDebugLog("AWARD_ITEM", {
+                        context: 'awardItem',
+                        qty,
+                        error: 'Invalid quantity',
+                        success: false
+                    }, "warn");
                     return false;
                 }
 
                 if (!player || typeof player !== 'object') {
-                    console.warn('[Award] Invalid player object');
+                    mmDebugLog("AWARD_ITEM", {
+                        context: 'awardItem',
+                        error: 'Invalid player object',
+                        success: false
+                    }, "warn");
                     return false;
                 }
 
@@ -2201,22 +2215,29 @@
                 // Add item (reuse existing inventory logic)
                 player.inventory[itemId] = (player.inventory[itemId] || 0) + quantity;
 
-                // Log to console if in therapist mode
-                if (typeof mmGetTherapistMode === 'function' && mmGetTherapistMode()) {
-                    console.log('[Award] Granted item:', {
-                        itemId: itemId,
-                        quantity: quantity,
-                        newTotal: player.inventory[itemId],
-                        player: player.name
-                    });
-                }
+                // Commit 13 (Wave 13.2): Success log with mmDebugLog
+                mmDebugLog("AWARD_ITEM", {
+                    context: 'awardItem',
+                    itemId: itemId,
+                    quantity: quantity,
+                    newTotal: player.inventory[itemId],
+                    playerId: player.id,
+                    playerName: player.name,
+                    success: true
+                }, "info");
 
                 // Persist
                 saveGame();
                 return true;
 
             } catch (error) {
-                console.error('[Award] awardItem failed:', error);
+                // Commit 13 (Wave 13.2): Error logging
+                mmDebugLog("AWARD_ITEM", {
+                    context: 'awardItem',
+                    itemId,
+                    error: error.message || String(error),
+                    success: false
+                }, "error");
                 return false;
             }
         }
@@ -2236,18 +2257,33 @@
                 // Commit 12 (Wave C12.2): Validate templateId against catalog
                 const template = requireMonsterTemplate(templateId, 'awardMonster');
                 if (!template) {
-                    console.error('[Award] Invalid templateId:', templateId);
+                    // Commit 13 (Wave 13.2): Use mmDebugLog for errors
+                    mmDebugLog("AWARD_MONSTER", {
+                        context: 'awardMonster',
+                        templateId,
+                        error: 'Invalid templateId',
+                        success: false
+                    }, "error");
                     return null;
                 }
 
                 // Validate inputs
                 if (!templateId || typeof templateId !== 'string') {
-                    console.warn('[Award] Invalid templateId:', templateId);
+                    mmDebugLog("AWARD_MONSTER", {
+                        context: 'awardMonster',
+                        templateId,
+                        error: 'Invalid templateId type',
+                        success: false
+                    }, "warn");
                     return null;
                 }
 
                 if (!player || typeof player !== 'object') {
-                    console.warn('[Award] Invalid player object');
+                    mmDebugLog("AWARD_MONSTER", {
+                        context: 'awardMonster',
+                        error: 'Invalid player object',
+                        success: false
+                    }, "warn");
                     return null;
                 }
 
@@ -2258,7 +2294,12 @@
                 const monster = createMonsterInstanceFromTemplate(templateId, monsterLevel, rarity, overrides);
                 
                 if (!monster) {
-                    console.warn('[Award] Failed to create monster from template:', templateId);
+                    mmDebugLog("AWARD_MONSTER", {
+                        context: 'awardMonster',
+                        templateId,
+                        error: 'Failed to create monster from template',
+                        success: false
+                    }, "warn");
                     return null;
                 }
 
@@ -2287,7 +2328,14 @@
                         // Party full, add to box instead
                         player.box.push(monster);
                         actualDest = 'box';
-                        console.warn('[Award] Party full, monster sent to box');
+                        // Commit 13 (Wave 13.2): Use mmDebugLog
+                        mmDebugLog("AWARD_MONSTER", {
+                            context: 'awardMonster',
+                            templateId,
+                            note: 'Party full, redirected to box',
+                            requestedDest: 'team',
+                            actualDest: 'box'
+                        }, "warn");
                     }
                 } else {
                     // box
@@ -2298,24 +2346,31 @@
                 GameState.monsters = GameState.monsters || [];
                 GameState.monsters.push(monster);
 
-                // Log to console if in therapist mode
-                if (typeof mmGetTherapistMode === 'function' && mmGetTherapistMode()) {
-                    console.log('[Award] Granted monster:', {
-                        templateId: templateId,
-                        name: monster.name,
-                        level: monsterLevel,
-                        rarity: monster.rarity,
-                        destination: actualDest,
-                        player: player.name
-                    });
-                }
+                // Commit 13 (Wave 13.2): Success log with mmDebugLog
+                mmDebugLog("AWARD_MONSTER", {
+                    context: 'awardMonster',
+                    templateId: templateId,
+                    monsterName: monster.name,
+                    level: monsterLevel,
+                    rarity: monster.rarity,
+                    destination: actualDest,
+                    playerId: player.id,
+                    playerName: player.name,
+                    success: true
+                }, "info");
 
                 // Persist
                 saveGame();
                 return monster;
 
             } catch (error) {
-                console.error('[Award] awardMonster failed:', error);
+                // Commit 13 (Wave 13.2): Error logging
+                mmDebugLog("AWARD_MONSTER", {
+                    context: 'awardMonster',
+                    templateId,
+                    error: error.message || String(error),
+                    success: false
+                }, "error");
                 return null;
             }
         }
@@ -3735,6 +3790,174 @@
             if (entries.length > 50) {
                 entries[0].remove();
             }
+        }
+
+        // ============================================================================
+        // Commit 13: mmDebugLog - Standardized Debug Logging System
+        // ============================================================================
+
+        /**
+         * Get current timestamp in ISO format
+         * @returns {string} ISO timestamp or empty string on error
+         */
+        function mmNowISO() {
+            try {
+                return new Date().toISOString();
+            } catch (e) {
+                return "";
+            }
+        }
+
+        /**
+         * Safely stringify an object to JSON
+         * @param {*} obj - Object to stringify
+         * @returns {string} JSON string or error object
+         */
+        function mmSafeStringify(obj) {
+            try {
+                return JSON.stringify(obj);
+            } catch (e) {
+                try {
+                    return JSON.stringify({
+                        error: "stringify_failed",
+                        keys: Object.keys(obj || {})
+                    });
+                } catch (_) {
+                    return '{"error":"stringify_failed"}';
+                }
+            }
+        }
+
+        /**
+         * Normalize log level to standard values
+         * @param {string} level - Log level (error, warn, info, debug)
+         * @returns {string} Normalized level
+         */
+        function mmNormalizeLevel(level) {
+            const L = String(level || "info").toLowerCase();
+            if (L === "error" || L === "warn" || L === "info" || L === "debug") {
+                return L;
+            }
+            return "info";
+        }
+
+        // In-memory debug buffer (useful for export or audit)
+        window.MM_DEBUG_BUFFER = window.MM_DEBUG_BUFFER || [];
+        const MM_DEBUG_BUFFER_MAX = 200;
+
+        /**
+         * Standardized debug logging function
+         * @param {string} event - Event name (e.g., 'CATALOG_ID_INVALID', 'AWARD_MONSTER')
+         * @param {object} details - Event details (context, ids, values, etc.)
+         * @param {string} level - Log level ('error', 'warn', 'info', 'debug')
+         * @returns {object} The logged payload
+         */
+        function mmDebugLog(event, details, level) {
+            const lvl = mmNormalizeLevel(level);
+            const ev = String(event || "EVENT_UNSPECIFIED").trim() || "EVENT_UNSPECIFIED";
+            const det = (details && typeof details === "object") ? details : { value: details };
+
+            // Enrich payload with context
+            const payload = {
+                ts: mmNowISO(),
+                level: lvl,
+                event: ev,
+                context: det.context || det.fn || det.source || "unknown",
+                saveSlot: (window.GameState && GameState.saveSlot) ? GameState.saveSlot : null,
+                ...det
+            };
+
+            // 1) Console output with standard format
+            const tag = `[MM:${payload.level.toUpperCase()}] ${payload.event}`;
+            if (payload.level === "error") {
+                console.error(tag, payload);
+            } else if (payload.level === "warn") {
+                console.warn(tag, payload);
+            } else if (payload.level === "debug") {
+                console.debug(tag, payload);
+            } else {
+                console.log(tag, payload);
+            }
+
+            // 2) Add to debug buffer
+            window.MM_DEBUG_BUFFER.push(payload);
+            if (window.MM_DEBUG_BUFFER.length > MM_DEBUG_BUFFER_MAX) {
+                window.MM_DEBUG_BUFFER.splice(0, window.MM_DEBUG_BUFFER.length - MM_DEBUG_BUFFER_MAX);
+            }
+
+            // 3) Therapist panel log (if therapist mode is active)
+            if (typeof therapistLog === 'function') {
+                // Create condensed message for therapist panel
+                const icon = lvl === 'error' ? '❌' : lvl === 'warn' ? '⚠️' : lvl === 'debug' ? '🔍' : 'ℹ️';
+                const condensed = `${icon} ${ev}: ${det.context || 'unknown'}`;
+                
+                // Add key details if present
+                const keyDetails = [];
+                if (det.templateId) keyDetails.push(`template=${det.templateId}`);
+                if (det.itemId) keyDetails.push(`item=${det.itemId}`);
+                if (det.className) keyDetails.push(`class=${det.className}`);
+                if (det.rarity) keyDetails.push(`rarity=${det.rarity}`);
+                if (det.note) keyDetails.push(`note=${det.note}`);
+                
+                const fullMessage = keyDetails.length > 0 
+                    ? `${condensed} (${keyDetails.join(', ')})`
+                    : condensed;
+                
+                therapistLog(fullMessage);
+            }
+
+            return payload;
+        }
+
+        /**
+         * Log invalid class warning
+         * @param {string} className - The invalid class name
+         * @param {string} context - Where the validation failed
+         */
+        function mmLogInvalidClass(className, context) {
+            const isValid = (window.MM_TABLES && typeof MM_TABLES.validateClass === 'function')
+                ? MM_TABLES.validateClass(className)
+                : false;
+
+            if (!isValid) {
+                mmDebugLog("CLASS_INVALID", {
+                    context,
+                    className,
+                    allowedClasses: (MM_TABLES && MM_TABLES.CLASSES) ? MM_TABLES.CLASSES : null
+                }, "warn");
+            }
+        }
+
+        /**
+         * Log invalid rarity warning
+         * @param {string} rarityName - The invalid rarity name
+         * @param {string} context - Where the validation failed
+         */
+        function mmLogInvalidRarity(rarityName, context) {
+            const isValid = (window.MM_TABLES && typeof MM_TABLES.validateRarity === 'function')
+                ? MM_TABLES.validateRarity(rarityName)
+                : false;
+
+            if (!isValid) {
+                mmDebugLog("RARITY_INVALID", {
+                    context,
+                    rarity: rarityName,
+                    allowedRarities: (MM_TABLES && MM_TABLES.RARITIES) ? MM_TABLES.RARITIES : null
+                }, "warn");
+            }
+        }
+
+        /**
+         * Log legacy fallback usage
+         * @param {string} context - Where the fallback occurred
+         * @param {object} details - Additional details
+         */
+        function mmLogLegacyFallback(context, details) {
+            mmDebugLog("WARN_LEGACY_FALLBACK", {
+                context,
+                legacy: true,
+                ...details
+            }, "warn");
         }
 
         /**
