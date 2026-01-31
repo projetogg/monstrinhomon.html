@@ -700,10 +700,8 @@
                     battleWin: 2,
                     battleLoss: -5,
                     useHealItem: 5,
-                    stayInTeam: 1,
                     levelUp: 3,
-                    faint: -3,
-                    timeInBox: -1
+                    faint: -3
                 }
             }
         };
@@ -1120,8 +1118,9 @@
          * Atualiza o nível de amizade de um monstrinho
          * @param {Object} monster - Instância do monstrinho
          * @param {string} event - Evento que dispara mudança de amizade
+         * @param {boolean} autoSave - Se deve salvar automaticamente (default: true)
          */
-        function updateFriendship(monster, event) {
+        function updateFriendship(monster, event, autoSave = true) {
             if (!monster || typeof monster !== 'object') return;
             
             // Inicializar friendship se não existir
@@ -1159,7 +1158,9 @@
                 }
             }
             
-            saveToLocalStorage();
+            if (autoSave) {
+                saveToLocalStorage();
+            }
         }
 
         /**
@@ -1200,23 +1201,19 @@
                 surviveChance: 0
             };
             
+            // Progressão gradual de bônus por nível
             if (level >= 2) {
-                bonuses.xpMultiplier = 1.05;
+                bonuses.xpMultiplier = 1.05; // +5% XP
             }
             if (level >= 3) {
-                bonuses.xpMultiplier = 1.05;
-                bonuses.critChance = 0.05;
+                bonuses.critChance = 0.05;   // +5% crítico (mantém +5% XP)
             }
             if (level >= 4) {
-                bonuses.xpMultiplier = 1.10;
-                bonuses.critChance = 0.05;
-                bonuses.statBonus = 1;
+                bonuses.xpMultiplier = 1.10; // +10% XP (upgrade)
+                bonuses.statBonus = 1;       // +1 stats
             }
             if (level >= 5) {
-                bonuses.xpMultiplier = 1.10;
-                bonuses.critChance = 0.05;
-                bonuses.statBonus = 1;
-                bonuses.surviveChance = 0.10;
+                bonuses.surviveChance = 0.10; // 10% sobreviver (mantém tudo)
             }
             
             return bonuses;
@@ -5442,8 +5439,9 @@
                             
                             if (playerMonster.hp <= 0) {
                                 // SISTEMA DE AMIZADE: Perder amizade ao desmaiar e perder batalha
-                                updateFriendship(playerMonster, 'faint');
-                                updateFriendship(playerMonster, 'battleLoss');
+                                // Combinar múltiplos eventos para evitar múltiplas chamadas de save
+                                updateFriendship(playerMonster, 'faint', false);
+                                updateFriendship(playerMonster, 'battleLoss', false);
                                 
                                 encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
                                 playerMonster.status = 'fainted';
@@ -5453,6 +5451,7 @@
                                 
                                 encounter.active = false;
                                 GameState.currentEncounter = null;
+                                saveToLocalStorage(); // Salvar uma única vez após todas as mudanças
                             }
                             return;
                         } else {
@@ -5488,13 +5487,15 @@
                             
                             if (playerMonster.hp <= 0) {
                                 // SISTEMA DE AMIZADE: Perder amizade ao desmaiar e perder batalha
-                                updateFriendship(playerMonster, 'faint');
-                                updateFriendship(playerMonster, 'battleLoss');
+                                // Combinar múltiplos eventos para evitar múltiplas chamadas de save
+                                updateFriendship(playerMonster, 'faint', false);
+                                updateFriendship(playerMonster, 'battleLoss', false);
                                 
                                 encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
                                 playerMonster.status = 'fainted';
                                 encounter.active = false;
                                 GameState.currentEncounter = null;
+                                saveToLocalStorage(); // Salvar uma única vez após todas as mudanças
                             }
                             return;
                         } else {
