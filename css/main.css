@@ -292,6 +292,52 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     transform: translateX(0);
 }
 
+/* Toast type variations */
+.mm-toast.success {
+    background: rgba(76, 175, 80, 0.95);
+}
+
+.mm-toast.error {
+    background: rgba(214, 48, 49, 0.95);
+}
+
+/* Therapist Log Panel */
+.therapist-log-box {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 15px;
+}
+
+.therapist-log {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 10px;
+    max-height: 150px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: #e0e0e0;
+}
+
+.therapist-log-entry {
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.therapist-log-entry:last-child {
+    border-bottom: none;
+}
+
+.therapist-log:empty::before {
+    content: "No actions logged yet...";
+    color: rgba(255, 255, 255, 0.4);
+    font-style: italic;
+}
+
+
 /* ===== Feature 4.0: Menu / Overlays ===== */
 .mm-overlay {
     position: fixed;

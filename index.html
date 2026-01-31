@@ -192,6 +192,15 @@
                 <h3>🔬 Therapist Mode Tools</h3>
                 <p class="therapist-header-text">Advanced debugging and testing controls</p>
                 <div id="therapistPanelContent">
+                    <!-- Commit 9: Therapist Log -->
+                    <div class="therapist-log-box">
+                        <div class="d-flex" style="justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <h4 style="margin: 0;">📜 Action Log</h4>
+                            <button class="btn btn-sm" onclick="clearTherapistLog()">🗑️ Clear</button>
+                        </div>
+                        <div id="therapistLog" class="therapist-log"></div>
+                    </div>
+                    
                     <!-- Commit 2: Export/Import Save Tools -->
                     <div class="save-management-box">
                         <h4 class="save-management-title">💾 Save Management</h4>
@@ -3309,23 +3318,60 @@
         /**
          * Exibe um toast notification temporário
          */
-        function showToast(text) {
+        function showToast(text, type = 'success') {
             const host = document.getElementById("mmToastHost");
             if (!host) return;
 
             const el = document.createElement("div");
-            el.className = "mm-toast";
+            el.className = `mm-toast ${type}`;
             el.textContent = text;
 
             host.appendChild(el);
 
+            // Show toast with slide-in animation
+            setTimeout(() => {
+                el.classList.add('show');
+            }, 10);
+
+            // Start fade-out after 1.5 seconds
             setTimeout(() => {
                 el.style.opacity = "0";
                 el.style.transform = "translateY(-4px)";
                 el.style.transition = "opacity .2s ease, transform .2s ease";
-            }, 2600);
+            }, 1500);
 
-            setTimeout(() => el.remove(), 3100);
+            // Remove from DOM after animation
+            setTimeout(() => el.remove(), 2000);
+        }
+
+        /**
+         * Logs a message to the therapist log panel (only if therapist mode is active)
+         * @param {string} message - Message to log
+         */
+        function therapistLog(message) {
+            // Only log if therapist mode is enabled
+            if (typeof mmIsTherapistMode !== 'function' || !mmIsTherapistMode()) {
+                return;
+            }
+
+            const logContainer = document.getElementById("therapistLog");
+            if (!logContainer) return;
+
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement("div");
+            logEntry.className = "therapist-log-entry";
+            logEntry.textContent = `[${timestamp}] ${message}`;
+
+            logContainer.appendChild(logEntry);
+
+            // Auto-scroll to bottom
+            logContainer.scrollTop = logContainer.scrollHeight;
+
+            // Keep only last 50 entries to avoid memory issues
+            const entries = logContainer.querySelectorAll(".therapist-log-entry");
+            if (entries.length > 50) {
+                entries[0].remove();
+            }
         }
 
         /**
@@ -6273,6 +6319,17 @@
         }
 
         // Therapist action: Give XP
+        /**
+         * Clears the therapist log panel
+         */
+        function clearTherapistLog() {
+            const logContainer = document.getElementById("therapistLog");
+            if (logContainer) {
+                logContainer.innerHTML = "";
+                therapistLog("Log cleared");
+            }
+        }
+
         // Therapist action: Give XP (uses Award API)
         function mmTherGiveXP() {
             if (!mmRequireGameOrAlert()) return;
@@ -6282,13 +6339,15 @@
 
             const player = GameState.players.find(p => p.id === pid);
             if (!player) {
-                alert("Jogador não encontrado.");
+                showToast("Jogador não encontrado.", 'error');
+                therapistLog("❌ awardXP failed: player not found");
                 return;
             }
 
             // Validate team and activeIndex
             if (!player.team || !Array.isArray(player.team) || player.team.length === 0) {
-                alert("Jogador não tem monstrinhos no time.");
+                showToast("Jogador não tem monstrinhos no time.", 'error');
+                therapistLog("❌ awardXP failed: empty team");
                 return;
             }
 
@@ -6299,7 +6358,8 @@
 
             const mon = player.team[player.activeIndex];
             if (!mon) {
-                alert("Monstrinho ativo não encontrado. Verifique activeIndex.");
+                showToast("Monstrinho ativo não encontrado.", 'error');
+                therapistLog("❌ awardXP failed: active monster not found");
                 return;
             }
 
@@ -6308,13 +6368,11 @@
             
             if (success) {
                 if (typeof renderEncounter === "function") renderEncounter();
-                if (typeof showToast === "function") {
-                    showToast(`✨ ${mon.name} recebeu +${amt} XP! (Nível ${mon.level})`);
-                } else {
-                    alert(`✨ ${mon.name} recebeu +${amt} XP! (Nível ${mon.level})`);
-                }
+                showToast(`✨ ${mon.name} recebeu +${amt} XP! (Nível ${mon.level})`);
+                therapistLog(`✅ awardXP +${amt} → ${mon.name} (Lv ${mon.level})`);
             } else {
-                alert("❌ Falha ao dar XP. Verifique o console.");
+                showToast("Falha ao dar XP.", 'error');
+                therapistLog("❌ awardXP failed");
             }
         }
 
@@ -6326,13 +6384,15 @@
             const player = GameState.players.find(p => p.id === pid);
             
             if (!player) {
-                alert("Jogador não encontrado.");
+                showToast("Jogador não encontrado.", 'error');
+                therapistLog("❌ awardXP failed: player not found");
                 return;
             }
 
             // Validate team and activeIndex
             if (!player.team || !Array.isArray(player.team) || player.team.length === 0) {
-                alert("Jogador não tem monstrinhos no time.");
+                showToast("Jogador não tem monstrinhos no time.", 'error');
+                therapistLog("❌ awardXP failed: empty team");
                 return;
             }
 
@@ -6343,7 +6403,8 @@
 
             const mon = player.team[player.activeIndex];
             if (!mon) {
-                alert("Monstrinho ativo não encontrado. Verifique activeIndex.");
+                showToast("Monstrinho ativo não encontrado.", 'error');
+                therapistLog("❌ awardXP failed: active monster not found");
                 return;
             }
 
@@ -6352,13 +6413,11 @@
             
             if (success) {
                 if (typeof renderEncounter === "function") renderEncounter();
-                if (typeof showToast === "function") {
-                    showToast(`✨ ${mon.name} recebeu +${amount} XP! (Nível ${mon.level})`);
-                } else {
-                    alert(`✨ ${mon.name} recebeu +${amount} XP! (Nível ${mon.level})`);
-                }
+                showToast(`✨ ${mon.name} recebeu +${amount} XP! (Nível ${mon.level})`);
+                therapistLog(`✅ awardXP +${amount} → ${mon.name} (Lv ${mon.level})`);
             } else {
-                alert("❌ Falha ao dar XP. Verifique o console.");
+                showToast("Falha ao dar XP.", 'error');
+                therapistLog("❌ awardXP failed");
             }
         }
 
@@ -6372,12 +6431,14 @@
 
             const player = GameState.players.find(p => p.id === pid);
             if (!player) {
-                alert("Jogador não encontrado.");
+                showToast("Jogador não encontrado.", 'error');
+                therapistLog("❌ awardItem failed: player not found");
                 return;
             }
 
             if (!itemId) {
-                alert("Selecione um item.");
+                showToast("Selecione um item.", 'error');
+                therapistLog("❌ awardItem failed: no item selected");
                 return;
             }
 
@@ -6393,13 +6454,11 @@
                     itemName = window.CLASTERORBS[itemId].name;
                 }
                 
-                if (typeof showToast === "function") {
-                    showToast(`🎒 ${player.name} recebeu ${qty}x ${itemName}`);
-                } else {
-                    alert(`🎒 ${player.name} recebeu ${qty}x ${itemName}`);
-                }
+                showToast(`🎒 ${player.name} recebeu ${qty}x ${itemName}`);
+                therapistLog(`✅ awardItem ${itemId} x${qty} → ${player.name}`);
             } else {
-                alert("❌ Falha ao dar item. Verifique o console.");
+                showToast("Falha ao dar item.", 'error');
+                therapistLog("❌ awardItem failed");
             }
         }
 
