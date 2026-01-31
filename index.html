@@ -4554,7 +4554,7 @@
          * @param {Object} mon - Monstro
          * @returns {Object|null} - Template encontrado ou null
          */
-        function getMonsterTemplate(mon) {
+        function getMonsterTemplateFromInstance(mon) {
             if (!mon) return null;
             
             const catalog = MONSTER_CATALOG || (window.DB?.MONSTERS) || (window.DB?.MONSTER_CATALOG) || [];
@@ -4588,7 +4588,7 @@
          * @returns {Object|null} - { nextTemplate, evolvesAt } ou null
          */
         function getEvolutionTargetTemplate(mon) {
-            const currentTemplate = getMonsterTemplate(mon);
+            const currentTemplate = getMonsterTemplateFromInstance(mon);
             const evo = getEvolutionData(currentTemplate);
             if (!evo) return null;
 
@@ -4671,7 +4671,7 @@
             if (!mon) return false;
             ensureMonsterProgressFields(mon);
 
-            const currentTemplate = getMonsterTemplate(mon);
+            const currentTemplate = getMonsterTemplateFromInstance(mon);
             const evo = getEvolutionData(currentTemplate);
             if (!evo) return false;
 
@@ -8492,6 +8492,33 @@
             if (typeof updateAllViews === "function") updateAllViews();
             if (typeof renderEncounter === "function") renderEncounter();
         }
+
+        // ===== EXPOSE FUNCTIONS TO GLOBAL SCOPE FOR ONCLICK HANDLERS =====
+        // When using type="module", functions are scoped to the module.
+        // We need to expose them to window for inline onclick handlers to work.
+        window.dismissError = dismissError;
+        window.copyError = copyError;
+        window.mmShowMainMenu = mmShowMainMenu;
+        window.switchTab = switchTab;
+        window.createSession = createSession;
+        window.nextTurn = nextTurn;
+        window.endSession = endSession;
+        window.addPlayer = addPlayer;
+        window.startEncounter = startEncounter;
+        window.addObjective = addObjective;
+        window.clearTherapistLog = clearTherapistLog;
+        window.therapistExportSave = therapistExportSave;
+        window.therapistImportSave = therapistImportSave;
+        window.therapistLoadJson = therapistLoadJson;
+        window.therapistCancelImport = therapistCancelImport;
+        window.exportData = exportData;
+        window.importData = importData;
+        window.clearAllData = clearAllData;
+        window.attackWild = attackWild;
+        window.useSkillWild = useSkillWild;
+        window.mmEnterGameUI = mmEnterGameUI;
+        window.mmCloseAllOverlays = mmCloseAllOverlays;
+        window.Audio = Audio;
 
         // Initialize on load
         window.addEventListener('DOMContentLoaded', function() {
