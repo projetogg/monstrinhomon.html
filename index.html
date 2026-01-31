@@ -390,8 +390,14 @@
         // Import combat modules
         import Combat from './js/combat/index.js';
         
+        // Import progression modules (PR8A)
+        import Progression from './js/progression/index.js';
+        
         // Make Combat available globally for the wrapper
         window.Combat = Combat;
+        
+        // Make Progression available globally (PR8A)
+        window.Progression = Progression;
         
         // Destructure groupCore for easier access
         const GroupCore = Combat.Group.Core;
@@ -4058,22 +4064,16 @@
          * @param {string} encounterType - Tipo do encontro ('wild', 'group_trainer', 'boss')
          * @returns {number} - XP calculado
          */
+        /**
+         * PR8A: WRAPPER - Progression.Core.calculateBattleXP()
+         * Calcula XP de batalha (wrapper para manter compatibilidade)
+         */
         function calculateBattleXP(defeatedEnemy, encounterType) {
-            const base = GameState.config?.battleXpBase || 15;
-            const level = Math.max(1, Number(defeatedEnemy?.level) || 1);
-            const rarity = defeatedEnemy?.rarity || defeatedEnemy?.raridade || null;
-            
-            // Multiplicador de raridade (com fallback)
-            const rarityMult = Number(GameState.config.rarityXP?.[rarity]) || 1.0;
-            
-            let xp = Math.floor((base + level * 2) * rarityMult);
-            
-            // Boss bonus (se encounterType for fornecido)
-            if (encounterType && String(encounterType).toLowerCase() === 'boss') {
-                xp = Math.floor(xp * 1.5);
-            }
-            
-            return Math.max(1, xp);
+            return Progression.Core.calculateBattleXP(
+                defeatedEnemy, 
+                encounterType, 
+                GameState.config
+            );
         }
         
         /**
