@@ -3235,102 +3235,23 @@
             return GroupCore.hasAliveEnemies(enc);
         }
         
+        /**
+         * PR5C: WRAPPER - Combat.Group.Actions.advanceGroupTurn()
+         * (Chamado internamente pelas actions, não exposto diretamente)
+         */
         function advanceTurn(enc) {
-            if (!enc || !enc.turnOrder || enc.turnOrder.length === 0) return;
-            
-            // Verificar condições de fim
-            const alivePlayers = _hasAlivePlayers(enc);
-            const aliveEnemies = _hasAliveEnemies(enc);
-            
-            if (!aliveEnemies) {
-                enc.finished = true;
-                enc.result = "victory";
-                enc.active = false;
-                enc.log = enc.log || [];
-                enc.log.push("🏁 Vitória! Todos os inimigos foram derrotados.");
-                
-                // Feature 4.4: Victory sound (com idempotência)
-                if (!enc._winSfxPlayed) {
-                    Audio.playSfx("win");
-                    enc._winSfxPlayed = true;
-                }
-                
-                // Distribuir recompensas (XP) com idempotência
-                handleVictoryRewards(enc);
-                
-                return;
-            }
-            
-            if (!alivePlayers) {
-                enc.finished = true;
-                enc.result = "defeat";
-                enc.active = false;
-                enc.log = enc.log || [];
-                enc.log.push("💀 Derrota... Todos os participantes foram derrotados.");
-                
-                // Feature 4.4: Defeat sound (com idempotência)
-                if (!enc._loseSfxPlayed) {
-                    Audio.playSfx("lose");
-                    enc._loseSfxPlayed = true;
-                }
-                
-                return;
-            }
-            
-            // Avançar para próximo ator válido
-            const maxLoops = enc.turnOrder.length + 2;
-            let loops = 0;
-            
-            do {
-                enc.turnIndex = ((Number(enc.turnIndex) || 0) + 1) % enc.turnOrder.length;
-                loops++;
-                
-                const actor = getCurrentActor(enc);
-                if (!actor) break;
-                
-                // Validar se ator ainda está vivo
-                if (actor.side === "player") {
-                    const p = GameState.players.find(x => x.id === actor.id);
-                    const mon = p?.team?.[0];
-                    if (mon && (Number(mon.hp) || 0) > 0) break;
-                } else {
-                    const e = enc.enemies?.[actor.id];
-                    if (e && (Number(e.hp) || 0) > 0) break;
-                }
-                
-            } while (loops < maxLoops);
-            
-            // Atualizar currentActor
-            enc.currentActor = getCurrentActor(enc);
-            
-            // Auto-trigger turno do inimigo
-            const actorNow = getCurrentActor(enc);
-            if (actorNow && actorNow.side === "enemy" && !enc.finished) {
-                processEnemyTurnGroup(enc);
-            } else if (actorNow) {
-                enc.log = enc.log || [];
-                enc.log.push(`⏺️ Turno: ${actorNow.name}`);
-            }
+            const deps = createGroupCombatDeps();
+            Combat.Group.Actions.advanceGroupTurn(enc, deps);
         }
         
         /**
-         * WRAPPER FUTURO: Combat.Group.Actions.passTurn()
+         * PR5C: WRAPPER - Combat.Group.Actions.passTurn()
          * Passa turno sem ação
          */
         function groupPassTurn() {
             try {
-                // TODO PR5B: Mover para Combat.Group.Actions.passTurn()
-                const enc = GameState.currentEncounter;
-                if (!enc) return;
-                
-                const actor = getCurrentActor(enc);
-                if (!actor) return;
-                
-                enc.log.push(`▶️ ${actor.name} passou o turno`);
-                
-                advanceTurn(enc);
-                saveToLocalStorage();
-                renderEncounter();
+                const deps = createGroupCombatDeps();
+                Combat.Group.Actions.passTurn(deps);
             } catch (error) {
                 showError('Failed to pass turn', error.stack);
             }
@@ -3540,141 +3461,49 @@
         // ==================== FASE 3.A: Player Attack ====================
 
         /**
-         * WRAPPER FUTURO: Combat.Group.Actions.executePlayerAttackGroup()
+         * PR5C: Criar objeto de dependências para injetar nas actions
+         */
+        function createGroupCombatDeps() {
+            return {
+                state: GameState,
+                core: GroupCore,
+                ui: {
+                    render: renderEncounter,
+                    showDamageFeedback: Combat.Group.UI.showDamageFeedback,
+                    showMissFeedback: Combat.Group.UI.showMissFeedback,
+                    playAttackFeedback: Combat.Group.UI.playAttackFeedback
+                },
+                audio: Audio,
+                storage: {
+                    save: saveToLocalStorage
+                },
+                helpers: {
+                    getPlayerById: _getPlayerById,
+                    getActiveMonsterOfPlayer: _getActiveMonsterOfPlayer,
+                    getEnemyByIndex: _getEnemyByIndex,
+                    log: _log,
+                    applyEneRegen: applyEneRegen,
+                    updateBuffs: updateBuffs,
+                    rollD20: rollD20,
+                    recordD20Roll: recordD20Roll,
+                    getBasicAttackPower: (cls) => MM_TABLES.getBasicAttackPower(cls),
+                    applyDamage: applyDamage,
+                    chooseTargetPlayerId: _chooseTargetPlayerId,
+                    firstAliveIndex: firstAliveIndex,
+                    openSwitchMonsterModal: openSwitchMonsterModal,
+                    handleVictoryRewards: handleVictoryRewards
+                }
+            };
+        }
+
+        /**
+         * PR5C: WRAPPER - Combat.Group.Actions.executePlayerAttackGroup()
          * Executa ataque do jogador em combate de grupo
          */
         function groupAttack() {
             try {
-                // TODO PR5B: Mover para Combat.Group.Actions.executePlayerAttackGroup()
-                const enc = _getGroupEncounter();
-                if (!enc || enc.finished) return;
-
-                const actor = getCurrentActor(enc);
-                if (!actor || actor.side !== 'player') return;
-
-                const player = _getPlayerById(actor.id);
-                const mon = _getActiveMonsterOfPlayer(player);
-                if (!player || !mon) return;
-
-                // GAME_RULES.md: Em batalha, só pode usar monstros da mesma classe do jogador
-                if (mon.class !== player.class) {
-                    alert(`⚠️ ${player.name}: Você só pode usar monstrinhos da classe ${player.class} em batalha!\n\nEste ${mon.name} é da classe ${mon.class}.\nREGRA: Em batalha, você só pode usar monstrinhos da SUA classe.`);
-                    return;
-                }
-
-                if (!_isAlive(mon)) {
-                    _log(enc, "⚠️ Seu monstrinho está desmaiado. Não pode atacar.");
-                    saveToLocalStorage();
-                    renderEncounter();
-                    return;
-                }
-
-                // Aplicar ENE REGEN no início do turno do jogador
-                applyEneRegen(mon, enc);
-                
-                // Atualizar buffs (reduzir duração)
-                updateBuffs(mon);
-
-                // Alvo: primeiro inimigo vivo
-                let enemyIndex = 0;
-                while (enemyIndex < (enc.enemies?.length || 0) && !_isAlive(enc.enemies[enemyIndex])) enemyIndex++;
-
-                const enemy = _getEnemyByIndex(enc, enemyIndex);
-                if (!enemy || !_isAlive(enemy)) {
-                    _log(enc, "ℹ️ Não há inimigos vivos para atacar.");
-                    saveToLocalStorage();
-                    renderEncounter();
-                    return;
-                }
-
-                const d20 = rollD20();
-                
-                const alwaysMiss = (d20 === 1);
-                const isCrit = (d20 === 20);
-                const hit = !alwaysMiss && (isCrit || checkHit(d20, mon, enemy));
-
-                const attackerName = player.name || player.nome || actor.name || "Jogador";
-                const monName = mon.nickname || mon.name || mon.nome || "Monstrinho";
-                const enemyName = enemy.name || enemy.nome || "Inimigo";
-                
-                // Feature 3.8: Record d20 roll
-                const rollType = isCrit ? 'crit' : alwaysMiss ? 'fail' : 'normal';
-                recordD20Roll(enc, attackerName, d20, rollType);
-
-                // Feature 4.4: Play attack sound
-                if (isCrit) {
-                    Audio.playSfx("crit");
-                } else if (alwaysMiss || !hit) {
-                    Audio.playSfx("miss");
-                } else {
-                    Audio.playSfx("hit");
-                }
-
-                if (!hit) {
-                    _log(enc, `🎲 ${attackerName} (${monName}) rolou ${d20} e ERROU o ataque em ${enemyName}.`);
-                    
-                    // Feature 3.8: Flash fail on player
-                    setTimeout(() => flashTarget(`grpP_${actor.id}`, 'fail'), 50);
-                    
-                    advanceTurn(enc);
-                    saveToLocalStorage();
-                    renderEncounter();
-                    return;
-                }
-
-                // POWER básico
-                // Commit 12 (Wave C12.3.2): Use MM_TABLES for basic attack power
-                const basicPower = MM_TABLES.getBasicAttackPower(mon.class);
-                let powerUsed = basicPower;
-
-                if (isCrit) {
-                    powerUsed = basicPower * 2;
-                    _log(enc, `💥 CRIT 20! ${monName} ativou Poder Duplo!`);
-                }
-
-                // Aplicar modificadores de buff
-                const atkMods = getBuffModifiers(mon);
-                const effectiveAtk = Math.max(1, (Number(mon.atk) || 0) + atkMods.atk);
-                
-                const defMods = getBuffModifiers(enemy);
-                const effectiveDef = Math.max(1, (Number(enemy.def) || 0) + defMods.def);
-
-                // Calcular vantagem de classe
-                const classAdv = GameState.config?.classAdvantages?.[mon.class];
-                let damageMult = 1.0;
-                if (classAdv?.strong === enemy.class) {
-                    damageMult = 1.10;
-                } else if (classAdv?.weak === enemy.class) {
-                    damageMult = 0.90;
-                }
-
-                const dmg = calcDamage({
-                    atk: effectiveAtk,
-                    def: effectiveDef,
-                    power: powerUsed,
-                    damageMult: damageMult
-                });
-                
-                // Commit 11 (Wave B): Use applyDamage helper
-                const damageResult = applyDamage(enemy, dmg);
-
-                _log(enc, `🎲 ${attackerName} (${monName}) rolou ${d20} e acertou ${enemyName} causando ${dmg} de dano!`);
-                
-                // Feature 3.8: Visual feedback
-                saveToLocalStorage();
-                renderEncounter();
-                setTimeout(() => {
-                    showFloatingText(`grpE_${enemyIndex}`, `-${dmg}`, isCrit ? 'crit' : 'damage');
-                    flashTarget(`grpE_${enemyIndex}`, isCrit ? 'crit' : 'hit');
-                }, 50);
-
-                if (!_isAlive(enemy)) {
-                    _log(enc, `🏁 ${enemyName} foi derrotado!`);
-                }
-
-                advanceTurn(enc);
-                saveToLocalStorage();
-                renderEncounter();
+                const deps = createGroupCombatDeps();
+                Combat.Group.Actions.executePlayerAttackGroup(deps);
             } catch (error) {
                 showError('Failed to attack', error.stack);
             }
@@ -3683,150 +3512,13 @@
         // ==================== FASE 3.B: Enemy AI ====================
 
         /**
-         * WRAPPER FUTURO: Combat.Group.Actions.executeEnemyTurnGroup()
+         * PR5C: WRAPPER - Combat.Group.Actions.executeEnemyTurnGroup()
          * Processa turno do inimigo em combate de grupo
          */
         function processEnemyTurnGroup(enc) {
             try {
-                // TODO PR5B: Mover para Combat.Group.Actions.executeEnemyTurnGroup()
-                if (!enc || enc.finished) return;
-
-                const actor = getCurrentActor(enc);
-                if (!actor || actor.side !== 'enemy') return;
-
-                const enemy = _getEnemyByIndex(enc, actor.id);
-                if (!enemy || !_isAlive(enemy)) {
-                    advanceTurn(enc);
-                    saveToLocalStorage();
-                    renderEncounter();
-                    return;
-                }
-
-                // Aplicar ENE REGEN no início do turno do inimigo
-                applyEneRegen(enemy, enc);
-                
-                // Atualizar buffs (reduzir duração)
-                updateBuffs(enemy);
-
-                // Escolhe alvo (menor HP%)
-                const targetPid = _chooseTargetPlayerId(enc);
-                if (!targetPid) {
-                    advanceTurn(enc);
-                    saveToLocalStorage();
-                    renderEncounter();
-                    return;
-                }
-
-                const targetPlayer = _getPlayerById(targetPid);
-                const targetMon = _getActiveMonsterOfPlayer(targetPlayer);
-
-                const enemyName = enemy.name || actor.name || "Inimigo";
-                const targetName = targetPlayer?.name || targetPlayer?.nome || "Jogador";
-                const targetMonName = targetMon?.nickname || targetMon?.name || targetMon?.nome || "Monstrinho";
-
-                const d20 = rollD20();
-
-                const alwaysMiss = (d20 === 1);
-                const isCrit = (d20 === 20);
-                const hit = !alwaysMiss && (isCrit || checkHit(d20, enemy, targetMon));
-                
-                // Feature 3.8: Record d20 roll
-                const rollType = isCrit ? 'crit' : alwaysMiss ? 'fail' : 'normal';
-                recordD20Roll(enc, enemyName, d20, rollType);
-
-                // Feature 4.4: Enemy attack sound (group)
-                if (isCrit) {
-                    Audio.playSfx("crit");
-                } else if (alwaysMiss || !hit) {
-                    Audio.playSfx("miss");
-                } else {
-                    Audio.playSfx("hit");
-                }
-
-                if (!hit) {
-                    _log(enc, `🎲 ${enemyName} rolou ${d20} e ERROU o ataque em ${targetName} (${targetMonName}).`);
-                    
-                    // Feature 3.8: Flash fail on enemy
-                    const enemyIndex = enc.enemies.indexOf(enemy);
-                    setTimeout(() => flashTarget(`grpE_${enemyIndex}`, 'fail'), 50);
-                    
-                    advanceTurn(enc);
-                    saveToLocalStorage();
-                    renderEncounter();
-                    return;
-                }
-
-                // POWER básico do inimigo
-                // Commit 12 (Wave C12.3.2): Use MM_TABLES for basic attack power
-                const basicPower = MM_TABLES.getBasicAttackPower(enemy.class);
-                let powerUsed = basicPower;
-
-                if (isCrit) {
-                    powerUsed = basicPower * 2;
-                    _log(enc, `💥 CRIT 20! ${enemyName} ativou Poder Duplo!`);
-                }
-
-                // Aplicar modificadores de buff
-                const atkMods = getBuffModifiers(enemy);
-                const effectiveAtk = Math.max(1, (Number(enemy.atk) || 0) + atkMods.atk);
-                
-                const defMods = getBuffModifiers(targetMon);
-                const effectiveDef = Math.max(1, (Number(targetMon?.def) || 0) + defMods.def);
-
-                // Calcular vantagem de classe
-                const classAdv = GameState.config?.classAdvantages?.[enemy.class];
-                let damageMult = 1.0;
-                if (classAdv?.strong === targetMon?.class) {
-                    damageMult = 1.10;
-                } else if (classAdv?.weak === targetMon?.class) {
-                    damageMult = 0.90;
-                }
-
-                const dmg = calcDamage({
-                    atk: effectiveAtk,
-                    def: effectiveDef,
-                    power: powerUsed,
-                    damageMult: damageMult
-                });
-                
-                // Commit 11 (Wave B): Use applyDamage helper
-                const damageResult = applyDamage(targetMon, dmg);
-
-                _log(enc, `🎲 ${enemyName} rolou ${d20} e acertou ${targetName} (${targetMonName}) causando ${dmg} de dano!`);
-                
-                // Feature 3.8: Visual feedback
-                saveToLocalStorage();
-                renderEncounter();
-                setTimeout(() => {
-                    showFloatingText(`grpP_${targetPid}`, `-${dmg}`, isCrit ? 'crit' : 'damage');
-                    flashTarget(`grpP_${targetPid}`, isCrit ? 'crit' : 'hit');
-                }, 50);
-
-                if (!_isAlive(targetMon)) {
-                    _log(enc, `💀 ${targetName} (${targetMonName}) foi derrotado!`);
-                    
-                    // Check if player has other alive monsters
-                    const aliveIdx = firstAliveIndex(targetPlayer.team);
-                    if (aliveIdx >= 0) {
-                        // Player has other monsters - need to switch
-                        // Save state and open modal
-                        saveToLocalStorage();
-                        renderEncounter();
-                        
-                        // Open modal for replacement (async)
-                        setTimeout(() => {
-                            openSwitchMonsterModal(targetPlayer, enc);
-                        }, 100);
-                        return; // Don't advance turn yet - modal will handle it
-                    } else {
-                        // Player has no more monsters - they're out
-                        _log(enc, `⚠️ ${targetName} não tem mais monstrinhos vivos!`);
-                    }
-                }
-
-                advanceTurn(enc);
-                saveToLocalStorage();
-                renderEncounter();
+                const deps = createGroupCombatDeps();
+                Combat.Group.Actions.executeEnemyTurnGroup(enc, deps);
             } catch (error) {
                 showError('Failed to process enemy turn', error.stack);
             }
@@ -5082,193 +4774,28 @@
         }
         
         /**
-         * WRAPPER FUTURO: Combat.Group.UI.renderGroupEncounterPanel()
+         * PR5C: WRAPPER - Combat.Group.UI.renderGroupEncounterPanel()
          * Renderiza UI do encounter de grupo
          */
         function renderGroupEncounter(panel, encounter) {
             try {
-                // TODO PR5B: Mover para Combat.Group.UI.renderGroupEncounterPanel()
-                if (!encounter) return;
-                
-                const actor = getCurrentActor(encounter);
-                const isPlayerTurn = actor && actor.side === 'player';
-                
-                let html = '<div class="encounter-panel">';
-                html += renderTutorialBanner(encounter);
-                html += '<h3>⚔️ Batalha em Grupo</h3>';
-                
-                // Last d20 roll badge
-                if (encounter.lastRoll) {
-                    const lr = encounter.lastRoll;
-                    const badgeClass = lr.type === 'crit' ? 'crit' : lr.type === 'fail' ? 'fail' : '';
-                    const emoji = lr.type === 'crit' ? '🌟' : lr.type === 'fail' ? '💥' : '🎲';
-                    html += `<div class="d20-badge ${badgeClass}">${emoji} ${lr.name}: ${lr.roll} ${lr.type === 'crit' ? '(CRIT!)' : lr.type === 'fail' ? '(FALHA!)' : ''}</div>`;
-                }
-                
-                // Indicador de turno atual
-                if (actor) {
-                    const sideColor = actor.side === 'player' ? '#4CAF50' : '#f44336';
-                    html += `<div class="battle-result" style="background: ${sideColor};">`;
-                    html += `<strong>⏺️ Turno: ${actor.name}</strong> (${actor.side === 'player' ? 'Jogador' : 'Inimigo'})`;
-                    html += `</div>`;
-                }
-                
-                // Participantes (jogadores)
-                html += '<div class="my-15">';
-                html += '<h4>👥 Participantes:</h4>';
-                for (const pid of (encounter.participants || [])) {
-                    const p = GameState.players.find(x => x.id === pid);
-                    if (!p) continue;
-                    
-                    const mon = p.team?.[0];
-                    if (!mon) continue;
-                    
-                    // Garantir campos de XP
-                    ensureXpFields(mon);
-                    
-                    const hp = Number(mon.hp) || 0;
-                    const hpMax = Number(mon.hpMax) || 1;
-                    const hpPercent = Math.floor((hp / hpMax) * 100);
-                    
-                    const xp = Math.max(0, Number(mon.xp) || 0);
-                    const xpNeeded = Math.max(1, Number(mon.xpNeeded) || calcXpNeeded(mon.level));
-                    const xpPct = Math.max(0, Math.min(100, Math.floor((xp / xpNeeded) * 100)));
-                    
-                    const isCurrent = actor && actor.side === 'player' && actor.id === pid;
-                    
-                    const border = isCurrent ? '3px solid #4CAF50' : '1px solid #ddd';
-                    html += `<div id="grpP_${pid}" class="group-participant-box" style="border: ${border};">`;
-                    html += `<strong>${p.name || p.nome}</strong> (${p.class})`;
-                    html += `<br>${mon.name || mon.nome} - Nv ${mon.level}`;
-                    html += `<br>HP: ${hp}/${hpMax} (${hpPercent}%)`;
-                    html += `<div class="progress-bar mt-6">`;
-                    html += `<div class="progress-fill xp" style="width:${xpPct}%"></div>`;
-                    html += `</div>`;
-                    html += `<div class="small mt-5">XP: ${xp}/${xpNeeded} (${xpPct}%)</div>`;
-                    html += `</div>`;
-                }
-                html += '</div>';
-                
-                // Inimigos
-                html += '<div class="my-15">';
-                html += '<h4>👹 Inimigos:</h4>';
-                for (let i = 0; i < (encounter.enemies || []).length; i++) {
-                    const e = encounter.enemies[i];
-                    if (!e) continue;
-                    
-                    const hp = Number(e.hp) || 0;
-                    const hpMax = Number(e.hpMax) || 1;
-                    const hpPercent = Math.floor((hp / hpMax) * 100);
-                    const isCurrent = actor && actor.side === 'enemy' && actor.id === i;
-                    
-                    const border = isCurrent ? '3px solid #f44336' : '1px solid #ddd';
-                    html += `<div id="grpE_${i}" class="enemy-participant-box" style="border: ${border};">`;
-                    html += `<strong>${e.name || e.nome}</strong> - Nv ${e.level}`;
-                    html += `<br>HP: ${hp}/${hpMax} (${hpPercent}%)`;
-                    html += `<br>SPD: ${e.spd} | ATK: ${e.atk} | DEF: ${e.def}`;
-                    html += `</div>`;
-                }
-                html += '</div>';
-                
-                // Ações (apenas para turno do jogador)
-                if (isPlayerTurn && !encounter.finished) {
-                    html += '<div class="my-15 p-15 bg-light-gray border-radius-5">';
-                    html += '<h4>Ações:</h4>';
-                    html += '<div class="d-flex flex-gap-10 flex-wrap mt-10">';
-                    html += '<button class="btn btn-danger" onclick="groupAttack()">⚔️ Atacar</button>';
-                    html += '<button class="btn btn-primary" onclick="groupPassTurn()">⏭️ Passar</button>';
-                    html += '</div>';
-                    
-                    // Feature 3.7: Skills buttons for current player
-                    if (actor && actor.side === 'player') {
-                        const player = GameState.players.find(p => p.id === actor.id);
-                        const mon = player?.team?.[0];
-                        if (mon) {
-                            const skillIds = getSkillsArray(mon);
-                            if (skillIds && skillIds.length > 0) {
-                                html += '<div class="skills-box">';
-                                html += '<strong class="skills-title">✨ Habilidades</strong>';
-                                html += '<div class="d-flex flex-gap-10 flex-wrap mt-10">';
-                                
-                                skillIds.forEach((skillId, idx) => {
-                                    const skill = getSkillById(skillId);
-                                    if (!skill) return;
-                                    
-                                    const label = formatSkillButtonLabel(skill, mon);
-                                    const canUse = canUseSkillNow(skill, mon) && mon.hp > 0;
-                                    const tooltip = canUse ? (skill.desc || skill.descricao || '') : 'Sem ENE';
-                                    
-                                    html += `
-                                    <button class="btn btn-info" 
-                                            onclick="groupUseSkill(${idx})" 
-                                            ${!canUse ? 'disabled class="opacity-50"' : ''}
-                                            title="${tooltip}">
-                                        ${label}
-                                    </button>
-                                    `;
-                                });
-                                
-                                html += '</div>';
-                                html += '</div>';
-                            }
-                        }
+                const deps = {
+                    state: GameState,
+                    core: GroupCore,
+                    helpers: {
+                        renderTutorialBanner: renderTutorialBanner,
+                        ensureXpFields: ensureXpFields,
+                        calcXpNeeded: calcXpNeeded,
+                        getSkillsArray: getSkillsArray,
+                        getSkillById: getSkillById,
+                        formatSkillButtonLabel: formatSkillButtonLabel,
+                        canUseSkillNow: canUseSkillNow,
+                        saveToLocalStorage: saveToLocalStorage,
+                        maybeToastFromLog: maybeToastFromLog,
+                        maybeSfxFromLog: maybeSfxFromLog
                     }
-                    
-                    html += '</div>';
-                }
-                
-                // Mensagem de fim com recompensas
-                if (encounter.finished) {
-                    const resultColor = encounter.result === 'victory' ? '#4CAF50' : '#f44336';
-                    html += `<div class="battle-result" style="background: ${resultColor};">`;
-                    html += `<h3>${encounter.result === 'victory' ? '🏁 VITÓRIA!' : '💀 DERROTA'}</h3>`;
-                    
-                    // Recompensas na vitória
-                    if (encounter.result === 'victory') {
-                        html += '<div class="mt-10 p-10 border-radius-5 bg-white-20">';
-                        html += '<strong>💰 Recompensas:</strong><br>';
-                        
-                        // Dinheiro dividido
-                        const totalCoins = Math.floor(Math.random() * 31) + 30; // 30-60
-                        const coinsPerPlayer = Math.floor(totalCoins / encounter.participants.length);
-                        
-                        for (const pid of encounter.participants) {
-                            const p = GameState.players.find(pl => pl.id === pid);
-                            if (p) {
-                                p.coins = (p.coins || 0) + coinsPerPlayer;
-                                html += `${p.name}: +${coinsPerPlayer} moedas<br>`;
-                            }
-                        }
-                        
-                        html += '<br><em>ℹ️ XP será implementado na Feature 3.3</em>';
-                        html += '</div>';
-                        saveToLocalStorage();
-                    }
-                    
-                    html += `</div>`;
-                    html += '<button class="btn btn-secondary" onclick="GameState.currentEncounter = null; saveToLocalStorage(); renderEncounter();">Fechar</button>';
-                }
-                
-                // Log de combate
-                html += '<div class="mt-20">';
-                html += '<h4>📜 Log de Combate:</h4>';
-                html += '<div class="bg-gray p-10 border-radius-5 max-h-300 overflow-auto">';
-                const logs = encounter.log || [];
-                for (let i = Math.max(0, logs.length - 20); i < logs.length; i++) {
-                    html += `<div>${logs[i]}</div>`;
-                }
-                html += '</div>';
-                html += '</div>';
-                
-                html += '</div>';
-                
-                panel.innerHTML = html;
-                
-                // Exibir toasts para eventos importantes (level up, evolução)
-                maybeToastFromLog(encounter);
-                
-                // Feature 4.4: Tocar sons para level up e evolução
-                maybeSfxFromLog(encounter);
+                };
+                Combat.Group.UI.renderGroupEncounterPanel(panel, encounter, deps);
             } catch (error) {
                 showError('Failed to render group encounter', error.stack);
             }

@@ -1,139 +1,403 @@
 /**
  * GROUP COMBAT ACTIONS - Ações de Combate
  * 
- * STUB para PR5A - não contém lógica real ainda
- * Implementação real será feita em PR posterior
+ * PR5C: Implementação real extraída de index.html
  * 
  * Funções que modificam state, mas não mexem diretamente em DOM
  * Recebem dependências por parâmetro (dependency injection)
  */
 
-// NOTA: Funções auxiliares ainda estão em index.html (não foram modularizadas no PR4)
-// - applyEneRegen: linhas 2766-2776 em index.html
-// - updateBuffs: linhas 2881-2887 em index.html
-// - recordD20Roll: linhas 4952+ em index.html
-//
-// RAZÃO: No PR4, wild combat usou estas funções via wrapper, mas não as exportou como módulos.
-// FUTURO: Em PR posterior, criar js/combat/sharedHelpers.js para estas funções compartilhadas
-//         entre wild e group combat. Por enquanto, código de grupo em index.html chama diretamente.
+import * as GroupCore from './groupCore.js';
 
 /**
- * STUB: Inicializa encounter de grupo/boss
+ * PR5C: Executa ataque do jogador em combate de grupo
  * 
- * Implementação real: index.html linha 3133-3204 (startGroupEncounter)
+ * Extraído de: index.html groupAttack() (linhas 3546-3681)
  * 
- * @param {object} options - Opções de inicialização
- * @param {array} options.selectedPlayerIds - IDs dos jogadores participantes
- * @param {string} options.encounterType - 'group_trainer' ou 'boss'
- * @param {number} options.enemyLevel - Nível do inimigo
- * @param {object} options.dependencies - Dependências injetadas
- * @returns {object} Encounter criado
+ * @param {object} deps - Dependências injetadas
+ * @param {object} deps.state - GameState
+ * @param {object} deps.core - GroupCore functions
+ * @param {object} deps.ui - UI functions
+ * @param {object} deps.audio - Audio object
+ * @param {object} deps.storage - Storage functions
+ * @param {object} deps.helpers - Helper functions from index.html
+ * @returns {boolean} true se ataque foi executado
  */
-export function initializeGroupEncounter(options) {
-    // TODO PR5B: Mover lógica de startGroupEncounter para cá
-    // Dependências esperadas: state, catalog, factories, helpers
-    throw new Error('initializeGroupEncounter - STUB not implemented yet');
+export function executePlayerAttackGroup(deps) {
+    const { state, core, ui, audio, storage, helpers } = deps;
+    
+    const enc = state.currentEncounter;
+    if (!enc || enc.finished) return false;
+
+    const actor = core.getCurrentActor(enc);
+    if (!actor || actor.side !== 'player') return false;
+
+    const player = helpers.getPlayerById(actor.id);
+    const mon = helpers.getActiveMonsterOfPlayer(player);
+    if (!player || !mon) return false;
+
+    // GAME_RULES.md: Em batalha, só pode usar monstros da mesma classe do jogador
+    if (mon.class !== player.class) {
+        alert(`⚠️ ${player.name}: Você só pode usar monstrinhos da classe ${player.class} em batalha!\n\nEste ${mon.name} é da classe ${mon.class}.\nREGRA: Em batalha, você só pode usar monstrinhos da SUA classe.`);
+        return false;
+    }
+
+    if (!core.isAlive(mon)) {
+        helpers.log(enc, "⚠️ Seu monstrinho está desmaiado. Não pode atacar.");
+        storage.save();
+        ui.render();
+        return false;
+    }
+
+    // Aplicar ENE REGEN no início do turno do jogador
+    helpers.applyEneRegen(mon, enc);
+    
+    // Atualizar buffs (reduzir duração)
+    helpers.updateBuffs(mon);
+
+    // Alvo: primeiro inimigo vivo
+    let enemyIndex = 0;
+    while (enemyIndex < (enc.enemies?.length || 0) && !core.isAlive(enc.enemies[enemyIndex])) enemyIndex++;
+
+    const enemy = helpers.getEnemyByIndex(enc, enemyIndex);
+    if (!enemy || !core.isAlive(enemy)) {
+        helpers.log(enc, "ℹ️ Não há inimigos vivos para atacar.");
+        storage.save();
+        ui.render();
+        return false;
+    }
+
+    const d20 = helpers.rollD20();
+    
+    const alwaysMiss = (d20 === 1);
+    const isCrit = (d20 === 20);
+    const hit = !alwaysMiss && (isCrit || core.checkHit(d20, mon, enemy));
+
+    const attackerName = player.name || player.nome || actor.name || "Jogador";
+    const monName = mon.nickname || mon.name || mon.nome || "Monstrinho";
+    const enemyName = enemy.name || enemy.nome || "Inimigo";
+    
+    // Feature 3.8: Record d20 roll
+    const rollType = isCrit ? 'crit' : alwaysMiss ? 'fail' : 'normal';
+    helpers.recordD20Roll(enc, attackerName, d20, rollType);
+
+    // Feature 4.4: Play attack sound
+    ui.playAttackFeedback(d20, hit, isCrit, audio);
+
+    if (!hit) {
+        helpers.log(enc, `🎲 ${attackerName} (${monName}) rolou ${d20} e ERROU o ataque em ${enemyName}.`);
+        
+        // Feature 3.8: Flash fail on player
+        ui.showMissFeedback(`grpP_${actor.id}`);
+        
+        advanceGroupTurn(enc, deps);
+        storage.save();
+        ui.render();
+        return true;
+    }
+
+    // POWER básico
+    const basicPower = helpers.getBasicAttackPower(mon.class);
+    let powerUsed = basicPower;
+
+    if (isCrit) {
+        powerUsed = basicPower * 2;
+        helpers.log(enc, `💥 CRIT 20! ${monName} ativou Poder Duplo!`);
+    }
+
+    // Aplicar modificadores de buff
+    const atkMods = core.getBuffModifiers(mon);
+    const effectiveAtk = Math.max(1, (Number(mon.atk) || 0) + atkMods.atk);
+    
+    const defMods = core.getBuffModifiers(enemy);
+    const effectiveDef = Math.max(1, (Number(enemy.def) || 0) + defMods.def);
+
+    // Calcular vantagem de classe
+    const classAdv = state.config?.classAdvantages?.[mon.class];
+    let damageMult = 1.0;
+    if (classAdv?.strong === enemy.class) {
+        damageMult = 1.10;
+    } else if (classAdv?.weak === enemy.class) {
+        damageMult = 0.90;
+    }
+
+    const dmg = core.calcDamage({
+        atk: effectiveAtk,
+        def: effectiveDef,
+        power: powerUsed,
+        damageMult: damageMult
+    });
+    
+    // Apply damage
+    helpers.applyDamage(enemy, dmg);
+
+    helpers.log(enc, `🎲 ${attackerName} (${monName}) rolou ${d20} e acertou ${enemyName} causando ${dmg} de dano!`);
+    
+    // Feature 3.8: Visual feedback
+    storage.save();
+    ui.render();
+    ui.showDamageFeedback(`grpE_${enemyIndex}`, dmg, isCrit);
+
+    if (!core.isAlive(enemy)) {
+        helpers.log(enc, `🏁 ${enemyName} foi derrotado!`);
+    }
+
+    advanceGroupTurn(enc, deps);
+    storage.save();
+    ui.render();
+    return true;
 }
 
 /**
- * STUB: Executa ataque do jogador em combate de grupo
+ * PR5C: Processa turno do inimigo em combate de grupo
  * 
- * Implementação real: index.html linha 3589-3723 (groupAttack)
- * 
- * @param {object} options - Opções de ataque
- * @param {object} options.encounter - Encounter ativo
- * @param {object} options.actor - Ator atual (jogador)
- * @param {object} options.player - Dados do jogador
- * @param {object} options.playerMonster - Monstrinho ativo do jogador
- * @param {object} options.dependencies - Dependências injetadas
- * @returns {object} Resultado do ataque { success, damage, hit, log }
- */
-export function executePlayerAttackGroup(options) {
-    // TODO PR5B: Mover lógica de groupAttack para cá
-    // Dependências esperadas: state, audio, storage, ui, core functions
-    throw new Error('executePlayerAttackGroup - STUB not implemented yet');
-}
-
-/**
- * STUB: Processa turno do inimigo em combate de grupo
- * 
- * Implementação real: index.html linha 3727-3872 (processEnemyTurnGroup)
- * 
- * @param {object} options - Opções do turno
- * @param {object} options.encounter - Encounter ativo
- * @param {object} options.actor - Ator atual (inimigo)
- * @param {object} options.enemy - Dados do inimigo
- * @param {object} options.dependencies - Dependências injetadas
- * @returns {object} Resultado do turno { success, damage, hit, log }
- */
-export function executeEnemyTurnGroup(options) {
-    // TODO PR5B: Mover lógica de processEnemyTurnGroup para cá
-    // Dependências esperadas: state, audio, storage, ui, core functions, AI
-    throw new Error('executeEnemyTurnGroup - STUB not implemented yet');
-}
-
-/**
- * STUB: Executa uso de item em combate de grupo
- * 
- * Implementação real: index.html linha 3979-4045 (groupUseItem)
- * 
- * @param {object} options - Opções de uso de item
- * @param {object} options.encounter - Encounter ativo
- * @param {object} options.actor - Ator atual (jogador)
- * @param {object} options.player - Dados do jogador
- * @param {object} options.playerMonster - Monstrinho ativo
- * @param {string} options.itemId - ID do item a usar
- * @param {object} options.dependencies - Dependências injetadas
- * @returns {object} Resultado { success, healed, log }
- */
-export function executeGroupUseItem(options) {
-    // TODO PR5B: Mover lógica de groupUseItem para cá
-    // Dependências esperadas: state, audio, storage, ui
-    throw new Error('executeGroupUseItem - STUB not implemented yet');
-}
-
-/**
- * STUB: Avança para próximo turno válido
- * 
- * Implementação real: index.html linha 3295-3371 (advanceTurn)
+ * Extraído de: index.html processEnemyTurnGroup() (linhas 3689-3833)
  * 
  * @param {object} enc - Encounter ativo
- * @param {object} dependencies - Dependências injetadas
- * @returns {object} Estado atualizado { finished, result, currentActor }
+ * @param {object} deps - Dependências injetadas
+ * @returns {boolean} true se turno foi processado
  */
-export function advanceGroupTurn(enc, dependencies) {
-    // TODO PR5B: Mover lógica de advanceTurn para cá
-    // Dependências esperadas: state, audio, rewards, core functions
-    // Responsável por: verificar vitória/derrota, avançar turnIndex, auto-trigger inimigo
-    throw new Error('advanceGroupTurn - STUB not implemented yet');
+export function executeEnemyTurnGroup(enc, deps) {
+    const { state, core, ui, audio, storage, helpers } = deps;
+    
+    if (!enc || enc.finished) return false;
+
+    const actor = core.getCurrentActor(enc);
+    if (!actor || actor.side !== 'enemy') return false;
+
+    const enemy = helpers.getEnemyByIndex(enc, actor.id);
+    if (!enemy || !core.isAlive(enemy)) {
+        advanceGroupTurn(enc, deps);
+        storage.save();
+        ui.render();
+        return false;
+    }
+
+    // Aplicar ENE REGEN no início do turno do inimigo
+    helpers.applyEneRegen(enemy, enc);
+    
+    // Atualizar buffs (reduzir duração)
+    helpers.updateBuffs(enemy);
+
+    // Escolhe alvo (menor HP%)
+    const targetPid = helpers.chooseTargetPlayerId(enc);
+    if (!targetPid) {
+        advanceGroupTurn(enc, deps);
+        storage.save();
+        ui.render();
+        return false;
+    }
+
+    const targetPlayer = helpers.getPlayerById(targetPid);
+    const targetMon = helpers.getActiveMonsterOfPlayer(targetPlayer);
+
+    const enemyName = enemy.name || actor.name || "Inimigo";
+    const targetName = targetPlayer?.name || targetPlayer?.nome || "Jogador";
+    const targetMonName = targetMon?.nickname || targetMon?.name || targetMon?.nome || "Monstrinho";
+
+    const d20 = helpers.rollD20();
+
+    const alwaysMiss = (d20 === 1);
+    const isCrit = (d20 === 20);
+    const hit = !alwaysMiss && (isCrit || core.checkHit(d20, enemy, targetMon));
+    
+    // Feature 3.8: Record d20 roll
+    const rollType = isCrit ? 'crit' : alwaysMiss ? 'fail' : 'normal';
+    helpers.recordD20Roll(enc, enemyName, d20, rollType);
+
+    // Feature 4.4: Enemy attack sound (group)
+    ui.playAttackFeedback(d20, hit, isCrit, audio);
+
+    if (!hit) {
+        helpers.log(enc, `🎲 ${enemyName} rolou ${d20} e ERROU o ataque em ${targetName} (${targetMonName}).`);
+        
+        // Feature 3.8: Flash fail on enemy
+        const enemyIndex = enc.enemies.indexOf(enemy);
+        ui.showMissFeedback(`grpE_${enemyIndex}`);
+        
+        advanceGroupTurn(enc, deps);
+        storage.save();
+        ui.render();
+        return true;
+    }
+
+    // POWER básico do inimigo
+    const basicPower = helpers.getBasicAttackPower(enemy.class);
+    let powerUsed = basicPower;
+
+    if (isCrit) {
+        powerUsed = basicPower * 2;
+        helpers.log(enc, `💥 CRIT 20! ${enemyName} ativou Poder Duplo!`);
+    }
+
+    // Aplicar modificadores de buff
+    const atkMods = core.getBuffModifiers(enemy);
+    const effectiveAtk = Math.max(1, (Number(enemy.atk) || 0) + atkMods.atk);
+    
+    const defMods = core.getBuffModifiers(targetMon);
+    const effectiveDef = Math.max(1, (Number(targetMon?.def) || 0) + defMods.def);
+
+    // Calcular vantagem de classe
+    const classAdv = state.config?.classAdvantages?.[enemy.class];
+    let damageMult = 1.0;
+    if (classAdv?.strong === targetMon?.class) {
+        damageMult = 1.10;
+    } else if (classAdv?.weak === targetMon?.class) {
+        damageMult = 0.90;
+    }
+
+    const dmg = core.calcDamage({
+        atk: effectiveAtk,
+        def: effectiveDef,
+        power: powerUsed,
+        damageMult: damageMult
+    });
+    
+    // Apply damage
+    helpers.applyDamage(targetMon, dmg);
+
+    helpers.log(enc, `🎲 ${enemyName} rolou ${d20} e acertou ${targetName} (${targetMonName}) causando ${dmg} de dano!`);
+    
+    // Feature 3.8: Visual feedback
+    storage.save();
+    ui.render();
+    ui.showDamageFeedback(`grpP_${targetPid}`, dmg, isCrit);
+
+    if (!core.isAlive(targetMon)) {
+        helpers.log(enc, `💀 ${targetName} (${targetMonName}) foi derrotado!`);
+        
+        // Check if player has other alive monsters
+        const aliveIdx = helpers.firstAliveIndex(targetPlayer.team);
+        if (aliveIdx >= 0) {
+            // Player has other monsters - need to switch
+            // Save state and open modal
+            storage.save();
+            ui.render();
+            
+            // Open modal for replacement (async)
+            setTimeout(() => {
+                helpers.openSwitchMonsterModal(targetPlayer, enc);
+            }, 100);
+            return true; // Don't advance turn yet - modal will handle it
+        } else {
+            // Player has no more monsters - they're out
+            helpers.log(enc, `⚠️ ${targetName} não tem mais monstrinhos vivos!`);
+        }
+    }
+
+    advanceGroupTurn(enc, deps);
+    storage.save();
+    ui.render();
+    return true;
 }
 
 /**
- * STUB: Passa turno sem ação
+ * PR5C: Avança para próximo turno válido
  * 
- * Implementação real: index.html linha 3373-3389 (groupPassTurn)
+ * Extraído de: index.html advanceTurn() (linhas 3238-3314)
  * 
- * @param {object} dependencies - Dependências injetadas
- * @returns {object} Estado atualizado
+ * @param {object} enc - Encounter ativo
+ * @param {object} deps - Dependências injetadas
  */
-export function passTurn(dependencies) {
-    // TODO PR5B: Mover lógica de groupPassTurn para cá
-    // Dependências esperadas: state, storage, ui, advanceGroupTurn
-    throw new Error('passTurn - STUB not implemented yet');
+export function advanceGroupTurn(enc, deps) {
+    const { state, core, audio, helpers } = deps;
+    
+    if (!enc || !enc.turnOrder || enc.turnOrder.length === 0) return;
+    
+    // Verificar condições de fim
+    const alivePlayers = core.hasAlivePlayers(enc, state.players);
+    const aliveEnemies = core.hasAliveEnemies(enc);
+    
+    if (!aliveEnemies) {
+        enc.finished = true;
+        enc.result = "victory";
+        enc.active = false;
+        enc.log = enc.log || [];
+        enc.log.push("🏁 Vitória! Todos os inimigos foram derrotados.");
+        
+        // Feature 4.4: Victory sound (com idempotência)
+        if (!enc._winSfxPlayed) {
+            audio.playSfx("win");
+            enc._winSfxPlayed = true;
+        }
+        
+        // Distribuir recompensas (XP) com idempotência
+        helpers.handleVictoryRewards(enc);
+        
+        return;
+    }
+    
+    if (!alivePlayers) {
+        enc.finished = true;
+        enc.result = "defeat";
+        enc.active = false;
+        enc.log = enc.log || [];
+        enc.log.push("💀 Derrota... Todos os participantes foram derrotados.");
+        
+        // Feature 4.4: Defeat sound (com idempotência)
+        if (!enc._loseSfxPlayed) {
+            audio.playSfx("lose");
+            enc._loseSfxPlayed = true;
+        }
+        
+        return;
+    }
+    
+    // Avançar para próximo ator válido
+    const maxLoops = enc.turnOrder.length + 2;
+    let loops = 0;
+    
+    do {
+        enc.turnIndex = ((Number(enc.turnIndex) || 0) + 1) % enc.turnOrder.length;
+        loops++;
+        
+        const actor = core.getCurrentActor(enc);
+        if (!actor) break;
+        
+        // Validar se ator ainda está vivo
+        if (actor.side === "player") {
+            const p = state.players.find(x => x.id === actor.id);
+            const mon = p?.team?.[0];
+            if (mon && (Number(mon.hp) || 0) > 0) break;
+        } else {
+            const e = enc.enemies?.[actor.id];
+            if (e && (Number(e.hp) || 0) > 0) break;
+        }
+        
+    } while (loops < maxLoops);
+    
+    // Atualizar currentActor
+    enc.currentActor = core.getCurrentActor(enc);
+    
+    // Auto-trigger turno do inimigo
+    const actorNow = core.getCurrentActor(enc);
+    if (actorNow && actorNow.side === "enemy" && !enc.finished) {
+        executeEnemyTurnGroup(enc, deps);
+    } else if (actorNow) {
+        enc.log = enc.log || [];
+        enc.log.push(`⏺️ Turno: ${actorNow.name}`);
+    }
 }
 
 /**
- * STUB: Executa uso de habilidade em combate de grupo
+ * PR5C: Passa turno sem ação
  * 
- * Implementação real: index.html linha 3951-3977 (groupUseSkill)
+ * Extraído de: index.html groupPassTurn() (linhas 3320-3337)
  * 
- * Nota: Atualmente é placeholder - sistema de skills não implementado
- * 
- * @param {object} options - Opções de uso de skill
- * @returns {object} Resultado { success, message }
+ * @param {object} deps - Dependências injetadas
  */
-export function executeGroupUseSkill(options) {
-    // TODO PR5B: Implementar quando sistema de skills estiver pronto
-    // Por enquanto, apenas placeholder que avança turno
-    throw new Error('executeGroupUseSkill - STUB not implemented yet');
+export function passTurn(deps) {
+    const { state, core, storage, ui } = deps;
+    
+    const enc = state.currentEncounter;
+    if (!enc) return;
+    
+    const actor = core.getCurrentActor(enc);
+    if (!actor) return;
+    
+    enc.log.push(`▶️ ${actor.name} passou o turno`);
+    
+    advanceGroupTurn(enc, deps);
+    storage.save();
+    ui.render();
 }
