@@ -74,7 +74,7 @@
                 <button class="btn btn-success" onclick="createSession()">Create Session</button>
             </div>
 
-            <div id="activeSessionPanel" class="card hidden">
+            <div id="activeSessionPanel" class="card is-hidden">
                 <h3>Active Session: <span id="activeSessionName"></span></h3>
                 <p>Created: <span id="sessionCreated"></span></p>
                 
@@ -130,7 +130,7 @@
                 </div>
                 
                 <!-- Para encontros em grupo (trainer/boss) -->
-                <div id="groupSelectDiv" class="hidden mt-15">
+                <div id="groupSelectDiv" class="is-hidden mt-15">
                     <label><strong>Select Participants (1-6):</strong></label>
                     <div id="groupParticipantsList" class="mt-10"></div>
                     <div class="mt-10">
@@ -157,7 +157,7 @@
                 <button class="btn btn-success" onclick="startEncounter()">Start Encounter</button>
             </div>
 
-            <div id="encounterPanel" class="hidden"></div>
+            <div id="encounterPanel" class="is-hidden"></div>
         </div>
 
         <div id="tabTherapy" class="tab-content">
@@ -204,6 +204,15 @@
                 <h3>🔬 Therapist Mode Tools</h3>
                 <p class="therapist-header-text">Advanced debugging and testing controls</p>
                 <div id="therapistPanelContent">
+                    <!-- Commit 9: Therapist Log -->
+                    <div class="therapist-log-box">
+                        <div class="d-flex" style="justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <h4 style="margin: 0;">📜 Action Log</h4>
+                            <button class="btn btn-sm" onclick="clearTherapistLog()">🗑️ Clear</button>
+                        </div>
+                        <div id="therapistLog" class="therapist-log"></div>
+                    </div>
+                    
                     <!-- Commit 2: Export/Import Save Tools -->
                     <div class="save-management-box">
                         <h4 class="save-management-title">💾 Save Management</h4>
@@ -250,7 +259,7 @@
                 <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear All Data</button>
             </div>
 
-            <div id="configPanel" class="card hidden">
+            <div id="configPanel" class="card is-hidden">
                 <h3>Advanced Configuration</h3>
                 <div id="configEditor"></div>
             </div>
@@ -296,7 +305,7 @@
         </div>
     </div>
 
-    <div id="mmSlotPicker" class="mm-overlay hidden">
+    <div id="mmSlotPicker" class="mm-overlay is-hidden">
         <div class="mm-card max-w-640">
             <div class="mm-title">💾 Escolher Slot</div>
             <div class="opacity-90 mb-12">
@@ -332,7 +341,7 @@
     </div>
 
     <!-- Feature 4.3: Save Slots Screen -->
-    <div id="mmSavesScreen" class="mm-overlay hidden">
+    <div id="mmSavesScreen" class="mm-overlay is-hidden">
         <div class="mm-card max-w-820">
             <div class="mm-title">📂 Gerenciar Saves</div>
             <div id="mmSavesSlots" class="d-grid grid-gap-12 mt-12 grid-cols-1"></div>
@@ -359,7 +368,7 @@
     </div>
 
     <!-- Feature 4.1.1: Start Choice Modal -->
-    <div id="mmStartChoice" class="mm-overlay hidden">
+    <div id="mmStartChoice" class="mm-overlay is-hidden">
         <div class="mm-card">
             <h2 class="intro-title">🎮 Começar</h2>
             <p class="intro-subtitle">Quer fazer o <b>Tutorial</b> agora?</p>
@@ -878,6 +887,227 @@
             'CLASTERORB_RARA': { id: 'CLASTERORB_RARA', name: 'ClasterOrb Rara', type: 'CAPTURE', capture_bonus_pp: 10, emoji: '🟣' }
         };
 
+        // ============================================================================
+        // Commit 12 (Wave C12.3): Centralized Auxiliary Tables - Single Source of Truth
+        // ============================================================================
+
+        /**
+         * MM_TABLES - Central repository for all enums, constants, and lookup helpers
+         * 
+         * Purpose:
+         * - Eliminate hardcoded arrays/values scattered throughout code
+         * - Provide single source of truth for UI labels, enums, and lookups
+         * - Enable easy validation and consistent behavior
+         * 
+         * Structure:
+         * - ENUMS: Arrays of valid values (classes, rarities, states)
+         * - UI_MAPS: Visual representations (emojis, colors, labels)
+         * - LOOKUPS: Helper functions referencing GameState.config
+         * - VALIDATORS: Validation functions for enums
+         */
+        const MM_TABLES = {
+            // ========================================================================
+            // ENUMS - Definitive lists of valid values
+            // ========================================================================
+            
+            CLASSES: [
+                'Guerreiro',
+                'Mago', 
+                'Curandeiro',
+                'Bárbaro',
+                'Ladino',
+                'Bardo',
+                'Caçador',
+                'Animalista'
+            ],
+            
+            RARITIES: [
+                'Comum',
+                'Incomum',
+                'Raro',
+                'Místico',
+                'Lendário'
+            ],
+            
+            MONSTER_STATES: [
+                'healthy',
+                'fainted',
+                'poisoned',
+                'paralyzed',
+                'asleep',
+                'confused'
+            ],
+            
+            // ========================================================================
+            // UI MAPS - Visual representations and labels
+            // ========================================================================
+            
+            CLASS_EMOJI: {
+                'Guerreiro': '⚔️',
+                'Mago': '🔮',
+                'Curandeiro': '💚',
+                'Bárbaro': '⚡',
+                'Ladino': '🌑',
+                'Bardo': '🎵',
+                'Caçador': '🏹',
+                'Animalista': '🐺'
+            },
+            
+            RARITY_EMOJI: {
+                'Comum': '⚪',
+                'Incomum': '🔵',
+                'Raro': '🟣',
+                'Místico': '✨',
+                'Lendário': '👑'
+            },
+            
+            RARITY_COLOR: {
+                'Comum': '#808080',      // Gray
+                'Incomum': '#1E90FF',    // Blue
+                'Raro': '#9370DB',       // Purple
+                'Místico': '#FFD700',    // Gold
+                'Lendário': '#FF4500'    // Red-Orange
+            },
+            
+            // ========================================================================
+            // COMBAT CONSTANTS - Moved from scattered locations
+            // ========================================================================
+            
+            BASIC_ATTACK_POWER: {
+                'Guerreiro': 12,
+                'Mago': 11,
+                'Curandeiro': 10,
+                'Bárbaro': 14,
+                'Ladino': 12,
+                'Bardo': 11,
+                'Caçador': 13,
+                'Animalista': 12
+            },
+            
+            ENERGY_REGEN: {
+                'Mago': { pct: 0.18, min: 3 },
+                'Curandeiro': { pct: 0.18, min: 3 },
+                'Bardo': { pct: 0.14, min: 2 },
+                'Caçador': { pct: 0.14, min: 2 },
+                'Ladino': { pct: 0.14, min: 2 },
+                'Animalista': { pct: 0.12, min: 2 },
+                'Bárbaro': { pct: 0.12, min: 2 },
+                'Guerreiro': { pct: 0.10, min: 1 }
+            },
+            
+            // ========================================================================
+            // LOOKUP HELPERS - Access GameState.config with fallbacks
+            // ========================================================================
+            
+            /**
+             * Get class advantage info (strong/weak matchups)
+             */
+            getClassAdvantage: function(attackerClass) {
+                if (!attackerClass) return null;
+                return GameState.config?.classAdvantages?.[attackerClass] || null;
+            },
+            
+            /**
+             * Get rarity multiplier (power, XP, etc.)
+             */
+            getRarityMultiplier: function(rarity, type = 'power') {
+                if (!rarity) return 1.0;
+                
+                const config = GameState.config;
+                if (type === 'power') {
+                    return config?.rarityPower?.[rarity] || 1.0;
+                } else if (type === 'xp') {
+                    return config?.rarityXP?.[rarity] || 1.0;
+                }
+                return 1.0;
+            },
+            
+            /**
+             * Get basic attack power for a class
+             */
+            getBasicAttackPower: function(monsterClass) {
+                if (!monsterClass) return 12; // Default fallback
+                return this.BASIC_ATTACK_POWER[monsterClass] || 12;
+            },
+            
+            /**
+             * Get energy regeneration config for a class
+             */
+            getEnergyRegen: function(monsterClass) {
+                if (!monsterClass) return { pct: 0.10, min: 1 };
+                return this.ENERGY_REGEN[monsterClass] || { pct: 0.10, min: 1 };
+            },
+            
+            /**
+             * Get capture threshold for a rarity
+             */
+            getCaptureThreshold: function(rarity) {
+                if (!rarity) return 0.35; // Default to Comum
+                return GameState.config?.captureThreshold?.[rarity] || 0.35;
+            },
+            
+            /**
+             * Get flee chance base for a rarity
+             */
+            getFleeBase: function(rarity) {
+                if (!rarity) return 10; // Default to Comum
+                return GameState.config?.fleeBase?.[rarity] || 10;
+            },
+            
+            // ========================================================================
+            // VALIDATORS - Check if values are valid
+            // ========================================================================
+            
+            /**
+             * Validate class name
+             */
+            validateClass: function(className) {
+                if (!className) return false;
+                return this.CLASSES.includes(className);
+            },
+            
+            /**
+             * Validate rarity name
+             */
+            validateRarity: function(rarityName) {
+                if (!rarityName) return false;
+                return this.RARITIES.includes(rarityName);
+            },
+            
+            /**
+             * Validate monster state
+             */
+            validateState: function(stateName) {
+                if (!stateName) return false;
+                return this.MONSTER_STATES.includes(stateName);
+            },
+            
+            /**
+             * Get class emoji with fallback
+             */
+            getClassEmoji: function(className) {
+                return this.CLASS_EMOJI[className] || '👾';
+            },
+            
+            /**
+             * Get rarity emoji with fallback
+             */
+            getRarityEmoji: function(rarityName) {
+                return this.RARITY_EMOJI[rarityName] || '⚪';
+            },
+            
+            /**
+             * Get rarity color with fallback
+             */
+            getRarityColor: function(rarityName) {
+                return this.RARITY_COLOR[rarityName] || '#808080';
+            }
+        };
+
+        // ============================================================================
+        // End of Commit 12 (Wave C12.3)
+        // ============================================================================
+
         // SKILLS CATALOG (baseado em HABILIDADES.csv)
         const SKILLS_CATALOG = [
             // Tier I skills (original)
@@ -926,6 +1156,90 @@
             { id: 6, text: 'Shared materials/ideas', weight: 2 }
         ];
 
+        // ============================================================================
+        // Commit 12 (Wave C12.1): Catalog Lookup Helpers - Single Source of Truth
+        // ============================================================================
+
+        /**
+         * Get monster template from MONSTER_CATALOG
+         * @param {string} templateId - Monster template ID (e.g., 'MON_001')
+         * @returns {Object|null} Monster template or null if not found
+         */
+        function getMonsterTemplate(templateId) {
+            if (!templateId) return null;
+            return MONSTER_CATALOG.find(m => m.id === templateId) || null;
+        }
+
+        /**
+         * Require monster template from catalog with validation and logging
+         * @param {string} templateId - Monster template ID
+         * @param {string} context - Context string for logging (e.g., 'awardMonster', 'encounterSpawn')
+         * @returns {Object|null} Monster template or null if not found (logs warning)
+         */
+        function requireMonsterTemplate(templateId, context = 'unknown') {
+            const template = getMonsterTemplate(templateId);
+            
+            if (!template) {
+                // Commit 13 (Wave 13.2): Use mmDebugLog for standardized logging
+                mmDebugLog("CATALOG_ID_INVALID", {
+                    context,
+                    templateId,
+                    catalogType: 'MONSTER_CATALOG'
+                }, "warn");
+            }
+            
+            return template;
+        }
+
+        /**
+         * Get item definition from catalogs (CLASTERORBS, healing items, etc.)
+         * @param {string} itemId - Item ID (e.g., 'CLASTERORB_COMUM', 'IT_HEAL_01')
+         * @returns {Object|null} Item definition or null if not found
+         */
+        function getItemDef(itemId) {
+            if (!itemId) return null;
+            
+            // Check CLASTERORBS first
+            if (CLASTERORBS[itemId]) {
+                return CLASTERORBS[itemId];
+            }
+            
+            // Fallback for legacy healing items
+            if (itemId === 'IT_HEAL_01') {
+                return {
+                    id: 'IT_HEAL_01',
+                    name: 'Petisco de Cura',
+                    type: 'HEAL',
+                    heal_pct: 0.30,
+                    emoji: '💚'
+                };
+            }
+            
+            return null;
+        }
+
+        /**
+         * Require item definition from catalog with validation and logging
+         * @param {string} itemId - Item ID
+         * @param {string} context - Context string for logging
+         * @returns {Object|null} Item definition or null if not found (logs warning)
+         */
+        function requireItemDef(itemId, context = 'unknown') {
+            const itemDef = getItemDef(itemId);
+            
+            if (!itemDef) {
+                // Commit 13 (Wave 13.2): Use mmDebugLog for standardized logging
+                mmDebugLog("ITEM_INVALID", {
+                    context,
+                    itemId,
+                    catalogType: 'ITEMS'
+                }, "warn");
+            }
+            
+            return itemDef;
+        }
+
+        // ============================================================================
         // INITIALIZATION
         function init() {
             try {
@@ -2191,20 +2505,47 @@
          */
         function awardItem(itemId, qty, player) {
             try {
+                // Commit 12 (Wave C12.2): Validate itemId against catalog
+                const itemDef = requireItemDef(itemId, 'awardItem');
+                if (!itemDef) {
+                    // Commit 13 (Wave 13.2): Use mmDebugLog
+                    mmDebugLog("AWARD_ITEM", {
+                        context: 'awardItem',
+                        itemId,
+                        error: 'Invalid itemId',
+                        success: false
+                    }, "error");
+                    return false;
+                }
+
                 // Validate inputs
                 if (!itemId || typeof itemId !== 'string') {
-                    console.warn('[Award] Invalid itemId:', itemId);
+                    mmDebugLog("AWARD_ITEM", {
+                        context: 'awardItem',
+                        itemId,
+                        error: 'Invalid itemId type',
+                        success: false
+                    }, "warn");
                     return false;
                 }
 
                 const quantity = Math.max(1, Number(qty) || 1);
                 if (quantity < 1) {
-                    console.warn('[Award] Invalid quantity:', qty);
+                    mmDebugLog("AWARD_ITEM", {
+                        context: 'awardItem',
+                        qty,
+                        error: 'Invalid quantity',
+                        success: false
+                    }, "warn");
                     return false;
                 }
 
                 if (!player || typeof player !== 'object') {
-                    console.warn('[Award] Invalid player object');
+                    mmDebugLog("AWARD_ITEM", {
+                        context: 'awardItem',
+                        error: 'Invalid player object',
+                        success: false
+                    }, "warn");
                     return false;
                 }
 
@@ -2214,22 +2555,29 @@
                 // Add item (reuse existing inventory logic)
                 player.inventory[itemId] = (player.inventory[itemId] || 0) + quantity;
 
-                // Log to console if in therapist mode
-                if (typeof mmGetTherapistMode === 'function' && mmGetTherapistMode()) {
-                    console.log('[Award] Granted item:', {
-                        itemId: itemId,
-                        quantity: quantity,
-                        newTotal: player.inventory[itemId],
-                        player: player.name
-                    });
-                }
+                // Commit 13 (Wave 13.2): Success log with mmDebugLog
+                mmDebugLog("AWARD_ITEM", {
+                    context: 'awardItem',
+                    itemId: itemId,
+                    quantity: quantity,
+                    newTotal: player.inventory[itemId],
+                    playerId: player.id,
+                    playerName: player.name,
+                    success: true
+                }, "info");
 
                 // Persist
                 saveGame();
                 return true;
 
             } catch (error) {
-                console.error('[Award] awardItem failed:', error);
+                // Commit 13 (Wave 13.2): Error logging
+                mmDebugLog("AWARD_ITEM", {
+                    context: 'awardItem',
+                    itemId,
+                    error: error.message || String(error),
+                    success: false
+                }, "error");
                 return false;
             }
         }
@@ -2246,14 +2594,36 @@
          */
         function awardMonster(templateId, level, rarity, destination, player, overrides = {}) {
             try {
+                // Commit 12 (Wave C12.2): Validate templateId against catalog
+                const template = requireMonsterTemplate(templateId, 'awardMonster');
+                if (!template) {
+                    // Commit 13 (Wave 13.2): Use mmDebugLog for errors
+                    mmDebugLog("AWARD_MONSTER", {
+                        context: 'awardMonster',
+                        templateId,
+                        error: 'Invalid templateId',
+                        success: false
+                    }, "error");
+                    return null;
+                }
+
                 // Validate inputs
                 if (!templateId || typeof templateId !== 'string') {
-                    console.warn('[Award] Invalid templateId:', templateId);
+                    mmDebugLog("AWARD_MONSTER", {
+                        context: 'awardMonster',
+                        templateId,
+                        error: 'Invalid templateId type',
+                        success: false
+                    }, "warn");
                     return null;
                 }
 
                 if (!player || typeof player !== 'object') {
-                    console.warn('[Award] Invalid player object');
+                    mmDebugLog("AWARD_MONSTER", {
+                        context: 'awardMonster',
+                        error: 'Invalid player object',
+                        success: false
+                    }, "warn");
                     return null;
                 }
 
@@ -2264,7 +2634,12 @@
                 const monster = createMonsterInstanceFromTemplate(templateId, monsterLevel, rarity, overrides);
                 
                 if (!monster) {
-                    console.warn('[Award] Failed to create monster from template:', templateId);
+                    mmDebugLog("AWARD_MONSTER", {
+                        context: 'awardMonster',
+                        templateId,
+                        error: 'Failed to create monster from template',
+                        success: false
+                    }, "warn");
                     return null;
                 }
 
@@ -2293,7 +2668,14 @@
                         // Party full, add to box instead
                         player.box.push(monster);
                         actualDest = 'box';
-                        console.warn('[Award] Party full, monster sent to box');
+                        // Commit 13 (Wave 13.2): Use mmDebugLog
+                        mmDebugLog("AWARD_MONSTER", {
+                            context: 'awardMonster',
+                            templateId,
+                            note: 'Party full, redirected to box',
+                            requestedDest: 'team',
+                            actualDest: 'box'
+                        }, "warn");
                     }
                 } else {
                     // box
@@ -2304,24 +2686,31 @@
                 GameState.monsters = GameState.monsters || [];
                 GameState.monsters.push(monster);
 
-                // Log to console if in therapist mode
-                if (typeof mmGetTherapistMode === 'function' && mmGetTherapistMode()) {
-                    console.log('[Award] Granted monster:', {
-                        templateId: templateId,
-                        name: monster.name,
-                        level: monsterLevel,
-                        rarity: monster.rarity,
-                        destination: actualDest,
-                        player: player.name
-                    });
-                }
+                // Commit 13 (Wave 13.2): Success log with mmDebugLog
+                mmDebugLog("AWARD_MONSTER", {
+                    context: 'awardMonster',
+                    templateId: templateId,
+                    monsterName: monster.name,
+                    level: monsterLevel,
+                    rarity: monster.rarity,
+                    destination: actualDest,
+                    playerId: player.id,
+                    playerName: player.name,
+                    success: true
+                }, "info");
 
                 // Persist
                 saveGame();
                 return monster;
 
             } catch (error) {
-                console.error('[Award] awardMonster failed:', error);
+                // Commit 13 (Wave 13.2): Error logging
+                mmDebugLog("AWARD_MONSTER", {
+                    context: 'awardMonster',
+                    templateId,
+                    error: error.message || String(error),
+                    success: false
+                }, "error");
                 return null;
             }
         }
@@ -2698,17 +3087,21 @@
                     // Limpar buffs do monstrinho do jogador antes da batalha
                     const player = GameState.players.find(p => p.id === encounter.selectedPlayerId);
                     if (player && player.team) {
+                        // Commit 11 (Wave B): Use resetBattleBuffs helper
                         for (const mon of player.team) {
-                            if (mon && mon.buffs) {
-                                mon.buffs = [];
-                            }
+                            resetBattleBuffs(mon);
                         }
                     }
                     
+                    // Wave B1: enemy instances now use factory
                     const randomMonster = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
                     const level = Math.floor(Math.random() * 10) + 1;
-                    encounter.wildMonster = createMonsterInstance(randomMonster, null, level);
-                    encounter.wildMonster.id = 'wild_' + Date.now();
+                    encounter.wildMonster = createMonsterInstanceFromTemplate(
+                        randomMonster.id, 
+                        level, 
+                        null, // Use template's default rarity
+                        { id: 'wild_' + Date.now() } // Override with wild encounter ID
+                    );
                     
                     // FASE 1 POKEMON: Gerar shiny (1% chance)
                     encounter.wildMonster.isShiny = generateShinyChance();
@@ -2750,18 +3143,21 @@
                 for (const pid of selectedPlayerIds) {
                     const player = GameState.players.find(p => p.id === pid);
                     if (player && player.team) {
+                        // Commit 11 (Wave B): Use resetBattleBuffs helper
                         for (const mon of player.team) {
-                            if (mon && mon.buffs) {
-                                mon.buffs = [];
-                            }
+                            resetBattleBuffs(mon);
                         }
                     }
                 }
                 
-                // Criar inimigo
+                // Wave B2: enemy instances now use factory
                 const randomMonster = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
-                const enemy = createMonsterInstance(randomMonster, null, enemyLevel);
-                enemy.id = 'enemy_1';
+                const enemy = createMonsterInstanceFromTemplate(
+                    randomMonster.id, 
+                    enemyLevel, 
+                    null, // Use template's default rarity
+                    { id: 'enemy_1' } // Override with group encounter enemy ID
+                );
                 
                 // Criar encounter de grupo
                 const encounter = {
@@ -3017,6 +3413,40 @@
             return Math.max(min, Math.min(max, n));
         }
 
+        /**
+         * Commit 11 (Wave A): Combat Helper - Apply Damage
+         * Applies damage to a target with HP clamping
+         * @param {Object} target - The monster receiving damage
+         * @param {number} dmg - Amount of damage to apply
+         * @returns {Object} { oldHp, newHp, fainted } - Damage application result
+         */
+        function applyDamage(target, dmg) {
+            if (!target) return { oldHp: 0, newHp: 0, fainted: true };
+            
+            const oldHp = Number(target.hp) || 0;
+            const hpMax = Number(target.hpMax) || 999999;
+            const newHp = _clamp(oldHp - dmg, 0, hpMax);
+            
+            target.hp = newHp;
+            
+            return {
+                oldHp: oldHp,
+                newHp: newHp,
+                fainted: newHp <= 0
+            };
+        }
+
+        /**
+         * Commit 11 (Wave A): Combat Helper - Reset Battle Buffs
+         * Resets a monster's buffs array (exactly matches current behavior)
+         * @param {Object} mon - The monster whose buffs to reset
+         */
+        function resetBattleBuffs(mon) {
+            if (mon && mon.buffs !== undefined) {
+                mon.buffs = [];
+            }
+        }
+
         function _calcDamage(power, atk, def) {
             const A = Number(atk) || 0;
             const D = Number(def) || 0;
@@ -3230,7 +3660,8 @@
                 }
 
                 // POWER básico
-                const basicPower = BASIC_ATTACK_POWER[mon.class] || 12;
+                // Commit 12 (Wave C12.3.2): Use MM_TABLES for basic attack power
+                const basicPower = MM_TABLES.getBasicAttackPower(mon.class);
                 let powerUsed = basicPower;
 
                 if (isCrit) {
@@ -3260,7 +3691,9 @@
                     power: powerUsed,
                     damageMult: damageMult
                 });
-                enemy.hp = _clamp((Number(enemy.hp) || 0) - dmg, 0, Number(enemy.hpMax) || 999999);
+                
+                // Commit 11 (Wave B): Use applyDamage helper
+                const damageResult = applyDamage(enemy, dmg);
 
                 _log(enc, `🎲 ${attackerName} (${monName}) rolou ${d20} e acertou ${enemyName} causando ${dmg} de dano!`);
                 
@@ -3356,7 +3789,8 @@
                 }
 
                 // POWER básico do inimigo
-                const basicPower = BASIC_ATTACK_POWER[enemy.class] || 12;
+                // Commit 12 (Wave C12.3.2): Use MM_TABLES for basic attack power
+                const basicPower = MM_TABLES.getBasicAttackPower(enemy.class);
                 let powerUsed = basicPower;
 
                 if (isCrit) {
@@ -3386,7 +3820,9 @@
                     power: powerUsed,
                     damageMult: damageMult
                 });
-                targetMon.hp = _clamp((Number(targetMon.hp) || 0) - dmg, 0, Number(targetMon.hpMax) || 999999);
+                
+                // Commit 11 (Wave B): Use applyDamage helper
+                const damageResult = applyDamage(targetMon, dmg);
 
                 _log(enc, `🎲 ${enemyName} rolou ${d20} e acertou ${targetName} (${targetMonName}) causando ${dmg} de dano!`);
                 
@@ -3646,23 +4082,228 @@
         /**
          * Exibe um toast notification temporário
          */
-        function showToast(text) {
+        function showToast(text, type = 'success') {
             const host = document.getElementById("mmToastHost");
             if (!host) return;
 
             const el = document.createElement("div");
-            el.className = "mm-toast";
+            el.className = `mm-toast ${type}`;
             el.textContent = text;
 
             host.appendChild(el);
 
+            // Show toast with slide-in animation
+            setTimeout(() => {
+                el.classList.add('show');
+            }, 10);
+
+            // Start fade-out after 1.5 seconds
             setTimeout(() => {
                 el.style.opacity = "0";
                 el.style.transform = "translateY(-4px)";
                 el.style.transition = "opacity .2s ease, transform .2s ease";
-            }, 2600);
+            }, 1500);
 
-            setTimeout(() => el.remove(), 3100);
+            // Remove from DOM after animation
+            setTimeout(() => el.remove(), 2000);
+        }
+
+        /**
+         * Logs a message to the therapist log panel (only if therapist mode is active)
+         * @param {string} message - Message to log
+         */
+        function therapistLog(message) {
+            // Only log if therapist mode is enabled
+            if (typeof mmIsTherapistMode !== 'function' || !mmIsTherapistMode()) {
+                return;
+            }
+
+            const logContainer = document.getElementById("therapistLog");
+            if (!logContainer) return;
+
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement("div");
+            logEntry.className = "therapist-log-entry";
+            logEntry.textContent = `[${timestamp}] ${message}`;
+
+            logContainer.appendChild(logEntry);
+
+            // Auto-scroll to bottom
+            logContainer.scrollTop = logContainer.scrollHeight;
+
+            // Keep only last 50 entries to avoid memory issues
+            const entries = logContainer.querySelectorAll(".therapist-log-entry");
+            if (entries.length > 50) {
+                entries[0].remove();
+            }
+        }
+
+        // ============================================================================
+        // Commit 13: mmDebugLog - Standardized Debug Logging System
+        // ============================================================================
+
+        /**
+         * Get current timestamp in ISO format
+         * @returns {string} ISO timestamp or empty string on error
+         */
+        function mmNowISO() {
+            try {
+                return new Date().toISOString();
+            } catch (e) {
+                return "";
+            }
+        }
+
+        /**
+         * Safely stringify an object to JSON
+         * @param {*} obj - Object to stringify
+         * @returns {string} JSON string or error object
+         */
+        function mmSafeStringify(obj) {
+            try {
+                return JSON.stringify(obj);
+            } catch (e) {
+                try {
+                    return JSON.stringify({
+                        error: "stringify_failed",
+                        keys: Object.keys(obj || {})
+                    });
+                } catch (_) {
+                    return '{"error":"stringify_failed"}';
+                }
+            }
+        }
+
+        /**
+         * Normalize log level to standard values
+         * @param {string} level - Log level (error, warn, info, debug)
+         * @returns {string} Normalized level
+         */
+        function mmNormalizeLevel(level) {
+            const L = String(level || "info").toLowerCase();
+            if (L === "error" || L === "warn" || L === "info" || L === "debug") {
+                return L;
+            }
+            return "info";
+        }
+
+        // In-memory debug buffer (useful for export or audit)
+        window.MM_DEBUG_BUFFER = window.MM_DEBUG_BUFFER || [];
+        const MM_DEBUG_BUFFER_MAX = 200;
+
+        /**
+         * Standardized debug logging function
+         * @param {string} event - Event name (e.g., 'CATALOG_ID_INVALID', 'AWARD_MONSTER')
+         * @param {object} details - Event details (context, ids, values, etc.)
+         * @param {string} level - Log level ('error', 'warn', 'info', 'debug')
+         * @returns {object} The logged payload
+         */
+        function mmDebugLog(event, details, level) {
+            const lvl = mmNormalizeLevel(level);
+            const ev = String(event || "EVENT_UNSPECIFIED").trim() || "EVENT_UNSPECIFIED";
+            const det = (details && typeof details === "object") ? details : { value: details };
+
+            // Enrich payload with context (det first, then override with standard fields)
+            const payload = {
+                ...det,
+                ts: mmNowISO(),
+                level: lvl,
+                event: ev,
+                context: det.context || det.fn || det.source || "unknown",
+                saveSlot: (window.GameState && GameState.saveSlot) ? GameState.saveSlot : null
+            };
+
+            // 1) Console output with standard format
+            const tag = `[MM:${String(payload.level).toUpperCase()}] ${payload.event}`;
+            if (payload.level === "error") {
+                console.error(tag, payload);
+            } else if (payload.level === "warn") {
+                console.warn(tag, payload);
+            } else if (payload.level === "debug") {
+                console.debug(tag, payload);
+            } else {
+                console.log(tag, payload);
+            }
+
+            // 2) Add to debug buffer
+            window.MM_DEBUG_BUFFER.push(payload);
+            if (window.MM_DEBUG_BUFFER.length > MM_DEBUG_BUFFER_MAX) {
+                window.MM_DEBUG_BUFFER.splice(0, window.MM_DEBUG_BUFFER.length - MM_DEBUG_BUFFER_MAX);
+            }
+
+            // 3) Therapist panel log (if therapist mode is active)
+            if (typeof therapistLog === 'function') {
+                // Create condensed message for therapist panel
+                const icon = lvl === 'error' ? '❌' : lvl === 'warn' ? '⚠️' : lvl === 'debug' ? '🔍' : 'ℹ️';
+                const condensed = `${icon} ${ev}: ${det.context || 'unknown'}`;
+                
+                // Add key details if present
+                const keyDetails = [];
+                if (det.templateId) keyDetails.push(`template=${det.templateId}`);
+                if (det.itemId) keyDetails.push(`item=${det.itemId}`);
+                if (det.className) keyDetails.push(`class=${det.className}`);
+                if (det.rarity) keyDetails.push(`rarity=${det.rarity}`);
+                if (det.note) keyDetails.push(`note=${det.note}`);
+                
+                const fullMessage = keyDetails.length > 0 
+                    ? `${condensed} (${keyDetails.join(', ')})`
+                    : condensed;
+                
+                therapistLog(fullMessage);
+            }
+
+            return payload;
+        }
+
+        /**
+         * Log invalid class warning
+         * @param {string} className - The invalid class name
+         * @param {string} context - Where the validation failed
+         */
+        function mmLogInvalidClass(className, context) {
+            const isValid = (window.MM_TABLES && typeof MM_TABLES.validateClass === 'function')
+                ? MM_TABLES.validateClass(className)
+                : false;
+
+            if (!isValid) {
+                mmDebugLog("CLASS_INVALID", {
+                    context,
+                    className,
+                    allowedClasses: (MM_TABLES && MM_TABLES.CLASSES) ? MM_TABLES.CLASSES : null
+                }, "warn");
+            }
+        }
+
+        /**
+         * Log invalid rarity warning
+         * @param {string} rarityName - The invalid rarity name
+         * @param {string} context - Where the validation failed
+         */
+        function mmLogInvalidRarity(rarityName, context) {
+            const isValid = (window.MM_TABLES && typeof MM_TABLES.validateRarity === 'function')
+                ? MM_TABLES.validateRarity(rarityName)
+                : false;
+
+            if (!isValid) {
+                mmDebugLog("RARITY_INVALID", {
+                    context,
+                    rarity: rarityName,
+                    allowedRarities: (MM_TABLES && MM_TABLES.RARITIES) ? MM_TABLES.RARITIES : null
+                }, "warn");
+            }
+        }
+
+        /**
+         * Log legacy fallback usage
+         * @param {string} context - Where the fallback occurred
+         * @param {object} details - Additional details
+         */
+        function mmLogLegacyFallback(context, details) {
+            mmDebugLog("WARN_LEGACY_FALLBACK", {
+                context,
+                legacy: true,
+                ...details
+            }, "warn");
         }
 
         /**
@@ -4658,11 +5299,11 @@
                 const encounter = GameState.currentEncounter;
                 
                 if (!encounter || !encounter.active) {
-                    panel.classList.add('hidden');
+                    hideEl(panel);
                     return;
                 }
                 
-                panel.classList.remove('hidden');
+                showEl(panel);
                 
                 if (encounter.type === 'wild') {
                     renderWildEncounter(panel, encounter);
@@ -5212,7 +5853,8 @@
                         }
                         
                         if (enemyHit) {
-                            const power = BASIC_ATTACK_POWER[wildMonster.class] || 12;
+                            // Commit 12 (Wave C12.3.2): Use MM_TABLES for basic attack power
+                            const power = MM_TABLES.getBasicAttackPower(wildMonster.class);
                             
                             const atkMods = getBuffModifiers(wildMonster);
                             const effectiveAtk = Math.max(1, wildMonster.atk + atkMods.atk);
@@ -5369,7 +6011,8 @@
                 
                 if (playerHit) {
                     // Calcular dano com power modificado se CRIT 20
-                    let power = BASIC_ATTACK_POWER[playerMonster.class] || 12;
+                    // Commit 12 (Wave C12.3.2): Use MM_TABLES for basic attack power
+                    let power = MM_TABLES.getBasicAttackPower(playerMonster.class);
                     if (isCrit20 && critBonus === 'double_power') {
                         power *= 2; // Dobrar POWER antes do cálculo
                     }
@@ -5781,7 +6424,8 @@
                 const defValue = defender.def || 3;
                 
                 // POWER básico por classe
-                const basicPower = BASIC_ATTACK_POWER[attacker.class] || 12;
+                // Commit 12 (Wave C12.3.2): Use MM_TABLES for basic attack power
+                const basicPower = MM_TABLES.getBasicAttackPower(attacker.class);
                 
                 // Aplicar modificadores de buff
                 const atkMods = getBuffModifiers(attacker);
@@ -5975,15 +6619,15 @@
                 if (!playerSelectDiv || !groupSelectDiv) return;
                 
                 if (type === 'wild') {
-                    playerSelectDiv.classList.remove('hidden');
-                    groupSelectDiv.classList.add('hidden');
+                    showEl(playerSelectDiv);
+                    hideEl(groupSelectDiv);
                 } else if (type === 'trainer' || type === 'boss') {
-                    playerSelectDiv.classList.add('hidden');
-                    groupSelectDiv.classList.remove('hidden');
+                    hideEl(playerSelectDiv);
+                    showEl(groupSelectDiv);
                     updateGroupParticipantsList();
                 } else {
-                    playerSelectDiv.classList.add('hidden');
-                    groupSelectDiv.classList.add('hidden');
+                    hideEl(playerSelectDiv);
+                    hideEl(groupSelectDiv);
                 }
             } catch (error) {
                 console.error('Failed to update encounter UI:', error);
@@ -6284,9 +6928,10 @@
                             <p>💰 Money: ${player.money || 0} | ⭐ Afterlife: ${player.afterlifeCurrency || 0}</p>
                             <p>👥 Team: ${teamCount}/${GameState.config?.maxTeamSize || 6} | 📦 Box: ${boxCount}</p>
                             
-                            <h4>Team:</h4>
-                            <div class="flex">
-                                ${(player.team || []).map(m => renderMonsterCard(m)).join('')}
+                            <h4>Team Order (${teamCount}):</h4>
+                            <div class="team-reorder-section">
+                                <p class="text-small text-muted mb-10">First alive monster will be your starter in battle. Use arrows to reorder.</p>
+                                ${renderTeamReorderList(player)}
                             </div>
                         </div>
                     `;
@@ -6358,17 +7003,113 @@
             }
         }
 
+        function renderTeamReorderList(player) {
+            try {
+                if (!player || !player.team || player.team.length === 0) {
+                    return '<p class="text-muted">No monsters in team.</p>';
+                }
+
+                let html = '<div class="team-reorder-container">';
+                
+                player.team.forEach((monster, index) => {
+                    if (!monster) return;
+                    
+                    const isActive = index === (player.activeIndex ?? 0);
+                    const isAlive = _isAlive(monster);
+                    const hpPercent = ((monster.hp || 0) / (monster.hpMax || 1)) * 100;
+                    
+                    html += `
+                        <div class="team-member-card ${isActive ? 'team-member-card-active' : 'team-member-card-inactive'}">
+                            <span class="team-member-index">${index + 1}.</span>
+                            <div class="team-member-info">
+                                <strong>${monster.name || 'Unknown'}</strong>
+                                <span class="badge badge-${monster.rarity || 'common'}">${monster.rarity || 'Comum'}</span>
+                                Lv${monster.level || 1}
+                                ${!isAlive ? '<span class="color-error text-bold"> (Fainted)</span>' : ''}
+                                <div class="progress-bar h-15 mt-5">
+                                    <div class="progress-fill hp" style="width: ${hpPercent}%"></div>
+                                </div>
+                                <small>${monster.hp || 0}/${monster.hpMax || 0} HP</small>
+                            </div>
+                            <div class="team-member-buttons">
+                                ${index > 0 ? `<button class="btn btn-sm-arrow" onclick="moveTeamMemberUp('${player.id}', ${index})">▲</button>` : '<span style="height:20px;display:block;"></span>'}
+                                ${index < player.team.length - 1 ? `<button class="btn btn-sm-arrow" onclick="moveTeamMemberDown('${player.id}', ${index})">▼</button>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                return html;
+            } catch (error) {
+                console.error('Failed to render team reorder list:', error);
+                return '<p class="color-error">Error rendering team list</p>';
+            }
+        }
+
+        function moveTeamMemberUp(playerId, index) {
+            try {
+                const player = GameState.players?.find(p => p?.id === playerId);
+                if (!player || !player.team || index <= 0 || index >= player.team.length) return;
+                
+                // Swap with previous
+                const temp = player.team[index - 1];
+                player.team[index - 1] = player.team[index];
+                player.team[index] = temp;
+                
+                // Update activeIndex if needed
+                if (player.activeIndex === index) {
+                    player.activeIndex = index - 1;
+                } else if (player.activeIndex === index - 1) {
+                    player.activeIndex = index;
+                }
+                
+                saveGame();
+                updatePlayersList();
+                showToast('Team order updated!');
+            } catch (error) {
+                console.error('Failed to move team member up:', error);
+                showToast('Error reordering team');
+            }
+        }
+
+        function moveTeamMemberDown(playerId, index) {
+            try {
+                const player = GameState.players?.find(p => p?.id === playerId);
+                if (!player || !player.team || index < 0 || index >= player.team.length - 1) return;
+                
+                // Swap with next
+                const temp = player.team[index + 1];
+                player.team[index + 1] = player.team[index];
+                player.team[index] = temp;
+                
+                // Update activeIndex if needed
+                if (player.activeIndex === index) {
+                    player.activeIndex = index + 1;
+                } else if (player.activeIndex === index + 1) {
+                    player.activeIndex = index;
+                }
+                
+                saveGame();
+                updatePlayersList();
+                showToast('Team order updated!');
+            } catch (error) {
+                console.error('Failed to move team member down:', error);
+                showToast('Error reordering team');
+            }
+        }
+
         function updateSessionView() {
             try {
                 const panel = document.getElementById('activeSessionPanel');
                 if (!panel) return;
                 
                 if (!GameState.currentSession) {
-                    panel.classList.add('hidden');
+                    hideEl(panel);
                     return;
                 }
                 
-                panel.classList.remove('hidden');
+                showEl(panel);
                 
                 const session = GameState.currentSession;
                 document.getElementById('activeSessionName').textContent = session.name || 'Unnamed';
@@ -6573,9 +7314,9 @@
                 const configPanel = document.getElementById('configPanel');
                 if (configPanel) {
                     if (checked) {
-                        configPanel.classList.remove('hidden');
+                        showEl(configPanel);
                     } else {
-                        configPanel.classList.add('hidden');
+                        hideEl(configPanel);
                     }
                 }
             } catch (error) {
@@ -6604,7 +7345,7 @@
                 const el = mmEl(id);
                 if (el) {
                     el.classList.remove("show");
-                    el.classList.add("hidden");
+                    el.classList.add("is-hidden");
                 }
             });
         }
@@ -6613,7 +7354,7 @@
             mmCloseAllOverlays();
             const el = mmEl(id);
             if (el) {
-                el.classList.remove("hidden");
+                el.classList.remove("is-hidden");
                 el.classList.add("show");
             }
         }
@@ -6700,11 +7441,15 @@
 
                     <div class="therapist-mestre-box">
                         <div class="therapist-field-title">✨ Dar XP (monstro ativo)</div>
+                        <div class="mm-row mb-8">
+                            <button class="mm-btn flex-1" onclick="mmTherGiveXPQuick(10)">+10 XP</button>
+                            <button class="mm-btn flex-1" onclick="mmTherGiveXPQuick(50)">+50 XP</button>
+                        </div>
                         <div class="mm-row">
                             <input id="mmTherXp" class="mm-input flex-1" type="number" min="1" value="50">
                             <button class="mm-btn" onclick="mmTherGiveXP()">+ XP</button>
                         </div>
-                        <div class="opacity-80 font-size-12 mt-6">Aplica no player.team[0].</div>
+                        <div class="opacity-80 font-size-12 mt-6">Aplica no monstro ativo (player.activeIndex).</div>
                     </div>
 
                     <div class="therapist-mestre-box">
@@ -6717,18 +7462,34 @@
                     </div>
 
                     <div class="therapist-mestre-box">
-                        <div class="therapist-field-title">🐾 Dar Monstrinhomon</div>
-                        <div class="mm-row">
+                        <div class="therapist-field-title">🎁 Conceder Monstrinhomon</div>
+                        <div class="mm-row mb-8">
                             <select id="mmTherMon" class="mm-input flex-1">${monOptions}</select>
-                            <input id="mmTherMonLv" class="mm-input w-90" type="number" min="1" value="5">
                         </div>
-                        <div class="mm-row mt-8">
+                        <div class="mm-row mb-8">
+                            <div class="flex-1">
+                                <label class="therapist-label">Nível (1-100)</label>
+                                <input id="mmTherMonLv" class="mm-input" type="number" min="1" max="100" value="5">
+                            </div>
+                            <div class="flex-1">
+                                <label class="therapist-label">Raridade</label>
+                                <select id="mmTherMonRarity" class="mm-input">
+                                    <option value="">Padrão do Template</option>
+                                    <option value="Comum">Comum</option>
+                                    <option value="Incomum">Incomum</option>
+                                    <option value="Raro">Raro</option>
+                                    <option value="Místico">Místico</option>
+                                    <option value="Lendário">Lendário</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mm-row">
                             <select id="mmTherMonDest" class="mm-input flex-1">
-                                <option value="auto">Auto (Time se <6, senão Caixa)</option>
+                                <option value="auto">Auto (Time se &lt;6, senão Caixa)</option>
                                 <option value="team">Forçar Time</option>
                                 <option value="box">Forçar Caixa</option>
                             </select>
-                            <button class="mm-btn" onclick="mmTherGiveMonster()">Adicionar</button>
+                            <button class="mm-btn" onclick="mmTherGiveMonster()">Conceder</button>
                         </div>
                     </div>
                 </div>
@@ -6736,6 +7497,18 @@
         }
 
         // Therapist action: Give XP
+        /**
+         * Clears the therapist log panel
+         */
+        function clearTherapistLog() {
+            const logContainer = document.getElementById("therapistLog");
+            if (logContainer) {
+                logContainer.innerHTML = "";
+                therapistLog("Log cleared");
+            }
+        }
+
+        // Therapist action: Give XP (uses Award API)
         function mmTherGiveXP() {
             if (!mmRequireGameOrAlert()) return;
 
@@ -6743,33 +7516,90 @@
             const amt = Math.max(1, parseInt(document.getElementById("mmTherXp")?.value || "0", 10));
 
             const player = GameState.players.find(p => p.id === pid);
-            const mon = player?.team?.[0];
-            
-            if (!mon) {
-                alert("Jogador sem monstrinho ativo (team[0]).");
+            if (!player) {
+                showToast("Jogador não encontrado.", 'error');
+                therapistLog("❌ awardXP failed: player not found");
                 return;
             }
 
-            const logArr = GameState.currentEncounter?.log || [];
-
-            // Use existing giveXP function
-            if (typeof giveXP === "function") {
-                giveXP(mon, amt, logArr);
-            } else {
-                // Fallback if giveXP doesn't exist
-                mon.xp = (mon.xp || 0) + amt;
+            // Validate team and activeIndex
+            if (!player.team || !Array.isArray(player.team) || player.team.length === 0) {
+                showToast("Jogador não tem monstrinhos no time.", 'error');
+                therapistLog("❌ awardXP failed: empty team");
+                return;
             }
 
-            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
-            if (typeof renderEncounter === "function") renderEncounter();
-            if (typeof showToast === "function") {
-                showToast(`✨ ${player.name} recebeu +${amt} XP!`);
+            // Ensure activeIndex is valid
+            if (typeof player.activeIndex !== 'number' || player.activeIndex < 0) {
+                player.activeIndex = 0;
+            }
+
+            const mon = player.team[player.activeIndex];
+            if (!mon) {
+                showToast("Monstrinho ativo não encontrado.", 'error');
+                therapistLog("❌ awardXP failed: active monster not found");
+                return;
+            }
+
+            // Use Award API
+            const success = awardXP(player.activeIndex, amt, player);
+            
+            if (success) {
+                if (typeof renderEncounter === "function") renderEncounter();
+                showToast(`✨ ${mon.name} recebeu +${amt} XP! (Nível ${mon.level})`);
+                therapistLog(`✅ awardXP +${amt} → ${mon.name} (Lv ${mon.level})`);
             } else {
-                alert(`✨ ${player.name} recebeu +${amt} XP!`);
+                showToast("Falha ao dar XP.", 'error');
+                therapistLog("❌ awardXP failed");
             }
         }
 
-        // Therapist action: Give Item
+        // Quick XP buttons
+        function mmTherGiveXPQuick(amount) {
+            if (!mmRequireGameOrAlert()) return;
+
+            const pid = document.getElementById("mmTherPlayer")?.value;
+            const player = GameState.players.find(p => p.id === pid);
+            
+            if (!player) {
+                showToast("Jogador não encontrado.", 'error');
+                therapistLog("❌ awardXP failed: player not found");
+                return;
+            }
+
+            // Validate team and activeIndex
+            if (!player.team || !Array.isArray(player.team) || player.team.length === 0) {
+                showToast("Jogador não tem monstrinhos no time.", 'error');
+                therapistLog("❌ awardXP failed: empty team");
+                return;
+            }
+
+            // Ensure activeIndex is valid
+            if (typeof player.activeIndex !== 'number' || player.activeIndex < 0) {
+                player.activeIndex = 0;
+            }
+
+            const mon = player.team[player.activeIndex];
+            if (!mon) {
+                showToast("Monstrinho ativo não encontrado.", 'error');
+                therapistLog("❌ awardXP failed: active monster not found");
+                return;
+            }
+
+            // Use Award API
+            const success = awardXP(player.activeIndex, amount, player);
+            
+            if (success) {
+                if (typeof renderEncounter === "function") renderEncounter();
+                showToast(`✨ ${mon.name} recebeu +${amount} XP! (Nível ${mon.level})`);
+                therapistLog(`✅ awardXP +${amount} → ${mon.name} (Lv ${mon.level})`);
+            } else {
+                showToast("Falha ao dar XP.", 'error');
+                therapistLog("❌ awardXP failed");
+            }
+        }
+
+        // Therapist action: Give Item (uses Award API)
         function mmTherGiveItem() {
             if (!mmRequireGameOrAlert()) return;
 
@@ -6778,24 +7608,40 @@
             const qty = Math.max(1, parseInt(document.getElementById("mmTherItemQty")?.value || "1", 10));
 
             const player = GameState.players.find(p => p.id === pid);
-            if (!player) return;
-
-            player.inventory = player.inventory || {};
-            player.inventory[itemId] = (player.inventory[itemId] || 0) + qty;
-
-            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
-            if (typeof renderEncounter === "function") renderEncounter();
-            
-            // Get item name from CLASTERORBS or fallback to itemId
-            let itemName = itemId;
-            if (window.CLASTERORBS && window.CLASTERORBS[itemId]) {
-                itemName = window.CLASTERORBS[itemId].name;
+            if (!player) {
+                showToast("Jogador não encontrado.", 'error');
+                therapistLog("❌ awardItem failed: player not found");
+                return;
             }
+
+            if (!itemId) {
+                showToast("Selecione um item.", 'error');
+                therapistLog("❌ awardItem failed: no item selected");
+                return;
+            }
+
+            // Commit 12 (Wave C12.2): Validate itemId using catalog helper
+            const itemDef = requireItemDef(itemId, 'therapist-UI');
+            if (!itemDef) {
+                showToast("Item inválido.", 'error');
+                therapistLog(`❌ awardItem failed: invalid itemId ${itemId}`);
+                return;
+            }
+
+            // Use Award API
+            const success = awardItem(itemId, qty, player);
             
-            if (typeof showToast === "function") {
+            if (success) {
+                if (typeof renderEncounter === "function") renderEncounter();
+                
+                // Use item name from catalog
+                const itemName = itemDef.name || itemId;
+                
                 showToast(`🎒 ${player.name} recebeu ${qty}x ${itemName}`);
+                therapistLog(`✅ awardItem ${itemId} x${qty} → ${player.name}`);
             } else {
-                alert(`🎒 ${player.name} recebeu ${qty}x ${itemName}`);
+                showToast("Falha ao dar item.", 'error');
+                therapistLog("❌ awardItem failed");
             }
         }
 
@@ -6805,23 +7651,47 @@
 
             const pid = document.getElementById("mmTherPlayer")?.value;
             const monId = document.getElementById("mmTherMon")?.value;
-            const lv = Math.max(1, parseInt(document.getElementById("mmTherMonLv")?.value || "1", 10));
+            const lv = parseInt(document.getElementById("mmTherMonLv")?.value || "1", 10);
+            const rarityInput = document.getElementById("mmTherMonRarity")?.value;
             const dest = document.getElementById("mmTherMonDest")?.value || "auto";
 
             const player = GameState.players.find(p => p.id === pid);
-            if (!player) return;
+            if (!player) {
+                showToast("Jogador não encontrado.", 'error');
+                therapistLog("❌ awardMonster failed: player not found");
+                return;
+            }
+
+            // Commit 12 (Wave C12.2): Validate templateId using catalog helper
+            const template = requireMonsterTemplate(monId, 'therapist-UI');
+            if (!template) {
+                showToast("Template de monstro inválido.", 'error');
+                therapistLog(`❌ awardMonster failed: invalid templateId ${monId}`);
+                return;
+            }
+
+            // Clamp level between 1 and 100
+            const clampedLevel = Math.max(1, Math.min(100, lv));
+
+            // Use template rarity if not specified (empty string means use template default)
+            const rarity = rarityInput || null;
+
+            // Track team size before to detect if it went to box
+            const teamSizeBefore = player.team?.length || 0;
+            const requestedTeam = (dest === 'team' || dest === 'auto');
 
             // COMMIT 8 (Wave A): Use Award API for canonical monster creation
             const inst = awardMonster(
-                monId,      // templateId
-                lv,         // level
-                null,       // rarity (use template default)
-                dest,       // destination ('auto', 'team', or 'box')
-                player      // player object
+                monId,          // templateId
+                clampedLevel,   // level (clamped)
+                rarity,         // rarity (null = use template default)
+                dest,           // destination ('auto', 'team', or 'box')
+                player          // player object
             );
             
             if (!inst) {
-                alert("❌ Erro ao conceder monstro via Award API.");
+                showToast("Falha ao conceder monstro.", 'error');
+                therapistLog("❌ awardMonster failed: creation error");
                 return;
             }
 
@@ -6829,13 +7699,20 @@
             
             // Determine where it actually went (Award API handles team limit)
             const inTeam = player.team.some(m => m.instanceId === inst.instanceId);
-            const destText = inTeam ? "time" : "caixa";
+            const actualDest = inTeam ? "time" : "caixa";
             
-            if (typeof showToast === "function") {
-                showToast(`🐾 ${player.name} recebeu ${inst.name || monId} (Lv ${lv}) no ${destText}`);
-            } else {
-                alert(`🐾 ${player.name} recebeu ${inst.name || monId} (Lv ${lv}) no ${destText}`);
+            // Check if it was redirected to box due to team being full
+            const wasRedirected = requestedTeam && !inTeam && teamSizeBefore >= 6;
+            
+            // Build toast message
+            const rarityText = inst.rarity || 'Comum';
+            let toastMsg = `🎁 Concedido ${inst.name} Lv${clampedLevel} (${rarityText}) → ${actualDest}`;
+            if (wasRedirected) {
+                toastMsg += ` (time cheio)`;
             }
+            
+            showToast(toastMsg, 'success');
+            therapistLog(`✅ awardMonster ${monId} Lv${clampedLevel} ${rarityText} → ${actualDest}${wasRedirected ? ' (redirected from team)' : ''}`);
         }
 
         function mmContinue(){
@@ -6905,7 +7782,9 @@
             players: [] // {name, class}
         };
 
-        const MM_CLASSES = ["Guerreiro","Mago","Curandeiro","Bárbaro","Ladino","Bardo","Caçador","Animalista"];
+        // @deprecated - Use MM_TABLES.CLASSES instead
+        // Kept for backward compatibility  
+        const MM_CLASSES = MM_TABLES.CLASSES;
 
         function escapeHtml(text) {
             const div = document.createElement('div');
@@ -7153,7 +8032,7 @@
         function mmShowOverlay(id) {
             const el = document.getElementById(id);
             if (el) {
-                el.classList.remove("hidden");
+                el.classList.remove("is-hidden");
                 el.classList.add("show");
             }
         }
@@ -7161,7 +8040,7 @@
         function mmHideOverlay(id) {
             const el = document.getElementById(id);
             if (el) {
-                el.classList.add("hidden");
+                el.classList.add("is-hidden");
                 el.classList.remove("show");
             }
         }
@@ -7613,8 +8492,11 @@
             // Tenta pegar um template real do catálogo
             const cat = MONSTER_CATALOG || [];
             const t = cat[0];
-            if (typeof createMonsterInstance === "function" && t) {
-                const m = createMonsterInstance(t, null, level);
+            if (typeof createMonsterInstanceFromTemplate === "function" && t) {
+                // Wave B (continuation): Use factory for tutorial enemy
+                const m = createMonsterInstanceFromTemplate(t.id, level, null, {
+                    id: 'tutorial_' + Date.now()
+                });
                 // Deixa mais fácil
                 m.hpMax = Math.max(20, Math.floor(m.hpMax * 0.6));
                 m.hp = m.hpMax;
@@ -7760,10 +8642,10 @@
             if (!el) return;
             if (show) {
                 el.classList.add("show");
-                el.classList.remove("hidden");
+                el.classList.remove("is-hidden");
             } else {
                 el.classList.remove("show");
-                el.classList.add("hidden");
+                el.classList.add("is-hidden");
             }
         }
 
