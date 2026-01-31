@@ -694,7 +694,17 @@
                     'Místico': 18,
                     'Lendário': 25
                 },
-                medalTiers: { bronze: 5, silver: 12, gold: 25 }
+                medalTiers: { bronze: 5, silver: 12, gold: 25 },
+                // Sistema de Amizade (Friendship)
+                friendshipConfig: {
+                    battleWin: 2,
+                    battleLoss: -5,
+                    useHealItem: 5,
+                    stayInTeam: 1,
+                    levelUp: 3,
+                    faint: -3,
+                    timeInBox: -1
+                }
             }
         };
 
@@ -1080,6 +1090,14 @@
             if (!mon.class) mon.class = 'Neutro';
             if (!mon.rarity) mon.rarity = 'Comum';
             
+            // --- 6. Sistema de Amizade ---
+            // Inicializar friendship se não existir (padrão: 50 - neutro)
+            if (typeof mon.friendship !== 'number') {
+                mon.friendship = 50;
+            }
+            // Garantir que está no range válido (0-100)
+            mon.friendship = Math.max(0, Math.min(100, mon.friendship));
+            
             return mon;
         }
         
@@ -1092,6 +1110,116 @@
             const growthPerLevel = 5;
             const lvl = level || 1;
             return baseHp + (growthPerLevel * (lvl - 1));
+        }
+
+        // ============================================================================
+        // SISTEMA DE AMIZADE (FRIENDSHIP)
+        // ============================================================================
+
+        /**
+         * Atualiza o nível de amizade de um monstrinho
+         * @param {Object} monster - Instância do monstrinho
+         * @param {string} event - Evento que dispara mudança de amizade
+         */
+        function updateFriendship(monster, event) {
+            if (!monster || typeof monster !== 'object') return;
+            
+            // Inicializar friendship se não existir
+            if (typeof monster.friendship !== 'number') {
+                monster.friendship = 50;
+            }
+            
+            const config = GameState.config?.friendshipConfig;
+            if (!config) {
+                console.warn('[Friendship] Config não encontrado');
+                return;
+            }
+            
+            const change = config[event] || 0;
+            const oldFriendship = monster.friendship;
+            
+            // Aplicar mudança (clamped entre 0-100)
+            monster.friendship = Math.max(0, Math.min(100, monster.friendship + change));
+            
+            // Log de mensagens especiais ao atingir marcos importantes
+            const encounter = GameState.currentEncounter;
+            const log = encounter?.log || [];
+            
+            if (monster.friendship === 100 && oldFriendship < 100) {
+                if (Array.isArray(log)) {
+                    log.push(`💖 ${monster.nickname || monster.name} atingiu amizade máxima!`);
+                }
+            } else if (monster.friendship >= 75 && oldFriendship < 75) {
+                if (Array.isArray(log)) {
+                    log.push(`💚 ${monster.nickname || monster.name} está muito feliz!`);
+                }
+            } else if (monster.friendship >= 50 && oldFriendship < 50) {
+                if (Array.isArray(log)) {
+                    log.push(`💛 ${monster.nickname || monster.name} está se aproximando de você!`);
+                }
+            }
+            
+            saveToLocalStorage();
+        }
+
+        /**
+         * Retorna o nível de amizade (1-5)
+         * @param {number} friendship - Valor de amizade (0-100)
+         * @returns {number} - Nível de 1 a 5
+         */
+        function getFriendshipLevel(friendship) {
+            if (friendship >= 100) return 5;
+            if (friendship >= 75) return 4;
+            if (friendship >= 50) return 3;
+            if (friendship >= 25) return 2;
+            return 1;
+        }
+
+        /**
+         * Retorna emoji representando nível de amizade
+         * @param {number} friendship - Valor de amizade (0-100)
+         * @returns {string} - Emoji de coração
+         */
+        function getFriendshipIcon(friendship) {
+            const level = getFriendshipLevel(friendship);
+            const icons = ['🖤', '🤍', '💛', '💚', '❤️'];
+            return icons[level - 1];
+        }
+
+        /**
+         * Calcula bônus baseados no nível de amizade
+         * @param {number} friendship - Valor de amizade (0-100)
+         * @returns {Object} - Objeto com bônus aplicáveis
+         */
+        function getFriendshipBonuses(friendship) {
+            const level = getFriendshipLevel(friendship);
+            const bonuses = {
+                xpMultiplier: 1.0,
+                critChance: 0,
+                statBonus: 0,
+                surviveChance: 0
+            };
+            
+            if (level >= 2) {
+                bonuses.xpMultiplier = 1.05;
+            }
+            if (level >= 3) {
+                bonuses.xpMultiplier = 1.05;
+                bonuses.critChance = 0.05;
+            }
+            if (level >= 4) {
+                bonuses.xpMultiplier = 1.10;
+                bonuses.critChance = 0.05;
+                bonuses.statBonus = 1;
+            }
+            if (level >= 5) {
+                bonuses.xpMultiplier = 1.10;
+                bonuses.critChance = 0.05;
+                bonuses.statBonus = 1;
+                bonuses.surviveChance = 0.10;
+            }
+            
+            return bonuses;
         }
 
         // COMMIT 6: normalizeGameState()
@@ -1819,7 +1947,8 @@
                     eneMax: eneMax,   // ENE máximo
                     stage: stage,     // Estágio de evolução (0-3)
                     status: 'healthy',
-                    buffs: []         // Array para buffs temporários
+                    buffs: [],        // Array para buffs temporários
+                    friendship: 50    // Sistema de Amizade (0-100, padrão neutro)
                 };
             } catch (error) {
                 console.error('Failed to create monster instance:', error);
@@ -1918,6 +2047,9 @@
                     
                     // Evolução
                     stage: 0,           // Sempre começa em stage 0
+                    
+                    // Sistema de Amizade
+                    friendship: 50,     // Padrão: neutro (0-100)
                     
                     // FASE 1 POKEMON: Shiny (1% chance se selvagem)
                     isShiny: false      // Padrão false, será sobrescrito se necessário
@@ -3606,8 +3738,12 @@
             
             ensureMonsterProgressFields(mon);
             
-            const xpGain = Math.max(0, Number(amount) || 0);
+            let xpGain = Math.max(0, Number(amount) || 0);
             if (xpGain <= 0) return;
+            
+            // SISTEMA DE AMIZADE: Aplicar multiplicador de XP baseado em amizade
+            const friendshipBonuses = getFriendshipBonuses(mon.friendship || 50);
+            xpGain = Math.floor(xpGain * friendshipBonuses.xpMultiplier);
             
             const name = mon.nickname || mon.name || mon.nome || "Monstrinho";
             mon.xp += xpGain;
@@ -3615,7 +3751,10 @@
             // Logar no array fornecido ou no encounter atual
             const log = Array.isArray(logArr) ? logArr : (GameState.currentEncounter?.log || []);
             if (Array.isArray(log)) {
-                log.push(`🧪 ${name} ganhou +${xpGain} XP.`);
+                const bonusText = friendshipBonuses.xpMultiplier > 1.0 
+                    ? ` (Bônus Amizade: +${Math.round((friendshipBonuses.xpMultiplier - 1) * 100)}%)`
+                    : '';
+                log.push(`🧪 ${name} ganhou +${xpGain} XP.${bonusText}`);
             }
             
             // Loop de level ups (pode subir múltiplos níveis de uma vez)
@@ -3665,6 +3804,9 @@
             if (Array.isArray(log)) {
                 log.push(`✨ ${name} subiu para o nível ${mon.level}!`);
             }
+            
+            // SISTEMA DE AMIZADE: Ganhar amizade ao subir de nível
+            updateFriendship(mon, 'levelUp');
             
             // Verificar e aplicar evolução após level up (passa o HP% original)
             maybeEvolveAfterLevelUp(mon, log, hpPctBeforeLevelUp);
@@ -4971,6 +5113,9 @@
                 
                 encounter.log.push(`✨ ${playerMonster.name} recuperou ${actualHeal} HP! (${playerMonster.hp}/${playerMonster.hpMax})`);
                 
+                // SISTEMA DE AMIZADE: Ganhar amizade ao usar item de cura
+                updateFriendship(playerMonster, 'useHealItem');
+                
                 // Feature 4.2: Tutorial hook
                 tutorialOnAction("item");
                 
@@ -5057,6 +5202,9 @@
                             
                             // Verificar se jogador perdeu
                             if (playerMonster.hp <= 0) {
+                                // SISTEMA DE AMIZADE: Perder amizade ao desmaiar
+                                updateFriendship(playerMonster, 'faint');
+                                
                                 encounter.log.push(`💀 ${playerMonster.name} fainted! Defeat!`);
                                 
                                 // Feature 4.4: Defeat sound (com idempotência)
@@ -5225,6 +5373,9 @@
                     }, 50);
                     
                     if (encounter.wildMonster.hp <= 0) {
+                        // SISTEMA DE AMIZADE: Ganhar amizade ao vencer batalha
+                        updateFriendship(playerMonster, 'battleWin');
+                        
                         encounter.log.push(`🏆 ${encounter.wildMonster.name} fainted! Victory!`);
                         
                         // Feature 4.4: Victory sound (com idempotência)
@@ -5290,6 +5441,10 @@
                             }, 50);
                             
                             if (playerMonster.hp <= 0) {
+                                // SISTEMA DE AMIZADE: Perder amizade ao desmaiar e perder batalha
+                                updateFriendship(playerMonster, 'faint');
+                                updateFriendship(playerMonster, 'battleLoss');
+                                
                                 encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
                                 playerMonster.status = 'fainted';
                                 
@@ -5332,6 +5487,10 @@
                             }, 50);
                             
                             if (playerMonster.hp <= 0) {
+                                // SISTEMA DE AMIZADE: Perder amizade ao desmaiar e perder batalha
+                                updateFriendship(playerMonster, 'faint');
+                                updateFriendship(playerMonster, 'battleLoss');
+                                
                                 encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
                                 playerMonster.status = 'fainted';
                                 encounter.active = false;
@@ -6111,6 +6270,27 @@
                 const xpNeeded = (monster.level || 1) * 100;
                 const xpPercent = ((monster.xp || 0) / xpNeeded) * 100;
                 
+                // SISTEMA DE AMIZADE
+                const friendship = monster.friendship || 50;
+                const friendshipIcon = getFriendshipIcon(friendship);
+                const friendshipLevel = getFriendshipLevel(friendship);
+                const friendshipBonuses = getFriendshipBonuses(friendship);
+                
+                // Tooltip de bônus
+                let bonusesTooltip = `Nível de Amizade: ${friendshipLevel}/5`;
+                if (friendshipBonuses.xpMultiplier > 1.0) {
+                    bonusesTooltip += `\\nBônus XP: +${Math.round((friendshipBonuses.xpMultiplier - 1) * 100)}%`;
+                }
+                if (friendshipBonuses.critChance > 0) {
+                    bonusesTooltip += `\\nChance Crítico: +${friendshipBonuses.critChance * 100}%`;
+                }
+                if (friendshipBonuses.statBonus > 0) {
+                    bonusesTooltip += `\\nBônus Stats: +${friendshipBonuses.statBonus}`;
+                }
+                if (friendshipBonuses.surviveChance > 0) {
+                    bonusesTooltip += `\\nChance Sobreviver: ${friendshipBonuses.surviveChance * 100}%`;
+                }
+                
                 return `
                     <div class="monster-card ${monster.class || 'common'}">
                         <div class="font-size-36">${monster.emoji || '🔮'}</div>
@@ -6126,6 +6306,13 @@
                             <div class="progress-fill xp" style="width: ${xpPercent}%"></div>
                         </div>
                         <small>${monster.xp || 0}/${xpNeeded} XP</small>
+                        
+                        <div class="friendship-indicator" title="${bonusesTooltip}">
+                            ${friendshipIcon} <span class="friendship-text">${friendship}/100</span>
+                            <div class="friendship-bar">
+                                <div class="friendship-fill" style="width: ${friendship}%"></div>
+                            </div>
+                        </div>
                     </div>
                 `;
             } catch (error) {
