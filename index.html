@@ -3130,8 +3130,17 @@
             return Math.floor(Math.random() * 20) + 1;
         }
         
+        // ==================== GROUP/BOSS COMBAT ====================
+        // PR5A: Funções abaixo serão movidas para js/combat/groupActions.js em PR futuro
+        // Por enquanto, mantêm implementação inline (sem mudança de comportamento)
+        
+        /**
+         * WRAPPER FUTURO: Combat.Group.Actions.initializeGroupEncounter()
+         * Inicializa encounter de grupo/boss
+         */
         function startGroupEncounter(selectedPlayerIds, encounterType, enemyLevel) {
             try {
+                // TODO PR5B: Mover para Combat.Group.Actions.initializeGroupEncounter()
                 // Initialize activeIndex for all participating players
                 for (const pid of selectedPlayerIds) {
                     const player = GameState.players.find(p => p.id === pid);
@@ -3370,8 +3379,13 @@
             }
         }
         
+        /**
+         * WRAPPER FUTURO: Combat.Group.Actions.passTurn()
+         * Passa turno sem ação
+         */
         function groupPassTurn() {
             try {
+                // TODO PR5B: Mover para Combat.Group.Actions.passTurn()
                 const enc = GameState.currentEncounter;
                 if (!enc) return;
                 
@@ -3586,8 +3600,13 @@
 
         // ==================== FASE 3.A: Player Attack ====================
 
+        /**
+         * WRAPPER FUTURO: Combat.Group.Actions.executePlayerAttackGroup()
+         * Executa ataque do jogador em combate de grupo
+         */
         function groupAttack() {
             try {
+                // TODO PR5B: Mover para Combat.Group.Actions.executePlayerAttackGroup()
                 const enc = _getGroupEncounter();
                 if (!enc || enc.finished) return;
 
@@ -3724,8 +3743,13 @@
 
         // ==================== FASE 3.B: Enemy AI ====================
 
+        /**
+         * WRAPPER FUTURO: Combat.Group.Actions.executeEnemyTurnGroup()
+         * Processa turno do inimigo em combate de grupo
+         */
         function processEnemyTurnGroup(enc) {
             try {
+                // TODO PR5B: Mover para Combat.Group.Actions.executeEnemyTurnGroup()
                 if (!enc || enc.finished) return;
 
                 const actor = getCurrentActor(enc);
@@ -3948,8 +3972,13 @@
 
         // ==================== FASE 3.C: Skills and Items ====================
 
+        /**
+         * WRAPPER FUTURO: Combat.Group.Actions.executeGroupUseSkill()
+         * Usa habilidade em combate de grupo (STUB - não implementado)
+         */
         function groupUseSkill(skillIndex) {
             try {
+                // TODO PR5B: Mover para Combat.Group.Actions.executeGroupUseSkill()
                 const enc = _getGroupEncounter();
                 if (!enc || enc.finished) return;
 
@@ -3976,8 +4005,13 @@
             }
         }
 
+        /**
+         * WRAPPER FUTURO: Combat.Group.Actions.executeGroupUseItem()
+         * Usa item em combate de grupo
+         */
         function groupUseItem(itemId) {
             try {
+                // TODO PR5B: Mover para Combat.Group.Actions.executeGroupUseItem()
                 const enc = _getGroupEncounter();
                 if (!enc || enc.finished) return;
 
@@ -5108,8 +5142,13 @@
             }
         }
         
+        /**
+         * WRAPPER FUTURO: Combat.Group.UI.renderGroupEncounterPanel()
+         * Renderiza UI do encounter de grupo
+         */
         function renderGroupEncounter(panel, encounter) {
             try {
+                // TODO PR5B: Mover para Combat.Group.UI.renderGroupEncounterPanel()
                 if (!encounter) return;
                 
                 const actor = getCurrentActor(encounter);
