@@ -6233,11 +6233,15 @@
 
                     <div class="therapist-mestre-box">
                         <div class="therapist-field-title">✨ Dar XP (monstro ativo)</div>
+                        <div class="mm-row mb-8">
+                            <button class="mm-btn flex-1" onclick="mmTherGiveXPQuick(10)">+10 XP</button>
+                            <button class="mm-btn flex-1" onclick="mmTherGiveXPQuick(50)">+50 XP</button>
+                        </div>
                         <div class="mm-row">
                             <input id="mmTherXp" class="mm-input flex-1" type="number" min="1" value="50">
                             <button class="mm-btn" onclick="mmTherGiveXP()">+ XP</button>
                         </div>
-                        <div class="opacity-80 font-size-12 mt-6">Aplica no player.team[0].</div>
+                        <div class="opacity-80 font-size-12 mt-6">Aplica no monstro ativo (player.activeIndex).</div>
                     </div>
 
                     <div class="therapist-mestre-box">
@@ -6269,6 +6273,7 @@
         }
 
         // Therapist action: Give XP
+        // Therapist action: Give XP (uses Award API)
         function mmTherGiveXP() {
             if (!mmRequireGameOrAlert()) return;
 
@@ -6276,33 +6281,88 @@
             const amt = Math.max(1, parseInt(document.getElementById("mmTherXp")?.value || "0", 10));
 
             const player = GameState.players.find(p => p.id === pid);
-            const mon = player?.team?.[0];
-            
-            if (!mon) {
-                alert("Jogador sem monstrinho ativo (team[0]).");
+            if (!player) {
+                alert("Jogador não encontrado.");
                 return;
             }
 
-            const logArr = GameState.currentEncounter?.log || [];
-
-            // Use existing giveXP function
-            if (typeof giveXP === "function") {
-                giveXP(mon, amt, logArr);
-            } else {
-                // Fallback if giveXP doesn't exist
-                mon.xp = (mon.xp || 0) + amt;
+            // Validate team and activeIndex
+            if (!player.team || !Array.isArray(player.team) || player.team.length === 0) {
+                alert("Jogador não tem monstrinhos no time.");
+                return;
             }
 
-            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
-            if (typeof renderEncounter === "function") renderEncounter();
-            if (typeof showToast === "function") {
-                showToast(`✨ ${player.name} recebeu +${amt} XP!`);
+            // Ensure activeIndex is valid
+            if (typeof player.activeIndex !== 'number' || player.activeIndex < 0) {
+                player.activeIndex = 0;
+            }
+
+            const mon = player.team[player.activeIndex];
+            if (!mon) {
+                alert("Monstrinho ativo não encontrado. Verifique activeIndex.");
+                return;
+            }
+
+            // Use Award API
+            const success = awardXP(player.activeIndex, amt, player);
+            
+            if (success) {
+                if (typeof renderEncounter === "function") renderEncounter();
+                if (typeof showToast === "function") {
+                    showToast(`✨ ${mon.name} recebeu +${amt} XP! (Nível ${mon.level})`);
+                } else {
+                    alert(`✨ ${mon.name} recebeu +${amt} XP! (Nível ${mon.level})`);
+                }
             } else {
-                alert(`✨ ${player.name} recebeu +${amt} XP!`);
+                alert("❌ Falha ao dar XP. Verifique o console.");
             }
         }
 
-        // Therapist action: Give Item
+        // Quick XP buttons
+        function mmTherGiveXPQuick(amount) {
+            if (!mmRequireGameOrAlert()) return;
+
+            const pid = document.getElementById("mmTherPlayer")?.value;
+            const player = GameState.players.find(p => p.id === pid);
+            
+            if (!player) {
+                alert("Jogador não encontrado.");
+                return;
+            }
+
+            // Validate team and activeIndex
+            if (!player.team || !Array.isArray(player.team) || player.team.length === 0) {
+                alert("Jogador não tem monstrinhos no time.");
+                return;
+            }
+
+            // Ensure activeIndex is valid
+            if (typeof player.activeIndex !== 'number' || player.activeIndex < 0) {
+                player.activeIndex = 0;
+            }
+
+            const mon = player.team[player.activeIndex];
+            if (!mon) {
+                alert("Monstrinho ativo não encontrado. Verifique activeIndex.");
+                return;
+            }
+
+            // Use Award API
+            const success = awardXP(player.activeIndex, amount, player);
+            
+            if (success) {
+                if (typeof renderEncounter === "function") renderEncounter();
+                if (typeof showToast === "function") {
+                    showToast(`✨ ${mon.name} recebeu +${amount} XP! (Nível ${mon.level})`);
+                } else {
+                    alert(`✨ ${mon.name} recebeu +${amount} XP! (Nível ${mon.level})`);
+                }
+            } else {
+                alert("❌ Falha ao dar XP. Verifique o console.");
+            }
+        }
+
+        // Therapist action: Give Item (uses Award API)
         function mmTherGiveItem() {
             if (!mmRequireGameOrAlert()) return;
 
@@ -6311,24 +6371,35 @@
             const qty = Math.max(1, parseInt(document.getElementById("mmTherItemQty")?.value || "1", 10));
 
             const player = GameState.players.find(p => p.id === pid);
-            if (!player) return;
-
-            player.inventory = player.inventory || {};
-            player.inventory[itemId] = (player.inventory[itemId] || 0) + qty;
-
-            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
-            if (typeof renderEncounter === "function") renderEncounter();
-            
-            // Get item name from CLASTERORBS or fallback to itemId
-            let itemName = itemId;
-            if (window.CLASTERORBS && window.CLASTERORBS[itemId]) {
-                itemName = window.CLASTERORBS[itemId].name;
+            if (!player) {
+                alert("Jogador não encontrado.");
+                return;
             }
+
+            if (!itemId) {
+                alert("Selecione um item.");
+                return;
+            }
+
+            // Use Award API
+            const success = awardItem(itemId, qty, player);
             
-            if (typeof showToast === "function") {
-                showToast(`🎒 ${player.name} recebeu ${qty}x ${itemName}`);
+            if (success) {
+                if (typeof renderEncounter === "function") renderEncounter();
+                
+                // Get item name from CLASTERORBS or fallback to itemId
+                let itemName = itemId;
+                if (window.CLASTERORBS && window.CLASTERORBS[itemId]) {
+                    itemName = window.CLASTERORBS[itemId].name;
+                }
+                
+                if (typeof showToast === "function") {
+                    showToast(`🎒 ${player.name} recebeu ${qty}x ${itemName}`);
+                } else {
+                    alert(`🎒 ${player.name} recebeu ${qty}x ${itemName}`);
+                }
             } else {
-                alert(`🎒 ${player.name} recebeu ${qty}x ${itemName}`);
+                alert("❌ Falha ao dar item. Verifique o console.");
             }
         }
 
