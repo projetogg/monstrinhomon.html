@@ -3270,7 +3270,8 @@
                 }
 
                 // POWER básico
-                const basicPower = BASIC_ATTACK_POWER[mon.class] || 12;
+                // Commit 12 (Wave C12.3.2): Use MM_TABLES for basic attack power
+                const basicPower = MM_TABLES.getBasicAttackPower(mon.class);
                 let powerUsed = basicPower;
 
                 if (isCrit) {
@@ -3398,7 +3399,8 @@
                 }
 
                 // POWER básico do inimigo
-                const basicPower = BASIC_ATTACK_POWER[enemy.class] || 12;
+                // Commit 12 (Wave C12.3.2): Use MM_TABLES for basic attack power
+                const basicPower = MM_TABLES.getBasicAttackPower(enemy.class);
                 let powerUsed = basicPower;
 
                 if (isCrit) {
@@ -5252,7 +5254,8 @@
                         }
                         
                         if (enemyHit) {
-                            const power = BASIC_ATTACK_POWER[wildMonster.class] || 12;
+                            // Commit 12 (Wave C12.3.2): Use MM_TABLES for basic attack power
+                            const power = MM_TABLES.getBasicAttackPower(wildMonster.class);
                             
                             const atkMods = getBuffModifiers(wildMonster);
                             const effectiveAtk = Math.max(1, wildMonster.atk + atkMods.atk);
@@ -5406,7 +5409,8 @@
                 
                 if (playerHit) {
                     // Calcular dano com power modificado se CRIT 20
-                    let power = BASIC_ATTACK_POWER[playerMonster.class] || 12;
+                    // Commit 12 (Wave C12.3.2): Use MM_TABLES for basic attack power
+                    let power = MM_TABLES.getBasicAttackPower(playerMonster.class);
                     if (isCrit20 && critBonus === 'double_power') {
                         power *= 2; // Dobrar POWER antes do cálculo
                     }
@@ -5805,7 +5809,8 @@
                 const defValue = defender.def || 3;
                 
                 // POWER básico por classe
-                const basicPower = BASIC_ATTACK_POWER[attacker.class] || 12;
+                // Commit 12 (Wave C12.3.2): Use MM_TABLES for basic attack power
+                const basicPower = MM_TABLES.getBasicAttackPower(attacker.class);
                 
                 // Aplicar modificadores de buff
                 const atkMods = getBuffModifiers(attacker);
@@ -6992,7 +6997,9 @@
             players: [] // {name, class}
         };
 
-        const MM_CLASSES = ["Guerreiro","Mago","Curandeiro","Bárbaro","Ladino","Bardo","Caçador","Animalista"];
+        // @deprecated - Use MM_TABLES.CLASSES instead
+        // Kept for backward compatibility  
+        const MM_CLASSES = MM_TABLES.CLASSES;
 
         function escapeHtml(text) {
             const div = document.createElement('div');
