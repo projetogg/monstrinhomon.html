@@ -147,23 +147,27 @@ export function calculateTurnOrder(enc, playersData, rollD20Fn) {
     order.sort((a, b) => (b.spd - a.spd));
     
     // Desempate por grupos de mesmo SPD
-    let i = 0;
-    while (i < order.length) {
-        let j = i + 1;
-        while (j < order.length && order[j].spd === order[i].spd) j++;
+    let blockStart = 0;
+    while (blockStart < order.length) {
+        let blockEnd = blockStart + 1;
+        while (blockEnd < order.length && order[blockEnd].spd === order[blockStart].spd) {
+            blockEnd++;
+        }
         
-        // [i, j) é o bloco empatado
-        if (j - i > 1) {
-            for (let k = i; k < j; k++) {
-                order[k]._tiebreak = rollD20Fn();
+        // [blockStart, blockEnd) é o bloco empatado
+        if (blockEnd - blockStart > 1) {
+            // Rolar d20 para cada membro do bloco empatado
+            for (let index = blockStart; index < blockEnd; index++) {
+                order[index]._tiebreak = rollD20Fn();
             }
-            const sortedBlock = order.slice(i, j).sort((a, b) => (b._tiebreak - a._tiebreak));
-            for (let k = 0; k < sortedBlock.length; k++) {
-                order[i + k] = sortedBlock[k];
+            // Ordenar bloco por tiebreak (maior primeiro)
+            const sortedBlock = order.slice(blockStart, blockEnd).sort((a, b) => (b._tiebreak - a._tiebreak));
+            for (let index = 0; index < sortedBlock.length; index++) {
+                order[blockStart + index] = sortedBlock[index];
             }
         }
         
-        i = j;
+        blockStart = blockEnd;
     }
     
     return order;
