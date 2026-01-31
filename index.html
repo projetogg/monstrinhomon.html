@@ -4803,7 +4803,7 @@
                                     // FASE 1 POKEMON: Indicador Visual de Vantagem de Classe
                                     const advantage = getClassAdvantage(playerMonster.class, monster.class);
                                     const advantageHtml = advantage.cssClass !== 'neutral' ? 
-                                        `<div class="class-advantage-indicator ${advantage.cssClass}" style="margin: 5px 0; font-size: 12px;">${advantage.text}</div>` : '';
+                                        `<div class="class-advantage-indicator ${advantage.cssClass}">${advantage.text}</div>` : '';
                                     
                                     return `
                                         ${advantageHtml}
@@ -6155,30 +6155,30 @@
                 });
                 
                 let html = `
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                    <div class="stats-grid-200">
                         <div class="stat-box">
                             <strong>👁️ Vistos:</strong> ${seenCount}/${totalMonsters} (${seenPercent}%)
-                            <div class="progress-bar" style="margin-top: 5px;">
+                            <div class="progress-bar progress-bar-spacing">
                                 <div class="progress-fill" style="width: ${seenPercent}%; background: #2196F3;"></div>
                             </div>
                         </div>
                         <div class="stat-box">
                             <strong>✅ Capturados:</strong> ${capturedCount}/${totalMonsters} (${capturedPercent}%)
-                            <div class="progress-bar" style="margin-top: 5px;">
+                            <div class="progress-bar progress-bar-spacing">
                                 <div class="progress-fill" style="width: ${capturedPercent}%; background: #4CAF50;"></div>
                             </div>
                         </div>
                     </div>
                     
-                    <details style="margin-top: 10px;">
-                        <summary style="cursor: pointer; font-weight: bold; padding: 5px;">📊 Progresso por Classe</summary>
-                        <div style="margin-top: 10px;">
+                    <details class="mt-10">
+                        <summary class="details-summary">📊 Progresso por Classe</summary>
+                        <div class="mt-10">
                             ${Object.entries(classCounts).map(([cls, counts]) => {
                                 const pct = counts.total > 0 ? Math.floor((counts.captured / counts.total) * 100) : 0;
                                 return `
-                                    <div style="margin-bottom: 8px;">
+                                    <div class="mb-8">
                                         <strong>${cls}:</strong> ${counts.captured}/${counts.total}
-                                        <div class="progress-bar" style="margin-top: 3px;">
+                                        <div class="progress-bar progress-bar-spacing-sm">
                                             <div class="progress-fill" style="width: ${pct}%; background: #9C27B0;"></div>
                                         </div>
                                     </div>
@@ -6218,38 +6218,38 @@
                 const captureRate = stats.captureAttempts > 0 ? Math.floor((stats.capturesSuccessful / stats.captureAttempts) * 100) : 0;
                 
                 let html = `
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+                    <div class="stats-grid-180">
                         <div class="stat-box">
-                            <div style="font-size: 24px; font-weight: bold; color: #4CAF50;">⚔️ ${stats.battlesWon}</div>
-                            <div style="font-size: 12px;">Vitórias</div>
+                            <div class="stat-value success">⚔️ ${stats.battlesWon}</div>
+                            <div class="stat-label">Vitórias</div>
                         </div>
                         <div class="stat-box">
-                            <div style="font-size: 24px; font-weight: bold; color: #f44336;">💀 ${stats.battlesLost}</div>
-                            <div style="font-size: 12px;">Derrotas</div>
+                            <div class="stat-value danger">💀 ${stats.battlesLost}</div>
+                            <div class="stat-label">Derrotas</div>
                         </div>
                         <div class="stat-box">
-                            <div style="font-size: 24px; font-weight: bold; color: #2196F3;">📊 ${winRate}%</div>
-                            <div style="font-size: 12px;">Taxa de Vitória</div>
+                            <div class="stat-value info">📊 ${winRate}%</div>
+                            <div class="stat-label">Taxa de Vitória</div>
                         </div>
                         <div class="stat-box">
-                            <div style="font-size: 24px; font-weight: bold; color: #FF9800;">🔥 ${stats.currentWinStreak}</div>
-                            <div style="font-size: 12px;">Sequência Atual</div>
+                            <div class="stat-value warning">🔥 ${stats.currentWinStreak}</div>
+                            <div class="stat-label">Sequência Atual</div>
                         </div>
                         <div class="stat-box">
-                            <div style="font-size: 24px; font-weight: bold; color: #9C27B0;">🏆 ${stats.highestWinStreak}</div>
-                            <div style="font-size: 12px;">Melhor Sequência</div>
+                            <div class="stat-value purple">🏆 ${stats.highestWinStreak}</div>
+                            <div class="stat-label">Melhor Sequência</div>
                         </div>
                         <div class="stat-box">
-                            <div style="font-size: 24px; font-weight: bold; color: #4CAF50;">🎯 ${captureRate}%</div>
-                            <div style="font-size: 12px;">Taxa de Captura</div>
+                            <div class="stat-value success">🎯 ${captureRate}%</div>
+                            <div class="stat-label">Taxa de Captura</div>
                         </div>
                         <div class="stat-box">
-                            <div style="font-size: 24px; font-weight: bold; color: #673AB7;">✨ ${stats.totalXpGained}</div>
-                            <div style="font-size: 12px;">XP Total</div>
+                            <div class="stat-value violet">✨ ${stats.totalXpGained}</div>
+                            <div class="stat-label">XP Total</div>
                         </div>
                         <div class="stat-box">
-                            <div style="font-size: 24px; font-weight: bold; color: #FFD700;">💰 ${stats.totalMoneyEarned}</div>
-                            <div style="font-size: 12px;">Moedas Ganhas</div>
+                            <div class="stat-value gold">💰 ${stats.totalMoneyEarned}</div>
+                            <div class="stat-label">Moedas Ganhas</div>
                         </div>
                     </div>
                 `;

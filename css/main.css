@@ -940,3 +940,61 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     color: #666;
     margin-left: 4px;
 }
+
+/* ============================================================================
+   REFACTOR PR1: Static styles extracted from inline
+   ============================================================================ */
+
+/* Grid layouts for stats display */
+.stats-grid-200 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.stats-grid-180 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+/* Stat value displays */
+.stat-value {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.stat-value.success { color: #4CAF50; }
+.stat-value.danger { color: #f44336; }
+.stat-value.info { color: #2196F3; }
+.stat-value.warning { color: #FF9800; }
+.stat-value.purple { color: #9C27B0; }
+.stat-value.violet { color: #673AB7; }
+.stat-value.gold { color: #FFD700; }
+
+.stat-label {
+    font-size: 12px;
+}
+
+/* Details/summary styling */
+.details-summary {
+    cursor: pointer;
+    font-weight: bold;
+    padding: 5px;
+}
+
+/* Progress bar container spacing */
+.progress-bar-spacing {
+    margin-top: 5px;
+}
+
+.progress-bar-spacing-sm {
+    margin-top: 3px;
+}
+
+/* Class advantage indicator - remove inline style override */
+.class-advantage-indicator {
+    margin: 5px 0;
+    font-size: 12px;
+}
