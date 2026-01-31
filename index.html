@@ -2417,10 +2417,14 @@
                     }
                 }
                 
-                // Criar inimigo
+                // Wave B2: enemy instances now use factory
                 const randomMonster = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
-                const enemy = createMonsterInstance(randomMonster, null, enemyLevel);
-                enemy.id = 'enemy_1';
+                const enemy = createMonsterInstanceFromTemplate(
+                    randomMonster.id, 
+                    enemyLevel, 
+                    null, // Use template's default rarity
+                    { id: 'enemy_1' } // Override with group encounter enemy ID
+                );
                 
                 // Criar encounter de grupo
                 const encounter = {
