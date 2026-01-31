@@ -386,7 +386,13 @@
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        // Import combat modules
+        import Combat from './js/combat/index.js';
+        
+        // Make Combat available globally for the wrapper
+        window.Combat = Combat;
+        
         // GLOBAL ERROR HANDLER
         window.addEventListener('error', function(event) {
             showError(event.error || event.message, event.error?.stack || '');
@@ -4547,7 +4553,7 @@
          * @param {Object} mon - Monstro
          * @returns {Object|null} - Template encontrado ou null
          */
-        function getMonsterTemplate(mon) {
+        function getMonsterTemplateFromInstance(mon) {
             if (!mon) return null;
             
             const catalog = MONSTER_CATALOG || (window.DB?.MONSTERS) || (window.DB?.MONSTER_CATALOG) || [];
@@ -4581,7 +4587,7 @@
          * @returns {Object|null} - { nextTemplate, evolvesAt } ou null
          */
         function getEvolutionTargetTemplate(mon) {
-            const currentTemplate = getMonsterTemplate(mon);
+            const currentTemplate = getMonsterTemplateFromInstance(mon);
             const evo = getEvolutionData(currentTemplate);
             if (!evo) return null;
 
@@ -4664,7 +4670,7 @@
             if (!mon) return false;
             ensureMonsterProgressFields(mon);
 
-            const currentTemplate = getMonsterTemplate(mon);
+            const currentTemplate = getMonsterTemplateFromInstance(mon);
             const evo = getEvolutionData(currentTemplate);
             if (!evo) return false;
 
@@ -5917,8 +5923,11 @@
             }
         }
 
+        // ===== COMBAT WILD 1v1 - Wrapper de Compatibilidade =====
+        // Mantém API pública, delega para módulo Combat
         function attackWild() {
             try {
+                // 1. Validações iniciais
                 const encounter = GameState.currentEncounter;
                 if (!encounter?.wildMonster) return;
                 
@@ -5941,253 +5950,56 @@
                     return;
                 }
                 
-                // Get dice roll from input field
-                const diceInput = document.getElementById('diceRoll');
-                const playerRoll = parseInt(diceInput?.value || '0');
-                
-                if (playerRoll < 1 || playerRoll > 20) {
+                // 2. Capturar input do usuário
+                const d20Roll = Combat.UI.getCombatInputRoll();
+                if (!d20Roll) {
                     alert('Please enter a valid roll between 1 and 20');
                     return;
                 }
+                Combat.UI.clearCombatInput();
                 
-                // Clear the input for next roll
-                if (diceInput) diceInput.value = '';
+                // 3. Preparar dependências
+                const dependencies = {
+                    classAdvantages: GameState.config?.classAdvantages || {},
+                    getBasicPower: (monsterClass) => MM_TABLES.getBasicAttackPower(monsterClass),
+                    eneRegenData: ENE_REGEN_BY_CLASS,
+                    recordD20Roll: recordD20Roll,
+                    audio: Audio,
+                    ui: {
+                        flashTarget: flashTarget,
+                        showFloatingText: showFloatingText
+                    },
+                    tutorialOnAction: tutorialOnAction,
+                    updateFriendship: updateFriendship,
+                    updateMultipleFriendshipEvents: updateMultipleFriendshipEvents,
+                    handleVictoryRewards: handleVictoryRewards,
+                    updateStats: updateStats
+                };
                 
-                encounter.log = encounter.log || [];
+                // 4. Executar combate via módulo
+                const result = Combat.Actions.executeWildAttack({
+                    encounter,
+                    player,
+                    playerMonster,
+                    d20Roll,
+                    dependencies
+                });
                 
-                // ENE REGEN no início do turno do jogador
-                applyEneRegen(playerMonster, encounter);
-                
-                // Atualizar buffs (reduzir duração)
-                updateBuffs(playerMonster);
-                
-                // CRIT 20 ou FALHA 1 (GAME_RULES.md)
-                let isCrit20 = false;
-                let isFail1 = false;
-                let critBonus = null;
-                
-                if (playerRoll === 20) {
-                    isCrit20 = true;
-                    encounter.log.push(`⭐ CRÍTICO 20! ⭐`);
-                    // Escolher bônus aleatório
-                    const bonusRoll = Math.floor(Math.random() * 3);
-                    if (bonusRoll === 0) {
-                        critBonus = 'double_power';
-                        encounter.log.push(`💥 Poder dobrado neste ataque!`);
-                    } else if (bonusRoll === 1) {
-                        critBonus = 'item';
-                        player.inventory = player.inventory || {};
-                        player.inventory['IT_HEAL_01'] = (player.inventory['IT_HEAL_01'] || 0) + 1;
-                        encounter.log.push(`🎁 Ganhou 1 Petisco de Cura!`);
-                    } else {
-                        critBonus = 'money';
-                        const moneyGain = 20 + Math.floor(Math.random() * 31); // 20-50
-                        player.money = (player.money || 0) + moneyGain;
-                        encounter.log.push(`💰 Ganhou ${moneyGain} moedas!`);
-                    }
-                } else if (playerRoll === 1) {
-                    isFail1 = true;
+                // 5. Processar resultado
+                if (!result.success) {
+                    console.error('Attack failed:', result.reason);
+                    return;
                 }
                 
-                // Fase 1: Ataque do jogador
-                encounter.log.push(`🎲 ${player.name}'s ${playerMonster.name} rolls ${playerRoll} (ATK: ${playerMonster.atk})`);
-                
-                // Feature 3.8: Record d20 roll
-                const rollType = isCrit20 ? 'crit' : isFail1 ? 'fail' : 'normal';
-                recordD20Roll(encounter, player.name, playerRoll, rollType);
-                
-                // d20=1 sempre erra, d20=20 sempre acerta
-                const playerHit = isFail1 ? false : (isCrit20 ? true : checkHit(playerRoll, playerMonster, encounter.wildMonster));
-                
-                // Feature 4.4: Play attack sound
-                if (isCrit20) {
-                    Audio.playSfx("crit");
-                } else if (isFail1 || !playerHit) {
-                    Audio.playSfx("miss");
-                } else {
-                    Audio.playSfx("hit");
+                // 6. Limpar encounter se terminou
+                if (result.result === 'victory' || result.result === 'defeat') {
+                    GameState.currentEncounter = null;
                 }
                 
-                if (playerHit) {
-                    // Calcular dano com power modificado se CRIT 20
-                    // Commit 12 (Wave C12.3.2): Use MM_TABLES for basic attack power
-                    let power = MM_TABLES.getBasicAttackPower(playerMonster.class);
-                    if (isCrit20 && critBonus === 'double_power') {
-                        power *= 2; // Dobrar POWER antes do cálculo
-                    }
-                    
-                    // Calcular dano com nova fórmula
-                    const atkMods = getBuffModifiers(playerMonster);
-                    const effectiveAtk = Math.max(1, playerMonster.atk + atkMods.atk);
-                    
-                    const defMods = getBuffModifiers(encounter.wildMonster);
-                    const effectiveDef = Math.max(1, encounter.wildMonster.def + defMods.def);
-                    
-                    const classAdv = GameState.config?.classAdvantages?.[playerMonster.class];
-                    let damageMult = 1.0;
-                    if (classAdv?.strong === encounter.wildMonster.class) {
-                        damageMult = 1.10;
-                    } else if (classAdv?.weak === encounter.wildMonster.class) {
-                        damageMult = 0.90;
-                    }
-                    
-                    const damage = calcDamage({
-                        atk: effectiveAtk,
-                        def: effectiveDef,
-                        power: power,
-                        damageMult: damageMult
-                    });
-                    
-                    encounter.wildMonster.hp = Math.max(0, encounter.wildMonster.hp - damage);
-                    encounter.log.push(`💥 ${playerMonster.name} hits! Deals ${damage} damage!`);
-                    
-                    // Feature 4.2: Tutorial hook
-                    tutorialOnAction("attack");
-                    
-                    // Feature 3.8: Visual feedback
-                    saveToLocalStorage();
-                    renderEncounter();
-                    setTimeout(() => {
-                        showFloatingText('wildEnemyBox', `-${damage}`, isCrit20 ? 'crit' : 'damage');
-                        flashTarget('wildEnemyBox', isCrit20 ? 'crit' : 'hit');
-                    }, 50);
-                    
-                    if (encounter.wildMonster.hp <= 0) {
-                        // SISTEMA DE AMIZADE: Ganhar amizade ao vencer batalha
-                        updateFriendship(playerMonster, 'battleWin');
-                        
-                        encounter.log.push(`🏆 ${encounter.wildMonster.name} fainted! Victory!`);
-                        
-                        // Feature 4.4: Victory sound (com idempotência)
-                        if (!encounter._winSfxPlayed) {
-                            Audio.playSfx("win");
-                            encounter._winSfxPlayed = true;
-                        }
-                        
-                        // Feature 3.3: Distribuir recompensas (XP) com idempotência
-                        handleVictoryRewards(encounter);
-                        
-                        encounter.active = false;
-                        GameState.currentEncounter = null;
-                        saveToLocalStorage();
-                        renderEncounter();
-                        return;
-                    }
-                } else {
-                    if (isFail1) {
-                        encounter.log.push(`💀 FALHA CRÍTICA! Ataque erra automaticamente!`);
-                    } else {
-                        encounter.log.push(`❌ ${playerMonster.name} misses!`);
-                    }
-                    
-                    // Feature 3.8: Flash fail on player
-                    saveToLocalStorage();
-                    renderEncounter();
-                    setTimeout(() => flashTarget('wildPlayerBox', 'fail'), 50);
-                }
-                
-                // Fase 2: Contra-ataque do monstrinho selvagem (se ainda vivo)
-                if (encounter.wildMonster.hp > 0) {
-                    const wildMonster = encounter.wildMonster;
-                    const wildSkill = wildMonster.skill;
-                    
-                    // IA: 50% chance de usar habilidade se tiver ENE
-                    const useSkill = wildSkill && (wildMonster.ene || 0) >= wildSkill.energy_cost && Math.random() < 0.5;
-                    
-                    if (useSkill) {
-                        wildMonster.ene -= wildSkill.energy_cost;
-                        encounter.log.push(`✨ ${wildMonster.name} usa ${wildSkill.name}! (-${wildSkill.energy_cost} ENE)`);
-                        
-                        const enemyRoll = Math.floor(Math.random() * 20) + 1;
-                        const enemyHit = checkHit(enemyRoll, wildMonster, playerMonster);
-                        encounter.log.push(`🎲 ${wildMonster.name} rolls ${enemyRoll}`);
-                        
-                        // Feature 3.8: Record enemy d20 roll
-                        const enemyRollType = enemyRoll === 20 ? 'crit' : enemyRoll === 1 ? 'fail' : 'normal';
-                        recordD20Roll(encounter, wildMonster.name, enemyRoll, enemyRollType);
-                        
-                        if (enemyHit) {
-                            const baseDamage = wildMonster.atk + wildSkill.power - playerMonster.def;
-                            const damage = Math.max(1, baseDamage);
-                            playerMonster.hp = Math.max(0, playerMonster.hp - damage);
-                            encounter.log.push(`💥 ${wildSkill.name} acerta! Causa ${damage} de dano!`);
-                            
-                            // Feature 3.8: Visual feedback
-                            saveToLocalStorage();
-                            renderEncounter();
-                            setTimeout(() => {
-                                showFloatingText('wildPlayerBox', `-${damage}`, enemyRoll === 20 ? 'crit' : 'damage');
-                                flashTarget('wildPlayerBox', enemyRoll === 20 ? 'crit' : 'hit');
-                            }, 50);
-                            
-                            if (playerMonster.hp <= 0) {
-                                // SISTEMA DE AMIZADE: Perder amizade ao desmaiar e perder batalha
-                                updateMultipleFriendshipEvents(playerMonster, ['faint', 'battleLoss']);
-                                
-                                encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
-                                playerMonster.status = 'fainted';
-                                
-                                // FASE 1 POKEMON: Rastrear derrota
-                                updateStats('battlesLost', 1);
-                                
-                                encounter.active = false;
-                                GameState.currentEncounter = null;
-                            }
-                            return;
-                        } else {
-                            encounter.log.push(`❌ ${wildSkill.name} erra!`);
-                            
-                            // Feature 3.8: Flash fail on enemy
-                            saveToLocalStorage();
-                            renderEncounter();
-                            setTimeout(() => flashTarget('wildEnemyBox', 'fail'), 50);
-                        }
-                    } else {
-                        // Ataque básico
-                        const enemyRoll = Math.floor(Math.random() * 20) + 1;
-                        const enemyHit = checkHit(enemyRoll, wildMonster, playerMonster);
-                        encounter.log.push(`🎲 Wild ${wildMonster.name} rolls ${enemyRoll} (ATK: ${wildMonster.atk})`);
-                        
-                        // Feature 3.8: Record enemy d20 roll
-                        const enemyRollType = enemyRoll === 20 ? 'crit' : enemyRoll === 1 ? 'fail' : 'normal';
-                        recordD20Roll(encounter, wildMonster.name, enemyRoll, enemyRollType);
-                        
-                        if (enemyHit) {
-                            const damage = calculateDamage(wildMonster, playerMonster);
-                            playerMonster.hp = Math.max(0, playerMonster.hp - damage);
-                            encounter.log.push(`💥 ${wildMonster.name} hits! Deals ${damage} damage!`);
-                            
-                            // Feature 3.8: Visual feedback
-                            saveToLocalStorage();
-                            renderEncounter();
-                            setTimeout(() => {
-                                showFloatingText('wildPlayerBox', `-${damage}`, enemyRoll === 20 ? 'crit' : 'damage');
-                                flashTarget('wildPlayerBox', enemyRoll === 20 ? 'crit' : 'hit');
-                            }, 50);
-                            
-                            if (playerMonster.hp <= 0) {
-                                // SISTEMA DE AMIZADE: Perder amizade ao desmaiar e perder batalha
-                                updateMultipleFriendshipEvents(playerMonster, ['faint', 'battleLoss']);
-                                
-                                encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
-                                playerMonster.status = 'fainted';
-                                encounter.active = false;
-                                GameState.currentEncounter = null;
-                            }
-                            return;
-                        } else {
-                            encounter.log.push(`❌ ${wildMonster.name} misses!`);
-                            
-                            // Feature 3.8: Flash fail on enemy
-                            saveToLocalStorage();
-                            renderEncounter();
-                            setTimeout(() => flashTarget('wildEnemyBox', 'fail'), 50);
-                        }
-                    }
-                }
-                
+                // 7. Atualizar UI (1 vez só ao final)
                 saveToLocalStorage();
                 renderEncounter();
+                
             } catch (error) {
                 showError('Attack failed', error.stack);
             }
@@ -8656,6 +8468,56 @@
             if (typeof updateAllViews === "function") updateAllViews();
             if (typeof renderEncounter === "function") renderEncounter();
         }
+
+        // ===== EXPOSE FUNCTIONS TO GLOBAL SCOPE FOR ONCLICK HANDLERS =====
+        // When using type="module", functions are scoped to the module.
+        // We need to expose them to window for inline onclick handlers to work.
+        window.dismissError = dismissError;
+        window.copyError = copyError;
+        window.mmShowMainMenu = mmShowMainMenu;
+        window.switchTab = switchTab;
+        window.createSession = createSession;
+        window.nextTurn = nextTurn;
+        window.endSession = endSession;
+        window.addPlayer = addPlayer;
+        window.startEncounter = startEncounter;
+        window.addObjective = addObjective;
+        window.clearTherapistLog = clearTherapistLog;
+        window.therapistExportSave = therapistExportSave;
+        window.therapistImportSave = therapistImportSave;
+        window.therapistLoadJson = therapistLoadJson;
+        window.therapistCancelImport = therapistCancelImport;
+        window.exportData = exportData;
+        window.importData = importData;
+        window.clearAllData = clearAllData;
+        window.attackWild = attackWild;
+        window.useSkillWild = useSkillWild;
+        window.mmEnterGameUI = mmEnterGameUI;
+        window.mmCloseAllOverlays = mmCloseAllOverlays;
+        window.mmOpenSlotPickerForNewGame = mmOpenSlotPickerForNewGame;
+        window.mmChooseSlotAndStartNewGame = mmChooseSlotAndStartNewGame;
+        window.mmCancelSlotPicker = mmCancelSlotPicker;
+        window.mmNewGameBack = mmNewGameBack;
+        window.mmNewGameNext = mmNewGameNext;
+        window.mmFinishNewGame = mmFinishNewGame;
+        window.mmSkipTutorialFromChoice = mmSkipTutorialFromChoice;
+        window.mmStartTutorialFromChoice = mmStartTutorialFromChoice;
+        window.mmStartTutorial = mmStartTutorial;
+        window.mmOpenSaves = mmOpenSaves;
+        window.mmCloseSaves = mmCloseSaves;
+        window.mmSaveToSlot = mmSaveToSlot;
+        window.mmLoadFromSlot = mmLoadFromSlot;
+        window.mmDeleteSlot = mmDeleteSlot;
+        window.mmExportSlot = mmExportSlot;
+        window.mmResetSaveConfirm = mmResetSaveConfirm;
+        window.mmContinue = mmContinue;
+        window.mmShowConfig = mmShowConfig;
+        window.mmOpenTherapistPanel = mmOpenTherapistPanel;
+        window.mmTherGiveMonster = mmTherGiveMonster;
+        window.mmTherGiveItem = mmTherGiveItem;
+        window.mmTherGiveXP = mmTherGiveXP;
+        window.mmTherGiveXPQuick = mmTherGiveXPQuick;
+        window.Audio = Audio;
 
         // Initialize on load
         window.addEventListener('DOMContentLoaded', function() {
