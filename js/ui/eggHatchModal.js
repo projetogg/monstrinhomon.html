@@ -226,8 +226,6 @@ export function showEggHatchModal(monster) {
         }
     });
 }
-    });
-}
 
 /**
  * Inicializa o sistema de modal de ovos
