@@ -1,5 +1,5 @@
 /**
- * DATA MODULE INDEX (PR9A + PR10A)
+ * DATA MODULE INDEX (PR9A + PR10A + PR14A)
  * 
  * Exporta funções de data loading
  */
@@ -24,7 +24,7 @@ export {
     clearSkillsCache
 } from './skillsLoader.js';
 
-// Items (PR11B)
+// Items (PR11B + PR14A)
 export {
     loadItems,
     getItemById,
@@ -32,5 +32,24 @@ export {
     getItemsByTier,
     canItemBreak,
     getItemBreakChance,
-    getItemStats
+    getItemStats,
+    getItemsByCategory,
+    getAllEggs
 } from './itemsLoader.js';
+
+// Eggs (PR14A)
+export {
+    chooseRandom,
+    getMonstersByRarity,
+    hatchEgg,
+    isValidEgg,
+    getEggInfo
+} from './eggHatcher.js';
+
+// Egg UI (PR14A)
+export {
+    handleHatchEgg,
+    renderEggActionButton,
+    initEggUI,
+    checkIfEgg
+} from './eggUI.js';

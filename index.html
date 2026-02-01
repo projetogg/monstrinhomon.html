@@ -6069,6 +6069,9 @@
                     const isEquipped = equippedItems.has(itemId);
                     const canSell = sellPrice !== null && !isEquipped;
                     
+                    // PR14A: Check if item is an egg
+                    const isEgg = item.category === 'egg';
+                    
                     // Tier badge color
                     const tierColors = {
                         'comum': '#999',
@@ -6082,20 +6085,30 @@
                     html += `
                         <div class="card" style="margin: 0; padding: 1rem; border-left: 4px solid ${tierColor};">
                             <h4 style="margin-top: 0;">${item.name}</h4>
+                            ${item.category === 'egg' ? `<p style="font-size: 0.9em; color: ${tierColor}; font-weight: bold;">🥚 OVO</p>` : `
                             <p style="font-size: 0.9em; color: #666;">
                                 <span style="color: ${tierColor}; font-weight: bold; text-transform: uppercase;">
                                     ${item.tier}
                                 </span>
-                            </p>
+                            </p>`}
                             <p style="font-size: 0.9em;">${item.description}</p>
-                            <p style="font-size: 0.85em; color: #555;">
+                            ${!isEgg && item.stats ? `<p style="font-size: 0.85em; color: #555;">
                                 <strong>Stats:</strong> 
                                 ${item.stats.atk > 0 ? `⚔️ ATK +${item.stats.atk}` : ''}${item.stats.atk > 0 && item.stats.def > 0 ? ' ' : ''}${item.stats.def > 0 ? `🛡️ DEF +${item.stats.def}` : ''}
-                            </p>
+                            </p>` : ''}
                             <p style="font-size: 0.85em; color: #555;">
                                 <strong>Você tem:</strong> ${qty}x
                             </p>
                             ${isEquipped ? `<p style="font-size: 0.85em; color: #e74c3c;">⚠️ Item equipado em um monstro</p>` : ''}
+                            ${isEgg ? `
+                            <button 
+                                class="btn btn-success" 
+                                onclick="hatchEggFromInventory('${player.id}', '${itemId}')"
+                                style="width: 100%; margin-top: 0.5rem;"
+                            >
+                                🐣 Chocar Ovo
+                            </button>
+                            ` : `
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
                                 ${sellPrice !== null ? `<strong style="font-size: 1.1em;">💰 Vender por ${sellPrice}</strong>` : `<span style="font-size: 0.9em; color: #999;">Não vendável</span>`}
                                 <button 
@@ -6108,6 +6121,7 @@
                                     ${canSell ? `💵 Vender (${sellPrice})` : (isEquipped ? '🔒 Equipado' : '✗ Não vendável')}
                                 </button>
                             </div>
+                            `}
                         </div>
                     `;
                 }
@@ -6405,6 +6419,149 @@
             } catch (error) {
                 console.error('Failed to sell item:', error);
                 alert('❌ Erro ao vender item. Veja o console para detalhes.');
+            }
+        }
+
+        /**
+         * PR14A: Hatch an egg from player's inventory
+         * @param {string} playerId - Player ID
+         * @param {string} eggItemId - Egg item ID (ex: "EGG_C")
+         * @returns {void}
+         */
+        function hatchEggFromInventory(playerId, eggItemId) {
+            try {
+                // Find player
+                const player = GameState.players?.find(p => p.id === playerId);
+                if (!player) {
+                    alert('❌ Jogador não encontrado!');
+                    return;
+                }
+                
+                // Validate player has the egg
+                const eggQty = player.inventory?.[eggItemId] || 0;
+                if (eggQty <= 0) {
+                    alert('❌ Você não tem este ovo no inventário!');
+                    return;
+                }
+                
+                // Get egg definition
+                const allItems = window.itemsData || [];
+                const eggItem = allItems.find(i => i.id === eggItemId);
+                if (!eggItem || eggItem.category !== 'egg') {
+                    alert('❌ Este item não é um ovo válido!');
+                    return;
+                }
+                
+                // Get rarity from egg effect
+                const hatchEffect = eggItem.effects?.find(e => e.type === 'hatch_egg');
+                if (!hatchEffect || !hatchEffect.rarity) {
+                    alert('❌ Ovo não possui efeito de choque válido!');
+                    return;
+                }
+                
+                const targetRarity = hatchEffect.rarity;
+                
+                // Get monsters of that rarity
+                const monstersMap = window.Data?.getMonstersMapSync?.();
+                if (!monstersMap || monstersMap.size === 0) {
+                    alert('❌ Dados de monstros não carregados. Recarregue a página.');
+                    return;
+                }
+                
+                // Filter by rarity
+                const monsterPool = [];
+                for (const [id, monster] of monstersMap.entries()) {
+                    if (monster.rarity === targetRarity) {
+                        monsterPool.push(monster);
+                    }
+                }
+                
+                if (monsterPool.length === 0) {
+                    alert(`❌ Nenhum Monstrinhomon ${targetRarity} disponível ainda.`);
+                    return;
+                }
+                
+                // Check team size
+                const teamSize = player.team?.length || 0;
+                const boxSize = player.box?.length || 0;
+                const totalMonsters = teamSize + boxSize;
+                
+                const MAX_TEAM_SIZE = 6;
+                const MAX_TOTAL = 100;
+                
+                if (totalMonsters >= MAX_TOTAL) {
+                    alert('❌ Você atingiu o limite máximo de Monstrinhomons (100)!');
+                    return;
+                }
+                
+                // Choose random monster from pool
+                const randomIndex = Math.floor(Math.random() * monsterPool.length);
+                const template = monsterPool[randomIndex];
+                
+                // Create monster instance
+                const newMonster = {
+                    id: `mi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    monsterId: template.id,
+                    name: template.name,
+                    class: template.class,
+                    rarity: template.rarity,
+                    emoji: template.emoji || '❓',
+                    level: 1,
+                    xp: 0,
+                    hp: template.baseHp || 30,
+                    hpMax: template.baseHp || 30,
+                    atk: template.baseAtk || 5,
+                    def: template.baseDef || 3,
+                    spd: template.baseSpd || 5,
+                    ene: template.baseEne || 6,
+                    eneMax: template.baseEne || 6,
+                    heldItemId: null,
+                    buffs: []
+                };
+                
+                // Add evolution fields if present
+                if (template.evolvesTo) {
+                    newMonster.evolvesTo = template.evolvesTo;
+                }
+                if (template.evolvesAt) {
+                    newMonster.evolvesAt = template.evolvesAt;
+                }
+                
+                // Ensure arrays exist
+                player.team = player.team || [];
+                player.box = player.box || [];
+                
+                // Add to team or box
+                let location = '';
+                if (teamSize < MAX_TEAM_SIZE) {
+                    player.team.push(newMonster);
+                    location = 'time';
+                } else {
+                    player.box.push(newMonster);
+                    location = 'box';
+                }
+                
+                // Decrease egg quantity
+                player.inventory[eggItemId] = eggQty - 1;
+                if (player.inventory[eggItemId] <= 0) {
+                    delete player.inventory[eggItemId];
+                }
+                
+                // Save game
+                saveToLocalStorage();
+                
+                // Update views
+                updateShopView();
+                updatePlayersList();
+                updateAllViews();
+                
+                // Show success message with animation
+                alert(`🎉 Nasceu: ${newMonster.name} (${newMonster.rarity})!\n\n✅ Adicionado ao ${location}.`);
+                console.log('[EggHatch] Successfully hatched:', newMonster);
+                
+            } catch (error) {
+                console.error('[EggHatch] Failed to hatch egg:', error);
+                alert(`❌ Erro ao chocar ovo: ${error.message}`);
             }
         }
 
