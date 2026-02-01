@@ -5992,8 +5992,10 @@
         
         /**
          * Render shop items list
+         * @param {object} player - Player object
+         * @param {HTMLElement} container - Container element to render items into
          */
-        async function renderShopItems(player, container) {
+        function renderShopItems(player, container) {
             try {
                 // Get all items from the global itemsData (loaded at init)
                 const allItems = window.itemsData || [];
@@ -6043,8 +6045,7 @@
                             <p style="font-size: 0.9em;">${item.description}</p>
                             <p style="font-size: 0.85em; color: #555;">
                                 <strong>Stats:</strong> 
-                                ${item.stats.atk > 0 ? `⚔️ ATK +${item.stats.atk}` : ''} 
-                                ${item.stats.def > 0 ? `🛡️ DEF +${item.stats.def}` : ''}
+                                ${item.stats.atk > 0 ? `⚔️ ATK +${item.stats.atk}` : ''}${item.stats.atk > 0 && item.stats.def > 0 ? ' ' : ''}${item.stats.def > 0 ? `🛡️ DEF +${item.stats.def}` : ''}
                             </p>
                             ${item.break.enabled ? `<p style="font-size: 0.85em; color: #e74c3c;">⚠️ Pode quebrar (${Math.round(item.break.chance * 100)}%)</p>` : ''}
                             <p style="font-size: 0.85em; color: #555;">
@@ -6076,8 +6077,17 @@
         
         /**
          * Buy an item for a player
+         * 
+         * Validates item availability and player funds, then performs the purchase transaction:
+         * - Deducts cost from player.money
+         * - Adds item to player.inventory
+         * - Saves game state via StorageManager
+         * - Updates shop view to reflect changes
+         * - Shows alert to user with success/error message
+         * 
          * @param {string} playerId - Player ID
-         * @param {string} itemId - Item ID
+         * @param {string} itemId - Item ID from items catalog
+         * @returns {void}
          */
         function buyItem(playerId, itemId) {
             try {
