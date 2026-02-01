@@ -393,11 +393,17 @@
         // Import progression modules (PR8A)
         import Progression from './js/progression/index.js';
         
+        // Import data modules (PR9B)
+        import * as Data from './js/data/index.js';
+        
         // Make Combat available globally for the wrapper
         window.Combat = Combat;
         
         // Make Progression available globally (PR8A)
         window.Progression = Progression;
+        
+        // Make Data available globally (PR9B)
+        window.Data = Data;
         
         // Destructure groupCore for easier access
         const GroupCore = Combat.Group.Core;
@@ -1178,12 +1184,25 @@
         // ============================================================================
 
         /**
-         * Get monster template from MONSTER_CATALOG
+         * Get monster template from JSON (if available) or MONSTER_CATALOG (fallback)
+         * PR9B: Tries JSON first (sync lookup), falls back to hardcoded if not found
          * @param {string} templateId - Monster template ID (e.g., 'MON_001')
          * @returns {Object|null} Monster template or null if not found
          */
         function getMonsterTemplate(templateId) {
             if (!templateId) return null;
+            
+            // PR9B: Try JSON first (synchronous lookup, no blocking)
+            if (window.Data && window.Data.getMonstersMapSync) {
+                const monstersMap = window.Data.getMonstersMapSync();
+                if (monstersMap && monstersMap.has(templateId)) {
+                    // Deep clone to prevent cache mutation
+                    const template = monstersMap.get(templateId);
+                    return JSON.parse(JSON.stringify(template));
+                }
+            }
+            
+            // Fallback: hardcoded MONSTER_CATALOG
             return MONSTER_CATALOG.find(m => m.id === templateId) || null;
         }
 
@@ -1269,6 +1288,13 @@
                 
                 if (!GameState.objectives || GameState.objectives.length === 0) {
                     GameState.objectives = [...DEFAULT_OBJECTIVES];
+                }
+                
+                // PR9B: Preload monsters from JSON in background (non-blocking)
+                if (window.Data && window.Data.loadMonsters) {
+                    window.Data.loadMonsters().catch(() => {
+                        // Errors already logged by DataLoader, silently continue with hardcoded fallback
+                    });
                 }
                 
                 updateAllViews();

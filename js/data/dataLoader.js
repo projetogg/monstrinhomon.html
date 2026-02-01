@@ -207,6 +207,15 @@ export async function loadMonsters() {
 }
 
 /**
+ * Retorna Map de monsters SINCRONAMENTE (sem fetch)
+ * Usado por getMonsterTemplate() para lookup rápido
+ * @returns {Map<string, Object>|null} Map de monsters se já carregado, null caso contrário
+ */
+export function getMonstersMapSync() {
+    return monstersCache;
+}
+
+/**
  * Retorna status do cache
  * @returns {Object} Cache status
  */
