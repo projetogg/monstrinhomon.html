@@ -422,6 +422,9 @@
         // Import data modules (PR9B)
         import * as Data from './js/data/index.js';
         
+        // Import UI modules (PR14B)
+        import { showEggHatchModal, initEggHatchModal } from './js/ui/eggHatchModal.js';
+        
         // Make Combat available globally for the wrapper
         window.Combat = Combat;
         
@@ -430,6 +433,9 @@
         
         // Make Data available globally (PR9B)
         window.Data = Data;
+        
+        // Make egg hatch modal available globally (PR14B)
+        window.showEggHatchModal = showEggHatchModal;
         
         // Destructure groupCore for easier access
         const GroupCore = Combat.Group.Core;
@@ -1339,6 +1345,11 @@
                         // Errors already logged by ItemsLoader, silently continue
                         window.itemsData = [];
                     });
+                }
+                
+                // PR14B: Initialize egg hatch modal
+                if (window.showEggHatchModal) {
+                    console.log('[Init] Egg hatch modal loaded successfully');
                 }
                 
                 updateAllViews();
@@ -6428,7 +6439,7 @@
          * @param {string} eggItemId - Egg item ID (ex: "EGG_C")
          * @returns {void}
          */
-        function hatchEggFromInventory(playerId, eggItemId) {
+        async function hatchEggFromInventory(playerId, eggItemId) {
             try {
                 // Find player
                 const player = GameState.players?.find(p => p.id === playerId);
@@ -6527,6 +6538,11 @@
                     newMonster.evolvesAt = template.evolvesAt;
                 }
                 
+                // PR14B: Show egg hatch modal BEFORE making changes
+                if (window.showEggHatchModal) {
+                    await window.showEggHatchModal(newMonster);
+                }
+                
                 // Ensure arrays exist
                 player.team = player.team || [];
                 player.box = player.box || [];
@@ -6555,8 +6571,7 @@
                 updatePlayersList();
                 updateAllViews();
                 
-                // Show success message with animation
-                alert(`🎉 Nasceu: ${newMonster.name} (${newMonster.rarity})!\n\n✅ Adicionado ao ${location}.`);
+                // Show brief success message (modal already showed details)
                 console.log('[EggHatch] Successfully hatched:', newMonster);
                 
             } catch (error) {
