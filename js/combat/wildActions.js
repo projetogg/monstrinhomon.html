@@ -7,6 +7,20 @@
 
 import * as WildCore from './wildCore.js';
 import * as WildUI from './wildUI.js';
+import { initializeBattleParticipation, markAsParticipated, processBattleItemBreakage } from './itemBreakage.js';
+
+/**
+ * Inicializa participação de batalha para wild 1v1
+ * Deve ser chamado no início do encounter
+ * 
+ * @param {object} playerMonster - Monstrinho do jogador
+ * @param {object} wildMonster - Monstrinho selvagem (opcional)
+ */
+export function initializeWildBattleParticipation(playerMonster, wildMonster = null) {
+    const monsters = [playerMonster];
+    if (wildMonster) monsters.push(wildMonster);
+    initializeBattleParticipation(monsters);
+}
 
 /**
  * Executa um turno completo de ataque wild 1v1
@@ -26,6 +40,9 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
         }
         
         encounter.log = encounter.log || [];
+        
+        // PR11B: Marcar que o monstro do jogador participou (executou ação)
+        markAsParticipated(playerMonster);
         
         // Aplicar regeneração de ENE
         applyEneRegen(playerMonster, encounter, dependencies.eneRegenData);
@@ -83,6 +100,9 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
             // Aplicar dano
             encounter.wildMonster.hp = WildCore.applyDamageToHP(encounter.wildMonster.hp, damage);
             encounter.log.push(`💥 ${playerMonster.name} hits! Deals ${damage} damage!`);
+            
+            // PR11B: Marcar que o monstro selvagem participou (recebeu dano)
+            markAsParticipated(encounter.wildMonster);
             
             // Tutorial hook
             if (dependencies.tutorialOnAction) {
@@ -241,6 +261,11 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
         playerMonster.hp = WildCore.applyDamageToHP(playerMonster.hp, damage);
         encounter.log.push(`💥 ${wildSkill.name} acerta! Causa ${damage} de dano!`);
         
+        // PR11B: Marcar que o jogador participou (recebeu dano)
+        markAsParticipated(playerMonster);
+        // PR11B: Marcar que o selvagem participou (causou dano)
+        markAsParticipated(wildMonster);
+        
         WildUI.showDamageFeedback('wildPlayerBox', damage, enemyRoll === 20, dependencies.ui);
         
         return { defeated: playerMonster.hp <= 0 };
@@ -275,6 +300,11 @@ function processEnemyBasicAttack(encounter, wildMonster, playerMonster, dependen
         playerMonster.hp = WildCore.applyDamageToHP(playerMonster.hp, damage);
         encounter.log.push(`💥 ${wildMonster.name} hits! Deals ${damage} damage!`);
         
+        // PR11B: Marcar que o jogador participou (recebeu dano)
+        markAsParticipated(playerMonster);
+        // PR11B: Marcar que o selvagem participou (causou dano)
+        markAsParticipated(wildMonster);
+        
         WildUI.showDamageFeedback('wildPlayerBox', damage, enemyRoll === 20, dependencies.ui);
         
         return { defeated: playerMonster.hp <= 0 };
@@ -304,6 +334,11 @@ function handleVictory(encounter, player, playerMonster, dependencies) {
         dependencies.handleVictoryRewards(encounter);
     }
     
+    // PR11B: Processar quebra de itens
+    const breakResults = processBattleItemBreakage([playerMonster], {
+        log: (msg) => encounter.log.push(msg)
+    });
+    
     // Finalizar encontro
     encounter.active = false;
     
@@ -326,6 +361,11 @@ function handleDefeat(encounter, player, playerMonster, dependencies) {
     if (dependencies.updateStats) {
         dependencies.updateStats('battlesLost', 1);
     }
+    
+    // PR11B: Processar quebra de itens
+    const breakResults = processBattleItemBreakage([playerMonster], {
+        log: (msg) => encounter.log.push(msg)
+    });
     
     // Finalizar encontro
     encounter.active = false;
