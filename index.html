@@ -26,6 +26,7 @@
                 <button class="tab-button" onclick="switchTab('players')">👥 Players</button>
                 <button class="tab-button" onclick="switchTab('encounter')">⚔️ Encounter</button>
                 <button class="tab-button" onclick="switchTab('therapy')">🎯 Therapy</button>
+                <button class="tab-button" onclick="switchTab('shop')">🛒 Loja</button>
                 <button class="tab-button" onclick="switchTab('report')">📊 Report</button>
                 <button class="tab-button" onclick="switchTab('settings')">⚙️ Settings</button>
             </div>
@@ -187,6 +188,24 @@
         <div id="tabReport" class="tab-content">
             <h2>Session Report 📊</h2>
             <div id="reportContent"></div>
+        </div>
+
+        <div id="tabShop" class="tab-content">
+            <h2>Loja de Itens 🛒</h2>
+            
+            <div class="card">
+                <h3>Jogador Selecionado</h3>
+                <div id="shopPlayerInfo">
+                    <p>Selecione um jogador para comprar itens.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Itens Disponíveis</h3>
+                <div id="shopItemsList">
+                    <p>Carregando itens...</p>
+                </div>
+            </div>
         </div>
 
         <div id="tabSettings" class="tab-content">
@@ -1306,8 +1325,12 @@
                 
                 // PR12A: Preload items from JSON in background (non-blocking)
                 if (window.Data && window.Data.loadItems) {
-                    window.Data.loadItems().catch(() => {
+                    window.Data.loadItems().then(items => {
+                        window.itemsData = items;
+                        console.log(`[Shop] Loaded ${items.length} items for shop`);
+                    }).catch(() => {
                         // Errors already logged by ItemsLoader, silently continue
+                        window.itemsData = [];
                     });
                 }
                 
@@ -5917,11 +5940,206 @@
                 updateSessionView();
                 updateTherapyView();
                 updateReportView();
+                updateShopView();
                 updateEncounterPlayerDropdown();
                 updateEncounterUI();
                 renderEncounter();
             } catch (error) {
                 console.error('Failed to update views:', error);
+            }
+        }
+
+        // ===== SHOP SYSTEM (PR13A) =====
+        
+        /**
+         * Update shop view with current player and items
+         */
+        function updateShopView() {
+            try {
+                const playerInfo = document.getElementById('shopPlayerInfo');
+                const itemsList = document.getElementById('shopItemsList');
+                
+                if (!playerInfo || !itemsList) return;
+                
+                // Get selected player from encounter dropdown or first available player
+                let selectedPlayerId = document.getElementById('encounterPlayer')?.value;
+                if (!selectedPlayerId && GameState.players && GameState.players.length > 0) {
+                    selectedPlayerId = GameState.players[0].id;
+                }
+                
+                const player = GameState.players?.find(p => p.id === selectedPlayerId);
+                
+                if (!player) {
+                    playerInfo.innerHTML = '<p>Nenhum jogador disponível. Crie um jogador primeiro!</p>';
+                    itemsList.innerHTML = '';
+                    return;
+                }
+                
+                // Display player info
+                const money = player.money || 0;
+                playerInfo.innerHTML = `
+                    <p><strong>Jogador:</strong> ${player.name} (${player.class || 'Sem classe'})</p>
+                    <p><strong>💰 Dinheiro:</strong> ${money}</p>
+                `;
+                
+                // Load and display items
+                renderShopItems(player, itemsList);
+                
+            } catch (error) {
+                console.error('Failed to update shop view:', error);
+            }
+        }
+        
+        /**
+         * Render shop items list
+         * @param {object} player - Player object
+         * @param {HTMLElement} container - Container element to render items into
+         */
+        function renderShopItems(player, container) {
+            try {
+                // Get all items from the global itemsData (loaded at init)
+                const allItems = window.itemsData || [];
+                
+                if (allItems.length === 0) {
+                    container.innerHTML = '<p>Nenhum item disponível.</p>';
+                    return;
+                }
+                
+                // Filter items that can be bought (have price.buy > 0)
+                const buyableItems = allItems.filter(item => item.price && item.price.buy > 0);
+                
+                if (buyableItems.length === 0) {
+                    container.innerHTML = '<p>Nenhum item disponível para compra.</p>';
+                    return;
+                }
+                
+                // Sort by price
+                buyableItems.sort((a, b) => a.price.buy - b.price.buy);
+                
+                // Render items
+                let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">';
+                
+                for (const item of buyableItems) {
+                    const price = item.price.buy;
+                    const canAfford = (player.money || 0) >= price;
+                    const owned = player.inventory?.[item.id] || 0;
+                    
+                    // Tier badge color
+                    const tierColors = {
+                        'comum': '#999',
+                        'incomum': '#2ecc71',
+                        'raro': '#3498db',
+                        'mistico': '#9b59b6',
+                        'lendario': '#f39c12'
+                    };
+                    const tierColor = tierColors[item.tier] || '#999';
+                    
+                    html += `
+                        <div class="card" style="margin: 0; padding: 1rem; border-left: 4px solid ${tierColor};">
+                            <h4 style="margin-top: 0;">${item.name}</h4>
+                            <p style="font-size: 0.9em; color: #666;">
+                                <span style="color: ${tierColor}; font-weight: bold; text-transform: uppercase;">
+                                    ${item.tier}
+                                </span>
+                            </p>
+                            <p style="font-size: 0.9em;">${item.description}</p>
+                            <p style="font-size: 0.85em; color: #555;">
+                                <strong>Stats:</strong> 
+                                ${item.stats.atk > 0 ? `⚔️ ATK +${item.stats.atk}` : ''}${item.stats.atk > 0 && item.stats.def > 0 ? ' ' : ''}${item.stats.def > 0 ? `🛡️ DEF +${item.stats.def}` : ''}
+                            </p>
+                            ${item.break.enabled ? `<p style="font-size: 0.85em; color: #e74c3c;">⚠️ Pode quebrar (${Math.round(item.break.chance * 100)}%)</p>` : ''}
+                            <p style="font-size: 0.85em; color: #555;">
+                                <strong>Você tem:</strong> ${owned}x
+                            </p>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                                <strong style="font-size: 1.1em;">💰 ${price}</strong>
+                                <button 
+                                    class="btn ${canAfford ? 'btn-success' : 'btn-secondary'}" 
+                                    onclick="buyItem('${player.id}', '${item.id}')"
+                                    ${!canAfford ? 'disabled' : ''}
+                                    style="${!canAfford ? 'opacity: 0.5; cursor: not-allowed;' : ''}"
+                                >
+                                    ${canAfford ? '✓ Comprar' : '✗ Sem dinheiro'}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                html += '</div>';
+                container.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Failed to render shop items:', error);
+                container.innerHTML = '<p style="color: red;">Erro ao carregar itens.</p>';
+            }
+        }
+        
+        /**
+         * Buy an item for a player
+         * 
+         * Validates item availability and player funds, then performs the purchase transaction:
+         * - Deducts cost from player.money
+         * - Adds item to player.inventory
+         * - Saves game state via StorageManager
+         * - Updates shop view to reflect changes
+         * - Shows alert to user with success/error message
+         * 
+         * @param {string} playerId - Player ID
+         * @param {string} itemId - Item ID from items catalog
+         * @returns {void}
+         */
+        function buyItem(playerId, itemId) {
+            try {
+                // Find player
+                const player = GameState.players?.find(p => p.id === playerId);
+                if (!player) {
+                    alert('❌ Jogador não encontrado!');
+                    return;
+                }
+                
+                // Find item
+                const allItems = window.itemsData || [];
+                const item = allItems.find(i => i.id === itemId);
+                if (!item) {
+                    alert('❌ Item não encontrado!');
+                    return;
+                }
+                
+                // Validate item has price
+                if (!item.price || !item.price.buy || item.price.buy <= 0) {
+                    alert('❌ Item não está disponível para compra!');
+                    return;
+                }
+                
+                const price = item.price.buy;
+                const playerMoney = player.money || 0;
+                
+                // Validate player has enough money
+                if (playerMoney < price) {
+                    alert(`❌ Dinheiro insuficiente! Você tem ${playerMoney} e precisa de ${price}.`);
+                    return;
+                }
+                
+                // Debit money
+                player.money = playerMoney - price;
+                
+                // Add item to inventory
+                player.inventory = player.inventory || {};
+                player.inventory[itemId] = (player.inventory[itemId] || 0) + 1;
+                
+                // Save game state
+                saveToLocalStorage();
+                
+                // Show success message
+                alert(`✅ Comprou ${item.name} por ${price}! Você tem ${player.money} restantes.`);
+                
+                // Update shop view
+                updateShopView();
+                
+            } catch (error) {
+                console.error('Failed to buy item:', error);
+                alert('❌ Erro ao comprar item. Veja o console para detalhes.');
             }
         }
 
@@ -8216,6 +8434,7 @@
         window.nextTurn = nextTurn;
         window.endSession = endSession;
         window.addPlayer = addPlayer;
+        window.buyItem = buyItem;
         window.startEncounter = startEncounter;
         window.addObjective = addObjective;
         window.clearTherapistLog = clearTherapistLog;
