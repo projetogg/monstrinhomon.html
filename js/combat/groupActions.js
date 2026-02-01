@@ -357,7 +357,12 @@ export function advanceGroupTurn(enc, deps) {
             }
         }
         processBattleItemBreakage(allPlayerMonsters, {
-            log: (msg) => helpers.log(enc, msg)
+            log: (msg) => helpers.log(enc, msg),
+            notify: (monster, itemDef) => {
+                if (typeof window.showToast === 'function') {
+                    window.showToast(`💥 ${itemDef.name} quebrou!`, 'warning');
+                }
+            }
         });
         
         return;
@@ -385,7 +390,12 @@ export function advanceGroupTurn(enc, deps) {
             }
         }
         processBattleItemBreakage(allPlayerMonsters, {
-            log: (msg) => helpers.log(enc, msg)
+            log: (msg) => helpers.log(enc, msg),
+            notify: (monster, itemDef) => {
+                if (typeof window.showToast === 'function') {
+                    window.showToast(`💥 ${itemDef.name} quebrou!`, 'warning');
+                }
+            }
         });
         
         return;

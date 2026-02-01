@@ -3796,6 +3796,41 @@
         }
         
         /**
+         * PR12B: Formata informações do item equipado para exibição em combate
+         * @param {string} itemId - ID do item equipado
+         * @returns {string} HTML formatado ou mensagem padrão
+         */
+        function formatEquippedItemDisplay(itemId) {
+            if (!itemId) {
+                return '<div class="equipped-item-info"><strong>⚔️ Item:</strong> Nenhum</div>';
+            }
+            
+            const itemDef = window.Data?.getItemById?.(itemId);
+            if (!itemDef) {
+                return '<div class="equipped-item-info"><strong>⚔️ Item:</strong> Desconhecido</div>';
+            }
+            
+            // Formatar bônus
+            const bonuses = [];
+            if (itemDef.stats?.atk > 0) bonuses.push(`+${itemDef.stats.atk} ATK`);
+            if (itemDef.stats?.def > 0) bonuses.push(`+${itemDef.stats.def} DEF`);
+            
+            let itemLabel = itemDef.name;
+            if (bonuses.length > 0) {
+                itemLabel += ` (${bonuses.join(', ')})`;
+            }
+            
+            // Mostrar chance de quebra apenas se break.enabled
+            let breakInfo = '';
+            if (itemDef.break?.enabled) {
+                const chancePercent = Math.round(itemDef.break.chance * 100);
+                breakInfo = ` <span class="text-warning">| Quebra: ${chancePercent}%</span>`;
+            }
+            
+            return `<div class="equipped-item-info"><strong>⚔️ Item:</strong> ${itemLabel}${breakInfo}</div>`;
+        }
+        
+        /**
          * Exibe um toast notification temporário
          */
         function showToast(text, type = 'success') {
@@ -4773,7 +4808,8 @@
                         canUseSkillNow: canUseSkillNow,
                         saveToLocalStorage: saveToLocalStorage,
                         maybeToastFromLog: maybeToastFromLog,
-                        maybeSfxFromLog: maybeSfxFromLog
+                        maybeSfxFromLog: maybeSfxFromLog,
+                        formatEquippedItemDisplay: formatEquippedItemDisplay
                     }
                 };
                 Combat.Group.UI.renderGroupEncounterPanel(panel, encounter, deps);
@@ -4848,6 +4884,7 @@
                                 <div class="progress-fill xp" style="width: ${xpPercent}%"></div>
                             </div>
                             <small><strong>XP:</strong> ${xpCurrent}/${xpNeeded} (${Math.floor(xpPercent)}%)</small>
+                            ${formatEquippedItemDisplay(playerMonster.heldItemId)}
                         </div>
                         `;
                         })() : ''}
@@ -5459,7 +5496,8 @@
                     updateFriendship: updateFriendship,
                     updateMultipleFriendshipEvents: updateMultipleFriendshipEvents,
                     handleVictoryRewards: handleVictoryRewards,
-                    updateStats: updateStats
+                    updateStats: updateStats,
+                    showToast: showToast
                 };
                 
                 // 4. Executar combate via módulo

@@ -74,6 +74,32 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
         html += `<strong>${p.name || p.nome}</strong> (${p.class})`;
         html += `<br>${mon.name || mon.nome} - Nv ${mon.level}`;
         html += `<br>HP: ${hp}/${hpMax} (${hpPercent}%)`;
+        
+        // PR12B: Show equipped item (inline text format)
+        if (mon.heldItemId && window.Data && window.Data.getItemById) {
+            const itemDef = window.Data.getItemById(mon.heldItemId);
+            if (itemDef) {
+                const bonuses = [];
+                if (itemDef.stats?.atk > 0) bonuses.push(`+${itemDef.stats.atk} ATK`);
+                if (itemDef.stats?.def > 0) bonuses.push(`+${itemDef.stats.def} DEF`);
+                
+                let itemLabel = itemDef.name;
+                if (bonuses.length > 0) {
+                    itemLabel += ` (${bonuses.join(', ')})`;
+                }
+                
+                // Mostrar chance de quebra se break.enabled
+                if (itemDef.break?.enabled) {
+                    const chancePercent = Math.round(itemDef.break.chance * 100);
+                    itemLabel += ` | Quebra: ${chancePercent}%`;
+                }
+                
+                html += `<br><small>⚔️ ${itemLabel}</small>`;
+            }
+        } else if (!mon.heldItemId) {
+            html += `<br><small>⚔️ Sem item</small>`;
+        }
+        
         html += `<div class="progress-bar mt-6">`;
         html += `<div class="progress-fill xp" style="width:${xpPct}%"></div>`;
         html += `</div>`;
