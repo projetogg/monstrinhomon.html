@@ -201,7 +201,14 @@
             </div>
 
             <div class="card">
-                <h3>Itens Disponíveis</h3>
+                <h3>💼 Seu Inventário</h3>
+                <div id="shopPlayerInventory">
+                    <p>Seu inventário está vazio.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🛒 Itens Disponíveis para Compra</h3>
                 <div id="shopItemsList">
                     <p>Carregando itens...</p>
                 </div>
@@ -5958,6 +5965,7 @@
             try {
                 const playerInfo = document.getElementById('shopPlayerInfo');
                 const itemsList = document.getElementById('shopItemsList');
+                const inventoryContainer = document.getElementById('shopPlayerInventory');
                 
                 if (!playerInfo || !itemsList) return;
                 
@@ -5972,6 +5980,9 @@
                 if (!player) {
                     playerInfo.innerHTML = '<p>Nenhum jogador disponível. Crie um jogador primeiro!</p>';
                     itemsList.innerHTML = '';
+                    if (inventoryContainer) {
+                        inventoryContainer.innerHTML = '<p>Nenhum jogador selecionado.</p>';
+                    }
                     return;
                 }
                 
@@ -5982,11 +5993,131 @@
                     <p><strong>💰 Dinheiro:</strong> ${money}</p>
                 `;
                 
+                // PR13B: Render player inventory for selling
+                if (inventoryContainer) {
+                    renderPlayerInventory(player, inventoryContainer);
+                }
+                
                 // Load and display items
                 renderShopItems(player, itemsList);
                 
             } catch (error) {
                 console.error('Failed to update shop view:', error);
+            }
+        }
+        
+        /**
+         * PR13B: Render player inventory for selling
+         * @param {object} player - Player object
+         * @param {HTMLElement} container - Container element to render inventory into
+         */
+        function renderPlayerInventory(player, container) {
+            try {
+                // Get player inventory
+                const inventory = player.inventory || {};
+                const inventoryItems = Object.entries(inventory).filter(([itemId, qty]) => qty > 0);
+                
+                if (inventoryItems.length === 0) {
+                    container.innerHTML = '<p>Seu inventário está vazio.</p>';
+                    return;
+                }
+                
+                // Get all items from the global itemsData
+                const allItems = window.itemsData || [];
+                
+                // Sort by item name
+                inventoryItems.sort((a, b) => {
+                    const itemA = allItems.find(i => i.id === a[0]);
+                    const itemB = allItems.find(i => i.id === b[0]);
+                    return (itemA?.name || '').localeCompare(itemB?.name || '');
+                });
+                
+                // Check which items are equipped
+                const equippedItems = new Set();
+                if (player.team && Array.isArray(player.team)) {
+                    player.team.forEach(monster => {
+                        if (monster?.equippedItem) {
+                            equippedItems.add(monster.equippedItem);
+                        }
+                    });
+                }
+                
+                // Render inventory items
+                let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">';
+                
+                for (const [itemId, qty] of inventoryItems) {
+                    const item = allItems.find(i => i.id === itemId);
+                    
+                    if (!item) {
+                        // Item not found in catalog (maybe old/invalid item)
+                        html += `
+                            <div class="card" style="margin: 0; padding: 1rem; background: #f8f8f8;">
+                                <h4 style="margin-top: 0; color: #999;">Item desconhecido (${itemId})</h4>
+                                <p style="font-size: 0.85em; color: #555;">
+                                    <strong>Quantidade:</strong> ${qty}x
+                                </p>
+                                <p style="font-size: 0.85em; color: #999;">
+                                    Este item não está mais no catálogo.
+                                </p>
+                            </div>
+                        `;
+                        continue;
+                    }
+                    
+                    // Calculate sell price
+                    const sellPrice = getSellPrice(item);
+                    const isEquipped = equippedItems.has(itemId);
+                    const canSell = sellPrice !== null && !isEquipped;
+                    
+                    // Tier badge color
+                    const tierColors = {
+                        'comum': '#999',
+                        'incomum': '#2ecc71',
+                        'raro': '#3498db',
+                        'mistico': '#9b59b6',
+                        'lendario': '#f39c12'
+                    };
+                    const tierColor = tierColors[item.tier] || '#999';
+                    
+                    html += `
+                        <div class="card" style="margin: 0; padding: 1rem; border-left: 4px solid ${tierColor};">
+                            <h4 style="margin-top: 0;">${item.name}</h4>
+                            <p style="font-size: 0.9em; color: #666;">
+                                <span style="color: ${tierColor}; font-weight: bold; text-transform: uppercase;">
+                                    ${item.tier}
+                                </span>
+                            </p>
+                            <p style="font-size: 0.9em;">${item.description}</p>
+                            <p style="font-size: 0.85em; color: #555;">
+                                <strong>Stats:</strong> 
+                                ${item.stats.atk > 0 ? `⚔️ ATK +${item.stats.atk}` : ''}${item.stats.atk > 0 && item.stats.def > 0 ? ' ' : ''}${item.stats.def > 0 ? `🛡️ DEF +${item.stats.def}` : ''}
+                            </p>
+                            <p style="font-size: 0.85em; color: #555;">
+                                <strong>Você tem:</strong> ${qty}x
+                            </p>
+                            ${isEquipped ? `<p style="font-size: 0.85em; color: #e74c3c;">⚠️ Item equipado em um monstro</p>` : ''}
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                                ${sellPrice !== null ? `<strong style="font-size: 1.1em;">💰 Vender por ${sellPrice}</strong>` : `<span style="font-size: 0.9em; color: #999;">Não vendável</span>`}
+                                <button 
+                                    class="btn ${canSell ? 'btn-warning' : 'btn-secondary'}" 
+                                    onclick="sellItem('${player.id}', '${itemId}', 1)"
+                                    ${!canSell ? 'disabled' : ''}
+                                    style="${!canSell ? 'opacity: 0.5; cursor: not-allowed;' : ''}"
+                                    title="${isEquipped ? 'Não é possível vender item equipado' : (sellPrice === null ? 'Este item não pode ser vendido' : 'Vender 1x')}"
+                                >
+                                    ${canSell ? `💵 Vender (${sellPrice})` : (isEquipped ? '🔒 Equipado' : '✗ Não vendável')}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                html += '</div>';
+                container.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Failed to render player inventory:', error);
+                container.innerHTML = '<p style="color: red;">Erro ao carregar inventário.</p>';
             }
         }
         
@@ -6140,6 +6271,140 @@
             } catch (error) {
                 console.error('Failed to buy item:', error);
                 alert('❌ Erro ao comprar item. Veja o console para detalhes.');
+            }
+        }
+
+        /**
+         * PR13B: Calculate sell price for an item with enforced sell < buy rule
+         * 
+         * Rules:
+         * - If item has no buy price or buy <= 1: return null (not sellable)
+         * - If item has explicit sell price: use it
+         * - Otherwise: fallback to 50% of buy price (floor(buy * 0.5))
+         * - Enforce: sell = max(1, sell)
+         * - Enforce: sell = min(sell, buy - 1) to guarantee sell < buy
+         * 
+         * @param {object} itemDef - Item definition from catalog
+         * @returns {number|null} Sell price or null if item cannot be sold
+         */
+        function getSellPrice(itemDef) {
+            try {
+                // Get buy price
+                const buy = itemDef?.price?.buy;
+                
+                // Block sale if no buy price or buy <= 1
+                if (typeof buy !== 'number' || buy <= 1) {
+                    return null;
+                }
+                
+                // Get raw sell price (explicit or fallback to 50%)
+                const rawSell = itemDef?.price?.sell;
+                let sell = (typeof rawSell === 'number') ? rawSell : Math.floor(buy * 0.5);
+                
+                // Enforce minimum: sell >= 1
+                sell = Math.max(1, sell);
+                
+                // Enforce strict: sell < buy (never equal or greater)
+                sell = Math.min(sell, buy - 1);
+                
+                return sell;
+                
+            } catch (error) {
+                console.error('[getSellPrice] Error calculating sell price:', error);
+                return null;
+            }
+        }
+
+        /**
+         * PR13B: Sell an item from player inventory
+         * 
+         * Validates item availability, calculates sell price, and performs the sale transaction:
+         * - Validates player has item in inventory
+         * - Validates item is not equipped on any team monster
+         * - Calculates sell price via getSellPrice
+         * - Decrements inventory (deletes key if qty reaches 0)
+         * - Credits money to player
+         * - Saves game state via StorageManager
+         * - Updates shop view to reflect changes
+         * 
+         * @param {string} playerId - Player ID
+         * @param {string} itemId - Item ID from items catalog
+         * @param {number} qty - Quantity to sell (default: 1)
+         * @returns {void}
+         */
+        function sellItem(playerId, itemId, qty = 1) {
+            try {
+                // Find player
+                const player = GameState.players?.find(p => p.id === playerId);
+                if (!player) {
+                    alert('❌ Jogador não encontrado!');
+                    return;
+                }
+                
+                // Find item
+                const allItems = window.itemsData || [];
+                const item = allItems.find(i => i.id === itemId);
+                if (!item) {
+                    alert('❌ Item não encontrado!');
+                    return;
+                }
+                
+                // Validate quantity
+                if (qty < 1 || !Number.isInteger(qty)) {
+                    alert('❌ Quantidade inválida!');
+                    return;
+                }
+                
+                // Check inventory
+                const owned = player.inventory?.[itemId] || 0;
+                if (owned < qty) {
+                    alert(`❌ Você não tem ${qty}x ${item.name}! Você tem apenas ${owned}x.`);
+                    return;
+                }
+                
+                // Calculate sell price
+                const sellPrice = getSellPrice(item);
+                if (sellPrice === null) {
+                    alert('❌ Este item não pode ser vendido!');
+                    return;
+                }
+                
+                // Check if item is equipped on any team monster
+                if (player.team && Array.isArray(player.team)) {
+                    const equippedMonster = player.team.find(monster => monster?.equippedItem === itemId);
+                    if (equippedMonster) {
+                        alert(`❌ Não é possível vender item equipado! ${item.name} está equipado em ${equippedMonster.name}.`);
+                        return;
+                    }
+                }
+                
+                // Calculate total sale value
+                const totalValue = sellPrice * qty;
+                
+                // Update inventory
+                player.inventory = player.inventory || {};
+                player.inventory[itemId] = owned - qty;
+                
+                // Clean up if quantity reaches 0
+                if (player.inventory[itemId] <= 0) {
+                    delete player.inventory[itemId];
+                }
+                
+                // Credit money
+                player.money = (player.money || 0) + totalValue;
+                
+                // Save game state
+                saveToLocalStorage();
+                
+                // Show success message
+                alert(`✅ Vendeu ${qty}x ${item.name} por ${totalValue}! Você tem ${player.money} moedas.`);
+                
+                // Update shop view
+                updateShopView();
+                
+            } catch (error) {
+                console.error('Failed to sell item:', error);
+                alert('❌ Erro ao vender item. Veja o console para detalhes.');
             }
         }
 
