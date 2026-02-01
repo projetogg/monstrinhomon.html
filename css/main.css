@@ -143,6 +143,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .medal { font-size: 48px; display: inline-block; margin: 10px; }
 .flex { display: flex; gap: 15px; flex-wrap: wrap; }
 .flex-center { display: flex; justify-content: center; align-items: center; gap: 15px; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; } /* PR12A */
 
 .stat-box {
     display: inline-block; padding: 10px 20px; background: var(--light);
@@ -852,6 +853,14 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .btn-sm-arrow {
     padding: 2px 8px;
     font-size: 12px;
+}
+
+/* PR12A: Extra small buttons for equipment UI */
+.btn-xs {
+    padding: 4px 8px;
+    font-size: 11px;
+    min-height: 24px;
+    min-width: auto;
 }
 
 /* Modal Overlay */
