@@ -1,9 +1,9 @@
 /**
- * ITEMS LOADER - PR11B
+ * ITEMS LOADER - PR11B + PR14A
  * 
- * Carrega e valida definições de itens equipáveis do arquivo items.json
+ * Carrega e valida definições de itens do arquivo items.json
  * 
- * Estrutura de Item:
+ * Estrutura de Item Equipável (held):
  * {
  *   id: string,              // ID único do item (ex: "IT_ATK_COMUM")
  *   name: string,            // Nome exibido
@@ -18,6 +18,26 @@
  *     enabled: boolean,     // Se true, item pode quebrar
  *     chance: number        // Chance de quebra (0.0 a 1.0)
  *   }
+ * }
+ * 
+ * Estrutura de Ovo (egg):
+ * {
+ *   id: string,              // ID único (ex: "EGG_C")
+ *   name: string,            // Nome exibido
+ *   description: string,     // Descrição
+ *   category: "egg",         // Categoria do item
+ *   stackable: true,         // Empilhável
+ *   maxStack: number,        // Máximo por pilha
+ *   usableIn: ["menu"],      // Onde pode ser usado
+ *   price: {                 // Preços
+ *     buy: number,
+ *     sell: number
+ *   },
+ *   effects: [{              // Efeitos
+ *     type: "hatch_egg",
+ *     mode: "by_rarity",
+ *     rarity: string
+ *   }]
  * }
  */
 
@@ -76,9 +96,30 @@ export async function loadItems() {
 function validateItem(item) {
     if (!item || typeof item !== 'object') return false;
     
-    // Campos obrigatórios
+    // Campos obrigatórios para todos os itens
     if (!item.id || typeof item.id !== 'string') return false;
     if (!item.name || typeof item.name !== 'string') return false;
+    
+    // PR14A: Validar ovos (categoria egg)
+    if (item.category === 'egg') {
+        // Validar campos obrigatórios para ovos
+        if (typeof item.stackable !== 'boolean') return false;
+        if (typeof item.maxStack !== 'number') return false;
+        if (!Array.isArray(item.usableIn)) return false;
+        if (!Array.isArray(item.effects)) return false;
+        
+        // Validar que tem pelo menos um efeito hatch_egg
+        const hasHatchEffect = item.effects.some(e => 
+            e.type === 'hatch_egg' && 
+            e.mode === 'by_rarity' && 
+            typeof e.rarity === 'string'
+        );
+        if (!hasHatchEffect) return false;
+        
+        return true;
+    }
+    
+    // Validação para itens equipáveis (held)
     if (!item.type || item.type !== 'held') return false;
     if (!item.tier || typeof item.tier !== 'string') return false;
     
@@ -177,4 +218,22 @@ export function getItemStats(itemId) {
         atk: Number(item.stats.atk) || 0,
         def: Number(item.stats.def) || 0
     };
+}
+
+/**
+ * Filtra itens por categoria
+ * @param {string} category - Categoria desejada (ex: "egg")
+ * @returns {Array} Itens da categoria especificada
+ */
+export function getItemsByCategory(category) {
+    if (!itemsCache) return [];
+    return itemsCache.filter(item => item.category === category);
+}
+
+/**
+ * Retorna todos os ovos disponíveis
+ * @returns {Array} Array de ovos
+ */
+export function getAllEggs() {
+    return getItemsByCategory('egg');
 }
