@@ -234,6 +234,106 @@
       "price": {
         "buy": 1200
       }
+    },
+    {
+      "id": "EGG_C",
+      "name": "Ovo Comum",
+      "description": "Choca 1 Monstrinhomon Comum.",
+      "category": "egg",
+      "stackable": true,
+      "maxStack": 99,
+      "usableIn": ["menu"],
+      "price": {
+        "buy": 120,
+        "sell": 59
+      },
+      "effects": [
+        {
+          "type": "hatch_egg",
+          "mode": "by_rarity",
+          "rarity": "Comum"
+        }
+      ]
+    },
+    {
+      "id": "EGG_U",
+      "name": "Ovo Incomum",
+      "description": "Choca 1 Monstrinhomon Incomum.",
+      "category": "egg",
+      "stackable": true,
+      "maxStack": 99,
+      "usableIn": ["menu"],
+      "price": {
+        "buy": 300,
+        "sell": 149
+      },
+      "effects": [
+        {
+          "type": "hatch_egg",
+          "mode": "by_rarity",
+          "rarity": "Incomum"
+        }
+      ]
+    },
+    {
+      "id": "EGG_R",
+      "name": "Ovo Raro",
+      "description": "Choca 1 Monstrinhomon Raro.",
+      "category": "egg",
+      "stackable": true,
+      "maxStack": 99,
+      "usableIn": ["menu"],
+      "price": {
+        "buy": 750,
+        "sell": 374
+      },
+      "effects": [
+        {
+          "type": "hatch_egg",
+          "mode": "by_rarity",
+          "rarity": "Raro"
+        }
+      ]
+    },
+    {
+      "id": "EGG_M",
+      "name": "Ovo Místico",
+      "description": "Choca 1 Monstrinhomon Místico.",
+      "category": "egg",
+      "stackable": true,
+      "maxStack": 99,
+      "usableIn": ["menu"],
+      "price": {
+        "buy": 1500,
+        "sell": 749
+      },
+      "effects": [
+        {
+          "type": "hatch_egg",
+          "mode": "by_rarity",
+          "rarity": "Místico"
+        }
+      ]
+    },
+    {
+      "id": "EGG_L",
+      "name": "Ovo Lendário",
+      "description": "Choca 1 Monstrinhomon Lendário.",
+      "category": "egg",
+      "stackable": true,
+      "maxStack": 99,
+      "usableIn": ["menu"],
+      "price": {
+        "buy": 3000,
+        "sell": 1499
+      },
+      "effects": [
+        {
+          "type": "hatch_egg",
+          "mode": "by_rarity",
+          "rarity": "Lendário"
+        }
+      ]
     }
   ]
 }
