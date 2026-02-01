@@ -1,14 +1,17 @@
 /**
- * EGG UI INTEGRATION (PR14A)
+ * EGG UI INTEGRATION (PR14A + PR14B)
  * 
  * Integração do sistema de ovos com a UI do jogo
  * Adiciona botões "Chocar" para ovos no inventário
+ * PR14B: Integra modal de eclosão visual
  */
 
 import { hatchEgg, getEggInfo, isValidEgg } from './eggHatcher.js';
+import { showEggHatchModal } from '../ui/eggHatchModal.js';
 
 /**
  * Manipula o clique no botão "Chocar" de um ovo
+ * PR14B: Adiciona modal de eclosão antes de mostrar resultado
  * 
  * @param {string} playerId - ID do jogador
  * @param {string} eggItemId - ID do ovo
@@ -17,28 +20,29 @@ import { hatchEgg, getEggInfo, isValidEgg } from './eggHatcher.js';
  * @param {Function} updateCallback - Função para atualizar a UI
  * @param {Function} toastCallback - Função para mostrar mensagens
  */
-export function handleHatchEgg(playerId, eggItemId, gameState, saveCallback, updateCallback, toastCallback) {
+export async function handleHatchEgg(playerId, eggItemId, gameState, saveCallback, updateCallback, toastCallback) {
     try {
         // Chamar função de choque
         const result = hatchEgg(gameState, playerId, eggItemId);
         
         if (result.success) {
-            // Salvar estado
+            // PR14B: Mostrar modal de eclosão com o monstro nascido
+            await showEggHatchModal(result.monster);
+            
+            // Salvar estado (após modal fechar)
             if (saveCallback) saveCallback();
             
             // Atualizar UI
             if (updateCallback) updateCallback();
             
-            // Mostrar mensagem de sucesso
+            // Mostrar mensagem de sucesso (toast menor, modal já mostrou)
             if (toastCallback) {
-                toastCallback(result.message);
-            } else {
-                alert(result.message);
+                toastCallback(`${result.monster.name} adicionado ao seu time! 🎉`);
             }
             
             return true;
         } else {
-            // Mostrar mensagem de erro
+            // Mostrar mensagem de erro (sem modal)
             if (toastCallback) {
                 toastCallback(result.message);
             } else {
