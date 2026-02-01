@@ -23,3 +23,14 @@ export {
     getSkillsCacheStatus,
     clearSkillsCache
 } from './skillsLoader.js';
+
+// Items (PR11B)
+export {
+    loadItems,
+    getItemById,
+    getAllItems,
+    getItemsByTier,
+    canItemBreak,
+    getItemBreakChance,
+    getItemStats
+} from './itemsLoader.js';

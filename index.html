@@ -1304,6 +1304,13 @@
                     });
                 }
                 
+                // PR12A: Preload items from JSON in background (non-blocking)
+                if (window.Data && window.Data.loadItems) {
+                    window.Data.loadItems().catch(() => {
+                        // Errors already logged by ItemsLoader, silently continue
+                    });
+                }
+                
                 updateAllViews();
                 mmUpdateTherapistUI(); // Update therapist mode UI
                 
@@ -6308,6 +6315,31 @@
                     const isAlive = _isAlive(monster);
                     const hpPercent = ((monster.hp || 0) / (monster.hpMax || 1)) * 100;
                     
+                    // PR12A: Get equipped item info
+                    let equippedItemHtml = '';
+                    if (monster.heldItemId && window.Data && window.Data.getItemById) {
+                        const itemDef = window.Data.getItemById(monster.heldItemId);
+                        if (itemDef) {
+                            const atkBonus = itemDef.stats?.atk || 0;
+                            const defBonus = itemDef.stats?.def || 0;
+                            let statsText = '';
+                            if (atkBonus > 0) statsText += `+${atkBonus} ATK `;
+                            if (defBonus > 0) statsText += `+${defBonus} DEF`;
+                            equippedItemHtml = `
+                                <div class="text-small mt-5">
+                                    🎒 <strong>${itemDef.name}</strong> (${statsText})
+                                    <button class="btn btn-xs" onclick="unequipItem('${player.id}', ${index})">Remover</button>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        equippedItemHtml = `
+                            <div class="text-small mt-5">
+                                🎒 <em>Nenhum item equipado</em>
+                            </div>
+                        `;
+                    }
+                    
                     html += `
                         <div class="team-member-card ${isActive ? 'team-member-card-active' : 'team-member-card-inactive'}">
                             <span class="team-member-index">${index + 1}.</span>
@@ -6320,6 +6352,7 @@
                                     <div class="progress-fill hp" style="width: ${hpPercent}%"></div>
                                 </div>
                                 <small>${monster.hp || 0}/${monster.hpMax || 0} HP</small>
+                                ${equippedItemHtml}
                             </div>
                             <div class="team-member-buttons">
                                 ${index > 0 ? `<button class="btn btn-sm-arrow" onclick="moveTeamMemberUp('${player.id}', ${index})">▲</button>` : '<span style="height:20px;display:block;"></span>'}
@@ -6330,6 +6363,10 @@
                 });
                 
                 html += '</div>';
+                
+                // PR12A: Add equipable items section
+                html += renderEquipableItems(player);
+                
                 return html;
             } catch (error) {
                 console.error('Failed to render team reorder list:', error);
@@ -6388,6 +6425,188 @@
                 showToast('Error reordering team');
             }
         }
+
+        // PR12A: Equipment UI Functions
+        function renderEquipableItems(player) {
+            try {
+                if (!player || !player.inventory) {
+                    return '';
+                }
+                
+                // Get all items from inventory
+                const inventoryItems = Object.keys(player.inventory || {});
+                if (inventoryItems.length === 0) {
+                    return '';
+                }
+                
+                // Filter to equipable items only (type: held)
+                const equipableItems = [];
+                for (const itemId of inventoryItems) {
+                    const qty = player.inventory[itemId] || 0;
+                    if (qty > 0 && window.Data && window.Data.getItemById) {
+                        const itemDef = window.Data.getItemById(itemId);
+                        if (itemDef && itemDef.type === 'held') {
+                            equipableItems.push({ id: itemId, def: itemDef, qty: qty });
+                        }
+                    }
+                }
+                
+                if (equipableItems.length === 0) {
+                    return '';
+                }
+                
+                let html = `
+                    <div class="card mt-10">
+                        <h4 class="m-0">🎒 Itens Disponíveis para Equipar</h4>
+                        <p class="text-small text-muted">Selecione um monstrinho acima, depois clique em Equipar</p>
+                        <div class="mt-10">
+                `;
+                
+                equipableItems.forEach(item => {
+                    const atkBonus = item.def.stats?.atk || 0;
+                    const defBonus = item.def.stats?.def || 0;
+                    let statsText = '';
+                    if (atkBonus > 0) statsText += `+${atkBonus} ATK `;
+                    if (defBonus > 0) statsText += `+${defBonus} DEF`;
+                    
+                    html += `
+                        <div class="flex-between mb-5">
+                            <span>
+                                <strong>${item.def.name}</strong> 
+                                <span class="text-small text-muted">(${statsText})</span>
+                                x${item.qty}
+                            </span>
+                            <div>
+                    `;
+                    
+                    // Add equip button for each team member
+                    if (player.team && player.team.length > 0) {
+                        player.team.forEach((monster, idx) => {
+                            if (!monster) return;
+                            html += `
+                                <button class="btn btn-xs" onclick="equipItem('${player.id}', ${idx}, '${item.id}')">
+                                    → ${monster.name}
+                                </button>
+                            `;
+                        });
+                    }
+                    
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+                
+                return html;
+            } catch (error) {
+                console.error('Failed to render equipable items:', error);
+                return '';
+            }
+        }
+        
+        function equipItem(playerId, monsterIndex, itemId) {
+            try {
+                const player = GameState.players?.find(p => p?.id === playerId);
+                if (!player || !player.team || monsterIndex < 0 || monsterIndex >= player.team.length) {
+                    showToast('Erro: Jogador ou monstrinho não encontrado');
+                    return;
+                }
+                
+                const monster = player.team[monsterIndex];
+                if (!monster) {
+                    showToast('Erro: Monstrinho não encontrado');
+                    return;
+                }
+                
+                // Check inventory
+                player.inventory = player.inventory || {};
+                const itemCount = player.inventory[itemId] || 0;
+                if (itemCount < 1) {
+                    showToast('Erro: Item não disponível no inventário');
+                    return;
+                }
+                
+                // Get item definition
+                let itemName = itemId;
+                if (window.Data && window.Data.getItemById) {
+                    const itemDef = window.Data.getItemById(itemId);
+                    if (itemDef) {
+                        itemName = itemDef.name;
+                    }
+                }
+                
+                // If monster already has item equipped, unequip it first
+                if (monster.heldItemId) {
+                    // Return old item to inventory
+                    player.inventory[monster.heldItemId] = (player.inventory[monster.heldItemId] || 0) + 1;
+                }
+                
+                // Equip new item
+                monster.heldItemId = itemId;
+                
+                // Remove from inventory
+                player.inventory[itemId] = itemCount - 1;
+                if (player.inventory[itemId] === 0) {
+                    delete player.inventory[itemId];
+                }
+                
+                saveGame();
+                updatePlayersList();
+                showToast(`✅ ${itemName} equipado em ${monster.name}!`);
+            } catch (error) {
+                console.error('Failed to equip item:', error);
+                showToast('Erro ao equipar item');
+            }
+        }
+        
+        function unequipItem(playerId, monsterIndex) {
+            try {
+                const player = GameState.players?.find(p => p?.id === playerId);
+                if (!player || !player.team || monsterIndex < 0 || monsterIndex >= player.team.length) {
+                    showToast('Erro: Jogador ou monstrinho não encontrado');
+                    return;
+                }
+                
+                const monster = player.team[monsterIndex];
+                if (!monster || !monster.heldItemId) {
+                    showToast('Erro: Nenhum item equipado');
+                    return;
+                }
+                
+                // Get item name
+                let itemName = monster.heldItemId;
+                if (window.Data && window.Data.getItemById) {
+                    const itemDef = window.Data.getItemById(monster.heldItemId);
+                    if (itemDef) {
+                        itemName = itemDef.name;
+                    }
+                }
+                
+                // Return item to inventory
+                player.inventory = player.inventory || {};
+                player.inventory[monster.heldItemId] = (player.inventory[monster.heldItemId] || 0) + 1;
+                
+                // Remove from monster
+                const oldItemId = monster.heldItemId;
+                monster.heldItemId = null;
+                
+                saveGame();
+                updatePlayersList();
+                showToast(`✅ ${itemName} removido de ${monster.name}!`);
+            } catch (error) {
+                console.error('Failed to unequip item:', error);
+                showToast('Erro ao remover item');
+            }
+        }
+        
+        // PR12A: Make equipment functions globally available
+        window.equipItem = equipItem;
+        window.unequipItem = unequipItem;
 
         function updateSessionView() {
             try {
