@@ -1059,3 +1059,18 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     margin: 5px 0;
     font-size: 12px;
 }
+
+/* PR12B: Equipped item info in combat */
+.equipped-item-info {
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: rgba(108, 92, 231, 0.1);
+    border-left: 3px solid var(--primary);
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.text-warning {
+    color: var(--warning);
+    font-weight: 600;
+}

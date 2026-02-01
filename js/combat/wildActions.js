@@ -336,7 +336,12 @@ function handleVictory(encounter, player, playerMonster, dependencies) {
     
     // PR11B: Processar quebra de itens
     const breakResults = processBattleItemBreakage([playerMonster], {
-        log: (msg) => encounter.log.push(msg)
+        log: (msg) => encounter.log.push(msg),
+        notify: (monster, itemDef) => {
+            if (dependencies.showToast) {
+                dependencies.showToast(`💥 ${itemDef.name} quebrou!`, 'warning');
+            }
+        }
     });
     
     // Finalizar encontro
@@ -364,7 +369,12 @@ function handleDefeat(encounter, player, playerMonster, dependencies) {
     
     // PR11B: Processar quebra de itens
     const breakResults = processBattleItemBreakage([playerMonster], {
-        log: (msg) => encounter.log.push(msg)
+        log: (msg) => encounter.log.push(msg),
+        notify: (monster, itemDef) => {
+            if (dependencies.showToast) {
+                dependencies.showToast(`💥 ${itemDef.name} quebrou!`, 'warning');
+            }
+        }
     });
     
     // Finalizar encontro
