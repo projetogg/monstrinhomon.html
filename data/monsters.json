@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "monsters": [
+    {
+      "id": "MON_001",
+      "name": "Cantapau",
+      "class": "Bardo",
+      "rarity": "Comum",
+      "baseHp": 28,
+      "baseAtk": 6,
+      "baseDef": 4,
+      "baseSpd": 6,
+      "baseEne": 8,
+      "emoji": "🎵"
+    },
+    {
+      "id": "MON_002",
+      "name": "Pedrino",
+      "class": "Guerreiro",
+      "rarity": "Comum",
+      "baseHp": 32,
+      "baseAtk": 7,
+      "baseDef": 6,
+      "baseSpd": 5,
+      "baseEne": 6,
+      "emoji": "⚔️",
+      "evolvesTo": "MON_002B",
+      "evolvesAt": 12
+    },
+    {
+      "id": "MON_003",
+      "name": "Faíscari",
+      "class": "Mago",
+      "rarity": "Comum",
+      "baseHp": 26,
+      "baseAtk": 8,
+      "baseDef": 3,
+      "baseSpd": 7,
+      "baseEne": 10,
+      "emoji": "🔮"
+    }
+  ]
+}
