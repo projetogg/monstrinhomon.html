@@ -1297,6 +1297,13 @@
                     });
                 }
                 
+                // PR10B: Preload skills from JSON in background (non-blocking)
+                if (window.Data && window.Data.loadSkills) {
+                    window.Data.loadSkills().catch(() => {
+                        // Errors already logged by SkillsLoader, silently continue with hardcoded fallback
+                    });
+                }
+                
                 updateAllViews();
                 mmUpdateTherapistUI(); // Update therapist mode UI
                 
@@ -4410,6 +4417,18 @@
          * @returns {Array} - Catálogo de skills
          */
         function getSkillCatalog() {
+            // PR10B: Try JSON first (synchronous lookup, no blocking)
+            if (window.Data && window.Data.getSkillsMapSync) {
+                const skillsMap = window.Data.getSkillsMapSync();
+                if (skillsMap && skillsMap.size > 0) {
+                    // Convert Map to Array with deep clone to prevent cache mutation
+                    return Array.from(skillsMap.values()).map(skill => 
+                        JSON.parse(JSON.stringify(skill))
+                    );
+                }
+            }
+            
+            // Fallback: hardcoded sources
             const candidates = [];
             
             // Verificar SKILLS_CATALOG definido no escopo local
@@ -4436,6 +4455,18 @@
         function getSkillById(id) {
             const sid = String(id || "");
             if (!sid) return null;
+            
+            // PR10B: Try JSON first (synchronous lookup, no blocking)
+            if (window.Data && window.Data.getSkillsMapSync) {
+                const skillsMap = window.Data.getSkillsMapSync();
+                if (skillsMap && skillsMap.has(sid)) {
+                    // Deep clone to prevent cache mutation
+                    const skill = skillsMap.get(sid);
+                    return JSON.parse(JSON.stringify(skill));
+                }
+            }
+            
+            // Fallback: search in hardcoded catalog
             const cat = getSkillCatalog();
             return cat.find(s => String(s.id) === sid) || null;
         }
