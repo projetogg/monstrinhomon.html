@@ -13,6 +13,7 @@ import * as WildUI from './wildUI.js';
 import * as GroupCore from './groupCore.js';
 import * as GroupActions from './groupActions.js';
 import * as GroupUI from './groupUI.js';
+import * as ItemBreakage from './itemBreakage.js';
 
 export const Combat = {
     Wild: {
@@ -31,7 +32,9 @@ export const Combat = {
         Core: GroupCore,
         Actions: GroupActions,
         UI: GroupUI
-    }
+    },
+    // PR11B: Item Breakage System
+    ItemBreakage: ItemBreakage
 };
 
 export default Combat;

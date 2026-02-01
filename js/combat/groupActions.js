@@ -8,6 +8,19 @@
  */
 
 import * as GroupCore from './groupCore.js';
+import { initializeBattleParticipation, markAsParticipated, processBattleItemBreakage } from './itemBreakage.js';
+
+/**
+ * PR11B: Inicializa participação de batalha para group/boss
+ * Deve ser chamado no início do encounter
+ * 
+ * @param {Array} playerMonsters - Monstrinhos dos jogadores
+ * @param {Array} enemies - Inimigos (opcional)
+ */
+export function initializeGroupBattleParticipation(playerMonsters, enemies = []) {
+    const monsters = [...playerMonsters, ...enemies];
+    initializeBattleParticipation(monsters);
+}
 
 /**
  * PR5C: Executa ataque do jogador em combate de grupo
@@ -35,6 +48,9 @@ export function executePlayerAttackGroup(deps) {
     const player = helpers.getPlayerById(actor.id);
     const mon = helpers.getActiveMonsterOfPlayer(player);
     if (!player || !mon) return false;
+
+    // PR11B: Marcar monstro como participante (entrou em campo como ativo)
+    markAsParticipated(mon);
 
     // GAME_RULES.md: Em batalha, só pode usar monstros da mesma classe do jogador
     if (mon.class !== player.class) {
@@ -130,6 +146,9 @@ export function executePlayerAttackGroup(deps) {
     
     // Apply damage
     helpers.applyDamage(enemy, dmg);
+    
+    // PR11B: Marcar que o inimigo participou (recebeu dano)
+    markAsParticipated(enemy);
 
     helpers.log(enc, `🎲 ${attackerName} (${monName}) rolou ${d20} e acertou ${enemyName} causando ${dmg} de dano!`);
     
@@ -255,6 +274,11 @@ export function executeEnemyTurnGroup(enc, deps) {
     
     // Apply damage
     helpers.applyDamage(targetMon, dmg);
+    
+    // PR11B: Marcar que o monstro do jogador participou (recebeu dano)
+    markAsParticipated(targetMon);
+    // PR11B: Marcar que o inimigo participou (causou dano)
+    markAsParticipated(enemy);
 
     helpers.log(enc, `🎲 ${enemyName} rolou ${d20} e acertou ${targetName} (${targetMonName}) causando ${dmg} de dano!`);
     
@@ -324,6 +348,18 @@ export function advanceGroupTurn(enc, deps) {
         // Distribuir recompensas (XP) com idempotência
         helpers.handleVictoryRewards(enc);
         
+        // PR11B: Processar quebra de itens para todos os jogadores
+        const allPlayerMonsters = [];
+        for (const pid of (enc.participants || [])) {
+            const player = state.players.find(p => p.id === pid);
+            if (player && Array.isArray(player.team)) {
+                allPlayerMonsters.push(...player.team);
+            }
+        }
+        processBattleItemBreakage(allPlayerMonsters, {
+            log: (msg) => helpers.log(enc, msg)
+        });
+        
         return;
     }
     
@@ -339,6 +375,18 @@ export function advanceGroupTurn(enc, deps) {
             audio.playSfx("lose");
             enc._loseSfxPlayed = true;
         }
+        
+        // PR11B: Processar quebra de itens para todos os jogadores
+        const allPlayerMonsters = [];
+        for (const pid of (enc.participants || [])) {
+            const player = state.players.find(p => p.id === pid);
+            if (player && Array.isArray(player.team)) {
+                allPlayerMonsters.push(...player.team);
+            }
+        }
+        processBattleItemBreakage(allPlayerMonsters, {
+            log: (msg) => helpers.log(enc, msg)
+        });
         
         return;
     }

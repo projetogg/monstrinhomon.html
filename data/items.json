@@ -1,0 +1,200 @@
+{
+  "$schema": "items-schema-v1",
+  "items": [
+    {
+      "id": "IT_ATK_COMUM",
+      "name": "Amuleto de Força",
+      "description": "Aumenta o ATK do Monstrinho.",
+      "type": "held",
+      "tier": "comum",
+      "stats": {
+        "atk": 2,
+        "def": 0
+      },
+      "break": {
+        "enabled": true,
+        "chance": 0.15
+      }
+    },
+    {
+      "id": "IT_DEF_COMUM",
+      "name": "Escudo Leve",
+      "description": "Aumenta a DEF do Monstrinho.",
+      "type": "held",
+      "tier": "comum",
+      "stats": {
+        "atk": 0,
+        "def": 2
+      },
+      "break": {
+        "enabled": true,
+        "chance": 0.15
+      }
+    },
+    {
+      "id": "IT_ATK_INCOMUM",
+      "name": "Colar de Poder",
+      "description": "Aumenta significativamente o ATK.",
+      "type": "held",
+      "tier": "incomum",
+      "stats": {
+        "atk": 4,
+        "def": 0
+      },
+      "break": {
+        "enabled": true,
+        "chance": 0.10
+      }
+    },
+    {
+      "id": "IT_DEF_INCOMUM",
+      "name": "Armadura Reforçada",
+      "description": "Aumenta significativamente a DEF.",
+      "type": "held",
+      "tier": "incomum",
+      "stats": {
+        "atk": 0,
+        "def": 4
+      },
+      "break": {
+        "enabled": true,
+        "chance": 0.10
+      }
+    },
+    {
+      "id": "IT_ATK_RARO",
+      "name": "Garra do Dragão",
+      "description": "Aumenta muito o ATK do Monstrinho.",
+      "type": "held",
+      "tier": "raro",
+      "stats": {
+        "atk": 6,
+        "def": 0
+      },
+      "break": {
+        "enabled": true,
+        "chance": 0.05
+      }
+    },
+    {
+      "id": "IT_DEF_RARO",
+      "name": "Couraça de Titã",
+      "description": "Aumenta muito a DEF do Monstrinho.",
+      "type": "held",
+      "tier": "raro",
+      "stats": {
+        "atk": 0,
+        "def": 6
+      },
+      "break": {
+        "enabled": true,
+        "chance": 0.05
+      }
+    },
+    {
+      "id": "IT_ATK_MISTICO",
+      "name": "Orbe de Destruição",
+      "description": "Poder místico que amplifica ataques.",
+      "type": "held",
+      "tier": "mistico",
+      "stats": {
+        "atk": 8,
+        "def": 0
+      },
+      "break": {
+        "enabled": false,
+        "chance": 0
+      }
+    },
+    {
+      "id": "IT_DEF_MISTICO",
+      "name": "Égide Mística",
+      "description": "Defesa mágica que não se quebra.",
+      "type": "held",
+      "tier": "mistico",
+      "stats": {
+        "atk": 0,
+        "def": 8
+      },
+      "break": {
+        "enabled": false,
+        "chance": 0
+      }
+    },
+    {
+      "id": "IT_ATK_LENDARIO",
+      "name": "Lâmina Eterna",
+      "description": "Arma lendária de poder supremo.",
+      "type": "held",
+      "tier": "lendario",
+      "stats": {
+        "atk": 12,
+        "def": 0
+      },
+      "break": {
+        "enabled": false,
+        "chance": 0
+      }
+    },
+    {
+      "id": "IT_DEF_LENDARIO",
+      "name": "Escudo do Infinito",
+      "description": "Proteção lendária indestrutível.",
+      "type": "held",
+      "tier": "lendario",
+      "stats": {
+        "atk": 0,
+        "def": 12
+      },
+      "break": {
+        "enabled": false,
+        "chance": 0
+      }
+    },
+    {
+      "id": "IT_BALANCED_INCOMUM",
+      "name": "Cristal Equilibrado",
+      "description": "Aumenta ATK e DEF moderadamente.",
+      "type": "held",
+      "tier": "incomum",
+      "stats": {
+        "atk": 2,
+        "def": 2
+      },
+      "break": {
+        "enabled": true,
+        "chance": 0.10
+      }
+    },
+    {
+      "id": "IT_BALANCED_RARO",
+      "name": "Emblema do Guerreiro",
+      "description": "Aumenta ATK e DEF significativamente.",
+      "type": "held",
+      "tier": "raro",
+      "stats": {
+        "atk": 3,
+        "def": 3
+      },
+      "break": {
+        "enabled": true,
+        "chance": 0.05
+      }
+    },
+    {
+      "id": "IT_BALANCED_LENDARIO",
+      "name": "Coração do Campeão",
+      "description": "Item lendário balanceado e indestrutível.",
+      "type": "held",
+      "tier": "lendario",
+      "stats": {
+        "atk": 6,
+        "def": 6
+      },
+      "break": {
+        "enabled": false,
+        "chance": 0
+      }
+    }
+  ]
+}
