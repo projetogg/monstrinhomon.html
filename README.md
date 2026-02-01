@@ -44,6 +44,32 @@ Monstrinhomon is a therapeutic game designed for children with ASD level 1 and A
 5. Track therapeutic progress in the "Therapy" tab
 6. View reports in the "Report" tab
 
+### For Developers (AI-Friendly Setup)
+
+#### Using Replit
+1. Import this repository into Replit
+2. The `.replit` file automatically configures everything
+3. Click "Run" to start the development server
+4. Access the game in the Webview panel
+
+#### Using Command-Line Tools
+```bash
+# Interactive menu with all commands
+npm run menu
+# or
+./commands.sh
+
+# Quick commands
+npm run dev        # Start local server
+npm test           # Run tests
+npm run validate   # Validate code
+```
+
+#### With AI Tools (ChatGPT, Claude, Copilot)
+- **Read first**: `AI_SUMMARY.md` - Complete project summary for AI
+- **Commands**: `AI_COMMANDS.md` - Ready-to-use prompts and scripts
+- **Quick ref**: `QUICK_REFERENCE.md` - Fast copy-paste reference
+
 ### Deployment to GitHub Pages
 1. Push `index.html` to your GitHub repository
 2. Go to Settings → Pages
@@ -141,6 +167,66 @@ The Report tab shows:
 - Medal awards
 - Objectives completion rate
 - Encounter history
+
+## 🤖 AI Integration & Developer Tools
+
+This project includes comprehensive AI-friendly documentation and tools:
+
+### AI Documentation
+- **AI_SUMMARY.md** - Complete project summary optimized for AI assistants (ChatGPT, Claude, etc)
+- **AI_COMMANDS.md** - Ready-to-use prompts, commands, and workflows for AI-assisted development
+- **QUICK_REFERENCE.md** - Fast copy-paste reference for common tasks
+
+### Command-Line Tools
+- **commands.sh** - Interactive menu with all development commands
+  ```bash
+  ./commands.sh  # or npm run menu
+  ```
+  Features:
+  - Setup and installation
+  - Development server
+  - Testing and validation
+  - Git operations
+  - Project maintenance
+  - Documentation access
+
+### NPM Scripts
+```bash
+npm run dev        # Start development server (port 8000)
+npm run menu       # Open interactive command menu
+npm test           # Run all tests
+npm run validate   # Validate code before commit
+npm run backup     # Create project backup
+npm run clean      # Clean temporary files
+```
+
+### Replit Configuration
+- **.replit** - Automatic configuration for Replit.com
+  - Zero-config import and run
+  - Integrated debugger
+  - Auto-start development server
+
+### Using with AI Tools
+
+**ChatGPT / Claude:**
+```
+1. Share AI_SUMMARY.md with the AI
+2. Use prompts from AI_COMMANDS.md
+3. Get code, explanations, and solutions
+```
+
+**GitHub Copilot:**
+```
+Reads AGENTS.md automatically
+Use AI_SUMMARY.md as additional context
+```
+
+**Replit AI:**
+```
+Import repository
+.replit configures everything
+Ask Replit AI for help
+```
 
 ## 🔧 Technical Details
 
