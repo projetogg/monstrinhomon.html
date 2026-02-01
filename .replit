@@ -1,0 +1,106 @@
+# Configuração Replit para Monstrinhomon
+# Este arquivo configura como o projeto funciona no Replit
+
+# Linguagem principal
+language = "html"
+
+# Comando para executar o projeto
+run = "python3 -m http.server 8000"
+
+# Ponto de entrada (arquivo principal)
+entrypoint = "index.html"
+
+# Configuração do servidor web
+[nix]
+channel = "stable-22_11"
+
+[deployment]
+run = ["sh", "-c", "python3 -m http.server 8000"]
+deploymentTarget = "static"
+publicDir = "."
+
+# Arquivos a serem ignorados
+[gitHubImport]
+requiredFiles = [".replit", "index.html"]
+
+# Configurações de ambiente
+[env]
+PATH = "/home/runner/$REPL_SLUG/.pythonlibs/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+# Portas
+[[ports]]
+localPort = 8000
+externalPort = 80
+
+# Unidades para executar testes
+[unitTest]
+language = "nodejs"
+
+# Configuração de debugger
+[debugger]
+support = true
+
+[debugger.interactive]
+transport = "localhost:0"
+startCommand = ["dap-node"]
+
+[debugger.interactive.initializeMessage]
+command = "initialize"
+type = "request"
+
+[debugger.interactive.initializeMessage.arguments]
+clientID = "replit"
+clientName = "replit.com"
+columnsStartAt1 = true
+linesStartAt1 = true
+locale = "en-us"
+pathFormat = "path"
+supportsInvalidatedEvent = true
+supportsProgressReporting = true
+supportsRunInTerminalRequest = true
+supportsVariablePaging = true
+supportsVariableType = true
+
+[debugger.interactive.launchMessage]
+command = "launch"
+type = "request"
+
+[debugger.interactive.launchMessage.arguments]
+console = "externalTerminal"
+cwd = "."
+pauseForSourceMap = false
+program = "./index.html"
+request = "launch"
+sourceMaps = true
+stopOnEntry = false
+type = "pwa-node"
+
+# Configuração de pacotes
+[packager]
+language = "nodejs"
+
+[packager.features]
+enabledForHosting = false
+packageSearch = true
+guessImports = true
+
+# LSP (Language Server Protocol)
+[languages.javascript]
+pattern = "**/*.js"
+[languages.javascript.languageServer]
+start = "typescript-language-server --stdio"
+
+[languages.html]
+pattern = "**/*.html"
+[languages.html.languageServer]
+start = "vscode-html-language-server --stdio"
+
+[languages.css]
+pattern = "**/*.css"
+[languages.css.languageServer]
+start = "vscode-css-language-server --stdio"
+
+# Configurações do editor
+[editor]
+tabSize = 2
+indentUnit = 2
