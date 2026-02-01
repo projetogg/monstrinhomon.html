@@ -6603,6 +6603,10 @@
                 showToast('Erro ao remover item');
             }
         }
+        
+        // PR12A: Make equipment functions globally available
+        window.equipItem = equipItem;
+        window.unequipItem = unequipItem;
 
         function updateSessionView() {
             try {
