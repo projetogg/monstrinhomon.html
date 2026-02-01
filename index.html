@@ -6538,10 +6538,30 @@
                     newMonster.evolvesAt = template.evolvesAt;
                 }
                 
-                // PR14B: Show egg hatch modal BEFORE making changes
-                if (window.showEggHatchModal) {
-                    await window.showEggHatchModal(newMonster);
+                // ============================================================================
+                // PR14B: CRITICAL - Modal must be confirmed BEFORE any state changes
+                // This ensures egg is NEVER consumed if:
+                // - User closes tab/reloads during modal
+                // - Modal fails to display
+                // - Any error occurs before confirmation
+                // ============================================================================
+                
+                // Show modal and WAIT for user confirmation
+                // If this throws or user closes page, execution stops here
+                // and NO state changes happen below
+                try {
+                    if (window.showEggHatchModal) {
+                        await window.showEggHatchModal(newMonster);
+                    }
+                } catch (error) {
+                    console.error('[EggHatch] Modal error - egg NOT consumed:', error);
+                    alert('❌ Erro ao exibir resultado. Ovo não foi consumido.');
+                    return; // Exit without consuming egg
                 }
+                
+                // ============================================================================
+                // ONLY AFTER user confirms modal do we mutate state
+                // ============================================================================
                 
                 // Ensure arrays exist
                 player.team = player.team || [];
@@ -6557,13 +6577,13 @@
                     location = 'box';
                 }
                 
-                // Decrease egg quantity
+                // Decrease egg quantity (ONLY after modal confirmed)
                 player.inventory[eggItemId] = eggQty - 1;
                 if (player.inventory[eggItemId] <= 0) {
                     delete player.inventory[eggItemId];
                 }
                 
-                // Save game
+                // Save game (ONLY after modal confirmed)
                 saveToLocalStorage();
                 
                 // Update views

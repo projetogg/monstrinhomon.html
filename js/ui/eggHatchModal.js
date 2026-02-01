@@ -8,6 +8,19 @@
  * 1. Incubação (300-500ms): "🥚 Ovo chocando..."
  * 2. Nascimento: Exibe dados do Monstrinho nascido
  * 
+ * GARANTIA CRÍTICA DE CONSISTÊNCIA:
+ * ==================================
+ * O modal é BLOQUEANTE e usa Promise + await para garantir que:
+ * 
+ * 1. O ovo NUNCA é consumido antes da confirmação do usuário
+ * 2. Se o usuário fecha a aba durante o modal, a Promise nunca resolve
+ *    e a função caller para de executar, preservando o estado
+ * 3. Se ocorrer erro ao exibir o modal, a Promise é rejeitada e o
+ *    ovo NÃO é consumido
+ * 4. Safety timeout de 5min previne que o modal fique travado indefinidamente
+ * 
+ * Esta garantia é essencial para evitar frustração (perder ovo sem ver resultado).
+ * 
  * Funções exportadas:
  * - showEggHatchModal(monster): Mostra modal completo (incubação + resultado)
  */
@@ -24,6 +37,15 @@ function getOrCreateModalElement() {
         modal.id = 'eggHatchModal';
         modal.className = 'modal-overlay-fixed';
         modal.style.display = 'none';
+        
+        // Prevent clicks on overlay from passing through
+        // Modal is blocking - only the confirm button should close it
+        modal.addEventListener('click', (e) => {
+            // Prevent any click from bubbling up
+            e.stopPropagation();
+            // Only close if clicking directly on overlay (not content)
+            // But since we only have a confirm button, this is just defensive
+        });
         
         // Conteúdo do modal
         modal.innerHTML = `
@@ -157,27 +179,53 @@ function closeModal() {
  * Mostra modal completo de eclosão de ovo
  * Sequência: Incubação (400ms) → Nascimento
  * 
+ * GARANTIA DE CONSISTÊNCIA:
+ * - A Promise só resolve quando o usuário clica em "Confirmar"
+ * - Se a página for fechada/recarregada durante o modal, a Promise nunca resolve
+ * - Isso garante que o código que chama esta função (e usa await) nunca
+ *   executará as linhas seguintes (consumir ovo, salvar estado)
+ * - O modal é bloqueante - não há forma de fechá-lo sem clicar em Confirmar
+ * 
  * @param {Object} monster - Dados do Monstrinho nascido
- * @returns {Promise} Promise que resolve quando modal é fechado
+ * @returns {Promise} Promise que resolve quando modal é fechado pelo usuário
  */
 export function showEggHatchModal(monster) {
-    return new Promise((resolve) => {
-        // Criar/obter modal
-        const modal = getOrCreateModalElement();
-        
-        // Registrar função global de fechar
-        window.closeEggHatchModal = () => {
+    return new Promise((resolve, reject) => {
+        try {
+            // Criar/obter modal
+            const modal = getOrCreateModalElement();
+            
+            // Safety timeout - se por algum motivo modal ficar "travado"
+            // por mais de 5 minutos, rejeitar a promise
+            // Isso previne que o egg fique "locked" indefinidamente
+            const safetyTimeout = setTimeout(() => {
+                console.error('[EggHatchModal] Safety timeout - modal did not resolve in 5 minutes');
+                closeModal();
+                reject(new Error('Modal timeout - egg was NOT consumed'));
+            }, 5 * 60 * 1000); // 5 minutes
+            
+            // Registrar função global de fechar
+            window.closeEggHatchModal = () => {
+                clearTimeout(safetyTimeout); // Cancel safety timeout
+                closeModal();
+                resolve(); // Resolve promise - allow egg consumption
+            };
+            
+            // Stage 1: Incubação
+            showIncubationState(modal);
+            
+            // Stage 2: Após 400ms, mostrar resultado
+            setTimeout(() => {
+                showBirthResult(modal, monster);
+            }, 400);
+            
+        } catch (error) {
+            console.error('[EggHatchModal] Error showing modal:', error);
             closeModal();
-            resolve();
-        };
-        
-        // Stage 1: Incubação
-        showIncubationState(modal);
-        
-        // Stage 2: Após 400ms, mostrar resultado
-        setTimeout(() => {
-            showBirthResult(modal, monster);
-        }, 400);
+            reject(error); // Reject promise - prevent egg consumption
+        }
+    });
+}
     });
 }
 
