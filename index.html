@@ -6940,7 +6940,7 @@
                             
                             <h4>📦 Inventory:</h4>
                             <div class="inventory-section">
-                                ${renderPlayerInventory(player)}
+                                ${renderPlayerInventorySimple(player)}
                             </div>
                             
                             <h4>Team Order (${teamCount}):</h4>
@@ -7017,8 +7017,8 @@
                 return '<div class="monster-card">Error</div>';
             }
         }
-
-        function renderPlayerInventory(player) {
+        
+        function renderPlayerInventorySimple(player) {
             try {
                 if (!player || !player.inventory) {
                     return '<p class="text-muted">No inventory.</p>';
@@ -7035,7 +7035,7 @@
                 
                 items.forEach(itemId => {
                     const count = inventory[itemId];
-                    const itemDef = getItemDefinition(itemId);
+                    const itemDef = getItemDef(itemId);
                     const name = itemDef ? itemDef.name : itemId;
                     const emoji = itemDef ? (itemDef.emoji || '📦') : '📦';
                     
