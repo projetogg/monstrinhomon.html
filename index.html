@@ -27,6 +27,7 @@
                 <button class="tab-button" onclick="switchTab('encounter')">⚔️ Encounter</button>
                 <button class="tab-button" onclick="switchTab('therapy')">🎯 Therapy</button>
                 <button class="tab-button" onclick="switchTab('box')">📦 Box</button>
+                <button class="tab-button" onclick="switchTab('partyDex')">📘 Monstrodex</button>
                 <button class="tab-button" onclick="switchTab('shop')">🛒 Loja</button>
                 <button class="tab-button" onclick="switchTab('report')">📊 Report</button>
                 <button class="tab-button" onclick="switchTab('settings')">⚙️ Settings</button>
@@ -195,7 +196,17 @@
             <h2>Loja de Itens 🛒</h2>
             
             <div class="card">
-                <h3>Jogador Selecionado</h3>
+                <h3>👤 Selecionar Jogador</h3>
+                <div class="mb-10">
+                    <label><strong>Comprar para:</strong></label>
+                    <select id="shopPlayerSelect" onchange="onShopPlayerChange()">
+                        <option value="">-- Selecione um Jogador --</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>💰 Informações do Jogador</h3>
                 <div id="shopPlayerInfo">
                     <p>Selecione um jogador para comprar itens.</p>
                 </div>
@@ -250,6 +261,13 @@
                 <div id="boxMonstersList" class="box-grid">
                     <p class="text-center">Carregando...</p>
                 </div>
+            </div>
+        </div>
+
+        <!-- PR16B: PartyDex Tab -->
+        <div id="tabPartyDex" class="tab-content">
+            <div id="partyDexRoot">
+                <p class="text-center">Carregando Monstrodex...</p>
             </div>
         </div>
 
@@ -463,6 +481,12 @@
         // Import UI modules (PR14B)
         import { showEggHatchModal, initEggHatchModal } from './js/ui/eggHatchModal.js';
         
+        // PR16A: Import PartyDex module
+        import * as PartyDex from './js/data/partyDex.js';
+        
+        // PR16B: Import PartyDex UI module
+        import * as PartyDexUI from './js/ui/partyDexUI.js';
+        
         // Make Combat available globally for the wrapper
         window.Combat = Combat;
         
@@ -474,6 +498,9 @@
         
         // Make egg hatch modal available globally (PR14B)
         window.showEggHatchModal = showEggHatchModal;
+        
+        // PR16A: Make PartyDex available globally
+        window.PartyDex = PartyDex;
         
         // Destructure groupCore for easier access
         const GroupCore = Combat.Group.Core;
@@ -744,6 +771,15 @@
                 seen: [],      // IDs de monstrinhos vistos
                 captured: []   // IDs de monstrinhos capturados
             },
+            // PR16A: PartyDex - Shared Dex for the entire party
+            partyDex: {
+                entries: {},   // { [templateId]: { seen: boolean, captured: boolean } }
+                meta: {
+                    lastMilestoneAwarded: 0  // Last milestone that was awarded (10, 20, 30, etc.)
+                }
+            },
+            // PR16A: Party Money - Shared money pool for milestone rewards
+            partyMoney: 0,
             // FASE 1 POKEMON: Livro de Conquistas (Estatísticas)
             stats: {
                 battlesWon: 0,
@@ -1455,6 +1491,13 @@
                 migratedSave.monsters = Array.isArray(migratedSave.monsters) ? migratedSave.monsters : [];
                 migratedSave.sessions = Array.isArray(migratedSave.sessions) ? migratedSave.sessions : [];
                 
+                // PR16A: Ensure PartyDex and partyMoney exist
+                if (window.PartyDex) {
+                    window.PartyDex.ensurePartyDex(migratedSave);
+                    window.PartyDex.ensurePartyMoney(migratedSave);
+                    console.log('[Migration] PR16A: PartyDex and partyMoney initialized');
+                }
+                
                 console.log('[Migration] Applied v0->v1: Added meta.saveVersion (preserved existing meta fields)');
             }
             
@@ -1976,6 +2019,13 @@
                     activeButton.classList.add('active');
                 }
                 
+                // PR16B: Render PartyDex when tab is opened
+                // Note: renderPartyDexTab() is idempotent (DOM-only, no side effects)
+                // Safe to call multiple times without creating loops or duplicates
+                if (tabName === 'partyDex' && typeof window.renderPartyDexTab === 'function') {
+                    window.renderPartyDexTab();
+                }
+                
                 updateAllViews();
             } catch (error) {
                 showError('Tab switching failed', error.stack);
@@ -2010,11 +2060,17 @@
                 GameState.therapistMode = v; 
             } catch (e) {
                 console.warn('Failed to set GameState.therapistMode:', e);
+                return false;
             }
-            StorageManager.setTherapistMode(v); // PR3
+            const storageSaved = StorageManager.setTherapistMode(v); // PR3
+            if (!storageSaved) {
+                console.warn('[mmSetTherapistMode] StorageManager.setTherapistMode failed');
+                return false;
+            }
             if (typeof saveToLocalStorage === "function") saveToLocalStorage();
             // Update UI elements
             mmUpdateTherapistUI();
+            return true;
         }
 
         function mmRequireGameOrAlert() {
@@ -2862,6 +2918,14 @@
                     success: true
                 }, "info");
 
+                // PR16A: Mark as captured in PartyDex and check milestones
+                if (window.PartyDex && templateId) {
+                    window.PartyDex.onMonsterAddedToGroup(GameState, templateId, {
+                        showToast: showToast,
+                        saveToLocalStorage: saveToLocalStorage
+                    });
+                }
+
                 // Persist
                 saveGame();
                 return monster;
@@ -3260,7 +3324,7 @@
                     const randomMonster = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
                     const level = Math.floor(Math.random() * 10) + 1;
                     encounter.wildMonster = createMonsterInstanceFromTemplate(
-                        randomMonster.id, 
+                        randomMonster.id,  // Template ID from catalog
                         level, 
                         null, // Use template's default rarity
                         { id: 'wild_' + Date.now() } // Override with wild encounter ID
@@ -3271,6 +3335,11 @@
                     
                     // FASE 1 POKEMON: Marcar como visto no Monstródex
                     updateMonstrodex('see', randomMonster.id);
+                    
+                    // PR16A: Mark as seen in PartyDex (randomMonster.id is the template ID)
+                    if (window.PartyDex) {
+                        window.PartyDex.markDexSeen(GameState, randomMonster.id);
+                    }
                 }
                 
                 GameState.currentEncounter = encounter;
@@ -3325,11 +3394,16 @@
                 // Wave B2: enemy instances now use factory
                 const randomMonster = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
                 const enemy = createMonsterInstanceFromTemplate(
-                    randomMonster.id, 
+                    randomMonster.id,  // Template ID from catalog
                     enemyLevel, 
                     null, // Use template's default rarity
                     { id: 'enemy_1' } // Override with group encounter enemy ID
                 );
+                
+                // PR16A: Mark as seen in PartyDex (randomMonster.id is the template ID)
+                if (window.PartyDex) {
+                    window.PartyDex.markDexSeen(GameState, randomMonster.id);
+                }
                 
                 // Criar encounter de grupo
                 const encounter = {
@@ -5316,6 +5390,15 @@
                         updateMonstrodex('capture', monster.monsterId || monster.templateId);
                     }
                     
+                    // PR16A: Mark as captured in PartyDex and check milestones
+                    if (window.PartyDex && (monster.monsterId || monster.templateId)) {
+                        const templateId = monster.monsterId || monster.templateId;
+                        window.PartyDex.onMonsterAddedToGroup(GameState, templateId, {
+                            showToast: showToast,
+                            saveToLocalStorage: saveToLocalStorage
+                        });
+                    }
+                    
                     // Feature 4.2: Tutorial hook
                     tutorialOnAction("capture");
                     
@@ -5610,7 +5693,7 @@
                 };
                 
                 // 4. Executar combate via módulo
-                const result = Combat.Actions.executeWildAttack({
+                const result = Combat.Wild.Actions.executeWildAttack({
                     encounter,
                     player,
                     playerMonster,
@@ -6377,7 +6460,102 @@
             }
         }
 
+        /**
+         * PR16B: Render PartyDex tab
+         * 
+         * Wrapper function that calls the PartyDexUI module with proper dependencies.
+         * 
+         * IDEMPOTENT: Multiple calls only update DOM (no side effects, no loops).
+         * Safe to call on tab switch and after relevant events (capture, egg hatch).
+         */
+        function renderPartyDexTab() {
+            try {
+                // Ensure PartyDex structures exist
+                if (window.PartyDex) {
+                    window.PartyDex.ensurePartyDex(GameState);
+                    window.PartyDex.ensurePartyMoney(GameState);
+                }
+                
+                const root = document.getElementById('partyDexRoot');
+                if (!root) {
+                    console.warn('[PartyDex] Root element not found');
+                    return;
+                }
+                
+                // Check if PartyDexUI is loaded
+                if (!window.PartyDexUI || typeof window.PartyDexUI.renderPartyDex !== 'function') {
+                    console.warn('[PartyDex] PartyDexUI module not loaded');
+                    root.innerHTML = '<p class="error">Módulo PartyDex UI não carregado</p>';
+                    return;
+                }
+                
+                /**
+                 * Get all monster templates (canonical source)
+                 * Priority:
+                 * 1. Data.getMonstersMapSync() - JSON-loaded monsters (PR9B)
+                 *    Returns Map, so we convert to Array via Array.from(map.values())
+                 * 2. MONSTER_CATALOG - Hardcoded fallback (only if JSON not available)
+                 */
+                function getMonsterTemplates() {
+                    // Try JSON-loaded monsters first (canonical source from PR9B)
+                    if (window.Data && window.Data.getMonstersMapSync) {
+                        const monstersMap = window.Data.getMonstersMapSync();
+                        // getMonstersMapSync() returns a Map, convert to Array
+                        if (monstersMap && monstersMap.size > 0) {
+                            return Array.from(monstersMap.values());
+                        }
+                    }
+                    
+                    // Fallback: Use hardcoded MONSTER_CATALOG only if JSON not available
+                    console.log('[PartyDex] Using fallback MONSTER_CATALOG (JSON not loaded)');
+                    return MONSTER_CATALOG || [];
+                }
+                
+                // Render the PartyDex UI (idempotent DOM update)
+                window.PartyDexUI.renderPartyDex(root, {
+                    state: GameState,
+                    getMonsterTemplates: getMonsterTemplates
+                });
+                
+            } catch (error) {
+                console.error('[PartyDex] Failed to render:', error);
+                const root = document.getElementById('partyDexRoot');
+                if (root) {
+                    root.innerHTML = '<p class="error">Erro ao renderizar Monstrodex</p>';
+                }
+            }
+        }
+
         // ===== SHOP SYSTEM (PR13A) =====
+        
+        /**
+         * Initialize shop UI state
+         */
+        function ensureShopUIState() {
+            if (!GameState.ui) GameState.ui = {};
+            
+            const fallbackId = GameState.players?.[0]?.id || null;
+            
+            // Initialize selectedShopPlayerId if not set or invalid
+            if (!GameState.ui.selectedShopPlayerId ||
+                !GameState.players.some(p => p.id === GameState.ui.selectedShopPlayerId)) {
+                GameState.ui.selectedShopPlayerId = fallbackId;
+            }
+        }
+        
+        /**
+         * Handle shop player selector change
+         */
+        function onShopPlayerChange() {
+            const select = document.getElementById('shopPlayerSelect');
+            if (!select) return;
+            
+            const playerId = select.value;
+            if (playerId && GameState.ui) {
+                GameState.ui.selectedShopPlayerId = playerId;
+                updateShopView();
+            }
+        }
         
         /**
          * Update shop view with current player and items
@@ -6387,16 +6565,30 @@
                 const playerInfo = document.getElementById('shopPlayerInfo');
                 const itemsList = document.getElementById('shopItemsList');
                 const inventoryContainer = document.getElementById('shopPlayerInventory');
+                const playerSelect = document.getElementById('shopPlayerSelect');
                 
                 if (!playerInfo || !itemsList) return;
                 
-                // Get selected player from encounter dropdown or first available player
-                let selectedPlayerId = document.getElementById('encounterPlayer')?.value;
-                if (!selectedPlayerId && GameState.players && GameState.players.length > 0) {
-                    selectedPlayerId = GameState.players[0].id;
-                }
+                // Ensure shop UI state is initialized
+                ensureShopUIState();
                 
+                // Get selected player from dedicated shop selector
+                const selectedPlayerId = GameState.ui.selectedShopPlayerId;
                 const player = GameState.players?.find(p => p.id === selectedPlayerId);
+                
+                // Populate player selector dropdown
+                if (playerSelect) {
+                    playerSelect.innerHTML = '<option value="">-- Selecione um Jogador --</option>';
+                    GameState.players.forEach(p => {
+                        const option = document.createElement('option');
+                        option.value = p.id;
+                        option.textContent = p.name;
+                        if (p.id === selectedPlayerId) {
+                            option.selected = true;
+                        }
+                        playerSelect.appendChild(option);
+                    });
+                }
                 
                 if (!player) {
                     playerInfo.innerHTML = '<p>Nenhum jogador disponível. Crie um jogador primeiro!</p>';
@@ -6600,20 +6792,23 @@
                     };
                     const tierColor = tierColors[item.tier] || '#999';
                     
+                    // Check if it's an egg
+                    const isEgg = item.category === 'egg';
+                    
                     html += `
                         <div class="card" style="margin: 0; padding: 1rem; border-left: 4px solid ${tierColor};">
                             <h4 style="margin-top: 0;">${item.name}</h4>
-                            <p style="font-size: 0.9em; color: #666;">
+                            ${isEgg ? '<p style="font-size: 0.9em; color: #666; font-weight: bold;">🥚 OVO</p>' : item.tier ? `<p style="font-size: 0.9em; color: #666;">
                                 <span style="color: ${tierColor}; font-weight: bold; text-transform: uppercase;">
                                     ${item.tier}
                                 </span>
-                            </p>
+                            </p>` : ''}
                             <p style="font-size: 0.9em;">${item.description}</p>
-                            <p style="font-size: 0.85em; color: #555;">
+                            ${item.stats ? `<p style="font-size: 0.85em; color: #555;">
                                 <strong>Stats:</strong> 
                                 ${item.stats.atk > 0 ? `⚔️ ATK +${item.stats.atk}` : ''}${item.stats.atk > 0 && item.stats.def > 0 ? ' ' : ''}${item.stats.def > 0 ? `🛡️ DEF +${item.stats.def}` : ''}
-                            </p>
-                            ${item.break.enabled ? `<p style="font-size: 0.85em; color: #e74c3c;">⚠️ Pode quebrar (${Math.round(item.break.chance * 100)}%)</p>` : ''}
+                            </p>` : ''}
+                            ${item.break?.enabled ? `<p style="font-size: 0.85em; color: #e74c3c;">⚠️ Pode quebrar (${Math.round(item.break.chance * 100)}%)</p>` : ''}
                             <p style="font-size: 0.85em; color: #555;">
                                 <strong>Você tem:</strong> ${owned}x
                             </p>
@@ -6991,6 +7186,15 @@
                 player.inventory[eggItemId] = eggQty - 1;
                 if (player.inventory[eggItemId] <= 0) {
                     delete player.inventory[eggItemId];
+                }
+                
+                // PR16A: Mark as captured in PartyDex and check milestones
+                if (window.PartyDex && (newMonster.monsterId || template.id)) {
+                    const templateId = newMonster.monsterId || template.id;
+                    window.PartyDex.onMonsterAddedToGroup(GameState, templateId, {
+                        showToast: showToast,
+                        saveToLocalStorage: saveToLocalStorage
+                    });
                 }
                 
                 // Save game (ONLY after modal confirmed)
@@ -7940,7 +8144,25 @@
         function toggleTherapistMode() {
             try {
                 const checked = document.getElementById('therapistMode')?.checked;
-                mmSetTherapistMode(checked);
+                const success = mmSetTherapistMode(checked);
+                
+                // Mostrar feedback visual para o usuário
+                if (success) {
+                    if (checked) {
+                        showToast('🔬 Modo Terapeuta ativado', 'success');
+                    } else {
+                        showToast('Modo Terapeuta desativado', 'info');
+                    }
+                } else {
+                    // Falha silenciosa corrigida: informar o usuário sobre o erro
+                    showToast('❌ Falha ao alterar modo terapeuta', 'error');
+                    console.error('[toggleTherapistMode] mmSetTherapistMode returned false');
+                    // Reverter checkbox para o estado correto
+                    const checkbox = document.getElementById('therapistMode');
+                    if (checkbox) {
+                        checkbox.checked = mmIsTherapistMode();
+                    }
+                }
                 
                 // Also update the old config panel if it exists
                 const configPanel = document.getElementById('configPanel');
@@ -7952,7 +8174,8 @@
                     }
                 }
             } catch (error) {
-                console.error('Failed to toggle therapist mode:', error);
+                console.error('[toggleTherapistMode] Failed to toggle therapist mode:', error);
+                showToast('❌ Erro ao alterar modo terapeuta: ' + error.message, 'error');
             }
         }
 
@@ -8568,15 +8791,20 @@
                     ) || MONSTER_CATALOG[0]; // Fallback to first monster if no match
                     
                     // Create player first (Award API needs player object)
+                    // Recursos iniciais: mesmos valores que addPlayer() para consistência
                     const player = {
                         id: playerId,
                         name: p.name,
                         class: p.class,
+                        money: 100,
+                        afterlifeCurrency: 0,
                         team: [],
                         box: [],
                         inventory: {
-                            'Monstribola': 5,
-                            'Poção': 3
+                            'CLASTERORB_COMUM': 5,    // ClasterOrb Comum x5
+                            'CLASTERORB_INCOMUM': 2,  // ClasterOrb Incomum x2
+                            'CLASTERORB_RARA': 1,     // ClasterOrb Rara x1
+                            'IT_HEAL_01': 3           // Petisco de Cura x3
                         }
                     };
                     
@@ -9313,6 +9541,9 @@
         window.importData = importData;
         window.clearAllData = clearAllData;
         window.attackWild = attackWild;
+        window.useItemInBattle = useItemInBattle;
+        window.attemptCapture = attemptCapture;
+        window.fleeEncounter = fleeEncounter;
         window.useSkillWild = useSkillWild;
         window.mmEnterGameUI = mmEnterGameUI;
         window.mmCloseAllOverlays = mmCloseAllOverlays;
@@ -9329,6 +9560,7 @@
         window.mmCloseSaves = mmCloseSaves;
         window.mmSaveToSlot = mmSaveToSlot;
         window.hatchEggFromInventory = hatchEggFromInventory; // PR14B: Egg hatching modal
+        window.renderPartyDexTab = renderPartyDexTab; // PR16B: PartyDex UI
         window.mmLoadFromSlot = mmLoadFromSlot;
         window.mmDeleteSlot = mmDeleteSlot;
         window.mmExportSlot = mmExportSlot;
@@ -9340,6 +9572,7 @@
         window.mmTherGiveItem = mmTherGiveItem;
         window.mmTherGiveXP = mmTherGiveXP;
         window.mmTherGiveXPQuick = mmTherGiveXPQuick;
+        window.toggleTherapistMode = toggleTherapistMode;
         window.Audio = Audio;
 
         // Initialize on load
