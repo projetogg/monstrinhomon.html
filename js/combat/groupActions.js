@@ -87,7 +87,8 @@ export function executePlayerAttackGroup(deps) {
     
     const alwaysMiss = (d20 === 1);
     const isCrit = (d20 === 20);
-    const hit = !alwaysMiss && (isCrit || core.checkHit(d20, mon, enemy));
+    // Bug Fix #3: Adicionar classAdvantages como 4º parâmetro
+    const hit = !alwaysMiss && (isCrit || core.checkHit(d20, mon, enemy, state.config?.classAdvantages));
 
     const attackerName = player.name || player.nome || actor.name || "Jogador";
     const monName = mon.nickname || mon.name || mon.nome || "Monstrinho";
@@ -128,20 +129,18 @@ export function executePlayerAttackGroup(deps) {
     const defMods = core.getBuffModifiers(enemy);
     const effectiveDef = Math.max(1, (Number(enemy.def) || 0) + defMods.def);
 
-    // Calcular vantagem de classe
-    const classAdv = state.config?.classAdvantages?.[mon.class];
-    let damageMult = 1.0;
-    if (classAdv?.strong === enemy.class) {
-        damageMult = 1.10;
-    } else if (classAdv?.weak === enemy.class) {
-        damageMult = 0.90;
-    }
+    // Bug Fix #4: Usar getClassAdvantageModifiers() corretamente
+    const classAdv = core.getClassAdvantageModifiers(
+        mon.class,
+        enemy.class,
+        state.config?.classAdvantages
+    );
 
     const dmg = core.calcDamage({
         atk: effectiveAtk,
         def: effectiveDef,
         power: powerUsed,
-        damageMult: damageMult
+        damageMult: classAdv.damageMult
     });
     
     // Apply damage
@@ -218,7 +217,8 @@ export function executeEnemyTurnGroup(enc, deps) {
 
     const alwaysMiss = (d20 === 1);
     const isCrit = (d20 === 20);
-    const hit = !alwaysMiss && (isCrit || core.checkHit(d20, enemy, targetMon));
+    // Bug Fix #5: Adicionar classAdvantages como 4º parâmetro
+    const hit = !alwaysMiss && (isCrit || core.checkHit(d20, enemy, targetMon, state.config?.classAdvantages));
     
     // Feature 3.8: Record d20 roll
     const rollType = isCrit ? 'crit' : alwaysMiss ? 'fail' : 'normal';
@@ -256,20 +256,18 @@ export function executeEnemyTurnGroup(enc, deps) {
     const defMods = core.getBuffModifiers(targetMon);
     const effectiveDef = Math.max(1, (Number(targetMon?.def) || 0) + defMods.def);
 
-    // Calcular vantagem de classe
-    const classAdv = state.config?.classAdvantages?.[enemy.class];
-    let damageMult = 1.0;
-    if (classAdv?.strong === targetMon?.class) {
-        damageMult = 1.10;
-    } else if (classAdv?.weak === targetMon?.class) {
-        damageMult = 0.90;
-    }
+    // Bug Fix #4: Usar getClassAdvantageModifiers() corretamente
+    const classAdv = core.getClassAdvantageModifiers(
+        enemy.class,
+        targetMon?.class,
+        state.config?.classAdvantages
+    );
 
     const dmg = core.calcDamage({
         atk: effectiveAtk,
         def: effectiveDef,
         power: powerUsed,
-        damageMult: damageMult
+        damageMult: classAdv.damageMult
     });
     
     // Apply damage
