@@ -151,6 +151,17 @@ The Report tab shows:
 - **Browser Compatibility**: Modern browsers (Chrome 90+, Safari 14+, Firefox 88+)
 - **Mobile Support**: Fully responsive, optimized for iPad
 
+### Developer Documentation
+
+For developers working on the codebase:
+
+- **[DEF Field Reference](DEF_FIELD_REFERENCE.md)** - Complete guide on where the DEF (Defense) field is located in different objects (monsters, players, items)
+- **[DEF Usage Examples](EXAMPLES_DEF_USAGE.md)** - Practical code examples of accessing and using the DEF field
+- **[Active Player Reference](ACTIVE_PLAYER_REFERENCE.md)** - Guide on how to access the active player in different contexts
+- **[Game Rules](GAME_RULES.md)** - Official game rules and mechanics
+- **[Data Instructions](.github/instructions/data.instructions.md)** - Guidelines for working with game data
+- **[Test Instructions](.github/instructions/tests.instructions.md)** - Testing conventions and best practices
+
 ## 📝 License
 
 Created for therapeutic use in clinical settings.
