@@ -2828,7 +2828,6 @@
 
                 // Ensure arrays exist
                 player.team = player.team || [];
-                player.box = player.box || [];
 
                 // Determine destination
                 let actualDest = dest;
@@ -2843,21 +2842,27 @@
                     if (player.team.length < maxTeamSize) {
                         player.team.push(monster);
                     } else {
-                        // Party full, add to box instead
-                        player.box.push(monster);
+                        // Party full, add to sharedBox instead (PR15A)
+                        const boxResult = addToSharedBox(player.id, monster);
+                        if (!boxResult.success) {
+                            console.error('Failed to add to box:', boxResult.message);
+                        }
                         actualDest = 'box';
                         // Commit 13 (Wave 13.2): Use mmDebugLog
                         mmDebugLog("AWARD_MONSTER", {
                             context: 'awardMonster',
                             templateId,
-                            note: 'Party full, redirected to box',
+                            note: 'Party full, redirected to sharedBox',
                             requestedDest: 'team',
                             actualDest: 'box'
                         }, "warn");
                     }
                 } else {
-                    // box
-                    player.box.push(monster);
+                    // box - use sharedBox (PR15A)
+                    const boxResult = addToSharedBox(player.id, monster);
+                    if (!boxResult.success) {
+                        console.error('Failed to add to box:', boxResult.message);
+                    }
                 }
 
                 // Add to global monsters list (for compatibility)
@@ -5431,14 +5436,18 @@
                     monster.ownerId = player.id;
                     
                     player.team = player.team || [];
-                    player.box = player.box || [];
                     
                     if (player.team.length < (GameState.config?.maxTeamSize || 6)) {
                         player.team.push(monster);
                         encounter.log.push(`${monster.name} foi adicionado ao time de ${player.name}!`);
                     } else {
-                        player.box.push(monster);
-                        encounter.log.push(`${monster.name} foi enviado para a caixa de ${player.name}!`);
+                        // PR15A: Use sharedBox instead of player.box
+                        const boxResult = addToSharedBox(player.id, monster);
+                        if (boxResult.success) {
+                            encounter.log.push(`${monster.name} foi enviado para a caixa de ${player.name}!`);
+                        } else {
+                            encounter.log.push(`❌ Erro: ${boxResult.message}`);
+                        }
                     }
                     
                     GameState.monsters = GameState.monsters || [];
