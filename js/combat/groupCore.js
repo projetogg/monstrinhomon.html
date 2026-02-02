@@ -17,6 +17,9 @@
 // getBuffModifiers: retorna modificadores de buffs ativos (+ATK, +DEF, +SPD)
 export { checkHit, calcDamage, getBuffModifiers, getClassAdvantageModifiers } from './wildCore.js';
 
+// Import for internal use in this module
+import { getBuffModifiers as _getBuffModifiers } from './wildCore.js';
+
 /**
  * Retorna ator atual do encounter baseado em turnIndex
  * 
@@ -91,6 +94,114 @@ export function chooseTargetByLowestHP(targets) {
     }
     
     return best ? best.id : null;
+}
+
+/**
+ * Calcula defesa efetiva de um monstrinho
+ * 
+ * PURE: effectiveDef = monster.def + itemBonus + buffBonus
+ * 
+ * @param {object} monster - Monstrinho
+ * @param {object|null} heldItem - Item equipado (ou null)
+ * @returns {number} Defesa efetiva
+ */
+export function calculateEffectiveDefense(monster, heldItem = null) {
+    const baseDef = Number(monster?.def) || 0;
+    const itemBonus = Number(heldItem?.stats?.def) || 0;
+    const buffMods = _getBuffModifiers(monster);
+    const buffBonus = Number(buffMods?.def) || 0;
+    
+    return baseDef + itemBonus + buffBonus;
+}
+
+/**
+ * IA v1 - Escolhe alvo baseado em DEF (aggro)
+ * 
+ * PURE: Sistema de pontuação com múltiplos fatores
+ * 
+ * Fórmula de Score:
+ * score = aggroDEF + posBonus + finisherBonus + noise - focusPenalty
+ * 
+ * - aggroDEF: DEF normalizada (0-24), tanks naturalmente atraem
+ * - posBonus: neutro (8) por enquanto, futuro: grid/distance
+ * - finisherBonus: HP baixo (0-16), ajuda a finalizar
+ * - noise: aleatoriedade (-6 a +6), comportamento não-robótico
+ * - focusPenalty: anti-repetição (8 por hit recente), espalha dano
+ * 
+ * Seleção: Top 3 ponderado (60% top1, 30% top2, 10% top3)
+ * 
+ * @param {array} targets - Array de alvos elegíveis: [{ id, playerId, monster, heldItem }]
+ * @param {object} recentTargets - Mapa de IDs recentes: { playerId: hitCount }
+ * @param {function} rngFn - Função random (0-1) para testes determinísticos
+ * @returns {string|null} playerId do alvo escolhido ou null
+ */
+export function pickEnemyTargetByDEF(targets, recentTargets = {}, rngFn = Math.random) {
+    if (!targets || targets.length === 0) return null;
+    
+    // Calcular scores para cada alvo
+    const scored = [];
+    
+    // Primeiro passo: coletar todas as DEFs para normalização
+    const defs = targets.map(t => calculateEffectiveDefense(t.monster, t.heldItem));
+    const defMin = Math.min(...defs);
+    const defMax = Math.max(...defs);
+    const defRange = Math.max(1, defMax - defMin);
+    
+    for (let i = 0; i < targets.length; i++) {
+        const target = targets[i];
+        const def = defs[i];
+        
+        // A) aggroDEF: DEF normalizada (0-24)
+        const defNorm = (def - defMin) / defRange;
+        const aggroDEF = defNorm * 24;
+        
+        // B) posBonus: neutro por enquanto
+        const posBonus = 8;
+        
+        // C) finisherBonus: HP% baixo
+        const hp = Number(target.monster?.hp) || 0;
+        const hpMax = Number(target.monster?.hpMax) || 1;
+        const hpPct = hp / hpMax;
+        const finisherBonus = clamp((1 - hpPct) * 16, 0, 16);
+        
+        // D) noise: aleatoriedade (-6 a +6)
+        const noise = (rngFn() * 12) - 6;
+        
+        // E) focusPenalty: penalidade por repetição
+        const recentHits = recentTargets[target.playerId] || 0;
+        const focusPenalty = recentHits * 8;
+        
+        // Score total
+        const score = aggroDEF + posBonus + finisherBonus + noise - focusPenalty;
+        
+        scored.push({
+            playerId: target.playerId,
+            score: score,
+            _debug: { aggroDEF, posBonus, finisherBonus, noise, focusPenalty, def }
+        });
+    }
+    
+    // Ordenar por score descendente
+    scored.sort((a, b) => b.score - a.score);
+    
+    // Seleção ponderada: top 3
+    // 60% top1, 30% top2, 10% top3
+    const roll = rngFn();
+    
+    if (scored.length === 1) {
+        return scored[0].playerId;
+    } else if (scored.length === 2) {
+        return roll < 0.60 ? scored[0].playerId : scored[1].playerId;
+    } else {
+        // 3 ou mais alvos
+        if (roll < 0.60) {
+            return scored[0].playerId;  // 60%
+        } else if (roll < 0.90) {
+            return scored[1].playerId;  // 30%
+        } else {
+            return scored[2].playerId;  // 10%
+        }
+    }
 }
 
 /**

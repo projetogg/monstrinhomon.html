@@ -23,6 +23,45 @@ export function initializeGroupBattleParticipation(playerMonsters, enemies = [])
 }
 
 /**
+ * Constrói array de alvos elegíveis para IA
+ * 
+ * Critérios de elegibilidade:
+ * - Participante do encounter
+ * - Monstrinho ativo vivo (hp > 0)
+ * - Não fugiu (futuro: verificar flag de fuga)
+ * 
+ * @param {object} enc - Encounter ativo
+ * @param {object} deps - Dependências (state, helpers)
+ * @returns {array} Array de alvos: [{ playerId, monster, heldItem }]
+ */
+export function buildEligibleTargets(enc, deps) {
+    const { state, helpers } = deps;
+    const targets = [];
+    
+    for (const playerId of (enc.participants || [])) {
+        const player = helpers.getPlayerById(playerId);
+        if (!player) continue;
+        
+        const monster = helpers.getActiveMonsterOfPlayer(player);
+        if (!monster || !GroupCore.isAlive(monster)) continue;
+        
+        // Buscar item equipado (se houver)
+        let heldItem = null;
+        if (monster.heldItemId) {
+            heldItem = helpers.getItemById?.(monster.heldItemId) || null;
+        }
+        
+        targets.push({
+            playerId: playerId,
+            monster: monster,
+            heldItem: heldItem
+        });
+    }
+    
+    return targets;
+}
+
+/**
  * PR5C: Executa ataque do jogador em combate de grupo
  * 
  * Extraído de: index.html groupAttack() (linhas 3546-3681)
@@ -197,8 +236,15 @@ export function executeEnemyTurnGroup(enc, deps) {
     // Atualizar buffs (reduzir duração)
     helpers.updateBuffs(enemy);
 
-    // Escolhe alvo (menor HP%)
-    const targetPid = helpers.chooseTargetPlayerId(enc);
+    // IA v1: Escolhe alvo por DEF (aggro)
+    // Inicializar recentTargets se não existir
+    if (!enc.recentTargets) {
+        enc.recentTargets = {};
+    }
+    
+    const eligibleTargets = buildEligibleTargets(enc, deps);
+    const targetPid = GroupCore.pickEnemyTargetByDEF(eligibleTargets, enc.recentTargets);
+    
     if (!targetPid) {
         advanceGroupTurn(enc, deps);
         storage.save();
@@ -277,6 +323,9 @@ export function executeEnemyTurnGroup(enc, deps) {
     markAsParticipated(targetMon);
     // PR11B: Marcar que o inimigo participou (causou dano)
     markAsParticipated(enemy);
+    
+    // IA v1: Atualizar recentTargets para focusPenalty
+    enc.recentTargets[targetPid] = (enc.recentTargets[targetPid] || 0) + 1;
 
     helpers.log(enc, `🎲 ${enemyName} rolou ${d20} e acertou ${targetName} (${targetMonName}) causando ${dmg} de dano!`);
     
