@@ -3759,16 +3759,17 @@
             if (!player || !Array.isArray(player.team)) return;
             
             // Get alive monsters (excluding current active)
+            // GAME_RULES.md: Em batalha, só pode usar monstros da mesma classe do jogador
             const aliveMonsters = [];
             player.team.forEach((mon, idx) => {
-                if (_isAlive(mon) && idx !== player.activeIndex) {
+                if (_isAlive(mon) && idx !== player.activeIndex && mon.class === player.class) {
                     aliveMonsters.push({ monster: mon, index: idx });
                 }
             });
             
             if (aliveMonsters.length === 0) {
-                alert('Sem monstrinhos vivos para substituir!');
-                // Continue battle
+                alert(`⚠️ Sem monstrinhos vivos da sua classe (${player.class}) para substituir!\n\nREGRA: Em batalha, você só pode usar monstrinhos da classe ${player.class}.\nTroque com outros jogadores para completar seu time!`);
+                // Continue battle (player is eliminated)
                 advanceTurn(enc);
                 saveToLocalStorage();
                 renderEncounter();
