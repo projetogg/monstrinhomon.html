@@ -26,6 +26,7 @@
                 <button class="tab-button" onclick="switchTab('players')">👥 Players</button>
                 <button class="tab-button" onclick="switchTab('encounter')">⚔️ Encounter</button>
                 <button class="tab-button" onclick="switchTab('therapy')">🎯 Therapy</button>
+                <button class="tab-button" onclick="switchTab('box')">📦 Box</button>
                 <button class="tab-button" onclick="switchTab('shop')">🛒 Loja</button>
                 <button class="tab-button" onclick="switchTab('report')">📊 Report</button>
                 <button class="tab-button" onclick="switchTab('settings')">⚙️ Settings</button>
@@ -211,6 +212,43 @@
                 <h3>🛒 Itens Disponíveis para Compra</h3>
                 <div id="shopItemsList">
                     <p>Carregando itens...</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="tabBox" class="tab-content">
+            <h2>Box (PC) 📦</h2>
+            
+            <div class="card">
+                <h3>📍 Status</h3>
+                <div id="boxStatus">
+                    <p><strong>Jogador Ativo:</strong> <span id="boxActivePlayer">-</span></p>
+                    <p><strong>Equipe:</strong> <span id="boxTeamCount">0/6</span></p>
+                    <p><strong>Box Total:</strong> <span id="boxTotalCount">0/100</span></p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>📖 Página da Box</h3>
+                <div class="mb-10">
+                    <label><strong>Visualizar página de:</strong></label>
+                    <select id="boxPageSelect" onchange="onBoxPageChange()">
+                        <option value="">-- Selecione --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🎒 Sua Equipe</h3>
+                <div id="boxTeamList" class="box-grid">
+                    <p class="text-center">Carregando...</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>📦 Monstrinhos na Box</h3>
+                <div id="boxMonstersList" class="box-grid">
+                    <p class="text-center">Carregando...</p>
                 </div>
             </div>
         </div>
@@ -690,6 +728,13 @@
             currentEncounter: null,
             objectives: [],
             therapistMode: false, // Feature 4.6: Therapist Mode
+            // PR15A: Shared Box (PC) System
+            sharedBox: [],  // Array of { slotId, ownerPlayerId, monster }
+            ui: {
+                activePlayerId: null,      // Fallback active player for UI
+                boxViewedPlayerId: null,   // Which player's page we're viewing
+                boxPageIndex: 0            // Current page index
+            },
             // COMMIT 4: Save versioning
             meta: {
                 saveVersion: 1  // Current save format version
@@ -1737,6 +1782,20 @@
                 state.objectives = [];
             }
             
+            // PR15A: Garantir sharedBox é array
+            if (!Array.isArray(state.sharedBox)) {
+                state.sharedBox = [];
+            }
+            
+            // PR15A: Garantir ui é objeto
+            if (!state.ui || typeof state.ui !== 'object' || Array.isArray(state.ui)) {
+                state.ui = {
+                    activePlayerId: null,
+                    boxViewedPlayerId: null,
+                    boxPageIndex: 0
+                };
+            }
+            
             // Normalizar cada jogador
             if (state.players) {
                 state.players.forEach(player => {
@@ -1765,12 +1824,21 @@
                         });
                     }
                     
-                    // Normalizar monstros no box
+                    // Normalizar monstros no box (old per-player box)
                     if (player.box) {
                         player.box.forEach(monster => {
                             if (!monster) return;
                             normalizeMonster(monster);
                         });
+                    }
+                });
+            }
+            
+            // PR15A: Normalizar monstros na sharedBox
+            if (state.sharedBox) {
+                state.sharedBox.forEach(slot => {
+                    if (slot && slot.monster) {
+                        normalizeMonster(slot.monster);
                     }
                 });
             }
@@ -5864,6 +5932,328 @@
             }
         }
 
+        // ========================================================================
+        // PR15A: BOX (PC) SYSTEM
+        // ========================================================================
+        
+        /**
+         * Get active player for Box operations with proper fallbacks
+         * Priority: getCurrentPlayer() > ui.activePlayerId > players[0]
+         */
+        function getActivePlayerForBox() {
+            try {
+                if (typeof getCurrentPlayer === "function") {
+                    const p = getCurrentPlayer();
+                    if (p && p.id) return p;
+                }
+            } catch {}
+
+            const uiId = GameState.ui?.activePlayerId;
+            if (uiId) {
+                const p = GameState.players.find(x => x.id === uiId);
+                if (p) return p;
+            }
+
+            return GameState.players[0] || null;
+        }
+
+        /**
+         * Ensure Box UI state is properly initialized
+         */
+        function ensureBoxUIState() {
+            if (!GameState.ui) GameState.ui = {};
+
+            const fallbackId = GameState.players?.[0]?.id || null;
+
+            if (!GameState.ui.activePlayerId ||
+                !GameState.players.some(p => p.id === GameState.ui.activePlayerId)) {
+                GameState.ui.activePlayerId = fallbackId;
+            }
+
+            if (!GameState.ui.boxViewedPlayerId ||
+                !GameState.players.some(p => p.id === GameState.ui.boxViewedPlayerId)) {
+                GameState.ui.boxViewedPlayerId = GameState.ui.activePlayerId;
+            }
+
+            if (typeof GameState.ui.boxPageIndex !== 'number') {
+                GameState.ui.boxPageIndex = 0;
+            }
+
+            if (!Array.isArray(GameState.sharedBox)) {
+                GameState.sharedBox = [];
+            }
+        }
+
+        /**
+         * Add a monster to the shared box
+         */
+        function addToSharedBox(ownerPlayerId, monster) {
+            if (!GameState.sharedBox) GameState.sharedBox = [];
+            
+            const BOX_MAX_TOTAL = 100;
+            if (GameState.sharedBox.length >= BOX_MAX_TOTAL) {
+                return { success: false, message: 'Box está cheia (100/100)' };
+            }
+
+            const slotId = 'BX_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            GameState.sharedBox.push({
+                slotId,
+                ownerPlayerId,
+                monster
+            });
+
+            return { success: true, slotId };
+        }
+
+        /**
+         * Move monster from team to box
+         */
+        function moveTeamToBox(activePlayerId, teamIndex) {
+            const player = GameState.players.find(p => p.id === activePlayerId);
+            if (!player) {
+                return { success: false, message: 'Jogador não encontrado' };
+            }
+
+            if (!player.team || teamIndex < 0 || teamIndex >= player.team.length) {
+                return { success: false, message: 'Índice de equipe inválido' };
+            }
+
+            const monster = player.team[teamIndex];
+            if (!monster) {
+                return { success: false, message: 'Monstrinho não encontrado' };
+            }
+
+            const result = addToSharedBox(activePlayerId, monster);
+            if (!result.success) {
+                return result;
+            }
+
+            // Remove from team
+            player.team.splice(teamIndex, 1);
+
+            return { success: true, message: `${monster.name} enviado para Box` };
+        }
+
+        /**
+         * Move monster from box to team
+         */
+        function moveBoxToTeam(activePlayerId, slotId) {
+            const player = GameState.players.find(p => p.id === activePlayerId);
+            if (!player) {
+                return { success: false, message: 'Jogador não encontrado' };
+            }
+
+            const TEAM_MAX = GameState.config?.maxTeamSize || 6;
+            if (player.team && player.team.length >= TEAM_MAX) {
+                return { success: false, message: `Equipe cheia (${TEAM_MAX}/${TEAM_MAX})` };
+            }
+
+            const slotIndex = GameState.sharedBox.findIndex(slot => slot.slotId === slotId);
+            if (slotIndex === -1) {
+                return { success: false, message: 'Slot não encontrado' };
+            }
+
+            const slot = GameState.sharedBox[slotIndex];
+            if (slot.ownerPlayerId !== activePlayerId) {
+                return { success: false, message: 'Este monstrinho não é seu' };
+            }
+
+            // Add to team
+            if (!player.team) player.team = [];
+            player.team.push(slot.monster);
+
+            // Remove from box
+            GameState.sharedBox.splice(slotIndex, 1);
+
+            return { success: true, message: `${slot.monster.name} retirado da Box` };
+        }
+
+        /**
+         * Handle box page selector change
+         */
+        function onBoxPageChange() {
+            const select = document.getElementById('boxPageSelect');
+            if (!select) return;
+
+            const playerId = select.value;
+            if (playerId && GameState.ui) {
+                GameState.ui.boxViewedPlayerId = playerId;
+                renderBoxTab();
+            }
+        }
+
+        /**
+         * Render Box tab content
+         */
+        function renderBoxTab() {
+            try {
+                ensureBoxUIState();
+                
+                const activePlayer = getActivePlayerForBox();
+                if (!activePlayer) {
+                    document.getElementById('boxStatus').innerHTML = '<p>Nenhum jogador disponível</p>';
+                    return;
+                }
+
+                // Update status
+                const teamCount = activePlayer.team?.length || 0;
+                const TEAM_MAX = GameState.config?.maxTeamSize || 6;
+                const boxTotal = GameState.sharedBox?.length || 0;
+                const BOX_MAX_TOTAL = 100;
+
+                document.getElementById('boxActivePlayer').textContent = activePlayer.name;
+                document.getElementById('boxTeamCount').textContent = `${teamCount}/${TEAM_MAX}`;
+                document.getElementById('boxTotalCount').textContent = `${boxTotal}/${BOX_MAX_TOTAL}`;
+
+                // Populate page selector
+                const pageSelect = document.getElementById('boxPageSelect');
+                if (pageSelect) {
+                    pageSelect.innerHTML = '<option value="">-- Selecione --</option>';
+                    GameState.players.forEach(player => {
+                        const option = document.createElement('option');
+                        option.value = player.id;
+                        option.textContent = player.name;
+                        if (player.id === GameState.ui.boxViewedPlayerId) {
+                            option.selected = true;
+                        }
+                        pageSelect.appendChild(option);
+                    });
+                }
+
+                // Render team
+                const teamList = document.getElementById('boxTeamList');
+                if (teamList && activePlayer.team && activePlayer.team.length > 0) {
+                    teamList.innerHTML = '';
+                    activePlayer.team.forEach((monster, index) => {
+                        if (!monster) return;
+                        
+                        const slotDiv = document.createElement('div');
+                        slotDiv.className = 'box-slot';
+                        slotDiv.innerHTML = `
+                            <div class="box-slot-emoji">${monster.emoji || '🐾'}</div>
+                            <div class="box-slot-name">${monster.name || 'Sem Nome'}</div>
+                            <div class="box-slot-class">${monster.class || '?'}</div>
+                            <div class="box-slot-level">Nv. ${monster.level || 1}</div>
+                            <button class="btn btn-warning box-slot-btn" onclick="sendToBox(${index})">
+                                📦 Enviar para Box
+                            </button>
+                        `;
+                        teamList.appendChild(slotDiv);
+                    });
+                } else if (teamList) {
+                    teamList.innerHTML = '<p class="text-center">Equipe vazia</p>';
+                }
+
+                // Render box monsters for viewed player
+                const viewedPlayerId = GameState.ui.boxViewedPlayerId;
+                const boxList = document.getElementById('boxMonstersList');
+                
+                if (boxList) {
+                    const playerSlots = GameState.sharedBox.filter(slot => slot.ownerPlayerId === viewedPlayerId);
+                    
+                    if (playerSlots.length > 0) {
+                        boxList.innerHTML = '';
+                        playerSlots.forEach(slot => {
+                            const monster = slot.monster;
+                            if (!monster) return;
+                            
+                            const isOwner = activePlayer.id === slot.ownerPlayerId;
+                            const slotDiv = document.createElement('div');
+                            slotDiv.className = isOwner ? 'box-slot' : 'box-slot locked';
+                            
+                            let buttonHtml = '';
+                            if (isOwner) {
+                                if (teamCount < TEAM_MAX) {
+                                    buttonHtml = `
+                                        <button class="btn btn-success box-slot-btn" onclick="withdrawFromBox('${slot.slotId}')">
+                                            ⬆️ Retirar
+                                        </button>
+                                    `;
+                                } else {
+                                    buttonHtml = `
+                                        <button class="btn box-slot-btn" disabled>
+                                            Equipe Cheia
+                                        </button>
+                                    `;
+                                }
+                            } else {
+                                buttonHtml = `<div class="box-slot-owner">🔒 Não é seu</div>`;
+                            }
+                            
+                            slotDiv.innerHTML = `
+                                <div class="box-slot-emoji">${monster.emoji || '🐾'}</div>
+                                <div class="box-slot-name">${monster.name || 'Sem Nome'}</div>
+                                <div class="box-slot-class">${monster.class || '?'}</div>
+                                <div class="box-slot-level">Nv. ${monster.level || 1}</div>
+                                ${buttonHtml}
+                            `;
+                            boxList.appendChild(slotDiv);
+                        });
+                    } else {
+                        boxList.innerHTML = '<p class="text-center">Nenhum monstrinho na Box deste jogador</p>';
+                    }
+                }
+
+            } catch (error) {
+                console.error('Failed to render Box tab:', error);
+                showError('Erro ao renderizar Box', error.stack);
+            }
+        }
+
+        /**
+         * Send monster from team to box
+         */
+        function sendToBox(teamIndex) {
+            try {
+                const activePlayer = getActivePlayerForBox();
+                if (!activePlayer) {
+                    alert('Jogador ativo não encontrado');
+                    return;
+                }
+
+                const result = moveTeamToBox(activePlayer.id, teamIndex);
+                
+                if (result.success) {
+                    saveToLocalStorage();
+                    renderBoxTab();
+                    updateAllViews();
+                } else {
+                    alert(result.message || 'Erro ao enviar para Box');
+                }
+            } catch (error) {
+                showError('Erro ao enviar para Box', error.stack);
+            }
+        }
+
+        /**
+         * Withdraw monster from box to team
+         */
+        function withdrawFromBox(slotId) {
+            try {
+                const activePlayer = getActivePlayerForBox();
+                if (!activePlayer) {
+                    alert('Jogador ativo não encontrado');
+                    return;
+                }
+
+                const result = moveBoxToTeam(activePlayer.id, slotId);
+                
+                if (result.success) {
+                    saveToLocalStorage();
+                    renderBoxTab();
+                    updateAllViews();
+                } else {
+                    alert(result.message || 'Erro ao retirar da Box');
+                }
+            } catch (error) {
+                showError('Erro ao retirar da Box', error.stack);
+            }
+        }
+
+        // ========================================================================
+        // END PR15A: BOX SYSTEM
+        // ========================================================================
+
         // THERAPY MANAGEMENT
         function addObjective() {
             try {
@@ -5962,6 +6352,7 @@
                 updateEncounterPlayerDropdown();
                 updateEncounterUI();
                 renderEncounter();
+                renderBoxTab(); // PR15A: Box system
             } catch (error) {
                 console.error('Failed to update views:', error);
             }
