@@ -6,6 +6,7 @@
  * PR4: Wild 1v1 combat (implementado)
  * PR5A: Group/Boss combat (stubs apenas - implementação em PR futuro)
  * PR##: GroupBattleState v1.0 (estrutura completa)
+ * PASSO 3: GroupBattleLoop v1.0 (loop de batalha)
  */
 
 import * as WildCore from './wildCore.js';
@@ -16,6 +17,7 @@ import * as GroupActions from './groupActions.js';
 import * as GroupUI from './groupUI.js';
 import * as ItemBreakage from './itemBreakage.js';
 import * as GroupBattleState from './groupBattleState.js';
+import * as GroupBattleLoop from './groupBattleLoop.js';
 
 export const Combat = {
     Wild: {
@@ -27,7 +29,8 @@ export const Combat = {
         Core: GroupCore,
         Actions: GroupActions,
         UI: GroupUI,
-        BattleState: GroupBattleState
+        BattleState: GroupBattleState,
+        BattleLoop: GroupBattleLoop
     },
     // Boss reutiliza Group (não precisa de módulo separado)
     // Boss é apenas uma variação de grupo (encounterType diferente)
@@ -35,7 +38,8 @@ export const Combat = {
         Core: GroupCore,
         Actions: GroupActions,
         UI: GroupUI,
-        BattleState: GroupBattleState
+        BattleState: GroupBattleState,
+        BattleLoop: GroupBattleLoop
     },
     // PR11B: Item Breakage System
     ItemBreakage: ItemBreakage
