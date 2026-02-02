@@ -463,6 +463,9 @@
         // Import UI modules (PR14B)
         import { showEggHatchModal, initEggHatchModal } from './js/ui/eggHatchModal.js';
         
+        // PR16A: Import PartyDex module
+        import * as PartyDex from './js/data/partyDex.js';
+        
         // Make Combat available globally for the wrapper
         window.Combat = Combat;
         
@@ -474,6 +477,9 @@
         
         // Make egg hatch modal available globally (PR14B)
         window.showEggHatchModal = showEggHatchModal;
+        
+        // PR16A: Make PartyDex available globally
+        window.PartyDex = PartyDex;
         
         // Destructure groupCore for easier access
         const GroupCore = Combat.Group.Core;
@@ -744,6 +750,15 @@
                 seen: [],      // IDs de monstrinhos vistos
                 captured: []   // IDs de monstrinhos capturados
             },
+            // PR16A: PartyDex - Shared Dex for the entire party
+            partyDex: {
+                entries: {},   // { [templateId]: { seen: boolean, captured: boolean } }
+                meta: {
+                    lastMilestoneAwarded: 0  // Last milestone that was awarded (10, 20, 30, etc.)
+                }
+            },
+            // PR16A: Party Money - Shared money pool for milestone rewards
+            partyMoney: 0,
             // FASE 1 POKEMON: Livro de Conquistas (Estatísticas)
             stats: {
                 battlesWon: 0,
@@ -1454,6 +1469,13 @@
                 migratedSave.players = Array.isArray(migratedSave.players) ? migratedSave.players : [];
                 migratedSave.monsters = Array.isArray(migratedSave.monsters) ? migratedSave.monsters : [];
                 migratedSave.sessions = Array.isArray(migratedSave.sessions) ? migratedSave.sessions : [];
+                
+                // PR16A: Ensure PartyDex and partyMoney exist
+                if (window.PartyDex) {
+                    window.PartyDex.ensurePartyDex(migratedSave);
+                    window.PartyDex.ensurePartyMoney(migratedSave);
+                    console.log('[Migration] PR16A: PartyDex and partyMoney initialized');
+                }
                 
                 console.log('[Migration] Applied v0->v1: Added meta.saveVersion (preserved existing meta fields)');
             }
@@ -2862,6 +2884,14 @@
                     success: true
                 }, "info");
 
+                // PR16A: Mark as captured in PartyDex and check milestones
+                if (window.PartyDex && templateId) {
+                    window.PartyDex.onMonsterAddedToGroup(GameState, templateId, {
+                        showToast: showToast,
+                        saveToLocalStorage: saveToLocalStorage
+                    });
+                }
+
                 // Persist
                 saveGame();
                 return monster;
@@ -3271,6 +3301,11 @@
                     
                     // FASE 1 POKEMON: Marcar como visto no Monstródex
                     updateMonstrodex('see', randomMonster.id);
+                    
+                    // PR16A: Mark as seen in PartyDex
+                    if (window.PartyDex) {
+                        window.PartyDex.markDexSeen(GameState, randomMonster.id);
+                    }
                 }
                 
                 GameState.currentEncounter = encounter;
@@ -3330,6 +3365,11 @@
                     null, // Use template's default rarity
                     { id: 'enemy_1' } // Override with group encounter enemy ID
                 );
+                
+                // PR16A: Mark as seen in PartyDex
+                if (window.PartyDex) {
+                    window.PartyDex.markDexSeen(GameState, randomMonster.id);
+                }
                 
                 // Criar encounter de grupo
                 const encounter = {
@@ -5316,6 +5356,15 @@
                         updateMonstrodex('capture', monster.monsterId || monster.templateId);
                     }
                     
+                    // PR16A: Mark as captured in PartyDex and check milestones
+                    if (window.PartyDex && (monster.monsterId || monster.templateId)) {
+                        const templateId = monster.monsterId || monster.templateId;
+                        window.PartyDex.onMonsterAddedToGroup(GameState, templateId, {
+                            showToast: showToast,
+                            saveToLocalStorage: saveToLocalStorage
+                        });
+                    }
+                    
                     // Feature 4.2: Tutorial hook
                     tutorialOnAction("capture");
                     
@@ -6991,6 +7040,15 @@
                 player.inventory[eggItemId] = eggQty - 1;
                 if (player.inventory[eggItemId] <= 0) {
                     delete player.inventory[eggItemId];
+                }
+                
+                // PR16A: Mark as captured in PartyDex and check milestones
+                if (window.PartyDex && (newMonster.monsterId || template.id)) {
+                    const templateId = newMonster.monsterId || template.id;
+                    window.PartyDex.onMonsterAddedToGroup(GameState, templateId, {
+                        showToast: showToast,
+                        saveToLocalStorage: saveToLocalStorage
+                    });
                 }
                 
                 // Save game (ONLY after modal confirmed)
