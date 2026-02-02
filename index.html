@@ -6606,20 +6606,23 @@
                     };
                     const tierColor = tierColors[item.tier] || '#999';
                     
+                    // Check if it's an egg
+                    const isEgg = item.category === 'egg';
+                    
                     html += `
                         <div class="card" style="margin: 0; padding: 1rem; border-left: 4px solid ${tierColor};">
                             <h4 style="margin-top: 0;">${item.name}</h4>
-                            <p style="font-size: 0.9em; color: #666;">
+                            ${isEgg ? '<p style="font-size: 0.9em; color: #666; font-weight: bold;">🥚 OVO</p>' : item.tier ? `<p style="font-size: 0.9em; color: #666;">
                                 <span style="color: ${tierColor}; font-weight: bold; text-transform: uppercase;">
                                     ${item.tier}
                                 </span>
-                            </p>
+                            </p>` : ''}
                             <p style="font-size: 0.9em;">${item.description}</p>
-                            <p style="font-size: 0.85em; color: #555;">
+                            ${item.stats ? `<p style="font-size: 0.85em; color: #555;">
                                 <strong>Stats:</strong> 
                                 ${item.stats.atk > 0 ? `⚔️ ATK +${item.stats.atk}` : ''}${item.stats.atk > 0 && item.stats.def > 0 ? ' ' : ''}${item.stats.def > 0 ? `🛡️ DEF +${item.stats.def}` : ''}
-                            </p>
-                            ${item.break.enabled ? `<p style="font-size: 0.85em; color: #e74c3c;">⚠️ Pode quebrar (${Math.round(item.break.chance * 100)}%)</p>` : ''}
+                            </p>` : ''}
+                            ${item.break?.enabled ? `<p style="font-size: 0.85em; color: #e74c3c;">⚠️ Pode quebrar (${Math.round(item.break.chance * 100)}%)</p>` : ''}
                             <p style="font-size: 0.85em; color: #555;">
                                 <strong>Você tem:</strong> ${owned}x
                             </p>
