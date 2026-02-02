@@ -156,6 +156,12 @@ function applyEneRegen(monster, encounter, eneRegenData) {
     try {
         if (!monster || !monster.class) return;
         
+        // Bug Fix #10: Validar eneRegenData antes de usar
+        if (!eneRegenData) {
+            console.warn('ENE regen data not provided, skipping regeneration');
+            return;
+        }
+        
         const regenData = eneRegenData[monster.class] || { pct: 0.10, min: 1 };
         const eneGain = Math.max(regenData.min, Math.ceil(monster.eneMax * regenData.pct));
         
@@ -256,8 +262,26 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
     }
     
     if (enemyHit) {
-        const baseDamage = wildMonster.atk + wildSkill.power - playerMonster.def;
-        const damage = Math.max(1, baseDamage);
+        // Bug Fix #1 & #2: Usar fórmula correta com ratio e vantagem de classe
+        const atkMods = WildCore.getBuffModifiers(wildMonster);
+        const effectiveAtk = Math.max(1, wildMonster.atk + atkMods.atk);
+        
+        const defMods = WildCore.getBuffModifiers(playerMonster);
+        const effectiveDef = Math.max(1, playerMonster.def + defMods.def);
+        
+        const classAdv = WildCore.getClassAdvantageModifiers(
+            wildMonster.class,
+            playerMonster.class,
+            dependencies.classAdvantages
+        );
+        
+        const damage = WildCore.calcDamage({
+            atk: effectiveAtk,
+            def: effectiveDef,
+            power: wildSkill.power,
+            damageMult: classAdv.damageMult
+        });
+        
         playerMonster.hp = WildCore.applyDamageToHP(playerMonster.hp, damage);
         encounter.log.push(`💥 ${wildSkill.name} acerta! Causa ${damage} de dano!`);
         
