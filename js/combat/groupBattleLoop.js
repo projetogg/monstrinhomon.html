@@ -2,12 +2,13 @@
  * GROUP BATTLE LOOP (v1.0) - Funções de Transição de Estado
  * 
  * PASSO 3: Loop de batalha em grupo usando GroupBattleState
+ * PASSO 4.5: Ações completas + Encerramento da batalha
  * 
  * Este módulo implementa as funções que fazem a batalha "acontecer":
  * - Criar batalha
  * - Iniciar fases (players/enemies)
  * - Avançar turnos
- * - Executar ações
+ * - Executar ações (attack, skill, item, flee, pass)
  * - Verificar fim de batalha
  * - Distribuir recompensas
  * 
@@ -15,10 +16,11 @@
  * - Todas as funções são puras (recebem state, retornam novo state)
  * - Sem side effects (sem DOM, sem I/O)
  * - Dependency injection para testabilidade
+ * - performAction é o ponto único de mutação do combate
  */
 
 import * as GroupBattleState from './groupBattleState.js';
-import { calculateTurnOrder, isAlive } from './groupCore.js';
+import { calculateTurnOrder, isAlive, checkHit, calcDamage } from './groupCore.js';
 
 /**
  * Cria uma nova batalha em grupo
@@ -447,4 +449,447 @@ export function getTurnInfo(state) {
         isEnemyPhase: state.turn.phase === "enemies",
         banner: state.turn.visibleBanner
     };
+}
+
+/**
+ * PASSO 4.5 - Verifica condições de fim de batalha
+ * 
+ * @param {Object} state - GroupBattleState
+ * @returns {{ ended: boolean, result?: string }} Resultado da verificação
+ * 
+ * REGRAS:
+ * - Vitória: todos os inimigos mortos
+ * - Derrota: nenhum participante com monstro ativo vivo
+ * - Retreat: todos fugiram
+ */
+export function checkEndConditions(state) {
+    // Verificar vitória: todos inimigos mortos
+    const hasAliveEnemies = state.teams.enemies.some(enemy => isAlive(enemy));
+    
+    if (!hasAliveEnemies) {
+        return { ended: true, result: "victory" };
+    }
+    
+    // Verificar derrota/retreat: nenhum participante ativo com monstro vivo
+    const activeParticipants = GroupBattleState.getActiveParticipants(state);
+    
+    if (activeParticipants.length === 0) {
+        // Todos fugiram
+        return { ended: true, result: "retreat" };
+    }
+    
+    // Verificar se algum participante ativo tem monstro vivo
+    let hasAlivePlayers = false;
+    for (const participant of activeParticipants) {
+        const playerTeam = state.teams.players.find(pt => pt.playerId === participant.playerId);
+        if (playerTeam && playerTeam.activeMonster && isAlive(playerTeam.activeMonster)) {
+            hasAlivePlayers = true;
+            break;
+        }
+    }
+    
+    if (!hasAlivePlayers) {
+        return { ended: true, result: "defeat" };
+    }
+    
+    // Batalha continua
+    return { ended: false };
+}
+
+/**
+ * PASSO 4.5 - Distribui recompensas ao fim da batalha
+ * 
+ * @param {Object} state - GroupBattleState
+ * @param {Array} playersData - Dados completos dos jogadores
+ * @returns {Object} Novo state com recompensas distribuídas
+ * 
+ * REGRAS:
+ * - Apenas participantes elegíveis recebem (não fugiram)
+ * - XP igual para todos
+ * - Dinheiro dividido igualmente
+ * - Boss dá recompensas maiores
+ */
+export function endBattleAndDistributeRewards(state, playersData) {
+    // Obter participantes elegíveis (não fugiram)
+    const eligiblePlayerIds = GroupBattleState.getRewardEligiblePlayers(state);
+    
+    if (eligiblePlayerIds.length === 0) {
+        // Ninguém elegível
+        return GroupBattleState.addLogEntry(
+            state,
+            "REWARDS",
+            "Nenhum participante elegível para recompensas",
+            {}
+        );
+    }
+    
+    // Calcular recompensas base
+    const isBoss = state.kind === "boss";
+    const baseXP = isBoss ? 50 : 30;
+    const baseMoney = isBoss ? 100 : 50;
+    
+    // XP por participante (igual para todos)
+    const xpPerPlayer = baseXP;
+    
+    // Dinheiro por participante (divisão igual)
+    const moneyPerPlayer = Math.floor(baseMoney / eligiblePlayerIds.length);
+    
+    let newState = state;
+    
+    // Distribuir recompensas
+    for (const playerId of eligiblePlayerIds) {
+        const player = playersData.find(p => p.id === playerId);
+        if (!player) continue;
+        
+        // Adicionar XP ao monstro ativo
+        const activeMonster = player.team?.[0];
+        if (activeMonster && isAlive(activeMonster)) {
+            // XP será aplicado externamente, apenas logar aqui
+            newState = GroupBattleState.addLogEntry(
+                newState,
+                "XP_REWARD",
+                `${player.name || playerId} ganhou ${xpPerPlayer} XP`,
+                { playerId, xp: xpPerPlayer }
+            );
+        }
+        
+        // Adicionar dinheiro
+        newState = GroupBattleState.addLogEntry(
+            newState,
+            "MONEY_REWARD",
+            `${player.name || playerId} ganhou ${moneyPerPlayer} moedas`,
+            { playerId, money: moneyPerPlayer }
+        );
+    }
+    
+    // Log final consolidado
+    newState = GroupBattleState.addLogEntry(
+        newState,
+        "BATTLE_END",
+        `Recompensas distribuídas: ${xpPerPlayer} XP e ${moneyPerPlayer} moedas por jogador`,
+        {
+            xpPerPlayer,
+            moneyPerPlayer,
+            eligibleCount: eligiblePlayerIds.length,
+            isBoss
+        }
+    );
+    
+    return newState;
+}
+
+/**
+ * PASSO 4.5 - Executa uma ação de combate (ponto único de mutação)
+ * 
+ * @param {Object} state - GroupBattleState
+ * @param {Object} action - Ação a executar
+ * @param {Object} deps - Dependências (playersData, rollD20Fn, etc)
+ * @returns {Object} Novo state após ação
+ * 
+ * TIPOS DE AÇÃO:
+ * - { type: "attack", actorId, targetId, side: "player"|"enemy" }
+ * - { type: "skill", actorId, targetId, skillId }
+ * - { type: "item", actorId, itemId, targetId? }
+ * - { type: "flee", actorId }
+ * - { type: "pass", actorId }
+ */
+export function performAction(state, action, deps = {}) {
+    const { playersData = [], rollD20Fn = () => Math.floor(Math.random() * 20) + 1 } = deps;
+    
+    let newState = state;
+    
+    // Validar que é o turno do ator
+    const currentActor = getCurrentActor(state);
+    if (!currentActor || currentActor.id !== action.actorId) {
+        throw new Error(`Não é o turno de ${action.actorId}`);
+    }
+    
+    // Processar ação baseado no tipo
+    switch (action.type) {
+        case "attack":
+            newState = performAttack(newState, action, deps);
+            break;
+            
+        case "skill":
+            newState = performSkill(newState, action, deps);
+            break;
+            
+        case "item":
+            newState = performItem(newState, action, deps);
+            break;
+            
+        case "flee":
+            newState = performFlee(newState, action, deps);
+            break;
+            
+        case "pass":
+            newState = performPass(newState, action, deps);
+            break;
+            
+        default:
+            throw new Error(`Tipo de ação desconhecido: ${action.type}`);
+    }
+    
+    // Verificar condições de fim
+    const endCheck = checkEndConditions(newState);
+    
+    if (endCheck.ended) {
+        // Finalizar batalha
+        newState = GroupBattleState.endBattle(newState, endCheck.result);
+        
+        // Distribuir recompensas se vitória
+        if (endCheck.result === "victory") {
+            newState = endBattleAndDistributeRewards(newState, playersData);
+        }
+        
+        return newState;
+    }
+    
+    // Se não acabou, avançar turno
+    newState = advanceTurn(newState, deps);
+    
+    return newState;
+}
+
+/**
+ * Executa ataque
+ */
+function performAttack(state, action, deps) {
+    const { playersData = [], rollD20Fn = () => Math.floor(Math.random() * 20) + 1 } = deps;
+    
+    const currentActor = getCurrentActor(state);
+    let attacker, defender, attackerName, defenderName;
+    
+    // Determinar atacante e defensor
+    if (currentActor.side === "player") {
+        const player = playersData.find(p => p.id === action.actorId);
+        const playerTeam = state.teams.players.find(pt => pt.playerId === action.actorId);
+        attacker = playerTeam?.activeMonster;
+        attackerName = player?.name || action.actorId;
+        
+        defender = state.teams.enemies[action.targetId];
+        defenderName = defender?.name || `Inimigo ${action.targetId}`;
+    } else {
+        attacker = state.teams.enemies[action.actorId];
+        attackerName = attacker?.name || `Inimigo ${action.actorId}`;
+        
+        const player = playersData.find(p => p.id === action.targetId);
+        const playerTeam = state.teams.players.find(pt => pt.playerId === action.targetId);
+        defender = playerTeam?.activeMonster;
+        defenderName = player?.name || action.targetId;
+    }
+    
+    if (!attacker || !defender) {
+        throw new Error("Atacante ou defensor inválido");
+    }
+    
+    // Rolar d20
+    const d20 = rollD20Fn();
+    const alwaysMiss = (d20 === 1);
+    const isCrit = (d20 === 20);
+    
+    // Verificar acerto usando checkHit do groupCore
+    const hit = !alwaysMiss && (isCrit || checkHit(d20, attacker, defender));
+    
+    let newState = state;
+    
+    // Log do d20
+    newState = GroupBattleState.addLogEntry(
+        newState,
+        "D20_ROLL",
+        `${attackerName} rolou ${d20}`,
+        { actorId: action.actorId, roll: d20, isCrit, alwaysMiss }
+    );
+    
+    if (!hit) {
+        newState = GroupBattleState.addLogEntry(
+            newState,
+            "ATTACK_MISS",
+            `${attackerName} errou o ataque em ${defenderName}`,
+            { actorId: action.actorId, targetId: action.targetId }
+        );
+        return newState;
+    }
+    
+    // Calcular dano usando calcDamage do groupCore
+    const basicPower = 10; // Poder básico de ataque
+    let power = isCrit ? basicPower * 2 : basicPower;
+    
+    // Aplicar multiplicador se for skill
+    if (action.powerMultiplier) {
+        power = Math.floor(power * action.powerMultiplier);
+    }
+    
+    const atk = Number(attacker.atk) || 0;
+    const def = Number(defender.def) || 0;
+    
+    const damage = calcDamage({
+        atk,
+        def,
+        power,
+        damageMult: 1.0 // Sem modificador de classe por enquanto
+    });
+    
+    // Aplicar dano
+    const newHp = Math.max(0, (Number(defender.hp) || 0) - damage);
+    
+    // Atualizar HP do defensor
+    if (currentActor.side === "player") {
+        // Jogador atacou inimigo
+        newState = {
+            ...newState,
+            teams: {
+                ...newState.teams,
+                enemies: newState.teams.enemies.map((e, idx) =>
+                    idx === action.targetId ? { ...e, hp: newHp } : e
+                )
+            }
+        };
+    } else {
+        // Inimigo atacou jogador
+        newState = {
+            ...newState,
+            teams: {
+                ...newState.teams,
+                players: newState.teams.players.map(pt =>
+                    pt.playerId === action.targetId
+                        ? { ...pt, activeMonster: { ...pt.activeMonster, hp: newHp } }
+                        : pt
+                )
+            }
+        };
+    }
+    
+    // Log do ataque
+    newState = GroupBattleState.addLogEntry(
+        newState,
+        "ATTACK_HIT",
+        `${attackerName} acertou ${defenderName} causando ${damage} de dano${isCrit ? ' (CRÍTICO!)' : ''}`,
+        { actorId: action.actorId, targetId: action.targetId, damage, isCrit, newHp }
+    );
+    
+    // Verificar se matou
+    if (newHp <= 0) {
+        newState = GroupBattleState.addLogEntry(
+            newState,
+            "DEFEAT",
+            `${defenderName} foi derrotado!`,
+            { targetId: action.targetId }
+        );
+    }
+    
+    return newState;
+}
+
+/**
+ * Executa habilidade (v1 simples)
+ */
+function performSkill(state, action, deps) {
+    // V1: skill = ataque com dano aumentado
+    const modifiedAction = {
+        ...action,
+        type: "attack",
+        powerMultiplier: 1.5 // Skill causa 50% mais dano
+    };
+    
+    let newState = performAttack(state, modifiedAction, deps);
+    
+    // Log adicional para skill
+    newState = GroupBattleState.addLogEntry(
+        newState,
+        "SKILL_USED",
+        `Habilidade usada!`,
+        { actorId: action.actorId, skillId: action.skillId }
+    );
+    
+    return newState;
+}
+
+/**
+ * Executa uso de item (v1 apenas defensivos)
+ */
+function performItem(state, action, deps) {
+    const { playersData = [] } = deps;
+    
+    const currentActor = getCurrentActor(state);
+    let newState = state;
+    
+    // V1: apenas cura
+    // Assumindo que itemId é algo como "potion" que cura 30% HP
+    const healAmount = 30; // Valor fixo por enquanto
+    
+    if (currentActor.side === "player") {
+        const playerTeam = state.teams.players.find(pt => pt.playerId === action.actorId);
+        const monster = playerTeam?.activeMonster;
+        
+        if (monster) {
+            const currentHp = Number(monster.hp) || 0;
+            const maxHp = Number(monster.hpMax) || 1;
+            const newHp = Math.min(maxHp, currentHp + healAmount);
+            
+            newState = {
+                ...newState,
+                teams: {
+                    ...newState.teams,
+                    players: newState.teams.players.map(pt =>
+                        pt.playerId === action.actorId
+                            ? { ...pt, activeMonster: { ...pt.activeMonster, hp: newHp } }
+                            : pt
+                    )
+                }
+            };
+            
+            const player = playersData.find(p => p.id === action.actorId);
+            const playerName = player?.name || action.actorId;
+            
+            newState = GroupBattleState.addLogEntry(
+                newState,
+                "ITEM_USED",
+                `${playerName} usou item e recuperou ${newHp - currentHp} HP`,
+                { actorId: action.actorId, itemId: action.itemId, healing: newHp - currentHp }
+            );
+        }
+    }
+    
+    return newState;
+}
+
+/**
+ * Executa fuga individual
+ */
+function performFlee(state, action, deps) {
+    const { playersData = [] } = deps;
+    
+    // Marcar jogador como fugido
+    let newState = GroupBattleState.playerFlees(state, action.actorId);
+    
+    const player = playersData.find(p => p.id === action.actorId);
+    const playerName = player?.name || action.actorId;
+    
+    // Log já adicionado por playerFlees, mas adicionar visual
+    newState = GroupBattleState.addLogEntry(
+        newState,
+        "FLEE_ACTION",
+        `🏃 ${playerName} fugiu da batalha e não receberá recompensas!`,
+        { actorId: action.actorId }
+    );
+    
+    return newState;
+}
+
+/**
+ * Passa o turno
+ */
+function performPass(state, action, deps) {
+    const { playersData = [] } = deps;
+    
+    const player = playersData.find(p => p.id === action.actorId);
+    const playerName = player?.name || action.actorId;
+    
+    return GroupBattleState.addLogEntry(
+        state,
+        "PASS",
+        `${playerName} passou o turno`,
+        { actorId: action.actorId }
+    );
 }
