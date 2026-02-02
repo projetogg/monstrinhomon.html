@@ -231,8 +231,8 @@ export function executeEnemyTurnGroup(enc, deps) {
         helpers.log(enc, `🎲 ${enemyName} rolou ${d20} e ERROU o ataque em ${targetName} (${targetMonName}).`);
         
         // Feature 3.8: Flash fail on enemy
-        const enemyIndex = enc.enemies.indexOf(enemy);
-        ui.showMissFeedback(`grpE_${enemyIndex}`);
+        // Bug Fix #8: Usar actor.id diretamente (já é o índice)
+        ui.showMissFeedback(`grpE_${actor.id}`);
         
         advanceGroupTurn(enc, deps);
         storage.save();
