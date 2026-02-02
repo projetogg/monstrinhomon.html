@@ -230,12 +230,17 @@ export function hatchEgg(state, playerId, eggItemId) {
             delete player.inventory[eggItemId];
         }
         
+        // PR16A: Mark as captured in PartyDex
+        // Note: PartyDex may not be available in module context, so we'll add it to the caller
+        const templateId = template.id || newMonster.monsterId;
+        
         // 12. Retornar sucesso (salvamento será feito pelo caller)
         const location = teamSize < MAX_TEAM_SIZE ? 'time' : 'box';
         return {
             success: true,
             message: `🎉 Nasceu: ${newMonster.name} (${newMonster.rarity})! Adicionado ao ${location}.`,
-            monster: newMonster
+            monster: newMonster,
+            templateId: templateId  // PR16A: Return templateId for PartyDex tracking
         };
         
     } catch (error) {

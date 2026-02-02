@@ -27,6 +27,7 @@
                 <button class="tab-button" onclick="switchTab('encounter')">⚔️ Encounter</button>
                 <button class="tab-button" onclick="switchTab('therapy')">🎯 Therapy</button>
                 <button class="tab-button" onclick="switchTab('box')">📦 Box</button>
+                <button class="tab-button" onclick="switchTab('partyDex')">📘 Monstrodex</button>
                 <button class="tab-button" onclick="switchTab('shop')">🛒 Loja</button>
                 <button class="tab-button" onclick="switchTab('report')">📊 Report</button>
                 <button class="tab-button" onclick="switchTab('settings')">⚙️ Settings</button>
@@ -253,6 +254,13 @@
             </div>
         </div>
 
+        <!-- PR16B: PartyDex Tab -->
+        <div id="tabPartyDex" class="tab-content">
+            <div id="partyDexRoot">
+                <p class="text-center">Carregando Monstrodex...</p>
+            </div>
+        </div>
+
         <div id="tabSettings" class="tab-content">
             <h2>Settings ⚙️</h2>
             
@@ -463,6 +471,12 @@
         // Import UI modules (PR14B)
         import { showEggHatchModal, initEggHatchModal } from './js/ui/eggHatchModal.js';
         
+        // PR16A: Import PartyDex module
+        import * as PartyDex from './js/data/partyDex.js';
+        
+        // PR16B: Import PartyDex UI module
+        import * as PartyDexUI from './js/ui/partyDexUI.js';
+        
         // Make Combat available globally for the wrapper
         window.Combat = Combat;
         
@@ -474,6 +488,9 @@
         
         // Make egg hatch modal available globally (PR14B)
         window.showEggHatchModal = showEggHatchModal;
+        
+        // PR16A: Make PartyDex available globally
+        window.PartyDex = PartyDex;
         
         // Destructure groupCore for easier access
         const GroupCore = Combat.Group.Core;
@@ -744,6 +761,15 @@
                 seen: [],      // IDs de monstrinhos vistos
                 captured: []   // IDs de monstrinhos capturados
             },
+            // PR16A: PartyDex - Shared Dex for the entire party
+            partyDex: {
+                entries: {},   // { [templateId]: { seen: boolean, captured: boolean } }
+                meta: {
+                    lastMilestoneAwarded: 0  // Last milestone that was awarded (10, 20, 30, etc.)
+                }
+            },
+            // PR16A: Party Money - Shared money pool for milestone rewards
+            partyMoney: 0,
             // FASE 1 POKEMON: Livro de Conquistas (Estatísticas)
             stats: {
                 battlesWon: 0,
@@ -1455,6 +1481,13 @@
                 migratedSave.monsters = Array.isArray(migratedSave.monsters) ? migratedSave.monsters : [];
                 migratedSave.sessions = Array.isArray(migratedSave.sessions) ? migratedSave.sessions : [];
                 
+                // PR16A: Ensure PartyDex and partyMoney exist
+                if (window.PartyDex) {
+                    window.PartyDex.ensurePartyDex(migratedSave);
+                    window.PartyDex.ensurePartyMoney(migratedSave);
+                    console.log('[Migration] PR16A: PartyDex and partyMoney initialized');
+                }
+                
                 console.log('[Migration] Applied v0->v1: Added meta.saveVersion (preserved existing meta fields)');
             }
             
@@ -1974,6 +2007,13 @@
                 );
                 if (activeButton) {
                     activeButton.classList.add('active');
+                }
+                
+                // PR16B: Render PartyDex when tab is opened
+                // Note: renderPartyDexTab() is idempotent (DOM-only, no side effects)
+                // Safe to call multiple times without creating loops or duplicates
+                if (tabName === 'partyDex' && typeof window.renderPartyDexTab === 'function') {
+                    window.renderPartyDexTab();
                 }
                 
                 updateAllViews();
@@ -2868,6 +2908,14 @@
                     success: true
                 }, "info");
 
+                // PR16A: Mark as captured in PartyDex and check milestones
+                if (window.PartyDex && templateId) {
+                    window.PartyDex.onMonsterAddedToGroup(GameState, templateId, {
+                        showToast: showToast,
+                        saveToLocalStorage: saveToLocalStorage
+                    });
+                }
+
                 // Persist
                 saveGame();
                 return monster;
@@ -3266,7 +3314,7 @@
                     const randomMonster = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
                     const level = Math.floor(Math.random() * 10) + 1;
                     encounter.wildMonster = createMonsterInstanceFromTemplate(
-                        randomMonster.id, 
+                        randomMonster.id,  // Template ID from catalog
                         level, 
                         null, // Use template's default rarity
                         { id: 'wild_' + Date.now() } // Override with wild encounter ID
@@ -3277,6 +3325,11 @@
                     
                     // FASE 1 POKEMON: Marcar como visto no Monstródex
                     updateMonstrodex('see', randomMonster.id);
+                    
+                    // PR16A: Mark as seen in PartyDex (randomMonster.id is the template ID)
+                    if (window.PartyDex) {
+                        window.PartyDex.markDexSeen(GameState, randomMonster.id);
+                    }
                 }
                 
                 GameState.currentEncounter = encounter;
@@ -3331,11 +3384,16 @@
                 // Wave B2: enemy instances now use factory
                 const randomMonster = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
                 const enemy = createMonsterInstanceFromTemplate(
-                    randomMonster.id, 
+                    randomMonster.id,  // Template ID from catalog
                     enemyLevel, 
                     null, // Use template's default rarity
                     { id: 'enemy_1' } // Override with group encounter enemy ID
                 );
+                
+                // PR16A: Mark as seen in PartyDex (randomMonster.id is the template ID)
+                if (window.PartyDex) {
+                    window.PartyDex.markDexSeen(GameState, randomMonster.id);
+                }
                 
                 // Criar encounter de grupo
                 const encounter = {
@@ -5322,6 +5380,15 @@
                         updateMonstrodex('capture', monster.monsterId || monster.templateId);
                     }
                     
+                    // PR16A: Mark as captured in PartyDex and check milestones
+                    if (window.PartyDex && (monster.monsterId || monster.templateId)) {
+                        const templateId = monster.monsterId || monster.templateId;
+                        window.PartyDex.onMonsterAddedToGroup(GameState, templateId, {
+                            showToast: showToast,
+                            saveToLocalStorage: saveToLocalStorage
+                        });
+                    }
+                    
                     // Feature 4.2: Tutorial hook
                     tutorialOnAction("capture");
                     
@@ -6383,6 +6450,72 @@
             }
         }
 
+        /**
+         * PR16B: Render PartyDex tab
+         * 
+         * Wrapper function that calls the PartyDexUI module with proper dependencies.
+         * 
+         * IDEMPOTENT: Multiple calls only update DOM (no side effects, no loops).
+         * Safe to call on tab switch and after relevant events (capture, egg hatch).
+         */
+        function renderPartyDexTab() {
+            try {
+                // Ensure PartyDex structures exist
+                if (window.PartyDex) {
+                    window.PartyDex.ensurePartyDex(GameState);
+                    window.PartyDex.ensurePartyMoney(GameState);
+                }
+                
+                const root = document.getElementById('partyDexRoot');
+                if (!root) {
+                    console.warn('[PartyDex] Root element not found');
+                    return;
+                }
+                
+                // Check if PartyDexUI is loaded
+                if (!window.PartyDexUI || typeof window.PartyDexUI.renderPartyDex !== 'function') {
+                    console.warn('[PartyDex] PartyDexUI module not loaded');
+                    root.innerHTML = '<p class="error">Módulo PartyDex UI não carregado</p>';
+                    return;
+                }
+                
+                /**
+                 * Get all monster templates (canonical source)
+                 * Priority:
+                 * 1. Data.getMonstersMapSync() - JSON-loaded monsters (PR9B)
+                 *    Returns Map, so we convert to Array via Array.from(map.values())
+                 * 2. MONSTER_CATALOG - Hardcoded fallback (only if JSON not available)
+                 */
+                function getMonsterTemplates() {
+                    // Try JSON-loaded monsters first (canonical source from PR9B)
+                    if (window.Data && window.Data.getMonstersMapSync) {
+                        const monstersMap = window.Data.getMonstersMapSync();
+                        // getMonstersMapSync() returns a Map, convert to Array
+                        if (monstersMap && monstersMap.size > 0) {
+                            return Array.from(monstersMap.values());
+                        }
+                    }
+                    
+                    // Fallback: Use hardcoded MONSTER_CATALOG only if JSON not available
+                    console.log('[PartyDex] Using fallback MONSTER_CATALOG (JSON not loaded)');
+                    return MONSTER_CATALOG || [];
+                }
+                
+                // Render the PartyDex UI (idempotent DOM update)
+                window.PartyDexUI.renderPartyDex(root, {
+                    state: GameState,
+                    getMonsterTemplates: getMonsterTemplates
+                });
+                
+            } catch (error) {
+                console.error('[PartyDex] Failed to render:', error);
+                const root = document.getElementById('partyDexRoot');
+                if (root) {
+                    root.innerHTML = '<p class="error">Erro ao renderizar Monstrodex</p>';
+                }
+            }
+        }
+
         // ===== SHOP SYSTEM (PR13A) =====
         
         /**
@@ -7000,6 +7133,15 @@
                 player.inventory[eggItemId] = eggQty - 1;
                 if (player.inventory[eggItemId] <= 0) {
                     delete player.inventory[eggItemId];
+                }
+                
+                // PR16A: Mark as captured in PartyDex and check milestones
+                if (window.PartyDex && (newMonster.monsterId || template.id)) {
+                    const templateId = newMonster.monsterId || template.id;
+                    window.PartyDex.onMonsterAddedToGroup(GameState, templateId, {
+                        showToast: showToast,
+                        saveToLocalStorage: saveToLocalStorage
+                    });
                 }
                 
                 // Save game (ONLY after modal confirmed)
@@ -9362,6 +9504,7 @@
         window.mmCloseSaves = mmCloseSaves;
         window.mmSaveToSlot = mmSaveToSlot;
         window.hatchEggFromInventory = hatchEggFromInventory; // PR14B: Egg hatching modal
+        window.renderPartyDexTab = renderPartyDexTab; // PR16B: PartyDex UI
         window.mmLoadFromSlot = mmLoadFromSlot;
         window.mmDeleteSlot = mmDeleteSlot;
         window.mmExportSlot = mmExportSlot;
