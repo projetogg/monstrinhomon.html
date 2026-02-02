@@ -778,12 +778,13 @@
                     'Animalista': { strong: null, weak: null } // Neutro
                 },
                 // Thresholds de captura por raridade (sem dado)
+                // Valores mais baixos = captura requer HP mais baixo
                 captureThreshold: {
-                    'Comum': 0.35,
-                    'Incomum': 0.30,
-                    'Raro': 0.22,
-                    'Místico': 0.15,
-                    'Lendário': 0.08
+                    'Comum': 0.25,      // 25% HP base
+                    'Incomum': 0.20,    // 20% HP base
+                    'Raro': 0.15,       // 15% HP base
+                    'Místico': 0.10,    // 10% HP base
+                    'Lendário': 0.05    // 5% HP base
                 },
                 // Multiplicadores de raridade
                 rarityPower: {
@@ -986,10 +987,11 @@
         };
 
         // CLASTERORB TIERS (Sistema de captura em tiers)
+        // Valores maiores = melhor item de captura = mais útil
         const CLASTERORBS = {
             'CLASTERORB_COMUM': { id: 'CLASTERORB_COMUM', name: 'ClasterOrb Comum', type: 'CAPTURE', capture_bonus_pp: 0, emoji: '⚪' },
-            'CLASTERORB_INCOMUM': { id: 'CLASTERORB_INCOMUM', name: 'ClasterOrb Incomum', type: 'CAPTURE', capture_bonus_pp: 5, emoji: '🔵' },
-            'CLASTERORB_RARA': { id: 'CLASTERORB_RARA', name: 'ClasterOrb Rara', type: 'CAPTURE', capture_bonus_pp: 10, emoji: '🟣' }
+            'CLASTERORB_INCOMUM': { id: 'CLASTERORB_INCOMUM', name: 'ClasterOrb Incomum', type: 'CAPTURE', capture_bonus_pp: 10, emoji: '🔵' },
+            'CLASTERORB_RARA': { id: 'CLASTERORB_RARA', name: 'ClasterOrb Rara', type: 'CAPTURE', capture_bonus_pp: 20, emoji: '🟣' }
         };
 
         // ============================================================================

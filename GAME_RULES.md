@@ -218,18 +218,23 @@ Habilidades são **automaticamente upgradadas** baseado no estágio (S0-S3):
 ```
 
 **Thresholds por Raridade (base):**
-- Comum: 35%
-- Incomum: 30%
-- Raro: 22%
-- Místico: 15%
-- Lendário: 8%
+- Comum: 25%
+- Incomum: 20%
+- Raro: 15%
+- Místico: 10%
+- Lendário: 5%
+
+**Bônus de ClasterOrb:**
+- Comum: +0%
+- Incomum: +10%
+- Rara: +20%
 
 **Exemplo:**
 ```
-Monstrinho Raro com 20% HP, usando Orbe Reforçado (+8% bonus)
+Monstrinho Raro com 20% HP, usando Orbe Reforçado (+10% bonus)
 HP 20% <= 25% → bônus de +10%
-Threshold final = 22% + 10% + 8% = 40%
-20% <= 40% → SUCESSO!
+Threshold final = 15% + 10% + 10% = 35%
+20% <= 35% → SUCESSO!
 ```
 
 ### 4.4 Interface
