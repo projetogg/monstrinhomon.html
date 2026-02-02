@@ -231,7 +231,7 @@ Habilidades são **automaticamente upgradadas** baseado no estágio (S0-S3):
 
 **Exemplo:**
 ```
-Monstrinho Raro com 20% HP, usando Orbe Reforçado (+10% bonus)
+Monstrinho Raro com 20% HP, usando ClasterOrb Incomum (+10% bonus)
 HP 20% <= 25% → bônus de +10%
 Threshold final = 15% + 10% + 10% = 35%
 20% <= 35% → SUCESSO!
