@@ -3830,6 +3830,9 @@
             }
         }
 
+        // Expose selectReplacementMonster globally
+        window.selectReplacementMonster = selectReplacementMonster;
+
         // ==================== FASE 3.C: Skills and Items ====================
 
         /**
@@ -5288,6 +5291,9 @@
             }
         }
 
+        // Expose updateCaptureThreshold globally
+        window.updateCaptureThreshold = updateCaptureThreshold;
+
         function attemptCapture() {
             try {
                 const encounter = GameState.currentEncounter;
@@ -6188,19 +6194,25 @@
                     return;
                 }
 
-                // Update status
-                const teamCount = activePlayer.team?.length || 0;
+                // Get the viewed player (the one selected in the dropdown)
+                const viewedPlayerId = GameState.ui.boxViewedPlayerId;
+                const viewedPlayer = GameState.players.find(p => p.id === viewedPlayerId) || activePlayer;
+
+                // Update status - show info about the VIEWED player
+                const teamCount = viewedPlayer.team?.length || 0;
                 const TEAM_MAX = GameState.config?.maxTeamSize || 6;
-                const boxTotal = GameState.sharedBox?.length || 0;
+                
+                // Count box monsters for the viewed player
+                const viewedPlayerBoxCount = GameState.sharedBox?.filter(slot => slot.ownerPlayerId === viewedPlayerId).length || 0;
                 const BOX_MAX_TOTAL = 100;
 
                 const boxActivePlayer = document.getElementById('boxActivePlayer');
                 const boxTeamCount = document.getElementById('boxTeamCount');
                 const boxTotalCount = document.getElementById('boxTotalCount');
 
-                if (boxActivePlayer) boxActivePlayer.textContent = activePlayer.name;
+                if (boxActivePlayer) boxActivePlayer.textContent = viewedPlayer.name;
                 if (boxTeamCount) boxTeamCount.textContent = `${teamCount}/${TEAM_MAX}`;
-                if (boxTotalCount) boxTotalCount.textContent = `${boxTotal}/${BOX_MAX_TOTAL}`;
+                if (boxTotalCount) boxTotalCount.textContent = `${viewedPlayerBoxCount}/${BOX_MAX_TOTAL}`;
 
                 // Populate page selector
                 const pageSelect = document.getElementById('boxPageSelect');
@@ -6217,23 +6229,30 @@
                     });
                 }
 
-                // Render team
+                // Render team of the viewed player
                 const teamList = document.getElementById('boxTeamList');
-                if (teamList && activePlayer.team && activePlayer.team.length > 0) {
+                if (teamList && viewedPlayer.team && viewedPlayer.team.length > 0) {
                     teamList.innerHTML = '';
-                    activePlayer.team.forEach((monster, index) => {
+                    viewedPlayer.team.forEach((monster, index) => {
                         if (!monster) return;
                         
+                        const isOwnMonster = activePlayer.id === viewedPlayer.id;
                         const slotDiv = document.createElement('div');
                         slotDiv.className = 'box-slot';
+                        
+                        // Only allow sending to box if it's the active player's monster
+                        const buttonHtml = isOwnMonster 
+                            ? `<button class="btn btn-warning box-slot-btn" onclick="sendToBox(${index})">
+                                📦 Enviar para Box
+                               </button>`
+                            : `<div class="box-slot-owner">🔒 Não é seu</div>`;
+                        
                         slotDiv.innerHTML = `
                             <div class="box-slot-emoji">${monster.emoji || '🐾'}</div>
                             <div class="box-slot-name">${monster.name || 'Sem Nome'}</div>
                             <div class="box-slot-class">${monster.class || '?'}</div>
                             <div class="box-slot-level">Nv. ${monster.level || 1}</div>
-                            <button class="btn btn-warning box-slot-btn" onclick="sendToBox(${index})">
-                                📦 Enviar para Box
-                            </button>
+                            ${buttonHtml}
                         `;
                         teamList.appendChild(slotDiv);
                     });
@@ -6242,7 +6261,6 @@
                 }
 
                 // Render box monsters for viewed player
-                const viewedPlayerId = GameState.ui.boxViewedPlayerId;
                 const boxList = document.getElementById('boxMonstersList');
                 
                 if (boxList) {
@@ -6418,6 +6436,9 @@
             }
         }
 
+        // Expose toggleObjectiveForPlayer globally
+        window.toggleObjectiveForPlayer = toggleObjectiveForPlayer;
+
         function updateMedals(playerId) {
             try {
                 if (!GameState.currentSession) return;
@@ -6556,6 +6577,9 @@
                 updateShopView();
             }
         }
+        
+        // Make Shop functions globally available
+        window.onShopPlayerChange = onShopPlayerChange;
         
         /**
          * Update shop view with current player and items
@@ -7038,6 +7062,9 @@
             }
         }
 
+        // Expose sellItem globally
+        window.sellItem = sellItem;
+
         /**
          * PR14A: Hatch an egg from player's inventory
          * @param {string} playerId - Player ID
@@ -7257,6 +7284,9 @@
                 console.error('Failed to update encounter UI:', error);
             }
         }
+        
+        // Expose updateEncounterUI globally
+        window.updateEncounterUI = updateEncounterUI;
         
         function updateGroupParticipantsList() {
             try {
@@ -7752,6 +7782,11 @@
                 showToast('Error reordering team');
             }
         }
+
+        // Expose team movement functions globally
+        window.moveTeamMemberUp = moveTeamMemberUp;
+        window.moveTeamMemberDown = moveTeamMemberDown;
+        window.movePlayerTeamMember = movePlayerTeamMember;
 
         // PR12A: Equipment UI Functions
         function renderEquipableItems(player) {
