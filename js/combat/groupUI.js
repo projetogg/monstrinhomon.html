@@ -163,11 +163,11 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
                 }
                 
                 html += '</div>';
-                html += `<button class="btn btn-primary mt-10 w-100" 
-                        onclick="groupUseItem('IT_HEAL_01')"
-                        ${!canUseItem ? 'disabled class="opacity-50"' : ''}>
-                    💚 Usar Petisco de Cura
-                </button>`;
+                const buttonClass = `btn btn-primary mt-10 w-100${!canUseItem ? ' opacity-50' : ''}`;
+                const buttonDisabled = !canUseItem ? 'disabled' : '';
+                html += `<button class="${buttonClass}" onclick="groupUseItem('IT_HEAL_01')" ${buttonDisabled}>`;
+                html += '💚 Usar Petisco de Cura';
+                html += '</button>';
                 html += '</div>';
             }
         }

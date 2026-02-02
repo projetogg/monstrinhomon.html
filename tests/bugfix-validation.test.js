@@ -40,6 +40,7 @@ describe('Bug Fix #1: Monsters go to sharedBox when team is full', () => {
         GameState.players.push(player);
 
         // Mock addToSharedBox function (from index.html)
+        let slotIdCounter = 0;
         addToSharedBox = (ownerPlayerId, monster) => {
             if (!GameState.sharedBox) GameState.sharedBox = [];
             
@@ -48,7 +49,7 @@ describe('Bug Fix #1: Monsters go to sharedBox when team is full', () => {
                 return { success: false, message: 'Box está cheia (100/100)' };
             }
 
-            const slotId = 'BX_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            const slotId = 'BX_test_' + (++slotIdCounter);
             GameState.sharedBox.push({
                 slotId,
                 ownerPlayerId,
