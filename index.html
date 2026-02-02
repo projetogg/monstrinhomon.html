@@ -2942,6 +2942,102 @@
             }
         }
 
+        /**
+         * Awards money to a player.
+         * @param {number} amount - Amount of money to award (must be >= 1)
+         * @param {Object} player - Player object
+         * @returns {boolean} - true if successful, false otherwise
+         */
+        function awardMoney(amount, player) {
+            try {
+                // Validate amount
+                const moneyAmount = Math.max(1, Number(amount) || 0);
+                if (moneyAmount < 1) {
+                    console.warn('[Award] Invalid money amount:', amount);
+                    return false;
+                }
+
+                // Validate player
+                if (!player || typeof player !== 'object') {
+                    console.warn('[Award] Invalid player object');
+                    return false;
+                }
+
+                // Initialize money if not present
+                if (typeof player.money !== 'number') {
+                    player.money = 0;
+                }
+
+                // Add money
+                player.money += moneyAmount;
+
+                // Log to console if in therapist mode
+                if (typeof mmGetTherapistMode === 'function' && mmGetTherapistMode()) {
+                    console.log('[Award] Granted Money:', {
+                        player: player.name || player.id,
+                        amount: moneyAmount,
+                        newTotal: player.money
+                    });
+                }
+
+                // Persist
+                saveGame();
+                return true;
+
+            } catch (error) {
+                console.error('[Award] awardMoney failed:', error);
+                return false;
+            }
+        }
+
+        /**
+         * Awards afterlife currency to a player.
+         * @param {number} amount - Amount of afterlife currency to award (must be >= 1)
+         * @param {Object} player - Player object
+         * @returns {boolean} - true if successful, false otherwise
+         */
+        function awardAfterlifeCurrency(amount, player) {
+            try {
+                // Validate amount
+                const currencyAmount = Math.max(1, Number(amount) || 0);
+                if (currencyAmount < 1) {
+                    console.warn('[Award] Invalid afterlife currency amount:', amount);
+                    return false;
+                }
+
+                // Validate player
+                if (!player || typeof player !== 'object') {
+                    console.warn('[Award] Invalid player object');
+                    return false;
+                }
+
+                // Initialize afterlife currency if not present
+                if (typeof player.afterlifeCurrency !== 'number') {
+                    player.afterlifeCurrency = 0;
+                }
+
+                // Add afterlife currency
+                player.afterlifeCurrency += currencyAmount;
+
+                // Log to console if in therapist mode
+                if (typeof mmGetTherapistMode === 'function' && mmGetTherapistMode()) {
+                    console.log('[Award] Granted Afterlife Currency:', {
+                        player: player.name || player.id,
+                        amount: currencyAmount,
+                        newTotal: player.afterlifeCurrency
+                    });
+                }
+
+                // Persist
+                saveGame();
+                return true;
+
+            } catch (error) {
+                console.error('[Award] awardAfterlifeCurrency failed:', error);
+                return false;
+            }
+        }
+
         // ============================================================================
         // End of Award API
         // ============================================================================
@@ -8352,6 +8448,32 @@
                     </div>
 
                     <div class="therapist-mestre-box">
+                        <div class="therapist-field-title">💰 Dar Moedas</div>
+                        <div class="mm-row mb-8">
+                            <button class="mm-btn flex-1" onclick="mmTherGiveMoneyQuick(10)">+10 💰</button>
+                            <button class="mm-btn flex-1" onclick="mmTherGiveMoneyQuick(50)">+50 💰</button>
+                            <button class="mm-btn flex-1" onclick="mmTherGiveMoneyQuick(100)">+100 💰</button>
+                        </div>
+                        <div class="mm-row">
+                            <input id="mmTherMoney" class="mm-input flex-1" type="number" min="1" value="50">
+                            <button class="mm-btn" onclick="mmTherGiveMoney()">+ Moedas</button>
+                        </div>
+                    </div>
+
+                    <div class="therapist-mestre-box">
+                        <div class="therapist-field-title">⭐ Dar Moeda Afterlife</div>
+                        <div class="mm-row mb-8">
+                            <button class="mm-btn flex-1" onclick="mmTherGiveAfterlifeQuick(1)">+1 ⭐</button>
+                            <button class="mm-btn flex-1" onclick="mmTherGiveAfterlifeQuick(5)">+5 ⭐</button>
+                            <button class="mm-btn flex-1" onclick="mmTherGiveAfterlifeQuick(10)">+10 ⭐</button>
+                        </div>
+                        <div class="mm-row">
+                            <input id="mmTherAfterlife" class="mm-input flex-1" type="number" min="1" value="5">
+                            <button class="mm-btn" onclick="mmTherGiveAfterlife()">+ Afterlife</button>
+                        </div>
+                    </div>
+
+                    <div class="therapist-mestre-box">
                         <div class="therapist-field-title">🎁 Conceder Monstrinhomon</div>
                         <div class="mm-row mb-8">
                             <select id="mmTherMon" class="mm-input flex-1">${monOptions}</select>
@@ -8532,6 +8654,112 @@
             } else {
                 showToast("Falha ao dar item.", 'error');
                 therapistLog("❌ awardItem failed");
+            }
+        }
+
+        // Therapist action: Give Money
+        function mmTherGiveMoney() {
+            if (!mmRequireGameOrAlert()) return;
+
+            const pid = document.getElementById("mmTherPlayer")?.value;
+            const amt = Math.max(1, parseInt(document.getElementById("mmTherMoney")?.value || "0", 10));
+
+            const player = GameState.players.find(p => p.id === pid);
+            if (!player) {
+                showToast("Jogador não encontrado.", 'error');
+                therapistLog("❌ awardMoney failed: player not found");
+                return;
+            }
+
+            // Use Award API
+            const success = awardMoney(amt, player);
+            
+            if (success) {
+                if (typeof renderEncounter === "function") renderEncounter();
+                showToast(`💰 ${player.name} recebeu +${amt} moedas! (Total: ${player.money})`);
+                therapistLog(`✅ awardMoney +${amt} → ${player.name} (Total: ${player.money})`);
+            } else {
+                showToast("Falha ao dar moedas.", 'error');
+                therapistLog("❌ awardMoney failed");
+            }
+        }
+
+        // Quick money buttons
+        function mmTherGiveMoneyQuick(amount) {
+            if (!mmRequireGameOrAlert()) return;
+
+            const pid = document.getElementById("mmTherPlayer")?.value;
+            const player = GameState.players.find(p => p.id === pid);
+            
+            if (!player) {
+                showToast("Jogador não encontrado.", 'error');
+                therapistLog("❌ awardMoney failed: player not found");
+                return;
+            }
+
+            // Use Award API
+            const success = awardMoney(amount, player);
+            
+            if (success) {
+                if (typeof renderEncounter === "function") renderEncounter();
+                showToast(`💰 ${player.name} recebeu +${amount} moedas! (Total: ${player.money})`);
+                therapistLog(`✅ awardMoney +${amount} → ${player.name} (Total: ${player.money})`);
+            } else {
+                showToast("Falha ao dar moedas.", 'error');
+                therapistLog("❌ awardMoney failed");
+            }
+        }
+
+        // Therapist action: Give Afterlife Currency
+        function mmTherGiveAfterlife() {
+            if (!mmRequireGameOrAlert()) return;
+
+            const pid = document.getElementById("mmTherPlayer")?.value;
+            const amt = Math.max(1, parseInt(document.getElementById("mmTherAfterlife")?.value || "0", 10));
+
+            const player = GameState.players.find(p => p.id === pid);
+            if (!player) {
+                showToast("Jogador não encontrado.", 'error');
+                therapistLog("❌ awardAfterlifeCurrency failed: player not found");
+                return;
+            }
+
+            // Use Award API
+            const success = awardAfterlifeCurrency(amt, player);
+            
+            if (success) {
+                if (typeof renderEncounter === "function") renderEncounter();
+                showToast(`⭐ ${player.name} recebeu +${amt} moeda afterlife! (Total: ${player.afterlifeCurrency})`);
+                therapistLog(`✅ awardAfterlifeCurrency +${amt} → ${player.name} (Total: ${player.afterlifeCurrency})`);
+            } else {
+                showToast("Falha ao dar moeda afterlife.", 'error');
+                therapistLog("❌ awardAfterlifeCurrency failed");
+            }
+        }
+
+        // Quick afterlife buttons
+        function mmTherGiveAfterlifeQuick(amount) {
+            if (!mmRequireGameOrAlert()) return;
+
+            const pid = document.getElementById("mmTherPlayer")?.value;
+            const player = GameState.players.find(p => p.id === pid);
+            
+            if (!player) {
+                showToast("Jogador não encontrado.", 'error');
+                therapistLog("❌ awardAfterlifeCurrency failed: player not found");
+                return;
+            }
+
+            // Use Award API
+            const success = awardAfterlifeCurrency(amount, player);
+            
+            if (success) {
+                if (typeof renderEncounter === "function") renderEncounter();
+                showToast(`⭐ ${player.name} recebeu +${amount} moeda afterlife! (Total: ${player.afterlifeCurrency})`);
+                therapistLog(`✅ awardAfterlifeCurrency +${amount} → ${player.name} (Total: ${player.afterlifeCurrency})`);
+            } else {
+                showToast("Falha ao dar moeda afterlife.", 'error');
+                therapistLog("❌ awardAfterlifeCurrency failed");
             }
         }
 
@@ -9607,6 +9835,10 @@
         window.mmTherGiveItem = mmTherGiveItem;
         window.mmTherGiveXP = mmTherGiveXP;
         window.mmTherGiveXPQuick = mmTherGiveXPQuick;
+        window.mmTherGiveMoney = mmTherGiveMoney;
+        window.mmTherGiveMoneyQuick = mmTherGiveMoneyQuick;
+        window.mmTherGiveAfterlife = mmTherGiveAfterlife;
+        window.mmTherGiveAfterlifeQuick = mmTherGiveAfterlifeQuick;
         window.toggleTherapistMode = toggleTherapistMode;
         window.Audio = Audio;
 
