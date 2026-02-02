@@ -196,7 +196,17 @@
             <h2>Loja de Itens 🛒</h2>
             
             <div class="card">
-                <h3>Jogador Selecionado</h3>
+                <h3>👤 Selecionar Jogador</h3>
+                <div class="mb-10">
+                    <label><strong>Comprar para:</strong></label>
+                    <select id="shopPlayerSelect" onchange="onShopPlayerChange()">
+                        <option value="">-- Selecione um Jogador --</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>💰 Informações do Jogador</h3>
                 <div id="shopPlayerInfo">
                     <p>Selecione um jogador para comprar itens.</p>
                 </div>
@@ -6519,6 +6529,35 @@
         // ===== SHOP SYSTEM (PR13A) =====
         
         /**
+         * Initialize shop UI state
+         */
+        function ensureShopUIState() {
+            if (!GameState.ui) GameState.ui = {};
+            
+            const fallbackId = GameState.players?.[0]?.id || null;
+            
+            // Initialize selectedShopPlayerId if not set or invalid
+            if (!GameState.ui.selectedShopPlayerId ||
+                !GameState.players.some(p => p.id === GameState.ui.selectedShopPlayerId)) {
+                GameState.ui.selectedShopPlayerId = fallbackId;
+            }
+        }
+        
+        /**
+         * Handle shop player selector change
+         */
+        function onShopPlayerChange() {
+            const select = document.getElementById('shopPlayerSelect');
+            if (!select) return;
+            
+            const playerId = select.value;
+            if (playerId && GameState.ui) {
+                GameState.ui.selectedShopPlayerId = playerId;
+                updateShopView();
+            }
+        }
+        
+        /**
          * Update shop view with current player and items
          */
         function updateShopView() {
@@ -6526,16 +6565,30 @@
                 const playerInfo = document.getElementById('shopPlayerInfo');
                 const itemsList = document.getElementById('shopItemsList');
                 const inventoryContainer = document.getElementById('shopPlayerInventory');
+                const playerSelect = document.getElementById('shopPlayerSelect');
                 
                 if (!playerInfo || !itemsList) return;
                 
-                // Get selected player from encounter dropdown or first available player
-                let selectedPlayerId = document.getElementById('encounterPlayer')?.value;
-                if (!selectedPlayerId && GameState.players && GameState.players.length > 0) {
-                    selectedPlayerId = GameState.players[0].id;
-                }
+                // Ensure shop UI state is initialized
+                ensureShopUIState();
                 
+                // Get selected player from dedicated shop selector
+                const selectedPlayerId = GameState.ui.selectedShopPlayerId;
                 const player = GameState.players?.find(p => p.id === selectedPlayerId);
+                
+                // Populate player selector dropdown
+                if (playerSelect) {
+                    playerSelect.innerHTML = '<option value="">-- Selecione um Jogador --</option>';
+                    GameState.players.forEach(p => {
+                        const option = document.createElement('option');
+                        option.value = p.id;
+                        option.textContent = p.name;
+                        if (p.id === selectedPlayerId) {
+                            option.selected = true;
+                        }
+                        playerSelect.appendChild(option);
+                    });
+                }
                 
                 if (!player) {
                     playerInfo.innerHTML = '<p>Nenhum jogador disponível. Crie um jogador primeiro!</p>';
