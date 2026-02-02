@@ -30,20 +30,25 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
     html += helpers.renderTutorialBanner(encounter);
     html += '<h3>⚔️ Batalha em Grupo</h3>';
     
+    // CAMADA 2: Banner de Turno FIXO E DESTACADO
+    // Banner sempre visível, nunca desaparece
+    if (actor && !encounter.finished) {
+        const isPlayerPhase = actor.side === 'player';
+        const bannerColor = isPlayerPhase ? '#4CAF50' : '#f44336';
+        const bannerText = isPlayerPhase ? '🟢 VEZ DOS JOGADORES' : '🔴 VEZ DOS INIMIGOS';
+        const roundText = `Rodada ${encounter.turn?.round || 1}`;
+        
+        html += `<div class="turn-banner" style="background: ${bannerColor}; color: white; padding: 15px; margin: 15px 0; border-radius: 8px; text-align: center; font-size: 18px; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">`;
+        html += `${bannerText} <span style="opacity: 0.9; font-size: 14px; margin-left: 10px;">${roundText}</span>`;
+        html += `</div>`;
+    }
+    
     // Last d20 roll badge
     if (encounter.lastRoll) {
         const lr = encounter.lastRoll;
         const badgeClass = lr.type === 'crit' ? 'crit' : lr.type === 'fail' ? 'fail' : '';
         const emoji = lr.type === 'crit' ? '🌟' : lr.type === 'fail' ? '💥' : '🎲';
         html += `<div class="d20-badge ${badgeClass}">${emoji} ${lr.name}: ${lr.roll} ${lr.type === 'crit' ? '(CRIT!)' : lr.type === 'fail' ? '(FALHA!)' : ''}</div>`;
-    }
-    
-    // Indicador de turno atual
-    if (actor) {
-        const sideColor = actor.side === 'player' ? '#4CAF50' : '#f44336';
-        html += `<div class="battle-result" style="background: ${sideColor};">`;
-        html += `<strong>⏺️ Turno: ${actor.name}</strong> (${actor.side === 'player' ? 'Jogador' : 'Inimigo'})`;
-        html += `</div>`;
     }
     
     // Participantes (jogadores)
@@ -69,8 +74,20 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
         
         const isCurrent = actor && actor.side === 'player' && actor.id === pid;
         
-        const border = isCurrent ? '3px solid #4CAF50' : '1px solid #ddd';
-        html += `<div id="grpP_${pid}" class="group-participant-box" style="border: ${border};">`;
+        // CAMADA 2: Destaque Visual Forte + Apagado quando não é a vez
+        let cardStyle = '';
+        if (isCurrent) {
+            // É o turno deste jogador: DESTAQUE FORTE
+            cardStyle = 'border: 4px solid #4CAF50; box-shadow: 0 0 20px rgba(76, 175, 80, 0.5); opacity: 1; transform: scale(1.02);';
+        } else if (isPlayerTurn) {
+            // É turno dos jogadores, mas não é este: levemente apagado
+            cardStyle = 'border: 1px solid #ddd; opacity: 0.7;';
+        } else {
+            // É turno dos inimigos: todos jogadores apagados
+            cardStyle = 'border: 1px solid #ddd; opacity: 0.5;';
+        }
+        
+        html += `<div id="grpP_${pid}" class="group-participant-box" style="${cardStyle} transition: all 0.3s ease; padding: 12px; border-radius: 8px; margin: 8px 0; background: white;">`;
         html += `<strong>${p.name || p.nome}</strong> (${p.class})`;
         html += `<br>${mon.name || mon.nome} - Nv ${mon.level}`;
         html += `<br>HP: ${hp}/${hpMax} (${hpPercent}%)`;
@@ -120,8 +137,20 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
         const hpPercent = Math.floor((hp / hpMax) * 100);
         const isCurrent = actor && actor.side === 'enemy' && actor.id === i;
         
-        const border = isCurrent ? '3px solid #f44336' : '1px solid #ddd';
-        html += `<div id="grpE_${i}" class="enemy-participant-box" style="border: ${border};">`;
+        // CAMADA 2: Destaque Visual Forte + Apagado quando não é a vez
+        let cardStyle = '';
+        if (isCurrent) {
+            // É o turno deste inimigo: DESTAQUE FORTE
+            cardStyle = 'border: 4px solid #f44336; box-shadow: 0 0 20px rgba(244, 67, 54, 0.5); opacity: 1; transform: scale(1.02);';
+        } else if (!isPlayerTurn) {
+            // É turno dos inimigos, mas não é este: levemente apagado
+            cardStyle = 'border: 1px solid #ddd; opacity: 0.7;';
+        } else {
+            // É turno dos jogadores: todos inimigos apagados
+            cardStyle = 'border: 1px solid #ddd; opacity: 0.5;';
+        }
+        
+        html += `<div id="grpE_${i}" class="enemy-participant-box" style="${cardStyle} transition: all 0.3s ease; padding: 12px; border-radius: 8px; margin: 8px 0; background: white;">`;
         html += `<strong>${e.name || e.nome}</strong> - Nv ${e.level}`;
         html += `<br>HP: ${hp}/${hpMax} (${hpPercent}%)`;
         html += `<br>SPD: ${e.spd} | ATK: ${e.atk} | DEF: ${e.def}`;
