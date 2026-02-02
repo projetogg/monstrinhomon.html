@@ -282,37 +282,6 @@
                 </label>
             </div>
 
-            <!-- Therapist Mode Panel - Commit 1 -->
-            <div id="therapistPanel" class="card therapist-header is-hidden">
-                <h3>🔬 Therapist Mode Tools</h3>
-                <p class="therapist-header-text">Advanced debugging and testing controls</p>
-                <div id="therapistPanelContent">
-                    <!-- Commit 9: Therapist Log -->
-                    <div class="therapist-log-box">
-                        <div class="d-flex" style="justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <h4 style="margin: 0;">📜 Action Log</h4>
-                            <button class="btn btn-sm" onclick="clearTherapistLog()">🗑️ Clear</button>
-                        </div>
-                        <div id="therapistLog" class="therapist-log"></div>
-                    </div>
-                    
-                    <!-- Commit 2: Export/Import Save Tools -->
-                    <div class="save-management-box">
-                        <h4 class="save-management-title">💾 Save Management</h4>
-                        <div class="d-flex flex-gap-10 flex-wrap">
-                            <button class="btn btn-success flex-1 min-w-120" onclick="therapistExportSave()">📤 Export Save (JSON)</button>
-                            <button class="btn btn-warning flex-1 min-w-120" onclick="therapistImportSave()">📥 Import Save (JSON)</button>
-                        </div>
-                        <textarea id="therapistJsonArea" placeholder="Paste JSON here to import..." 
-                            class="json-textarea is-hidden"></textarea>
-                        <div class="d-flex flex-gap-10 mt-10 d-none" id="therapistJsonButtons">
-                            <button class="btn btn-success flex-1" onclick="therapistLoadJson()">✅ Load JSON</button>
-                            <button class="btn btn-danger flex-1" onclick="therapistCancelImport()">❌ Cancel</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <div class="card">
                 <h3>🎵 Audio Configuration</h3>
                 <div class="d-grid grid-gap-12">
@@ -2095,16 +2064,6 @@
             // Update checkbox in settings
             const checkbox = document.getElementById("therapistMode");
             if (checkbox) checkbox.checked = mmIsTherapistMode();
-            
-            // Update therapist panel visibility (Commit 1)
-            const panel = document.getElementById("therapistPanel");
-            if (panel) {
-                if (mmIsTherapistMode()) {
-                    showEl(panel);
-                } else {
-                    hideEl(panel);
-                }
-            }
         }
 
         // COMMIT 2: Therapist Export/Import Save Tools
@@ -8502,6 +8461,30 @@
                                 <option value="box">Forçar Caixa</option>
                             </select>
                             <button class="mm-btn" onclick="mmTherGiveMonster()">Conceder</button>
+                        </div>
+                    </div>
+
+                    <div class="therapist-mestre-box">
+                        <div class="therapist-field-title">📜 Action Log</div>
+                        <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+                            <button class="mm-btn" onclick="clearTherapistLog()">🗑️ Clear</button>
+                        </div>
+                        <div id="therapistLog" class="therapist-log" style="max-height: 200px; overflow-y: auto; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 4px; font-size: 12px;">
+                            No actions logged yet...
+                        </div>
+                    </div>
+
+                    <div class="therapist-mestre-box">
+                        <div class="therapist-field-title">💾 Save Management</div>
+                        <div class="mm-row mb-8">
+                            <button class="mm-btn flex-1" onclick="therapistExportSave()">📤 Export Save (JSON)</button>
+                            <button class="mm-btn flex-1" onclick="therapistImportSave()">📥 Import Save (JSON)</button>
+                        </div>
+                        <textarea id="therapistJsonArea" placeholder="Paste JSON here to import..." 
+                            class="mm-input" style="width: 100%; min-height: 100px; display: none; font-family: monospace; font-size: 11px;"></textarea>
+                        <div class="mm-row mt-8" id="therapistJsonButtons" style="display: none;">
+                            <button class="mm-btn flex-1" onclick="therapistLoadJson()">✅ Load JSON</button>
+                            <button class="mm-btn flex-1" onclick="therapistCancelImport()">❌ Cancel</button>
                         </div>
                     </div>
                 </div>
