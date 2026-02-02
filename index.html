@@ -2048,11 +2048,17 @@
                 GameState.therapistMode = v; 
             } catch (e) {
                 console.warn('Failed to set GameState.therapistMode:', e);
+                return false;
             }
-            StorageManager.setTherapistMode(v); // PR3
+            const storageSaved = StorageManager.setTherapistMode(v); // PR3
+            if (!storageSaved) {
+                console.warn('[mmSetTherapistMode] StorageManager.setTherapistMode failed');
+                return false;
+            }
             if (typeof saveToLocalStorage === "function") saveToLocalStorage();
             // Update UI elements
             mmUpdateTherapistUI();
+            return true;
         }
 
         function mmRequireGameOrAlert() {
@@ -8068,7 +8074,25 @@
         function toggleTherapistMode() {
             try {
                 const checked = document.getElementById('therapistMode')?.checked;
-                mmSetTherapistMode(checked);
+                const success = mmSetTherapistMode(checked);
+                
+                // Mostrar feedback visual para o usuário
+                if (success) {
+                    if (checked) {
+                        showToast('🔬 Modo Terapeuta ativado', 'success');
+                    } else {
+                        showToast('Modo Terapeuta desativado', 'info');
+                    }
+                } else {
+                    // Falha silenciosa corrigida: informar o usuário sobre o erro
+                    showToast('❌ Falha ao alterar modo terapeuta', 'error');
+                    console.error('[toggleTherapistMode] mmSetTherapistMode returned false');
+                    // Reverter checkbox para o estado correto
+                    const checkbox = document.getElementById('therapistMode');
+                    if (checkbox) {
+                        checkbox.checked = mmIsTherapistMode();
+                    }
+                }
                 
                 // Also update the old config panel if it exists
                 const configPanel = document.getElementById('configPanel');
@@ -8080,7 +8104,8 @@
                     }
                 }
             } catch (error) {
-                console.error('Failed to toggle therapist mode:', error);
+                console.error('[toggleTherapistMode] Failed to toggle therapist mode:', error);
+                showToast('❌ Erro ao alterar modo terapeuta: ' + error.message, 'error');
             }
         }
 
@@ -8696,15 +8721,20 @@
                     ) || MONSTER_CATALOG[0]; // Fallback to first monster if no match
                     
                     // Create player first (Award API needs player object)
+                    // Recursos iniciais: mesmos valores que addPlayer() para consistência
                     const player = {
                         id: playerId,
                         name: p.name,
                         class: p.class,
+                        money: 100,
+                        afterlifeCurrency: 0,
                         team: [],
                         box: [],
                         inventory: {
-                            'Monstribola': 5,
-                            'Poção': 3
+                            'CLASTERORB_COMUM': 5,    // ClasterOrb Comum x5
+                            'CLASTERORB_INCOMUM': 2,  // ClasterOrb Incomum x2
+                            'CLASTERORB_RARA': 1,     // ClasterOrb Rara x1
+                            'IT_HEAL_01': 3           // Petisco de Cura x3
                         }
                     };
                     
@@ -9469,6 +9499,7 @@
         window.mmTherGiveItem = mmTherGiveItem;
         window.mmTherGiveXP = mmTherGiveXP;
         window.mmTherGiveXPQuick = mmTherGiveXPQuick;
+        window.toggleTherapistMode = toggleTherapistMode;
         window.Audio = Audio;
 
         // Initialize on load
