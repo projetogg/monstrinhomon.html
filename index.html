@@ -6609,11 +6609,11 @@
                                 </span>
                             </p>
                             <p style="font-size: 0.9em;">${item.description}</p>
-                            <p style="font-size: 0.85em; color: #555;">
+                            ${item.stats ? `<p style="font-size: 0.85em; color: #555;">
                                 <strong>Stats:</strong> 
                                 ${item.stats.atk > 0 ? `⚔️ ATK +${item.stats.atk}` : ''}${item.stats.atk > 0 && item.stats.def > 0 ? ' ' : ''}${item.stats.def > 0 ? `🛡️ DEF +${item.stats.def}` : ''}
-                            </p>
-                            ${item.break.enabled ? `<p style="font-size: 0.85em; color: #e74c3c;">⚠️ Pode quebrar (${Math.round(item.break.chance * 100)}%)</p>` : ''}
+                            </p>` : ''}
+                            ${item.break?.enabled ? `<p style="font-size: 0.85em; color: #e74c3c;">⚠️ Pode quebrar (${Math.round(item.break.chance * 100)}%)</p>` : ''}
                             <p style="font-size: 0.85em; color: #555;">
                                 <strong>Você tem:</strong> ${owned}x
                             </p>
