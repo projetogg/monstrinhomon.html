@@ -6938,6 +6938,11 @@
                             <p>💰 Money: ${player.money || 0} | ⭐ Afterlife: ${player.afterlifeCurrency || 0}</p>
                             <p>👥 Team: ${teamCount}/${GameState.config?.maxTeamSize || 6} | 📦 Box: ${boxCount}</p>
                             
+                            <h4>📦 Inventory:</h4>
+                            <div class="inventory-section">
+                                ${renderPlayerInventory(player)}
+                            </div>
+                            
                             <h4>Team Order (${teamCount}):</h4>
                             <div class="team-reorder-section">
                                 <p class="text-small text-muted mb-10">First alive monster will be your starter in battle. Use arrows to reorder.</p>
@@ -7010,6 +7015,44 @@
             } catch (error) {
                 console.error('Failed to render monster card:', error);
                 return '<div class="monster-card">Error</div>';
+            }
+        }
+
+        function renderPlayerInventory(player) {
+            try {
+                if (!player || !player.inventory) {
+                    return '<p class="text-muted">No inventory.</p>';
+                }
+                
+                const inventory = player.inventory;
+                const items = Object.keys(inventory).filter(itemId => inventory[itemId] > 0);
+                
+                if (items.length === 0) {
+                    return '<p class="text-muted">Inventory is empty.</p>';
+                }
+                
+                let html = '<div class="inventory-grid">';
+                
+                items.forEach(itemId => {
+                    const count = inventory[itemId];
+                    const itemDef = getItemDefinition(itemId);
+                    const name = itemDef ? itemDef.name : itemId;
+                    const emoji = itemDef ? (itemDef.emoji || '📦') : '📦';
+                    
+                    html += `
+                        <div class="inventory-item">
+                            <span class="inventory-item-emoji">${emoji}</span>
+                            <span class="inventory-item-name">${name}</span>
+                            <span class="inventory-item-count">x${count}</span>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                return html;
+            } catch (error) {
+                console.error('Failed to render player inventory:', error);
+                return '<p class="color-error">Error rendering inventory</p>';
             }
         }
 
@@ -7545,6 +7588,9 @@
                 console.error('Failed to toggle therapist mode:', error);
             }
         }
+        
+        // Expose to global scope for inline HTML handlers
+        window.toggleTherapistMode = toggleTherapistMode;
 
         // Feature 4.4: Global click listener for button sounds
         document.addEventListener("click", (e) => {
@@ -8162,11 +8208,15 @@
                         id: playerId,
                         name: p.name,
                         class: p.class,
+                        money: 100,
+                        afterlifeCurrency: 0,
                         team: [],
                         box: [],
                         inventory: {
-                            'Monstribola': 5,
-                            'Poção': 3
+                            'CLASTERORB_COMUM': 5,      // ClasterOrb Comum x5
+                            'CLASTERORB_INCOMUM': 2,    // ClasterOrb Incomum x2
+                            'CLASTERORB_RARA': 1,       // ClasterOrb Rara x1
+                            'IT_HEAL_01': 3             // Petisco de Cura x3
                         }
                     };
                     

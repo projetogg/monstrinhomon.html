@@ -1092,3 +1092,40 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     color: var(--warning);
     font-weight: 600;
 }
+
+/* Inventory display styles */
+.inventory-section {
+    margin: 10px 0;
+}
+
+.inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.inventory-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(108, 92, 231, 0.05);
+    border: 1px solid rgba(108, 92, 231, 0.2);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.inventory-item-emoji {
+    font-size: 20px;
+}
+
+.inventory-item-name {
+    flex: 1;
+    font-weight: 500;
+}
+
+.inventory-item-count {
+    color: var(--primary);
+    font-weight: 700;
+}
