@@ -5656,12 +5656,12 @@
                 }
                 
                 // 2. Capturar input do usuário
-                const d20Roll = Combat.UI.getCombatInputRoll();
+                const d20Roll = Combat.Wild.UI.getCombatInputRoll();
                 if (!d20Roll) {
                     alert('Please enter a valid roll between 1 and 20');
                     return;
                 }
-                Combat.UI.clearCombatInput();
+                Combat.Wild.UI.clearCombatInput();
                 
                 // 3. Preparar dependências
                 const dependencies = {
@@ -5683,7 +5683,7 @@
                 };
                 
                 // 4. Executar combate via módulo
-                const result = Combat.Actions.executeWildAttack({
+                const result = Combat.Wild.Actions.executeWildAttack({
                     encounter,
                     player,
                     playerMonster,
@@ -9488,6 +9488,9 @@
         window.importData = importData;
         window.clearAllData = clearAllData;
         window.attackWild = attackWild;
+        window.useItemInBattle = useItemInBattle;
+        window.attemptCapture = attemptCapture;
+        window.fleeEncounter = fleeEncounter;
         window.useSkillWild = useSkillWild;
         window.mmEnterGameUI = mmEnterGameUI;
         window.mmCloseAllOverlays = mmCloseAllOverlays;
