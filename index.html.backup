@@ -5583,12 +5583,12 @@
                 }
                 
                 // 2. Capturar input do usuário
-                const d20Roll = Combat.Wild.UI.getCombatInputRoll();
+                const d20Roll = Combat.UI.getCombatInputRoll();
                 if (!d20Roll) {
                     alert('Please enter a valid roll between 1 and 20');
                     return;
                 }
-                Combat.Wild.UI.clearCombatInput();
+                Combat.UI.clearCombatInput();
                 
                 // 3. Preparar dependências
                 const dependencies = {
