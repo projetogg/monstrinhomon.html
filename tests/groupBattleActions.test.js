@@ -13,7 +13,7 @@ import {
 } from '../js/combat/groupBattleLoop.js';
 
 // Mock rollD20 determinístico
-const mockRollD20 = () => 15; // Sempre acerta (não é 1 nem 20)
+const mockRollD20Hit = () => 15; // Sempre acerta (não é 1 nem 20)
 const mockRollD20Crit = () => 20; // Sempre crítico
 
 describe('checkEndConditions - Verificação de Fim de Batalha', () => {
@@ -262,7 +262,7 @@ describe('performAction - Ataque', () => {
 
         const newState = performAction(state, action, {
             playersData: mockPlayersData,
-            rollD20Fn: mockRollD20 // Sempre acerta
+            rollD20Fn: mockRollD20Hit // Sempre acerta
         });
 
         // Inimigo deve ter recebido dano
@@ -286,7 +286,7 @@ describe('performAction - Ataque', () => {
 
         const newState = performAction(state, action, {
             playersData: mockPlayersData,
-            rollD20Fn: mockRollD20
+            rollD20Fn: mockRollD20Hit
         });
 
         // Batalha deve ter acabado em vitória
@@ -375,7 +375,7 @@ describe('performAction - Fuga', () => {
 
         const newState = performAction(state, action, {
             playersData: mockPlayersData,
-            rollD20Fn: mockRollD20
+            rollD20Fn: mockRollD20Hit
         });
 
         // p1 deve estar marcado como não ativo
@@ -401,7 +401,7 @@ describe('performAction - Fuga', () => {
         };
         let newState = performAction(state, action1, {
             playersData: mockPlayersData,
-            rollD20Fn: mockRollD20
+            rollD20Fn: mockRollD20Hit
         });
 
         // p2 foge (precisa atualizar currentActorId)
@@ -414,7 +414,7 @@ describe('performAction - Fuga', () => {
         };
         newState = performAction(newState, action2, {
             playersData: mockPlayersData,
-            rollD20Fn: mockRollD20
+            rollD20Fn: mockRollD20Hit
         });
 
         // Batalha deve ter acabado em retreat
@@ -480,7 +480,7 @@ describe('performAction - Item', () => {
 
         const newState = performAction(state, action, {
             playersData: mockPlayersData,
-            rollD20Fn: mockRollD20
+            rollD20Fn: mockRollD20Hit
         });
 
         // HP deve ter aumentado
@@ -557,7 +557,7 @@ describe('performAction - Skill', () => {
 
         const newState = performAction(state, action, {
             playersData: mockPlayersData,
-            rollD20Fn: mockRollD20
+            rollD20Fn: mockRollD20Hit
         });
 
         // Skill deve ter causado dano

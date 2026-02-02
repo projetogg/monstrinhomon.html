@@ -22,6 +22,15 @@
 import * as GroupBattleState from './groupBattleState.js';
 import { calculateTurnOrder, isAlive, checkHit, calcDamage } from './groupCore.js';
 
+// Constantes de configuração de batalha
+const BASIC_ATTACK_POWER = 10;      // Poder base de ataque normal
+const SKILL_POWER_MULTIPLIER = 1.5; // Multiplicador de dano para skills
+const DEFAULT_HEAL_AMOUNT = 30;     // Quantidade padrão de cura de itens
+const BASE_XP_TRAINER = 30;         // XP base para vitória contra trainer
+const BASE_XP_BOSS = 50;            // XP base para vitória contra boss
+const BASE_MONEY_TRAINER = 50;      // Moedas base para vitória contra trainer
+const BASE_MONEY_BOSS = 100;        // Moedas base para vitória contra boss
+
 /**
  * Cria uma nova batalha em grupo
  * 
@@ -525,8 +534,8 @@ export function endBattleAndDistributeRewards(state, playersData) {
     
     // Calcular recompensas base
     const isBoss = state.kind === "boss";
-    const baseXP = isBoss ? 50 : 30;
-    const baseMoney = isBoss ? 100 : 50;
+    const baseXP = isBoss ? BASE_XP_BOSS : BASE_XP_TRAINER;
+    const baseMoney = isBoss ? BASE_MONEY_BOSS : BASE_MONEY_TRAINER;
     
     // XP por participante (igual para todos)
     const xpPerPlayer = baseXP;
@@ -712,7 +721,7 @@ function performAttack(state, action, deps) {
     }
     
     // Calcular dano usando calcDamage do groupCore
-    const basicPower = 10; // Poder básico de ataque
+    const basicPower = BASIC_ATTACK_POWER;
     let power = isCrit ? basicPower * 2 : basicPower;
     
     // Aplicar multiplicador se for skill
@@ -789,7 +798,7 @@ function performSkill(state, action, deps) {
     const modifiedAction = {
         ...action,
         type: "attack",
-        powerMultiplier: 1.5 // Skill causa 50% mais dano
+        powerMultiplier: SKILL_POWER_MULTIPLIER
     };
     
     let newState = performAttack(state, modifiedAction, deps);
@@ -815,8 +824,8 @@ function performItem(state, action, deps) {
     let newState = state;
     
     // V1: apenas cura
-    // Assumindo que itemId é algo como "potion" que cura 30% HP
-    const healAmount = 30; // Valor fixo por enquanto
+    // Usar constante para valor de cura
+    const healAmount = DEFAULT_HEAL_AMOUNT;
     
     if (currentActor.side === "player") {
         const playerTeam = state.teams.players.find(pt => pt.playerId === action.actorId);
