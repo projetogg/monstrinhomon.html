@@ -6087,11 +6087,21 @@
          */
         function renderBoxTab() {
             try {
+                // Check if box tab is visible before rendering
+                const boxTab = document.getElementById('tabBox');
+                if (!boxTab || !boxTab.classList.contains('active')) {
+                    return; // Tab not active, skip rendering
+                }
+                
                 ensureBoxUIState();
                 
                 const activePlayer = getActivePlayerForBox();
+                const boxStatus = document.getElementById('boxStatus');
+                
                 if (!activePlayer) {
-                    document.getElementById('boxStatus').innerHTML = '<p>Nenhum jogador disponível</p>';
+                    if (boxStatus) {
+                        boxStatus.innerHTML = '<p>Nenhum jogador disponível</p>';
+                    }
                     return;
                 }
 
@@ -6101,9 +6111,13 @@
                 const boxTotal = GameState.sharedBox?.length || 0;
                 const BOX_MAX_TOTAL = 100;
 
-                document.getElementById('boxActivePlayer').textContent = activePlayer.name;
-                document.getElementById('boxTeamCount').textContent = `${teamCount}/${TEAM_MAX}`;
-                document.getElementById('boxTotalCount').textContent = `${boxTotal}/${BOX_MAX_TOTAL}`;
+                const boxActivePlayer = document.getElementById('boxActivePlayer');
+                const boxTeamCount = document.getElementById('boxTeamCount');
+                const boxTotalCount = document.getElementById('boxTotalCount');
+
+                if (boxActivePlayer) boxActivePlayer.textContent = activePlayer.name;
+                if (boxTeamCount) boxTeamCount.textContent = `${teamCount}/${TEAM_MAX}`;
+                if (boxTotalCount) boxTotalCount.textContent = `${boxTotal}/${BOX_MAX_TOTAL}`;
 
                 // Populate page selector
                 const pageSelect = document.getElementById('boxPageSelect');
@@ -6253,6 +6267,11 @@
         // ========================================================================
         // END PR15A: BOX SYSTEM
         // ========================================================================
+
+        // Make Box functions globally available
+        window.sendToBox = sendToBox;
+        window.withdrawFromBox = withdrawFromBox;
+        window.onBoxPageChange = onBoxPageChange;
 
         // THERAPY MANAGEMENT
         function addObjective() {
