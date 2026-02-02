@@ -1368,33 +1368,37 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     text-transform: uppercase;
     color: white;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    border: 2px solid transparent;
 }
 
+/* Solid colors for all rarities (no gradients, no animations) */
 .dex-rarity-comum {
-    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+    background: #95a5a6;
+    border-color: #7f8c8d;
 }
 
 .dex-rarity-incomum {
-    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    background: #3498db;
+    border-color: #2980b9;
 }
 
 .dex-rarity-raro {
-    background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+    background: #9b59b6;
+    border-color: #8e44ad;
 }
 
 .dex-rarity-mistico {
-    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    background: #e74c3c;
+    border-color: #c0392b;
 }
 
 .dex-rarity-lendario {
-    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
-    animation: shimmer 2s infinite;
+    background: #f39c12;
+    border-color: #e67e22;
 }
 
-@keyframes shimmer {
-    0%, 100% { box-shadow: 0 2px 10px rgba(243, 156, 18, 0.5); }
-    50% { box-shadow: 0 2px 20px rgba(243, 156, 18, 0.8); }
-}
+/* Note: Gradients and shimmer animation removed for simplicity.
+   Can be added in future PR16D if desired. */
 
 .dex-badge-class {
     padding: 4px 10px;

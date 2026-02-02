@@ -2010,6 +2010,8 @@
                 }
                 
                 // PR16B: Render PartyDex when tab is opened
+                // Note: renderPartyDexTab() is idempotent (DOM-only, no side effects)
+                // Safe to call multiple times without creating loops or duplicates
                 if (tabName === 'partyDex' && typeof window.renderPartyDexTab === 'function') {
                     window.renderPartyDexTab();
                 }
@@ -6450,7 +6452,11 @@
 
         /**
          * PR16B: Render PartyDex tab
-         * Wrapper function that calls the PartyDexUI module with proper dependencies
+         * 
+         * Wrapper function that calls the PartyDexUI module with proper dependencies.
+         * 
+         * IDEMPOTENT: Multiple calls only update DOM (no side effects, no loops).
+         * Safe to call on tab switch and after relevant events (capture, egg hatch).
          */
         function renderPartyDexTab() {
             try {
@@ -6473,21 +6479,29 @@
                     return;
                 }
                 
-                // Function to get all monster templates
+                /**
+                 * Get all monster templates (canonical source)
+                 * Priority:
+                 * 1. Data.getMonstersMapSync() - JSON-loaded monsters (PR9B)
+                 *    Returns Map, so we convert to Array via Array.from(map.values())
+                 * 2. MONSTER_CATALOG - Hardcoded fallback (only if JSON not available)
+                 */
                 function getMonsterTemplates() {
-                    // Try JSON first
+                    // Try JSON-loaded monsters first (canonical source from PR9B)
                     if (window.Data && window.Data.getMonstersMapSync) {
                         const monstersMap = window.Data.getMonstersMapSync();
+                        // getMonstersMapSync() returns a Map, convert to Array
                         if (monstersMap && monstersMap.size > 0) {
                             return Array.from(monstersMap.values());
                         }
                     }
                     
-                    // Fallback to hardcoded MONSTER_CATALOG
+                    // Fallback: Use hardcoded MONSTER_CATALOG only if JSON not available
+                    console.log('[PartyDex] Using fallback MONSTER_CATALOG (JSON not loaded)');
                     return MONSTER_CATALOG || [];
                 }
                 
-                // Render the PartyDex UI
+                // Render the PartyDex UI (idempotent DOM update)
                 window.PartyDexUI.renderPartyDex(root, {
                     state: GameState,
                     getMonsterTemplates: getMonsterTemplates

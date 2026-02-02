@@ -1,7 +1,9 @@
-# PR16B - PartyDex UI Visual Guide
+# PR16B - PartyDex UI Visual Guide (Safety-Reviewed)
 
 ## Overview
 The PartyDex UI provides a read-only view of the shared monster collection for the entire party/group.
+
+**Safety Adjustments**: Simplified rarity badges (solid colors, no gradients/animations) per review feedback.
 
 ## UI Layout
 
@@ -42,7 +44,9 @@ The cards are displayed in a responsive grid, sorted by status (captured → see
 ```
 - **Background**: White with purple border
 - **Shows**: Full emoji, name, class, rarity (color-coded), base stats
-- **Badges**: Rarity has gradient background (gray=comum, blue=incomum, purple=raro, red=místico, gold=lendário)
+- **Badges**: Rarity has solid background color + border (simplified per review)
+  - No gradients or animations for maximum safety/reviewability
+  - Can be enhanced in future PR16D if desired
 
 #### 2. Seen Monster Card (Silhouette)
 ```
@@ -98,15 +102,19 @@ The progress bar shows progress toward the next milestone:
 
 Formula: `progressPct = ((capturedCount % 10) / 10) * 100`
 
-## Rarity Badge Colors
+## Rarity Badge Colors (Simplified)
+
+**Solid colors with borders** (gradients and animations removed per safety review):
 
 ```
-Comum      → Gray gradient     #95a5a6 → #7f8c8d
-Incomum    → Blue gradient     #3498db → #2980b9
-Raro       → Purple gradient   #9b59b6 → #8e44ad
-Místico    → Red gradient      #e74c3c → #c0392b
-Lendário   → Gold gradient     #f39c12 → #e67e22 (with shimmer animation)
+Comum      → Solid #95a5a6, border #7f8c8d
+Incomum    → Solid #3498db, border #2980b9
+Raro       → Solid #9b59b6, border #8e44ad
+Místico    → Solid #e74c3c, border #c0392b
+Lendário   → Solid #f39c12, border #e67e22
 ```
+
+**Note**: Gradients and shimmer animation removed for simplicity and lower review risk. Can be added in future PR16D if desired.
 
 ## Responsive Behavior
 
@@ -136,10 +144,17 @@ The PartyDex tab is accessed via:
 3. Shows live data from GameState.partyDex
 4. Read-only (no buttons that change state)
 
-## Re-rendering
+**Data Source** (explicit per review):
+- Primary: `Data.getMonstersMapSync()` (JSON-loaded, returns Map → converted to Array)
+- Fallback: `MONSTER_CATALOG` (hardcoded, only if JSON not available)
+
+## Re-rendering (Idempotent)
 
 The UI automatically re-renders when:
 - User switches to the PartyDex tab
-- (Future) After capturing a monster
-- (Future) After hatching an egg
-- (Future) After receiving a monster reward
+
+**Idempotent Behavior**:
+- Multiple calls are safe (DOM-only updates)
+- No side effects or state mutations
+- No render loops
+- Future: Can hook into capture/egg/reward events
