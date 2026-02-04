@@ -5290,25 +5290,27 @@
          */
         async function showBattleEndModalWrapper(encounter, state) {
             try {
+                // Constantes de recompensas
+                const REWARDS = {
+                    TRAINER: { xp: 30, money: 50 },
+                    BOSS: { xp: 50, money: 100 }
+                };
+                
                 // Preparar dados de recompensas
                 const participants = [];
                 
                 if (encounter.result === 'victory') {
                     // Obter participantes elegíveis (não fugiram)
                     const eligiblePlayerIds = encounter.participants || [];
+                    const rewards = encounter.kind === 'boss' ? REWARDS.BOSS : REWARDS.TRAINER;
                     
                     for (const pid of eligiblePlayerIds) {
                         const player = state.players.find(p => p.id === pid);
                         if (player) {
-                            // Obter recompensas do log ou calcular
-                            // Por enquanto, usar valores padrão
-                            const xp = encounter.kind === 'boss' ? 50 : 30;
-                            const money = encounter.kind === 'boss' ? 100 : 50;
-                            
                             participants.push({
                                 playerName: player.name || player.nome || pid,
-                                xp: xp,
-                                money: money
+                                xp: rewards.xp,
+                                money: rewards.money
                             });
                         }
                     }

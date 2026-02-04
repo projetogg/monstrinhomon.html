@@ -124,6 +124,36 @@ function renderRetreatContent() {
 }
 
 /**
+ * Cria botão com estilo baseado no resultado
+ * @param {string} result - Resultado da batalha
+ * @returns {string} HTML do botão
+ */
+function createModalButton(result) {
+    const buttonConfig = {
+        victory: {
+            class: 'btn-success',
+            icon: '✅',
+            text: 'Continuar'
+        },
+        defeat: {
+            class: 'btn-secondary',
+            icon: '🔄',
+            text: 'Continuar'
+        },
+        retreat: {
+            class: 'btn-warning',
+            icon: '👍',
+            text: 'Continuar'
+        }
+    };
+    
+    const config = buttonConfig[result] || buttonConfig.defeat;
+    const baseStyle = 'width: 100%; margin-top: 20px; font-size: 18px;';
+    
+    return `<button class="btn ${config.class} btn-large" onclick="window.BattleEndModal.close()" style="${baseStyle}">${config.icon} ${config.text}</button>`;
+}
+
+/**
  * Exibe modal de fim de batalha
  * 
  * @param {Object} params - Parâmetros do modal
@@ -152,15 +182,13 @@ export function showBattleEndModal(params) {
         
         if (result === 'victory') {
             content += renderVictoryContent(participants, rewards);
-            content += '<button class="btn btn-success btn-large" onclick="window.BattleEndModal.close()" style="width: 100%; margin-top: 20px; font-size: 18px;">✅ Continuar</button>';
         } else if (result === 'defeat') {
             content += renderDefeatContent();
-            content += '<button class="btn btn-secondary btn-large" onclick="window.BattleEndModal.close()" style="width: 100%; margin-top: 20px; font-size: 18px;">🔄 Continuar</button>';
         } else if (result === 'retreat') {
             content += renderRetreatContent();
-            content += '<button class="btn btn-warning btn-large" onclick="window.BattleEndModal.close()" style="width: 100%; margin-top: 20px; font-size: 18px;">👍 Continuar</button>';
         }
         
+        content += createModalButton(result);
         content += '</div>';
         
         modal.innerHTML = content;
