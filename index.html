@@ -453,6 +453,9 @@
         // Import UI modules (PR14B)
         import { showEggHatchModal, initEggHatchModal } from './js/ui/eggHatchModal.js';
         
+        // CAMADA 4: Import Battle End Modal
+        import * as BattleEndModal from './js/ui/battleEndModal.js';
+        
         // PR16A: Import PartyDex module
         import * as PartyDex from './js/data/partyDex.js';
         
@@ -5283,6 +5286,55 @@
         }
         
         /**
+         * CAMADA 4: Mostra modal de fim de batalha
+         */
+        async function showBattleEndModalWrapper(encounter, state) {
+            try {
+                // Preparar dados de recompensas
+                const participants = [];
+                
+                if (encounter.result === 'victory') {
+                    // Obter participantes elegíveis (não fugiram)
+                    const eligiblePlayerIds = encounter.participants || [];
+                    
+                    for (const pid of eligiblePlayerIds) {
+                        const player = state.players.find(p => p.id === pid);
+                        if (player) {
+                            // Obter recompensas do log ou calcular
+                            // Por enquanto, usar valores padrão
+                            const xp = encounter.kind === 'boss' ? 50 : 30;
+                            const money = encounter.kind === 'boss' ? 100 : 50;
+                            
+                            participants.push({
+                                playerName: player.name || player.nome || pid,
+                                xp: xp,
+                                money: money
+                            });
+                        }
+                    }
+                }
+                
+                // Mostrar modal
+                await BattleEndModal.showBattleEndModal({
+                    result: encounter.result,
+                    participants: participants
+                });
+                
+                // Após fechar modal, limpar encounter
+                GameState.currentEncounter = null;
+                saveToLocalStorage();
+                renderEncounter();
+                
+            } catch (error) {
+                console.error('Failed to show battle end modal:', error);
+                // Fallback: just clear encounter
+                GameState.currentEncounter = null;
+                saveToLocalStorage();
+                renderEncounter();
+            }
+        }
+        
+        /**
          * PR5C: WRAPPER - Combat.Group.UI.renderGroupEncounterPanel()
          * Renderiza UI do encounter de grupo
          */
@@ -5302,7 +5354,8 @@
                         saveToLocalStorage: saveToLocalStorage,
                         maybeToastFromLog: maybeToastFromLog,
                         maybeSfxFromLog: maybeSfxFromLog,
-                        formatEquippedItemDisplay: formatEquippedItemDisplay
+                        formatEquippedItemDisplay: formatEquippedItemDisplay,
+                        showBattleEndModal: showBattleEndModalWrapper
                     }
                 };
                 Combat.Group.UI.renderGroupEncounterPanel(panel, encounter, deps);

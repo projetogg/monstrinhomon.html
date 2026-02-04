@@ -179,36 +179,17 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
     // CAMADA 3: Painel de Ações Contextual
     html += renderActionPanel(encounter, actor, isPlayerTurn, state, helpers);
     
-    // Mensagem de fim com recompensas
-    if (encounter.finished) {
-        const resultColor = encounter.result === 'victory' ? '#4CAF50' : '#f44336';
-        html += `<div class="battle-result" style="background: ${resultColor};">`;
-        html += `<h3>${encounter.result === 'victory' ? '🏁 VITÓRIA!' : '💀 DERROTA'}</h3>`;
-        
-        // Recompensas na vitória
-        if (encounter.result === 'victory') {
-            html += '<div class="mt-10 p-10 border-radius-5 bg-white-20">';
-            html += '<strong>💰 Recompensas:</strong><br>';
-            
-            // Dinheiro dividido
-            const totalCoins = Math.floor(Math.random() * 31) + 30; // 30-60
-            const coinsPerPlayer = Math.floor(totalCoins / encounter.participants.length);
-            
-            for (const pid of encounter.participants) {
-                const p = state.players.find(pl => pl.id === pid);
-                if (p) {
-                    p.coins = (p.coins || 0) + coinsPerPlayer;
-                    html += `${p.name}: +${coinsPerPlayer} moedas<br>`;
-                }
-            }
-            
-            html += '<br><em>ℹ️ XP será implementado na Feature 3.3</em>';
-            html += '</div>';
-            helpers.saveToLocalStorage();
-        }
-        
-        html += `</div>`;
+    // CAMADA 4: Trigger modal se a batalha acabou de terminar
+    // (depois de renderizar, checamos se deve abrir modal)
+    const shouldShowModal = encounter.finished && !encounter._modalShown;
+    
+    // Mensagem de fim INLINE (backup - não deve ser necessária com modal)
+    // Mantida temporariamente para compatibilidade
+    if (encounter.finished && encounter._modalShown) {
+        html += '<div class="mt-15 p-15" style="text-align: center; background: rgba(0,0,0,0.05); border-radius: 8px;">';
+        html += '<p style="color: #666;">Batalha encerrada</p>';
         html += '<button class="btn btn-secondary" onclick="GameState.currentEncounter = null; saveToLocalStorage(); renderEncounter();">Fechar</button>';
+        html += '</div>';
     }
     
     // Log de combate
@@ -231,6 +212,17 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
     
     // Feature 4.4: Tocar sons para level up e evolução
     helpers.maybeSfxFromLog(encounter);
+    
+    // CAMADA 4: Mostrar modal de fim de batalha se necessário
+    if (shouldShowModal) {
+        // Marcar que modal foi mostrado (para não mostrar novamente)
+        encounter._modalShown = true;
+        
+        // Chamar função que mostrará o modal (deve ser injetada via helpers)
+        if (typeof helpers.showBattleEndModal === 'function') {
+            helpers.showBattleEndModal(encounter, state);
+        }
+    }
 }
 
 /**
