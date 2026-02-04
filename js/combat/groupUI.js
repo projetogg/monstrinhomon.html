@@ -2,12 +2,14 @@
  * GROUP COMBAT UI - Renderização e Feedback Visual
  * 
  * PR5C: Implementação real extraída de index.html
+ * CAMADA 3: Painel de Ações Contextual + Seleção de Alvo
  * 
  * Funções que manipulam DOM, animações e áudio
  * Recebem dependências por parâmetro (dependency injection)
  */
 
 import * as GroupCore from './groupCore.js';
+import * as TargetSelection from '../ui/targetSelection.js';
 
 /**
  * PR5C: Renderiza UI completa do encounter de grupo
@@ -125,7 +127,7 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
     }
     html += '</div>';
     
-    // Inimigos
+    // Inimigos (CAMADA 3: Suporte para seleção de alvo)
     html += '<div class="my-15">';
     html += '<h4>👹 Inimigos:</h4>';
     for (let i = 0; i < (encounter.enemies || []).length; i++) {
@@ -136,9 +138,13 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
         const hpMax = Number(e.hpMax) || 1;
         const hpPercent = Math.floor((hp / hpMax) * 100);
         const isCurrent = actor && actor.side === 'enemy' && actor.id === i;
+        const isDead = hp <= 0;
         
         // CAMADA 2: Destaque Visual Forte + Apagado quando não é a vez
         let cardStyle = '';
+        let cursorStyle = 'cursor: default;';
+        let clickHandler = '';
+        
         if (isCurrent) {
             // É o turno deste inimigo: DESTAQUE FORTE
             cardStyle = 'border: 4px solid #f44336; box-shadow: 0 0 20px rgba(244, 67, 54, 0.5); opacity: 1; transform: scale(1.02);';
@@ -150,7 +156,19 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
             cardStyle = 'border: 1px solid #ddd; opacity: 0.5;';
         }
         
-        html += `<div id="grpE_${i}" class="enemy-participant-box" style="${cardStyle} transition: all 0.3s ease; padding: 12px; border-radius: 8px; margin: 8px 0; background: white;">`;
+        // CAMADA 3: Visual e interação para modo de seleção de alvo
+        if (isDead) {
+            // Morto: opacidade 0.4, nunca clicável
+            cardStyle += ' opacity: 0.4;';
+        } else if (isPlayerTurn && !isDead) {
+            // Vivo durante turno do jogador: potencialmente clicável
+            // O visual dinâmico será aplicado via JS quando entrar em target mode
+            cursorStyle = 'cursor: pointer;';
+            clickHandler = ` onclick="handleEnemyClick(${i})"`;
+            cardStyle += ' transition: all 0.3s ease;';
+        }
+        
+        html += `<div id="grpE_${i}" class="enemy-participant-box" style="${cardStyle} ${cursorStyle} padding: 12px; border-radius: 8px; margin: 8px 0; background: white;"${clickHandler}>`;
         html += `<strong>${e.name || e.nome}</strong> - Nv ${e.level}`;
         html += `<br>HP: ${hp}/${hpMax} (${hpPercent}%)`;
         html += `<br>SPD: ${e.spd} | ATK: ${e.atk} | DEF: ${e.def}`;
@@ -158,86 +176,8 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
     }
     html += '</div>';
     
-    // Ações (apenas para turno do jogador)
-    if (isPlayerTurn && !encounter.finished) {
-        html += '<div class="my-15 p-15 bg-light-gray border-radius-5">';
-        html += '<h4>Ações:</h4>';
-        html += '<div class="d-flex flex-gap-10 flex-wrap mt-10">';
-        html += '<button class="btn btn-danger" onclick="groupAttack()">⚔️ Atacar</button>';
-        html += '<button class="btn btn-primary" onclick="groupPassTurn()">⏭️ Passar</button>';
-        html += '</div>';
-        
-        // Items section for current player
-        if (actor && actor.side === 'player') {
-            const player = state.players.find(p => p.id === actor.id);
-            const mon = player?.team?.[0];
-            if (mon && player) {
-                const healItems = player.inventory?.['IT_HEAL_01'] || 0;
-                const hp = Number(mon.hp) || 0;
-                const hpMax = Number(mon.hpMax) || 1;
-                const canUseItem = healItems > 0 && hp > 0 && hp < hpMax;
-                
-                html += '<div class="heal-box mt-15">';
-                html += '<strong class="font-size-16 text-bold">💚 Usar Item de Cura</strong>';
-                html += '<div class="mt-10">';
-                html += `<div><strong>Petisco de Cura disponível:</strong> ${healItems}x</div>`;
-                html += `<div><strong>HP atual:</strong> ${hp}/${hpMax}</div>`;
-                
-                if (!canUseItem && healItems === 0) {
-                    html += '<div class="color-error mt-5">❌ Sem itens de cura disponíveis</div>';
-                } else if (!canUseItem && hp <= 0) {
-                    html += '<div class="color-error mt-5">❌ Monstrinho desmaiado, não pode usar item</div>';
-                } else if (!canUseItem && hp >= hpMax) {
-                    html += '<div class="color-warning mt-5">⚠️ HP já está cheio</div>';
-                }
-                
-                html += '</div>';
-                const buttonClass = `btn btn-primary mt-10 w-100${!canUseItem ? ' opacity-50' : ''}`;
-                const buttonDisabled = !canUseItem ? 'disabled' : '';
-                html += `<button class="${buttonClass}" onclick="groupUseItem('IT_HEAL_01')" ${buttonDisabled}>`;
-                html += '💚 Usar Petisco de Cura';
-                html += '</button>';
-                html += '</div>';
-            }
-        }
-        
-        // Feature 3.7: Skills buttons for current player
-        if (actor && actor.side === 'player') {
-            const player = state.players.find(p => p.id === actor.id);
-            const mon = player?.team?.[0];
-            if (mon) {
-                const skillIds = helpers.getSkillsArray(mon);
-                if (skillIds && skillIds.length > 0) {
-                    html += '<div class="skills-box">';
-                    html += '<strong class="skills-title">✨ Habilidades</strong>';
-                    html += '<div class="d-flex flex-gap-10 flex-wrap mt-10">';
-                    
-                    skillIds.forEach((skillId, idx) => {
-                        const skill = helpers.getSkillById(skillId);
-                        if (!skill) return;
-                        
-                        const label = helpers.formatSkillButtonLabel(skill, mon);
-                        const canUse = helpers.canUseSkillNow(skill, mon) && mon.hp > 0;
-                        const tooltip = canUse ? (skill.desc || skill.descricao || '') : 'Sem ENE';
-                        
-                        html += `
-                        <button class="btn btn-info" 
-                                onclick="groupUseSkill(${idx})" 
-                                ${!canUse ? 'disabled class="opacity-50"' : ''}
-                                title="${tooltip}">
-                            ${label}
-                        </button>
-                        `;
-                    });
-                    
-                    html += '</div>';
-                    html += '</div>';
-                }
-            }
-        }
-        
-        html += '</div>';
-    }
+    // CAMADA 3: Painel de Ações Contextual
+    html += renderActionPanel(encounter, actor, isPlayerTurn, state, helpers);
     
     // Mensagem de fim com recompensas
     if (encounter.finished) {
@@ -368,4 +308,140 @@ export function render(deps) {
     if (encounter.type === 'group_trainer' || encounter.type === 'boss') {
         renderGroupEncounterPanel(panel, encounter, deps);
     }
+}
+
+/**
+ * CAMADA 3: Renderiza painel de ações contextual
+ * 
+ * ESTADO A (Não é sua vez): Mostra "Aguarde sua vez", zero botões
+ * ESTADO B (É sua vez): Mostra botões dinamicamente baseado em validações
+ * 
+ * Ordem fixa dos botões: Atacar → Habilidade → Item → Fugir → Passar
+ * Regra: Nunca renderizar botão disabled. Se não pode usar, não existe.
+ * 
+ * @param {object} encounter - Encounter atual
+ * @param {object|null} actor - Ator atual (getCurrentActor result)
+ * @param {boolean} isPlayerTurn - Se é turno de algum jogador
+ * @param {object} state - GameState
+ * @param {object} helpers - Helper functions
+ * @returns {string} HTML do painel de ações
+ */
+function renderActionPanel(encounter, actor, isPlayerTurn, state, helpers) {
+    // Se batalha terminou, não mostrar painel
+    if (encounter.finished) {
+        return '';
+    }
+    
+    let html = '';
+    
+    // ESTADO A: NÃO É SUA VEZ
+    if (!isPlayerTurn || !actor || actor.side !== 'player') {
+        html += '<div class="action-panel my-15 p-15 bg-light-gray border-radius-5" style="text-align: center;">';
+        html += '<h4 style="color: #666; font-size: 18px;">⏳ Aguarde sua vez</h4>';
+        html += '</div>';
+        return html;
+    }
+    
+    // ESTADO B: É SUA VEZ - Montar painel dinamicamente
+    html += '<div class="action-panel my-15 p-15 bg-light-gray border-radius-5">';
+    html += '<h4>⚔️ Suas Ações:</h4>';
+    
+    // Coletar dados do jogador atual
+    const player = state.players.find(p => p.id === actor.id);
+    const mon = player?.team?.[0];
+    
+    if (!player || !mon) {
+        html += '<div class="color-error">❌ Erro: Jogador ou monstrinho não encontrado</div>';
+        html += '</div>';
+        return html;
+    }
+    
+    const hp = Number(mon.hp) || 0;
+    const hpMax = Number(mon.hpMax) || 1;
+    const isAlive = hp > 0;
+    
+    // Container de botões
+    html += '<div class="d-flex flex-gap-10 flex-wrap mt-10">';
+    
+    // 1. BOTÃO ATACAR (sempre visível se monstrinho vivo)
+    if (isAlive) {
+        html += '<button class="btn btn-large btn-danger" onclick="enterAttackMode()" style="min-width: 120px;">';
+        html += '⚔️ Atacar';
+        html += '</button>';
+    }
+    
+    // 2. BOTÃO HABILIDADE (se tiver skill disponível)
+    const skillIds = helpers.getSkillsArray(mon);
+    let hasUsableSkill = false;
+    
+    if (isAlive && skillIds && skillIds.length > 0) {
+        for (let idx = 0; idx < skillIds.length; idx++) {
+            const skillId = skillIds[idx];
+            const skill = helpers.getSkillById(skillId);
+            if (skill && helpers.canUseSkillNow(skill, mon)) {
+                if (!hasUsableSkill) {
+                    // Primeiro skill: renderizar botão dropdown ou botão direto
+                    hasUsableSkill = true;
+                    html += '<button class="btn btn-large btn-info" onclick="enterSkillMode(0)" style="min-width: 120px;">';
+                    html += '✨ Habilidade';
+                    html += '</button>';
+                }
+            }
+        }
+    }
+    
+    // 3. BOTÃO ITEM (se tiver item defensivo = cura disponível)
+    const healItems = player.inventory?.['IT_HEAL_01'] || 0;
+    const canUseItem = healItems > 0 && hp > 0 && hp < hpMax;
+    
+    if (canUseItem) {
+        html += '<button class="btn btn-large btn-success" onclick="groupUseItem(\'IT_HEAL_01\')" style="min-width: 120px;">';
+        html += '🧪 Item';
+        html += '</button>';
+    }
+    
+    // 4. BOTÃO FUGIR (sempre visível se vivo)
+    if (isAlive) {
+        html += '<button class="btn btn-large btn-warning" onclick="groupFlee()" style="min-width: 120px;">';
+        html += '🏃 Fugir';
+        html += '</button>';
+    }
+    
+    // 5. BOTÃO PASSAR (sempre visível)
+    html += '<button class="btn btn-large btn-secondary" onclick="groupPassTurn()" style="min-width: 120px;">';
+    html += '⏭️ Passar';
+    html += '</button>';
+    
+    html += '</div>'; // Fecha container de botões
+    
+    // Informação adicional (itens e skills detalhados)
+    if (isAlive) {
+        html += '<div class="mt-15" style="font-size: 14px; color: #666;">';
+        
+        // Mostrar itens disponíveis
+        if (healItems > 0) {
+            html += `<div>💚 Petisco de Cura: ${healItems}x disponível</div>`;
+        }
+        
+        // Mostrar skills disponíveis
+        if (skillIds && skillIds.length > 0) {
+            const usableSkills = [];
+            skillIds.forEach((skillId) => {
+                const skill = helpers.getSkillById(skillId);
+                if (skill && helpers.canUseSkillNow(skill, mon)) {
+                    usableSkills.push(skill.name || skill.nome);
+                }
+            });
+            
+            if (usableSkills.length > 0) {
+                html += `<div>✨ Habilidades: ${usableSkills.join(', ')}</div>`;
+            }
+        }
+        
+        html += '</div>';
+    }
+    
+    html += '</div>'; // Fecha action-panel
+    
+    return html;
 }
