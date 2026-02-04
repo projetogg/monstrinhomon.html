@@ -363,17 +363,22 @@ export function incrementRound(state) {
  * Finaliza batalha
  * 
  * @param {Object} state - GroupBattleState
- * @param {string} result - Resultado: "victory" ou "defeat"
+ * @param {string} result - Resultado: "victory", "defeat", ou "retreat"
  * @returns {Object} Novo estado finalizado
  */
 export function endBattle(state, result) {
-    if (result !== "victory" && result !== "defeat") {
-        throw new Error("result deve ser 'victory' ou 'defeat'");
+    if (result !== "victory" && result !== "defeat" && result !== "retreat") {
+        throw new Error("result deve ser 'victory', 'defeat' ou 'retreat'");
     }
 
-    const text = result === "victory"
-        ? "🏁 Vitória! Todos os inimigos foram derrotados."
-        : "💀 Derrota... Todos os participantes foram derrotados.";
+    let text;
+    if (result === "victory") {
+        text = "🏁 Vitória! Todos os inimigos foram derrotados.";
+    } else if (result === "defeat") {
+        text = "💀 Derrota... Todos os participantes foram derrotados.";
+    } else {
+        text = "🏃 Todos os participantes fugiram da batalha.";
+    }
 
     const newState = {
         ...state,

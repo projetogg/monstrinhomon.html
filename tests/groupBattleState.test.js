@@ -449,7 +449,7 @@ describe('endBattle - Finalizar Batalha', () => {
 
         expect(() => {
             endBattle(state, "draw");
-        }).toThrow("result deve ser 'victory' ou 'defeat'");
+        }).toThrow("result deve ser 'victory', 'defeat' ou 'retreat'");
     });
 });
 
