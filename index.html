@@ -778,12 +778,13 @@
                     'Animalista': { strong: null, weak: null } // Neutro
                 },
                 // Thresholds de captura por raridade (sem dado)
+                // Valores mais baixos = captura requer HP mais baixo
                 captureThreshold: {
-                    'Comum': 0.35,
-                    'Incomum': 0.30,
-                    'Raro': 0.22,
-                    'Místico': 0.15,
-                    'Lendário': 0.08
+                    'Comum': 0.25,      // 25% HP base
+                    'Incomum': 0.20,    // 20% HP base
+                    'Raro': 0.15,       // 15% HP base
+                    'Místico': 0.10,    // 10% HP base
+                    'Lendário': 0.05    // 5% HP base
                 },
                 // Multiplicadores de raridade
                 rarityPower: {
@@ -986,10 +987,11 @@
         };
 
         // CLASTERORB TIERS (Sistema de captura em tiers)
+        // Valores maiores = melhor item de captura = mais útil
         const CLASTERORBS = {
             'CLASTERORB_COMUM': { id: 'CLASTERORB_COMUM', name: 'ClasterOrb Comum', type: 'CAPTURE', capture_bonus_pp: 0, emoji: '⚪' },
-            'CLASTERORB_INCOMUM': { id: 'CLASTERORB_INCOMUM', name: 'ClasterOrb Incomum', type: 'CAPTURE', capture_bonus_pp: 5, emoji: '🔵' },
-            'CLASTERORB_RARA': { id: 'CLASTERORB_RARA', name: 'ClasterOrb Rara', type: 'CAPTURE', capture_bonus_pp: 10, emoji: '🟣' }
+            'CLASTERORB_INCOMUM': { id: 'CLASTERORB_INCOMUM', name: 'ClasterOrb Incomum', type: 'CAPTURE', capture_bonus_pp: 10, emoji: '🔵' },
+            'CLASTERORB_RARA': { id: 'CLASTERORB_RARA', name: 'ClasterOrb Rara', type: 'CAPTURE', capture_bonus_pp: 20, emoji: '🟣' }
         };
 
         // ============================================================================
@@ -2828,7 +2830,6 @@
 
                 // Ensure arrays exist
                 player.team = player.team || [];
-                player.box = player.box || [];
 
                 // Determine destination
                 let actualDest = dest;
@@ -2843,21 +2844,27 @@
                     if (player.team.length < maxTeamSize) {
                         player.team.push(monster);
                     } else {
-                        // Party full, add to box instead
-                        player.box.push(monster);
+                        // Party full, add to sharedBox instead (PR15A)
+                        const boxResult = addToSharedBox(player.id, monster);
+                        if (!boxResult.success) {
+                            console.error('Failed to add to box:', boxResult.message);
+                        }
                         actualDest = 'box';
                         // Commit 13 (Wave 13.2): Use mmDebugLog
                         mmDebugLog("AWARD_MONSTER", {
                             context: 'awardMonster',
                             templateId,
-                            note: 'Party full, redirected to box',
+                            note: 'Party full, redirected to sharedBox',
                             requestedDest: 'team',
                             actualDest: 'box'
                         }, "warn");
                     }
                 } else {
-                    // box
-                    player.box.push(monster);
+                    // box - use sharedBox (PR15A)
+                    const boxResult = addToSharedBox(player.id, monster);
+                    if (!boxResult.success) {
+                        console.error('Failed to add to box:', boxResult.message);
+                    }
                 }
 
                 // Add to global monsters list (for compatibility)
@@ -5431,14 +5438,18 @@
                     monster.ownerId = player.id;
                     
                     player.team = player.team || [];
-                    player.box = player.box || [];
                     
                     if (player.team.length < (GameState.config?.maxTeamSize || 6)) {
                         player.team.push(monster);
                         encounter.log.push(`${monster.name} foi adicionado ao time de ${player.name}!`);
                     } else {
-                        player.box.push(monster);
-                        encounter.log.push(`${monster.name} foi enviado para a caixa de ${player.name}!`);
+                        // PR15A: Use sharedBox instead of player.box
+                        const boxResult = addToSharedBox(player.id, monster);
+                        if (boxResult.success) {
+                            encounter.log.push(`${monster.name} foi enviado para a caixa de ${player.name}!`);
+                        } else {
+                            encounter.log.push(`❌ Erro: ${boxResult.message}`);
+                        }
                     }
                     
                     GameState.monsters = GameState.monsters || [];

@@ -167,6 +167,40 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
         html += '<button class="btn btn-primary" onclick="groupPassTurn()">⏭️ Passar</button>';
         html += '</div>';
         
+        // Items section for current player
+        if (actor && actor.side === 'player') {
+            const player = state.players.find(p => p.id === actor.id);
+            const mon = player?.team?.[0];
+            if (mon && player) {
+                const healItems = player.inventory?.['IT_HEAL_01'] || 0;
+                const hp = Number(mon.hp) || 0;
+                const hpMax = Number(mon.hpMax) || 1;
+                const canUseItem = healItems > 0 && hp > 0 && hp < hpMax;
+                
+                html += '<div class="heal-box mt-15">';
+                html += '<strong class="font-size-16 text-bold">💚 Usar Item de Cura</strong>';
+                html += '<div class="mt-10">';
+                html += `<div><strong>Petisco de Cura disponível:</strong> ${healItems}x</div>`;
+                html += `<div><strong>HP atual:</strong> ${hp}/${hpMax}</div>`;
+                
+                if (!canUseItem && healItems === 0) {
+                    html += '<div class="color-error mt-5">❌ Sem itens de cura disponíveis</div>';
+                } else if (!canUseItem && hp <= 0) {
+                    html += '<div class="color-error mt-5">❌ Monstrinho desmaiado, não pode usar item</div>';
+                } else if (!canUseItem && hp >= hpMax) {
+                    html += '<div class="color-warning mt-5">⚠️ HP já está cheio</div>';
+                }
+                
+                html += '</div>';
+                const buttonClass = `btn btn-primary mt-10 w-100${!canUseItem ? ' opacity-50' : ''}`;
+                const buttonDisabled = !canUseItem ? 'disabled' : '';
+                html += `<button class="${buttonClass}" onclick="groupUseItem('IT_HEAL_01')" ${buttonDisabled}>`;
+                html += '💚 Usar Petisco de Cura';
+                html += '</button>';
+                html += '</div>';
+            }
+        }
+        
         // Feature 3.7: Skills buttons for current player
         if (actor && actor.side === 'player') {
             const player = state.players.find(p => p.id === actor.id);
