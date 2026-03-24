@@ -334,6 +334,51 @@
           "rarity": "Lendário"
         }
       ]
+    },
+    {
+      "id": "IT_HEAL_01",
+      "name": "Petisco de Cura",
+      "description": "Restaura 30% do HP máximo (mínimo 30 HP). Usado em batalha.",
+      "type": "heal",
+      "heal_pct": 0.30,
+      "heal_min": 30,
+      "emoji": "💚",
+      "stackable": true,
+      "maxStack": 99,
+      "price": {
+        "buy": 20,
+        "sell": 5
+      }
+    },
+    {
+      "id": "IT_HEAL_02",
+      "name": "Ração Revigorante",
+      "description": "Restaura 55% do HP máximo (mínimo 60 HP). Usado em batalha.",
+      "type": "heal",
+      "heal_pct": 0.55,
+      "heal_min": 60,
+      "emoji": "🍖",
+      "stackable": true,
+      "maxStack": 99,
+      "price": {
+        "buy": 50,
+        "sell": 15
+      }
+    },
+    {
+      "id": "IT_HEAL_03",
+      "name": "Elixir Máximo",
+      "description": "Restaura 100% do HP máximo. Usado em batalha.",
+      "type": "heal",
+      "heal_pct": 1.00,
+      "heal_min": 999,
+      "emoji": "✨",
+      "stackable": true,
+      "maxStack": 99,
+      "price": {
+        "buy": 200,
+        "sell": 60
+      }
     }
   ]
 }

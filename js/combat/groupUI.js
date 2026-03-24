@@ -10,6 +10,10 @@
 
 import * as GroupCore from './groupCore.js';
 import * as TargetSelection from '../ui/targetSelection.js';
+import { renderFriendlyBattleLog, scrollFriendlyLogToBottom } from '../ui/friendlyBattleLog.js';
+
+/** IDs dos itens de cura consumíveis suportados em batalha. Manter alinhado com data/items.json. */
+const HEAL_ITEM_IDS = ['IT_HEAL_01', 'IT_HEAL_02', 'IT_HEAL_03'];
 
 /**
  * PR5C: Renderiza UI completa do encounter de grupo
@@ -192,20 +196,15 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
         html += '</div>';
     }
     
-    // Log de combate
-    html += '<div class="mt-20">';
-    html += '<h4>📜 Log de Combate:</h4>';
-    html += '<div class="bg-gray p-10 border-radius-5 max-h-300 overflow-auto">';
-    const logs = encounter.log || [];
-    for (let i = Math.max(0, logs.length - 20); i < logs.length; i++) {
-        html += `<div>${logs[i]}</div>`;
-    }
-    html += '</div>';
-    html += '</div>';
+    // CAMADA 4B: Log amigável de combate (últimas 3–5 ações)
+    html += renderFriendlyBattleLog(encounter.log || []);
     
     html += '</div>';
     
     panel.innerHTML = html;
+    
+    // CAMADA 4B: Rolar log amigável para o final
+    scrollFriendlyLogToBottom();
     
     // Exibir toasts para eventos importantes (level up, evolução)
     helpers.maybeToastFromLog(encounter);
@@ -382,12 +381,13 @@ function renderActionPanel(encounter, actor, isPlayerTurn, state, helpers) {
         }
     }
     
-    // 3. BOTÃO ITEM (se tiver item defensivo = cura disponível)
-    const healItems = player.inventory?.['IT_HEAL_01'] || 0;
-    const canUseItem = healItems > 0 && hp > 0 && hp < hpMax;
-    
-    if (canUseItem) {
-        html += '<button class="btn btn-large btn-success" onclick="groupUseItem(\'IT_HEAL_01\')" style="min-width: 120px;">';
+    // 3. BOTÃO ITEM (itens de cura disponíveis no inventário)
+    const availableHealItems = HEAL_ITEM_IDS.filter(id => (player.inventory?.[id] || 0) > 0);
+    const canUseAnyItem = availableHealItems.length > 0 && hp > 0 && hp < hpMax;
+
+    if (canUseAnyItem) {
+        const firstHealId = availableHealItems[0];
+        html += `<button class="btn btn-large btn-success" onclick="groupUseItem('${firstHealId}')" style="min-width: 120px;">`;
         html += '🧪 Item';
         html += '</button>';
     }
@@ -411,9 +411,15 @@ function renderActionPanel(encounter, actor, isPlayerTurn, state, helpers) {
         html += '<div class="mt-15" style="font-size: 14px; color: #666;">';
         
         // Mostrar itens disponíveis
-        if (healItems > 0) {
-            html += `<div>💚 Petisco de Cura: ${healItems}x disponível</div>`;
-        }
+        availableHealItems.forEach(id => {
+            const qty = player.inventory?.[id] || 0;
+            if (qty > 0) {
+                const healItemDef = helpers.getItemDef ? helpers.getItemDef(id) : null;
+                const itemLabel = healItemDef?.name ?? id;
+                const itemEmoji = healItemDef?.emoji ?? '💚';
+                html += `<div>${itemEmoji} ${itemLabel}: ${qty}x disponível</div>`;
+            }
+        });
         
         // Mostrar skills disponíveis
         if (skillIds && skillIds.length > 0) {
