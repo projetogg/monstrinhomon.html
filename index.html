@@ -4029,7 +4029,8 @@
                     openSwitchMonsterModal: openSwitchMonsterModal,
                     handleVictoryRewards: handleVictoryRewards,
                     getSkillById: getSkillById,
-                    canUseSkillNow: canUseSkillNow
+                    canUseSkillNow: canUseSkillNow,
+                    getItemDef: getItemDef
                 }
             };
         }
@@ -4180,73 +4181,14 @@
         }
 
         /**
-         * WRAPPER FUTURO: Combat.Group.Actions.executeGroupUseItem()
-         * Usa item em combate de grupo
+         * PR5B: Usa item de cura em combate de grupo
+         * Delega para Combat.Group.Actions.executeGroupUseItem()
          */
         function groupUseItem(itemId) {
             try {
-                // TODO PR5B: Mover para Combat.Group.Actions.executeGroupUseItem()
-                const enc = _getGroupEncounter();
-                if (!enc || enc.finished) return;
-
-                const actor = getCurrentActor(enc);
-                if (!actor || actor.side !== 'player') return;
-
-                const player = _getPlayerById(actor.id);
-                const mon = _getActiveMonsterOfPlayer(player);
-                if (!player || !mon) return;
-
-                // Reutiliza lógica do 3.1
-                const hp = Number(mon.hp) || 0;
-                const hpMax = Number(mon.hpMax) || 1;
-
-                if (hp <= 0) {
-                    _log(enc, "⚠️ Monstrinho está desmaiado.");
-                    saveToLocalStorage();
-                    renderEncounter();
-                    return;
-                }
-
-                if (hp >= hpMax) {
-                    _log(enc, "ℹ️ HP já está cheio.");
-                    saveToLocalStorage();
-                    renderEncounter();
-                    return;
-                }
-
-                if (!itemId || itemId === 'IT_HEAL_01') {
-                    itemId = 'IT_HEAL_01';
-                }
-
-                const itemCount = Number(player.inventory?.[itemId]) || 0;
-                if (itemCount <= 0) {
-                    _log(enc, "⚠️ Você não tem esse item.");
-                    saveToLocalStorage();
-                    renderEncounter();
-                    return;
-                }
-
-                // Consumir item
-                player.inventory[itemId] = Math.max(0, itemCount - 1);
-
-                // Aplicar cura (mesmo do 3.1)
-                const healAmount = Math.max(30, Math.floor(hpMax * 0.30));
-                const newHp = Math.min(hpMax, hp + healAmount);
-                const healed = newHp - hp;
-                mon.hp = newHp;
-
-                const playerName = player.name || "Jogador";
-                const monName = mon.nickname || mon.name || "Monstrinho";
-
-                _log(enc, `💚 ${playerName} usou Petisco de Cura! (Restam: ${player.inventory[itemId]})`);
-                _log(enc, `✨ ${monName} recuperou ${healed} HP! (${mon.hp}/${hpMax})`);
-                
-                // Feature 4.4: Heal sound
-                Audio.playSfx("heal");
-
-                advanceTurn(enc);
-                saveToLocalStorage();
-                renderEncounter();
+                if (!itemId) itemId = 'IT_HEAL_01';
+                const deps = createGroupCombatDeps();
+                Combat.Group.Actions.executeGroupUseItem(itemId, deps);
             } catch (error) {
                 showError('Failed to use item', error.stack);
             }
@@ -5358,7 +5300,8 @@
                         maybeToastFromLog: maybeToastFromLog,
                         maybeSfxFromLog: maybeSfxFromLog,
                         formatEquippedItemDisplay: formatEquippedItemDisplay,
-                        showBattleEndModal: showBattleEndModalWrapper
+                    showBattleEndModal: showBattleEndModalWrapper,
+                        getItemDef: getItemDef
                     }
                 };
                 Combat.Group.UI.renderGroupEncounterPanel(panel, encounter, deps);

@@ -675,3 +675,85 @@ export function executePlayerSkillGroup(skillId, enemyIndex, deps) {
     ui.render();
     return true;
 }
+
+/**
+ * PR5B: Executa uso de item de cura em combate de grupo
+ *
+ * Suporta itens do tipo 'heal' definidos em data/items.json.
+ * Consome o item do inventário do jogador, aplica cura ao monstrinho ativo
+ * e avança o turno.
+ *
+ * @param {string} itemId - ID do item (ex: 'IT_HEAL_01')
+ * @param {object} deps   - Dependências injetadas (mesmo padrão de executePlayerAttackGroup)
+ * @returns {boolean} true se o item foi usado com sucesso
+ */
+export function executeGroupUseItem(itemId, deps) {
+    const { state, core, ui, audio, storage, helpers } = deps;
+
+    const enc = state.currentEncounter;
+    if (!enc || enc.finished) return false;
+
+    const actor = core.getCurrentActor(enc);
+    if (!actor || actor.side !== 'player') return false;
+
+    const player = helpers.getPlayerById(actor.id);
+    const mon = helpers.getActiveMonsterOfPlayer(player);
+    if (!player || !mon) return false;
+
+    const hp = Number(mon.hp) || 0;
+    const hpMax = Number(mon.hpMax) || 1;
+
+    if (hp <= 0) {
+        helpers.log(enc, "⚠️ Monstrinho está desmaiado. Não pode usar itens.");
+        storage.save();
+        ui.render();
+        return false;
+    }
+
+    if (hp >= hpMax) {
+        helpers.log(enc, "ℹ️ HP já está cheio. Item não é necessário.");
+        storage.save();
+        ui.render();
+        return false;
+    }
+
+    // Verificar item no inventário do jogador
+    const itemCount = Number(player.inventory?.[itemId]) || 0;
+    if (itemCount <= 0) {
+        helpers.log(enc, "⚠️ Você não tem esse item.");
+        storage.save();
+        ui.render();
+        return false;
+    }
+
+    // Buscar definição do item (suporta items.json via getItemDef)
+    const itemDef = helpers.getItemDef(itemId);
+    const healPct = Number(itemDef?.heal_pct ?? 0.30);
+    const healMin = Number(itemDef?.heal_min ?? 30);
+    const itemName = itemDef?.name ?? itemId;
+    const itemEmoji = itemDef?.emoji ?? '💊';
+
+    // Consumir item do inventário
+    player.inventory[itemId] = Math.max(0, itemCount - 1);
+
+    // Calcular e aplicar cura
+    const healAmount = Math.max(healMin, Math.floor(hpMax * healPct));
+    const newHp = Math.min(hpMax, hp + healAmount);
+    const healed = newHp - hp;
+    mon.hp = newHp;
+
+    const playerName = player.name || player.nome || "Jogador";
+    const monName = mon.nickname || mon.name || mon.nome || "Monstrinho";
+    const remaining = player.inventory[itemId];
+
+    helpers.log(enc, `${itemEmoji} ${playerName} usou ${itemName}! (Restam: ${remaining})`);
+    helpers.log(enc, `✨ ${monName} recuperou ${healed} HP! (${mon.hp}/${hpMax})`);
+
+    // Som de cura
+    audio.playSfx("heal");
+
+    advanceGroupTurn(enc, deps);
+    storage.save();
+    ui.render();
+    return true;
+}
