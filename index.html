@@ -5220,12 +5220,55 @@
         
         /**
          * PR8B: WRAPPER - Progression.Actions.handleVictoryRewards()
-         * Distribui recompensas de vitória de forma idempotente (XP + recompensas futuras)
+         * Distribui recompensas de vitória de forma idempotente (XP + drops + recompensas futuras)
          * Previne duplicação via flag rewardsGranted
          * @param {Object} enc - Encounter (wild ou group)
          */
         function handleVictoryRewards(enc) {
-            return Progression.Actions.handleVictoryRewards(createProgressionDeps(), enc);
+            // XP e recompensas base
+            Progression.Actions.handleVictoryRewards(createProgressionDeps(), enc);
+            
+            // Sistema de Drops: gerar e conceder itens após vitória
+            processVictoryDrops(enc);
+        }
+        
+        /**
+         * Gera drops de itens após vitória e adiciona ao inventário do jogador.
+         * Usa flag dropsGranted para evitar duplicação (idempotente).
+         * @param {Object} enc - Encounter (wild ou group)
+         */
+        function processVictoryDrops(enc) {
+            if (!enc || enc.dropsGranted) return;
+            enc.dropsGranted = true;
+            
+            enc.log = enc.log || [];
+            
+            // Determinar tabela de drop baseado no tipo de encontro
+            const dropTableId = Data.getDropTableForEncounter(enc.type);
+            if (!dropTableId) return;
+            
+            // Gerar drops
+            const drops = Data.generateDrops(dropTableId);
+            if (!drops || drops.length === 0) return;
+            
+            // Determinar jogador que recebe os drops
+            let player = null;
+            if (enc.selectedPlayerId || enc.currentPlayerId) {
+                player = GameState.players.find(p => 
+                    p.id === (enc.selectedPlayerId || enc.currentPlayerId)
+                );
+            }
+            if (!player) player = GameState.players?.[0] || null;
+            if (!player) return;
+            
+            // Adicionar ao inventário
+            Data.addDropsToInventory(player, drops);
+            
+            // Logar os drops no battle log
+            const logLines = Data.formatDropsLog(drops);
+            for (const line of logLines) {
+                enc.log.push(line);
+            }
         }
         
         /**
@@ -5255,6 +5298,26 @@
                                 xp: rewards.xp,
                                 money: rewards.money
                             });
+                        }
+                    }
+                    
+                    // Sistema de Drops: gerar itens para cada participante
+                    const dropTableId = Data.getDropTableForEncounter(encounter.kind || encounter.type);
+                    if (dropTableId) {
+                        for (const pid of eligiblePlayerIds) {
+                            const player = state.players.find(p => p.id === pid);
+                            if (!player) continue;
+                            
+                            const drops = Data.generateDrops(dropTableId);
+                            if (drops.length > 0) {
+                                Data.addDropsToInventory(player, drops);
+                                const logLines = Data.formatDropsLog(drops);
+                                encounter.log = encounter.log || [];
+                                encounter.log.push(`📦 Drops de ${player.name || player.nome}:`);
+                                for (const line of logLines.slice(1)) {
+                                    encounter.log.push(line);
+                                }
+                            }
                         }
                     }
                 }
@@ -6096,8 +6159,7 @@
                 // Verificar se o selvagem foi derrotado
                 if (encounter.wildMonster.hp <= 0) {
                     encounter.log.push(`🏆 ${encounter.wildMonster.name} foi derrotado!`);
-                    const xpGained = calculateBattleXP(encounter.wildMonster);
-                    giveXP(playerMonster, xpGained, encounter.log);
+                    handleVictoryRewards(encounter);
                     encounter.active = false;
                     GameState.currentEncounter = null;
                     saveToLocalStorage();

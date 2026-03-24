@@ -53,3 +53,13 @@ export {
     initEggUI,
     checkIfEgg
 } from './eggUI.js';
+
+// Drop System
+export {
+    generateDrops,
+    addDropsToInventory,
+    formatDropsLog,
+    getDropTableForEncounter,
+    resolveItemId,
+    DROP_TABLES
+} from './dropSystem.js';
