@@ -10,6 +10,7 @@
 
 import * as GroupCore from './groupCore.js';
 import * as TargetSelection from '../ui/targetSelection.js';
+import { renderFriendlyBattleLog, scrollFriendlyLogToBottom } from '../ui/friendlyBattleLog.js';
 
 /**
  * PR5C: Renderiza UI completa do encounter de grupo
@@ -192,20 +193,15 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
         html += '</div>';
     }
     
-    // Log de combate
-    html += '<div class="mt-20">';
-    html += '<h4>📜 Log de Combate:</h4>';
-    html += '<div class="bg-gray p-10 border-radius-5 max-h-300 overflow-auto">';
-    const logs = encounter.log || [];
-    for (let i = Math.max(0, logs.length - 20); i < logs.length; i++) {
-        html += `<div>${logs[i]}</div>`;
-    }
-    html += '</div>';
-    html += '</div>';
+    // CAMADA 4B: Log amigável de combate (últimas 3–5 ações)
+    html += renderFriendlyBattleLog(encounter.log || []);
     
     html += '</div>';
     
     panel.innerHTML = html;
+    
+    // CAMADA 4B: Rolar log amigável para o final
+    scrollFriendlyLogToBottom();
     
     // Exibir toasts para eventos importantes (level up, evolução)
     helpers.maybeToastFromLog(encounter);
