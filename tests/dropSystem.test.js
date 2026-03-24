@@ -179,13 +179,25 @@ describe('generateDrops - Geração de Drops', () => {
 
     it('deve respeitar min/max qty para heals (1-2)', () => {
         // Forçar drop do heal com qty máxima
-        // Roll chance: 0.0 (dropa), Roll qty: 0.99 → qty = 1 + floor(0.99 * 2) = 2
+        // Roll chance: 0.0 (dropa), Roll qty: 0.99 → qty = min(2, 1 + floor(0.99 * 2)) = 2
         const rng = createDeterministicRng([0.99, 0.0, 0.99]); // skip orb, drop heal, max qty
         const drops = generateDrops('DROP_001', rng);
         
         const heal = drops.find(d => d.itemId === 'IT_HEAL_01');
         expect(heal).toBeDefined();
         expect(heal.qty).toBe(2);
+    });
+
+    it('deve clampar qty quando RNG retorna exatamente 1.0', () => {
+        // Edge case: rngFn pode retornar 1.0 (Math.random não, mas custom sim)
+        // Sem clamp: 1 + floor(1.0 * 2) = 3 (>maxQty!)
+        // Com clamp: min(2, 3) = 2
+        const rng = createDeterministicRng([0.0, 0.0, 1.0]); // orb dropa (qty=1=1), heal dropa, qty clamped
+        const drops = generateDrops('DROP_001', rng);
+        
+        const heal = drops.find(d => d.itemId === 'IT_HEAL_01');
+        expect(heal).toBeDefined();
+        expect(heal.qty).toBeLessThanOrEqual(2);
     });
 
     it('deve usar Math.random como fallback quando rngFn não fornecido', () => {

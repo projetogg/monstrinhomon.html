@@ -5220,8 +5220,8 @@
         
         /**
          * PR8B: WRAPPER - Progression.Actions.handleVictoryRewards()
-         * Distribui recompensas de vitória de forma idempotente (XP + drops + recompensas futuras)
-         * Previne duplicação via flag rewardsGranted
+         * Distribui recompensas de vitória de forma idempotente (XP + drops)
+         * Previne duplicação via flags rewardsGranted / dropsGranted
          * @param {Object} enc - Encounter (wild ou group)
          */
         function handleVictoryRewards(enc) {

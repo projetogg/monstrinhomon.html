@@ -98,7 +98,7 @@ export function generateDrops(dropTableId, rngFn) {
             qty = minQty;
         } else {
             // Gerar quantidade aleatória entre min e max (inclusive)
-            qty = minQty + Math.floor(rng() * (maxQty - minQty + 1));
+            qty = Math.min(maxQty, minQty + Math.floor(rng() * (maxQty - minQty + 1)));
         }
         
         drops.push({ itemId: entry.itemId, qty });
