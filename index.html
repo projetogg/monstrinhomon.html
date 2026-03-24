@@ -3614,8 +3614,18 @@
                     alert('⚠️ Habilidade não encontrada!');
                     return;
                 }
+
+                // CAMADA 4C: Skills Self/Aliado não precisam de seleção de inimigo
+                const skill = getSkillById(skillId);
+                const skillTarget = skill?.target || '';
+                if (skillTarget === 'Self' || skillTarget === 'Aliado') {
+                    // Executar diretamente sem modo de seleção
+                    const deps = createGroupCombatDeps();
+                    Combat.Group.Actions.executePlayerSkillGroup(skillId, null, deps);
+                    return;
+                }
                 
-                // Entrar em modo de seleção de alvo
+                // Entrar em modo de seleção de alvo (para skills ofensivas)
                 window.Combat.TargetSelection.enterTargetMode('skill', skillId);
                 
                 // Aplicar visual de modo de seleção
@@ -3712,11 +3722,8 @@
         function executeAttackOnTarget(enemyIndex) {
             try {
                 const deps = createGroupCombatDeps();
-                
-                // Usar função existente, mas com alvo específico
-                // Por enquanto, usar a implementação atual (que já pega primeiro inimigo vivo)
-                // TODO: Passar enemyIndex como parâmetro
-                Combat.Group.Actions.executePlayerAttackGroup(deps);
+                // CAMADA 4C: Passar enemyIndex para atacar o alvo selecionado
+                Combat.Group.Actions.executePlayerAttackGroup(deps, enemyIndex);
             } catch (error) {
                 showError('Failed to execute attack', error.stack);
             }
@@ -3727,18 +3734,9 @@
          */
         function executeSkillOnTarget(enemyIndex, skillId) {
             try {
-                // TODO: Implementar execução de skill com alvo específico
-                // Por enquanto, usar implementação stub
-                const enc = _getGroupEncounter();
-                if (!enc || enc.finished) return;
-                
-                const actor = getCurrentActor(enc);
-                if (!actor || actor.side !== 'player') return;
-                
-                _log(enc, `ℹ️ Skill ${skillId} será implementada na Feature 3.3`);
-                
-                advanceTurn(enc);
-                saveToLocalStorage();
+                // CAMADA 4C: Execução real de skill com alvo específico
+                const deps = createGroupCombatDeps();
+                Combat.Group.Actions.executePlayerSkillGroup(skillId, enemyIndex, deps);
             } catch (error) {
                 showError('Failed to execute skill', error.stack);
             }
@@ -4029,7 +4027,9 @@
                     chooseTargetPlayerId: _chooseTargetPlayerId,
                     firstAliveIndex: firstAliveIndex,
                     openSwitchMonsterModal: openSwitchMonsterModal,
-                    handleVictoryRewards: handleVictoryRewards
+                    handleVictoryRewards: handleVictoryRewards,
+                    getSkillById: getSkillById,
+                    canUseSkillNow: canUseSkillNow
                 }
             };
         }
@@ -4146,12 +4146,11 @@
         // ==================== FASE 3.C: Skills and Items ====================
 
         /**
-         * WRAPPER FUTURO: Combat.Group.Actions.executeGroupUseSkill()
-         * Usa habilidade em combate de grupo (STUB - não implementado)
+         * CAMADA 4C: Usa habilidade em combate de grupo
+         * Delega para Combat.Group.Actions.executePlayerSkillGroup()
          */
         function groupUseSkill(skillIndex) {
             try {
-                // TODO PR5B: Mover para Combat.Group.Actions.executeGroupUseSkill()
                 const enc = _getGroupEncounter();
                 if (!enc || enc.finished) return;
 
@@ -4162,17 +4161,19 @@
                 const mon = _getActiveMonsterOfPlayer(player);
                 if (!player || !mon || !_isAlive(mon)) return;
 
-                // Alvo: primeiro inimigo vivo
-                let enemyIndex = 0;
-                while (enemyIndex < (enc.enemies?.length || 0) && !_isAlive(enc.enemies[enemyIndex])) enemyIndex++;
-                const enemy = _getEnemyByIndex(enc, enemyIndex);
-                if (!enemy || !_isAlive(enemy)) return;
+                // Obter skillId pelo índice
+                const skillIds = getSkillsArray(mon);
+                const skillId = skillIds[skillIndex];
+                if (!skillId) {
+                    _log(enc, "⚠️ Habilidade não encontrada.");
+                    saveToLocalStorage();
+                    renderEncounter();
+                    return;
+                }
 
-                _log(enc, "ℹ️ (Ajuste) Sistema de habilidades será integrado na Feature 3.3");
-
-                advanceTurn(enc);
-                saveToLocalStorage();
-                renderEncounter();
+                // Delegar para módulo (sem alvo específico, usa primeiro inimigo vivo)
+                const deps = createGroupCombatDeps();
+                Combat.Group.Actions.executePlayerSkillGroup(skillId, null, deps);
             } catch (error) {
                 showError('Failed to use skill', error.stack);
             }

@@ -62,6 +62,22 @@ export function buildEligibleTargets(enc, deps) {
 }
 
 /**
+ * Resolve o índice do inimigo alvo.
+ * Se `targetIndex` for fornecido, usa-o; caso contrário, procura o primeiro inimigo vivo.
+ *
+ * @param {object} enc - Encounter atual
+ * @param {number|null} targetIndex - Índice preferencial ou null
+ * @param {object} core - GroupCore (usado para isAlive)
+ * @returns {number} Índice do inimigo alvo
+ */
+function resolveEnemyIndex(enc, targetIndex, core) {
+    if (targetIndex != null) return targetIndex;
+    let idx = 0;
+    while (idx < (enc.enemies?.length || 0) && !core.isAlive(enc.enemies[idx])) idx++;
+    return idx;
+}
+
+/**
  * PR5C: Executa ataque do jogador em combate de grupo
  * 
  * Extraído de: index.html groupAttack() (linhas 3546-3681)
@@ -75,7 +91,7 @@ export function buildEligibleTargets(enc, deps) {
  * @param {object} deps.helpers - Helper functions from index.html
  * @returns {boolean} true se ataque foi executado
  */
-export function executePlayerAttackGroup(deps) {
+export function executePlayerAttackGroup(deps, targetEnemyIndex = null) {
     const { state, core, ui, audio, storage, helpers } = deps;
     
     const enc = state.currentEncounter;
@@ -110,9 +126,8 @@ export function executePlayerAttackGroup(deps) {
     // Atualizar buffs (reduzir duração)
     helpers.updateBuffs(mon);
 
-    // Alvo: primeiro inimigo vivo
-    let enemyIndex = 0;
-    while (enemyIndex < (enc.enemies?.length || 0) && !core.isAlive(enc.enemies[enemyIndex])) enemyIndex++;
+    // Alvo: inimigo especificado ou primeiro inimigo vivo
+    const enemyIndex = resolveEnemyIndex(enc, targetEnemyIndex, core);
 
     const enemy = helpers.getEnemyByIndex(enc, enemyIndex);
     if (!enemy || !core.isAlive(enemy)) {
@@ -505,4 +520,158 @@ export function passTurn(deps) {
     advanceGroupTurn(enc, deps);
     storage.save();
     ui.render();
+}
+
+/**
+ * CAMADA 4C: Executa skill real do jogador em combate de grupo
+ *
+ * Suporta:
+ * - Habilidades de Ataque/Controle (target: 'Inimigo' ou 'Área') → dano + rolagem d20
+ * - Habilidades de Cura/Suporte (target: 'Aliado' ou 'Self') → cura/buff no caster
+ *
+ * @param {string} skillId         - ID da skill (ex: 'SK_WAR_01')
+ * @param {number|null} enemyIndex - Índice do inimigo alvo (para skills ofensivas)
+ * @param {object} deps            - Dependências injetadas (mesmo padrão de executePlayerAttackGroup)
+ * @returns {boolean} true se a ação foi executada com sucesso
+ */
+export function executePlayerSkillGroup(skillId, enemyIndex, deps) {
+    const { state, core, ui, audio, storage, helpers } = deps;
+
+    const enc = state.currentEncounter;
+    if (!enc || enc.finished) return false;
+
+    const actor = core.getCurrentActor(enc);
+    if (!actor || actor.side !== 'player') return false;
+
+    const player = helpers.getPlayerById(actor.id);
+    const mon = helpers.getActiveMonsterOfPlayer(player);
+    if (!player || !mon) return false;
+
+    // PR11B: Marcar monstro como participante
+    markAsParticipated(mon);
+
+    if (!core.isAlive(mon)) {
+        helpers.log(enc, "⚠️ Seu monstrinho está desmaiado. Não pode usar habilidades.");
+        storage.save();
+        ui.render();
+        return false;
+    }
+
+    // Buscar definição da skill
+    const skill = helpers.getSkillById(skillId);
+    if (!skill) {
+        helpers.log(enc, `⚠️ Habilidade não encontrada: ${skillId}`);
+        storage.save();
+        ui.render();
+        return false;
+    }
+
+    // Verificar ENE suficiente
+    if (!helpers.canUseSkillNow(skill, mon)) {
+        const cost = Number(skill.energy_cost ?? skill.eneCost ?? skill.cost ?? 0) || 0;
+        helpers.log(enc, `⚠️ ENE insuficiente para ${skill.name} (custo: ${cost}, atual: ${mon.ene ?? 0}).`);
+        storage.save();
+        ui.render();
+        return false;
+    }
+
+    // Aplicar ENE REGEN e buffs no início do turno
+    helpers.applyEneRegen(mon, enc);
+    helpers.updateBuffs(mon);
+
+    // Consumir ENE
+    const eneCost = Number(skill.energy_cost ?? skill.eneCost ?? skill.cost ?? 0) || 0;
+    mon.ene = Math.max(0, (Number(mon.ene) || 0) - eneCost);
+
+    const attackerName = player.name || player.nome || actor.name || "Jogador";
+    const monName = mon.nickname || mon.name || mon.nome || "Monstrinho";
+    const skillName = skill.name || skillId;
+    const skillTarget = skill.target || '';
+    const skillCategory = skill.category || '';
+
+    // Habilidades ofensivas: Inimigo ou Área de ataque
+    const isOffensive = skillTarget === 'Inimigo' ||
+        (skillTarget === 'Área' && (skillCategory === 'Ataque' || skillCategory === 'Controle'));
+
+    if (isOffensive) {
+        // Localizar alvo inimigo usando helper compartilhado
+        const tIdx = resolveEnemyIndex(enc, enemyIndex, core);
+
+        const enemy = helpers.getEnemyByIndex(enc, tIdx);
+        if (!enemy || !core.isAlive(enemy)) {
+            helpers.log(enc, "ℹ️ Não há inimigos vivos para usar a habilidade.");
+            storage.save();
+            ui.render();
+            return false;
+        }
+
+        const enemyName = enemy.name || enemy.nome || "Inimigo";
+
+        // Rolagem d20 para acurácia da skill
+        const d20 = helpers.rollD20();
+        const alwaysMiss = (d20 === 1);
+        const isCrit = (d20 === 20);
+        // Calcular threshold de acerto: accuracy 0-1 → d20 > (1-accuracy)*20
+        const missThreshold = Math.round((1 - (Number(skill.accuracy) || 1)) * 20);
+        const hit = !alwaysMiss && (isCrit || d20 > missThreshold);
+
+        const rollType = isCrit ? 'crit' : alwaysMiss ? 'fail' : 'normal';
+        helpers.recordD20Roll(enc, attackerName, d20, rollType);
+        ui.playAttackFeedback(d20, hit, isCrit, audio);
+
+        if (!hit) {
+            helpers.log(enc, `✨ ${attackerName} (${monName}) usou ${skillName} e ERROU! (rolou ${d20})`);
+            ui.showMissFeedback(`grpP_${actor.id}`);
+            advanceGroupTurn(enc, deps);
+            storage.save();
+            ui.render();
+            return true;
+        }
+
+        // Calcular dano com poder da skill
+        const atkMods = core.getBuffModifiers(mon);
+        const effectiveAtk = Math.max(1, (Number(mon.atk) || 0) + atkMods.atk);
+        const defMods = core.getBuffModifiers(enemy);
+        const effectiveDef = Math.max(1, (Number(enemy.def) || 0) + defMods.def);
+        const classAdv = core.getClassAdvantageModifiers(
+            mon.class,
+            enemy.class,
+            state.config?.classAdvantages
+        );
+
+        let power = Number(skill.power) || 0;
+        if (isCrit) power = power * 2;
+
+        const dmg = core.calcDamage({
+            atk: effectiveAtk,
+            def: effectiveDef,
+            power: power,
+            damageMult: classAdv.damageMult
+        });
+
+        helpers.applyDamage(enemy, dmg);
+        markAsParticipated(enemy);
+
+        const critText = isCrit ? ' CRÍTICO! 🌟' : '';
+        helpers.log(enc, `✨ ${attackerName} (${monName}) usou ${skillName}! ${enemyName} recebe ${dmg} de dano!${critText}`);
+        ui.showDamageFeedback(`grpE_${tIdx}`, dmg, isCrit);
+
+        if (!core.isAlive(enemy)) {
+            helpers.log(enc, `🏁 ${enemyName} foi derrotado!`);
+        }
+
+    } else {
+        // Habilidades defensivas: Cura / Suporte (Self, Aliado, Área de suporte)
+        const healPower = Number(skill.power) || 0;
+        const hpMax = Number(mon.hpMax) || 1;
+        // Se power = 0, cura 20% do HP máximo
+        const healAmt = healPower > 0 ? healPower : Math.round(hpMax * 0.20);
+        mon.hp = Math.min(hpMax, (Number(mon.hp) || 0) + healAmt);
+        helpers.log(enc, `💚 ${monName} usou ${skillName}! Recuperou ${healAmt} HP!`);
+    }
+
+    advanceGroupTurn(enc, deps);
+    storage.save();
+    ui.render();
+    return true;
 }
