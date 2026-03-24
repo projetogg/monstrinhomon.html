@@ -561,7 +561,7 @@ export function applyDrops(playerId, drops) {
 // 5 naturezas para Monstrinhomon
 const NATURES = {
   Corajoso:    { atk: 1.05, def: 0.95, label: '🗡️ Corajoso' },
-  Agil:        { spd: 1.05, hp:  0.95, label: '💨 Ágil' },
+  Ágil:        { spd: 1.05, hp:  0.95, label: '💨 Ágil' },
   Resiliente:  { def: 1.05, atk: 0.95, label: '🛡️ Resiliente' },
   Cauteloso:   { def: 1.05, spd: 0.95, label: '🧠 Cauteloso' },
   Equilibrado: { /* neutro */           label: '⚖️ Equilibrado' }
