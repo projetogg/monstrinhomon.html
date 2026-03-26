@@ -1,0 +1,235 @@
+{
+  "version": "1.0.0",
+  "families": [
+    {
+      "familyId": "ferro",
+      "theme": "ouriço-cavaleiro",
+      "starterLine": true,
+      "habitats": [
+        "fortes de pedra",
+        "campos de treino",
+        "castelos antigos"
+      ],
+      "members": [
+        "ferrozimon",
+        "cavalheiromon",
+        "kinguespinhomon",
+        "arconouricomon"
+      ]
+    },
+    {
+      "familyId": "miau",
+      "theme": "felino-caçador",
+      "starterLine": true,
+      "habitats": [
+        "becos",
+        "telhados",
+        "ruínas furtivas"
+      ],
+      "members": [
+        "miaumon",
+        "gatunamon",
+        "felinomon",
+        "panterezamon"
+      ]
+    },
+    {
+      "familyId": "luvurso",
+      "theme": "urso-totêmico",
+      "starterLine": true,
+      "habitats": [
+        "florestas densas",
+        "cavernas de mel",
+        "montes gelados"
+      ],
+      "members": [
+        "luvursomon",
+        "manoplamon",
+        "bestbearmon",
+        "ursauramon"
+      ]
+    },
+    {
+      "familyId": "dino-rock",
+      "theme": "dinossauro musical",
+      "starterLine": true,
+      "habitats": [
+        "ruínas musicais",
+        "desertos de eco",
+        "arenas de show"
+      ],
+      "members": [
+        "dinomon",
+        "guitarapitormon",
+        "t-rockmon",
+        "giganotometalmon"
+      ]
+    },
+    {
+      "familyId": "salamandra",
+      "theme": "lagarto arcano ígneo",
+      "starterLine": true,
+      "habitats": [
+        "vulcões baixos",
+        "desertos quentes",
+        "templos de brasas"
+      ],
+      "members": [
+        "lagartomon",
+        "salamandromon",
+        "dracoflamemon",
+        "wizardragomon"
+      ]
+    },
+    {
+      "familyId": "gota-lirio",
+      "theme": "gota floral curativa",
+      "starterLine": false,
+      "habitats": [
+        "nascentes claras",
+        "jardins tranquilos",
+        "lagos lunares"
+      ],
+      "members": [
+        "gotimon",
+        "lirialmon",
+        "serafloramon"
+      ]
+    },
+    {
+      "familyId": "tambor",
+      "theme": "tambor tribal",
+      "starterLine": false,
+      "habitats": [
+        "arenas ecoantes",
+        "campos de batalha antigos",
+        "cânions ressonantes"
+      ],
+      "members": [
+        "tamborilhomon",
+        "rufamon",
+        "trovatambormon"
+      ]
+    },
+    {
+      "familyId": "corvo-sombra",
+      "theme": "corvo furtivo",
+      "starterLine": false,
+      "habitats": [
+        "torres",
+        "trilhas noturnas",
+        "cemitérios antigos"
+      ],
+      "members": [
+        "corvimon",
+        "noxcorvomon",
+        "umbraquimonom"
+      ]
+    },
+    {
+      "familyId": "cervo-bosque",
+      "theme": "cervo sagrado",
+      "starterLine": false,
+      "habitats": [
+        "clareiras",
+        "pontes naturais",
+        "ruínas sagradas"
+      ],
+      "members": [
+        "cervimon",
+        "galhantemon",
+        "bosquidalmon"
+      ]
+    },
+    {
+      "familyId": "coral-prisma",
+      "theme": "coral prismático",
+      "starterLine": false,
+      "habitats": [
+        "costas",
+        "cavernas de cristal",
+        "lagos abissais"
+      ],
+      "members": [
+        "coralimon",
+        "recifalmon",
+        "abissalquimon"
+      ]
+    },
+    {
+      "familyId": "coelho-preciso",
+      "theme": "coelho arqueiro",
+      "starterLine": false,
+      "habitats": [
+        "pradarias",
+        "vilas",
+        "torres de relógio"
+      ],
+      "members": [
+        "pulimbon",
+        "flecharelmon",
+        "relampejomon"
+      ]
+    },
+    {
+      "familyId": "pedra-bastiao",
+      "theme": "pedra muralha",
+      "starterLine": false,
+      "habitats": [
+        "montanhas",
+        "minas",
+        "muralhas quebradas"
+      ],
+      "members": [
+        "cascalhimon",
+        "muralhimon",
+        "bastiaomon"
+      ]
+    },
+    {
+      "familyId": "abelha-coro",
+      "theme": "abelha coral",
+      "starterLine": false,
+      "habitats": [
+        "jardins altos",
+        "colmeias douradas",
+        "campos floridos"
+      ],
+      "members": [
+        "zunzumon",
+        "melodimon",
+        "rainhassommon"
+      ]
+    },
+    {
+      "familyId": "broto-sol",
+      "theme": "broto solar",
+      "starterLine": false,
+      "habitats": [
+        "hortos",
+        "estufas",
+        "templos solares"
+      ],
+      "members": [
+        "brotomon",
+        "cupulamon",
+        "solariamon"
+      ]
+    },
+    {
+      "familyId": "touro-ardor",
+      "theme": "touro ígneo",
+      "starterLine": false,
+      "habitats": [
+        "campos vulcânicos",
+        "planícies secas",
+        "desfiladeiros"
+      ],
+      "members": [
+        "brasamon",
+        "tauroramon",
+        "megacornomon"
+      ]
+    }
+  ]
+}
