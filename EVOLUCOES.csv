@@ -1,3 +1,34 @@
 evo_id,from_monster_id,to_monster_id,trigger_level,auto_evolve,notes
 EVO_001,MON_002,MON_002B,12,True,Pedrino S1→S2 (placeholder).
 EVO_002,MON_002B,MON_002C,25,True,Pedrino S2→S3 (placeholder; S3 terá dupla classe Guerreiro+Mago).
+EVO_003,MON_010,MON_010B,12,True,Ferrozimon → Cavalheiromon.
+EVO_004,MON_010B,MON_010C,25,True,Cavalheiromon → Kinguespinhomon.
+EVO_005,MON_010C,MON_010D,45,True,Kinguespinhomon → Arconouricomon.
+EVO_006,MON_011,MON_011B,12,True,Dinomon → Guitarapitormon.
+EVO_007,MON_011B,MON_011C,25,True,Guitarapitormon → TRockmon.
+EVO_008,MON_011C,MON_011D,45,True,TRockmon → Giganotometalmon.
+EVO_009,MON_012,MON_012B,12,True,Luvursomon → Manoplamon.
+EVO_010,MON_012B,MON_012C,25,True,Manoplamon → BestBearmon.
+EVO_011,MON_012C,MON_012D,45,True,BestBearmon → Ursauramon.
+EVO_012,MON_013,MON_013B,12,True,Miaumon → Gatunamon.
+EVO_013,MON_013B,MON_013C,25,True,Gatunamon → Felinomon.
+EVO_014,MON_013C,MON_013D,45,True,Felinomon → Panterezamon.
+EVO_015,MON_014,MON_014B,12,True,Lagartomon → Salamandromon.
+EVO_016,MON_014B,MON_014C,25,True,Salamandromon → Dracoflamemon.
+EVO_017,MON_014C,MON_014D,45,True,Dracoflamemon → Wizardragomon.
+EVO_018,MON_020,MON_020B,15,True,Gotimon → Lirialmon.
+EVO_019,MON_020B,MON_020C,30,True,Lirialmon → Serafloramon.
+EVO_020,MON_021,MON_021B,15,True,Tamborilhomon → Rufamon.
+EVO_021,MON_021B,MON_021C,30,True,Rufamon → Trovatambormon.
+EVO_022,MON_022,MON_022B,15,True,Corvimon → Noxcorvomon.
+EVO_023,MON_022B,MON_022C,30,True,Noxcorvomon → Umbraquimonom.
+EVO_024,MON_023,MON_023B,15,True,Cervimon → Galhantemon.
+EVO_025,MON_023B,MON_023C,30,True,Galhantemon → Bosquidalmon.
+EVO_026,MON_024,MON_024B,15,True,Coralimon → Recifalmon.
+EVO_027,MON_024B,MON_024C,30,True,Recifalmon → Abissalquimon.
+EVO_028,MON_025,MON_025B,15,True,Pulimbon → Flecharelmon.
+EVO_029,MON_025B,MON_025C,30,True,Flecharelmon → Relampejomon.
+EVO_030,MON_026,MON_026B,15,True,Cascalhimon → Muralhimon.
+EVO_031,MON_026B,MON_026C,30,True,Muralhimon → Bastiaomon.
+EVO_032,MON_027,MON_027B,15,True,Zunzumon → Melodimon.
+EVO_033,MON_027B,MON_027C,30,True,Melodimon → Rainhassommon.
