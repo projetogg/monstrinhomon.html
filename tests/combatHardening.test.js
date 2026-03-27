@@ -16,7 +16,7 @@
  * 10. Inimigo morto antes da sua vez: advanceGroupTurn pula e avança para próximo
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { giveXP, handleVictoryRewards } from '../js/progression/xpActions.js';
 import { advanceGroupTurn, buildEligibleTargets } from '../js/combat/groupActions.js';
 import * as GroupCore from '../js/combat/groupCore.js';
@@ -26,6 +26,7 @@ import * as GroupCore from '../js/combat/groupCore.js';
 // ─────────────────────────────────────────────────────────────────────────────
 
 let _monCounter = 0;
+beforeEach(() => { _monCounter = 0; });
 function makeMon(overrides = {}) {
     return {
         id: `mi_test_${++_monCounter}`,

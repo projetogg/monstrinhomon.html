@@ -246,6 +246,7 @@ function findPlayerNeedingSwitch(enc, deps) {
         const p = helpers.getPlayerById(pid);
         if (!p) continue;
         const activeMon = helpers.getActiveMonsterOfPlayer(p);
+        // Condição: monstro ativo morto (precisa trocar) E ainda há substituto vivo no time
         if (!GroupCore.isAlive(activeMon) && helpers.firstAliveIndex(p.team) >= 0) {
             return p;
         }

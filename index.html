@@ -6067,7 +6067,9 @@
                     return;
                 }
                 
-                const playerMonster = player.team?.[0];
+                // BUG FIX: usar monstro ativo (activeIndex), não sempre team[0]
+                const itemActiveIdx = typeof player.activeIndex === 'number' ? player.activeIndex : 0;
+                const playerMonster = player.team?.[itemActiveIdx];
                 if (!playerMonster) {
                     alert('Jogador não tem monstrinhos no time');
                     return;
@@ -6212,8 +6214,11 @@
                                     encounter._loseSfxPlayed = true;
                                 }
                                 
+                                // BUG FIX: manter encounter para exibir painel de resultado
+                                // (consistente com attackWild/useSkillWild/attemptCapture)
+                                playerMonster.status = 'fainted';
+                                encounter.result = 'defeat';
                                 encounter.active = false;
-                                GameState.currentEncounter = null;
                                 saveToLocalStorage();
                                 renderEncounter();
                                 return;
@@ -6252,7 +6257,9 @@
                     return;
                 }
                 
-                const playerMonster = player.team?.[0];
+                // BUG FIX: usar monstro ativo (activeIndex), não sempre team[0]
+                const attackActiveIdx = typeof player.activeIndex === 'number' ? player.activeIndex : 0;
+                const playerMonster = player.team?.[attackActiveIdx];
                 if (!playerMonster) {
                     alert('Player has no monsters in team');
                     return;
@@ -6334,7 +6341,9 @@
                 const player = GameState.players.find(p => p.id === playerId);
                 if (!player) return;
                 
-                const playerMonster = player.team?.[0];
+                // BUG FIX: usar monstro ativo (activeIndex), não sempre team[0]
+                const skillActiveIdx = typeof player.activeIndex === 'number' ? player.activeIndex : 0;
+                const playerMonster = player.team?.[skillActiveIdx];
                 if (!playerMonster) {
                     alert('No monster available');
                     return;
