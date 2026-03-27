@@ -224,6 +224,9 @@ describe('QUESTS.csv - Progressão e Cobertura de Biomas', () => {
         const bossQuests = quests.filter(q => q.tipo_objetivo === 'derrotar_boss');
         const wildQuests = quests.filter(q => q.tipo_objetivo === 'derrotar_wild');
 
+        // Só testar se existirem quests selvagens para calcular a média
+        if (wildQuests.length === 0) return;
+
         // Todos os bosses devem ter XP > média das quests selvagens
         const wildAvgXp = wildQuests.reduce((sum, q) => sum + Number(q.reward_xp), 0) / wildQuests.length;
         for (const bq of bossQuests) {

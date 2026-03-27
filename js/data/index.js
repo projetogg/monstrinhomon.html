@@ -63,3 +63,14 @@ export {
     resolveItemId,
     DROP_TABLES
 } from './dropSystem.js';
+
+// Quest System
+export {
+    QUESTS_DATA,
+    QUEST_OBJECTIVE_TYPES,
+    getQuest,
+    getQuestsByLocation,
+    isQuestAvailable,
+    getNextQuest,
+    getQuestChain
+} from './questSystem.js';

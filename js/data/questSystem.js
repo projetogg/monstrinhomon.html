@@ -348,14 +348,17 @@ export function getNextQuest(questId) {
 export function getQuestChain() {
     const sorted = [];
     const visited = new Set();
+    const inStack = new Set(); // guard contra ciclos durante recursão
 
     function visit(questId) {
         if (visited.has(questId)) return;
-        visited.add(questId);
+        if (inStack.has(questId)) return; // ciclo detectado — ignorar
+        inStack.add(questId);
         const quest = QUESTS_DATA[questId];
-        if (!quest) return;
-        if (quest.preReq) visit(quest.preReq);
-        sorted.push(quest);
+        if (quest && quest.preReq) visit(quest.preReq);
+        inStack.delete(questId);
+        visited.add(questId);
+        if (quest) sorted.push(quest);
     }
 
     Object.keys(QUESTS_DATA).forEach(visit);
