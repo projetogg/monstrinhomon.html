@@ -1436,3 +1436,39 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     background: rgba(0,0,0,0.1);
     color: rgba(0,0,0,0.5);
 }
+
+/* ============================= */
+/* QUEST TRACKER — UX LOOP PHASE */
+/* ============================= */
+
+.quest-tracker-entry {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+.quest-tracker-entry:last-child {
+    border-bottom: none;
+}
+.quest-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+.quest-progress-bar {
+    background: #e0e0e0;
+    border-radius: 4px;
+    height: 8px;
+    margin: 6px 0 4px;
+    overflow: hidden;
+}
+.quest-progress-fill {
+    background: linear-gradient(90deg, #4caf50, #66bb6a);
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+.quest-hint-card {
+    background: rgba(255, 193, 7, 0.08);
+    border-left: 3px solid #ffc107;
+    margin-bottom: 12px;
+}

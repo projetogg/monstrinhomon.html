@@ -47,6 +47,14 @@
                 </div>
             </div>
 
+            <!-- FASE UX: Painel de Quests Ativas -->
+            <div class="card">
+                <h3>📋 Quests Ativas</h3>
+                <div id="questTrackerContent">
+                    <p class="text-muted">Nenhuma quest ativa.</p>
+                </div>
+            </div>
+
             <!-- FASE 1 POKEMON: Monstródex -->
             <div class="card">
                 <h3>📖 Monstródex</h3>
@@ -115,7 +123,13 @@
 
         <div id="tabEncounter" class="tab-content">
             <h2>Encounter ⚔️</h2>
-            
+
+            <!-- FASE UX: Dica de objetivo da quest ativa -->
+            <div id="encounterQuestHint" class="card quest-hint-card is-hidden">
+                <h4 style="margin:0 0 6px">📋 Objetivo da Quest</h4>
+                <div id="encounterQuestHintContent"></div>
+            </div>
+
             <div class="card">
                 <h3>Start New Encounter</h3>
                 <select id="encounterType" onchange="updateEncounterUI()">
@@ -128,7 +142,7 @@
                 <!-- Para encontros individuais (wild) -->
                 <div id="playerSelectDiv" class="mt-15">
                     <label><strong>Select Player for Individual Encounter:</strong></label>
-                    <select id="encounterPlayer">
+                    <select id="encounterPlayer" onchange="renderEncounterQuestHint(this.value)">
                         <option value="">-- Select Player --</option>
                     </select>
                 </div>
@@ -7406,7 +7420,7 @@
                 // Encontra jogador
                 const player = GameState.players?.find(p => p.id === playerId);
                 if (!player) {
-                    alert('❌ Jogador não encontrado!');
+                    showToast('❌ Jogador não encontrado!', 'error');
                     return;
                 }
 
@@ -7414,7 +7428,7 @@
                 const allItems = window.itemsData || [];
                 const item = allItems.find(i => i.id === itemId);
                 if (!item) {
-                    alert('❌ Item não encontrado!');
+                    showToast('❌ Item não encontrado!', 'error');
                     return;
                 }
 
@@ -7422,7 +7436,7 @@
                 if (window.ShopSystem) {
                     const check = window.ShopSystem.canBuy(player, item, 1);
                     if (!check.ok) {
-                        alert(`❌ ${check.reason}`);
+                        showToast(`❌ ${check.reason}`, 'error');
                         return;
                     }
                     // Executa compra e aplica ao player no GameState
@@ -7432,13 +7446,13 @@
                 } else {
                     // Fallback sem módulo
                     if (!item.price || !item.price.buy || item.price.buy <= 0) {
-                        alert('❌ Item não está disponível para compra!');
+                        showToast('❌ Item não está disponível para compra!', 'error');
                         return;
                     }
                     const price = item.price.buy;
                     const playerMoney = player.money || 0;
                     if (playerMoney < price) {
-                        alert(`❌ Dinheiro insuficiente! Você tem ${playerMoney} e precisa de ${price}.`);
+                        showToast(`❌ Dinheiro insuficiente! Você tem ${playerMoney} e precisa de ${price}.`, 'error');
                         return;
                     }
                     player.money = playerMoney - price;
@@ -7449,15 +7463,15 @@
                 // Salva estado
                 saveToLocalStorage();
 
-                // Exibe confirmação
-                alert(`✅ Comprou ${item.name} por ${item.price.buy}! Você tem ${player.money} restantes.`);
+                // Exibe confirmação como toast
+                showToast(`✅ Comprou ${item.name} por ${item.price.buy} 💰. Saldo: ${player.money} 💰`, 'success');
 
                 // Atualiza view
                 updateShopView();
 
             } catch (error) {
                 console.error('Failed to buy item:', error);
-                alert('❌ Erro ao comprar item. Veja o console para detalhes.');
+                showToast('❌ Erro ao comprar item. Veja o console para detalhes.', 'error');
             }
         }
 
@@ -7508,7 +7522,7 @@
                 // Encontra jogador
                 const player = GameState.players?.find(p => p.id === playerId);
                 if (!player) {
-                    alert('❌ Jogador não encontrado!');
+                    showToast('❌ Jogador não encontrado!', 'error');
                     return;
                 }
 
@@ -7516,7 +7530,7 @@
                 const allItems = window.itemsData || [];
                 const item = allItems.find(i => i.id === itemId);
                 if (!item) {
-                    alert('❌ Item não encontrado!');
+                    showToast('❌ Item não encontrado!', 'error');
                     return;
                 }
 
@@ -7524,7 +7538,7 @@
                 if (window.ShopSystem) {
                     const check = window.ShopSystem.canSell(player, item, qty);
                     if (!check.ok) {
-                        alert(`❌ ${check.reason}`);
+                        showToast(`❌ ${check.reason}`, 'error');
                         return;
                     }
                     const sellPrice = window.ShopSystem.getSellPrice(item);
@@ -7533,27 +7547,27 @@
                     player.money = updated.money;
                     player.inventory = updated.inventory;
                     saveToLocalStorage();
-                    alert(`✅ Vendeu ${qty}x ${item.name} por ${totalValue}! Você tem ${player.money} moedas.`);
+                    showToast(`✅ Vendeu ${qty}x ${item.name} por ${totalValue} 💰`, 'success');
                 } else {
                     // Fallback sem módulo
                     if (qty < 1 || !Number.isInteger(qty)) {
-                        alert('❌ Quantidade inválida!');
+                        showToast('❌ Quantidade inválida!', 'error');
                         return;
                     }
                     const owned = player.inventory?.[itemId] || 0;
                     if (owned < qty) {
-                        alert(`❌ Você não tem ${qty}x ${item.name}! Você tem apenas ${owned}x.`);
+                        showToast(`❌ Você não tem ${qty}x ${item.name}! Você tem apenas ${owned}x.`, 'error');
                         return;
                     }
                     const sellPrice = getSellPrice(item);
                     if (sellPrice === null) {
-                        alert('❌ Este item não pode ser vendido!');
+                        showToast('❌ Este item não pode ser vendido!', 'error');
                         return;
                     }
                     if (player.team && Array.isArray(player.team)) {
                         const equippedMonster = player.team.find(m => m?.equippedItem === itemId);
                         if (equippedMonster) {
-                            alert(`❌ Não é possível vender item equipado! ${item.name} está equipado em ${equippedMonster.name}.`);
+                            showToast(`❌ Não é possível vender item equipado! ${item.name} está equipado em ${equippedMonster.name}.`, 'error');
                             return;
                         }
                     }
@@ -7563,7 +7577,7 @@
                     if (player.inventory[itemId] <= 0) delete player.inventory[itemId];
                     player.money = (player.money || 0) + totalValue;
                     saveToLocalStorage();
-                    alert(`✅ Vendeu ${qty}x ${item.name} por ${totalValue}! Você tem ${player.money} moedas.`);
+                    showToast(`✅ Vendeu ${qty}x ${item.name} por ${totalValue} 💰`, 'success');
                 }
 
                 // Atualiza view
@@ -7571,7 +7585,7 @@
 
             } catch (error) {
                 console.error('Failed to sell item:', error);
-                alert('❌ Erro ao vender item. Veja o console para detalhes.');
+                showToast('❌ Erro ao vender item. Veja o console para detalhes.', 'error');
             }
         }
 
@@ -7932,6 +7946,9 @@
                 
                 // FASE 1 POKEMON: Renderizar Estatísticas
                 renderAchievements();
+
+                // FASE UX: Renderizar painel de quests ativas
+                renderQuestTrackerPanel();
             } catch (error) {
                 console.error('Failed to update home stats:', error);
             }
@@ -8003,6 +8020,92 @@
             } catch (error) {
                 console.error('Error rendering monstrodex:', error);
             }
+        }
+
+        /**
+         * FASE UX: Renderiza painel de quests ativas na Home.
+         * Usa GameFlow.getActiveQuestsSummary() para leitura pura sem mutação.
+         */
+        function renderQuestTrackerPanel() {
+            const container = document.getElementById('questTrackerContent');
+            if (!container) return;
+
+            if (!window.GameFlow) {
+                container.innerHTML = '<p class="text-muted">Sistema de quests não carregado.</p>';
+                return;
+            }
+
+            const players = GameState.players || [];
+            if (players.length === 0) {
+                container.innerHTML = '<p class="text-muted">Adicione jogadores para ver quests.</p>';
+                return;
+            }
+
+            const entries = [];
+            for (const player of players) {
+                const summary = window.GameFlow.getActiveQuestsSummary(player);
+                for (const { quest, progress, needed } of summary) {
+                    const pct = needed > 0 ? Math.min(100, Math.round((progress / needed) * 100)) : 0;
+                    const playerName = player.name || player.nome || player.id;
+                    entries.push(`
+                        <div class="quest-tracker-entry">
+                            <div class="quest-header">
+                                <strong>${quest.nome}</strong>
+                                <span class="text-small text-muted">(${playerName})</span>
+                            </div>
+                            <div class="text-small">${quest.descricao || ''}</div>
+                            <div class="quest-progress-bar">
+                                <div class="quest-progress-fill" style="width:${pct}%"></div>
+                            </div>
+                            <div class="text-small">Progresso: ${progress}/${needed} &nbsp;|&nbsp; 💰 ${quest.rewardGold} &nbsp;⭐ ${quest.rewardXp} XP</div>
+                        </div>
+                    `);
+                }
+            }
+
+            container.innerHTML = entries.length > 0
+                ? entries.join('')
+                : '<p class="text-muted">Nenhuma quest ativa no momento.</p>';
+        }
+
+        /**
+         * FASE UX: Renderiza dica de objetivo da quest ativa no painel Encounter.
+         * Mostra a quest do jogador selecionado no dropdown de encontros individuais.
+         * @param {string} playerId
+         */
+        function renderEncounterQuestHint(playerId) {
+            const hintPanel = document.getElementById('encounterQuestHint');
+            const hintContent = document.getElementById('encounterQuestHintContent');
+            if (!hintPanel || !hintContent) return;
+
+            if (!playerId || !window.GameFlow) {
+                hintPanel.classList.add('is-hidden');
+                return;
+            }
+
+            const player = GameState.players?.find(p => p.id === playerId);
+            if (!player) {
+                hintPanel.classList.add('is-hidden');
+                return;
+            }
+
+            const summary = window.GameFlow.getActiveQuestsSummary(player);
+            if (summary.length === 0) {
+                hintPanel.classList.add('is-hidden');
+                return;
+            }
+
+            const { quest, progress, needed } = summary[0];
+            const pct = needed > 0 ? Math.min(100, Math.round((progress / needed) * 100)) : 0;
+            hintContent.innerHTML = `
+                <strong>${quest.nome}</strong>
+                <div class="text-small">${quest.descricao || ''}</div>
+                <div class="quest-progress-bar" style="margin-top:6px">
+                    <div class="quest-progress-fill" style="width:${pct}%"></div>
+                </div>
+                <div class="text-small" style="margin-top:4px">Progresso: ${progress}/${needed}</div>
+            `;
+            hintPanel.classList.remove('is-hidden');
         }
 
         /**

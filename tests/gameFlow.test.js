@@ -428,8 +428,8 @@ describe('completeQuest - recompensas e cadeia', () => {
         const p = makePlayer();
         activateQuest(p, 'QST_001');
         completeQuest(p, 'QST_001', makeDeps());
-        // QST_001 reward_item_id = IT_CAP_02
-        expect(p.inventory['IT_CAP_02']).toBe(1);
+        // QST_001 reward_item_id = CLASTERORB_COMUM
+        expect(p.inventory['CLASTERORB_COMUM']).toBe(1);
     });
 
     it('deve aplicar XP de quest via deps', () => {
