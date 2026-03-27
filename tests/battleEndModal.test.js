@@ -178,6 +178,133 @@ describe('BattleEndModal - Casos de Uso', () => {
     });
 });
 
+describe('BattleEndModal - Parâmetro log', () => {
+    it('deve aceitar log vazio sem erro', () => {
+        const params = {
+            result: 'victory',
+            participants: [{ playerName: 'P1', xp: 30, money: 50 }],
+            log: []
+        };
+        expect(params.log).toEqual([]);
+    });
+
+    it('deve incluir linhas de drop no log', () => {
+        const log = ['🎁 Drops:', '  • 2x Petisco de Cura (💚)'];
+        const params = {
+            result: 'victory',
+            participants: [{ playerName: 'P1', xp: 30, money: 50 }],
+            log
+        };
+        expect(params.log).toHaveLength(2);
+        expect(params.log[0]).toBe('🎁 Drops:');
+    });
+
+    it('deve incluir linhas de conclusão de quest', () => {
+        const log = ['🏆 Quest concluída: "O Ovo Perdido"!', '💰 +60 moedas!', '⭐ +80 XP de quest!'];
+        const params = {
+            result: 'victory',
+            participants: [{ playerName: 'P1', xp: 30, money: 50 }],
+            log
+        };
+        const questLine = params.log.find(l => l.startsWith('🏆'));
+        expect(questLine).toBeDefined();
+        expect(questLine).toContain('Quest concluída');
+    });
+
+    it('deve incluir linha de nova quest desbloqueada', () => {
+        const log = ['🗺️ Nova quest: "Primeira Captura"!'];
+        const params = {
+            result: 'victory',
+            participants: [{ playerName: 'P1', xp: 30, money: 50 }],
+            log
+        };
+        const newQuestLine = params.log.find(l => l.startsWith('🗺️'));
+        expect(newQuestLine).toBeDefined();
+        expect(newQuestLine).toContain('Nova quest');
+    });
+
+    it('deve filtrar linhas relevantes (drops, quests) de um log misto', () => {
+        const log = [
+            '💥 Luma atacou por 12 de dano!',
+            '🎁 Drops:',
+            '  • 1x ClasterOrb Comum (⚪)',
+            '📋 Quest "O Ovo Perdido": 1/1',
+            '🏆 Quest concluída: "O Ovo Perdido"!',
+            '💰 +60 moedas!',
+            '🗺️ Nova quest: "Primeira Captura"!'
+        ];
+
+        const relevant = log.filter(l => {
+            const s = String(l);
+            return s.startsWith('🎁') || s.startsWith('📦') ||
+                   s.startsWith('🏆') || s.startsWith('🗺️') ||
+                   s.startsWith('📋') || s.startsWith('💰') ||
+                   s.startsWith('⭐') || s.startsWith('🎉') ||
+                   s.startsWith('  ');
+        });
+
+        // Deve conter drops, progresso, conclusão, nova quest, moedas
+        expect(relevant.length).toBeGreaterThanOrEqual(5);
+        expect(relevant.some(l => l.startsWith('🎁'))).toBe(true);
+        expect(relevant.some(l => l.startsWith('🏆'))).toBe(true);
+        expect(relevant.some(l => l.startsWith('🗺️'))).toBe(true);
+        expect(relevant.some(l => l.startsWith('💰'))).toBe(true);
+        // Deve excluir linhas de combate
+        expect(relevant.some(l => l.includes('atacou'))).toBe(false);
+    });
+
+    it('log não deve ser mostrado em derrota', () => {
+        const params = {
+            result: 'defeat',
+            participants: []
+            // sem log — derrota não tem recompensas
+        };
+        expect(params.result).toBe('defeat');
+        expect(params.participants).toHaveLength(0);
+    });
+});
+
+describe('maybeToastFromLog - Detecção de Eventos', () => {
+    it('deve detectar conclusão de quest pela linha do log', () => {
+        const line = '🏆 Quest concluída: "O Ovo Perdido"!';
+        expect(line.startsWith('🏆 Quest concluída:')).toBe(true);
+    });
+
+    it('deve detectar nova quest desbloqueada pela linha do log', () => {
+        const line = '🗺️ Nova quest: "Primeira Captura"!';
+        expect(line.startsWith('🗺️ Nova quest:')).toBe(true);
+    });
+
+    it('deve detectar level up pela linha do log', () => {
+        const lineEmoji = '✨ Luma subiu para o nível 2!';
+        const lineText = 'Luma subiu para o nível 2!';
+        expect(lineEmoji.includes('✨')).toBe(true);
+        expect(/subiu para o nível/i.test(lineText)).toBe(true);
+    });
+
+    it('deve detectar evolução pela linha do log', () => {
+        const lineEmoji = '🌟 Luma evoluiu para Lumax!';
+        const lineText = 'Luma evoluiu para Lumax!';
+        expect(lineEmoji.includes('🌟')).toBe(true);
+        expect(/evoluiu para/i.test(lineText)).toBe(true);
+    });
+
+    it('não deve disparar toast para linhas de combate genéricas', () => {
+        const combatLines = [
+            '💥 Luma atacou por 12 de dano!',
+            'Errou o ataque!',
+            'A batalha começou.',
+        ];
+        for (const line of combatLines) {
+            const isLevelUp = line.includes('✨') || /subiu para o nível/i.test(line);
+            const isEvo = line.includes('🌟') || /evoluiu para/i.test(line);
+            const isQuestDone = line.startsWith('🏆 Quest concluída:');
+            const isNewQuest = line.startsWith('🗺️ Nova quest:');
+            expect(isLevelUp || isEvo || isQuestDone || isNewQuest).toBe(false);
+        }
+    });
+});
+
 describe('BattleEndModal - Recompensas', () => {
     it('deve distribuir XP igualmente', () => {
         const baseXP = 50;

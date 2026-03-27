@@ -4616,6 +4616,12 @@
                 // Detectar evolução: por emoji OU por texto
                 const isEvo = line.includes("🌟") || /evoluiu para/i.test(line);
                 if (isEvo) showToast(line);
+
+                // Detectar conclusão de quest
+                if (line.startsWith("🏆 Quest concluída:")) showToast(line, 'success');
+
+                // Detectar nova quest desbloqueada
+                if (line.startsWith("🗺️ Nova quest:")) showToast(line, 'success');
             }
             enc._toastCursor = enc.log.length;
         }
@@ -5487,10 +5493,11 @@
                     }
                 }
                 
-                // Mostrar modal
+                // Mostrar modal (com log do encontro para drops + progresso de quests)
                 await BattleEndModal.showBattleEndModal({
                     result: encounter.result,
-                    participants: participants
+                    participants: participants,
+                    log: encounter.log || []
                 });
                 
                 // Após fechar modal, limpar encounter
