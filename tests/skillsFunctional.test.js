@@ -160,8 +160,8 @@ describe('Skills JSON — Skills SKILL_DEFS Representadas', () => {
         { id: 'GOLPE_DE_ESPADA_I', name: 'Golpe de Espada I', class: 'Guerreiro' },
         { id: 'GOLPE_DE_ESPADA_II', name: 'Golpe de Espada II', class: 'Guerreiro' },
         { id: 'GOLPE_DE_ESPADA_III', name: 'Golpe de Espada III', class: 'Guerreiro' },
-        { id: 'PROVOCAR_II', name: 'Provocar I', class: 'Guerreiro' },
-        { id: 'PROVOCAR_III', name: 'Provocar II', class: 'Guerreiro' },
+        { id: 'PROVOCAR_I', name: 'Provocar I', class: 'Guerreiro' },
+        { id: 'PROVOCAR_II', name: 'Provocar II', class: 'Guerreiro' },
         // Curandeiro
         { id: 'CURA_I', name: 'Cura I', class: 'Curandeiro' },
         { id: 'CURA_III', name: 'Cura III', class: 'Curandeiro' },
@@ -174,13 +174,13 @@ describe('Skills JSON — Skills SKILL_DEFS Representadas', () => {
         { id: 'GOLPE_BRUTAL_I', name: 'Golpe Brutal I', class: 'Bárbaro' },
         // Ladino
         { id: 'ATAQUE_PRECISO_I', name: 'Ataque Preciso I', class: 'Ladino' },
-        { id: 'ENFRAQUECER_II', name: 'Enfraquecer I', class: 'Ladino' },
+        { id: 'ENFRAQUECER_I', name: 'Enfraquecer I', class: 'Ladino' },
         // Bardo
         { id: 'CANCAO_DE_CORAGEM_I', name: 'Canção de Coragem I', class: 'Bardo' },
         { id: 'CANCAO_CALMANTE_I', name: 'Canção Calmante I', class: 'Bardo' },
         // Caçador
         { id: 'FLECHA_PODEROSA_I', name: 'Flecha Poderosa I', class: 'Caçador' },
-        { id: 'ARMADILHA_II', name: 'Armadilha I', class: 'Caçador' },
+        { id: 'ARMADILHA_I', name: 'Armadilha I', class: 'Caçador' },
         // Animalista
         { id: 'INVESTIDA_BESTIAL_I', name: 'Investida Bestial I', class: 'Animalista' },
         { id: 'INSTINTO_SELVAGEM_I', name: 'Instinto Selvagem I', class: 'Animalista' },

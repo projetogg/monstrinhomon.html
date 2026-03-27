@@ -121,10 +121,10 @@
       "tier": 3
     },
     {
-      "id": "PROVOCAR_II",
+      "id": "PROVOCAR_I",
       "name": "Provocar I",
       "class": "Guerreiro",
-      "tier": 2,
+      "tier": 1,
       "category": "Controle",
       "power": 0,
       "accuracy": 0.9,
@@ -134,10 +134,10 @@
       "desc": "Provoca o inimigo."
     },
     {
-      "id": "PROVOCAR_III",
+      "id": "PROVOCAR_II",
       "name": "Provocar II",
       "class": "Guerreiro",
-      "tier": 3,
+      "tier": 2,
       "category": "Controle",
       "power": 0,
       "accuracy": 0.9,
@@ -537,29 +537,29 @@
       "desc": "Ataque extremamente preciso."
     },
     {
-      "id": "ENFRAQUECER_II",
+      "id": "ENFRAQUECER_I",
       "name": "Enfraquecer I",
       "class": "Ladino",
-      "tier": 2,
+      "tier": 1,
       "category": "Suporte",
       "power": 2,
       "accuracy": 1,
       "energy_cost": 4,
       "target": "Inimigo",
-      "status": "ATK+2",
+      "status": "ATK-2",
       "desc": "Reduz ATK do inimigo."
     },
     {
-      "id": "ENFRAQUECER_III",
+      "id": "ENFRAQUECER_II",
       "name": "Enfraquecer II",
       "class": "Ladino",
-      "tier": 3,
+      "tier": 2,
       "category": "Suporte",
       "power": 3,
       "accuracy": 1,
       "energy_cost": 6,
       "target": "Inimigo",
-      "status": "ATK+3",
+      "status": "ATK-3",
       "desc": "Enfraquece muito o inimigo."
     },
     {
@@ -654,29 +654,29 @@
       "tier": 0
     },
     {
-      "id": "ARMADILHA_II",
+      "id": "ARMADILHA_I",
       "name": "Armadilha I",
       "class": "Caçador",
-      "tier": 2,
+      "tier": 1,
       "category": "Suporte",
       "power": 2,
       "accuracy": 1,
       "energy_cost": 4,
       "target": "Inimigo",
-      "status": "SPD+2",
+      "status": "SPD-2",
       "desc": "Reduz SPD do inimigo."
     },
     {
-      "id": "ARMADILHA_III",
+      "id": "ARMADILHA_II",
       "name": "Armadilha II",
       "class": "Caçador",
-      "tier": 3,
+      "tier": 2,
       "category": "Suporte",
       "power": 3,
       "accuracy": 1,
       "energy_cost": 6,
       "target": "Inimigo",
-      "status": "SPD+3",
+      "status": "SPD-3",
       "desc": "Armadilha poderosa."
     },
     {
