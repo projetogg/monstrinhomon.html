@@ -8,34 +8,34 @@ ENC_006,Selvagem,LOC_002,Qualquer,4,7,MON_023,,,35,25,DROP_001,Cervimon entre as
 ENC_007,Selvagem,LOC_002,Qualquer,4,8,MON_020,,,35,25,DROP_001,Gotimon perto de riachos.
 ENC_008,Treinador,LOC_002,Qualquer,5,9,MON_006,MON_004,,70,50,DROP_002,Treinador da floresta com 2 monstros.
 ENC_009,Selvagem,LOC_002,Qualquer,8,12,MON_023B,,,55,40,DROP_001,Galhantemon (Incomum) na floresta profunda.
-ENC_010,Selvagem,LOC_003,Qualquer,6,10,MON_010,,,40,30,DROP_001,Ferrozimon nas minas.
-ENC_011,Selvagem,LOC_003,Qualquer,6,10,MON_026,,,40,30,DROP_001,Cascalhimon nas cavernas.
-ENC_012,Treinador,LOC_003,Qualquer,8,12,MON_010,MON_026,,80,60,DROP_002,Minerador com 2 monstros de rocha.
-ENC_013,Selvagem,LOC_003,Qualquer,12,15,MON_010B,,,65,50,DROP_001,Cavalheiromon (Incomum) nas cavernas.
-ENC_014,Selvagem,LOC_003,Qualquer,12,15,MON_026B,,,65,50,DROP_001,Muralhimon (Incomum) nas profundezas.
-ENC_015,Selvagem,LOC_004,Qualquer,10,14,MON_022,,,50,35,DROP_001,Corvimon nas ruínas.
-ENC_016,Selvagem,LOC_004,Qualquer,10,14,MON_008,,,50,35,DROP_001,Sombrio entre as pedras antigas.
-ENC_017,Selvagem,LOC_004,Qualquer,10,14,MON_003,,,50,35,DROP_001,Faíscari nas câmaras arcanas.
-ENC_018,Treinador,LOC_004,Qualquer,12,16,MON_022,MON_008,MON_003,90,70,DROP_002,Guardião das ruínas com 3 monstros.
-ENC_019,Selvagem,LOC_004,Noite,14,18,MON_022B,,,70,55,DROP_001,Noxcorvomon (Incomum) à noite nas ruínas.
-ENC_020,Boss,LOC_004,Qualquer,18,20,MON_011C,,,150,100,DROP_002,Boss das ruínas: TRockmon (Raro).
-ENC_021,Selvagem,LOC_005,Qualquer,8,12,MON_024,,,45,35,DROP_001,Coralimon nas águas rasas.
-ENC_022,Selvagem,LOC_005,Qualquer,8,12,MON_025,,,45,35,DROP_001,Pulimbon nas margens.
-ENC_023,Treinador,LOC_005,Qualquer,10,14,MON_024,MON_020,,85,65,DROP_002,Pescador com 2 monstros aquáticos.
-ENC_024,Selvagem,LOC_005,Qualquer,12,16,MON_024B,,,70,55,DROP_001,Recifalmon (Incomum) nas águas profundas.
-ENC_025,Selvagem,LOC_005,Qualquer,16,20,MON_024C,,,100,80,DROP_001,Abissalquimon (Raro) no fundo do lago.
-ENC_026,Selvagem,LOC_006,Qualquer,15,20,MON_014B,,,80,65,DROP_001,Salamandromon perto da lava.
-ENC_027,Selvagem,LOC_006,Qualquer,15,20,MON_021B,,,80,65,DROP_001,Rufamon na zona vulcânica.
-ENC_028,Treinador,LOC_006,Qualquer,18,24,MON_014B,MON_021B,,130,100,DROP_002,Vulcanólogo com 2 monstros de fogo.
-ENC_029,Selvagem,LOC_006,Qualquer,22,26,MON_014C,,,120,95,DROP_001,Dracoflamemon (Raro) na cratera.
-ENC_030,Boss,LOC_006,Qualquer,26,30,MON_014D,,,200,160,DROP_002,Boss vulcânico: Wizardragomon (Místico).
-ENC_031,Selvagem,LOC_007,Noite,12,16,MON_022B,,,70,55,DROP_001,Noxcorvomon (Incomum) na floresta noturna.
-ENC_032,Selvagem,LOC_007,Noite,12,16,MON_013B,,,70,55,DROP_001,Gatunamon (Incomum) à espreita.
-ENC_033,Treinador,LOC_007,Noite,14,18,MON_022B,MON_013,,110,85,DROP_002,Caçador noturno com 2 monstros furtivos.
-ENC_034,Selvagem,LOC_007,Noite,18,22,MON_022C,,,100,80,DROP_001,Umbraquimonom (Raro) na escuridão.
-ENC_035,Selvagem,LOC_007,Qualquer,18,24,MON_013C,,,110,90,DROP_001,Felinomon (Raro) emboscando.
-ENC_036,Selvagem,LOC_008,Qualquer,20,26,MON_012B,,,110,90,DROP_001,Manoplamon (Incomum) na arena.
-ENC_037,Selvagem,LOC_008,Qualquer,20,26,MON_021B,,,110,90,DROP_001,Rufamon (Incomum) na arena.
-ENC_038,Selvagem,LOC_008,Qualquer,22,28,MON_010C,,,130,105,DROP_001,Kinguespinhomon (Raro) nos combates.
-ENC_039,Treinador,LOC_008,Qualquer,24,30,MON_012B,MON_010C,MON_021B,180,140,DROP_002,Campeão da arena com 3 monstros poderosos.
-ENC_040,Boss,LOC_008,Qualquer,32,38,MON_012C,,,250,200,DROP_002,Boss da arena: BestBearmon (Raro).
+ENC_010,Selvagem,LOC_003,Qualquer,6,10,MON_010,,,40,30,DROP_004,Ferrozimon nas minas.
+ENC_011,Selvagem,LOC_003,Qualquer,6,10,MON_026,,,40,30,DROP_004,Cascalhimon nas cavernas.
+ENC_012,Treinador,LOC_003,Qualquer,8,12,MON_010,MON_026,,80,60,DROP_007,Minerador com 2 monstros de rocha.
+ENC_013,Selvagem,LOC_003,Qualquer,12,15,MON_010B,,,65,50,DROP_004,Cavalheiromon (Incomum) nas cavernas.
+ENC_014,Selvagem,LOC_003,Qualquer,12,15,MON_026B,,,65,50,DROP_004,Muralhimon (Incomum) nas profundezas.
+ENC_015,Selvagem,LOC_004,Qualquer,10,14,MON_022,,,50,35,DROP_004,Corvimon nas ruínas.
+ENC_016,Selvagem,LOC_004,Qualquer,10,14,MON_008,,,50,35,DROP_004,Sombrio entre as pedras antigas.
+ENC_017,Selvagem,LOC_004,Qualquer,10,14,MON_003,,,50,35,DROP_004,Faíscari nas câmaras arcanas.
+ENC_018,Treinador,LOC_004,Qualquer,12,16,MON_022,MON_008,MON_003,90,70,DROP_007,Guardião das ruínas com 3 monstros.
+ENC_019,Selvagem,LOC_004,Noite,14,18,MON_022B,,,70,55,DROP_004,Noxcorvomon (Incomum) à noite nas ruínas.
+ENC_020,Boss,LOC_004,Qualquer,18,20,MON_011C,,,150,100,DROP_003,Boss das ruínas: TRockmon (Raro).
+ENC_021,Selvagem,LOC_005,Qualquer,8,12,MON_024,,,45,35,DROP_004,Coralimon nas águas rasas.
+ENC_022,Selvagem,LOC_005,Qualquer,8,12,MON_025,,,45,35,DROP_004,Pulimbon nas margens.
+ENC_023,Treinador,LOC_005,Qualquer,10,14,MON_024,MON_020,,85,65,DROP_007,Pescador com 2 monstros aquáticos.
+ENC_024,Selvagem,LOC_005,Qualquer,12,16,MON_024B,,,70,55,DROP_004,Recifalmon (Incomum) nas águas profundas.
+ENC_025,Selvagem,LOC_005,Qualquer,16,20,MON_024C,,,100,80,DROP_004,Abissalquimon (Raro) no fundo do lago.
+ENC_026,Selvagem,LOC_006,Qualquer,15,20,MON_014B,,,80,65,DROP_005,Salamandromon perto da lava.
+ENC_027,Selvagem,LOC_006,Qualquer,15,20,MON_021B,,,80,65,DROP_005,Rufamon na zona vulcânica.
+ENC_028,Treinador,LOC_006,Qualquer,18,24,MON_014B,MON_021B,,130,100,DROP_008,Vulcanólogo com 2 monstros de fogo.
+ENC_029,Selvagem,LOC_006,Qualquer,22,26,MON_014C,,,120,95,DROP_005,Dracoflamemon (Raro) na cratera.
+ENC_030,Boss,LOC_006,Qualquer,26,30,MON_014D,,,200,160,DROP_003,Boss vulcânico: Wizardragomon (Místico).
+ENC_031,Selvagem,LOC_007,Noite,12,16,MON_022B,,,70,55,DROP_005,Noxcorvomon (Incomum) na floresta noturna.
+ENC_032,Selvagem,LOC_007,Noite,12,16,MON_013B,,,70,55,DROP_005,Gatunamon (Incomum) à espreita.
+ENC_033,Treinador,LOC_007,Noite,14,18,MON_022B,MON_013,,110,85,DROP_008,Caçador noturno com 2 monstros furtivos.
+ENC_034,Selvagem,LOC_007,Noite,18,22,MON_022C,,,100,80,DROP_005,Umbraquimonom (Raro) na escuridão.
+ENC_035,Selvagem,LOC_007,Qualquer,18,24,MON_013C,,,110,90,DROP_005,Felinomon (Raro) emboscando.
+ENC_036,Selvagem,LOC_008,Qualquer,20,26,MON_012B,,,110,90,DROP_006,Manoplamon (Incomum) na arena.
+ENC_037,Selvagem,LOC_008,Qualquer,20,26,MON_021B,,,110,90,DROP_006,Rufamon (Incomum) na arena.
+ENC_038,Selvagem,LOC_008,Qualquer,22,28,MON_010C,,,130,105,DROP_006,Kinguespinhomon (Raro) nos combates.
+ENC_039,Treinador,LOC_008,Qualquer,24,30,MON_012B,MON_010C,MON_021B,180,140,DROP_008,Campeão da arena com 3 monstros poderosos.
+ENC_040,Boss,LOC_008,Qualquer,32,38,MON_012C,,,250,200,DROP_003,Boss da arena: BestBearmon (Raro).

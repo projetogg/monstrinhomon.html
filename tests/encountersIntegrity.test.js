@@ -333,7 +333,9 @@ describe('ENCOUNTERS.csv - Integridade', () => {
     const monsterIds = new Set(monData.monsters.map(m => m.id));
     const locData = loadLocationsJson();
     const validLocIds = new Set(locData.locations.map(l => l.id));
-    const validDropTables = new Set(['DROP_001', 'DROP_002']);
+    const validDropTables = new Set(['DROP_001', 'DROP_002', 'DROP_003',
+                                       'DROP_004', 'DROP_005', 'DROP_006',
+                                       'DROP_007', 'DROP_008']);
     const validTypes = new Set(['Selvagem', 'Treinador', 'Boss']);
 
     it('deve ter pelo menos 20 encontros', () => {

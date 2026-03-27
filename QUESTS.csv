@@ -1,3 +1,17 @@
-quest_id,nome,descricao,local_id,pre_req,reward_xp,reward_gold,reward_item_id,next_quest_id,notes
-QST_001,O Ovo Perdido,Encontre o Ovo Perdido na Campina Inicial e vença o Treinador Novato.,LOC_001,,80,60,IT_CAP_02,QST_002,Quest tutorial: ensina andar→combate→recompensa.
-QST_002,Primeira Captura,Capture 1 monstrinho selvagem na Campina Inicial.,LOC_001,QST_001,60,40,IT_HEAL_01,,Encaminha para loop principal.
+quest_id,nome,descricao,local_id,pre_req,tipo_objetivo,objetivo_monster_id,objetivo_qtd,reward_xp,reward_gold,reward_item_id,next_quest_id,notes
+QST_001,O Ovo Perdido,Encontre o Ovo Perdido na Campina Inicial e vença o Treinador Novato.,LOC_001,,derrotar_treinador,,1,80,60,IT_CAP_02,QST_002,Quest tutorial
+QST_002,Primeira Captura,Capture 1 monstrinho selvagem na Campina Inicial.,LOC_001,QST_001,capturar,,1,60,40,IT_HEAL_01,QST_003,Introduz captura
+QST_003,Rastros na Floresta,Derrote 3 monstrinhos selvagens na Floresta Verde.,LOC_002,QST_002,derrotar_wild,,3,120,50,IT_HEAL_01,QST_004,Explorar floresta
+QST_004,O Cervo da Floresta,Capture um Cervimon na Floresta Verde.,LOC_002,QST_003,capturar,MON_023,1,150,80,CLASTERORB_INCOMUM,QST_005,Captura específica
+QST_005,Mineradores Endurecidos,Derrote o Treinador Minerador nas Minas e Cavernas.,LOC_003,QST_004,derrotar_treinador,,1,200,100,IT_HEAL_02,QST_006,Treinador de minas
+QST_006,Pedra e Metal,Capture um Ferrozimon nas Minas e Cavernas.,LOC_003,QST_005,capturar,MON_010,1,180,90,CLASTERORB_INCOMUM,QST_007,Captura de guerreiro
+QST_007,Guardiões das Ruínas,Derrote o Guardião das Ruínas Antigas.,LOC_004,QST_006,derrotar_treinador,,1,280,140,IT_HEAL_02,QST_008,Treinador de ruínas
+QST_008,O Espectro Ancestral,Derrote o Boss das Ruínas: TRockmon.,LOC_004,QST_007,derrotar_boss,MON_011C,1,400,200,EGG_U,QST_011,Boss de bioma
+QST_009,Tesouro das Águas,Capture um Coralimon na Costa e Lagos.,LOC_005,QST_005,capturar,MON_024,1,220,110,IT_HEAL_02,,Rota alternativa da costa
+QST_010,O Abismo Cristalino,Derrote o Abissalquimon nas profundezas da Costa e Lagos.,LOC_005,QST_009,derrotar_boss,MON_024C,1,350,175,EGG_U,,Boss aquático opcional
+QST_011,Calor do Inferno,Derrote 3 monstrinhos selvagens na Zona Vulcânica.,LOC_006,QST_008,derrotar_wild,,3,350,175,IT_HEAL_02,QST_012,Preparar para boss
+QST_012,O Rei das Chamas,Derrote o Boss Vulcânico: Wizardragomon.,LOC_006,QST_011,derrotar_boss,MON_014D,1,600,300,EGG_R,QST_015,Boss vulcânico
+QST_013,Sombras da Noite,Capture um Noxcorvomon na Floresta Noturna.,LOC_007,QST_007,capturar,MON_022B,1,300,150,IT_HEAL_03,,Rota noturna opcional
+QST_014,Caçada nas Trevas,Derrote o Caçador Noturno na Floresta Noturna.,LOC_007,QST_013,derrotar_treinador,,1,380,190,EGG_U,,Treinador noturno opcional
+QST_015,Desafio da Arena,Derrote o Campeão da Arena dos Conflitos.,LOC_008,QST_012,derrotar_treinador,,1,500,250,EGG_R,QST_016,Campeão da arena
+QST_016,O Grande Campeão,Derrote o Boss da Arena: BestBearmon.,LOC_008,QST_015,derrotar_boss,MON_012C,1,800,400,EGG_M,,Boss final da cadeia
