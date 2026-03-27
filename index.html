@@ -5531,7 +5531,20 @@
                 
                 const encounter = GameState.currentEncounter;
                 
-                if (!encounter || !encounter.active) {
+                if (!encounter) {
+                    hideEl(panel);
+                    return;
+                }
+
+                // Encounters de grupo finalizados ainda precisam ser renderizados
+                // para que o modal de fim de batalha possa ser exibido
+                const isFinishedGroup = encounter.finished &&
+                    (encounter.type === 'group_trainer' || encounter.type === 'boss');
+                // Encounters wild inativos são renderizados para exibir o resultado
+                // (XP ganho, log de batalha) antes de serem descartados
+                const isInactiveWild = !encounter.active && encounter.type === 'wild';
+
+                if (!encounter.active && !isFinishedGroup && !isInactiveWild) {
                     hideEl(panel);
                     return;
                 }
@@ -5550,6 +5563,17 @@
             }
         }
 
+        /**
+         * Fecha o painel de resultado de batalha wild (após o jogador ver o XP ganho).
+         * Chamado pelo botão "Continuar" do painel de resultado.
+         */
+        function closeBattleResult() {
+            GameState.currentEncounter = null;
+            saveToLocalStorage();
+            renderEncounter();
+        }
+        window.closeBattleResult = closeBattleResult;
+
         function renderWildEncounter(panel, encounter) {
             try {
                 const monster = encounter.wildMonster;
@@ -5559,6 +5583,42 @@
                 const playerId = encounter.selectedPlayerId;
                 const player = GameState.players.find(p => p.id === playerId);
                 const playerMonster = player?.team?.[0];
+
+                // BUG FIX: Quando o encounter está inativo, exibir painel de resultado
+                // para que o jogador possa ver o XP ganho antes de fechar.
+                if (!encounter.active) {
+                    const result = encounter.result || (monster.hp <= 0 ? 'victory' : 'defeat');
+                    const resultEmoji = result === 'victory' ? '🏆' : result === 'fled' ? '🏃' : '😵';
+                    const resultTitle = result === 'victory' ? 'Vitória!' : result === 'fled' ? 'Fugiu!' : 'Derrota!';
+                    const lastLogs = (encounter.log || []).slice(-12);
+                    const logHtml = lastLogs.map(msg =>
+                        `<div class="log-entry">${msg}</div>`
+                    ).join('');
+                    let xpBar = '';
+                    if (playerMonster) {
+                        const xpCurrent = playerMonster.xp || 0;
+                        const xpNeeded = playerMonster.xpNeeded || calcXpNeeded(playerMonster.level);
+                        const xpPct = Math.max(0, Math.min(100, (xpCurrent / xpNeeded) * 100));
+                        xpBar = `
+                            <div class="player-select-box mt-10">
+                                <strong>${playerMonster.emoji || ''} ${playerMonster.name} (Nv ${playerMonster.level})</strong>
+                                <div class="progress-bar h-15 mt-5">
+                                    <div class="progress-fill xp" style="width: ${xpPct}%"></div>
+                                </div>
+                                <small><strong>XP:</strong> ${xpCurrent}/${xpNeeded} (${Math.floor(xpPct)}%)</small>
+                            </div>`;
+                    }
+                    panel.innerHTML = `
+                        <div class="encounter-panel">
+                            <h3>${resultEmoji} ${resultTitle}</h3>
+                            ${xpBar}
+                            <div class="battle-log mt-10">${logHtml}</div>
+                            <div class="flex-center mt-15">
+                                <button class="btn btn-primary btn-large" onclick="closeBattleResult()">✅ Continuar</button>
+                            </div>
+                        </div>`;
+                    return;
+                }
                 
                 // Calcular threshold de captura
                 const hpPercent = monster.hp / monster.hpMax;
@@ -6241,9 +6301,13 @@
                     return;
                 }
                 
-                // 6. Limpar encounter se terminou
+                // 6. BUG FIX: Não limpar o encounter imediatamente ao terminar.
+                // O encounter fica inativo (active=false) e é renderizado pelo
+                // renderWildEncounter mostrando o painel de resultado com XP ganho.
+                // O jogador clica em "Continuar" para fechar (closeBattleResult).
                 if (result.result === 'victory' || result.result === 'defeat') {
-                    GameState.currentEncounter = null;
+                    encounter.result = result.result;
+                    // Não nullar: GameState.currentEncounter = null aqui
                 }
                 
                 // 7. Atualizar UI (1 vez só ao final)
@@ -6316,7 +6380,9 @@
                     encounter.log.push(`🏆 ${encounter.wildMonster.name} foi derrotado!`);
                     handleVictoryRewards(encounter);
                     encounter.active = false;
-                    GameState.currentEncounter = null;
+                    encounter.result = 'victory';
+                    // BUG FIX: Não limpar encounter imediatamente — renderWildEncounter
+                    // exibirá o painel de resultado com XP ganho. Jogador fecha com "Continuar".
                     saveToLocalStorage();
                     renderEncounter();
                     return;
@@ -6341,7 +6407,8 @@
                         encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
                         playerMonster.status = 'fainted';
                         encounter.active = false;
-                        GameState.currentEncounter = null;
+                        encounter.result = 'defeat';
+                        // BUG FIX: Manter encounter para exibir resultado
                     }
                 } else {
                     // Ataque básico do selvagem
@@ -6360,7 +6427,8 @@
                             encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
                             playerMonster.status = 'fainted';
                             encounter.active = false;
-                            GameState.currentEncounter = null;
+                            encounter.result = 'defeat';
+                            // BUG FIX: Manter encounter para exibir resultado
                         }
                     } else {
                         encounter.log.push(`❌ ${wildMonster.name} erra!`);
@@ -6522,9 +6590,10 @@
                 
                 if (confirm('Flee from this encounter?')) {
                     encounter.log = encounter.log || [];
-                    encounter.log.push('🏃 Fled from encounter');
+                    encounter.log.push('🏃 Fugiu do encontro');
                     encounter.active = false;
-                    GameState.currentEncounter = null;
+                    encounter.result = 'fled';
+                    // BUG FIX: Manter encounter para exibir painel de resultado
                     
                     saveToLocalStorage();
                     renderEncounter();
