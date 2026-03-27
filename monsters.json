@@ -1,0 +1,2694 @@
+{
+  "version": "2.0.0",
+  "project": "Monstrinhomon",
+  "notes": [
+    "Compatível com js/data/dataLoader.js do repositório atual.",
+    "Linhas iniciais evoluem em 12/25/45; linhas secundárias em 15/30.",
+    "Campos extras podem ser ignorados pelo código atual e usados em futuras refatorações."
+  ],
+  "monsters": [
+    {
+      "id": "ferrozimon",
+      "name": "Ferrozimon",
+      "class": "Guerreiro",
+      "rarity": "Comum",
+      "baseHp": 62,
+      "baseAtk": 13,
+      "baseDef": 18,
+      "baseSpd": 8,
+      "baseEne": 7,
+      "emoji": "⚔️",
+      "evolvesTo": "cavalheiromon",
+      "evolvesAt": 12,
+      "familyId": "ferro",
+      "theme": "ouriço-cavaleiro",
+      "starterLine": true,
+      "stage": "B0",
+      "stageLabel": "Básico",
+      "stageIndex": 0,
+      "classes": [
+        "Guerreiro"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": null,
+      "levelRange": {
+        "min": 1,
+        "max": 11
+      },
+      "habitats": [
+        "fortes de pedra",
+        "campos de treino",
+        "castelos antigos"
+      ],
+      "range": "melee",
+      "roleTags": [
+        "tank"
+      ],
+      "rarityPowerMultiplier": 1.0,
+      "capture": {
+        "baseThreshold": 0.38,
+        "fleeBase": 0.06,
+        "recommendedOrbTier": "Comum"
+      },
+      "moves": [
+        "Escudinho"
+      ],
+      "lore": "Ferrozimon pertence à linha ouriço-cavaleiro e atua principalmente como guerreiro.",
+      "artHints": {
+        "silhouetteTheme": "ouriço-cavaleiro",
+        "assetKey": "ferrozimon.png"
+      }
+    },
+    {
+      "id": "cavalheiromon",
+      "name": "Cavalheiromon",
+      "class": "Guerreiro",
+      "rarity": "Incomum",
+      "baseHp": 79,
+      "baseAtk": 17,
+      "baseDef": 23,
+      "baseSpd": 10,
+      "baseEne": 9,
+      "emoji": "⚔️",
+      "evolvesTo": "kinguespinhomon",
+      "evolvesAt": 25,
+      "familyId": "ferro",
+      "theme": "ouriço-cavaleiro",
+      "starterLine": true,
+      "stage": "S1",
+      "stageLabel": "Estágio 1",
+      "stageIndex": 1,
+      "classes": [
+        "Guerreiro"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": "ferrozimon",
+      "levelRange": {
+        "min": 12,
+        "max": 24
+      },
+      "habitats": [
+        "fortes de pedra",
+        "campos de treino",
+        "castelos antigos"
+      ],
+      "range": "melee",
+      "roleTags": [
+        "tank"
+      ],
+      "rarityPowerMultiplier": 1.08,
+      "capture": {
+        "baseThreshold": 0.3,
+        "fleeBase": 0.08,
+        "recommendedOrbTier": "Incomum"
+      },
+      "moves": [
+        "Escudinho",
+        "Investida de Latão"
+      ],
+      "lore": "Cavalheiromon pertence à linha ouriço-cavaleiro e atua principalmente como guerreiro.",
+      "artHints": {
+        "silhouetteTheme": "ouriço-cavaleiro",
+        "assetKey": "cavalheiromon.png"
+      }
+    },
+    {
+      "id": "kinguespinhomon",
+      "name": "Kinguespinhomon",
+      "class": "Guerreiro",
+      "rarity": "Raro",
+      "baseHp": 100,
+      "baseAtk": 21,
+      "baseDef": 29,
+      "baseSpd": 13,
+      "baseEne": 11,
+      "emoji": "⚔️",
+      "evolvesTo": "arconouricomon",
+      "evolvesAt": 45,
+      "familyId": "ferro",
+      "theme": "ouriço-cavaleiro",
+      "starterLine": true,
+      "stage": "S2",
+      "stageLabel": "Estágio 2",
+      "stageIndex": 2,
+      "classes": [
+        "Guerreiro"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": "cavalheiromon",
+      "levelRange": {
+        "min": 25,
+        "max": 44
+      },
+      "habitats": [
+        "fortes de pedra",
+        "campos de treino",
+        "castelos antigos"
+      ],
+      "range": "melee",
+      "roleTags": [
+        "tank"
+      ],
+      "rarityPowerMultiplier": 1.18,
+      "capture": {
+        "baseThreshold": 0.2,
+        "fleeBase": 0.1,
+        "recommendedOrbTier": "Raro"
+      },
+      "moves": [
+        "Escudinho",
+        "Investida de Latão",
+        "Muralha Régia"
+      ],
+      "lore": "Kinguespinhomon pertence à linha ouriço-cavaleiro e atua principalmente como guerreiro.",
+      "artHints": {
+        "silhouetteTheme": "ouriço-cavaleiro",
+        "assetKey": "kinguespinhomon.png"
+      }
+    },
+    {
+      "id": "arconouricomon",
+      "name": "Arconouriçomon",
+      "class": "Guerreiro",
+      "rarity": "Místico",
+      "baseHp": 117,
+      "baseAtk": 26,
+      "baseDef": 30,
+      "baseSpd": 18,
+      "baseEne": 19,
+      "emoji": "⚔️",
+      "evolvesTo": null,
+      "evolvesAt": null,
+      "familyId": "ferro",
+      "theme": "ouriço-cavaleiro",
+      "starterLine": true,
+      "stage": "S3",
+      "stageLabel": "Estágio 3",
+      "stageIndex": 3,
+      "classes": [
+        "Guerreiro",
+        "Mago"
+      ],
+      "secondaryClass": "Mago",
+      "evolvesFrom": "kinguespinhomon",
+      "levelRange": {
+        "min": 45,
+        "max": 100
+      },
+      "habitats": [
+        "fortes de pedra",
+        "campos de treino",
+        "castelos antigos"
+      ],
+      "range": "melee",
+      "roleTags": [
+        "tank",
+        "caster"
+      ],
+      "rarityPowerMultiplier": 1.32,
+      "capture": {
+        "baseThreshold": 0.12,
+        "fleeBase": 0.13,
+        "recommendedOrbTier": "Místico"
+      },
+      "moves": [
+        "Escudinho",
+        "Investida de Latão",
+        "Muralha Régia"
+      ],
+      "lore": "Arconouriçomon pertence à linha ouriço-cavaleiro e atua principalmente como guerreiro.",
+      "artHints": {
+        "silhouetteTheme": "ouriço-cavaleiro",
+        "assetKey": "arconouricomon.png"
+      }
+    },
+    {
+      "id": "miaumon",
+      "name": "Miaumon",
+      "class": "Caçador",
+      "rarity": "Comum",
+      "baseHp": 49,
+      "baseAtk": 16,
+      "baseDef": 9,
+      "baseSpd": 18,
+      "baseEne": 9,
+      "emoji": "🏹",
+      "evolvesTo": "gatunamon",
+      "evolvesAt": 12,
+      "familyId": "miau",
+      "theme": "felino-caçador",
+      "starterLine": true,
+      "stage": "B0",
+      "stageLabel": "Básico",
+      "stageIndex": 0,
+      "classes": [
+        "Caçador"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": null,
+      "levelRange": {
+        "min": 1,
+        "max": 11
+      },
+      "habitats": [
+        "becos",
+        "telhados",
+        "ruínas furtivas"
+      ],
+      "range": "long",
+      "roleTags": [
+        "ranged"
+      ],
+      "rarityPowerMultiplier": 1.0,
+      "capture": {
+        "baseThreshold": 0.35,
+        "fleeBase": 0.12,
+        "recommendedOrbTier": "Comum"
+      },
+      "moves": [
+        "Bote Astuto"
+      ],
+      "lore": "Miaumon pertence à linha felino-caçador e atua principalmente como caçador.",
+      "artHints": {
+        "silhouetteTheme": "felino-caçador",
+        "assetKey": "miaumon.png"
+      }
+    },
+    {
+      "id": "gatunamon",
+      "name": "Gatunamon",
+      "class": "Caçador",
+      "rarity": "Incomum",
+      "baseHp": 63,
+      "baseAtk": 20,
+      "baseDef": 12,
+      "baseSpd": 23,
+      "baseEne": 11,
+      "emoji": "🏹",
+      "evolvesTo": "felinomon",
+      "evolvesAt": 25,
+      "familyId": "miau",
+      "theme": "felino-caçador",
+      "starterLine": true,
+      "stage": "S1",
+      "stageLabel": "Estágio 1",
+      "stageIndex": 1,
+      "classes": [
+        "Caçador"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": "miaumon",
+      "levelRange": {
+        "min": 12,
+        "max": 24
+      },
+      "habitats": [
+        "becos",
+        "telhados",
+        "ruínas furtivas"
+      ],
+      "range": "long",
+      "roleTags": [
+        "ranged"
+      ],
+      "rarityPowerMultiplier": 1.08,
+      "capture": {
+        "baseThreshold": 0.27,
+        "fleeBase": 0.14,
+        "recommendedOrbTier": "Incomum"
+      },
+      "moves": [
+        "Bote Astuto",
+        "Mira de Telhado"
+      ],
+      "lore": "Gatunamon pertence à linha felino-caçador e atua principalmente como caçador.",
+      "artHints": {
+        "silhouetteTheme": "felino-caçador",
+        "assetKey": "gatunamon.png"
+      }
+    },
+    {
+      "id": "felinomon",
+      "name": "Felinomon",
+      "class": "Caçador",
+      "rarity": "Raro",
+      "baseHp": 79,
+      "baseAtk": 26,
+      "baseDef": 15,
+      "baseSpd": 29,
+      "baseEne": 14,
+      "emoji": "🏹",
+      "evolvesTo": "panterezamon",
+      "evolvesAt": 45,
+      "familyId": "miau",
+      "theme": "felino-caçador",
+      "starterLine": true,
+      "stage": "S2",
+      "stageLabel": "Estágio 2",
+      "stageIndex": 2,
+      "classes": [
+        "Caçador"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": "gatunamon",
+      "levelRange": {
+        "min": 25,
+        "max": 44
+      },
+      "habitats": [
+        "becos",
+        "telhados",
+        "ruínas furtivas"
+      ],
+      "range": "long",
+      "roleTags": [
+        "ranged"
+      ],
+      "rarityPowerMultiplier": 1.18,
+      "capture": {
+        "baseThreshold": 0.17,
+        "fleeBase": 0.16,
+        "recommendedOrbTier": "Raro"
+      },
+      "moves": [
+        "Bote Astuto",
+        "Mira de Telhado",
+        "Passo Fantasma"
+      ],
+      "lore": "Felinomon pertence à linha felino-caçador e atua principalmente como caçador.",
+      "artHints": {
+        "silhouetteTheme": "felino-caçador",
+        "assetKey": "felinomon.png"
+      }
+    },
+    {
+      "id": "panterezamon",
+      "name": "Panterezamon",
+      "class": "Caçador",
+      "rarity": "Místico",
+      "baseHp": 97,
+      "baseAtk": 32,
+      "baseDef": 18,
+      "baseSpd": 38,
+      "baseEne": 19,
+      "emoji": "🏹",
+      "evolvesTo": null,
+      "evolvesAt": null,
+      "familyId": "miau",
+      "theme": "felino-caçador",
+      "starterLine": true,
+      "stage": "S3",
+      "stageLabel": "Estágio 3",
+      "stageIndex": 3,
+      "classes": [
+        "Caçador",
+        "Ladino"
+      ],
+      "secondaryClass": "Ladino",
+      "evolvesFrom": "felinomon",
+      "levelRange": {
+        "min": 45,
+        "max": 100
+      },
+      "habitats": [
+        "becos",
+        "telhados",
+        "ruínas furtivas"
+      ],
+      "range": "long",
+      "roleTags": [
+        "ranged",
+        "assassin"
+      ],
+      "rarityPowerMultiplier": 1.32,
+      "capture": {
+        "baseThreshold": 0.09,
+        "fleeBase": 0.19,
+        "recommendedOrbTier": "Místico"
+      },
+      "moves": [
+        "Bote Astuto",
+        "Mira de Telhado",
+        "Passo Fantasma"
+      ],
+      "lore": "Panterezamon pertence à linha felino-caçador e atua principalmente como caçador.",
+      "artHints": {
+        "silhouetteTheme": "felino-caçador",
+        "assetKey": "panterezamon.png"
+      }
+    },
+    {
+      "id": "luvursomon",
+      "name": "Luvursomon",
+      "class": "Animalista",
+      "rarity": "Comum",
+      "baseHp": 58,
+      "baseAtk": 13,
+      "baseDef": 12,
+      "baseSpd": 13,
+      "baseEne": 11,
+      "emoji": "🐾",
+      "evolvesTo": "manoplamon",
+      "evolvesAt": 12,
+      "familyId": "luvurso",
+      "theme": "urso-totêmico",
+      "starterLine": true,
+      "stage": "B0",
+      "stageLabel": "Básico",
+      "stageIndex": 0,
+      "classes": [
+        "Animalista"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": null,
+      "levelRange": {
+        "min": 1,
+        "max": 11
+      },
+      "habitats": [
+        "florestas densas",
+        "cavernas de mel",
+        "montes gelados"
+      ],
+      "range": "melee",
+      "roleTags": [
+        "versatile"
+      ],
+      "rarityPowerMultiplier": 1.0,
+      "capture": {
+        "baseThreshold": 0.36,
+        "fleeBase": 0.09,
+        "recommendedOrbTier": "Comum"
+      },
+      "moves": [
+        "Abraço de Tronco"
+      ],
+      "lore": "Luvursomon pertence à linha urso-totêmico e atua principalmente como animalista.",
+      "artHints": {
+        "silhouetteTheme": "urso-totêmico",
+        "assetKey": "luvursomon.png"
+      }
+    },
+    {
+      "id": "manoplamon",
+      "name": "Manoplamon",
+      "class": "Animalista",
+      "rarity": "Incomum",
+      "baseHp": 74,
+      "baseAtk": 17,
+      "baseDef": 15,
+      "baseSpd": 17,
+      "baseEne": 14,
+      "emoji": "🐾",
+      "evolvesTo": "bestbearmon",
+      "evolvesAt": 25,
+      "familyId": "luvurso",
+      "theme": "urso-totêmico",
+      "starterLine": true,
+      "stage": "S1",
+      "stageLabel": "Estágio 1",
+      "stageIndex": 1,
+      "classes": [
+        "Animalista"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": "luvursomon",
+      "levelRange": {
+        "min": 12,
+        "max": 24
+      },
+      "habitats": [
+        "florestas densas",
+        "cavernas de mel",
+        "montes gelados"
+      ],
+      "range": "melee",
+      "roleTags": [
+        "versatile"
+      ],
+      "rarityPowerMultiplier": 1.08,
+      "capture": {
+        "baseThreshold": 0.28,
+        "fleeBase": 0.11,
+        "recommendedOrbTier": "Incomum"
+      },
+      "moves": [
+        "Abraço de Tronco",
+        "Rugido do Bosque"
+      ],
+      "lore": "Manoplamon pertence à linha urso-totêmico e atua principalmente como animalista.",
+      "artHints": {
+        "silhouetteTheme": "urso-totêmico",
+        "assetKey": "manoplamon.png"
+      }
+    },
+    {
+      "id": "bestbearmon",
+      "name": "BestBearmon",
+      "class": "Animalista",
+      "rarity": "Raro",
+      "baseHp": 94,
+      "baseAtk": 21,
+      "baseDef": 19,
+      "baseSpd": 21,
+      "baseEne": 17,
+      "emoji": "🐾",
+      "evolvesTo": "ursauramon",
+      "evolvesAt": 45,
+      "familyId": "luvurso",
+      "theme": "urso-totêmico",
+      "starterLine": true,
+      "stage": "S2",
+      "stageLabel": "Estágio 2",
+      "stageIndex": 2,
+      "classes": [
+        "Animalista"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": "manoplamon",
+      "levelRange": {
+        "min": 25,
+        "max": 44
+      },
+      "habitats": [
+        "florestas densas",
+        "cavernas de mel",
+        "montes gelados"
+      ],
+      "range": "melee",
+      "roleTags": [
+        "versatile"
+      ],
+      "rarityPowerMultiplier": 1.18,
+      "capture": {
+        "baseThreshold": 0.18,
+        "fleeBase": 0.13,
+        "recommendedOrbTier": "Raro"
+      },
+      "moves": [
+        "Abraço de Tronco",
+        "Rugido do Bosque",
+        "Totem da Alcateia"
+      ],
+      "lore": "BestBearmon pertence à linha urso-totêmico e atua principalmente como animalista.",
+      "artHints": {
+        "silhouetteTheme": "urso-totêmico",
+        "assetKey": "bestbearmon.png"
+      }
+    },
+    {
+      "id": "ursauramon",
+      "name": "Ursauramon",
+      "class": "Animalista",
+      "rarity": "Místico",
+      "baseHp": 123,
+      "baseAtk": 28,
+      "baseDef": 24,
+      "baseSpd": 24,
+      "baseEne": 19,
+      "emoji": "🐾",
+      "evolvesTo": null,
+      "evolvesAt": null,
+      "familyId": "luvurso",
+      "theme": "urso-totêmico",
+      "starterLine": true,
+      "stage": "S3",
+      "stageLabel": "Estágio 3",
+      "stageIndex": 3,
+      "classes": [
+        "Animalista",
+        "Bárbaro"
+      ],
+      "secondaryClass": "Bárbaro",
+      "evolvesFrom": "bestbearmon",
+      "levelRange": {
+        "min": 45,
+        "max": 100
+      },
+      "habitats": [
+        "florestas densas",
+        "cavernas de mel",
+        "montes gelados"
+      ],
+      "range": "melee",
+      "roleTags": [
+        "versatile",
+        "bruiser"
+      ],
+      "rarityPowerMultiplier": 1.32,
+      "capture": {
+        "baseThreshold": 0.1,
+        "fleeBase": 0.16,
+        "recommendedOrbTier": "Místico"
+      },
+      "moves": [
+        "Abraço de Tronco",
+        "Rugido do Bosque",
+        "Totem da Alcateia"
+      ],
+      "lore": "Ursauramon pertence à linha urso-totêmico e atua principalmente como animalista.",
+      "artHints": {
+        "silhouetteTheme": "urso-totêmico",
+        "assetKey": "ursauramon.png"
+      }
+    },
+    {
+      "id": "dinomon",
+      "name": "Dinomon",
+      "class": "Bardo",
+      "rarity": "Comum",
+      "baseHp": 50,
+      "baseAtk": 10,
+      "baseDef": 9,
+      "baseSpd": 17,
+      "baseEne": 15,
+      "emoji": "🎵",
+      "evolvesTo": "guitarapitormon",
+      "evolvesAt": 12,
+      "familyId": "dino-rock",
+      "theme": "dinossauro musical",
+      "starterLine": true,
+      "stage": "B0",
+      "stageLabel": "Básico",
+      "stageIndex": 0,
+      "classes": [
+        "Bardo"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": null,
+      "levelRange": {
+        "min": 1,
+        "max": 11
+      },
+      "habitats": [
+        "ruínas musicais",
+        "desertos de eco",
+        "arenas de show"
+      ],
+      "range": "long",
+      "roleTags": [
+        "buffer"
+      ],
+      "rarityPowerMultiplier": 1.0,
+      "capture": {
+        "baseThreshold": 0.34,
+        "fleeBase": 0.1,
+        "recommendedOrbTier": "Comum"
+      },
+      "moves": [
+        "Batida Fóssil"
+      ],
+      "lore": "Dinomon pertence à linha dinossauro musical e atua principalmente como bardo.",
+      "artHints": {
+        "silhouetteTheme": "dinossauro musical",
+        "assetKey": "dinomon.png"
+      }
+    },
+    {
+      "id": "guitarapitormon",
+      "name": "Guitarapitormon",
+      "class": "Bardo",
+      "rarity": "Incomum",
+      "baseHp": 64,
+      "baseAtk": 13,
+      "baseDef": 12,
+      "baseSpd": 22,
+      "baseEne": 18,
+      "emoji": "🎵",
+      "evolvesTo": "t-rockmon",
+      "evolvesAt": 25,
+      "familyId": "dino-rock",
+      "theme": "dinossauro musical",
+      "starterLine": true,
+      "stage": "S1",
+      "stageLabel": "Estágio 1",
+      "stageIndex": 1,
+      "classes": [
+        "Bardo"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": "dinomon",
+      "levelRange": {
+        "min": 12,
+        "max": 24
+      },
+      "habitats": [
+        "ruínas musicais",
+        "desertos de eco",
+        "arenas de show"
+      ],
+      "range": "long",
+      "roleTags": [
+        "buffer"
+      ],
+      "rarityPowerMultiplier": 1.08,
+      "capture": {
+        "baseThreshold": 0.26,
+        "fleeBase": 0.12,
+        "recommendedOrbTier": "Incomum"
+      },
+      "moves": [
+        "Batida Fóssil",
+        "Solo Rasgante"
+      ],
+      "lore": "Guitarapitormon pertence à linha dinossauro musical e atua principalmente como bardo.",
+      "artHints": {
+        "silhouetteTheme": "dinossauro musical",
+        "assetKey": "guitarapitormon.png"
+      }
+    },
+    {
+      "id": "t-rockmon",
+      "name": "T-Rockmon",
+      "class": "Bardo",
+      "rarity": "Raro",
+      "baseHp": 81,
+      "baseAtk": 16,
+      "baseDef": 15,
+      "baseSpd": 28,
+      "baseEne": 22,
+      "emoji": "🎵",
+      "evolvesTo": "giganotometalmon",
+      "evolvesAt": 45,
+      "familyId": "dino-rock",
+      "theme": "dinossauro musical",
+      "starterLine": true,
+      "stage": "S2",
+      "stageLabel": "Estágio 2",
+      "stageIndex": 2,
+      "classes": [
+        "Bardo"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": "guitarapitormon",
+      "levelRange": {
+        "min": 25,
+        "max": 44
+      },
+      "habitats": [
+        "ruínas musicais",
+        "desertos de eco",
+        "arenas de show"
+      ],
+      "range": "long",
+      "roleTags": [
+        "buffer"
+      ],
+      "rarityPowerMultiplier": 1.18,
+      "capture": {
+        "baseThreshold": 0.16,
+        "fleeBase": 0.14,
+        "recommendedOrbTier": "Raro"
+      },
+      "moves": [
+        "Batida Fóssil",
+        "Solo Rasgante",
+        "Concerto de Aço"
+      ],
+      "lore": "T-Rockmon pertence à linha dinossauro musical e atua principalmente como bardo.",
+      "artHints": {
+        "silhouetteTheme": "dinossauro musical",
+        "assetKey": "t-rockmon.png"
+      }
+    },
+    {
+      "id": "giganotometalmon",
+      "name": "Giganotometalmon",
+      "class": "Bardo",
+      "rarity": "Místico",
+      "baseHp": 107,
+      "baseAtk": 22,
+      "baseDef": 24,
+      "baseSpd": 28,
+      "baseEne": 24,
+      "emoji": "🎵",
+      "evolvesTo": null,
+      "evolvesAt": null,
+      "familyId": "dino-rock",
+      "theme": "dinossauro musical",
+      "starterLine": true,
+      "stage": "S3",
+      "stageLabel": "Estágio 3",
+      "stageIndex": 3,
+      "classes": [
+        "Bardo",
+        "Guerreiro"
+      ],
+      "secondaryClass": "Guerreiro",
+      "evolvesFrom": "t-rockmon",
+      "levelRange": {
+        "min": 45,
+        "max": 100
+      },
+      "habitats": [
+        "ruínas musicais",
+        "desertos de eco",
+        "arenas de show"
+      ],
+      "range": "long",
+      "roleTags": [
+        "buffer",
+        "tank"
+      ],
+      "rarityPowerMultiplier": 1.32,
+      "capture": {
+        "baseThreshold": 0.08,
+        "fleeBase": 0.17,
+        "recommendedOrbTier": "Místico"
+      },
+      "moves": [
+        "Batida Fóssil",
+        "Solo Rasgante",
+        "Concerto de Aço"
+      ],
+      "lore": "Giganotometalmon pertence à linha dinossauro musical e atua principalmente como bardo.",
+      "artHints": {
+        "silhouetteTheme": "dinossauro musical",
+        "assetKey": "giganotometalmon.png"
+      }
+    },
+    {
+      "id": "lagartomon",
+      "name": "Lagartomon",
+      "class": "Mago",
+      "rarity": "Comum",
+      "baseHp": 48,
+      "baseAtk": 12,
+      "baseDef": 9,
+      "baseSpd": 12,
+      "baseEne": 17,
+      "emoji": "🔮",
+      "evolvesTo": "salamandromon",
+      "evolvesAt": 12,
+      "familyId": "salamandra",
+      "theme": "lagarto arcano ígneo",
+      "starterLine": true,
+      "stage": "B0",
+      "stageLabel": "Básico",
+      "stageIndex": 0,
+      "classes": [
+        "Mago"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": null,
+      "levelRange": {
+        "min": 1,
+        "max": 11
+      },
+      "habitats": [
+        "vulcões baixos",
+        "desertos quentes",
+        "templos de brasas"
+      ],
+      "range": "mid",
+      "roleTags": [
+        "caster"
+      ],
+      "rarityPowerMultiplier": 1.0,
+      "capture": {
+        "baseThreshold": 0.33,
+        "fleeBase": 0.1,
+        "recommendedOrbTier": "Comum"
+      },
+      "moves": [
+        "Faísca de Cauda"
+      ],
+      "lore": "Lagartomon pertence à linha lagarto arcano ígneo e atua principalmente como mago.",
+      "artHints": {
+        "silhouetteTheme": "lagarto arcano ígneo",
+        "assetKey": "lagartomon.png"
+      }
+    },
+    {
+      "id": "salamandromon",
+      "name": "Salamandromon",
+      "class": "Mago",
+      "rarity": "Incomum",
+      "baseHp": 61,
+      "baseAtk": 15,
+      "baseDef": 12,
+      "baseSpd": 15,
+      "baseEne": 20,
+      "emoji": "🔮",
+      "evolvesTo": "dracoflamemon",
+      "evolvesAt": 25,
+      "familyId": "salamandra",
+      "theme": "lagarto arcano ígneo",
+      "starterLine": true,
+      "stage": "S1",
+      "stageLabel": "Estágio 1",
+      "stageIndex": 1,
+      "classes": [
+        "Mago"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": "lagartomon",
+      "levelRange": {
+        "min": 12,
+        "max": 24
+      },
+      "habitats": [
+        "vulcões baixos",
+        "desertos quentes",
+        "templos de brasas"
+      ],
+      "range": "mid",
+      "roleTags": [
+        "caster"
+      ],
+      "rarityPowerMultiplier": 1.08,
+      "capture": {
+        "baseThreshold": 0.25,
+        "fleeBase": 0.12,
+        "recommendedOrbTier": "Incomum"
+      },
+      "moves": [
+        "Faísca de Cauda",
+        "Brasa Espiral"
+      ],
+      "lore": "Salamandromon pertence à linha lagarto arcano ígneo e atua principalmente como mago.",
+      "artHints": {
+        "silhouetteTheme": "lagarto arcano ígneo",
+        "assetKey": "salamandromon.png"
+      }
+    },
+    {
+      "id": "dracoflamemon",
+      "name": "Dracoflamemon",
+      "class": "Mago",
+      "rarity": "Raro",
+      "baseHp": 78,
+      "baseAtk": 19,
+      "baseDef": 15,
+      "baseSpd": 19,
+      "baseEne": 25,
+      "emoji": "🔮",
+      "evolvesTo": "wizardragomon",
+      "evolvesAt": 45,
+      "familyId": "salamandra",
+      "theme": "lagarto arcano ígneo",
+      "starterLine": true,
+      "stage": "S2",
+      "stageLabel": "Estágio 2",
+      "stageIndex": 2,
+      "classes": [
+        "Mago"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": "salamandromon",
+      "levelRange": {
+        "min": 25,
+        "max": 44
+      },
+      "habitats": [
+        "vulcões baixos",
+        "desertos quentes",
+        "templos de brasas"
+      ],
+      "range": "mid",
+      "roleTags": [
+        "caster"
+      ],
+      "rarityPowerMultiplier": 1.18,
+      "capture": {
+        "baseThreshold": 0.15,
+        "fleeBase": 0.14,
+        "recommendedOrbTier": "Raro"
+      },
+      "moves": [
+        "Faísca de Cauda",
+        "Brasa Espiral",
+        "Meteorito Familiar"
+      ],
+      "lore": "Dracoflamemon pertence à linha lagarto arcano ígneo e atua principalmente como mago.",
+      "artHints": {
+        "silhouetteTheme": "lagarto arcano ígneo",
+        "assetKey": "dracoflamemon.png"
+      }
+    },
+    {
+      "id": "wizardragomon",
+      "name": "Wizardragomon",
+      "class": "Mago",
+      "rarity": "Místico",
+      "baseHp": 103,
+      "baseAtk": 24,
+      "baseDef": 20,
+      "baseSpd": 24,
+      "baseEne": 27,
+      "emoji": "🔮",
+      "evolvesTo": null,
+      "evolvesAt": null,
+      "familyId": "salamandra",
+      "theme": "lagarto arcano ígneo",
+      "starterLine": true,
+      "stage": "S3",
+      "stageLabel": "Estágio 3",
+      "stageIndex": 3,
+      "classes": [
+        "Mago",
+        "Animalista"
+      ],
+      "secondaryClass": "Animalista",
+      "evolvesFrom": "dracoflamemon",
+      "levelRange": {
+        "min": 45,
+        "max": 100
+      },
+      "habitats": [
+        "vulcões baixos",
+        "desertos quentes",
+        "templos de brasas"
+      ],
+      "range": "mid",
+      "roleTags": [
+        "caster",
+        "versatile"
+      ],
+      "rarityPowerMultiplier": 1.32,
+      "capture": {
+        "baseThreshold": 0.07,
+        "fleeBase": 0.17,
+        "recommendedOrbTier": "Místico"
+      },
+      "moves": [
+        "Faísca de Cauda",
+        "Brasa Espiral",
+        "Meteorito Familiar"
+      ],
+      "lore": "Wizardragomon pertence à linha lagarto arcano ígneo e atua principalmente como mago.",
+      "artHints": {
+        "silhouetteTheme": "lagarto arcano ígneo",
+        "assetKey": "wizardragomon.png"
+      }
+    },
+    {
+      "id": "gotimon",
+      "name": "Gotimon",
+      "class": "Curandeiro",
+      "rarity": "Comum",
+      "baseHp": 54,
+      "baseAtk": 8,
+      "baseDef": 11,
+      "baseSpd": 10,
+      "baseEne": 18,
+      "emoji": "💚",
+      "evolvesTo": "lirialmon",
+      "evolvesAt": 15,
+      "familyId": "gota-lirio",
+      "theme": "gota floral curativa",
+      "starterLine": false,
+      "stage": "B0",
+      "stageLabel": "Básico",
+      "stageIndex": 0,
+      "classes": [
+        "Curandeiro"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": null,
+      "levelRange": {
+        "min": 1,
+        "max": 14
+      },
+      "habitats": [
+        "nascentes claras",
+        "jardins tranquilos",
+        "lagos lunares"
+      ],
+      "range": "mid",
+      "roleTags": [
+        "support"
+      ],
+      "rarityPowerMultiplier": 1.0,
+      "capture": {
+        "baseThreshold": 0.35,
+        "fleeBase": 0.07,
+        "recommendedOrbTier": "Comum"
+      },
+      "moves": [
+        "Gota Serena"
+      ],
+      "lore": "Gotimon pertence à linha gota floral curativa e atua principalmente como curandeiro.",
+      "artHints": {
+        "silhouetteTheme": "gota floral curativa",
+        "assetKey": "gotimon.png"
+      }
+    },
+    {
+      "id": "lirialmon",
+      "name": "Lirialmon",
+      "class": "Curandeiro",
+      "rarity": "Incomum",
+      "baseHp": 69,
+      "baseAtk": 10,
+      "baseDef": 14,
+      "baseSpd": 13,
+      "baseEne": 23,
+      "emoji": "💚",
+      "evolvesTo": "serafloramon",
+      "evolvesAt": 30,
+      "familyId": "gota-lirio",
+      "theme": "gota floral curativa",
+      "starterLine": false,
+      "stage": "S1",
+      "stageLabel": "Estágio 1",
+      "stageIndex": 1,
+      "classes": [
+        "Curandeiro"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": "gotimon",
+      "levelRange": {
+        "min": 15,
+        "max": 29
+      },
+      "habitats": [
+        "nascentes claras",
+        "jardins tranquilos",
+        "lagos lunares"
+      ],
+      "range": "mid",
+      "roleTags": [
+        "support"
+      ],
+      "rarityPowerMultiplier": 1.08,
+      "capture": {
+        "baseThreshold": 0.27,
+        "fleeBase": 0.09,
+        "recommendedOrbTier": "Incomum"
+      },
+      "moves": [
+        "Gota Serena",
+        "Pétala Vital"
+      ],
+      "lore": "Lirialmon pertence à linha gota floral curativa e atua principalmente como curandeiro.",
+      "artHints": {
+        "silhouetteTheme": "gota floral curativa",
+        "assetKey": "lirialmon.png"
+      }
+    },
+    {
+      "id": "serafloramon",
+      "name": "Serafloramon",
+      "class": "Curandeiro",
+      "rarity": "Raro",
+      "baseHp": 87,
+      "baseAtk": 13,
+      "baseDef": 18,
+      "baseSpd": 16,
+      "baseEne": 28,
+      "emoji": "💚",
+      "evolvesTo": null,
+      "evolvesAt": null,
+      "familyId": "gota-lirio",
+      "theme": "gota floral curativa",
+      "starterLine": false,
+      "stage": "S2",
+      "stageLabel": "Estágio 2",
+      "stageIndex": 2,
+      "classes": [
+        "Curandeiro"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": "lirialmon",
+      "levelRange": {
+        "min": 30,
+        "max": 100
+      },
+      "habitats": [
+        "nascentes claras",
+        "jardins tranquilos",
+        "lagos lunares"
+      ],
+      "range": "mid",
+      "roleTags": [
+        "support"
+      ],
+      "rarityPowerMultiplier": 1.18,
+      "capture": {
+        "baseThreshold": 0.17,
+        "fleeBase": 0.11,
+        "recommendedOrbTier": "Raro"
+      },
+      "moves": [
+        "Gota Serena",
+        "Pétala Vital",
+        "Jardim Curativo"
+      ],
+      "lore": "Serafloramon pertence à linha gota floral curativa e atua principalmente como curandeiro.",
+      "artHints": {
+        "silhouetteTheme": "gota floral curativa",
+        "assetKey": "serafloramon.png"
+      }
+    },
+    {
+      "id": "tamborilhomon",
+      "name": "Tamborilhomon",
+      "class": "Bárbaro",
+      "rarity": "Comum",
+      "baseHp": 68,
+      "baseAtk": 17,
+      "baseDef": 11,
+      "baseSpd": 8,
+      "baseEne": 7,
+      "emoji": "🪓",
+      "evolvesTo": "rufamon",
+      "evolvesAt": 15,
+      "familyId": "tambor",
+      "theme": "tambor tribal",
+      "starterLine": false,
+      "stage": "B0",
+      "stageLabel": "Básico",
+      "stageIndex": 0,
+      "classes": [
+        "Bárbaro"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": null,
+      "levelRange": {
+        "min": 1,
+        "max": 14
+      },
+      "habitats": [
+        "arenas ecoantes",
+        "campos de batalha antigos",
+        "cânions ressonantes"
+      ],
+      "range": "melee",
+      "roleTags": [
+        "bruiser"
+      ],
+      "rarityPowerMultiplier": 1.0,
+      "capture": {
+        "baseThreshold": 0.4,
+        "fleeBase": 0.05,
+        "recommendedOrbTier": "Comum"
+      },
+      "moves": [
+        "Batida Pesada"
+      ],
+      "lore": "Tamborilhomon pertence à linha tambor tribal e atua principalmente como bárbaro.",
+      "artHints": {
+        "silhouetteTheme": "tambor tribal",
+        "assetKey": "tamborilhomon.png"
+      }
+    },
+    {
+      "id": "rufamon",
+      "name": "Rufamon",
+      "class": "Bárbaro",
+      "rarity": "Incomum",
+      "baseHp": 87,
+      "baseAtk": 22,
+      "baseDef": 14,
+      "baseSpd": 10,
+      "baseEne": 9,
+      "emoji": "🪓",
+      "evolvesTo": "trovatambormon",
+      "evolvesAt": 30,
+      "familyId": "tambor",
+      "theme": "tambor tribal",
+      "starterLine": false,
+      "stage": "S1",
+      "stageLabel": "Estágio 1",
+      "stageIndex": 1,
+      "classes": [
+        "Bárbaro"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": "tamborilhomon",
+      "levelRange": {
+        "min": 15,
+        "max": 29
+      },
+      "habitats": [
+        "arenas ecoantes",
+        "campos de batalha antigos",
+        "cânions ressonantes"
+      ],
+      "range": "melee",
+      "roleTags": [
+        "bruiser"
+      ],
+      "rarityPowerMultiplier": 1.08,
+      "capture": {
+        "baseThreshold": 0.32,
+        "fleeBase": 0.07,
+        "recommendedOrbTier": "Incomum"
+      },
+      "moves": [
+        "Batida Pesada",
+        "Grito de Guerra"
+      ],
+      "lore": "Rufamon pertence à linha tambor tribal e atua principalmente como bárbaro.",
+      "artHints": {
+        "silhouetteTheme": "tambor tribal",
+        "assetKey": "rufamon.png"
+      }
+    },
+    {
+      "id": "trovatambormon",
+      "name": "Trovatambormon",
+      "class": "Bárbaro",
+      "rarity": "Raro",
+      "baseHp": 102,
+      "baseAtk": 24,
+      "baseDef": 16,
+      "baseSpd": 18,
+      "baseEne": 14,
+      "emoji": "🪓",
+      "evolvesTo": null,
+      "evolvesAt": null,
+      "familyId": "tambor",
+      "theme": "tambor tribal",
+      "starterLine": false,
+      "stage": "S2",
+      "stageLabel": "Estágio 2",
+      "stageIndex": 2,
+      "classes": [
+        "Bárbaro",
+        "Bardo"
+      ],
+      "secondaryClass": "Bardo",
+      "evolvesFrom": "rufamon",
+      "levelRange": {
+        "min": 30,
+        "max": 100
+      },
+      "habitats": [
+        "arenas ecoantes",
+        "campos de batalha antigos",
+        "cânions ressonantes"
+      ],
+      "range": "melee",
+      "roleTags": [
+        "bruiser",
+        "buffer"
+      ],
+      "rarityPowerMultiplier": 1.18,
+      "capture": {
+        "baseThreshold": 0.22,
+        "fleeBase": 0.09,
+        "recommendedOrbTier": "Raro"
+      },
+      "moves": [
+        "Batida Pesada",
+        "Grito de Guerra",
+        "Tempestade Rítmica"
+      ],
+      "lore": "Trovatambormon pertence à linha tambor tribal e atua principalmente como bárbaro.",
+      "artHints": {
+        "silhouetteTheme": "tambor tribal",
+        "assetKey": "trovatambormon.png"
+      }
+    },
+    {
+      "id": "corvimon",
+      "name": "Corvimon",
+      "class": "Ladino",
+      "rarity": "Comum",
+      "baseHp": 46,
+      "baseAtk": 15,
+      "baseDef": 8,
+      "baseSpd": 20,
+      "baseEne": 11,
+      "emoji": "🗡️",
+      "evolvesTo": "noxcorvomon",
+      "evolvesAt": 15,
+      "familyId": "corvo-sombra",
+      "theme": "corvo furtivo",
+      "starterLine": false,
+      "stage": "B0",
+      "stageLabel": "Básico",
+      "stageIndex": 0,
+      "classes": [
+        "Ladino"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": null,
+      "levelRange": {
+        "min": 1,
+        "max": 14
+      },
+      "habitats": [
+        "torres",
+        "trilhas noturnas",
+        "cemitérios antigos"
+      ],
+      "range": "melee",
+      "roleTags": [
+        "assassin"
+      ],
+      "rarityPowerMultiplier": 1.0,
+      "capture": {
+        "baseThreshold": 0.34,
+        "fleeBase": 0.13,
+        "recommendedOrbTier": "Comum"
+      },
+      "moves": [
+        "Bico Furtivo"
+      ],
+      "lore": "Corvimon pertence à linha corvo furtivo e atua principalmente como ladino.",
+      "artHints": {
+        "silhouetteTheme": "corvo furtivo",
+        "assetKey": "corvimon.png"
+      }
+    },
+    {
+      "id": "noxcorvomon",
+      "name": "Noxcorvomon",
+      "class": "Ladino",
+      "rarity": "Incomum",
+      "baseHp": 59,
+      "baseAtk": 19,
+      "baseDef": 10,
+      "baseSpd": 26,
+      "baseEne": 14,
+      "emoji": "🗡️",
+      "evolvesTo": "umbraquimonom",
+      "evolvesAt": 30,
+      "familyId": "corvo-sombra",
+      "theme": "corvo furtivo",
+      "starterLine": false,
+      "stage": "S1",
+      "stageLabel": "Estágio 1",
+      "stageIndex": 1,
+      "classes": [
+        "Ladino"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": "corvimon",
+      "levelRange": {
+        "min": 15,
+        "max": 29
+      },
+      "habitats": [
+        "torres",
+        "trilhas noturnas",
+        "cemitérios antigos"
+      ],
+      "range": "melee",
+      "roleTags": [
+        "assassin"
+      ],
+      "rarityPowerMultiplier": 1.08,
+      "capture": {
+        "baseThreshold": 0.26,
+        "fleeBase": 0.15,
+        "recommendedOrbTier": "Incomum"
+      },
+      "moves": [
+        "Bico Furtivo",
+        "Capa Sombria"
+      ],
+      "lore": "Noxcorvomon pertence à linha corvo furtivo e atua principalmente como ladino.",
+      "artHints": {
+        "silhouetteTheme": "corvo furtivo",
+        "assetKey": "noxcorvomon.png"
+      }
+    },
+    {
+      "id": "umbraquimonom",
+      "name": "Umbraquimonom",
+      "class": "Ladino",
+      "rarity": "Raro",
+      "baseHp": 76,
+      "baseAtk": 23,
+      "baseDef": 13,
+      "baseSpd": 29,
+      "baseEne": 19,
+      "emoji": "🗡️",
+      "evolvesTo": null,
+      "evolvesAt": null,
+      "familyId": "corvo-sombra",
+      "theme": "corvo furtivo",
+      "starterLine": false,
+      "stage": "S2",
+      "stageLabel": "Estágio 2",
+      "stageIndex": 2,
+      "classes": [
+        "Ladino",
+        "Mago"
+      ],
+      "secondaryClass": "Mago",
+      "evolvesFrom": "noxcorvomon",
+      "levelRange": {
+        "min": 30,
+        "max": 100
+      },
+      "habitats": [
+        "torres",
+        "trilhas noturnas",
+        "cemitérios antigos"
+      ],
+      "range": "melee",
+      "roleTags": [
+        "assassin",
+        "caster"
+      ],
+      "rarityPowerMultiplier": 1.18,
+      "capture": {
+        "baseThreshold": 0.16,
+        "fleeBase": 0.17,
+        "recommendedOrbTier": "Raro"
+      },
+      "moves": [
+        "Bico Furtivo",
+        "Capa Sombria",
+        "Assalto Crepuscular"
+      ],
+      "lore": "Umbraquimonom pertence à linha corvo furtivo e atua principalmente como ladino.",
+      "artHints": {
+        "silhouetteTheme": "corvo furtivo",
+        "assetKey": "umbraquimonom.png"
+      }
+    },
+    {
+      "id": "cervimon",
+      "name": "Cervimon",
+      "class": "Animalista",
+      "rarity": "Comum",
+      "baseHp": 58,
+      "baseAtk": 13,
+      "baseDef": 12,
+      "baseSpd": 13,
+      "baseEne": 11,
+      "emoji": "🐾",
+      "evolvesTo": "galhantemon",
+      "evolvesAt": 15,
+      "familyId": "cervo-bosque",
+      "theme": "cervo sagrado",
+      "starterLine": false,
+      "stage": "B0",
+      "stageLabel": "Básico",
+      "stageIndex": 0,
+      "classes": [
+        "Animalista"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": null,
+      "levelRange": {
+        "min": 1,
+        "max": 14
+      },
+      "habitats": [
+        "clareiras",
+        "pontes naturais",
+        "ruínas sagradas"
+      ],
+      "range": "melee",
+      "roleTags": [
+        "versatile"
+      ],
+      "rarityPowerMultiplier": 1.0,
+      "capture": {
+        "baseThreshold": 0.36,
+        "fleeBase": 0.09,
+        "recommendedOrbTier": "Comum"
+      },
+      "moves": [
+        "Chifre Novo"
+      ],
+      "lore": "Cervimon pertence à linha cervo sagrado e atua principalmente como animalista.",
+      "artHints": {
+        "silhouetteTheme": "cervo sagrado",
+        "assetKey": "cervimon.png"
+      }
+    },
+    {
+      "id": "galhantemon",
+      "name": "Galhantemon",
+      "class": "Animalista",
+      "rarity": "Incomum",
+      "baseHp": 74,
+      "baseAtk": 17,
+      "baseDef": 15,
+      "baseSpd": 17,
+      "baseEne": 14,
+      "emoji": "🐾",
+      "evolvesTo": "bosquidalmon",
+      "evolvesAt": 30,
+      "familyId": "cervo-bosque",
+      "theme": "cervo sagrado",
+      "starterLine": false,
+      "stage": "S1",
+      "stageLabel": "Estágio 1",
+      "stageIndex": 1,
+      "classes": [
+        "Animalista"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": "cervimon",
+      "levelRange": {
+        "min": 15,
+        "max": 29
+      },
+      "habitats": [
+        "clareiras",
+        "pontes naturais",
+        "ruínas sagradas"
+      ],
+      "range": "melee",
+      "roleTags": [
+        "versatile"
+      ],
+      "rarityPowerMultiplier": 1.08,
+      "capture": {
+        "baseThreshold": 0.28,
+        "fleeBase": 0.11,
+        "recommendedOrbTier": "Incomum"
+      },
+      "moves": [
+        "Chifre Novo",
+        "Galhada Veloz"
+      ],
+      "lore": "Galhantemon pertence à linha cervo sagrado e atua principalmente como animalista.",
+      "artHints": {
+        "silhouetteTheme": "cervo sagrado",
+        "assetKey": "galhantemon.png"
+      }
+    },
+    {
+      "id": "bosquidalmon",
+      "name": "Bosquidalmon",
+      "class": "Animalista",
+      "rarity": "Raro",
+      "baseHp": 92,
+      "baseAtk": 19,
+      "baseDef": 19,
+      "baseSpd": 19,
+      "baseEne": 19,
+      "emoji": "🐾",
+      "evolvesTo": null,
+      "evolvesAt": null,
+      "familyId": "cervo-bosque",
+      "theme": "cervo sagrado",
+      "starterLine": false,
+      "stage": "S2",
+      "stageLabel": "Estágio 2",
+      "stageIndex": 2,
+      "classes": [
+        "Animalista",
+        "Curandeiro"
+      ],
+      "secondaryClass": "Curandeiro",
+      "evolvesFrom": "galhantemon",
+      "levelRange": {
+        "min": 30,
+        "max": 100
+      },
+      "habitats": [
+        "clareiras",
+        "pontes naturais",
+        "ruínas sagradas"
+      ],
+      "range": "melee",
+      "roleTags": [
+        "versatile",
+        "support"
+      ],
+      "rarityPowerMultiplier": 1.18,
+      "capture": {
+        "baseThreshold": 0.18,
+        "fleeBase": 0.13,
+        "recommendedOrbTier": "Raro"
+      },
+      "moves": [
+        "Chifre Novo",
+        "Galhada Veloz",
+        "Raiz Restauradora"
+      ],
+      "lore": "Bosquidalmon pertence à linha cervo sagrado e atua principalmente como animalista.",
+      "artHints": {
+        "silhouetteTheme": "cervo sagrado",
+        "assetKey": "bosquidalmon.png"
+      }
+    },
+    {
+      "id": "coralimon",
+      "name": "Coralimon",
+      "class": "Mago",
+      "rarity": "Comum",
+      "baseHp": 48,
+      "baseAtk": 12,
+      "baseDef": 9,
+      "baseSpd": 12,
+      "baseEne": 17,
+      "emoji": "🔮",
+      "evolvesTo": "recifalmon",
+      "evolvesAt": 15,
+      "familyId": "coral-prisma",
+      "theme": "coral prismático",
+      "starterLine": false,
+      "stage": "B0",
+      "stageLabel": "Básico",
+      "stageIndex": 0,
+      "classes": [
+        "Mago"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": null,
+      "levelRange": {
+        "min": 1,
+        "max": 14
+      },
+      "habitats": [
+        "costas",
+        "cavernas de cristal",
+        "lagos abissais"
+      ],
+      "range": "mid",
+      "roleTags": [
+        "caster"
+      ],
+      "rarityPowerMultiplier": 1.0,
+      "capture": {
+        "baseThreshold": 0.33,
+        "fleeBase": 0.1,
+        "recommendedOrbTier": "Comum"
+      },
+      "moves": [
+        "Lasca Prismática"
+      ],
+      "lore": "Coralimon pertence à linha coral prismático e atua principalmente como mago.",
+      "artHints": {
+        "silhouetteTheme": "coral prismático",
+        "assetKey": "coralimon.png"
+      }
+    },
+    {
+      "id": "recifalmon",
+      "name": "Recifalmon",
+      "class": "Mago",
+      "rarity": "Incomum",
+      "baseHp": 61,
+      "baseAtk": 15,
+      "baseDef": 12,
+      "baseSpd": 15,
+      "baseEne": 20,
+      "emoji": "🔮",
+      "evolvesTo": "abissalquimon",
+      "evolvesAt": 30,
+      "familyId": "coral-prisma",
+      "theme": "coral prismático",
+      "starterLine": false,
+      "stage": "S1",
+      "stageLabel": "Estágio 1",
+      "stageIndex": 1,
+      "classes": [
+        "Mago"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": "coralimon",
+      "levelRange": {
+        "min": 15,
+        "max": 29
+      },
+      "habitats": [
+        "costas",
+        "cavernas de cristal",
+        "lagos abissais"
+      ],
+      "range": "mid",
+      "roleTags": [
+        "caster"
+      ],
+      "rarityPowerMultiplier": 1.08,
+      "capture": {
+        "baseThreshold": 0.25,
+        "fleeBase": 0.12,
+        "recommendedOrbTier": "Incomum"
+      },
+      "moves": [
+        "Lasca Prismática",
+        "Onda Prismática"
+      ],
+      "lore": "Recifalmon pertence à linha coral prismático e atua principalmente como mago.",
+      "artHints": {
+        "silhouetteTheme": "coral prismático",
+        "assetKey": "recifalmon.png"
+      }
+    },
+    {
+      "id": "abissalquimon",
+      "name": "Abissalquimon",
+      "class": "Mago",
+      "rarity": "Raro",
+      "baseHp": 81,
+      "baseAtk": 18,
+      "baseDef": 16,
+      "baseSpd": 18,
+      "baseEne": 26,
+      "emoji": "🔮",
+      "evolvesTo": null,
+      "evolvesAt": null,
+      "familyId": "coral-prisma",
+      "theme": "coral prismático",
+      "starterLine": false,
+      "stage": "S2",
+      "stageLabel": "Estágio 2",
+      "stageIndex": 2,
+      "classes": [
+        "Mago",
+        "Curandeiro"
+      ],
+      "secondaryClass": "Curandeiro",
+      "evolvesFrom": "recifalmon",
+      "levelRange": {
+        "min": 30,
+        "max": 100
+      },
+      "habitats": [
+        "costas",
+        "cavernas de cristal",
+        "lagos abissais"
+      ],
+      "range": "mid",
+      "roleTags": [
+        "caster",
+        "support"
+      ],
+      "rarityPowerMultiplier": 1.18,
+      "capture": {
+        "baseThreshold": 0.15,
+        "fleeBase": 0.14,
+        "recommendedOrbTier": "Raro"
+      },
+      "moves": [
+        "Lasca Prismática",
+        "Onda Prismática",
+        "Maré Etérea"
+      ],
+      "lore": "Abissalquimon pertence à linha coral prismático e atua principalmente como mago.",
+      "artHints": {
+        "silhouetteTheme": "coral prismático",
+        "assetKey": "abissalquimon.png"
+      }
+    },
+    {
+      "id": "pulimbon",
+      "name": "Pulimbon",
+      "class": "Caçador",
+      "rarity": "Comum",
+      "baseHp": 49,
+      "baseAtk": 16,
+      "baseDef": 9,
+      "baseSpd": 18,
+      "baseEne": 9,
+      "emoji": "🏹",
+      "evolvesTo": "flecharelmon",
+      "evolvesAt": 15,
+      "familyId": "coelho-preciso",
+      "theme": "coelho arqueiro",
+      "starterLine": false,
+      "stage": "B0",
+      "stageLabel": "Básico",
+      "stageIndex": 0,
+      "classes": [
+        "Caçador"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": null,
+      "levelRange": {
+        "min": 1,
+        "max": 14
+      },
+      "habitats": [
+        "pradarias",
+        "vilas",
+        "torres de relógio"
+      ],
+      "range": "long",
+      "roleTags": [
+        "ranged"
+      ],
+      "rarityPowerMultiplier": 1.0,
+      "capture": {
+        "baseThreshold": 0.35,
+        "fleeBase": 0.12,
+        "recommendedOrbTier": "Comum"
+      },
+      "moves": [
+        "Pulo de Estilingue"
+      ],
+      "lore": "Pulimbon pertence à linha coelho arqueiro e atua principalmente como caçador.",
+      "artHints": {
+        "silhouetteTheme": "coelho arqueiro",
+        "assetKey": "pulimbon.png"
+      }
+    },
+    {
+      "id": "flecharelmon",
+      "name": "Flecharelmon",
+      "class": "Caçador",
+      "rarity": "Incomum",
+      "baseHp": 63,
+      "baseAtk": 20,
+      "baseDef": 12,
+      "baseSpd": 23,
+      "baseEne": 11,
+      "emoji": "🏹",
+      "evolvesTo": "relampejomon",
+      "evolvesAt": 30,
+      "familyId": "coelho-preciso",
+      "theme": "coelho arqueiro",
+      "starterLine": false,
+      "stage": "S1",
+      "stageLabel": "Estágio 1",
+      "stageIndex": 1,
+      "classes": [
+        "Caçador"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": "pulimbon",
+      "levelRange": {
+        "min": 15,
+        "max": 29
+      },
+      "habitats": [
+        "pradarias",
+        "vilas",
+        "torres de relógio"
+      ],
+      "range": "long",
+      "roleTags": [
+        "ranged"
+      ],
+      "rarityPowerMultiplier": 1.08,
+      "capture": {
+        "baseThreshold": 0.27,
+        "fleeBase": 0.14,
+        "recommendedOrbTier": "Incomum"
+      },
+      "moves": [
+        "Pulo de Estilingue",
+        "Curva Precisa"
+      ],
+      "lore": "Flecharelmon pertence à linha coelho arqueiro e atua principalmente como caçador.",
+      "artHints": {
+        "silhouetteTheme": "coelho arqueiro",
+        "assetKey": "flecharelmon.png"
+      }
+    },
+    {
+      "id": "relampejomon",
+      "name": "Relampejomon",
+      "class": "Caçador",
+      "rarity": "Raro",
+      "baseHp": 79,
+      "baseAtk": 23,
+      "baseDef": 15,
+      "baseSpd": 29,
+      "baseEne": 17,
+      "emoji": "🏹",
+      "evolvesTo": null,
+      "evolvesAt": null,
+      "familyId": "coelho-preciso",
+      "theme": "coelho arqueiro",
+      "starterLine": false,
+      "stage": "S2",
+      "stageLabel": "Estágio 2",
+      "stageIndex": 2,
+      "classes": [
+        "Caçador",
+        "Bardo"
+      ],
+      "secondaryClass": "Bardo",
+      "evolvesFrom": "flecharelmon",
+      "levelRange": {
+        "min": 30,
+        "max": 100
+      },
+      "habitats": [
+        "pradarias",
+        "vilas",
+        "torres de relógio"
+      ],
+      "range": "long",
+      "roleTags": [
+        "ranged",
+        "buffer"
+      ],
+      "rarityPowerMultiplier": 1.18,
+      "capture": {
+        "baseThreshold": 0.17,
+        "fleeBase": 0.16,
+        "recommendedOrbTier": "Raro"
+      },
+      "moves": [
+        "Pulo de Estilingue",
+        "Curva Precisa",
+        "Cadência Veloz"
+      ],
+      "lore": "Relampejomon pertence à linha coelho arqueiro e atua principalmente como caçador.",
+      "artHints": {
+        "silhouetteTheme": "coelho arqueiro",
+        "assetKey": "relampejomon.png"
+      }
+    },
+    {
+      "id": "cascalhimon",
+      "name": "Cascalhimon",
+      "class": "Guerreiro",
+      "rarity": "Comum",
+      "baseHp": 62,
+      "baseAtk": 13,
+      "baseDef": 18,
+      "baseSpd": 8,
+      "baseEne": 7,
+      "emoji": "⚔️",
+      "evolvesTo": "muralhimon",
+      "evolvesAt": 15,
+      "familyId": "pedra-bastiao",
+      "theme": "pedra muralha",
+      "starterLine": false,
+      "stage": "B0",
+      "stageLabel": "Básico",
+      "stageIndex": 0,
+      "classes": [
+        "Guerreiro"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": null,
+      "levelRange": {
+        "min": 1,
+        "max": 14
+      },
+      "habitats": [
+        "montanhas",
+        "minas",
+        "muralhas quebradas"
+      ],
+      "range": "melee",
+      "roleTags": [
+        "tank"
+      ],
+      "rarityPowerMultiplier": 1.0,
+      "capture": {
+        "baseThreshold": 0.38,
+        "fleeBase": 0.06,
+        "recommendedOrbTier": "Comum"
+      },
+      "moves": [
+        "Pedrada Curta"
+      ],
+      "lore": "Cascalhimon pertence à linha pedra muralha e atua principalmente como guerreiro.",
+      "artHints": {
+        "silhouetteTheme": "pedra muralha",
+        "assetKey": "cascalhimon.png"
+      }
+    },
+    {
+      "id": "muralhimon",
+      "name": "Muralhimon",
+      "class": "Guerreiro",
+      "rarity": "Incomum",
+      "baseHp": 79,
+      "baseAtk": 17,
+      "baseDef": 23,
+      "baseSpd": 10,
+      "baseEne": 9,
+      "emoji": "⚔️",
+      "evolvesTo": "bastiaomon",
+      "evolvesAt": 30,
+      "familyId": "pedra-bastiao",
+      "theme": "pedra muralha",
+      "starterLine": false,
+      "stage": "S1",
+      "stageLabel": "Estágio 1",
+      "stageIndex": 1,
+      "classes": [
+        "Guerreiro"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": "cascalhimon",
+      "levelRange": {
+        "min": 15,
+        "max": 29
+      },
+      "habitats": [
+        "montanhas",
+        "minas",
+        "muralhas quebradas"
+      ],
+      "range": "melee",
+      "roleTags": [
+        "tank"
+      ],
+      "rarityPowerMultiplier": 1.08,
+      "capture": {
+        "baseThreshold": 0.3,
+        "fleeBase": 0.08,
+        "recommendedOrbTier": "Incomum"
+      },
+      "moves": [
+        "Pedrada Curta",
+        "Postura de Rocha"
+      ],
+      "lore": "Muralhimon pertence à linha pedra muralha e atua principalmente como guerreiro.",
+      "artHints": {
+        "silhouetteTheme": "pedra muralha",
+        "assetKey": "muralhimon.png"
+      }
+    },
+    {
+      "id": "bastiaomon",
+      "name": "Bastiaomon",
+      "class": "Guerreiro",
+      "rarity": "Raro",
+      "baseHp": 97,
+      "baseAtk": 19,
+      "baseDef": 26,
+      "baseSpd": 15,
+      "baseEne": 15,
+      "emoji": "⚔️",
+      "evolvesTo": null,
+      "evolvesAt": null,
+      "familyId": "pedra-bastiao",
+      "theme": "pedra muralha",
+      "starterLine": false,
+      "stage": "S2",
+      "stageLabel": "Estágio 2",
+      "stageIndex": 2,
+      "classes": [
+        "Guerreiro",
+        "Curandeiro"
+      ],
+      "secondaryClass": "Curandeiro",
+      "evolvesFrom": "muralhimon",
+      "levelRange": {
+        "min": 30,
+        "max": 100
+      },
+      "habitats": [
+        "montanhas",
+        "minas",
+        "muralhas quebradas"
+      ],
+      "range": "melee",
+      "roleTags": [
+        "tank",
+        "support"
+      ],
+      "rarityPowerMultiplier": 1.18,
+      "capture": {
+        "baseThreshold": 0.2,
+        "fleeBase": 0.1,
+        "recommendedOrbTier": "Raro"
+      },
+      "moves": [
+        "Pedrada Curta",
+        "Postura de Rocha",
+        "Bastião Vivo"
+      ],
+      "lore": "Bastiaomon pertence à linha pedra muralha e atua principalmente como guerreiro.",
+      "artHints": {
+        "silhouetteTheme": "pedra muralha",
+        "assetKey": "bastiaomon.png"
+      }
+    },
+    {
+      "id": "zunzumon",
+      "name": "Zunzumon",
+      "class": "Bardo",
+      "rarity": "Comum",
+      "baseHp": 50,
+      "baseAtk": 10,
+      "baseDef": 9,
+      "baseSpd": 17,
+      "baseEne": 15,
+      "emoji": "🎵",
+      "evolvesTo": "melodimon",
+      "evolvesAt": 15,
+      "familyId": "abelha-coro",
+      "theme": "abelha coral",
+      "starterLine": false,
+      "stage": "B0",
+      "stageLabel": "Básico",
+      "stageIndex": 0,
+      "classes": [
+        "Bardo"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": null,
+      "levelRange": {
+        "min": 1,
+        "max": 14
+      },
+      "habitats": [
+        "jardins altos",
+        "colmeias douradas",
+        "campos floridos"
+      ],
+      "range": "long",
+      "roleTags": [
+        "buffer"
+      ],
+      "rarityPowerMultiplier": 1.0,
+      "capture": {
+        "baseThreshold": 0.34,
+        "fleeBase": 0.1,
+        "recommendedOrbTier": "Comum"
+      },
+      "moves": [
+        "Zumzum Áureo"
+      ],
+      "lore": "Zunzumon pertence à linha abelha coral e atua principalmente como bardo.",
+      "artHints": {
+        "silhouetteTheme": "abelha coral",
+        "assetKey": "zunzumon.png"
+      }
+    },
+    {
+      "id": "melodimon",
+      "name": "Melodimon",
+      "class": "Bardo",
+      "rarity": "Incomum",
+      "baseHp": 64,
+      "baseAtk": 13,
+      "baseDef": 12,
+      "baseSpd": 22,
+      "baseEne": 18,
+      "emoji": "🎵",
+      "evolvesTo": "rainhassommon",
+      "evolvesAt": 30,
+      "familyId": "abelha-coro",
+      "theme": "abelha coral",
+      "starterLine": false,
+      "stage": "S1",
+      "stageLabel": "Estágio 1",
+      "stageIndex": 1,
+      "classes": [
+        "Bardo"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": "zunzumon",
+      "levelRange": {
+        "min": 15,
+        "max": 29
+      },
+      "habitats": [
+        "jardins altos",
+        "colmeias douradas",
+        "campos floridos"
+      ],
+      "range": "long",
+      "roleTags": [
+        "buffer"
+      ],
+      "rarityPowerMultiplier": 1.08,
+      "capture": {
+        "baseThreshold": 0.26,
+        "fleeBase": 0.12,
+        "recommendedOrbTier": "Incomum"
+      },
+      "moves": [
+        "Zumzum Áureo",
+        "Canção de Néctar"
+      ],
+      "lore": "Melodimon pertence à linha abelha coral e atua principalmente como bardo.",
+      "artHints": {
+        "silhouetteTheme": "abelha coral",
+        "assetKey": "melodimon.png"
+      }
+    },
+    {
+      "id": "rainhassommon",
+      "name": "Rainhassommon",
+      "class": "Bardo",
+      "rarity": "Raro",
+      "baseHp": 83,
+      "baseAtk": 15,
+      "baseDef": 16,
+      "baseSpd": 24,
+      "baseEne": 24,
+      "emoji": "🎵",
+      "evolvesTo": null,
+      "evolvesAt": null,
+      "familyId": "abelha-coro",
+      "theme": "abelha coral",
+      "starterLine": false,
+      "stage": "S2",
+      "stageLabel": "Estágio 2",
+      "stageIndex": 2,
+      "classes": [
+        "Bardo",
+        "Curandeiro"
+      ],
+      "secondaryClass": "Curandeiro",
+      "evolvesFrom": "melodimon",
+      "levelRange": {
+        "min": 30,
+        "max": 100
+      },
+      "habitats": [
+        "jardins altos",
+        "colmeias douradas",
+        "campos floridos"
+      ],
+      "range": "long",
+      "roleTags": [
+        "buffer",
+        "support"
+      ],
+      "rarityPowerMultiplier": 1.18,
+      "capture": {
+        "baseThreshold": 0.16,
+        "fleeBase": 0.14,
+        "recommendedOrbTier": "Raro"
+      },
+      "moves": [
+        "Zumzum Áureo",
+        "Canção de Néctar",
+        "Coro da Colmeia"
+      ],
+      "lore": "Rainhassommon pertence à linha abelha coral e atua principalmente como bardo.",
+      "artHints": {
+        "silhouetteTheme": "abelha coral",
+        "assetKey": "rainhassommon.png"
+      }
+    },
+    {
+      "id": "brotomon",
+      "name": "Brotomon",
+      "class": "Curandeiro",
+      "rarity": "Comum",
+      "baseHp": 54,
+      "baseAtk": 8,
+      "baseDef": 11,
+      "baseSpd": 10,
+      "baseEne": 18,
+      "emoji": "💚",
+      "evolvesTo": "cupulamon",
+      "evolvesAt": 15,
+      "familyId": "broto-sol",
+      "theme": "broto solar",
+      "starterLine": false,
+      "stage": "B0",
+      "stageLabel": "Básico",
+      "stageIndex": 0,
+      "classes": [
+        "Curandeiro"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": null,
+      "levelRange": {
+        "min": 1,
+        "max": 14
+      },
+      "habitats": [
+        "hortos",
+        "estufas",
+        "templos solares"
+      ],
+      "range": "mid",
+      "roleTags": [
+        "support"
+      ],
+      "rarityPowerMultiplier": 1.0,
+      "capture": {
+        "baseThreshold": 0.35,
+        "fleeBase": 0.07,
+        "recommendedOrbTier": "Comum"
+      },
+      "moves": [
+        "Folha Mansa"
+      ],
+      "lore": "Brotomon pertence à linha broto solar e atua principalmente como curandeiro.",
+      "artHints": {
+        "silhouetteTheme": "broto solar",
+        "assetKey": "brotomon.png"
+      }
+    },
+    {
+      "id": "cupulamon",
+      "name": "Cupulamon",
+      "class": "Curandeiro",
+      "rarity": "Incomum",
+      "baseHp": 69,
+      "baseAtk": 10,
+      "baseDef": 14,
+      "baseSpd": 13,
+      "baseEne": 23,
+      "emoji": "💚",
+      "evolvesTo": "solariamon",
+      "evolvesAt": 30,
+      "familyId": "broto-sol",
+      "theme": "broto solar",
+      "starterLine": false,
+      "stage": "S1",
+      "stageLabel": "Estágio 1",
+      "stageIndex": 1,
+      "classes": [
+        "Curandeiro"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": "brotomon",
+      "levelRange": {
+        "min": 15,
+        "max": 29
+      },
+      "habitats": [
+        "hortos",
+        "estufas",
+        "templos solares"
+      ],
+      "range": "mid",
+      "roleTags": [
+        "support"
+      ],
+      "rarityPowerMultiplier": 1.08,
+      "capture": {
+        "baseThreshold": 0.27,
+        "fleeBase": 0.09,
+        "recommendedOrbTier": "Incomum"
+      },
+      "moves": [
+        "Folha Mansa",
+        "Cúpula Viva"
+      ],
+      "lore": "Cupulamon pertence à linha broto solar e atua principalmente como curandeiro.",
+      "artHints": {
+        "silhouetteTheme": "broto solar",
+        "assetKey": "cupulamon.png"
+      }
+    },
+    {
+      "id": "solariamon",
+      "name": "Solariamon",
+      "class": "Curandeiro",
+      "rarity": "Raro",
+      "baseHp": 86,
+      "baseAtk": 15,
+      "baseDef": 16,
+      "baseSpd": 19,
+      "baseEne": 26,
+      "emoji": "💚",
+      "evolvesTo": null,
+      "evolvesAt": null,
+      "familyId": "broto-sol",
+      "theme": "broto solar",
+      "starterLine": false,
+      "stage": "S2",
+      "stageLabel": "Estágio 2",
+      "stageIndex": 2,
+      "classes": [
+        "Curandeiro",
+        "Bardo"
+      ],
+      "secondaryClass": "Bardo",
+      "evolvesFrom": "cupulamon",
+      "levelRange": {
+        "min": 30,
+        "max": 100
+      },
+      "habitats": [
+        "hortos",
+        "estufas",
+        "templos solares"
+      ],
+      "range": "mid",
+      "roleTags": [
+        "support",
+        "buffer"
+      ],
+      "rarityPowerMultiplier": 1.18,
+      "capture": {
+        "baseThreshold": 0.17,
+        "fleeBase": 0.11,
+        "recommendedOrbTier": "Raro"
+      },
+      "moves": [
+        "Folha Mansa",
+        "Cúpula Viva",
+        "Raio de Pólen"
+      ],
+      "lore": "Solariamon pertence à linha broto solar e atua principalmente como curandeiro.",
+      "artHints": {
+        "silhouetteTheme": "broto solar",
+        "assetKey": "solariamon.png"
+      }
+    },
+    {
+      "id": "brasamon",
+      "name": "Brasamon",
+      "class": "Bárbaro",
+      "rarity": "Comum",
+      "baseHp": 68,
+      "baseAtk": 17,
+      "baseDef": 11,
+      "baseSpd": 8,
+      "baseEne": 7,
+      "emoji": "🪓",
+      "evolvesTo": "tauroramon",
+      "evolvesAt": 15,
+      "familyId": "touro-ardor",
+      "theme": "touro ígneo",
+      "starterLine": false,
+      "stage": "B0",
+      "stageLabel": "Básico",
+      "stageIndex": 0,
+      "classes": [
+        "Bárbaro"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": null,
+      "levelRange": {
+        "min": 1,
+        "max": 14
+      },
+      "habitats": [
+        "campos vulcânicos",
+        "planícies secas",
+        "desfiladeiros"
+      ],
+      "range": "melee",
+      "roleTags": [
+        "bruiser"
+      ],
+      "rarityPowerMultiplier": 1.0,
+      "capture": {
+        "baseThreshold": 0.4,
+        "fleeBase": 0.05,
+        "recommendedOrbTier": "Comum"
+      },
+      "moves": [
+        "Chifrada Rubra"
+      ],
+      "lore": "Brasamon pertence à linha touro ígneo e atua principalmente como bárbaro.",
+      "artHints": {
+        "silhouetteTheme": "touro ígneo",
+        "assetKey": "brasamon.png"
+      }
+    },
+    {
+      "id": "tauroramon",
+      "name": "Tauroramon",
+      "class": "Bárbaro",
+      "rarity": "Incomum",
+      "baseHp": 87,
+      "baseAtk": 22,
+      "baseDef": 14,
+      "baseSpd": 10,
+      "baseEne": 9,
+      "emoji": "🪓",
+      "evolvesTo": "megacornomon",
+      "evolvesAt": 30,
+      "familyId": "touro-ardor",
+      "theme": "touro ígneo",
+      "starterLine": false,
+      "stage": "S1",
+      "stageLabel": "Estágio 1",
+      "stageIndex": 1,
+      "classes": [
+        "Bárbaro"
+      ],
+      "secondaryClass": null,
+      "evolvesFrom": "brasamon",
+      "levelRange": {
+        "min": 15,
+        "max": 29
+      },
+      "habitats": [
+        "campos vulcânicos",
+        "planícies secas",
+        "desfiladeiros"
+      ],
+      "range": "melee",
+      "roleTags": [
+        "bruiser"
+      ],
+      "rarityPowerMultiplier": 1.08,
+      "capture": {
+        "baseThreshold": 0.32,
+        "fleeBase": 0.07,
+        "recommendedOrbTier": "Incomum"
+      },
+      "moves": [
+        "Chifrada Rubra",
+        "Pisotear Vulcânico"
+      ],
+      "lore": "Tauroramon pertence à linha touro ígneo e atua principalmente como bárbaro.",
+      "artHints": {
+        "silhouetteTheme": "touro ígneo",
+        "assetKey": "tauroramon.png"
+      }
+    },
+    {
+      "id": "megacornomon",
+      "name": "Megacornomon",
+      "class": "Bárbaro",
+      "rarity": "Raro",
+      "baseHp": 107,
+      "baseAtk": 26,
+      "baseDef": 21,
+      "baseSpd": 13,
+      "baseEne": 11,
+      "emoji": "🪓",
+      "evolvesTo": null,
+      "evolvesAt": null,
+      "familyId": "touro-ardor",
+      "theme": "touro ígneo",
+      "starterLine": false,
+      "stage": "S2",
+      "stageLabel": "Estágio 2",
+      "stageIndex": 2,
+      "classes": [
+        "Bárbaro",
+        "Guerreiro"
+      ],
+      "secondaryClass": "Guerreiro",
+      "evolvesFrom": "tauroramon",
+      "levelRange": {
+        "min": 30,
+        "max": 100
+      },
+      "habitats": [
+        "campos vulcânicos",
+        "planícies secas",
+        "desfiladeiros"
+      ],
+      "range": "melee",
+      "roleTags": [
+        "bruiser",
+        "tank"
+      ],
+      "rarityPowerMultiplier": 1.18,
+      "capture": {
+        "baseThreshold": 0.22,
+        "fleeBase": 0.09,
+        "recommendedOrbTier": "Raro"
+      },
+      "moves": [
+        "Chifrada Rubra",
+        "Pisotear Vulcânico",
+        "Carga Titânica"
+      ],
+      "lore": "Megacornomon pertence à linha touro ígneo e atua principalmente como bárbaro.",
+      "artHints": {
+        "silhouetteTheme": "touro ígneo",
+        "assetKey": "megacornomon.png"
+      }
+    }
+  ]
+}

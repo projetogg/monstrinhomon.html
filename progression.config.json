@@ -1,0 +1,534 @@
+{
+  "version": "1.0.0",
+  "maxLevel": 100,
+  "starterEvolutionLevels": [
+    12,
+    25,
+    45
+  ],
+  "standardEvolutionLevels": [
+    15,
+    30
+  ],
+  "stageConfig": {
+    "B0": {
+      "label": "Básico",
+      "index": 0,
+      "mult": 1.0,
+      "rarity": "Comum"
+    },
+    "S1": {
+      "label": "Estágio 1",
+      "index": 1,
+      "mult": 1.28,
+      "rarity": "Incomum"
+    },
+    "S2": {
+      "label": "Estágio 2",
+      "index": 2,
+      "mult": 1.62,
+      "rarity": "Raro"
+    },
+    "S3": {
+      "label": "Estágio 3",
+      "index": 3,
+      "mult": 2.02,
+      "rarity": "Místico"
+    }
+  },
+  "rarityPower": {
+    "Comum": 1.0,
+    "Incomum": 1.08,
+    "Raro": 1.18,
+    "Místico": 1.32,
+    "Lendário": 1.5
+  },
+  "xpCurve": [
+    {
+      "level": 1,
+      "xpToNext": 37
+    },
+    {
+      "level": 2,
+      "xpToNext": 47
+    },
+    {
+      "level": 3,
+      "xpToNext": 59
+    },
+    {
+      "level": 4,
+      "xpToNext": 73
+    },
+    {
+      "level": 5,
+      "xpToNext": 88
+    },
+    {
+      "level": 6,
+      "xpToNext": 106
+    },
+    {
+      "level": 7,
+      "xpToNext": 124
+    },
+    {
+      "level": 8,
+      "xpToNext": 144
+    },
+    {
+      "level": 9,
+      "xpToNext": 166
+    },
+    {
+      "level": 10,
+      "xpToNext": 190
+    },
+    {
+      "level": 11,
+      "xpToNext": 215
+    },
+    {
+      "level": 12,
+      "xpToNext": 242
+    },
+    {
+      "level": 13,
+      "xpToNext": 271
+    },
+    {
+      "level": 14,
+      "xpToNext": 301
+    },
+    {
+      "level": 15,
+      "xpToNext": 332
+    },
+    {
+      "level": 16,
+      "xpToNext": 366
+    },
+    {
+      "level": 17,
+      "xpToNext": 401
+    },
+    {
+      "level": 18,
+      "xpToNext": 438
+    },
+    {
+      "level": 19,
+      "xpToNext": 476
+    },
+    {
+      "level": 20,
+      "xpToNext": 516
+    },
+    {
+      "level": 21,
+      "xpToNext": 558
+    },
+    {
+      "level": 22,
+      "xpToNext": 601
+    },
+    {
+      "level": 23,
+      "xpToNext": 646
+    },
+    {
+      "level": 24,
+      "xpToNext": 692
+    },
+    {
+      "level": 25,
+      "xpToNext": 740
+    },
+    {
+      "level": 26,
+      "xpToNext": 790
+    },
+    {
+      "level": 27,
+      "xpToNext": 842
+    },
+    {
+      "level": 28,
+      "xpToNext": 895
+    },
+    {
+      "level": 29,
+      "xpToNext": 950
+    },
+    {
+      "level": 30,
+      "xpToNext": 1006
+    },
+    {
+      "level": 31,
+      "xpToNext": 1064
+    },
+    {
+      "level": 32,
+      "xpToNext": 1124
+    },
+    {
+      "level": 33,
+      "xpToNext": 1185
+    },
+    {
+      "level": 34,
+      "xpToNext": 1248
+    },
+    {
+      "level": 35,
+      "xpToNext": 1312
+    },
+    {
+      "level": 36,
+      "xpToNext": 1379
+    },
+    {
+      "level": 37,
+      "xpToNext": 1447
+    },
+    {
+      "level": 38,
+      "xpToNext": 1516
+    },
+    {
+      "level": 39,
+      "xpToNext": 1587
+    },
+    {
+      "level": 40,
+      "xpToNext": 1660
+    },
+    {
+      "level": 41,
+      "xpToNext": 1734
+    },
+    {
+      "level": 42,
+      "xpToNext": 1810
+    },
+    {
+      "level": 43,
+      "xpToNext": 1888
+    },
+    {
+      "level": 44,
+      "xpToNext": 1968
+    },
+    {
+      "level": 45,
+      "xpToNext": 2048
+    },
+    {
+      "level": 46,
+      "xpToNext": 2131
+    },
+    {
+      "level": 47,
+      "xpToNext": 2215
+    },
+    {
+      "level": 48,
+      "xpToNext": 2301
+    },
+    {
+      "level": 49,
+      "xpToNext": 2389
+    },
+    {
+      "level": 50,
+      "xpToNext": 2478
+    },
+    {
+      "level": 51,
+      "xpToNext": 2569
+    },
+    {
+      "level": 52,
+      "xpToNext": 2661
+    },
+    {
+      "level": 53,
+      "xpToNext": 2755
+    },
+    {
+      "level": 54,
+      "xpToNext": 2851
+    },
+    {
+      "level": 55,
+      "xpToNext": 2948
+    },
+    {
+      "level": 56,
+      "xpToNext": 3048
+    },
+    {
+      "level": 57,
+      "xpToNext": 3148
+    },
+    {
+      "level": 58,
+      "xpToNext": 3250
+    },
+    {
+      "level": 59,
+      "xpToNext": 3354
+    },
+    {
+      "level": 60,
+      "xpToNext": 3460
+    },
+    {
+      "level": 61,
+      "xpToNext": 3567
+    },
+    {
+      "level": 62,
+      "xpToNext": 3676
+    },
+    {
+      "level": 63,
+      "xpToNext": 3787
+    },
+    {
+      "level": 64,
+      "xpToNext": 3899
+    },
+    {
+      "level": 65,
+      "xpToNext": 4012
+    },
+    {
+      "level": 66,
+      "xpToNext": 4128
+    },
+    {
+      "level": 67,
+      "xpToNext": 4245
+    },
+    {
+      "level": 68,
+      "xpToNext": 4364
+    },
+    {
+      "level": 69,
+      "xpToNext": 4484
+    },
+    {
+      "level": 70,
+      "xpToNext": 4606
+    },
+    {
+      "level": 71,
+      "xpToNext": 4730
+    },
+    {
+      "level": 72,
+      "xpToNext": 4855
+    },
+    {
+      "level": 73,
+      "xpToNext": 4982
+    },
+    {
+      "level": 74,
+      "xpToNext": 5110
+    },
+    {
+      "level": 75,
+      "xpToNext": 5240
+    },
+    {
+      "level": 76,
+      "xpToNext": 5372
+    },
+    {
+      "level": 77,
+      "xpToNext": 5506
+    },
+    {
+      "level": 78,
+      "xpToNext": 5641
+    },
+    {
+      "level": 79,
+      "xpToNext": 5778
+    },
+    {
+      "level": 80,
+      "xpToNext": 5916
+    },
+    {
+      "level": 81,
+      "xpToNext": 6056
+    },
+    {
+      "level": 82,
+      "xpToNext": 6198
+    },
+    {
+      "level": 83,
+      "xpToNext": 6341
+    },
+    {
+      "level": 84,
+      "xpToNext": 6486
+    },
+    {
+      "level": 85,
+      "xpToNext": 6632
+    },
+    {
+      "level": 86,
+      "xpToNext": 6781
+    },
+    {
+      "level": 87,
+      "xpToNext": 6931
+    },
+    {
+      "level": 88,
+      "xpToNext": 7082
+    },
+    {
+      "level": 89,
+      "xpToNext": 7235
+    },
+    {
+      "level": 90,
+      "xpToNext": 7390
+    },
+    {
+      "level": 91,
+      "xpToNext": 7546
+    },
+    {
+      "level": 92,
+      "xpToNext": 7704
+    },
+    {
+      "level": 93,
+      "xpToNext": 7864
+    },
+    {
+      "level": 94,
+      "xpToNext": 8026
+    },
+    {
+      "level": 95,
+      "xpToNext": 8188
+    },
+    {
+      "level": 96,
+      "xpToNext": 8353
+    },
+    {
+      "level": 97,
+      "xpToNext": 8519
+    },
+    {
+      "level": 98,
+      "xpToNext": 8687
+    },
+    {
+      "level": 99,
+      "xpToNext": 8857
+    }
+  ],
+  "classProfiles": {
+    "Guerreiro": {
+      "role": "tank",
+      "range": "melee",
+      "base": {
+        "hp": 62,
+        "atk": 13,
+        "def": 18,
+        "spd": 8,
+        "ene": 8
+      }
+    },
+    "Mago": {
+      "role": "caster",
+      "range": "mid",
+      "base": {
+        "hp": 48,
+        "atk": 12,
+        "def": 9,
+        "spd": 12,
+        "ene": 18
+      }
+    },
+    "Curandeiro": {
+      "role": "support",
+      "range": "mid",
+      "base": {
+        "hp": 54,
+        "atk": 8,
+        "def": 11,
+        "spd": 10,
+        "ene": 20
+      }
+    },
+    "Bárbaro": {
+      "role": "bruiser",
+      "range": "melee",
+      "base": {
+        "hp": 68,
+        "atk": 17,
+        "def": 11,
+        "spd": 8,
+        "ene": 8
+      }
+    },
+    "Ladino": {
+      "role": "assassin",
+      "range": "melee",
+      "base": {
+        "hp": 46,
+        "atk": 15,
+        "def": 8,
+        "spd": 20,
+        "ene": 12
+      }
+    },
+    "Bardo": {
+      "role": "buffer",
+      "range": "long",
+      "base": {
+        "hp": 50,
+        "atk": 10,
+        "def": 9,
+        "spd": 17,
+        "ene": 16
+      }
+    },
+    "Caçador": {
+      "role": "ranged",
+      "range": "long",
+      "base": {
+        "hp": 49,
+        "atk": 16,
+        "def": 9,
+        "spd": 18,
+        "ene": 10
+      }
+    },
+    "Animalista": {
+      "role": "versatile",
+      "range": "melee",
+      "base": {
+        "hp": 58,
+        "atk": 13,
+        "def": 12,
+        "spd": 13,
+        "ene": 12
+      }
+    }
+  }
+}

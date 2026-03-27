@@ -93,7 +93,7 @@ export async function loadItems() {
  * @param {object} item - Item a validar
  * @returns {boolean} true se válido
  */
-function validateItem(item) {
+export function validateItem(item) {
     if (!item || typeof item !== 'object') return false;
     
     // Campos obrigatórios para todos os itens
@@ -116,6 +116,13 @@ function validateItem(item) {
         );
         if (!hasHatchEffect) return false;
         
+        return true;
+    }
+
+    // Validação para itens de cura consumíveis (heal)
+    if (item.type === 'heal') {
+        if (typeof item.heal_pct !== 'number' || item.heal_pct < 0 || item.heal_pct > 1) return false;
+        if (typeof item.heal_min !== 'number' || item.heal_min < 0) return false;
         return true;
     }
     
