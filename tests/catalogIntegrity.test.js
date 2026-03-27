@@ -289,7 +289,7 @@ describe('Distribuição de Classes e Raridades', () => {
         expect(raritiesPresent.size).toBeGreaterThanOrEqual(3);
     });
 
-    it('classe Comum deve ser a mais frequente', () => {
+    it('raridade Comum deve ser a mais frequente', () => {
         const rarityCount = {};
         for (const m of monsters) {
             rarityCount[m.rarity] = (rarityCount[m.rarity] || 0) + 1;
