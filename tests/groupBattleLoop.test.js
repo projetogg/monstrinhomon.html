@@ -581,3 +581,103 @@ describe('Funções Utilitárias', () => {
         expect(info.actor).toBeDefined();
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BUG FIX: startGroupBattle deve usar activeIndex, não team[0]
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('startGroupBattle – usa activeIndex (BUG FIX padrões herdados)', () => {
+
+    it('deve validar o monstro ATIVO (activeIndex=1), não team[0]', () => {
+        // team[0] está morto; o ativo é team[1]
+        const playersData = [{
+            id: 'p1',
+            name: 'Ana',
+            activeIndex: 1,
+            team: [
+                { uid: 'dead', name: 'Morto', hp: 0, hpMax: 50, spd: 5, atk: 5, def: 5, class: 'Mago', level: 1 },
+                { uid: 'alive', name: 'Vivo', hp: 40, hpMax: 50, spd: 8, atk: 6, def: 4, class: 'Mago', level: 3 }
+            ]
+        }];
+
+        // Não deve lançar — team[1] está vivo
+        expect(() => startGroupBattle({
+            selectedPlayerIds: ['p1'],
+            kind: 'trainer',
+            eligiblePlayerIds: ['p1'],
+            playersData,
+            options: { enemyLevel: 1 },
+            rollD20Fn: () => 10
+        })).not.toThrow();
+    });
+
+    it('deve rejeitar quando monstro ATIVO (activeIndex=1) está desmaiado, mesmo que team[0] esteja vivo', () => {
+        // team[0] vivo; team[1] (ativo) morto
+        const playersData = [{
+            id: 'p1',
+            name: 'Ana',
+            activeIndex: 1,
+            team: [
+                { uid: 'alive', name: 'Vivo',  hp: 40, hpMax: 50, spd: 8, atk: 6, def: 4, class: 'Mago', level: 3 },
+                { uid: 'dead',  name: 'Morto', hp: 0,  hpMax: 50, spd: 5, atk: 5, def: 5, class: 'Mago', level: 1 }
+            ]
+        }];
+
+        // Deve lançar — o monstro ATIVO (index 1) está morto
+        expect(() => startGroupBattle({
+            selectedPlayerIds: ['p1'],
+            kind: 'trainer',
+            eligiblePlayerIds: ['p1'],
+            playersData,
+            options: { enemyLevel: 1 },
+            rollD20Fn: () => 10
+        })).toThrow('está desmaiado');
+    });
+
+    it('deve preencher teams.players com o monstro ATIVO (activeIndex=1), não team[0]', () => {
+        const playersData = [{
+            id: 'p1',
+            name: 'Ana',
+            activeIndex: 1,
+            team: [
+                { uid: 'dead',  name: 'Morto', hp: 0,  hpMax: 50, spd: 5, atk: 5, def: 5, class: 'Mago', level: 1 },
+                { uid: 'alive', name: 'Vivo',  hp: 40, hpMax: 50, spd: 8, atk: 6, def: 4, class: 'Mago', level: 3 }
+            ]
+        }];
+
+        const state = startGroupBattle({
+            selectedPlayerIds: ['p1'],
+            kind: 'trainer',
+            eligiblePlayerIds: ['p1'],
+            playersData,
+            options: { enemyLevel: 1 },
+            rollD20Fn: () => 10
+        });
+
+        // activeMonster deve ser o team[1] (Vivo), não team[0] (Morto)
+        expect(state.teams.players[0].activeMonster.name).toBe('Vivo');
+        expect(state.teams.players[0].activeMonster.hp).toBe(40);
+    });
+
+    it('usa team[0] quando activeIndex não está definido (fallback seguro)', () => {
+        // Jogador sem activeIndex
+        const playersData = [{
+            id: 'p1',
+            name: 'Ana',
+            team: [
+                { uid: 'm1', name: 'PrimeiraMon', hp: 45, hpMax: 50, spd: 7, atk: 5, def: 5, class: 'Guerreiro', level: 2 }
+            ]
+        }];
+
+        const state = startGroupBattle({
+            selectedPlayerIds: ['p1'],
+            kind: 'trainer',
+            eligiblePlayerIds: ['p1'],
+            playersData,
+            options: { enemyLevel: 1 },
+            rollD20Fn: () => 10
+        });
+
+        expect(state.teams.players[0].activeMonster.name).toBe('PrimeiraMon');
+    });
+});
