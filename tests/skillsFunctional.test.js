@@ -266,6 +266,68 @@ describe('Skills JSON — Carregamento via SkillsLoader', () => {
     });
 });
 
+describe('Skills JSON — Deprecation e Alinhamento com SKILL_DEFS', () => {
+
+    const data = loadSkillsJsonRaw();
+    const skillMap = new Map(data.skills.map(s => [s.id, s]));
+
+    // Skills piloto que foram substituídas por versões canônicas do SKILL_DEFS
+    const deprecatedPairs = [
+        { old: 'GOLPE_ESPADA_I', canonical: 'GOLPE_DE_ESPADA_I' },
+        { old: 'GOLPE_ESPADA_II', canonical: 'GOLPE_DE_ESPADA_II' },
+        { old: 'GOLPE_ESPADA_III', canonical: 'GOLPE_DE_ESPADA_III' },
+        { old: 'BOLA_FOGO_I', canonical: 'MAGIA_ELEMENTAL_I' },
+        { old: 'BOLA_FOGO_II', canonical: 'MAGIA_ELEMENTAL_II' },
+        { old: 'BOLA_FOGO_III', canonical: 'MAGIA_ELEMENTAL_III' },
+    ];
+
+    for (const { old, canonical } of deprecatedPairs) {
+        it(`${old} deve estar marcada como deprecated com replacedBy=${canonical}`, () => {
+            const skill = skillMap.get(old);
+            expect(skill, `${old} deveria existir`).toBeDefined();
+            expect(skill.deprecated).toBe(true);
+            expect(skill.replacedBy).toBe(canonical);
+        });
+
+        it(`versão canônica ${canonical} deve existir e NÃO ser deprecated`, () => {
+            const skill = skillMap.get(canonical);
+            expect(skill, `${canonical} deveria existir`).toBeDefined();
+            expect(skill.deprecated).toBeFalsy();
+        });
+    }
+
+    it('ESCUDO_I/II/III energy_cost devem alinhar com SKILL_DEFS (4/6/8)', () => {
+        expect(skillMap.get('ESCUDO_I').energy_cost).toBe(4);
+        expect(skillMap.get('ESCUDO_II').energy_cost).toBe(6);
+        expect(skillMap.get('ESCUDO_III').energy_cost).toBe(8);
+    });
+
+    it('skills canônicas de Guerreiro devem ter power alinhado com SKILL_DEFS', () => {
+        // SKILL_DEFS: Golpe de Espada I/II/III → power 18/24/30
+        expect(skillMap.get('GOLPE_DE_ESPADA_I').power).toBe(18);
+        expect(skillMap.get('GOLPE_DE_ESPADA_II').power).toBe(24);
+        expect(skillMap.get('GOLPE_DE_ESPADA_III').power).toBe(30);
+    });
+
+    it('skills canônicas de Mago devem ter power alinhado com SKILL_DEFS', () => {
+        // SKILL_DEFS: Magia Elemental I/II/III → power 20/26/32
+        expect(skillMap.get('MAGIA_ELEMENTAL_I').power).toBe(20);
+        expect(skillMap.get('MAGIA_ELEMENTAL_II').power).toBe(26);
+        expect(skillMap.get('MAGIA_ELEMENTAL_III').power).toBe(32);
+        // SKILL_DEFS: Explosão Elemental I/II/III → power 24/32/38
+        expect(skillMap.get('EXPLOSAO_ELEMENTAL_I').power).toBe(24);
+        expect(skillMap.get('EXPLOSAO_ELEMENTAL_II').power).toBe(32);
+        expect(skillMap.get('EXPLOSAO_ELEMENTAL_III').power).toBe(38);
+    });
+
+    it('skills canônicas de Bárbaro devem ter power alinhado com SKILL_DEFS', () => {
+        // SKILL_DEFS: Golpe Brutal I/II/III → power 24/32/38
+        expect(skillMap.get('GOLPE_BRUTAL_I').power).toBe(24);
+        expect(skillMap.get('GOLPE_BRUTAL_II').power).toBe(32);
+        expect(skillMap.get('GOLPE_BRUTAL_III').power).toBe(38);
+    });
+});
+
 describe('Skills JSON — Distribuição por Categoria', () => {
 
     const data = loadSkillsJsonRaw();

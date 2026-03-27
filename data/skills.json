@@ -23,7 +23,7 @@
       "category": "Suporte",
       "power": 0,
       "accuracy": 1,
-      "energy_cost": 5,
+      "energy_cost": 6,
       "target": "Self",
       "status": "Protegido",
       "desc": "Defesa aprimorada.",
@@ -36,7 +36,7 @@
       "category": "Suporte",
       "power": 0,
       "accuracy": 1,
-      "energy_cost": 6,
+      "energy_cost": 8,
       "target": "Self",
       "status": "Protegido",
       "desc": "Defesa mestre.",
@@ -92,7 +92,9 @@
       "target": "Inimigo",
       "status": "",
       "desc": "Ataque de espada básico.",
-      "tier": 1
+      "tier": 1,
+      "deprecated": true,
+      "replacedBy": "GOLPE_DE_ESPADA_I"
     },
     {
       "id": "GOLPE_ESPADA_II",
@@ -105,7 +107,9 @@
       "target": "Inimigo",
       "status": "",
       "desc": "Ataque de espada aprimorado.",
-      "tier": 2
+      "tier": 2,
+      "deprecated": true,
+      "replacedBy": "GOLPE_DE_ESPADA_II"
     },
     {
       "id": "GOLPE_ESPADA_III",
@@ -118,7 +122,9 @@
       "target": "Inimigo",
       "status": "",
       "desc": "Ataque de espada mestre.",
-      "tier": 3
+      "tier": 3,
+      "deprecated": true,
+      "replacedBy": "GOLPE_DE_ESPADA_III"
     },
     {
       "id": "PROVOCAR_I",
@@ -287,7 +293,9 @@
       "target": "Inimigo",
       "status": "",
       "desc": "Ataque de fogo básico.",
-      "tier": 1
+      "tier": 1,
+      "deprecated": true,
+      "replacedBy": "MAGIA_ELEMENTAL_I"
     },
     {
       "id": "BOLA_FOGO_II",
@@ -300,7 +308,9 @@
       "target": "Inimigo",
       "status": "",
       "desc": "Ataque de fogo aprimorado.",
-      "tier": 2
+      "tier": 2,
+      "deprecated": true,
+      "replacedBy": "MAGIA_ELEMENTAL_II"
     },
     {
       "id": "BOLA_FOGO_III",
@@ -313,7 +323,9 @@
       "target": "Inimigo",
       "status": "",
       "desc": "Ataque de fogo mestre.",
-      "tier": 3
+      "tier": 3,
+      "deprecated": true,
+      "replacedBy": "MAGIA_ELEMENTAL_III"
     },
     {
       "id": "EXPLOSAO_ELEMENTAL_I",
