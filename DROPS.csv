@@ -1,5 +1,29 @@
 drop_table_id,item_id,chance,min_qty,max_qty,notes
-DROP_001,IT_CAP_01,0.35,1,1,Orbe comum em encontro selvagem.
-DROP_001,IT_HEAL_01,0.25,1,2,Petisco de cura.
-DROP_002,IT_CAP_01,0.5,1,2,Treinador dá itens básicos.
-DROP_002,IT_HEAL_01,0.4,1,2,Cura para continuar.
+DROP_001,CLASTERORB_COMUM,0.35,1,1,Orbe comum em encontro selvagem básico.
+DROP_001,IT_HEAL_01,0.25,1,2,Petisco de cura básico.
+DROP_002,CLASTERORB_COMUM,0.50,1,2,Treinador básico dá orbes comuns.
+DROP_002,IT_HEAL_01,0.40,1,2,Cura para continuar.
+DROP_003,CLASTERORB_INCOMUM,0.80,1,1,Boss garante orbe incomum com alta chance.
+DROP_003,IT_HEAL_02,0.60,1,2,Ração revigorante do boss.
+DROP_003,IT_HEAL_03,0.25,1,1,Elixir máximo raro do boss.
+DROP_003,EGG_U,0.10,1,1,Ovo Incomum ocasional de boss.
+DROP_004,CLASTERORB_COMUM,0.30,1,1,Orbe comum em bioma intermediário.
+DROP_004,IT_HEAL_01,0.20,1,2,Cura básica em bioma intermediário.
+DROP_004,IT_HEAL_02,0.10,1,1,Cura melhorada ocasional.
+DROP_004,EGG_C,0.05,1,1,Ovo Comum raro em selvagem intermediário.
+DROP_005,CLASTERORB_INCOMUM,0.25,1,1,Orbe incomum em bioma avançado.
+DROP_005,IT_HEAL_02,0.20,1,2,Cura melhorada em bioma avançado.
+DROP_005,IT_HEAL_03,0.08,1,1,Elixir máximo raro em selvagem avançado.
+DROP_005,EGG_C,0.08,1,1,Ovo Comum em selvagem avançado.
+DROP_006,CLASTERORB_INCOMUM,0.30,1,1,Orbe incomum em bioma elite (arena).
+DROP_006,IT_HEAL_02,0.25,1,2,Cura melhorada em arena.
+DROP_006,IT_HEAL_03,0.12,1,1,Elixir máximo em arena.
+DROP_006,EGG_U,0.05,1,1,Ovo Incomum raro em selvagem elite.
+DROP_007,CLASTERORB_COMUM,0.45,1,2,Treinador intermediário dá orbes com mais frequência.
+DROP_007,IT_HEAL_01,0.35,1,2,Cura básica de treinador intermediário.
+DROP_007,IT_HEAL_02,0.20,1,1,Cura melhorada de treinador.
+DROP_007,EGG_C,0.10,1,1,Ovo Comum de treinador intermediário.
+DROP_008,CLASTERORB_INCOMUM,0.40,1,1,Treinador avançado dá orbe incomum.
+DROP_008,IT_HEAL_02,0.35,1,2,Cura melhorada de treinador avançado.
+DROP_008,IT_HEAL_03,0.15,1,1,Elixir máximo de treinador avançado.
+DROP_008,EGG_U,0.08,1,1,Ovo Incomum de treinador avançado.

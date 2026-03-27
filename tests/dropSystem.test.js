@@ -380,13 +380,13 @@ describe('getDropTableForEncounter - Mapeamento Tipo → Tabela', () => {
         expect(getDropTableForEncounter('trainer')).toBe('DROP_002');
     });
 
-    it('deve retornar DROP_002 para boss', () => {
-        expect(getDropTableForEncounter('boss')).toBe('DROP_002');
+    it('deve retornar DROP_003 para boss', () => {
+        expect(getDropTableForEncounter('boss')).toBe('DROP_003');
     });
 
     it('deve ser case-insensitive', () => {
         expect(getDropTableForEncounter('WILD')).toBe('DROP_001');
-        expect(getDropTableForEncounter('Boss')).toBe('DROP_002');
+        expect(getDropTableForEncounter('Boss')).toBe('DROP_003');
     });
 
     it('deve retornar null para tipo desconhecido', () => {
