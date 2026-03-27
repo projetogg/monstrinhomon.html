@@ -1,2 +1,9 @@
 local_id,nome,descricao,nivel_recomendado,notes
 LOC_001,Campina Inicial,Área segura para aprender captura e batalha.,1-4,Local tutorial.
+LOC_002,Floresta Verde,Floresta densa com fauna variada. Sons de pássaros e riachos entre as árvores.,3-10,Animais selvagens e curandeiros da natureza.
+LOC_003,Minas e Cavernas,Cavernas escuras repletas de minerais e monstros de pedra e metal.,6-15,Guerreiros de pedra e ferro dominam as profundezas.
+LOC_004,Ruínas Antigas,Estruturas em ruínas de civilizações passadas habitadas por monstros arcanos e sombrios.,10-20,Ladinos e Magos dominam as ruínas.
+LOC_005,Costa e Lagos,Praias e lagos cristalinos habitados por criaturas aquáticas e mágicas.,8-18,Magos da água e Caçadores ágeis.
+LOC_006,Zona Vulcânica,Terreno hostil de lavas e rochas incandescentes. Apenas os mais fortes sobrevivem.,15-28,Magos de fogo e Bárbaros explosivos.
+LOC_007,Floresta Noturna,Floresta densa encoberta por escuridão permanente. Criaturas furtivas espreitam nas sombras.,12-25,Ladinos e Caçadores furtivos dominam a noite.
+LOC_008,Arena dos Conflitos,Zona de batalhas intensas onde monstros poderosos treinam e competem.,20-35,Formas evoluídas Incomuns e Raras.
