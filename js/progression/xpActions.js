@@ -132,10 +132,12 @@ export function handleVictoryRewards(deps, enc) {
                    enc.participants?.length > 0;
     
     if (isGroup) {
-        // Grupo: cada participante vivo recebe XP completo
+        // Grupo: cada participante vivo recebe XP completo no monstro ATIVO
         for (const pid of (enc.participants || [])) {
             const p = deps.state.players.find(x => x.id === pid);
-            const mon = p?.team?.[0];
+            // BUG FIX: usar monstro ativo (activeIndex), não sempre team[0]
+            const activeIdx = typeof p?.activeIndex === 'number' ? p.activeIndex : 0;
+            const mon = p?.team?.[activeIdx];
             if (!mon || (Number(mon.hp) || 0) <= 0) continue;
             giveXP(deps, mon, xp, enc.log);
         }
@@ -149,7 +151,9 @@ export function handleVictoryRewards(deps, enc) {
         }
         if (!player) player = deps.state.players?.[0] || null;
         
-        const mon = player?.team?.[0];
+        // BUG FIX: usar monstro ativo (activeIndex), não sempre team[0]
+        const activeIdx = typeof player?.activeIndex === 'number' ? player.activeIndex : 0;
+        const mon = player?.team?.[activeIdx];
         if (mon && (Number(mon.hp) || 0) > 0) {
             giveXP(deps, mon, xp, enc.log);
         }

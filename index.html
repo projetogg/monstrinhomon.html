@@ -5568,6 +5568,8 @@
          * Chamado pelo botão "Continuar" do painel de resultado.
          */
         function closeBattleResult() {
+            // Guard: previne double-click / double-exec (encounter já foi limpo)
+            if (!GameState.currentEncounter) return;
             GameState.currentEncounter = null;
             saveToLocalStorage();
             renderEncounter();
@@ -6005,7 +6007,9 @@
                     // Feature 4.4: Capture fail sound
                     Audio.playSfx("capture_fail");
                     
-                    const playerMonster = player.team?.[0];
+                    // BUG FIX: usar monstro ativo (activeIndex), não sempre team[0]
+                    const captureActiveIdx = typeof player.activeIndex === 'number' ? player.activeIndex : 0;
+                    const playerMonster = player.team?.[captureActiveIdx];
                     if (playerMonster && playerMonster.hp > 0) {
                         encounter.log.push(`⚡ ${monster.name} contra-ataca!`);
                         
@@ -6033,8 +6037,9 @@
                             if (playerMonster.hp <= 0) {
                                 encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
                                 playerMonster.status = 'fainted';
+                                // BUG FIX: marcar derrota sem nulifar encounter para mostrar painel de resultado
+                                encounter.result = 'defeat';
                                 encounter.active = false;
-                                GameState.currentEncounter = null;
                             }
                         } else {
                             encounter.log.push(`❌ ${monster.name} erra o ataque!`);

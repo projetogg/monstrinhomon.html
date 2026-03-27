@@ -233,6 +233,9 @@ export function executePlayerAttackGroup(deps, targetEnemyIndex = null) {
  * BUG FIX: Verifica se algum participante tem o monstro ativo morto mas possui substituto vivo.
  * Retorna o primeiro jogador nessa situação, ou null se nenhum precisar trocar.
  *
+ * Não exportada intencionalmente — é uma função auxiliar interna de executeEnemyTurnGroup.
+ * Exportar exigiria expor o contrato de deps inteiro, adicionando complexidade desnecessária.
+ *
  * @param {object} enc - Encounter ativo
  * @param {object} deps - Dependências injetadas
  * @returns {object|null} jogador que precisa trocar, ou null
