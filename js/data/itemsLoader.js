@@ -125,6 +125,12 @@ export function validateItem(item) {
         if (typeof item.heal_min !== 'number' || item.heal_min < 0) return false;
         return true;
     }
+
+    // Validação para orbes de captura (capture)
+    if (item.type === 'capture') {
+        if (typeof item.capture_bonus_pp !== 'number' || item.capture_bonus_pp < 0) return false;
+        return true;
+    }
     
     // Validação para itens equipáveis (held)
     if (!item.type || item.type !== 'held') return false;

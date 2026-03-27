@@ -453,6 +453,9 @@
         // Import Game Flow module (Quest progression runtime)
         import * as GameFlow from './js/gameFlow.js';
         
+        // Import Shop System module
+        import * as ShopSystem from './js/shopSystem.js';
+        
         // Import UI modules (PR14B)
         import { showEggHatchModal, initEggHatchModal } from './js/ui/eggHatchModal.js';
         
@@ -479,6 +482,9 @@
 
         // Make GameFlow available globally
         window.GameFlow = GameFlow;
+        
+        // Make ShopSystem available globally
+        window.ShopSystem = ShopSystem;
         
         // Make egg hatch modal available globally (PR14B)
         window.showEggHatchModal = showEggHatchModal;
@@ -7397,52 +7403,58 @@
          */
         function buyItem(playerId, itemId) {
             try {
-                // Find player
+                // Encontra jogador
                 const player = GameState.players?.find(p => p.id === playerId);
                 if (!player) {
                     alert('❌ Jogador não encontrado!');
                     return;
                 }
-                
-                // Find item
+
+                // Encontra item
                 const allItems = window.itemsData || [];
                 const item = allItems.find(i => i.id === itemId);
                 if (!item) {
                     alert('❌ Item não encontrado!');
                     return;
                 }
-                
-                // Validate item has price
-                if (!item.price || !item.price.buy || item.price.buy <= 0) {
-                    alert('❌ Item não está disponível para compra!');
-                    return;
+
+                // Valida compra via ShopSystem (ou inline como fallback)
+                if (window.ShopSystem) {
+                    const check = window.ShopSystem.canBuy(player, item, 1);
+                    if (!check.ok) {
+                        alert(`❌ ${check.reason}`);
+                        return;
+                    }
+                    // Executa compra e aplica ao player no GameState
+                    const updated = window.ShopSystem.executeBuy(player, item, 1);
+                    player.money = updated.money;
+                    player.inventory = updated.inventory;
+                } else {
+                    // Fallback sem módulo
+                    if (!item.price || !item.price.buy || item.price.buy <= 0) {
+                        alert('❌ Item não está disponível para compra!');
+                        return;
+                    }
+                    const price = item.price.buy;
+                    const playerMoney = player.money || 0;
+                    if (playerMoney < price) {
+                        alert(`❌ Dinheiro insuficiente! Você tem ${playerMoney} e precisa de ${price}.`);
+                        return;
+                    }
+                    player.money = playerMoney - price;
+                    player.inventory = player.inventory || {};
+                    player.inventory[itemId] = (player.inventory[itemId] || 0) + 1;
                 }
-                
-                const price = item.price.buy;
-                const playerMoney = player.money || 0;
-                
-                // Validate player has enough money
-                if (playerMoney < price) {
-                    alert(`❌ Dinheiro insuficiente! Você tem ${playerMoney} e precisa de ${price}.`);
-                    return;
-                }
-                
-                // Debit money
-                player.money = playerMoney - price;
-                
-                // Add item to inventory
-                player.inventory = player.inventory || {};
-                player.inventory[itemId] = (player.inventory[itemId] || 0) + 1;
-                
-                // Save game state
+
+                // Salva estado
                 saveToLocalStorage();
-                
-                // Show success message
-                alert(`✅ Comprou ${item.name} por ${price}! Você tem ${player.money} restantes.`);
-                
-                // Update shop view
+
+                // Exibe confirmação
+                alert(`✅ Comprou ${item.name} por ${item.price.buy}! Você tem ${player.money} restantes.`);
+
+                // Atualiza view
                 updateShopView();
-                
+
             } catch (error) {
                 console.error('Failed to buy item:', error);
                 alert('❌ Erro ao comprar item. Veja o console para detalhes.');
@@ -7451,41 +7463,25 @@
 
         /**
          * PR13B: Calculate sell price for an item with enforced sell < buy rule
-         * 
-         * Rules:
-         * - If item has no buy price or buy <= 1: return null (not sellable)
-         * - If item has explicit sell price: use it
-         * - Otherwise: fallback to 50% of buy price (floor(buy * 0.5))
-         * - Enforce: sell = max(1, sell)
-         * - Enforce: sell = min(sell, buy - 1) to guarantee sell < buy
-         * 
+         * Delegates to ShopSystem.getSellPrice for canonical logic.
+         *
          * @param {object} itemDef - Item definition from catalog
          * @returns {number|null} Sell price or null if item cannot be sold
          */
         function getSellPrice(itemDef) {
+            if (window.ShopSystem) {
+                return window.ShopSystem.getSellPrice(itemDef);
+            }
+            // Fallback inline (em caso de carregamento tardio do módulo)
             try {
-                // Get buy price
                 const buy = itemDef?.price?.buy;
-                
-                // Block sale if no buy price or buy <= 1
-                if (typeof buy !== 'number' || buy <= 1) {
-                    return null;
-                }
-                
-                // Get raw sell price (explicit or fallback to 50%)
+                if (typeof buy !== 'number' || buy <= 1) return null;
                 const rawSell = itemDef?.price?.sell;
                 let sell = (typeof rawSell === 'number') ? rawSell : Math.floor(buy * 0.5);
-                
-                // Enforce minimum: sell >= 1
                 sell = Math.max(1, sell);
-                
-                // Enforce strict: sell < buy (never equal or greater)
                 sell = Math.min(sell, buy - 1);
-                
                 return sell;
-                
-            } catch (error) {
-                console.error('[getSellPrice] Error calculating sell price:', error);
+            } catch (_) {
                 return null;
             }
         }
@@ -7509,74 +7505,70 @@
          */
         function sellItem(playerId, itemId, qty = 1) {
             try {
-                // Find player
+                // Encontra jogador
                 const player = GameState.players?.find(p => p.id === playerId);
                 if (!player) {
                     alert('❌ Jogador não encontrado!');
                     return;
                 }
-                
-                // Find item
+
+                // Encontra item
                 const allItems = window.itemsData || [];
                 const item = allItems.find(i => i.id === itemId);
                 if (!item) {
                     alert('❌ Item não encontrado!');
                     return;
                 }
-                
-                // Validate quantity
-                if (qty < 1 || !Number.isInteger(qty)) {
-                    alert('❌ Quantidade inválida!');
-                    return;
-                }
-                
-                // Check inventory
-                const owned = player.inventory?.[itemId] || 0;
-                if (owned < qty) {
-                    alert(`❌ Você não tem ${qty}x ${item.name}! Você tem apenas ${owned}x.`);
-                    return;
-                }
-                
-                // Calculate sell price
-                const sellPrice = getSellPrice(item);
-                if (sellPrice === null) {
-                    alert('❌ Este item não pode ser vendido!');
-                    return;
-                }
-                
-                // Check if item is equipped on any team monster
-                if (player.team && Array.isArray(player.team)) {
-                    const equippedMonster = player.team.find(monster => monster?.equippedItem === itemId);
-                    if (equippedMonster) {
-                        alert(`❌ Não é possível vender item equipado! ${item.name} está equipado em ${equippedMonster.name}.`);
+
+                // Valida venda via ShopSystem (ou inline como fallback)
+                if (window.ShopSystem) {
+                    const check = window.ShopSystem.canSell(player, item, qty);
+                    if (!check.ok) {
+                        alert(`❌ ${check.reason}`);
                         return;
                     }
+                    const sellPrice = window.ShopSystem.getSellPrice(item);
+                    const totalValue = sellPrice * qty;
+                    const updated = window.ShopSystem.executeSell(player, item, qty);
+                    player.money = updated.money;
+                    player.inventory = updated.inventory;
+                    saveToLocalStorage();
+                    alert(`✅ Vendeu ${qty}x ${item.name} por ${totalValue}! Você tem ${player.money} moedas.`);
+                } else {
+                    // Fallback sem módulo
+                    if (qty < 1 || !Number.isInteger(qty)) {
+                        alert('❌ Quantidade inválida!');
+                        return;
+                    }
+                    const owned = player.inventory?.[itemId] || 0;
+                    if (owned < qty) {
+                        alert(`❌ Você não tem ${qty}x ${item.name}! Você tem apenas ${owned}x.`);
+                        return;
+                    }
+                    const sellPrice = getSellPrice(item);
+                    if (sellPrice === null) {
+                        alert('❌ Este item não pode ser vendido!');
+                        return;
+                    }
+                    if (player.team && Array.isArray(player.team)) {
+                        const equippedMonster = player.team.find(m => m?.equippedItem === itemId);
+                        if (equippedMonster) {
+                            alert(`❌ Não é possível vender item equipado! ${item.name} está equipado em ${equippedMonster.name}.`);
+                            return;
+                        }
+                    }
+                    const totalValue = sellPrice * qty;
+                    player.inventory = player.inventory || {};
+                    player.inventory[itemId] = owned - qty;
+                    if (player.inventory[itemId] <= 0) delete player.inventory[itemId];
+                    player.money = (player.money || 0) + totalValue;
+                    saveToLocalStorage();
+                    alert(`✅ Vendeu ${qty}x ${item.name} por ${totalValue}! Você tem ${player.money} moedas.`);
                 }
-                
-                // Calculate total sale value
-                const totalValue = sellPrice * qty;
-                
-                // Update inventory
-                player.inventory = player.inventory || {};
-                player.inventory[itemId] = owned - qty;
-                
-                // Clean up if quantity reaches 0
-                if (player.inventory[itemId] <= 0) {
-                    delete player.inventory[itemId];
-                }
-                
-                // Credit money
-                player.money = (player.money || 0) + totalValue;
-                
-                // Save game state
-                saveToLocalStorage();
-                
-                // Show success message
-                alert(`✅ Vendeu ${qty}x ${item.name} por ${totalValue}! Você tem ${player.money} moedas.`);
-                
-                // Update shop view
+
+                // Atualiza view
                 updateShopView();
-                
+
             } catch (error) {
                 console.error('Failed to sell item:', error);
                 alert('❌ Erro ao vender item. Veja o console para detalhes.');

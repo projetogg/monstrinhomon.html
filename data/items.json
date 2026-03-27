@@ -379,6 +379,64 @@
         "buy": 200,
         "sell": 60
       }
+    },
+    {
+      "id": "CLASTERORB_COMUM",
+      "name": "ClasterOrb Comum",
+      "description": "Orbe de captura básico. Permite tentar capturar Monstrinhos selvagens.",
+      "type": "capture",
+      "emoji": "⚪",
+      "capture_bonus_pp": 0,
+      "stackable": true,
+      "maxStack": 99,
+      "price": {
+        "buy": 30,
+        "sell": 10
+      }
+    },
+    {
+      "id": "CLASTERORB_INCOMUM",
+      "name": "ClasterOrb Incomum",
+      "description": "Orbe de captura reforçado. Bônus de +10% na chance de captura.",
+      "type": "capture",
+      "emoji": "🔵",
+      "capture_bonus_pp": 10,
+      "stackable": true,
+      "maxStack": 99,
+      "price": {
+        "buy": 80,
+        "sell": 25
+      }
+    },
+    {
+      "id": "CLASTERORB_RARA",
+      "name": "ClasterOrb Rara",
+      "description": "Orbe de captura poderoso. Bônus de +20% na chance de captura.",
+      "type": "capture",
+      "emoji": "🟣",
+      "capture_bonus_pp": 20,
+      "stackable": true,
+      "maxStack": 99,
+      "price": {
+        "buy": 150,
+        "sell": 50
+      }
+    },
+    {
+      "id": "IT_CAP_02",
+      "name": "Orbe Reforçado",
+      "description": "Orbe de captura reforçado (legado). Equivalente ao ClasterOrb Incomum.",
+      "type": "capture",
+      "emoji": "🔵",
+      "capture_bonus_pp": 10,
+      "deprecated": true,
+      "replacedBy": "CLASTERORB_INCOMUM",
+      "stackable": true,
+      "maxStack": 99,
+      "price": {
+        "buy": 80,
+        "sell": 25
+      }
     }
   ]
 }
