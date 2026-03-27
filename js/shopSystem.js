@@ -103,13 +103,10 @@ export function canBuy(player, itemDef, qty = 1) {
 export function executeBuy(player, itemDef, qty = 1) {
     const totalCost = itemDef.price.buy * qty;
 
-    const newInventory = Object.assign({}, player.inventory || {});
+    const newInventory = { ...(player.inventory || {}) };
     newInventory[itemDef.id] = (newInventory[itemDef.id] || 0) + qty;
 
-    return Object.assign({}, player, {
-        money: (player.money || 0) - totalCost,
-        inventory: newInventory
-    });
+    return { ...player, money: (player.money || 0) - totalCost, inventory: newInventory };
 }
 
 /**
@@ -169,7 +166,7 @@ export function executeSell(player, itemDef, qty = 1) {
     const sellPrice = getSellPrice(itemDef);
     const totalValue = sellPrice * qty;
 
-    const newInventory = Object.assign({}, player.inventory || {});
+    const newInventory = { ...(player.inventory || {}) };
     const newQty = (newInventory[itemDef.id] || 0) - qty;
 
     if (newQty <= 0) {
@@ -178,10 +175,7 @@ export function executeSell(player, itemDef, qty = 1) {
         newInventory[itemDef.id] = newQty;
     }
 
-    return Object.assign({}, player, {
-        money: (player.money || 0) + totalValue,
-        inventory: newInventory
-    });
+    return { ...player, money: (player.money || 0) + totalValue, inventory: newInventory };
 }
 
 /**

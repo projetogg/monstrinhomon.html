@@ -246,6 +246,7 @@ describe('executeBuy', () => {
         expect(player.inventory['IT_ATK_COMUM']).toBe(1);
         expect(updated.money).toBe(150);
         expect(updated.inventory['IT_ATK_COMUM']).toBe(2);
+        expect(updated.inventory).not.toBe(player.inventory);
     });
 
     it('executa compra múltipla corretamente', () => {
@@ -357,6 +358,7 @@ describe('executeSell', () => {
         expect(player.inventory['IT_HEAL_01']).toBe(5);
         expect(updated.money).toBe(55);
         expect(updated.inventory['IT_HEAL_01']).toBe(4);
+        expect(updated.inventory).not.toBe(player.inventory);
     });
 
     it('vende ClasterOrb corretamente', () => {
