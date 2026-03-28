@@ -127,10 +127,12 @@
                 
                 <!-- Para encontros individuais (wild) -->
                 <div id="playerSelectDiv" class="mt-15">
-                    <label><strong>Select Player for Individual Encounter:</strong></label>
-                    <select id="encounterPlayer">
-                        <option value="">-- Select Player --</option>
+                    <label><strong>Selecionar Jogador (Encontro Individual):</strong></label>
+                    <select id="encounterPlayer" onchange="renderEncounterQuestHint(this.value)">
+                        <option value="">-- Selecione --</option>
                     </select>
+                    <!-- Fix #8: Hint de quests ativas do jogador selecionado -->
+                    <div id="encounterQuestHint"></div>
                 </div>
                 
                 <!-- Para encontros em grupo (trainer/boss) -->
@@ -1923,6 +1925,59 @@
                 state.sharedBox.forEach(slot => {
                     if (slot && slot.monster) {
                         normalizeMonster(slot.monster);
+                    }
+                });
+            }
+            
+            // CORREÇÃO BUG PERSISTÊNCIA: Garantir campos obrigatórios do config.
+            // Object.assign() faz merge raso — se o save tiver um config de versão antiga
+            // sem alguns campos (ex: friendshipConfig), esses campos ficam ausentes.
+            // Aqui aplicamos os defaults para campos ausentes sem sobrescrever os existentes.
+            const configDefaults = {
+                maxTeamSize: 6,
+                maxLevel: 100,
+                levelExpo: 1.5,
+                battleXpBase: 15,
+                captureModel: 'threshold_no_dice',
+                classAdvantages: {
+                    'Guerreiro': { strong: 'Ladino', weak: 'Curandeiro' },
+                    'Ladino': { strong: 'Mago', weak: 'Guerreiro' },
+                    'Mago': { strong: 'Bárbaro', weak: 'Ladino' },
+                    'Bárbaro': { strong: 'Caçador', weak: 'Mago' },
+                    'Caçador': { strong: 'Bardo', weak: 'Bárbaro' },
+                    'Bardo': { strong: 'Curandeiro', weak: 'Caçador' },
+                    'Curandeiro': { strong: 'Guerreiro', weak: 'Bardo' },
+                    'Animalista': { strong: null, weak: null }
+                },
+                captureThreshold: {
+                    'Comum': 0.25, 'Incomum': 0.20, 'Raro': 0.15,
+                    'Místico': 0.10, 'Lendário': 0.05
+                },
+                rarityPower: {
+                    'Comum': 1.00, 'Incomum': 1.08, 'Raro': 1.18,
+                    'Místico': 1.32, 'Lendário': 1.50
+                },
+                rarityXP: {
+                    'Comum': 1.00, 'Incomum': 1.05, 'Raro': 1.10,
+                    'Místico': 1.15, 'Lendário': 1.25
+                },
+                fleeBase: {
+                    'Comum': 10, 'Incomum': 12, 'Raro': 15,
+                    'Místico': 18, 'Lendário': 25
+                },
+                medalTiers: { bronze: 5, silver: 12, gold: 25 },
+                friendshipConfig: {
+                    battleWin: 2, battleLoss: -5, useHealItem: 5,
+                    levelUp: 3, faint: -3
+                }
+            };
+            if (!state.config || typeof state.config !== 'object') {
+                state.config = configDefaults;
+            } else {
+                // Preencher apenas campos ausentes (preservar valores do save)
+                Object.keys(configDefaults).forEach(key => {
+                    if (state.config[key] === undefined) {
+                        state.config[key] = configDefaults[key];
                     }
                 });
             }
@@ -4602,6 +4657,14 @@
                 // Detectar evolução: por emoji OU por texto
                 const isEvo = line.includes("🌟") || /evoluiu para/i.test(line);
                 if (isEvo) showToast(line);
+
+                // Fix #3: Detectar conclusão de quest
+                const isQuestComplete = line.includes("🏆") && /quest/i.test(line);
+                if (isQuestComplete) showToast(line, 'success');
+
+                // Fix #3: Detectar nova quest ativada
+                const isNewQuest = line.includes("🗺️");
+                if (isNewQuest) showToast(line);
             }
             enc._toastCursor = enc.log.length;
         }
@@ -5292,6 +5355,9 @@
         function handleVictoryRewards(enc) {
             // XP e recompensas base
             Progression.Actions.handleVictoryRewards(createProgressionDeps(), enc);
+
+            // REGRA DE DESIGN: batalhas selvagens NÃO concedem ouro.
+            // Ouro vem de: treinadores (50g), bosses (100g), quests e venda de drops.
             
             // Sistema de Drops: gerar e conceder itens após vitória
             processVictoryDrops(enc);
@@ -5584,7 +5650,9 @@
                 // Buscar jogador selecionado
                 const playerId = encounter.selectedPlayerId;
                 const player = GameState.players.find(p => p.id === playerId);
-                const playerMonster = player?.team?.[0];
+                // Fix #6: usar monstro ativo (activeIndex), não sempre team[0]
+                const activeIdx = typeof player?.activeIndex === 'number' ? player.activeIndex : 0;
+                const playerMonster = player?.team?.[activeIdx];
 
                 // BUG FIX: Quando o encounter está inativo, exibir painel de resultado
                 // para que o jogador possa ver o XP ganho antes de fechar.
@@ -7852,10 +7920,53 @@
                         select.appendChild(option);
                     });
                 }
+
+                // Fix #8: Mostrar hint de quests ativas do jogador selecionado
+                renderEncounterQuestHint(select.value);
             } catch (error) {
                 console.error('Failed to update encounter player dropdown:', error);
             }
         }
+
+        /**
+         * Fix #8: Renderiza hint de quests ativas no tab de Encontro.
+         * Chamado quando o jogador seleciona um participante.
+         * @param {string} playerId - ID do jogador selecionado (ou '' para nenhum)
+         */
+        function renderEncounterQuestHint(playerId) {
+            try {
+                const container = document.getElementById('encounterQuestHint');
+                if (!container) return;
+
+                if (!playerId || !window.GameFlow) {
+                    container.innerHTML = '';
+                    return;
+                }
+
+                const player = GameState.players?.find(p => p.id === playerId);
+                if (!player) { container.innerHTML = ''; return; }
+
+                const quests = GameFlow.getActiveQuestsSummary(player);
+                if (quests.length === 0) {
+                    container.innerHTML = `<div class="opacity-70 text-small mt-5">📋 ${player.name} não tem quests ativas.</div>`;
+                    return;
+                }
+
+                const items = quests.map(q => {
+                    const pct = Math.min(100, Math.floor((q.progress / q.needed) * 100));
+                    return `<div class="mb-5">
+                        <strong>${q.quest.nome}</strong>: ${q.progress}/${q.needed}
+                        <div class="progress-bar h-10 mt-3">
+                            <div class="progress-fill xp" style="width: ${pct}%"></div>
+                        </div>
+                    </div>`;
+                }).join('');
+                container.innerHTML = `<div class="card mt-10"><h4 class="m-0 mb-6">📋 Quests Ativas — ${player.name}:</h4>${items}</div>`;
+            } catch (error) {
+                console.warn('[renderEncounterQuestHint] Erro:', error);
+            }
+        }
+        window.renderEncounterQuestHint = renderEncounterQuestHint;
         
         function updateEncounterUI() {
             try {
@@ -8170,17 +8281,39 @@
                     
                     const teamCount = player.team?.length || 0;
                     const boxCount = player.box?.length || 0;
+                    // Fix #4: usar player.class como fallback quando playerClassId não existe (saves do wizard)
+                    const playerClass = player.class || player.playerClassId || '';
+
+                    // Fix #5: Quest progress tracker
+                    let questHtml = '';
+                    if (window.GameFlow && typeof GameFlow.getActiveQuestsSummary === 'function') {
+                        const quests = GameFlow.getActiveQuestsSummary(player);
+                        if (quests.length > 0) {
+                            const questItems = quests.map(q => {
+                                const pct = Math.min(100, Math.floor((q.progress / q.needed) * 100));
+                                return `<div class="mb-5">
+                                    <strong>${q.quest.nome}</strong>: ${q.progress}/${q.needed}
+                                    <div class="progress-bar h-10 mt-3">
+                                        <div class="progress-fill xp" style="width: ${pct}%"></div>
+                                    </div>
+                                </div>`;
+                            }).join('');
+                            questHtml = `<div class="mt-10"><h4 class="m-0 mb-6">📋 Quests Ativas:</h4>${questItems}</div>`;
+                        } else {
+                            questHtml = `<div class="mt-8 opacity-70 text-small">📋 Nenhuma quest ativa.</div>`;
+                        }
+                    }
                     
                     html += `
                         <div class="card">
                             <h3>${player.name}</h3>
-                            <div class="badge badge-${player.playerClassId}">${player.playerClassId}</div>
-                            <p>💰 Money: ${player.money || 0} | ⭐ Afterlife: ${player.afterlifeCurrency || 0}</p>
-                            <p>👥 Team: ${teamCount}/${GameState.config?.maxTeamSize || 6} | 📦 Box: ${boxCount}</p>
-                            
-                            <h4>Team Order (${teamCount}):</h4>
+                            <div class="badge badge-${playerClass}">${playerClass}</div>
+                            <p>💰 Moedas: ${player.money || 0} | ⭐ Afterlife: ${player.afterlifeCurrency || 0}</p>
+                            <p>👥 Time: ${teamCount}/${GameState.config?.maxTeamSize || 6} | 📦 Box: ${boxCount}</p>
+                            ${questHtml}
+                            <h4>Ordem do Time (${teamCount}):</h4>
                             <div class="team-reorder-section">
-                                <p class="text-small text-muted mb-10">First alive monster will be your starter in battle. Use arrows to reorder.</p>
+                                <p class="text-small text-muted mb-10">O primeiro monstrinho vivo começa na batalha. Use as setas para reordenar.</p>
                                 ${renderTeamReorderList(player)}
                             </div>
                         </div>
@@ -8846,16 +8979,27 @@
         }
 
         function mmHasSave(){
-            // Check if any slot has a valid save
+            // Verificar o auto-save principal (monstrinhomon_state) antes dos slots.
+            // O auto-save é sempre mais recente que os slots (que são saves manuais).
+            try {
+                const result = StorageManager.loadState();
+                if (result.loaded && result.state &&
+                    Array.isArray(result.state.players) && result.state.players.length > 0) {
+                    return true;
+                }
+            } catch(e) {
+                console.warn('[mmHasSave] Erro ao verificar auto-save:', e);
+            }
+            // Fallback: verificar slots
             try {
                 for (let slot = 1; slot <= 3; slot++) {
                     const env = mmReadSlot(slot);
                     if (env && env.state) return true;
                 }
-                return false;
-            } catch(e){ 
-                return false; 
+            } catch(e) {
+                console.warn('[mmHasSave] Erro ao verificar slots:', e);
             }
+            return false;
         }
 
         function mmBoot(){
@@ -9358,50 +9502,49 @@
         }
 
         function mmContinue(){
-            // Check if there's a last slot saved - if so, load from it
+            // CORREÇÃO BUG PERSISTÊNCIA: init() já carregou o estado mais recente de
+            // monstrinhomon_state (auto-save). Se há jogadores válidos em memória,
+            // usar esse estado diretamente — NÃO recarregar do slot, que pode ser
+            // mais antigo e sobrescrever o progresso do auto-save.
+            try {
+                const hasLoadedGame = Array.isArray(GameState.players) && GameState.players.length > 0;
+                if (hasLoadedGame) {
+                    console.log('[mmContinue] Estado já carregado pelo init(). Usando auto-save.');
+                    mmCloseAllOverlays();
+                    mmPostGameStartFlow();
+                    return;
+                }
+            } catch (e) {
+                console.warn('[mmContinue] Erro ao verificar estado carregado:', e);
+            }
+
+            // Fallback: init() não carregou nada (monstrinhomon_state vazio ou ausente).
+            // Tentar carregar do último slot usado — sem confirm dialog (user já clicou Continuar).
             try {
                 const lastSlot = StorageManager.getLastSlot(); // PR3
-                if (lastSlot) {
-                    const slotNum = parseInt(lastSlot, 10);
-                    if ([1, 2, 3].includes(slotNum)) {
-                        // Load from slot - this will call mmPostGameStartFlow()
-                        mmLoadFromSlot(slotNum);
+                const slotNum = lastSlot ? parseInt(lastSlot, 10) : 1;
+                if ([1, 2, 3].includes(slotNum)) {
+                    const env = mmReadSlot(slotNum);
+                    if (env && env.state) {
+                        Object.assign(GameState, env.state);
+                        GameState.saveSlot = slotNum;
+                        StorageManager.setLastSlot(slotNum); // PR3
+                        saveToLocalStorage(); // Sincronizar o auto-save com o slot carregado
+                        if (typeof updateAllViews === "function") updateAllViews();
+                        showToast(`📂 Carregado do Slot ${slotNum}!`);
+                        mmCloseAllOverlays();
+                        mmPostGameStartFlow();
                         return;
                     }
                 }
             } catch (e) {
-                console.warn("Failed to check last slot", e);
-            }
-
-            // Fallback: load from main localStorage
-            try {
-                // Load from the last used slot
-                const lastSlot = mmGetLastSlot();
-                const env = mmReadSlot(lastSlot);
-                
-                if (!env || !env.state) {
-                    alert("Nenhum save encontrado para continuar.");
-                    return;
-                }
-                
-                // Load the save from the slot
-                Object.assign(GameState, env.state);
-                GameState.saveSlot = lastSlot;
-                
-                // Update views
-                if (typeof updateAllViews === "function") updateAllViews();
-                if (typeof renderEncounter === "function") renderEncounter();
-                
-                showToast(`📂 Carregado do Slot ${lastSlot}!`);
-            } catch(e){
-                console.warn("mmContinue failed", e);
+                console.warn('[mmContinue] Fallback de slot falhou:', e);
                 alert("Erro ao carregar o save: " + e.message);
                 mmCloseAllOverlays();
                 return;
             }
-            mmCloseAllOverlays();
-            // Feature 4.1.1: Show tutorial choice or go to game based on preference
-            mmPostGameStartFlow();
+
+            alert("Nenhum save encontrado para continuar.");
         }
 
         function mmResetSaveConfirm(){
@@ -9561,12 +9704,31 @@
                     class: p.class || MM_CLASSES[0]
                 }));
 
-                // Clear existing state
+                // CORREÇÃO BUG PERSISTÊNCIA: Resetar TODO o estado específico do jogo
+                // para evitar vazamento de dados de um save anterior carregado pelo init().
+                // Campos preservados propositalmente: therapistMode (preferência do dispositivo),
+                // config (configurações do jogo), saveSlot (definido pelo slot picker).
                 GameState.players = [];
                 GameState.monsters = [];
                 GameState.sessions = [];
                 GameState.currentSession = null;
                 GameState.currentEncounter = null;
+                GameState.sharedBox = [];
+                GameState.partyDex = { entries: {}, meta: { lastMilestoneAwarded: 0 } };
+                GameState.partyMoney = 0;
+                GameState.monstrodex = { seen: [], captured: [] };
+                GameState.stats = {
+                    battlesWon: 0,
+                    battlesLost: 0,
+                    captureAttempts: 0,
+                    capturesSuccessful: 0,
+                    totalXpGained: 0,
+                    totalMoneyEarned: 0,
+                    currentWinStreak: 0,
+                    highestWinStreak: 0
+                };
+                GameState.meta = { saveVersion: 1 };
+                GameState.ui = { activePlayerId: null, boxViewedPlayerId: null, boxPageIndex: 0 };
 
                 // Create players
                 MM_NEW.players.forEach((p, idx) => {
@@ -9596,6 +9758,12 @@
                     };
                     
                     GameState.players.push(player);
+
+                    // Fix #2: Inicializar estado de quests e ativar QST_001 (igual ao addPlayer())
+                    if (window.GameFlow) {
+                        GameFlow.ensureQuestState(player);
+                        GameFlow.autoActivateFirstQuest(player);
+                    }
                     
                     // COMMIT 8 (Wave A): Use Award API for canonical monster creation
                     const starterMonster = awardMonster(
