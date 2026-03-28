@@ -3584,11 +3584,10 @@
                 encounter.turnIndex = 0;
                 encounter.currentActor = getCurrentActor(encounter);
                 
-                encounter.log.push('🎲 Ordem de turnos calculada!');
-                encounter.turnOrder.forEach((actor, idx) => {
-                    const tieInfo = actor._tiebreak ? ` (d20: ${actor._tiebreak})` : '';
-                    encounter.log.push(`   ${idx + 1}. ${actor.name} (${actor.side === 'player' ? 'Jogador' : 'Inimigo'}, SPD: ${actor.spd}${tieInfo})`);
-                });
+                // Log compacto da ordem de turnos (1 linha)
+                const firstActor = encounter.turnOrder[0];
+                const totalActors = encounter.turnOrder.length;
+                encounter.log.push(`🎲 Batalha iniciada! ${totalActors} participantes. Primeiro: ${firstActor?.name || '?'}.`);
                 
                 GameState.currentEncounter = encounter;
                 
@@ -5300,7 +5299,7 @@
             if (!encounter || !encounter.rewards || !encounter.rewards.xp) return;
             
             const player = GameState.players.find(p => p.id === encounter.selectedPlayerId);
-            const mon = player?.team?.[0];
+            const mon = player ? _getActiveMonsterOfPlayer(player) : null;
             
             // Só ganha XP se estiver vivo
             if (!mon || mon.hp <= 0) return;
@@ -5583,10 +5582,9 @@
                 const monster = encounter.wildMonster;
                 if (!monster) return;
                 
-                // Buscar jogador selecionado
                 const playerId = encounter.selectedPlayerId;
                 const player = GameState.players.find(p => p.id === playerId);
-                const playerMonster = player?.team?.[0];
+                const playerMonster = player ? _getActiveMonsterOfPlayer(player) : null;
                 
                 // Calcular threshold de captura
                 const hpPercent = monster.hp / monster.hpMax;
@@ -5983,7 +5981,7 @@
                     // Feature 4.4: Capture fail sound
                     Audio.playSfx("capture_fail");
                     
-                    const playerMonster = player.team?.[0];
+                    const playerMonster = _getActiveMonsterOfPlayer(player);
                     if (playerMonster && playerMonster.hp > 0) {
                         encounter.log.push(`⚡ ${monster.name} contra-ataca!`);
                         
@@ -6040,7 +6038,7 @@
                     return;
                 }
                 
-                const playerMonster = player.team?.[0];
+                const playerMonster = _getActiveMonsterOfPlayer(player);
                 if (!playerMonster) {
                     alert('Jogador não tem monstrinhos no time');
                     return;
@@ -6176,14 +6174,14 @@
                             });
                             
                             playerMonster.hp = Math.max(0, playerMonster.hp - damage);
-                            encounter.log.push(`💥 ${wildMonster.name} hits! Deals ${damage} damage!`);
+                            encounter.log.push(`💥 ${wildMonster.name} acertou! Causa ${damage} de dano!`);
                             
                             // Verificar se jogador perdeu
                             if (playerMonster.hp <= 0) {
                                 // SISTEMA DE AMIZADE: Perder amizade ao desmaiar
                                 updateFriendship(playerMonster, 'faint');
                                 
-                                encounter.log.push(`💀 ${playerMonster.name} fainted! Defeat!`);
+                                encounter.log.push(`💀 ${playerMonster.name} desmaiou! Derrota!`);
                                 
                                 // Feature 4.4: Defeat sound (com idempotência)
                                 if (!encounter._loseSfxPlayed) {
@@ -6231,7 +6229,7 @@
                     return;
                 }
                 
-                const playerMonster = player.team?.[0];
+                const playerMonster = _getActiveMonsterOfPlayer(player);
                 if (!playerMonster) {
                     alert('Player has no monsters in team');
                     return;
@@ -6309,7 +6307,7 @@
                 const player = GameState.players.find(p => p.id === playerId);
                 if (!player) return;
                 
-                const playerMonster = player.team?.[0];
+                const playerMonster = _getActiveMonsterOfPlayer(player);
                 if (!playerMonster) {
                     alert('No monster available');
                     return;
@@ -8350,7 +8348,7 @@
                                 <strong>${monster.name || 'Unknown'}</strong>
                                 <span class="badge badge-${monster.rarity || 'common'}">${monster.rarity || 'Comum'}</span>
                                 Lv${monster.level || 1}
-                                ${!isAlive ? '<span class="color-error text-bold"> (Fainted)</span>' : ''}
+                                ${!isAlive ? '<span class="color-error text-bold"> (Desmaiado)</span>' : ''}
                                 <div class="progress-bar h-15 mt-5">
                                     <div class="progress-fill hp" style="width: ${hpPercent}%"></div>
                                 </div>

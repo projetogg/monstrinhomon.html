@@ -41,7 +41,15 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
     if (actor && !encounter.finished) {
         const isPlayerPhase = actor.side === 'player';
         const bannerColor = isPlayerPhase ? '#4CAF50' : '#f44336';
-        const bannerText = isPlayerPhase ? '🟢 VEZ DOS JOGADORES' : '🔴 VEZ DOS INIMIGOS';
+        // Quando for turno de um jogador específico, mostrar o nome
+        let bannerText;
+        if (isPlayerPhase) {
+            const currentPlayer = state.players.find(x => x.id === actor.id);
+            const playerName = currentPlayer ? (currentPlayer.name || currentPlayer.nome) : 'Jogador';
+            bannerText = `🟢 VEZ DE ${playerName.toUpperCase()}`;
+        } else {
+            bannerText = '🔴 VEZ DOS INIMIGOS';
+        }
         const roundText = `Rodada ${encounter.turn?.round || 1}`;
         
         html += `<div class="turn-banner" style="background: ${bannerColor}; color: white; padding: 15px; margin: 15px 0; border-radius: 8px; text-align: center; font-size: 18px; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">`;
@@ -64,7 +72,7 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
         const p = state.players.find(x => x.id === pid);
         if (!p) continue;
         
-        const mon = p.team?.[0];
+        const mon = p.team?.[p.activeIndex ?? 0];
         if (!mon) continue;
         
         // Garantir campos de XP
@@ -73,6 +81,7 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
         const hp = Number(mon.hp) || 0;
         const hpMax = Number(mon.hpMax) || 1;
         const hpPercent = Math.floor((hp / hpMax) * 100);
+        const isKO = hp <= 0;
         
         const xp = Math.max(0, Number(mon.xp) || 0);
         const xpNeeded = Math.max(1, Number(mon.xpNeeded) || helpers.calcXpNeeded(mon.level));
@@ -82,7 +91,10 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
         
         // CAMADA 2: Destaque Visual Forte + Apagado quando não é a vez
         let cardStyle = '';
-        if (isCurrent) {
+        if (isKO) {
+            // Monstrinho nocauteado: fundo acinzentado, sem destaque
+            cardStyle = 'border: 2px solid #ccc; opacity: 0.5; background: #f0f0f0 !important;';
+        } else if (isCurrent) {
             // É o turno deste jogador: DESTAQUE FORTE
             cardStyle = 'border: 4px solid #4CAF50; box-shadow: 0 0 20px rgba(76, 175, 80, 0.5); opacity: 1; transform: scale(1.02);';
         } else if (isPlayerTurn) {
@@ -96,6 +108,9 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
         html += `<div id="grpP_${pid}" class="group-participant-box" style="${cardStyle} transition: all 0.3s ease; padding: 12px; border-radius: 8px; margin: 8px 0; background: white;">`;
         html += `<strong>${p.name || p.nome}</strong> (${p.class})`;
         html += `<br>${mon.name || mon.nome} - Nv ${mon.level}`;
+        if (isKO) {
+            html += ` <span style="background: #e53935; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">💀 KO</span>`;
+        }
         html += `<br>HP: ${hp}/${hpMax} (${hpPercent}%)`;
         
         // PR12B: Show equipped item (inline text format)
@@ -174,6 +189,9 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
         
         html += `<div id="grpE_${i}" class="enemy-participant-box" style="${cardStyle} ${cursorStyle} padding: 12px; border-radius: 8px; margin: 8px 0; background: white;"${clickHandler}>`;
         html += `<strong>${e.name || e.nome}</strong> - Nv ${e.level}`;
+        if (isDead) {
+            html += ` <span style="background: #9e9e9e; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">💀 KO</span>`;
+        }
         html += `<br>HP: ${hp}/${hpMax} (${hpPercent}%)`;
         html += `<br>SPD: ${e.spd} | ATK: ${e.atk} | DEF: ${e.def}`;
         html += `</div>`;
@@ -339,7 +357,7 @@ function renderActionPanel(encounter, actor, isPlayerTurn, state, helpers) {
     
     // Coletar dados do jogador atual
     const player = state.players.find(p => p.id === actor.id);
-    const mon = player?.team?.[0];
+    const mon = player?.team?.[player?.activeIndex ?? 0];
     
     if (!player || !mon) {
         html += '<div class="color-error">❌ Erro: Jogador ou monstrinho não encontrado</div>';
@@ -387,8 +405,10 @@ function renderActionPanel(encounter, actor, isPlayerTurn, state, helpers) {
 
     if (canUseAnyItem) {
         const firstHealId = availableHealItems[0];
+        const firstItemDef = helpers.getItemDef ? helpers.getItemDef(firstHealId) : null;
+        const itemBtnLabel = firstItemDef ? `${firstItemDef.emoji || '🧪'} ${firstItemDef.name}` : '🧪 Item';
         html += `<button class="btn btn-large btn-success" onclick="groupUseItem('${firstHealId}')" style="min-width: 120px;">`;
-        html += '🧪 Item';
+        html += itemBtnLabel;
         html += '</button>';
     }
     
