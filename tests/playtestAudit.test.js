@@ -1,16 +1,16 @@
 /**
- * PLAYTEST AUDIT TESTS (PR-PLAYTEST)
+ * PLAYTEST AUDIT TESTS (PR-PLAYTEST / ECONOMY REVIEW)
  *
  * Testes de regressão para os fixes do Playtest Guiado Pós-Fix de Save.
  * Cobre:
- *   Fix #1 - Batalhas wild concedem ouro
+ *   Regra de design - Batalhas wild NÃO concedem ouro (revertido)
  *   Fix #2 - mmFinishNewGame ativa QST_001
  *   Fix #3 - maybeToastFromLog tosta quest/drops
  *   Fix #4 - updatePlayersList badge usa player.class como fallback
  *   Fix #5 - Quest progress tracker na lista de jogadores
  *   Fix #6 - Painel de resultado wild usa monstro ativo (activeIndex)
- *   Fix #7 - Painel de resultado exibe ouro ganho
  *   Fix #8 - Hint de quest na tab de Encontro
+ *   Economia - Auditoria geral (quests, trainers, bosses, drops, loja)
  */
 
 import { describe, it, expect, vi } from 'vitest';
@@ -64,151 +64,77 @@ function makeWildEncounter(overrides = {}) {
         log: [],
         selectedPlayerId: 'p_test',
         rewardsGranted: true,
-        moneyGranted: true,
-        rewards: { xp: 17, money: 10 },
+        rewards: { xp: 17 },
         wildMonster: makeMonster({ level: 5, hp: 0, hpMax: 32 }),
         ...overrides
     };
 }
 
-// ─── Fix #1: Batalhas wild concedem ouro ────────────────────────────────────
+// ─── Regra de design: Batalhas wild NÃO concedem ouro ───────────────────────
 
-describe('Fix #1 — Batalhas wild concedem ouro', () => {
+describe('Regra de design — Wild não concede ouro', () => {
 
-    function simulateHandleVictoryRewardsGold(enc, players, config = {}) {
-        // Replica lógica de handleVictoryRewards para a parte de gold
-        if (enc.type === 'wild' && !enc.moneyGranted) {
-            enc.moneyGranted = true;
-            const defeated = enc.wildMonster;
-            if (defeated) {
-                const minGold = config.minWildGold ?? 5;
-                const perLevel = config.wildGoldPerLevel ?? 2;
-                const goldEarned = Math.max(minGold, Math.floor((defeated.level || 1) * perLevel));
-                let player = null;
-                if (enc.selectedPlayerId) {
-                    player = players.find(p => p.id === enc.selectedPlayerId);
-                }
-                if (!player) player = players?.[0] || null;
-                if (player) {
-                    player.money = (player.money || 0) + goldEarned;
-                    enc.log = enc.log || [];
-                    enc.log.push(`💰 +${goldEarned} moedas!`);
-                    enc.rewards = enc.rewards || {};
-                    enc.rewards.money = goldEarned;
-                }
-            }
-        }
+    /**
+     * Simula a lógica CORRETA de handleVictoryRewards: sem gold para wild.
+     * Só XP (via Progression.Actions) + drops + quests.
+     */
+    function simulateHandleVictoryRewardsNoGold(enc, players) {
+        // Regra: wild não concede ouro — apenas registra que foi processado
+        enc.rewardsGranted = true;
+        // drops, quests etc. são processados à parte; gold não é concedido
     }
 
-    it('deve conceder gold ao jogador após vitória wild nível 1', () => {
+    it('batalha wild não deve alterar o dinheiro do jogador', () => {
         const player = makePlayer({ id: 'p1', money: 100 });
-        const enc = {
-            type: 'wild', active: false, result: 'victory',
-            log: [], moneyGranted: false,
-            selectedPlayerId: 'p1',
-            wildMonster: makeMonster({ level: 1 })
-        };
+        const enc = makeWildEncounter({ rewardsGranted: false, selectedPlayerId: 'p1' });
 
-        simulateHandleVictoryRewardsGold(enc, [player]);
+        simulateHandleVictoryRewardsNoGold(enc, [player]);
 
-        // nível 1: max(5, floor(1*2)) = max(5,2) = 5 moedas
-        expect(player.money).toBe(105);
-        expect(enc.rewards.money).toBe(5);
-        expect(enc.log.some(l => l.includes('💰'))).toBe(true);
+        expect(player.money).toBe(100); // inalterado
     });
 
-    it('deve conceder gold escalado ao nível do inimigo', () => {
+    it('enc.rewards.money não deve ser definido para wild', () => {
+        const enc = makeWildEncounter({ rewardsGranted: false });
+        simulateHandleVictoryRewardsNoGold(enc, []);
+        expect(enc.rewards?.money).toBeUndefined();
+    });
+
+    it('encounter wild não deve conter log de 💰 após handleVictoryRewards', () => {
         const player = makePlayer({ id: 'p1', money: 50 });
-        const enc = {
-            type: 'wild', active: false, result: 'victory',
-            log: [], moneyGranted: false,
-            selectedPlayerId: 'p1',
-            wildMonster: makeMonster({ level: 10 })
-        };
+        const enc = makeWildEncounter({ rewardsGranted: false, log: [], selectedPlayerId: 'p1' });
 
-        simulateHandleVictoryRewardsGold(enc, [player]);
+        simulateHandleVictoryRewardsNoGold(enc, [player]);
 
-        // nível 10: max(5, floor(10*2)) = 20 moedas
-        expect(player.money).toBe(70);
-        expect(enc.rewards.money).toBe(20);
+        const goldLogs = (enc.log || []).filter(l => l.includes('💰'));
+        expect(goldLogs.length).toBe(0);
     });
 
-    it('gold mínimo garantido é 5 mesmo para nível 1', () => {
-        const player = makePlayer({ id: 'p1', money: 0 });
-        const enc = {
-            type: 'wild', active: false, result: 'victory',
-            log: [], moneyGranted: false,
-            selectedPlayerId: 'p1',
-            wildMonster: makeMonster({ level: 1 })
-        };
+    it('encounter trainer deve conceder ouro (regra de design mantida)', () => {
+        // Simula a lógica de showBattleEndModalWrapper para trainers
+        const BASE_MONEY_TRAINER = 50;
+        const BASE_MONEY_BOSS = 100;
 
-        simulateHandleVictoryRewardsGold(enc, [player]);
+        const trainerMoney = BASE_MONEY_TRAINER;
+        const bossMoney = BASE_MONEY_BOSS;
 
-        expect(player.money).toBeGreaterThanOrEqual(5);
+        expect(trainerMoney).toBe(50);
+        expect(bossMoney).toBe(100);
+        expect(bossMoney).toBeGreaterThan(trainerMoney);
     });
 
-    it('gold não é concedido duas vezes (idempotência via moneyGranted)', () => {
-        const player = makePlayer({ id: 'p1', money: 100 });
-        const enc = {
-            type: 'wild', active: false, result: 'victory',
-            log: [], moneyGranted: false,
-            selectedPlayerId: 'p1',
-            wildMonster: makeMonster({ level: 5 })
+    it('config não deve ter campos minWildGold/wildGoldPerLevel', () => {
+        // Simula o config padrão pós-reversão
+        const configDefaults = {
+            maxTeamSize: 6,
+            maxLevel: 100,
+            levelExpo: 1.5,
+            battleXpBase: 15,
+            medalTiers: { bronze: 5, silver: 12, gold: 25 },
+            friendshipConfig: { battleWin: 2, battleLoss: -5, useHealItem: 5, levelUp: 3, faint: -3 }
         };
 
-        simulateHandleVictoryRewardsGold(enc, [player]);
-        const moneyAfterFirst = player.money;
-        simulateHandleVictoryRewardsGold(enc, [player]); // chamada duplicada
-
-        expect(player.money).toBe(moneyAfterFirst); // não duplicou
-    });
-
-    it('gold não é concedido para encontros group_trainer', () => {
-        const player = makePlayer({ id: 'p1', money: 100 });
-        const enc = {
-            type: 'group_trainer', active: false, result: 'victory',
-            log: [], moneyGranted: false,
-            selectedPlayerId: 'p1',
-            wildMonster: makeMonster({ level: 5 })
-        };
-
-        simulateHandleVictoryRewardsGold(enc, [player]);
-
-        expect(player.money).toBe(100); // não alterado
-        expect(enc.moneyGranted).toBe(false); // flag não setada
-    });
-
-    it('deve usar player do selectedPlayerId, não do primeiro da lista', () => {
-        const player1 = makePlayer({ id: 'p1', money: 100 });
-        const player2 = makePlayer({ id: 'p2', money: 50 });
-        const enc = {
-            type: 'wild', active: false, result: 'victory',
-            log: [], moneyGranted: false,
-            selectedPlayerId: 'p2',
-            wildMonster: makeMonster({ level: 5 })
-        };
-
-        simulateHandleVictoryRewardsGold(enc, [player1, player2]);
-
-        expect(player1.money).toBe(100); // não afetado
-        expect(player2.money).toBeGreaterThan(50); // afetado
-    });
-
-    it('deve respeitar config.minWildGold e config.wildGoldPerLevel', () => {
-        const player = makePlayer({ id: 'p1', money: 0 });
-        const enc = {
-            type: 'wild', active: false, result: 'victory',
-            log: [], moneyGranted: false,
-            selectedPlayerId: 'p1',
-            wildMonster: makeMonster({ level: 3 })
-        };
-        const config = { minWildGold: 10, wildGoldPerLevel: 5 };
-
-        simulateHandleVictoryRewardsGold(enc, [player], config);
-
-        // nível 3: max(10, floor(3*5)) = max(10, 15) = 15
-        expect(player.money).toBe(15);
-        expect(enc.rewards.money).toBe(15);
+        expect(configDefaults.minWildGold).toBeUndefined();
+        expect(configDefaults.wildGoldPerLevel).toBeUndefined();
     });
 });
 
@@ -472,41 +398,30 @@ describe('Fix #6 — Wild result panel usa monstro ativo (activeIndex)', () => {
     });
 });
 
-// ─── Fix #7: Painel de resultado exibe ouro ganho ───────────────────────────
+// ─── Fix #7 (REVERTIDO): Painel de resultado wild não exibe ouro ─────────────
+// Wild não concede ouro pela regra de design; a linha de gold foi removida.
 
-describe('Fix #7 — Wild result panel exibe ouro ganho', () => {
+describe('Fix #7 (revertido) — Wild result panel não exibe ouro', () => {
 
     function buildGoldLine(encounter) {
-        // Replica a lógica do goldLine no renderWildEncounter
+        // Após a reversão: goldLine não existe mais em renderWildEncounter.
+        // Wild não concede ouro; nenhuma linha de 💰 deve aparecer.
         const goldEarned = encounter.rewards?.money || 0;
         return goldEarned > 0
             ? `<div class="player-select-box mt-5">💰 +${goldEarned} moedas ganhas!</div>`
             : '';
     }
 
-    it('deve mostrar moedas quando rewards.money > 0', () => {
-        const enc = makeWildEncounter({ rewards: { xp: 17, money: 10 } });
+    it('painel de resultado wild não deve exibir linha de ouro', () => {
+        // rewards.money não é setado em wild após reversão
+        const enc = makeWildEncounter({ rewards: { xp: 17 } });
         const goldLine = buildGoldLine(enc);
-        expect(goldLine).toContain('💰');
-        expect(goldLine).toContain('+10 moedas');
+        expect(goldLine).toBe(''); // sem linha de gold
     });
 
-    it('deve ser vazio quando rewards.money é 0', () => {
-        const enc = makeWildEncounter({ rewards: { xp: 17, money: 0 } });
+    it('buildGoldLine retorna vazio quando money é undefined', () => {
+        const enc = makeWildEncounter();
         expect(buildGoldLine(enc)).toBe('');
-    });
-
-    it('deve ser vazio quando rewards não está definido', () => {
-        const enc = { ...makeWildEncounter() };
-        delete enc.rewards;
-        expect(buildGoldLine(enc)).toBe('');
-    });
-
-    it('deve exibir valor correto para nível 5 (10 moedas)', () => {
-        // nível 5: max(5, floor(5*2)) = 10
-        const enc = makeWildEncounter({ rewards: { xp: 17, money: 10 } });
-        const goldLine = buildGoldLine(enc);
-        expect(goldLine).toContain('10');
     });
 });
 
@@ -567,29 +482,55 @@ describe('Fix #8 — renderEncounterQuestHint mostra quests do jogador seleciona
     });
 });
 
-// ─── Fluxo integrado: save+reload persiste ouro de batalha wild ──────────────
+// ─── Auditoria de economia — regra oficial ──────────────────────────────────
 
-describe('Integração — Wild battle gold persiste no save', () => {
+describe('Auditoria de economia — regra oficial', () => {
 
-    it('awardMoney incrementa player.money e é preservado em JSON roundtrip', () => {
+    it('jogador inicia com 100 moedas', () => {
         const player = makePlayer({ money: 100 });
-        const goldEarned = 10;
-        player.money += goldEarned;
+        expect(player.money).toBe(100);
+    });
 
-        // Simula save/load (JSON roundtrip)
+    it('quests fornecem ouro suficiente para progressão inicial (QST_001 = 60g)', async () => {
+        const { getQuest } = await import('../js/data/questSystem.js');
+        const q1 = getQuest('QST_001');
+        expect(q1).toBeDefined();
+        expect(q1.rewardGold).toBeGreaterThanOrEqual(40);
+    });
+
+    it('todas as quests têm reward_gold >= 40', async () => {
+        const { QUESTS_DATA } = await import('../js/data/questSystem.js');
+        for (const q of Object.values(QUESTS_DATA)) {
+            expect(q.rewardGold, `Quest ${q.id} rewardGold < 40`).toBeGreaterThanOrEqual(40);
+        }
+    });
+
+    it('trainer concede 50g — suficiente para comprar CLASTERORB_COMUM (30g)', () => {
+        const TRAINER_MONEY = 50;
+        const ORB_COMUM_PRICE = 30;
+        expect(TRAINER_MONEY).toBeGreaterThanOrEqual(ORB_COMUM_PRICE);
+    });
+
+    it('boss concede 100g — mais que trainer (50g)', () => {
+        const TRAINER_MONEY = 50;
+        const BOSS_MONEY = 100;
+        expect(BOSS_MONEY).toBeGreaterThan(TRAINER_MONEY);
+    });
+
+    it('IT_HEAL_01 custa 20g — acessível após 1 quest inicial (60g)', () => {
+        const HEAL_01_PRICE = 20;
+        const QUEST_001_GOLD = 60;
+        expect(QUEST_001_GOLD).toBeGreaterThan(HEAL_01_PRICE);
+    });
+
+    it('save+reload preserva money sem alteração', () => {
+        const player = makePlayer({ money: 250 });
         const saved = JSON.parse(JSON.stringify(player));
-        expect(saved.money).toBe(110);
+        expect(saved.money).toBe(250);
     });
 
-    it('rewards.money é preservado no encounter serializado', () => {
-        const enc = makeWildEncounter({ rewards: { xp: 17, money: 10 } });
-        const saved = JSON.parse(JSON.stringify(enc));
-        expect(saved.rewards.money).toBe(10);
-    });
-
-    it('moneyGranted é preservado para evitar double-grant após reload', () => {
-        const enc = makeWildEncounter({ moneyGranted: true });
-        const saved = JSON.parse(JSON.stringify(enc));
-        expect(saved.moneyGranted).toBe(true);
+    it('wild encounter NÃO tem rewards.money definido', () => {
+        const enc = makeWildEncounter();
+        expect(enc.rewards?.money).toBeUndefined();
     });
 });

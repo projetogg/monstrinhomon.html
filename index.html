@@ -1969,10 +1969,7 @@
                 friendshipConfig: {
                     battleWin: 2, battleLoss: -5, useHealItem: 5,
                     levelUp: 3, faint: -3
-                },
-                // Recompensa de ouro por batalha wild: goldEarned = max(minWildGold, floor(level * wildGoldPerLevel))
-                minWildGold: 5,
-                wildGoldPerLevel: 2
+                }
             };
             if (!state.config || typeof state.config !== 'object') {
                 state.config = configDefaults;
@@ -5359,30 +5356,8 @@
             // XP e recompensas base
             Progression.Actions.handleVictoryRewards(createProgressionDeps(), enc);
 
-            // Recompensa de moedas por batalha wild (idempotente via flag moneyGranted)
-            if (enc.type === 'wild' && !enc.moneyGranted) {
-                enc.moneyGranted = true;
-                const defeated = enc.wildMonster;
-                if (defeated) {
-                    const minGold = GameState.config?.minWildGold ?? 5;
-                    const perLevel = GameState.config?.wildGoldPerLevel ?? 2;
-                    const goldEarned = Math.max(minGold, Math.floor((defeated.level || 1) * perLevel));
-                    let player = null;
-                    if (enc.selectedPlayerId || enc.currentPlayerId) {
-                        player = GameState.players.find(p =>
-                            p.id === (enc.selectedPlayerId || enc.currentPlayerId)
-                        );
-                    }
-                    if (!player) player = GameState.players?.[0] || null;
-                    if (player) {
-                        awardMoney(goldEarned, player);
-                        enc.log = enc.log || [];
-                        enc.log.push(`💰 +${goldEarned} moedas!`);
-                        enc.rewards = enc.rewards || {};
-                        enc.rewards.money = goldEarned;
-                    }
-                }
-            }
+            // REGRA DE DESIGN: batalhas selvagens NÃO concedem ouro.
+            // Ouro vem de: treinadores (50g), bosses (100g), quests e venda de drops.
             
             // Sistema de Drops: gerar e conceder itens após vitória
             processVictoryDrops(enc);
@@ -5703,16 +5678,10 @@
                                 <small><strong>XP:</strong> ${xpCurrent}/${xpNeeded} (${Math.floor(xpPct)}%)</small>
                             </div>`;
                     }
-                    // Fix #7: mostrar ouro ganho no painel de resultado
-                    const goldEarned = encounter.rewards?.money || 0;
-                    const goldLine = goldEarned > 0
-                        ? `<div class="player-select-box mt-5">💰 +${goldEarned} moedas ganhas!</div>`
-                        : '';
                     panel.innerHTML = `
                         <div class="encounter-panel">
                             <h3>${resultEmoji} ${resultTitle}</h3>
                             ${xpBar}
-                            ${goldLine}
                             <div class="battle-log mt-10">${logHtml}</div>
                             <div class="flex-center mt-15">
                                 <button class="btn btn-primary btn-large" onclick="closeBattleResult()">✅ Continuar</button>

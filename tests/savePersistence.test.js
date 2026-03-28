@@ -52,9 +52,7 @@ function makeDefaultConfig() {
         friendshipConfig: {
             battleWin: 2, battleLoss: -5, useHealItem: 5,
             levelUp: 3, faint: -3
-        },
-        minWildGold: 5,
-        wildGoldPerLevel: 2
+        }
     };
 }
 
