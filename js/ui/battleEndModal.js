@@ -66,7 +66,7 @@ export function closeBattleEndModal() {
 /**
  * Renderiza conteúdo para VITÓRIA
  */
-function renderVictoryContent(participants, rewards) {
+function renderVictoryContent(participants, rewards, log) {
     let html = '';
     
     html += '<h2 style="color: #4CAF50; font-size: 28px; margin-bottom: 20px; text-align: center;">🏁 Vocês venceram juntos!</h2>';
@@ -87,6 +87,33 @@ function renderVictoryContent(participants, rewards) {
     }
     
     html += '</div>';
+
+    // Seção de drops e progresso de quest a partir do log do encontro
+    const logLines = Array.isArray(log) ? log : [];
+    const eventLines = [];
+    let inDropSection = false;
+    for (const l of logLines) {
+        const s = String(l);
+        if (s.startsWith('🎁') || s.startsWith('📦')) { inDropSection = true; }
+        else if (!s.startsWith('  ')) { inDropSection = false; }
+
+        if (inDropSection ||
+            s.startsWith('🏆') || s.startsWith('🗺️') ||
+            s.startsWith('📋') || s.startsWith('💰') ||
+            s.startsWith('⭐') || s.startsWith('🎉')) {
+            eventLines.push(l);
+        }
+    }
+
+    if (eventLines.length > 0) {
+        html += '<div style="margin-top: 15px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.1);">';
+        html += '<h3 style="color: #333; font-size: 16px; margin-bottom: 8px;">📋 Resumo da Batalha:</h3>';
+        for (const line of eventLines) {
+            html += `<div style="padding: 4px 0; font-size: 14px; color: #444;">${line}</div>`;
+        }
+        html += '</div>';
+    }
+
     html += '</div>';
     
     return html;
@@ -160,16 +187,11 @@ function createModalButton(result) {
  * @param {string} params.result - Resultado: "victory", "defeat" ou "retreat"
  * @param {Array<Object>} params.participants - Array de participantes com recompensas
  * @param {Object} params.rewards - Objeto de recompensas (opcional, para compatibilidade)
+ * @param {string[]} [params.log] - Linhas do log do encontro (drops, quests, etc.)
  * @returns {Promise<void>} Promise que resolve quando modal é fechado
- * 
- * Exemplo de participants:
- * [
- *   { playerName: "João", xp: 30, money: 50 },
- *   { playerName: "Maria", xp: 30, money: 50 }
- * ]
  */
 export function showBattleEndModal(params) {
-    const { result, participants = [], rewards = {} } = params;
+    const { result, participants = [], rewards = {}, log = [] } = params;
     
     return new Promise((resolve) => {
         // Guardar resolve para ser chamado quando fechar
@@ -181,7 +203,7 @@ export function showBattleEndModal(params) {
         let content = '<div class="modal-content-card" style="max-width: 500px; padding: 30px;">';
         
         if (result === 'victory') {
-            content += renderVictoryContent(participants, rewards);
+            content += renderVictoryContent(participants, rewards, log);
         } else if (result === 'defeat') {
             content += renderDefeatContent();
         } else if (result === 'retreat') {

@@ -47,6 +47,14 @@
                 </div>
             </div>
 
+            <!-- FASE UX: Painel de Quests Ativas -->
+            <div class="card">
+                <h3>📋 Quests Ativas</h3>
+                <div id="questTrackerContent">
+                    <p class="text-muted">Nenhuma quest ativa.</p>
+                </div>
+            </div>
+
             <!-- FASE 1 POKEMON: Monstródex -->
             <div class="card">
                 <h3>📖 Monstródex</h3>
@@ -115,7 +123,13 @@
 
         <div id="tabEncounter" class="tab-content">
             <h2>Encounter ⚔️</h2>
-            
+
+            <!-- FASE UX: Dica de objetivo da quest ativa -->
+            <div id="encounterQuestHint" class="card quest-hint-card is-hidden">
+                <h4 style="margin:0 0 6px">📋 Objetivo da Quest</h4>
+                <div id="encounterQuestHintContent"></div>
+            </div>
+
             <div class="card">
                 <h3>Start New Encounter</h3>
                 <select id="encounterType" onchange="updateEncounterUI()">
@@ -801,13 +815,13 @@
                     'Animalista': { strong: null, weak: null } // Neutro
                 },
                 // Thresholds de captura por raridade (sem dado)
-                // Valores mais baixos = captura requer HP mais baixo
+                // Alinhados com CAPTURE_BASE em GAME_RULES.md
                 captureThreshold: {
-                    'Comum': 0.25,      // 25% HP base
-                    'Incomum': 0.20,    // 20% HP base
-                    'Raro': 0.15,       // 15% HP base
-                    'Místico': 0.10,    // 10% HP base
-                    'Lendário': 0.05    // 5% HP base
+                    'Comum': 0.60,      // 60% HP base (acessível para iniciantes)
+                    'Incomum': 0.45,    // 45% HP base
+                    'Raro': 0.30,       // 30% HP base (requer enfraquecimento)
+                    'Místico': 0.18,    // 18% HP base (desafiador)
+                    'Lendário': 0.10    // 10% HP base (muito difícil)
                 },
                 // Multiplicadores de raridade
                 rarityPower: {
@@ -1391,13 +1405,18 @@
                 return CLASTERORBS[itemId];
             }
             
-            // Fallback for legacy healing items
+            // Try Data module (cobre todos os itens de items.json, incluindo IT_HEAL_01/02/03)
+            const dataItem = window.Data?.getItemById?.(itemId);
+            if (dataItem) return dataItem;
+            
+            // Fallback para IT_HEAL_01 quando Data ainda não carregou
             if (itemId === 'IT_HEAL_01') {
                 return {
                     id: 'IT_HEAL_01',
                     name: 'Petisco de Cura',
-                    type: 'HEAL',
+                    type: 'heal',
                     heal_pct: 0.30,
+                    heal_min: 30,
                     emoji: '💚'
                 };
             }
@@ -3620,11 +3639,10 @@
                 encounter.turnIndex = 0;
                 encounter.currentActor = getCurrentActor(encounter);
                 
-                encounter.log.push('🎲 Ordem de turnos calculada!');
-                encounter.turnOrder.forEach((actor, idx) => {
-                    const tieInfo = actor._tiebreak ? ` (d20: ${actor._tiebreak})` : '';
-                    encounter.log.push(`   ${idx + 1}. ${actor.name} (${actor.side === 'player' ? 'Jogador' : 'Inimigo'}, SPD: ${actor.spd}${tieInfo})`);
-                });
+                // Log compacto da ordem de turnos (1 linha)
+                const firstActor = encounter.turnOrder[0];
+                const totalActors = encounter.turnOrder.length;
+                encounter.log.push(`🎲 Batalha iniciada! ${totalActors} participantes. Primeiro: ${firstActor?.name || '?'}.`);
                 
                 GameState.currentEncounter = encounter;
                 
@@ -4658,13 +4676,11 @@
                 const isEvo = line.includes("🌟") || /evoluiu para/i.test(line);
                 if (isEvo) showToast(line);
 
-                // Fix #3: Detectar conclusão de quest
-                const isQuestComplete = line.includes("🏆") && /quest/i.test(line);
-                if (isQuestComplete) showToast(line, 'success');
+                // Detectar conclusão de quest
+                if (line.startsWith("🏆 Quest concluída:")) showToast(line, 'success');
 
-                // Fix #3: Detectar nova quest ativada
-                const isNewQuest = line.includes("🗺️");
-                if (isNewQuest) showToast(line);
+                // Detectar nova quest desbloqueada
+                if (line.startsWith("🗺️ Nova quest:")) showToast(line, 'success');
             }
             enc._toastCursor = enc.log.length;
         }
@@ -5338,7 +5354,7 @@
             if (!encounter || !encounter.rewards || !encounter.rewards.xp) return;
             
             const player = GameState.players.find(p => p.id === encounter.selectedPlayerId);
-            const mon = player?.team?.[0];
+            const mon = player ? _getActiveMonsterOfPlayer(player) : null;
             
             // Só ganha XP se estiver vivo
             if (!mon || mon.hp <= 0) return;
@@ -5498,6 +5514,8 @@
                     for (const pid of eligiblePlayerIds) {
                         const player = state.players.find(p => p.id === pid);
                         if (player) {
+                            // Aplicar recompensa de moedas ao jogador
+                            awardMoney(rewards.money, player);
                             participants.push({
                                 playerName: player.name || player.nome || pid,
                                 xp: rewards.xp,
@@ -5539,10 +5557,11 @@
                     }
                 }
                 
-                // Mostrar modal
+                // Mostrar modal (com log do encontro para drops + progresso de quests)
                 await BattleEndModal.showBattleEndModal({
                     result: encounter.result,
-                    participants: participants
+                    participants: participants,
+                    log: encounter.log || []
                 });
                 
                 // Após fechar modal, limpar encounter
@@ -5647,12 +5666,9 @@
                 const monster = encounter.wildMonster;
                 if (!monster) return;
                 
-                // Buscar jogador selecionado
                 const playerId = encounter.selectedPlayerId;
                 const player = GameState.players.find(p => p.id === playerId);
-                // Fix #6: usar monstro ativo (activeIndex), não sempre team[0]
-                const activeIdx = typeof player?.activeIndex === 'number' ? player.activeIndex : 0;
-                const playerMonster = player?.team?.[activeIdx];
+                const playerMonster = player ? _getActiveMonsterOfPlayer(player) : null;
 
                 // BUG FIX: Quando o encounter está inativo, exibir painel de resultado
                 // para que o jogador possa ver o XP ganho antes de fechar.
@@ -5698,7 +5714,7 @@
                 const html = `
                     <div class="encounter-panel">
                         ${renderTutorialBanner(encounter)}
-                        <h3>Wild ${monster.emoji} ${monster.name} appeared!</h3>
+                        <h3>${monster.emoji} ${monster.name} selvagem apareceu!</h3>
                         ${encounter.lastRoll ? (() => {
                             const lr = encounter.lastRoll;
                             const badgeClass = lr.type === 'crit' ? 'crit' : lr.type === 'fail' ? 'fail' : '';
@@ -5748,7 +5764,7 @@
                             }
                         </div>
                         
-                        <h4>Choose Action:</h4>
+                        <h4>Escolha sua Ação:</h4>
                         <div class="flex-center-col">
                             <div class="my-10">
                                 <label class="d20-label">🎲 Enter your d20 roll:</label>
@@ -5776,8 +5792,8 @@
                                         <label class="text-bold">Escolha sua ClasterOrb:</label>
                                         <select id="captureOrbSelect" onchange="updateCaptureThreshold()" class="orb-select">
                                             ${comum > 0 ? `<option value="CLASTERORB_COMUM">⚪ Comum (${comum}x) - +0% bonus</option>` : ''}
-                                            ${incomum > 0 ? `<option value="CLASTERORB_INCOMUM">🔵 Incomum (${incomum}x) - +5% bonus</option>` : ''}
-                                            ${rara > 0 ? `<option value="CLASTERORB_RARA">🟣 Rara (${rara}x) - +10% bonus</option>` : ''}
+                                            ${incomum > 0 ? `<option value="CLASTERORB_INCOMUM">🔵 Incomum (${incomum}x) - +10% bônus</option>` : ''}
+                                            ${rara > 0 ? `<option value="CLASTERORB_RARA">🟣 Rara (${rara}x) - +20% bônus</option>` : ''}
                                         </select>
                                     </div>
                                     <div id="captureThresholdDisplay" class="capture-threshold-box">
@@ -5793,7 +5809,7 @@
                                     <div class="mt-10">
                                         <strong>📦 Inventário:</strong> 
                                         ⚪ ${comum} | 🔵 ${incomum} | 🟣 ${rara} | 
-                                        💚 Cura: ${player.inventory?.['IT_HEAL_01'] || 0}
+                                        💚 ${player.inventory?.['IT_HEAL_01'] || 0} | 🍖 ${player.inventory?.['IT_HEAL_02'] || 0} | ✨ ${player.inventory?.['IT_HEAL_03'] || 0}
                                     </div>
                                 </div>
                                 `;
@@ -5812,36 +5828,46 @@
                                     
                                     return `
                                         ${advantageHtml}
-                                        <button class="btn btn-danger btn-large" onclick="attackWild()" ${tutorialAllows("attack") ? "" : "disabled title='Tutorial: ainda não liberado'"}>⚔️ Attack</button>
+                                        <button class="btn btn-danger btn-large" onclick="attackWild()" ${tutorialAllows("attack") ? "" : "disabled title='Tutorial: ainda não liberado'"}>⚔️ Atacar</button>
                                     `;
-                                })() : '<button class="btn btn-danger btn-large" onclick="attackWild()">⚔️ Attack</button>'}
-                                <button class="btn btn-warning btn-large" onclick="fleeEncounter()" ${tutorialAllows("flee") ? "" : "disabled title='Tutorial: ainda não liberado'"}>🏃 Flee</button>
+                                })() : '<button class="btn btn-danger btn-large" onclick="attackWild()">⚔️ Atacar</button>'}
+                                <button class="btn btn-warning btn-large" onclick="fleeEncounter()" ${tutorialAllows("flee") ? "" : "disabled title='Tutorial: ainda não liberado'"}>🏃 Fugir</button>
                             </div>
                             
                             ${playerMonster && player ? (() => {
-                                const healItems = player.inventory?.['IT_HEAL_01'] || 0;
-                                const canUseItem = healItems > 0 && playerMonster.hp > 0 && playerMonster.hp < playerMonster.hpMax;
+                                // Todos os itens de cura suportados em batalha selvagem
+                                const WILD_HEAL_ITEMS = [
+                                    { id: 'IT_HEAL_01', emoji: '💚', name: 'Petisco de Cura' },
+                                    { id: 'IT_HEAL_02', emoji: '🍖', name: 'Ração Revigorante' },
+                                    { id: 'IT_HEAL_03', emoji: '✨', name: 'Elixir Máximo' },
+                                ];
+                                const availableHeals = WILD_HEAL_ITEMS.filter(h => (player.inventory?.[h.id] || 0) > 0);
+                                const canHeal = playerMonster.hp > 0 && playerMonster.hp < playerMonster.hpMax;
+                                const tutAllows = tutorialAllows("item");
                                 
                                 return `
                                 <div class="heal-box">
                                     <strong class="font-size-16 text-bold">💚 Usar Item de Cura</strong>
                                     <div class="mt-10">
-                                        <div><strong>Petisco de Cura disponível:</strong> ${healItems}x</div>
                                         <div><strong>HP atual:</strong> ${playerMonster.hp}/${playerMonster.hpMax}</div>
-                                        ${!canUseItem && healItems === 0 ? 
-                                            `<div class="color-error mt-5">❌ Sem itens de cura disponíveis</div>` : 
-                                            !canUseItem && playerMonster.hp <= 0 ? 
+                                        ${!canHeal && playerMonster.hp <= 0 ? 
                                             `<div class="color-error mt-5">❌ Monstrinho desmaiado, não pode usar item</div>` :
-                                            !canUseItem && playerMonster.hp >= playerMonster.hpMax ?
+                                            !canHeal && playerMonster.hp >= playerMonster.hpMax ?
                                             `<div class="color-warning mt-5">⚠️ HP já está cheio</div>` : ''
                                         }
                                     </div>
-                                    <button class="btn btn-primary mt-10 w-100" 
-                                            onclick="useItemInBattle('IT_HEAL_01')"
-                                            ${!canUseItem || !tutorialAllows("item") ? 'disabled class="opacity-50"' : ''}
-                                            ${!tutorialAllows("item") ? 'title="Tutorial: ainda não liberado"' : ''}>
-                                        💚 Usar Petisco de Cura
-                                    </button>
+                                    ${availableHeals.length === 0 ? `<div class="color-error mt-5">❌ Sem itens de cura disponíveis</div>` : ''}
+                                    ${availableHeals.map(h => {
+                                        const qty = player.inventory?.[h.id] || 0;
+                                        const canUse = canHeal && qty > 0;
+                                        return `
+                                        <button class="btn btn-primary mt-8 w-100"
+                                                onclick="useItemInBattle('${h.id}')"
+                                                ${!canUse || !tutAllows ? 'disabled class="opacity-50"' : ''}
+                                                ${!tutAllows ? 'title="Tutorial: ainda não liberado"' : ''}>
+                                            ${h.emoji} ${h.name} (${qty}x)
+                                        </button>`;
+                                    }).join('')}
                                 </div>
                                 `;
                             })() : ''}
@@ -6075,9 +6101,7 @@
                     // Feature 4.4: Capture fail sound
                     Audio.playSfx("capture_fail");
                     
-                    // BUG FIX: usar monstro ativo (activeIndex), não sempre team[0]
-                    const captureActiveIdx = typeof player.activeIndex === 'number' ? player.activeIndex : 0;
-                    const playerMonster = player.team?.[captureActiveIdx];
+                    const playerMonster = _getActiveMonsterOfPlayer(player);
                     if (playerMonster && playerMonster.hp > 0) {
                         encounter.log.push(`⚡ ${monster.name} contra-ataca!`);
                         
@@ -6135,9 +6159,7 @@
                     return;
                 }
                 
-                // BUG FIX: usar monstro ativo (activeIndex), não sempre team[0]
-                const itemActiveIdx = typeof player.activeIndex === 'number' ? player.activeIndex : 0;
-                const playerMonster = player.team?.[itemActiveIdx];
+                const playerMonster = _getActiveMonsterOfPlayer(player);
                 if (!playerMonster) {
                     alert('Jogador não tem monstrinhos no time');
                     return;
@@ -6161,8 +6183,15 @@
                 player.inventory = player.inventory || {};
                 const itemCount = player.inventory[itemId] || 0;
                 
+                // Obter definição do item para nome e fórmula de cura
+                const itemDef = getItemDef(itemId);
+                const itemName = itemDef?.name || itemId;
+                const healPct  = Number(itemDef?.heal_pct) || 0.30;
+                const healMin  = Number(itemDef?.heal_min) || 30;
+                const itemEmoji = itemDef?.emoji || '💚';
+                
                 if (itemCount <= 0) {
-                    alert('❌ Você não tem Petisco de Cura disponível!');
+                    alert(`❌ Você não tem ${itemName} disponível!`);
                     return;
                 }
                 
@@ -6170,11 +6199,10 @@
                 
                 // CONSUMIR 1 unidade do item
                 player.inventory[itemId]--;
-                encounter.log.push(`💚 ${player.name} usou Petisco de Cura! (Restam: ${player.inventory[itemId]})`);
+                encounter.log.push(`${itemEmoji} ${player.name} usou ${itemName}! (Restam: ${player.inventory[itemId]})`);
                 
-                // APLICAR CURA
-                // Petisco de Cura: restaura 30 HP ou 30% do HP máximo (o que for maior)
-                const healAmount = Math.max(30, Math.floor(playerMonster.hpMax * 0.30));
+                // APLICAR CURA usando fórmula do itemDef
+                const healAmount = Math.max(healMin, Math.floor(playerMonster.hpMax * healPct));
                 const hpBefore = playerMonster.hp;
                 playerMonster.hp = Math.min(playerMonster.hpMax, playerMonster.hp + healAmount);
                 const actualHeal = playerMonster.hp - hpBefore;
@@ -6267,14 +6295,14 @@
                             });
                             
                             playerMonster.hp = Math.max(0, playerMonster.hp - damage);
-                            encounter.log.push(`💥 ${wildMonster.name} hits! Deals ${damage} damage!`);
+                            encounter.log.push(`💥 ${wildMonster.name} acertou! Causa ${damage} de dano!`);
                             
                             // Verificar se jogador perdeu
                             if (playerMonster.hp <= 0) {
                                 // SISTEMA DE AMIZADE: Perder amizade ao desmaiar
                                 updateFriendship(playerMonster, 'faint');
                                 
-                                encounter.log.push(`💀 ${playerMonster.name} fainted! Defeat!`);
+                                encounter.log.push(`💀 ${playerMonster.name} desmaiou! Derrota!`);
                                 
                                 // Feature 4.4: Defeat sound (com idempotência)
                                 if (!encounter._loseSfxPlayed) {
@@ -6325,9 +6353,7 @@
                     return;
                 }
                 
-                // BUG FIX: usar monstro ativo (activeIndex), não sempre team[0]
-                const attackActiveIdx = typeof player.activeIndex === 'number' ? player.activeIndex : 0;
-                const playerMonster = player.team?.[attackActiveIdx];
+                const playerMonster = _getActiveMonsterOfPlayer(player);
                 if (!playerMonster) {
                     alert('Player has no monsters in team');
                     return;
@@ -6409,9 +6435,7 @@
                 const player = GameState.players.find(p => p.id === playerId);
                 if (!player) return;
                 
-                // BUG FIX: usar monstro ativo (activeIndex), não sempre team[0]
-                const skillActiveIdx = typeof player.activeIndex === 'number' ? player.activeIndex : 0;
-                const playerMonster = player.team?.[skillActiveIdx];
+                const playerMonster = _getActiveMonsterOfPlayer(player);
                 if (!playerMonster) {
                     alert('No monster available');
                     return;
@@ -6670,7 +6694,7 @@
                 const encounter = GameState.currentEncounter;
                 if (!encounter) return;
                 
-                if (confirm('Flee from this encounter?')) {
+                if (confirm('Fugir deste encontro?')) {
                     encounter.log = encounter.log || [];
                     encounter.log.push('🏃 Fugiu do encontro');
                     encounter.active = false;
@@ -7557,7 +7581,7 @@
                 // Encontra jogador
                 const player = GameState.players?.find(p => p.id === playerId);
                 if (!player) {
-                    alert('❌ Jogador não encontrado!');
+                    showToast('❌ Jogador não encontrado!', 'error');
                     return;
                 }
 
@@ -7565,7 +7589,7 @@
                 const allItems = window.itemsData || [];
                 const item = allItems.find(i => i.id === itemId);
                 if (!item) {
-                    alert('❌ Item não encontrado!');
+                    showToast('❌ Item não encontrado!', 'error');
                     return;
                 }
 
@@ -7573,7 +7597,7 @@
                 if (window.ShopSystem) {
                     const check = window.ShopSystem.canBuy(player, item, 1);
                     if (!check.ok) {
-                        alert(`❌ ${check.reason}`);
+                        showToast(`❌ ${check.reason}`, 'error');
                         return;
                     }
                     // Executa compra e aplica ao player no GameState
@@ -7583,13 +7607,13 @@
                 } else {
                     // Fallback sem módulo
                     if (!item.price || !item.price.buy || item.price.buy <= 0) {
-                        alert('❌ Item não está disponível para compra!');
+                        showToast('❌ Item não está disponível para compra!', 'error');
                         return;
                     }
                     const price = item.price.buy;
                     const playerMoney = player.money || 0;
                     if (playerMoney < price) {
-                        alert(`❌ Dinheiro insuficiente! Você tem ${playerMoney} e precisa de ${price}.`);
+                        showToast(`❌ Dinheiro insuficiente! Você tem ${playerMoney} e precisa de ${price}.`, 'error');
                         return;
                     }
                     player.money = playerMoney - price;
@@ -7600,15 +7624,15 @@
                 // Salva estado
                 saveToLocalStorage();
 
-                // Exibe confirmação
-                alert(`✅ Comprou ${item.name} por ${item.price.buy}! Você tem ${player.money} restantes.`);
+                // Exibe confirmação como toast
+                showToast(`✅ Comprou ${item.name} por ${item.price.buy} 💰. Saldo: ${player.money} 💰`, 'success');
 
                 // Atualiza view
                 updateShopView();
 
             } catch (error) {
                 console.error('Failed to buy item:', error);
-                alert('❌ Erro ao comprar item. Veja o console para detalhes.');
+                showToast('❌ Erro ao comprar item. Veja o console para detalhes.', 'error');
             }
         }
 
@@ -7659,7 +7683,7 @@
                 // Encontra jogador
                 const player = GameState.players?.find(p => p.id === playerId);
                 if (!player) {
-                    alert('❌ Jogador não encontrado!');
+                    showToast('❌ Jogador não encontrado!', 'error');
                     return;
                 }
 
@@ -7667,7 +7691,7 @@
                 const allItems = window.itemsData || [];
                 const item = allItems.find(i => i.id === itemId);
                 if (!item) {
-                    alert('❌ Item não encontrado!');
+                    showToast('❌ Item não encontrado!', 'error');
                     return;
                 }
 
@@ -7675,7 +7699,7 @@
                 if (window.ShopSystem) {
                     const check = window.ShopSystem.canSell(player, item, qty);
                     if (!check.ok) {
-                        alert(`❌ ${check.reason}`);
+                        showToast(`❌ ${check.reason}`, 'error');
                         return;
                     }
                     const sellPrice = window.ShopSystem.getSellPrice(item);
@@ -7684,27 +7708,27 @@
                     player.money = updated.money;
                     player.inventory = updated.inventory;
                     saveToLocalStorage();
-                    alert(`✅ Vendeu ${qty}x ${item.name} por ${totalValue}! Você tem ${player.money} moedas.`);
+                    showToast(`✅ Vendeu ${qty}x ${item.name} por ${totalValue} 💰`, 'success');
                 } else {
                     // Fallback sem módulo
                     if (qty < 1 || !Number.isInteger(qty)) {
-                        alert('❌ Quantidade inválida!');
+                        showToast('❌ Quantidade inválida!', 'error');
                         return;
                     }
                     const owned = player.inventory?.[itemId] || 0;
                     if (owned < qty) {
-                        alert(`❌ Você não tem ${qty}x ${item.name}! Você tem apenas ${owned}x.`);
+                        showToast(`❌ Você não tem ${qty}x ${item.name}! Você tem apenas ${owned}x.`, 'error');
                         return;
                     }
                     const sellPrice = getSellPrice(item);
                     if (sellPrice === null) {
-                        alert('❌ Este item não pode ser vendido!');
+                        showToast('❌ Este item não pode ser vendido!', 'error');
                         return;
                     }
                     if (player.team && Array.isArray(player.team)) {
                         const equippedMonster = player.team.find(m => m?.equippedItem === itemId);
                         if (equippedMonster) {
-                            alert(`❌ Não é possível vender item equipado! ${item.name} está equipado em ${equippedMonster.name}.`);
+                            showToast(`❌ Não é possível vender item equipado! ${item.name} está equipado em ${equippedMonster.name}.`, 'error');
                             return;
                         }
                     }
@@ -7714,7 +7738,7 @@
                     if (player.inventory[itemId] <= 0) delete player.inventory[itemId];
                     player.money = (player.money || 0) + totalValue;
                     saveToLocalStorage();
-                    alert(`✅ Vendeu ${qty}x ${item.name} por ${totalValue}! Você tem ${player.money} moedas.`);
+                    showToast(`✅ Vendeu ${qty}x ${item.name} por ${totalValue} 💰`, 'success');
                 }
 
                 // Atualiza view
@@ -7722,7 +7746,7 @@
 
             } catch (error) {
                 console.error('Failed to sell item:', error);
-                alert('❌ Erro ao vender item. Veja o console para detalhes.');
+                showToast('❌ Erro ao vender item. Veja o console para detalhes.', 'error');
             }
         }
 
@@ -8126,6 +8150,9 @@
                 
                 // FASE 1 POKEMON: Renderizar Estatísticas
                 renderAchievements();
+
+                // FASE UX: Renderizar painel de quests ativas
+                renderQuestTrackerPanel();
             } catch (error) {
                 console.error('Failed to update home stats:', error);
             }
@@ -8197,6 +8224,92 @@
             } catch (error) {
                 console.error('Error rendering monstrodex:', error);
             }
+        }
+
+        /**
+         * FASE UX: Renderiza painel de quests ativas na Home.
+         * Usa GameFlow.getActiveQuestsSummary() para leitura pura sem mutação.
+         */
+        function renderQuestTrackerPanel() {
+            const container = document.getElementById('questTrackerContent');
+            if (!container) return;
+
+            if (!window.GameFlow) {
+                container.innerHTML = '<p class="text-muted">Sistema de quests não carregado.</p>';
+                return;
+            }
+
+            const players = GameState.players || [];
+            if (players.length === 0) {
+                container.innerHTML = '<p class="text-muted">Adicione jogadores para ver quests.</p>';
+                return;
+            }
+
+            const entries = [];
+            for (const player of players) {
+                const summary = window.GameFlow.getActiveQuestsSummary(player);
+                for (const { quest, progress, needed } of summary) {
+                    const pct = needed > 0 ? Math.min(100, Math.round((progress / needed) * 100)) : 0;
+                    const playerName = player.name || player.nome || player.id;
+                    entries.push(`
+                        <div class="quest-tracker-entry">
+                            <div class="quest-header">
+                                <strong>${quest.nome}</strong>
+                                <span class="text-small text-muted">(${playerName})</span>
+                            </div>
+                            <div class="text-small">${quest.descricao || ''}</div>
+                            <div class="quest-progress-bar">
+                                <div class="quest-progress-fill" style="width:${pct}%"></div>
+                            </div>
+                            <div class="text-small">Progresso: ${progress}/${needed} &nbsp;|&nbsp; 💰 ${quest.rewardGold} &nbsp;⭐ ${quest.rewardXp} XP</div>
+                        </div>
+                    `);
+                }
+            }
+
+            container.innerHTML = entries.length > 0
+                ? entries.join('')
+                : '<p class="text-muted">Nenhuma quest ativa no momento.</p>';
+        }
+
+        /**
+         * FASE UX: Renderiza dica de objetivo da quest ativa no painel Encounter.
+         * Mostra a quest do jogador selecionado no dropdown de encontros individuais.
+         * @param {string} playerId
+         */
+        function renderEncounterQuestHint(playerId) {
+            const hintPanel = document.getElementById('encounterQuestHint');
+            const hintContent = document.getElementById('encounterQuestHintContent');
+            if (!hintPanel || !hintContent) return;
+
+            if (!playerId || !window.GameFlow) {
+                hintPanel.classList.add('is-hidden');
+                return;
+            }
+
+            const player = GameState.players?.find(p => p.id === playerId);
+            if (!player) {
+                hintPanel.classList.add('is-hidden');
+                return;
+            }
+
+            const summary = window.GameFlow.getActiveQuestsSummary(player);
+            if (summary.length === 0) {
+                hintPanel.classList.add('is-hidden');
+                return;
+            }
+
+            const { quest, progress, needed } = summary[0];
+            const pct = needed > 0 ? Math.min(100, Math.round((progress / needed) * 100)) : 0;
+            hintContent.innerHTML = `
+                <strong>${quest.nome}</strong>
+                <div class="text-small">${quest.descricao || ''}</div>
+                <div class="quest-progress-bar" style="margin-top:6px">
+                    <div class="quest-progress-fill" style="width:${pct}%"></div>
+                </div>
+                <div class="text-small" style="margin-top:4px">Progresso: ${progress}/${needed}</div>
+            `;
+            hintPanel.classList.remove('is-hidden');
         }
 
         /**
@@ -8433,7 +8546,7 @@
                                 <strong>${monster.name || 'Unknown'}</strong>
                                 <span class="badge badge-${monster.rarity || 'common'}">${monster.rarity || 'Comum'}</span>
                                 Lv${monster.level || 1}
-                                ${!isAlive ? '<span class="color-error text-bold"> (Fainted)</span>' : ''}
+                                ${!isAlive ? '<span class="color-error text-bold"> (Desmaiado)</span>' : ''}
                                 <div class="progress-bar h-15 mt-5">
                                     <div class="progress-fill hp" style="width: ${hpPercent}%"></div>
                                 </div>

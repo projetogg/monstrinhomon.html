@@ -1,7 +1,7 @@
 quest_id,nome,descricao,local_id,pre_req,tipo_objetivo,objetivo_monster_id,objetivo_qtd,reward_xp,reward_gold,reward_item_id,next_quest_id,notes
-QST_001,O Ovo Perdido,Encontre o Ovo Perdido na Campina Inicial e vença o Treinador Novato.,LOC_001,,derrotar_treinador,,1,80,60,IT_CAP_02,QST_002,Quest tutorial
-QST_002,Primeira Captura,Capture 1 monstrinho selvagem na Campina Inicial.,LOC_001,QST_001,capturar,,1,60,40,IT_HEAL_01,QST_003,Introduz captura
-QST_003,Rastros na Floresta,Derrote 3 monstrinhos selvagens na Floresta Verde.,LOC_002,QST_002,derrotar_wild,,3,120,50,IT_HEAL_01,QST_004,Explorar floresta
+QST_001,O Ovo Perdido,Encontre o Ovo Perdido na Campina Inicial e vença o Treinador Novato.,LOC_001,,derrotar_treinador,,1,80,60,CLASTERORB_COMUM,QST_002,Quest tutorial
+QST_002,Primeira Captura,Capture 1 monstrinho selvagem na Campina Inicial.,LOC_001,QST_001,capturar,,1,80,50,IT_HEAL_01,QST_003,Introduz captura
+QST_003,Rastros na Floresta,Derrote 3 monstrinhos selvagens na Floresta Verde.,LOC_002,QST_002,derrotar_wild,,3,120,70,IT_HEAL_01,QST_004,Explorar floresta
 QST_004,O Cervo da Floresta,Capture um Cervimon na Floresta Verde.,LOC_002,QST_003,capturar,MON_023,1,150,80,CLASTERORB_INCOMUM,QST_005,Captura específica
 QST_005,Mineradores Endurecidos,Derrote o Treinador Minerador nas Minas e Cavernas.,LOC_003,QST_004,derrotar_treinador,,1,200,100,IT_HEAL_02,QST_006,Treinador de minas
 QST_006,Pedra e Metal,Capture um Ferrozimon nas Minas e Cavernas.,LOC_003,QST_005,capturar,MON_010,1,180,90,CLASTERORB_INCOMUM,QST_007,Captura de guerreiro

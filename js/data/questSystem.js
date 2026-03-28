@@ -61,7 +61,7 @@ export const QUESTS_DATA = {
         objetivoQtd:      1,
         rewardXp:         80,
         rewardGold:       60,
-        rewardItemId:     'IT_CAP_02',
+        rewardItemId:     'CLASTERORB_COMUM',
         nextQuestId:      'QST_002'
     },
     'QST_002': {
@@ -73,8 +73,8 @@ export const QUESTS_DATA = {
         tipoObjetivo:     'capturar',
         objetivoMonsterId: null,
         objetivoQtd:      1,
-        rewardXp:         60,
-        rewardGold:       40,
+        rewardXp:         80,
+        rewardGold:       50,
         rewardItemId:     'IT_HEAL_01',
         nextQuestId:      'QST_003'
     },
@@ -90,7 +90,7 @@ export const QUESTS_DATA = {
         objetivoMonsterId: null,
         objetivoQtd:      3,
         rewardXp:         120,
-        rewardGold:       50,
+        rewardGold:       70,
         rewardItemId:     'IT_HEAL_01',
         nextQuestId:      'QST_004'
     },
