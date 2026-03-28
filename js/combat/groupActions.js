@@ -229,6 +229,31 @@ export function executePlayerAttackGroup(deps, targetEnemyIndex = null) {
  * @param {object} deps - Dependências injetadas
  * @returns {boolean} true se turno foi processado
  */
+/**
+ * BUG FIX: Verifica se algum participante tem o monstro ativo morto mas possui substituto vivo.
+ * Retorna o primeiro jogador nessa situação, ou null se nenhum precisar trocar.
+ *
+ * Não exportada intencionalmente — é uma função auxiliar interna de executeEnemyTurnGroup.
+ * Exportar exigiria expor o contrato de deps inteiro, adicionando complexidade desnecessária.
+ *
+ * @param {object} enc - Encounter ativo
+ * @param {object} deps - Dependências injetadas
+ * @returns {object|null} jogador que precisa trocar, ou null
+ */
+function findPlayerNeedingSwitch(enc, deps) {
+    const { helpers } = deps;
+    for (const pid of (enc.participants || [])) {
+        const p = helpers.getPlayerById(pid);
+        if (!p) continue;
+        const activeMon = helpers.getActiveMonsterOfPlayer(p);
+        // Condição: monstro ativo morto (precisa trocar) E ainda há substituto vivo no time
+        if (!GroupCore.isAlive(activeMon) && helpers.firstAliveIndex(p.team) >= 0) {
+            return p;
+        }
+    }
+    return null;
+}
+
 export function executeEnemyTurnGroup(enc, deps) {
     const { state, core, ui, audio, storage, helpers } = deps;
     
@@ -261,9 +286,20 @@ export function executeEnemyTurnGroup(enc, deps) {
     const targetPid = GroupCore.pickEnemyTargetByDEF(eligibleTargets, enc.recentTargets);
     
     if (!targetPid) {
-        advanceGroupTurn(enc, deps);
-        storage.save();
-        ui.render();
+        // BUG FIX: Se um jogador tem o monstro ativo morto mas possui substituto vivo,
+        // abrir o modal de troca em vez de chamar advanceGroupTurn recursivamente
+        // (causaria loop infinito enquanto o jogador não tiver monstro ativo vivo).
+        const playerNeedingSwitch = findPlayerNeedingSwitch(enc, deps);
+        if (playerNeedingSwitch) {
+            storage.save();
+            ui.render();
+            setTimeout(() => helpers.openSwitchMonsterModal(playerNeedingSwitch, enc), 100);
+        } else {
+            // Nenhum substituto disponível — avançar turno normalmente (vai detectar derrota)
+            advanceGroupTurn(enc, deps);
+            storage.save();
+            ui.render();
+        }
         return false;
     }
 
@@ -477,7 +513,10 @@ export function advanceGroupTurn(enc, deps) {
         // Validar se ator ainda está vivo
         if (actor.side === "player") {
             const p = state.players.find(x => x.id === actor.id);
-            const mon = p?.team?.[0];
+            // BUG FIX: usar monstro ativo (activeIndex), não sempre team[0]
+            // Após troca de monstro, team[0] pode estar morto mas activeIndex aponta para um vivo
+            const activeIdx = typeof p?.activeIndex === 'number' ? p.activeIndex : 0;
+            const mon = p?.team?.[activeIdx];
             if (mon && (Number(mon.hp) || 0) > 0) break;
         } else {
             const e = enc.enemies?.[actor.id];

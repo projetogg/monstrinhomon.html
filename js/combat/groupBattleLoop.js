@@ -87,7 +87,9 @@ export function startGroupBattle(params) {
             throw new Error(`Jogador ${pid} não encontrado em playersData`);
         }
 
-        const activeMonster = player.team?.[0];
+        // BUG FIX: usar monstro ativo (activeIndex), não sempre team[0]
+        const activeIdx = typeof player.activeIndex === 'number' ? player.activeIndex : 0;
+        const activeMonster = player.team?.[activeIdx];
         if (!activeMonster) {
             throw new Error(`Jogador ${pid} não tem monstrinho ativo`);
         }
@@ -115,7 +117,9 @@ export function startGroupBattle(params) {
     const playersTeam = [];
     for (const pid of selectedPlayerIds) {
         const player = playersData.find(p => p.id === pid);
-        const monster = player.team[0];
+        // BUG FIX: usar monstro ativo (activeIndex), não sempre team[0]
+        const activeIdx = typeof player.activeIndex === 'number' ? player.activeIndex : 0;
+        const monster = player.team[activeIdx];
         
         playersTeam.push({
             playerId: pid,
