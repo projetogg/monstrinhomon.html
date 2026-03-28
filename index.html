@@ -813,13 +813,13 @@
                     'Animalista': { strong: null, weak: null } // Neutro
                 },
                 // Thresholds de captura por raridade (sem dado)
-                // Valores mais baixos = captura requer HP mais baixo
+                // Alinhados com CAPTURE_BASE em GAME_RULES.md
                 captureThreshold: {
-                    'Comum': 0.25,      // 25% HP base
-                    'Incomum': 0.20,    // 20% HP base
-                    'Raro': 0.15,       // 15% HP base
-                    'Místico': 0.10,    // 10% HP base
-                    'Lendário': 0.05    // 5% HP base
+                    'Comum': 0.60,      // 60% HP base (acessível para iniciantes)
+                    'Incomum': 0.45,    // 45% HP base
+                    'Raro': 0.30,       // 30% HP base (requer enfraquecimento)
+                    'Místico': 0.18,    // 18% HP base (desafiador)
+                    'Lendário': 0.10    // 10% HP base (muito difícil)
                 },
                 // Multiplicadores de raridade
                 rarityPower: {
@@ -5452,6 +5452,8 @@
                     for (const pid of eligiblePlayerIds) {
                         const player = state.players.find(p => p.id === pid);
                         if (player) {
+                            // Aplicar recompensa de moedas ao jogador
+                            awardMoney(rewards.money, player);
                             participants.push({
                                 playerName: player.name || player.nome || pid,
                                 xp: rewards.xp,
