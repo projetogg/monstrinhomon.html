@@ -54,7 +54,7 @@ export async function loadItems() {
     }
 
     try {
-        const response = await fetch('/data/items.json');
+        const response = await fetch('data/items.json');
         if (!response.ok) {
             throw new Error(`Failed to load items.json: ${response.status} ${response.statusText}`);
         }
