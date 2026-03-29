@@ -518,6 +518,94 @@
         // PR16A: Make PartyDex available globally
         window.PartyDex = PartyDex;
         
+        // PR-BOOT-FIX: Exportar TODAS as funções para window ANTES de qualquer código
+        // que possa lançar exceção. Todas as funções abaixo são declaradas com a
+        // sintaxe `function fn(){}` (não `const fn = ...`), o que faz o motor JS
+        // içá-las (hoisting) para o topo do escopo do módulo antes da avaliação.
+        // Assim ficam disponíveis aqui mesmo sendo definidas textualmente mais abaixo.
+        // Isso garante que onclick handlers nunca fiquem "mortos" por erro de boot.
+        window.dismissError = dismissError;
+        window.copyError = copyError;
+        window.switchTab = switchTab;
+        window.createSession = createSession;
+        window.nextTurn = nextTurn;
+        window.endSession = endSession;
+        window.addPlayer = addPlayer;
+        window.buyItem = buyItem;
+        window.startEncounter = startEncounter;
+        window.addObjective = addObjective;
+        window.clearTherapistLog = clearTherapistLog;
+        window.therapistExportSave = therapistExportSave;
+        window.therapistImportSave = therapistImportSave;
+        window.therapistLoadJson = therapistLoadJson;
+        window.therapistCancelImport = therapistCancelImport;
+        window.exportData = exportData;
+        window.importData = importData;
+        window.clearAllData = clearAllData;
+        window.attackWild = attackWild;
+        window.useItemInBattle = useItemInBattle;
+        window.attemptCapture = attemptCapture;
+        window.fleeEncounter = fleeEncounter;
+        window.useSkillWild = useSkillWild;
+        window.mmEnterGameUI = mmEnterGameUI;
+        window.mmShowMainMenu = mmShowMainMenu;
+        window.mmCloseAllOverlays = mmCloseAllOverlays;
+        window.mmOpenSlotPickerForNewGame = mmOpenSlotPickerForNewGame;
+        window.mmChooseSlotAndStartNewGame = mmChooseSlotAndStartNewGame;
+        window.mmCancelSlotPicker = mmCancelSlotPicker;
+        window.mmNewGameBack = mmNewGameBack;
+        window.mmNewGameNext = mmNewGameNext;
+        window.mmFinishNewGame = mmFinishNewGame;
+        window.mmSkipTutorialFromChoice = mmSkipTutorialFromChoice;
+        window.mmStartTutorialFromChoice = mmStartTutorialFromChoice;
+        window.mmStartTutorial = mmStartTutorial;
+        window.exitTutorial = exitTutorial;
+        window.mmOpenSaves = mmOpenSaves;
+        window.mmCloseSaves = mmCloseSaves;
+        window.mmSaveToSlot = mmSaveToSlot;
+        window.hatchEggFromInventory = hatchEggFromInventory;
+        window.renderPartyDexTab = renderPartyDexTab;
+        window.mmLoadFromSlot = mmLoadFromSlot;
+        window.mmDeleteSlot = mmDeleteSlot;
+        window.mmExportSlot = mmExportSlot;
+        window.mmResetSaveConfirm = mmResetSaveConfirm;
+        window.mmContinue = mmContinue;
+        window.mmShowConfig = mmShowConfig;
+        window.mmOpenTherapistPanel = mmOpenTherapistPanel;
+        window.mmOpenMestre = mmOpenMestre;
+        window.mmRenderTherapistPanel = mmRenderTherapistPanel;
+        window.mmSetTherapistMode = mmSetTherapistMode;
+        window.mmStartStarterFlow = mmStartStarterFlow;
+        window.mmStarterSelectClass = mmStarterSelectClass;
+        window.mmStarterConfirmClass = mmStarterConfirmClass;
+        window.mmStarterHatchEgg = mmStarterHatchEgg;
+        window.mmStarterNextPlayer = mmStarterNextPlayer;
+        window.mmTherGiveMonster = mmTherGiveMonster;
+        window.mmTherGiveItem = mmTherGiveItem;
+        window.mmTherGiveXP = mmTherGiveXP;
+        window.mmTherGiveXPQuick = mmTherGiveXPQuick;
+        window.mmTherGiveMoney = mmTherGiveMoney;
+        window.mmTherGiveMoneyQuick = mmTherGiveMoneyQuick;
+        window.mmTherGiveAfterlife = mmTherGiveAfterlife;
+        window.mmTherGiveAfterlifeQuick = mmTherGiveAfterlifeQuick;
+        window.toggleTherapistMode = toggleTherapistMode;
+        window.selectReplacementMonster = selectReplacementMonster;
+        window.closeBattleResult = closeBattleResult;
+        window.updateCaptureThreshold = updateCaptureThreshold;
+        window.sendToBox = sendToBox;
+        window.withdrawFromBox = withdrawFromBox;
+        window.onBoxPageChange = onBoxPageChange;
+        window.toggleObjectiveForPlayer = toggleObjectiveForPlayer;
+        window.onShopPlayerChange = onShopPlayerChange;
+        window.sellItem = sellItem;
+        window.updateEncounterUI = updateEncounterUI;
+        window.renderEncounterQuestHint = renderEncounterQuestHint;
+        window.moveTeamMemberUp = moveTeamMemberUp;
+        window.moveTeamMemberDown = moveTeamMemberDown;
+        window.movePlayerTeamMember = movePlayerTeamMember;
+        window.equipItem = equipItem;
+        window.unequipItem = unequipItem;
+
         // Destructure groupCore for easier access
         const GroupCore = Combat.Group.Core;
         
@@ -10894,10 +10982,20 @@
         window.Audio = Audio;
 
         // Initialize on load
-        window.addEventListener('DOMContentLoaded', function() {
-            init(); // Call the existing init function
-            mmBoot(); // Show the intro overlay
-        });
+        // PR-BOOT-FIX: Usa readyState para evitar race condition caso o evento
+        // DOMContentLoaded já tenha disparado antes do módulo terminar de avaliar.
+        // Estado 'interactive' é suficiente pois o app só precisa de elementos DOM;
+        // CSS e imagens não são requisito para a inicialização do JavaScript.
+        function bootApp() {
+            init();   // Carrega estado salvo e renderiza views
+            mmBoot(); // Mostra overlay de introdução
+        }
+        if (document.readyState === 'loading') {
+            window.addEventListener('DOMContentLoaded', bootApp);
+        } else {
+            // DOM já está pronto (estado 'interactive' ou 'complete')
+            bootApp();
+        }
     </script>
     <div id="mmToastHost"></div>
 </body>
