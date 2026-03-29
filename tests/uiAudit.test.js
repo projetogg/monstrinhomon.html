@@ -196,3 +196,58 @@ describe('Auditoria UI — Integridade de onchange handlers', () => {
         expect(indexHtml).toContain('onchange="updateEncounterUI()"');
     });
 });
+
+// ── Regressão: batalha em grupo ────────────────────────────────────────────────
+// groupUI.js gera HTML com onclick="enterAttackMode()" etc. via template strings.
+// Estes handlers DEVEM estar exportados no window de index.html.
+// Sem os exports, o browser lança ReferenceError e a batalha trava.
+
+import { readFileSync } from 'fs';
+const groupUISource = readFileSync(
+    new URL('../js/combat/groupUI.js', import.meta.url),
+    'utf-8'
+);
+
+describe('Regressão: Batalha em Grupo — handlers exportados para window', () => {
+    const windowExports = extractWindowExports(indexHtml);
+
+    /** Handlers gerados dinamicamente por groupUI.js via onclick inline */
+    const GROUP_BATTLE_HANDLERS = [
+        'enterAttackMode',
+        'enterSkillMode',
+        'handleEnemyClick',
+        'groupPassTurn',
+        'groupFlee',
+        'groupUseItem',
+        'cancelTargetSelection',
+    ];
+
+    for (const fn of GROUP_BATTLE_HANDLERS) {
+        it(`${fn} deve estar exportado para window (regressão ReferenceError)`, () => {
+            expect(
+                windowExports.has(fn),
+                `window.${fn} não encontrado — groupUI.js usa onclick="${fn}()" mas a função não está no escopo global`
+            ).toBe(true);
+        });
+    }
+
+    it('groupUI.js deve conter onclick="enterAttackMode()" (validar fonte)', () => {
+        expect(groupUISource).toContain('onclick="enterAttackMode()"');
+    });
+
+    it('groupUI.js deve conter onclick="enterSkillMode(0)" (validar fonte)', () => {
+        expect(groupUISource).toContain('onclick="enterSkillMode(0)"');
+    });
+
+    it('groupUI.js deve conter onclick="groupPassTurn()" (validar fonte)', () => {
+        expect(groupUISource).toContain('onclick="groupPassTurn()"');
+    });
+
+    it('groupUI.js deve conter onclick="groupFlee()" (validar fonte)', () => {
+        expect(groupUISource).toContain('onclick="groupFlee()"');
+    });
+
+    it('groupUI.js deve conter onclick="handleEnemyClick(...)" (validar fonte)', () => {
+        expect(groupUISource).toContain('onclick="handleEnemyClick(');
+    });
+});
