@@ -18,19 +18,18 @@
 
     <div class="app-container">
         <div class="header">
-            <h1>🎮 Monstrinhomon 🌟</h1>
+            <div class="header-top">
+                <h1>🎮 Monstrinhomon 🌟</h1>
+                <button id="headerMestreBtn" class="tab-button mestre-btn" onclick="mmOpenMestre()">🧑‍🏫 Mestre</button>
+            </div>
             <div class="tabs">
                 <button class="tab-button" onclick="mmShowMainMenu()">📱 Menu</button>
-                <button class="tab-button active" onclick="switchTab('home')">🏠 Home</button>
-                <button class="tab-button" onclick="switchTab('session')">📋 Session</button>
-                <button class="tab-button" onclick="switchTab('players')">👥 Players</button>
-                <button class="tab-button" onclick="switchTab('encounter')">⚔️ Encounter</button>
-                <button class="tab-button" onclick="switchTab('therapy')">🎯 Therapy</button>
-                <button class="tab-button" onclick="switchTab('box')">📦 Box</button>
-                <button class="tab-button" onclick="switchTab('partyDex')">📘 Monstrodex</button>
-                <button class="tab-button" onclick="switchTab('shop')">🛒 Loja</button>
-                <button class="tab-button" onclick="switchTab('report')">📊 Report</button>
-                <button class="tab-button" onclick="switchTab('settings')">⚙️ Settings</button>
+                <button class="tab-button active" data-tab="home" onclick="switchTab('home')">🏠 Início</button>
+                <button class="tab-button" data-tab="players" onclick="switchTab('players')">👥 Grupo</button>
+                <button class="tab-button" data-tab="encounter" onclick="switchTab('encounter')">⚔️ Batalha</button>
+                <button class="tab-button" data-tab="box" onclick="switchTab('box')">📦 Box</button>
+                <button class="tab-button" data-tab="shop" onclick="switchTab('shop')">🛒 Loja</button>
+                <button class="tab-button" data-tab="partyDex" onclick="switchTab('partyDex')">📘 Monstrodex</button>
             </div>
         </div>
 
@@ -68,11 +67,11 @@
             </div>
 
             <div class="card">
-                <h3>Quick Actions</h3>
+                <h3>Ações Rápidas</h3>
                 <div class="flex">
-                    <button class="btn btn-large btn-success" onclick="switchTab('session')">Start New Session</button>
-                    <button class="btn btn-large" onclick="switchTab('players')">Manage Players</button>
-                    <button class="btn btn-large btn-secondary" onclick="switchTab('encounter')">Start Encounter</button>
+                    <button class="btn btn-large btn-success" onclick="switchTab('players')">👥 Grupo</button>
+                    <button class="btn btn-large btn-secondary" onclick="switchTab('encounter')">⚔️ Batalha</button>
+                    <button class="btn btn-large" onclick="mmOpenMestre()">🧑‍🏫 Painel Mestre</button>
                 </div>
             </div>
         </div>
@@ -99,13 +98,13 @@
         </div>
 
         <div id="tabPlayers" class="tab-content">
-            <h2>Player Management 👥</h2>
+            <h2>👥 Grupo de Jogadores</h2>
             
             <div class="card">
-                <h3>Add New Player</h3>
-                <input type="text" id="playerName" placeholder="Player Name">
+                <h3>➕ Adicionar Jogador</h3>
+                <input type="text" id="playerName" placeholder="Nome do Jogador">
                 <select id="playerClass">
-                    <option value="">Select Class</option>
+                    <option value="">Selecionar Classe</option>
                     <option value="Guerreiro">⚔️ Guerreiro</option>
                     <option value="Mago">🔮 Mago</option>
                     <option value="Curandeiro">💚 Curandeiro</option>
@@ -115,14 +114,14 @@
                     <option value="Caçador">🏹 Caçador</option>
                     <option value="Animalista">🐾 Animalista</option>
                 </select>
-                <button class="btn btn-success" onclick="addPlayer()">Add Player</button>
+                <button class="btn btn-success" onclick="addPlayer()">➕ Adicionar</button>
             </div>
 
             <div id="playersList"></div>
         </div>
 
         <div id="tabEncounter" class="tab-content">
-            <h2>Encounter ⚔️</h2>
+            <h2>⚔️ Batalha</h2>
 
             <!-- FASE UX: Dica de objetivo da quest ativa -->
             <div id="encounterQuestHint" class="card quest-hint-card is-hidden">
@@ -398,12 +397,14 @@
 
     <!-- Feature 4.6: Therapist Mode Panel -->
     <div id="mmTherapist" class="mm-overlay">
-        <div class="mm-card">
-            <div class="mm-title">🧑‍🏫 Therapist Mode</div>
-            <div id="mmTherapistBody"></div>
-
-            <div class="mm-row mt-12">
-                <button class="mm-btn" onclick="mmCloseAllOverlays()">Fechar</button>
+        <div class="mm-card mm-card-mestre">
+            <div class="mm-card-mestre-header">
+                <span class="mm-title">🧑‍🏫 Painel do Mestre</span>
+                <button class="mm-btn-close" onclick="mmCloseAllOverlays()" title="Fechar">✕</button>
+            </div>
+            <div id="mmTherapistBody" class="mm-card-mestre-body"></div>
+            <div class="mm-card-mestre-footer">
+                <button class="mm-btn" onclick="mmCloseAllOverlays()">✕ Fechar</button>
             </div>
         </div>
     </div>
@@ -450,6 +451,16 @@
                 <button class="mm-btn" onclick="mmStartTutorialFromChoice()">🎓 Fazer Tutorial</button>
                 <button class="mm-btn opacity-90" onclick="mmSkipTutorialFromChoice()">🚀 Pular</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Fluxo Inicial: Escolha de Classe + Ovo Starter -->
+    <div id="mmStarterFlow" class="mm-overlay is-hidden">
+        <div class="mm-card mm-card-starter">
+            <div class="mm-card-mestre-header">
+                <span class="mm-title" id="mmStarterFlowTitle">🥚 Escolha Inicial</span>
+            </div>
+            <div id="mmStarterFlowBody" class="mm-card-mestre-body"></div>
         </div>
     </div>
 
@@ -927,7 +938,19 @@
             { id: 'MON_027', name: 'Zunzumon', class: 'Bardo', rarity: 'Comum', baseHp: 22, baseAtk: 4, baseDef: 4, baseSpd: 11, baseEne: 8, emoji: '🐝', evolvesTo: 'MON_027B', evolvesAt: 15 },
             { id: 'MON_027B', name: 'Melodimon', class: 'Bardo', rarity: 'Incomum', baseHp: 28, baseAtk: 6, baseDef: 4, baseSpd: 14, baseEne: 10, emoji: '🎶', evolvesTo: 'MON_027C', evolvesAt: 30 },
             { id: 'MON_027C', name: 'Rainhassommon', class: 'Bardo', rarity: 'Raro', baseHp: 36, baseAtk: 8, baseDef: 6, baseSpd: 15, baseEne: 12, emoji: '🎭' },
-            { id: 'MON_100', name: 'Rato-de-Lama', class: 'Guerreiro', rarity: 'Comum', baseHp: 20, baseAtk: 5, baseDef: 3, baseSpd: 4, baseEne: 4, emoji: '🐀' }
+            { id: 'MON_100', name: 'Rato-de-Lama', class: 'Guerreiro', rarity: 'Comum', baseHp: 20, baseAtk: 5, baseDef: 3, baseSpd: 4, baseEne: 4, emoji: '🐀' },
+            // Linha Curandeiro oficial: Nutrilo → Silvelio → Auravelo
+            { id: 'MON_028',  name: 'Nutrilo',  class: 'Curandeiro', rarity: 'Comum',   baseHp: 28, baseAtk: 3, baseDef: 5, baseSpd: 5, baseEne: 11, emoji: '🌿', evolvesTo: 'MON_028B', evolvesAt: 12 },
+            { id: 'MON_028B', name: 'Silvelio', class: 'Curandeiro', rarity: 'Incomum',  baseHp: 37, baseAtk: 5, baseDef: 7, baseSpd: 6, baseEne: 14, emoji: '🌸', evolvesTo: 'MON_028C', evolvesAt: 25 },
+            { id: 'MON_028C', name: 'Auravelo', class: 'Curandeiro', rarity: 'Raro',     baseHp: 48, baseAtk: 7, baseDef: 10, baseSpd: 8, baseEne: 17, emoji: '✨' },
+            // Linha Bárbaro oficial: Tigrumo → Rugigron → Bestigrar
+            { id: 'MON_029',  name: 'Tigrumo',  class: 'Bárbaro',   rarity: 'Comum',   baseHp: 34, baseAtk: 9, baseDef: 4, baseSpd: 5, baseEne: 5, emoji: '🐯', evolvesTo: 'MON_029B', evolvesAt: 12 },
+            { id: 'MON_029B', name: 'Rugigron', class: 'Bárbaro',   rarity: 'Incomum',  baseHp: 46, baseAtk: 13, baseDef: 6, baseSpd: 6, baseEne: 6, emoji: '🦁', evolvesTo: 'MON_029C', evolvesAt: 25 },
+            { id: 'MON_029C', name: 'Bestigrar', class: 'Bárbaro',  rarity: 'Raro',     baseHp: 60, baseAtk: 17, baseDef: 9, baseSpd: 7, baseEne: 7, emoji: '🐻' },
+            // Linha Ladino oficial: Furtilhon → Velurino → Sombrifur
+            { id: 'MON_030',  name: 'Furtilhon', class: 'Ladino',   rarity: 'Comum',   baseHp: 24, baseAtk: 8, baseDef: 3, baseSpd: 10, baseEne: 6, emoji: '🦊', evolvesTo: 'MON_030B', evolvesAt: 12 },
+            { id: 'MON_030B', name: 'Velurino',  class: 'Ladino',   rarity: 'Incomum',  baseHp: 31, baseAtk: 11, baseDef: 5, baseSpd: 13, baseEne: 8, emoji: '🌑', evolvesTo: 'MON_030C', evolvesAt: 25 },
+            { id: 'MON_030C', name: 'Sombrifur', class: 'Ladino',   rarity: 'Raro',     baseHp: 40, baseAtk: 15, baseDef: 7, baseSpd: 16, baseEne: 10, emoji: '👤' }
         ];
 
         // ENE REGEN CONSTANTS por classe (fallback)
@@ -2001,6 +2024,13 @@
                 });
             }
             
+            // Retrocompatibilidade: saves antigos com monstrinhos no time já completaram o fluxo inicial
+            if (typeof state.starterFlowCompleted !== 'boolean') {
+                const hasMonsters = Array.isArray(state.players) &&
+                    state.players.some(p => (p.team && p.team.length > 0) || (p.box && p.box.length > 0));
+                state.starterFlowCompleted = hasMonsters;
+            }
+
             return state;
         }
 
@@ -2127,8 +2157,10 @@
                     activeTab.classList.add('active');
                 }
                 
-                const activeButton = Array.from(buttons).find(btn => 
-                    btn.textContent.toLowerCase().includes(tabName.toLowerCase())
+                // Usa data-tab attribute primeiro; fallback para textContent para botões legados
+                const activeButton = Array.from(buttons).find(btn =>
+                    btn.dataset.tab === tabName ||
+                    (!btn.dataset.tab && btn.textContent.toLowerCase().includes(tabName.toLowerCase()))
                 );
                 if (activeButton) {
                     activeButton.classList.add('active');
@@ -2204,6 +2236,16 @@
                     showEl(btn);
                 } else {
                     hideEl(btn);
+                }
+            }
+            
+            // Atualizar botão Mestre persistente no header (destaque quando modo ativo)
+            const headerBtn = document.getElementById("headerMestreBtn");
+            if (headerBtn) {
+                if (mmIsTherapistMode()) {
+                    headerBtn.classList.add("mestre-btn-active");
+                } else {
+                    headerBtn.classList.remove("mestre-btn-active");
                 }
             }
             
@@ -8418,17 +8460,23 @@
                     }
                     
                     html += `
-                        <div class="card">
-                            <h3>${player.name}</h3>
-                            <div class="badge badge-${playerClass}">${playerClass}</div>
-                            <p>💰 Moedas: ${player.money || 0} | ⭐ Afterlife: ${player.afterlifeCurrency || 0}</p>
-                            <p>👥 Time: ${teamCount}/${GameState.config?.maxTeamSize || 6} | 📦 Box: ${boxCount}</p>
+                        <div class="card group-player-card">
+                            <div class="group-player-header">
+                                <span class="group-player-name">${player.name}</span>
+                                <div class="badge badge-${playerClass}">${playerClass}</div>
+                            </div>
+                            <div class="group-player-stats">
+                                <span class="group-stat-pill">💰 ${player.money || 0}</span>
+                                <span class="group-stat-pill">⭐ ${player.afterlifeCurrency || 0}</span>
+                                <span class="group-stat-pill">🐾 Time: ${teamCount}/${GameState.config?.maxTeamSize || 6}</span>
+                                <span class="group-stat-pill">📦 Box: ${boxCount}</span>
+                            </div>
                             ${questHtml}
-                            <h4>Ordem do Time (${teamCount}):</h4>
-                            <div class="team-reorder-section">
+                            <details class="team-reorder-section">
+                                <summary style="cursor:pointer;font-weight:700;padding:6px 0;list-style:none;">⚔️ Time (${teamCount})</summary>
                                 <p class="text-small text-muted mb-10">O primeiro monstrinho vivo começa na batalha. Use as setas para reordenar.</p>
                                 ${renderTeamReorderList(player)}
-                            </div>
+                            </details>
                         </div>
                     `;
                 });
@@ -9073,7 +9121,7 @@
         function mmEl(id){ return document.getElementById(id); }
 
         function mmCloseAllOverlays(){
-            ["mmIntro","mmMenu","mmNewGame","mmConfig","mmTherapist","mmSavesScreen","mmSlotPicker","mmStartChoice"].forEach(id => {
+            ["mmIntro","mmMenu","mmNewGame","mmConfig","mmTherapist","mmSavesScreen","mmSlotPicker","mmStartChoice","mmStarterFlow"].forEach(id => {
                 const el = mmEl(id);
                 if (el) {
                     el.classList.remove("show");
@@ -9137,6 +9185,14 @@
         }
 
         // Feature 4.6: Therapist Mode Panel Functions
+
+        // Abre o painel Mestre a partir do botão persistente no header.
+        // Funciona mesmo sem jogo ativo (mostra opções de início de jogo).
+        function mmOpenMestre() {
+            mmShow("mmTherapist");
+            mmRenderTherapistPanel();
+        }
+
         function mmOpenTherapistPanel() {
             if (!mmRequireGameOrAlert()) return;
             mmShow("mmTherapist");
@@ -9146,23 +9202,54 @@
         function mmRenderTherapistPanel() {
             const host = document.getElementById("mmTherapistBody");
             if (!host) return;
-            
-            if (!mmIsTherapistMode()) {
-                host.innerHTML = `<div class="opacity-80">Ative o Therapist Mode nas Configurações.</div>`;
+
+            const isMestre = mmIsTherapistMode();
+            const hasGame = GameState?.players && GameState.players.length > 0;
+
+            // Seção de modo mestre (toggle sempre visível)
+            const mestreToggleHtml = `
+                <div class="mestre-mode-toggle">
+                    <label class="mestre-toggle-label">
+                        <input type="checkbox" id="mmPanelTherapistMode" ${isMestre ? 'checked' : ''}
+                            onchange="mmSetTherapistMode(this.checked); mmRenderTherapistPanel();">
+                        🔬 Modo Mestre ativado
+                    </label>
+                </div>
+            `;
+
+            if (!isMestre) {
+                host.innerHTML = `
+                    ${mestreToggleHtml}
+                    <div class="mestre-disabled-hint">
+                        Ative o Modo Mestre acima para acessar os controles de sessão e jogadores.
+                    </div>
+                    <div class="mm-row mt-12">
+                        <button class="mm-btn flex-1" onclick="mmShowMainMenu()">📱 Menu Principal</button>
+                    </div>
+                `;
                 return;
             }
-            
-            if (!mmRequireGameOrAlert()) {
-                host.innerHTML = "";
+
+            if (!hasGame) {
+                host.innerHTML = `
+                    ${mestreToggleHtml}
+                    <div class="mestre-disabled-hint">
+                        Nenhum jogo ativo. Crie ou carregue um jogo primeiro.
+                    </div>
+                    <div class="mm-row mt-12">
+                        <button class="mm-btn flex-1" onclick="mmShowMainMenu()">📱 Menu Principal</button>
+                        <button class="mm-btn flex-1" onclick="mmOpenSlotPickerForNewGame()">🎮 Novo Jogo</button>
+                    </div>
+                `;
                 return;
             }
 
             const players = GameState.players || [];
             
-            // Build player options
+            // Opções de jogador
             const playerOptions = players.map(p => `<option value="${p.id}">${escapeHtml(p.name)} (${escapeHtml(p.class || 'N/A')})</option>`).join("");
 
-            // Build item options (ClasterOrbs + healing items)
+            // Opções de item
             const itemOptions = `
                 <option value="CLASTERORB_COMUM">⚪ ClasterOrb Comum</option>
                 <option value="CLASTERORB_INCOMUM">🔵 ClasterOrb Incomum</option>
@@ -9170,122 +9257,159 @@
                 <option value="IT_HEAL_01">💚 Petisco de Cura</option>
             `;
 
-            // Build monster options from catalog
+            // Opções de monstro
             const monOptions = MONSTER_CATALOG.map(m => 
                 `<option value="${m.id}">${escapeHtml(m.name)} [${escapeHtml(m.class)}] (${escapeHtml(m.rarity)})</option>`
             ).join("");
 
             host.innerHTML = `
-                <div class="d-grid grid-gap-10">
-                    <div>
-                        <div class="therapist-field-title">Jogador alvo</div>
-                        <select id="mmTherPlayer" class="mm-input">${playerOptions}</select>
-                    </div>
+                ${mestreToggleHtml}
 
-                    <div class="therapist-mestre-box">
-                        <div class="therapist-field-title">✨ Dar XP (monstro ativo)</div>
-                        <div class="mm-row mb-8">
-                            <button class="mm-btn flex-1" onclick="mmTherGiveXPQuick(10)">+10 XP</button>
-                            <button class="mm-btn flex-1" onclick="mmTherGiveXPQuick(50)">+50 XP</button>
-                        </div>
-                        <div class="mm-row">
-                            <input id="mmTherXp" class="mm-input flex-1" type="number" min="1" value="50">
-                            <button class="mm-btn" onclick="mmTherGiveXP()">+ XP</button>
-                        </div>
-                        <div class="opacity-80 font-size-12 mt-6">Aplica no monstro ativo (player.activeIndex).</div>
-                    </div>
-
-                    <div class="therapist-mestre-box">
-                        <div class="therapist-field-title">🎒 Dar Item</div>
-                        <div class="mm-row">
-                            <select id="mmTherItem" class="mm-input flex-1">${itemOptions}</select>
-                            <input id="mmTherItemQty" class="mm-input w-90" type="number" min="1" value="1">
-                            <button class="mm-btn" onclick="mmTherGiveItem()">Adicionar</button>
-                        </div>
-                    </div>
-
-                    <div class="therapist-mestre-box">
-                        <div class="therapist-field-title">💰 Dar Moedas</div>
-                        <div class="mm-row mb-8">
-                            <button class="mm-btn flex-1" onclick="mmTherGiveMoneyQuick(10)">+10 💰</button>
-                            <button class="mm-btn flex-1" onclick="mmTherGiveMoneyQuick(50)">+50 💰</button>
-                            <button class="mm-btn flex-1" onclick="mmTherGiveMoneyQuick(100)">+100 💰</button>
-                        </div>
-                        <div class="mm-row">
-                            <input id="mmTherMoney" class="mm-input flex-1" type="number" min="1" value="50">
-                            <button class="mm-btn" onclick="mmTherGiveMoney()">+ Moedas</button>
-                        </div>
-                    </div>
-
-                    <div class="therapist-mestre-box">
-                        <div class="therapist-field-title">⭐ Dar Moeda Afterlife</div>
-                        <div class="mm-row mb-8">
-                            <button class="mm-btn flex-1" onclick="mmTherGiveAfterlifeQuick(1)">+1 ⭐</button>
-                            <button class="mm-btn flex-1" onclick="mmTherGiveAfterlifeQuick(5)">+5 ⭐</button>
-                            <button class="mm-btn flex-1" onclick="mmTherGiveAfterlifeQuick(10)">+10 ⭐</button>
-                        </div>
-                        <div class="mm-row">
-                            <input id="mmTherAfterlife" class="mm-input flex-1" type="number" min="1" value="5">
-                            <button class="mm-btn" onclick="mmTherGiveAfterlife()">+ Afterlife</button>
-                        </div>
-                    </div>
-
-                    <div class="therapist-mestre-box">
-                        <div class="therapist-field-title">🎁 Conceder Monstrinhomon</div>
-                        <div class="mm-row mb-8">
-                            <select id="mmTherMon" class="mm-input flex-1">${monOptions}</select>
-                        </div>
-                        <div class="mm-row mb-8">
-                            <div class="flex-1">
-                                <label class="therapist-label">Nível (1-100)</label>
-                                <input id="mmTherMonLv" class="mm-input" type="number" min="1" max="100" value="5">
-                            </div>
-                            <div class="flex-1">
-                                <label class="therapist-label">Raridade</label>
-                                <select id="mmTherMonRarity" class="mm-input">
-                                    <option value="">Padrão do Template</option>
-                                    <option value="Comum">Comum</option>
-                                    <option value="Incomum">Incomum</option>
-                                    <option value="Raro">Raro</option>
-                                    <option value="Místico">Místico</option>
-                                    <option value="Lendário">Lendário</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mm-row">
-                            <select id="mmTherMonDest" class="mm-input flex-1">
-                                <option value="auto">Auto (Time se &lt;6, senão Caixa)</option>
-                                <option value="team">Forçar Time</option>
-                                <option value="box">Forçar Caixa</option>
-                            </select>
-                            <button class="mm-btn" onclick="mmTherGiveMonster()">Conceder</button>
-                        </div>
-                    </div>
-
-                    <div class="therapist-mestre-box">
-                        <div class="therapist-field-title">📜 Action Log</div>
-                        <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
-                            <button class="mm-btn" onclick="clearTherapistLog()">🗑️ Clear</button>
-                        </div>
-                        <div id="therapistLog" class="therapist-log" style="max-height: 200px; overflow-y: auto; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 4px; font-size: 12px;">
-                            No actions logged yet...
-                        </div>
-                    </div>
-
-                    <div class="therapist-mestre-box">
-                        <div class="therapist-field-title">💾 Save Management</div>
-                        <div class="mm-row mb-8">
-                            <button class="mm-btn flex-1" onclick="therapistExportSave()">📤 Export Save (JSON)</button>
-                            <button class="mm-btn flex-1" onclick="therapistImportSave()">📥 Import Save (JSON)</button>
-                        </div>
-                        <textarea id="therapistJsonArea" placeholder="Paste JSON here to import..." 
-                            class="mm-input" style="width: 100%; min-height: 100px; display: none; font-family: monospace; font-size: 11px;"></textarea>
-                        <div class="mm-row mt-8" id="therapistJsonButtons" style="display: none;">
-                            <button class="mm-btn flex-1" onclick="therapistLoadJson()">✅ Load JSON</button>
-                            <button class="mm-btn flex-1" onclick="therapistCancelImport()">❌ Cancel</button>
-                        </div>
-                    </div>
+                <!-- Seleção de jogador ativa — sempre visível -->
+                <div class="mestre-player-selector">
+                    <div class="therapist-field-title">👤 Jogador Alvo</div>
+                    <select id="mmTherPlayer" class="mm-input">${playerOptions}</select>
                 </div>
+
+                <!-- Seção: Recompensas Rápidas -->
+                <details class="mestre-section" open>
+                    <summary class="mestre-section-header">🎁 Recompensas Rápidas</summary>
+                    <div class="mestre-section-body">
+                        <div class="therapist-mestre-box">
+                            <div class="therapist-field-title">✨ XP (monstro ativo)</div>
+                            <div class="mm-row mb-8">
+                                <button class="mm-btn flex-1" onclick="mmTherGiveXPQuick(10)">+10 XP</button>
+                                <button class="mm-btn flex-1" onclick="mmTherGiveXPQuick(50)">+50 XP</button>
+                                <button class="mm-btn flex-1" onclick="mmTherGiveXPQuick(100)">+100 XP</button>
+                            </div>
+                            <div class="mm-row">
+                                <input id="mmTherXp" class="mm-input flex-1" type="number" min="1" value="50">
+                                <button class="mm-btn w-auto" onclick="mmTherGiveXP()">+ XP</button>
+                            </div>
+                        </div>
+                        <div class="therapist-mestre-box">
+                            <div class="therapist-field-title">💰 Moedas</div>
+                            <div class="mm-row mb-8">
+                                <button class="mm-btn flex-1" onclick="mmTherGiveMoneyQuick(10)">+10</button>
+                                <button class="mm-btn flex-1" onclick="mmTherGiveMoneyQuick(50)">+50</button>
+                                <button class="mm-btn flex-1" onclick="mmTherGiveMoneyQuick(100)">+100</button>
+                            </div>
+                            <div class="mm-row">
+                                <input id="mmTherMoney" class="mm-input flex-1" type="number" min="1" value="50">
+                                <button class="mm-btn w-auto" onclick="mmTherGiveMoney()">+ 💰</button>
+                            </div>
+                        </div>
+                        <div class="therapist-mestre-box">
+                            <div class="therapist-field-title">⭐ Afterlife</div>
+                            <div class="mm-row mb-8">
+                                <button class="mm-btn flex-1" onclick="mmTherGiveAfterlifeQuick(1)">+1</button>
+                                <button class="mm-btn flex-1" onclick="mmTherGiveAfterlifeQuick(5)">+5</button>
+                                <button class="mm-btn flex-1" onclick="mmTherGiveAfterlifeQuick(10)">+10</button>
+                            </div>
+                            <div class="mm-row">
+                                <input id="mmTherAfterlife" class="mm-input flex-1" type="number" min="1" value="5">
+                                <button class="mm-btn w-auto" onclick="mmTherGiveAfterlife()">+ ⭐</button>
+                            </div>
+                        </div>
+                        <div class="therapist-mestre-box">
+                            <div class="therapist-field-title">🎒 Item</div>
+                            <div class="mm-row">
+                                <select id="mmTherItem" class="mm-input flex-1">${itemOptions}</select>
+                                <input id="mmTherItemQty" class="mm-input w-90" type="number" min="1" value="1">
+                                <button class="mm-btn w-auto" onclick="mmTherGiveItem()">+ Item</button>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+                <!-- Seção: Conceder Monstrinho -->
+                <details class="mestre-section">
+                    <summary class="mestre-section-header">🎮 Conceder Monstrinho</summary>
+                    <div class="mestre-section-body">
+                        <div class="therapist-mestre-box">
+                            <div class="mm-row mb-8">
+                                <select id="mmTherMon" class="mm-input flex-1">${monOptions}</select>
+                            </div>
+                            <div class="mm-row mb-8">
+                                <div class="flex-1">
+                                    <label class="therapist-label">Nível (1-100)</label>
+                                    <input id="mmTherMonLv" class="mm-input" type="number" min="1" max="100" value="5">
+                                </div>
+                                <div class="flex-1">
+                                    <label class="therapist-label">Raridade</label>
+                                    <select id="mmTherMonRarity" class="mm-input">
+                                        <option value="">Padrão do Template</option>
+                                        <option value="Comum">Comum</option>
+                                        <option value="Incomum">Incomum</option>
+                                        <option value="Raro">Raro</option>
+                                        <option value="Místico">Místico</option>
+                                        <option value="Lendário">Lendário</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mm-row">
+                                <select id="mmTherMonDest" class="mm-input flex-1">
+                                    <option value="auto">Auto (Time se &lt;6, senão Caixa)</option>
+                                    <option value="team">Forçar Time</option>
+                                    <option value="box">Forçar Caixa</option>
+                                </select>
+                                <button class="mm-btn w-auto" onclick="mmTherGiveMonster()">Conceder</button>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+                <!-- Seção: Sessão & Terapia -->
+                <details class="mestre-section">
+                    <summary class="mestre-section-header">📋 Sessão & Objetivos</summary>
+                    <div class="mestre-section-body">
+                        <div class="therapist-mestre-box">
+                            <div class="mm-row">
+                                <button class="mm-btn flex-1" onclick="mmCloseAllOverlays(); switchTab('session');">📋 Gerenciar Sessão</button>
+                                <button class="mm-btn flex-1" onclick="mmCloseAllOverlays(); switchTab('therapy');">🎯 Objetivos Terapêuticos</button>
+                            </div>
+                            <div class="mm-row mt-8">
+                                <button class="mm-btn flex-1" onclick="mmCloseAllOverlays(); switchTab('report');">📊 Relatório</button>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+                <!-- Seção: Sistema & Saves -->
+                <details class="mestre-section">
+                    <summary class="mestre-section-header">⚙️ Sistema & Saves</summary>
+                    <div class="mestre-section-body">
+                        <div class="therapist-mestre-box">
+                            <div class="mm-row mb-8">
+                                <button class="mm-btn flex-1" onclick="therapistExportSave()">📤 Exportar Save</button>
+                                <button class="mm-btn flex-1" onclick="therapistImportSave()">📥 Importar Save</button>
+                            </div>
+                            <textarea id="therapistJsonArea" placeholder="Cole o JSON aqui para importar..."
+                                class="mm-input" style="width:100%;min-height:80px;display:none;font-family:monospace;font-size:11px;"></textarea>
+                            <div class="mm-row mt-8" id="therapistJsonButtons" style="display:none;">
+                                <button class="mm-btn flex-1" onclick="therapistLoadJson()">✅ Carregar JSON</button>
+                                <button class="mm-btn flex-1" onclick="therapistCancelImport()">❌ Cancelar</button>
+                            </div>
+                            <div class="mm-row mt-8">
+                                <button class="mm-btn flex-1" onclick="mmCloseAllOverlays(); switchTab('settings');">⚙️ Configurações</button>
+                                <button class="mm-btn flex-1" onclick="mmOpenSaves();">💾 Saves</button>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+                <!-- Seção: Log de Ações -->
+                <details class="mestre-section">
+                    <summary class="mestre-section-header">📜 Log de Ações</summary>
+                    <div class="mestre-section-body">
+                        <div style="display:flex;justify-content:flex-end;margin-bottom:6px;">
+                            <button class="mm-btn w-auto" onclick="clearTherapistLog()">🗑️ Limpar</button>
+                        </div>
+                        <div id="therapistLog" class="therapist-log" style="max-height:180px;overflow-y:auto;padding:8px;background:rgba(0,0,0,0.2);border-radius:6px;font-size:12px;">
+                            Nenhuma ação registrada ainda...
+                        </div>
+                    </div>
+                </details>
             `;
         }
 
@@ -9846,14 +9970,8 @@
                 // Create players
                 MM_NEW.players.forEach((p, idx) => {
                     const playerId = `p_${Date.now()}_${idx}`;
-                    
-                    // Find a starter monster of the same class
-                    const starterTemplate = MONSTER_CATALOG.find(m => 
-                        m.class && p.class && m.class.toLowerCase() === p.class.toLowerCase()
-                    ) || MONSTER_CATALOG[0]; // Fallback to first monster if no match
-                    
-                    // Create player first (Award API needs player object)
-                    // Recursos iniciais: mesmos valores que addPlayer() para consistência
+
+                    // Criar jogador sem monstrinho inicial — será concedido pelo fluxo de starter
                     const player = {
                         id: playerId,
                         name: p.name,
@@ -9862,6 +9980,7 @@
                         afterlifeCurrency: 0,
                         team: [],
                         box: [],
+                        starterGranted: false,
                         inventory: {
                             'CLASTERORB_COMUM': 5,    // ClasterOrb Comum x5
                             'CLASTERORB_INCOMUM': 2,  // ClasterOrb Incomum x2
@@ -9877,24 +9996,14 @@
                         GameFlow.ensureQuestState(player);
                         GameFlow.autoActivateFirstQuest(player);
                     }
-                    
-                    // COMMIT 8 (Wave A): Use Award API for canonical monster creation
-                    const starterMonster = awardMonster(
-                        starterTemplate.id,  // templateId
-                        1,                   // level
-                        null,                // rarity (use template default)
-                        'party',             // destination
-                        player               // player object
-                    );
-                    
-                    if (!starterMonster) {
-                        console.error('Failed to award starter monster to new player:', p.name);
-                    }
                 });
 
                 // Save difficulty
                 if (!GameState.config) GameState.config = {};
                 GameState.config.difficulty = MM_NEW.difficulty;
+
+                // Fluxo inicial de starter: marcar como pendente
+                GameState.starterFlowCompleted = false;
 
                 // Save to localStorage
                 saveToLocalStorage();
@@ -9924,8 +10033,8 @@
                 return;
             }
 
-            // Feature 4.1.1: Show tutorial choice instead of going directly to game
-            mmPostGameStartFlow();
+            // Iniciar fluxo de escolha de classe + ovo inicial
+            mmStartStarterFlow();
         }
 
         // ===== Feature 4.3: Save Slots + Export/Import =====
@@ -10542,6 +10651,173 @@
             return mmShowStartChoiceOverlay(true);
         }
 
+        // ===== FLUXO INICIAL: Escolha de Classe + Ovo Starter =====
+
+        // Mapeamento classe → monstrinho inicial do catálogo oficial
+        const STARTER_BY_CLASS = {
+            'Bardo':      { monsterId: 'MON_011', eggName: 'Ovo Harmônico', eggEmoji: '🥚🎵' },
+            'Guerreiro':  { monsterId: 'MON_010', eggName: 'Ovo da Guarda', eggEmoji: '🥚⚔️' },
+            'Mago':       { monsterId: 'MON_014', eggName: 'Ovo Arcano',    eggEmoji: '🥚🔮' },
+            'Curandeiro': { monsterId: 'MON_028', eggName: 'Ovo Vital',     eggEmoji: '🥚🌿' },
+            'Caçador':    { monsterId: 'MON_013', eggName: 'Ovo Selvagem',  eggEmoji: '🥚🏹' },
+            'Animalista': { monsterId: 'MON_012', eggName: 'Ovo Primal',    eggEmoji: '🥚🐾' },
+            'Bárbaro':    { monsterId: 'MON_029', eggName: 'Ovo Feroz',     eggEmoji: '🥚🐯' },
+            'Ladino':     { monsterId: 'MON_030', eggName: 'Ovo Sombrio',   eggEmoji: '🥚🦊' },
+        };
+
+        // Estado interno do fluxo de starter
+        const MM_STARTER = { playerIndex: 0, phase: 'choose' };
+
+        function mmStartStarterFlow() {
+            // Segurança: se todos já têm starter, não repetir
+            const allDone = !GameState.players ||
+                GameState.players.every(p => p.starterGranted);
+            if (allDone || GameState.starterFlowCompleted) {
+                GameState.starterFlowCompleted = true;
+                saveToLocalStorage();
+                mmPostGameStartFlow();
+                return;
+            }
+
+            // Começar pelo primeiro jogador sem starter
+            const first = GameState.players.findIndex(p => !p.starterGranted);
+            MM_STARTER.playerIndex = first >= 0 ? first : 0;
+            MM_STARTER.phase = 'choose';
+
+            mmShow("mmStarterFlow");
+            mmRenderStarterFlow();
+        }
+
+        function mmRenderStarterFlow() {
+            const player = GameState.players[MM_STARTER.playerIndex];
+            if (!player) { mmFinishStarterFlow(); return; }
+
+            const title = document.getElementById("mmStarterFlowTitle");
+            const body = document.getElementById("mmStarterFlowBody");
+            if (!body) return;
+
+            if (MM_STARTER.phase === 'choose') {
+                if (title) title.textContent = `🎭 ${player.name} — Escolha sua Classe`;
+
+                const classCards = MM_CLASSES.map(cls => {
+                    const info = STARTER_BY_CLASS[cls];
+                    const tmpl = info ? MONSTER_CATALOG.find(m => m.id === info.monsterId) : null;
+                    const selected = player.class === cls;
+                    return `<div class="starter-class-card ${selected ? 'starter-class-card-sel' : ''}"
+                                onclick="mmStarterSelectClass('${escapeHtml(cls)}')">
+                        <div class="starter-class-emoji">${tmpl ? tmpl.emoji : '❓'}</div>
+                        <div class="starter-class-name">${escapeHtml(cls)}</div>
+                        <div class="starter-class-egg">${info ? escapeHtml(info.eggName) : ''}</div>
+                    </div>`;
+                }).join('');
+
+                body.innerHTML = `
+                    <p class="mm-sub">Jogador <strong>${escapeHtml(player.name)}</strong> — qual classe você vai jogar?</p>
+                    <div class="starter-class-grid">${classCards}</div>
+                    <div class="mm-row mt-12">
+                        <button class="mm-btn" onclick="mmStarterConfirmClass()">✅ Confirmar Classe</button>
+                    </div>
+                `;
+
+            } else if (MM_STARTER.phase === 'egg') {
+                const info = STARTER_BY_CLASS[player.class] || STARTER_BY_CLASS['Guerreiro'];
+                const tmpl = MONSTER_CATALOG.find(m => m.id === info.monsterId);
+                if (title) title.textContent = `${info.eggEmoji} ${player.name} recebeu um ovo!`;
+
+                body.innerHTML = `
+                    <div class="starter-egg-reveal">
+                        <div class="starter-egg-big">${info.eggEmoji}</div>
+                        <div class="starter-egg-name">${escapeHtml(info.eggName)}</div>
+                        <div class="starter-egg-cls">Classe: <strong>${escapeHtml(player.class)}</strong></div>
+                        ${tmpl ? `<div class="starter-egg-hint">Monstrinho: ${tmpl.emoji} <em>${escapeHtml(tmpl.name)}</em></div>` : ''}
+                    </div>
+                    <div class="mm-row mt-12">
+                        <button class="mm-btn mm-btn-hatch" onclick="mmStarterHatchEgg()">🌟 Chocar o Ovo!</button>
+                    </div>
+                `;
+
+            } else if (MM_STARTER.phase === 'hatched') {
+                const info = STARTER_BY_CLASS[player.class] || STARTER_BY_CLASS['Guerreiro'];
+                const tmpl = MONSTER_CATALOG.find(m => m.id === info.monsterId);
+                const isLast = MM_STARTER.playerIndex >= GameState.players.filter(p => !p.starterGranted || p === player).length - 1;
+                const btnLabel = (MM_STARTER.playerIndex >= GameState.players.length - 1) ? '🚀 Começar Aventura!' : `➡️ Próximo Jogador`;
+                if (title) title.textContent = `🎉 Nasceu!`;
+
+                body.innerHTML = `
+                    <div class="starter-hatch-reveal">
+                        <div class="starter-hatch-big">${tmpl ? tmpl.emoji : '🔮'}</div>
+                        <div class="starter-hatch-name">${tmpl ? escapeHtml(tmpl.name) : 'Monstrinho'}</div>
+                        <div class="starter-hatch-info">Nível 1 · ${escapeHtml(player.class)} · Comum</div>
+                        <div class="starter-hatch-msg">✨ ${escapeHtml(player.name)} recebeu ${tmpl ? escapeHtml(tmpl.name) : 'o monstrinho'}!</div>
+                    </div>
+                    <div class="mm-row mt-12">
+                        <button class="mm-btn" onclick="mmStarterNextPlayer()">${btnLabel}</button>
+                    </div>
+                `;
+            }
+        }
+
+        function mmStarterSelectClass(cls) {
+            const player = GameState.players[MM_STARTER.playerIndex];
+            if (player) player.class = cls;
+            mmRenderStarterFlow();
+        }
+
+        function mmStarterConfirmClass() {
+            MM_STARTER.phase = 'egg';
+            mmRenderStarterFlow();
+        }
+
+        function mmStarterHatchEgg() {
+            const player = GameState.players[MM_STARTER.playerIndex];
+            if (!player || player.starterGranted) {
+                MM_STARTER.phase = 'hatched';
+                mmRenderStarterFlow();
+                return;
+            }
+
+            const cls = player.class || MM_CLASSES[0];
+            const info = STARTER_BY_CLASS[cls] || STARTER_BY_CLASS[MM_CLASSES[0]];
+
+            const mon = awardMonster(info.monsterId, 1, null, 'party', player);
+            if (mon) {
+                player.starterGranted = true;
+                player.starterMonsterId = info.monsterId;
+            } else {
+                console.error('[mmStarterHatchEgg] awardMonster falhou para', info.monsterId);
+            }
+
+            MM_STARTER.phase = 'hatched';
+            mmRenderStarterFlow();
+        }
+
+        function mmStarterNextPlayer() {
+            MM_STARTER.playerIndex++;
+
+            // Pular jogadores que já têm starter
+            while (MM_STARTER.playerIndex < GameState.players.length &&
+                   GameState.players[MM_STARTER.playerIndex].starterGranted) {
+                MM_STARTER.playerIndex++;
+            }
+
+            if (MM_STARTER.playerIndex >= GameState.players.length) {
+                mmFinishStarterFlow();
+                return;
+            }
+
+            MM_STARTER.phase = 'choose';
+            mmRenderStarterFlow();
+        }
+
+        function mmFinishStarterFlow() {
+            GameState.starterFlowCompleted = true;
+            saveToLocalStorage();
+            if (GameState.saveSlot) {
+                try { StorageManager.saveSlot(GameState.saveSlot, mmBuildSaveEnvelope()); } catch(e) {}
+            }
+            mmPostGameStartFlow();
+        }
+
         function mmShowStartChoiceOverlay(show){
             const el = document.getElementById("mmStartChoice");
             if (!el) return;
@@ -10636,6 +10912,15 @@
         window.mmContinue = mmContinue;
         window.mmShowConfig = mmShowConfig;
         window.mmOpenTherapistPanel = mmOpenTherapistPanel;
+        window.mmOpenMestre = mmOpenMestre;
+        window.mmRenderTherapistPanel = mmRenderTherapistPanel;
+        window.mmSetTherapistMode = mmSetTherapistMode;
+        // Fluxo inicial de starter
+        window.mmStartStarterFlow = mmStartStarterFlow;
+        window.mmStarterSelectClass = mmStarterSelectClass;
+        window.mmStarterConfirmClass = mmStarterConfirmClass;
+        window.mmStarterHatchEgg = mmStarterHatchEgg;
+        window.mmStarterNextPlayer = mmStarterNextPlayer;
         window.mmTherGiveMonster = mmTherGiveMonster;
         window.mmTherGiveItem = mmTherGiveItem;
         window.mmTherGiveXP = mmTherGiveXP;

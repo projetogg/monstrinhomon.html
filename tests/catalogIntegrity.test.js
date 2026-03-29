@@ -1,7 +1,7 @@
 /**
  * CATALOG INTEGRITY TESTS
  *
- * Validação da integridade do catálogo expandido de monstros (55 monstros).
+ * Validação da integridade do catálogo expandido de monstros (64 monstros).
  * Cobertura:
  *  - Todos os monstros carregáveis com schema válido
  *  - Cadeias de evolução completas e sem referências quebradas
@@ -58,8 +58,8 @@ describe('Catálogo de Monstros - Integridade Geral', () => {
         expect(Array.isArray(data.monsters)).toBe(true);
     });
 
-    it('deve conter 55 monstros no catálogo', () => {
-        expect(monsters.length).toBe(55);
+    it('deve conter 64 monstros no catálogo', () => {
+        expect(monsters.length).toBe(64);
     });
 
     it('não deve ter IDs duplicados', () => {
@@ -209,8 +209,8 @@ describe('EVOLUCOES.csv ↔ monsters.json - Sincronia', () => {
     const monsterMap = new Map(monsters.map(m => [m.id, m]));
     const csvEntries = loadEvolucoesCSV();
 
-    it('EVOLUCOES.csv deve ter exatamente 33 entradas', () => {
-        expect(csvEntries.length).toBe(33);
+    it('EVOLUCOES.csv deve ter exatamente 39 entradas', () => {
+        expect(csvEntries.length).toBe(39);
     });
 
     it('cada entrada do CSV deve corresponder a evolvesTo/evolvesAt no JSON', () => {
