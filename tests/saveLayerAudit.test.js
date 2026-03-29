@@ -3,19 +3,24 @@
  *
  * Auditoria técnica completa do sistema de save/load do Monstrinhomon.
  * Cobertura:
- *   - getActiveSlot: resolução de slot ativo com diferentes configs
- *   - setActiveSlot: atualiza GameState.saveSlot e StorageManager.lastSlot
- *   - saveActiveGame: salva auto-save e espelha no slot ativo
+ *   - getActiveSlot: slot manual associado (metadado operacional), resolução canônica
+ *   - setActiveSlot: registra slot manual de forma centralizada e consistente
+ *   - saveActiveGame: grava auto-save (fonte de verdade) + snapshot no slot associado
  *   - loadActiveGame: sempre carrega do auto-save (fonte de verdade)
- *   - syncMainStateAndSlot: sincroniza slot ativo com auto-save
+ *   - syncMainStateAndSlot: atualiza snapshot do slot com estado atual do auto-save
  *   - Fluxo: novo jogo no slot 1
  *   - Fluxo: save manual
  *   - Fluxo: continue
- *   - Fluxo: reload
+ *   - Fluxo: reload idempotente
  *   - Fluxo: troca para slot 2
  *   - Isolamento entre slots
- *   - Consistência entre auto-save e slot ativo
- *   - Falha de save não exibindo falso sucesso
+ *   - Consistência entre auto-save e slot
+ *   - Falha de save sem falso sucesso
+ *   - Invariante: Continue usa auto-save, nunca slot diretamente
+ *   - Invariante: Load Slot restaura snapshot para o auto-save (não cria segunda sessão)
+ *   - Invariante: troca de slot não altera fonte de verdade da sessão
+ *   - Invariante: ausência de slot não quebra o auto-save
+ *   - Invariante: falha parcial no slot não gera falso sucesso
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -93,6 +98,9 @@ function makeSaveLayer(mockWindow) {
             autoSaved = sm.saveState(gameState);
         } catch { return { autoSaved: false, slotSaved: false, slot: null }; }
 
+        // Se auto-save falhou, não tentar snapshot — estado pode estar inconsistente
+        if (!autoSaved) return { autoSaved: false, slotSaved: false, slot: null };
+
         const slot = getActiveSlot();
         let slotSaved = true;
 
@@ -120,7 +128,7 @@ function makeSaveLayer(mockWindow) {
 
     function syncMainStateAndSlot(gameState, buildEnvelopeFn) {
         const slot = getActiveSlot();
-        if (!slot) return { synced: false, slot: null, reason: 'Nenhum slot ativo definido' };
+        if (!slot) return { synced: false, slot: null, reason: 'Nenhum slot manual associado' };
         if (typeof buildEnvelopeFn !== 'function') {
             return { synced: false, slot, reason: 'buildEnvelopeFn ausente ou inválida' };
         }
@@ -378,7 +386,7 @@ describe('SaveLayer — syncMainStateAndSlot', () => {
         const sl = makeSaveLayer(w);
         const result = sl.syncMainStateAndSlot(gs, buildEnvelope);
         expect(result.synced).toBe(false);
-        expect(result.reason).toContain('Nenhum slot ativo');
+        expect(result.reason).toContain('Nenhum slot manual');
     });
 
     it('deve retornar synced=false quando buildEnvelopeFn ausente', () => {
@@ -693,5 +701,222 @@ describe('SaveLayer — Falha de save não deve exibir falso sucesso', () => {
         // Slot deve ter falhado mas sem crash
         expect(result.slotSaved).toBe(false);
         expect(result.slot).toBe(1);
+    });
+});
+
+// ─── INVARIANTES SEMÂNTICOS ───────────────────────────────────────────────
+// Estes testes verificam que a arquitetura escolhida é respeitada:
+//   monstrinhomon_state = única fonte de verdade da sessão
+//   slots = snapshots manuais pontuais
+//   slot ativo = metadado operacional, não fonte de sessão
+
+describe('Invariante: Continue usa o auto-save, nunca o slot diretamente', () => {
+    it('loadActiveGame deve ler monstrinhomon_state independentemente de qual slot existe', () => {
+        const sm = makeStorageManagerMock();
+
+        // Slot 2 tem snapshot antigo
+        const oldGs = makeGameState({ saveSlot: 2 });
+        oldGs.players[0].money = 50;
+        sm._store['mm_save_slot_2'] = buildEnvelope(oldGs);
+
+        // Auto-save tem progresso mais recente
+        const currentGs = makeGameState({ saveSlot: 2 });
+        currentGs.players[0].money = 800;
+        sm._store['monstrinhomon_state'] = currentGs;
+        sm.loadState.mockReturnValue({ state: currentGs, loaded: true, migrated: false, notes: [] });
+
+        const w = { GameState: currentGs, StorageManager: sm };
+        const sl = makeSaveLayer(w);
+
+        // Continue → loadActiveGame → deve retornar auto-save, não slot
+        const result = sl.loadActiveGame();
+        expect(result.state.players[0].money).toBe(800);
+        // Confirma que loadState foi chamado (auto-save), não loadSlot
+        expect(sm.loadState).toHaveBeenCalled();
+        expect(sm.loadSlot).not.toHaveBeenCalled();
+    });
+
+    it('loadActiveGame não deve jamais chamar loadSlot', () => {
+        const sm = makeStorageManagerMock();
+        sm.loadState.mockReturnValue({ state: makeGameState(), loaded: true, migrated: false, notes: [] });
+        const w = { GameState: makeGameState(), StorageManager: sm };
+        const sl = makeSaveLayer(w);
+
+        sl.loadActiveGame();
+        expect(sm.loadSlot).not.toHaveBeenCalled();
+    });
+});
+
+describe('Invariante: Load Slot restaura snapshot para o auto-save (não cria segunda sessão)', () => {
+    it('após restaurar snapshot, saveActiveGame deve gravar no auto-save', () => {
+        const sm = makeStorageManagerMock();
+
+        // Snapshot no slot 1
+        const snapshotGs = makeGameState({ saveSlot: 1 });
+        snapshotGs.players[0].money = 200;
+        sm._store['mm_save_slot_1'] = buildEnvelope(snapshotGs);
+        sm.loadSlot.mockImplementation((slot) => {
+            const d = sm._store[`mm_save_slot_${slot}`];
+            if (!d) return { data: null, loaded: false, notes: [] };
+            return { data: JSON.parse(JSON.stringify(d)), loaded: true, notes: [] };
+        });
+
+        // Simula o fluxo de mmLoadFromSlot(1):
+        // 1. Lê snapshot
+        const slotResult = sm.loadSlot(1);
+        expect(slotResult.loaded).toBe(true);
+
+        // 2. Restaura para GameState em memória
+        const gs = makeGameState({ saveSlot: null });
+        Object.assign(gs, slotResult.data.state);
+
+        // 3. Registra slot como associação operacional
+        const w = { GameState: gs, StorageManager: sm };
+        const sl = makeSaveLayer(w);
+        sl.setActiveSlot(1);
+        expect(gs.saveSlot).toBe(1);
+
+        // 4. Persiste snapshot restaurado como novo auto-save
+        const saveResult = sl.saveActiveGame(gs, buildEnvelope);
+        expect(saveResult.autoSaved).toBe(true);
+        // O auto-save agora contém o estado do snapshot
+        expect(sm._store['monstrinhomon_state'].players[0].money).toBe(200);
+    });
+
+    it('após restaurar slot 2, o auto-save deve ser a fonte de verdade (não slot 2)', () => {
+        const sm = makeStorageManagerMock();
+
+        // Snapshot no slot 2
+        const snapshotGs = makeGameState({ saveSlot: 2 });
+        snapshotGs.players[0].money = 300;
+
+        const w = { GameState: snapshotGs, StorageManager: sm };
+        const sl = makeSaveLayer(w);
+
+        // Simula restauração: auto-save recebe o estado do snapshot
+        sl.saveActiveGame(snapshotGs, buildEnvelope);
+
+        // Continue subsequente lê o auto-save (não o slot 2)
+        sm.loadState.mockReturnValue({ state: snapshotGs, loaded: true, migrated: false, notes: [] });
+        const continueResult = sl.loadActiveGame();
+        expect(continueResult.state.players[0].money).toBe(300);
+        expect(sm.loadSlot).not.toHaveBeenCalled();
+    });
+});
+
+describe('Invariante: troca de slot não altera a fonte de verdade da sessão', () => {
+    it('setActiveSlot não deve modificar o auto-save', () => {
+        const sm = makeStorageManagerMock();
+        const gs = makeGameState({ saveSlot: 1 });
+        gs.players[0].money = 500;
+
+        // Auto-save com estado atual
+        sm._store['monstrinhomon_state'] = JSON.parse(JSON.stringify(gs));
+
+        const w = { GameState: gs, StorageManager: sm };
+        const sl = makeSaveLayer(w);
+
+        // Usuário troca de slot 1 para slot 3
+        sl.setActiveSlot(3);
+
+        // Auto-save não deve ter sido tocado
+        expect(sm.saveState).not.toHaveBeenCalled();
+        expect(sm._store['monstrinhomon_state'].players[0].money).toBe(500);
+    });
+
+    it('setActiveSlot não deve gravar snapshot automaticamente', () => {
+        const sm = makeStorageManagerMock();
+        const gs = makeGameState({ saveSlot: null });
+        const w = { GameState: gs, StorageManager: sm };
+        const sl = makeSaveLayer(w);
+
+        sl.setActiveSlot(2);
+
+        // Trocar slot não deve criar snapshot automaticamente
+        expect(sm.saveSlot).not.toHaveBeenCalled();
+        expect(sm.saveState).not.toHaveBeenCalled();
+    });
+
+    it('após troca de slot, loadActiveGame ainda lê o auto-save original', () => {
+        const sm = makeStorageManagerMock();
+        const gs = makeGameState({ saveSlot: 1 });
+        gs.players[0].money = 777;
+        sm.loadState.mockReturnValue({ state: gs, loaded: true, migrated: false, notes: [] });
+
+        const w = { GameState: gs, StorageManager: sm };
+        const sl = makeSaveLayer(w);
+
+        // Troca para slot 2
+        sl.setActiveSlot(2);
+
+        // Continue ainda lê o mesmo auto-save
+        const result = sl.loadActiveGame();
+        expect(result.state.players[0].money).toBe(777);
+        expect(sm.loadSlot).not.toHaveBeenCalled();
+    });
+});
+
+describe('Invariante: ausência de slot não quebra o auto-save', () => {
+    it('saveActiveGame sem slot associado deve salvar apenas no auto-save', () => {
+        const sm = makeStorageManagerMock();
+        sm.getLastSlot.mockReturnValue(null);
+        const gs = makeGameState({ saveSlot: null });
+        const w = { GameState: gs, StorageManager: sm };
+        const sl = makeSaveLayer(w);
+
+        const result = sl.saveActiveGame(gs, buildEnvelope);
+
+        expect(result.autoSaved).toBe(true);
+        expect(result.slot).toBeNull();
+        // Nenhum slot deve ter sido tocado
+        expect(sm.saveSlot).not.toHaveBeenCalled();
+    });
+
+    it('loadActiveGame sem slot associado deve funcionar normalmente', () => {
+        const sm = makeStorageManagerMock();
+        sm.getLastSlot.mockReturnValue(null);
+        const gs = makeGameState({ saveSlot: null });
+        gs.players[0].money = 100;
+        sm._store['monstrinhomon_state'] = gs;
+        sm.loadState.mockReturnValue({ state: gs, loaded: true, migrated: false, notes: [] });
+
+        const w = { GameState: gs, StorageManager: sm };
+        const sl = makeSaveLayer(w);
+
+        const result = sl.loadActiveGame();
+        expect(result.loaded).toBe(true);
+        expect(result.state.players[0].money).toBe(100);
+    });
+});
+
+describe('Invariante: falha parcial no slot não gera falso sucesso', () => {
+    it('resultado deve reportar autoSaved=true e slotSaved=false separadamente', () => {
+        const sm = makeStorageManagerMock({ saveSlot: vi.fn(() => false) });
+        const gs = makeGameState({ saveSlot: 1 });
+        const w = { GameState: gs, StorageManager: sm };
+        const sl = makeSaveLayer(w);
+
+        const result = sl.saveActiveGame(gs, buildEnvelope);
+
+        // Auto-save funcionou — progresso NÃO foi perdido
+        expect(result.autoSaved).toBe(true);
+        // Snapshot do slot falhou — deve ser reportado
+        expect(result.slotSaved).toBe(false);
+        // Os dois valores são independentes — não pode haver ambiguidade
+        expect(result.autoSaved).not.toBe(result.slotSaved);
+    });
+
+    it('falha no auto-save retorna imediatamente sem tentar snapshot do slot', () => {
+        const sm = makeStorageManagerMock({ saveState: vi.fn(() => false) });
+        const gs = makeGameState({ saveSlot: 1 });
+        const w = { GameState: gs, StorageManager: sm };
+        const sl = makeSaveLayer(w);
+
+        const result = sl.saveActiveGame(gs, buildEnvelope);
+
+        // Falha no auto-save = perda de progresso = deve reportar falha
+        expect(result.autoSaved).toBe(false);
+        // Slot não deve ter sido tentado após falha no auto-save (earlyReturn)
+        expect(result.slot).toBeNull();
     });
 });

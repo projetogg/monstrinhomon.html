@@ -414,7 +414,7 @@
         <div class="mm-card max-w-820">
             <div class="mm-title">📂 Gerenciar Saves</div>
 
-            <!-- Botão "Salvar agora" — camada canônica, valida após salvar -->
+            <!-- Botão "Salvar agora" — grava auto-save (fonte de verdade) + snapshot no slot selecionado -->
             <div class="d-flex flex-gap-10 align-center justify-center mt-10 mb-4">
                 <button class="mm-btn" onclick="mmSaveNow()" style="font-size:1.05em;padding:10px 24px;">
                     💾 Salvar agora
@@ -440,7 +440,7 @@
             </div>
 
             <div class="opacity-75 font-size-12 mt-10">
-                Dica: "Salvar agora" grava na fonte de verdade e espelha no slot ativo. Exportar/Importar é ideal para backup e trocar de dispositivo (iPad).
+                O progresso atual está sempre no auto-save principal. Os slots são snapshots manuais — use "Salvar aqui" para criar um snapshot, ou "Carregar" para restaurar um snapshot como sessão atual. Exportar/Importar é ideal para backup e trocar de dispositivo.
             </div>
         </div>
     </div>
@@ -2133,6 +2133,11 @@
 
         // COMMIT 3: Centralized Persistence Layer
         // PR3: All localStorage access now goes through StorageManager
+        // EXCEÇÃO DOCUMENTADA: saveGame() e loadGame() são as funções primitivas de
+        // persistência do auto-save (monstrinhomon_state). Chamam StorageManager diretamente
+        // pois são a camada imediatamente acima do StorageManager. O SaveLayer usa essas
+        // funções indiretamente via StorageManager.saveState/loadState.
+        // Todos os outros módulos devem usar saveToLocalStorage() ou SaveLayer.saveActiveGame().
         
         function saveGame() {
             try {
@@ -9198,8 +9203,11 @@
         }
 
         function mmHasSave(){
-            // Verificar o auto-save principal (monstrinhomon_state) antes dos slots.
-            // O auto-save é sempre mais recente que os slots (que são saves manuais).
+            // EXCEÇÃO DOCUMENTADA: leitura direta ao StorageManager para detecção de save.
+            // mmHasSave é uma função de verificação somente-leitura; não usa SaveLayer
+            // para evitar efeitos colaterais de carregamento.
+            // Verifica o auto-save principal (monstrinhomon_state) antes dos slots.
+            // O auto-save é sempre mais recente que os snapshots manuais.
             try {
                 const result = StorageManager.loadState();
                 if (result.loaded && result.state &&
@@ -9814,19 +9822,20 @@
             }
 
             // Fallback: init() não carregou nada (monstrinhomon_state vazio ou ausente).
-            // Tentar carregar do último slot usado — sem confirm dialog (user já clicou Continuar).
+            // Restaurar snapshot do último slot usado como novo auto-save.
+            // Após restauração, o auto-save passa a ser a fonte de verdade novamente.
             try {
-                const lastSlot = StorageManager.getLastSlot(); // PR3
-                const slotNum = lastSlot ? parseInt(lastSlot, 10) : 1;
+                const lastSlot = SaveLayer.getActiveSlot();
+                const slotNum = lastSlot ?? 1;
                 if ([1, 2, 3].includes(slotNum)) {
                     const env = mmReadSlot(slotNum);
                     if (env && env.state) {
                         Object.assign(GameState, env.state);
-                        GameState.saveSlot = slotNum;
-                        StorageManager.setLastSlot(slotNum); // PR3
-                        saveToLocalStorage(); // Sincronizar o auto-save com o slot carregado
+                        // Registra associação operacional do slot via camada canônica
+                        SaveLayer.setActiveSlot(slotNum);
+                        saveToLocalStorage(); // Persiste snapshot restaurado como novo auto-save
                         if (typeof updateAllViews === "function") updateAllViews();
-                        showToast(`📂 Carregado do Slot ${slotNum}!`);
+                        showToast(`📂 Snapshot do Slot ${slotNum} restaurado!`);
                         mmCloseAllOverlays();
                         mmPostGameStartFlow();
                         return;
@@ -10066,9 +10075,9 @@
                 // Salva via camada canônica: auto-save + espelha no slot ativo (se houver)
                 const saveResult = SaveLayer.saveActiveGame(GameState, mmBuildSaveEnvelope);
                 if (!saveResult.autoSaved) {
-                    alert("⚠️ Falha ao salvar o jogo!");
+                    alert("⚠️ Falha ao salvar o jogo! Verifique se há espaço disponível no dispositivo.");
                 } else if (!saveResult.slotSaved && saveResult.slot) {
-                    alert(`⚠️ Jogo criado, mas falhou ao salvar no Slot ${saveResult.slot}`);
+                    alert(`⚠️ Jogo criado, mas falhou ao gravar snapshot no Slot ${saveResult.slot}. O progresso está seguro no auto-save.`);
                 }
                 
                 // Update UI
@@ -10132,13 +10141,17 @@
         }
 
         function mmReadSlot(slot) {
-            // PR3: Load via StorageManager
+            // EXCEÇÃO DOCUMENTADA: acesso direto ao StorageManager para leitura de snapshot.
+            // mmReadSlot é um helper interno de slot — não deve ser chamado por UI diretamente.
+            // Para carregar a sessão, use SaveLayer.loadActiveGame().
             const result = StorageManager.loadSlot(slot);
             return result.loaded ? result.data : null;
         }
 
         function mmWriteSlot(slot, saveObj) {
-            // PR3: Save via StorageManager with auto-backup
+            // EXCEÇÃO DOCUMENTADA: acesso direto ao StorageManager para snapshot de slot.
+            // mmWriteSlot é um helper interno de slot — não deve ser chamado por UI diretamente.
+            // Para salvar a sessão, use SaveLayer.saveActiveGame().
             return StorageManager.saveSlot(slot, saveObj);
         }
 
@@ -10185,14 +10198,14 @@
                 // Valida leitura após salvar (garante integridade)
                 const check = SaveLayer.loadActiveGame();
                 if (!check.loaded) {
-                    showToast('⚠️ Save gravado mas verificação falhou. Verifique o armazenamento.');
+                    showToast('⚠️ Save gravado mas não pôde ser relido. O armazenamento pode estar corrompido.');
                     return;
                 }
                 let msg = `✅ Salvo às ${ts}`;
                 if (slot) msg += ` · Slot ${slot}`;
                 showToast(msg);
             } else {
-                alert('❌ Falha ao salvar o jogo. Verifique o armazenamento do dispositivo.');
+                alert('❌ Falha ao salvar o jogo. Verifique se há espaço disponível no dispositivo ou tente limpar o cache do navegador.');
             }
 
             // Atualiza tela de saves se estiver aberta
@@ -10209,29 +10222,30 @@
                 alert("Slot vazio ou inválido.");
                 return;
             }
-            if (!confirm(`Carregar Slot ${slot}? Isso substitui o estado atual.`)) return;
+            if (!confirm(`Restaurar snapshot do Slot ${slot}? O progresso atual será substituído.`)) return;
             
             try {
-                // Update GameState properties instead of reassigning
+                // 1. Restaura snapshot para o GameState em memória
                 Object.assign(GameState, env.state);
                 
-                // Atualiza slot ativo via camada canônica (GameState.saveSlot + StorageManager.lastSlot)
+                // 2. Registra slot como associação operacional via camada canônica
                 SaveLayer.setActiveSlot(slot);
                 
-                saveToLocalStorage();  // Sincroniza auto-save com o slot carregado
+                // 3. Persiste snapshot restaurado como novo auto-save (fonte de verdade)
+                saveToLocalStorage();
                 
                 // Update all views
                 if (typeof updateAllViews === "function") updateAllViews();
                 if (typeof renderEncounter === "function") renderEncounter();
                 
-                showToast(`📂 Carregado do Slot ${slot}!`);
+                showToast(`📂 Snapshot do Slot ${slot} restaurado!`);
                 mmCloseSaves();
                 
                 // Feature 4.1.1: Show tutorial choice or go to game based on preference
                 mmPostGameStartFlow();
             } catch (e) {
-                console.error("Failed to load from slot", e);
-                alert("Erro ao carregar o slot.");
+                console.error("Failed to restore slot", e);
+                alert("Erro ao restaurar o slot.");
             }
         }
 
@@ -10307,29 +10321,31 @@
             const host = document.getElementById("mmSavesSlots");
             if (!host) return;
 
-            const activeSlot = SaveLayer.getActiveSlot();
+            const selectedSlot = SaveLayer.getActiveSlot();
 
             const slotHtml = [1, 2, 3].map(slot => {
                 const env = mmReadSlot(slot);
                 const empty = !env || !env.state;
                 const date = env?.timestamp ? new Date(env.timestamp).toLocaleString('pt-BR') : "";
-                const isActive = activeSlot === slot;
-                const activeBadge = isActive ? `<span style="color:#4ade80;font-weight:bold;margin-left:8px;">● Ativo</span>` : "";
+                const isSelected = selectedSlot === slot;
+                // "Selecionado" = este é o slot manual associado (destino de próximos snapshots).
+                // NÃO significa que a sessão atual vem deste slot.
+                const selectedBadge = isSelected ? `<span style="color:#4ade80;font-weight:bold;margin-left:8px;" title="Slot manual selecionado para próximos snapshots">● Selecionado</span>` : "";
                 
                 const meta = empty
-                    ? `<div class="mm-slot-meta">Vazio</div>`
+                    ? `<div class="mm-slot-meta">Nenhum snapshot salvo</div>`
                     : `<div class="mm-slot-meta">
                          <div><b>Sessão:</b> ${escapeHtml(env.sessionName || "Sessão")}</div>
                          <div><b>Jogadores:</b> ${env.playersCount ?? "?"}</div>
-                         <div><b>Data:</b> ${date}</div>
+                         <div><b>Snapshot de:</b> ${date}</div>
                        </div>`;
 
                 return `
-                    <div class="mm-slot${isActive ? ' mm-slot-active' : ''}">
-                        <h3>Slot ${slot}${activeBadge}</h3>
+                    <div class="mm-slot${isSelected ? ' mm-slot-active' : ''}">
+                        <h3>Slot ${slot}${selectedBadge}</h3>
                         ${meta}
                         <div class="mm-slot-actions">
-                            <button class="mm-btn w-auto" ${empty ? "disabled" : ""} onclick="mmLoadFromSlot(${slot})">📂 Carregar</button>
+                            <button class="mm-btn w-auto" ${empty ? "disabled" : ""} onclick="mmLoadFromSlot(${slot})">📂 Restaurar</button>
                             <button class="mm-btn w-auto" onclick="mmSaveToSlot(${slot})">💾 Salvar aqui</button>
                             <button class="mm-btn w-auto" ${empty ? "disabled" : ""} onclick="mmExportSlot(${slot})">⬇️ Exportar</button>
                             <button class="mm-btn w-auto" ${empty ? "disabled" : ""} onclick="mmDeleteSlot(${slot})">🗑️ Apagar</button>
@@ -10343,8 +10359,8 @@
 
         // Slot Picker functions for New Game flow
         function mmGetLastSlot() {
-            // PR3: Use StorageManager
-            const slot = StorageManager.getLastSlot();
+            // Slot manual associado — referência operacional para a UI do slot picker.
+            const slot = SaveLayer.getActiveSlot();
             return slot !== null ? slot : 1;
         }
 
@@ -10403,10 +10419,9 @@
                 if (!ok) return;
             }
 
-            // Store chosen slot
+            // Registra slot como associação operacional (metadado do slot manual selecionado)
             if (!window.GameState) window.GameState = {};
-            GameState.saveSlot = slot;
-            StorageManager.setLastSlot(slot); // PR3
+            SaveLayer.setActiveSlot(slot);
 
             mmHideOverlay("mmSlotPicker");
             // Call existing wizard from Feature 4.0
@@ -10705,16 +10720,11 @@
             StorageManager.setTutorialPrefSlot(slotNum, pref);
         }
 
-        // Helper to get the active slot from multiple possible sources
+        // Retorna o slot manual associado à sessão (metadado operacional).
+        // Delega à camada canônica; campos legados (ui.activeSlot, activeSaveSlot,
+        // currentSaveSlot) foram removidos do GameState e não devem ser verificados.
         function mmGetActiveSlot(){
-            return (
-                GameState?.ui?.activeSlot ??
-                GameState?.activeSaveSlot ??
-                GameState?.saveSlot ??
-                GameState?.currentSaveSlot ??
-                StorageManager.getLastSlot() ?? // PR3
-                null
-            );
+            return SaveLayer.getActiveSlot();
         }
 
         // Decide what to do after loading/creating a game
@@ -10895,10 +10905,9 @@
 
         function mmFinishStarterFlow() {
             GameState.starterFlowCompleted = true;
-            saveToLocalStorage();
-            if (GameState.saveSlot) {
-                try { StorageManager.saveSlot(GameState.saveSlot, mmBuildSaveEnvelope()); } catch(e) {}
-            }
+            saveToLocalStorage(); // Persiste no auto-save (fonte de verdade)
+            // Grava snapshot no slot manual associado (se houver) via camada canônica
+            SaveLayer.syncMainStateAndSlot(GameState, mmBuildSaveEnvelope);
             mmPostGameStartFlow();
         }
 
