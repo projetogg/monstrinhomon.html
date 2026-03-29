@@ -1752,3 +1752,153 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
         padding: 10px 14px;
     }
 }
+
+/* ===== FLUXO INICIAL: Escolha de Classe + Ovo Starter ===== */
+
+.mm-card-starter {
+    width: min(680px, calc(100vw - 24px));
+    max-height: 92vh;
+    margin: auto;
+    background: rgba(15, 15, 25, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 18px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Grid de classes */
+.starter-class-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin: 10px 0;
+}
+
+@media (max-width: 480px) {
+    .starter-class-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.starter-class-card {
+    background: rgba(255, 255, 255, 0.07);
+    border: 2px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 10px 8px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.18s;
+    user-select: none;
+}
+
+.starter-class-card:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.starter-class-card-sel {
+    background: rgba(108, 92, 231, 0.35) !important;
+    border-color: #a29bfe !important;
+    box-shadow: 0 0 12px rgba(108, 92, 231, 0.4);
+}
+
+.starter-class-emoji {
+    font-size: 28px;
+    line-height: 1.2;
+}
+
+.starter-class-name {
+    font-size: 13px;
+    font-weight: 800;
+    color: #fff;
+    margin: 4px 0 2px;
+}
+
+.starter-class-egg {
+    font-size: 11px;
+    opacity: 0.7;
+    color: #ccc;
+}
+
+/* Tela do ovo */
+.starter-egg-reveal {
+    text-align: center;
+    padding: 20px 10px;
+}
+
+.starter-egg-big {
+    font-size: 72px;
+    line-height: 1;
+    margin-bottom: 12px;
+    animation: eggPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes eggPulse {
+    0%, 100% { transform: scale(1); }
+    50%       { transform: scale(1.08); }
+}
+
+.starter-egg-name {
+    font-size: 22px;
+    font-weight: 900;
+    color: #fff;
+    margin-bottom: 6px;
+}
+
+.starter-egg-cls {
+    font-size: 15px;
+    opacity: 0.85;
+    margin-bottom: 8px;
+}
+
+.starter-egg-hint {
+    font-size: 13px;
+    opacity: 0.7;
+    color: #ddd;
+}
+
+.mm-btn-hatch {
+    background: linear-gradient(135deg, #f39c12, #e67e22) !important;
+    font-size: 18px !important;
+}
+
+/* Tela de nascimento */
+.starter-hatch-reveal {
+    text-align: center;
+    padding: 20px 10px;
+}
+
+.starter-hatch-big {
+    font-size: 80px;
+    line-height: 1;
+    margin-bottom: 12px;
+    animation: hatchPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes hatchPop {
+    from { transform: scale(0.3); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+}
+
+.starter-hatch-name {
+    font-size: 26px;
+    font-weight: 900;
+    color: #fff;
+    margin-bottom: 6px;
+}
+
+.starter-hatch-info {
+    font-size: 13px;
+    opacity: 0.75;
+    color: #ddd;
+    margin-bottom: 10px;
+}
+
+.starter-hatch-msg {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fdcb6e;
+}

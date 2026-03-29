@@ -454,6 +454,16 @@
         </div>
     </div>
 
+    <!-- Fluxo Inicial: Escolha de Classe + Ovo Starter -->
+    <div id="mmStarterFlow" class="mm-overlay is-hidden">
+        <div class="mm-card mm-card-starter">
+            <div class="mm-card-mestre-header">
+                <span class="mm-title" id="mmStarterFlowTitle">🥚 Escolha Inicial</span>
+            </div>
+            <div id="mmStarterFlowBody" class="mm-card-mestre-body"></div>
+        </div>
+    </div>
+
     <script type="module">
         // Import combat modules
         import Combat from './js/combat/index.js';
@@ -2002,6 +2012,13 @@
                 });
             }
             
+            // Retrocompatibilidade: saves antigos com monstrinhos no time já completaram o fluxo inicial
+            if (typeof state.starterFlowCompleted !== 'boolean') {
+                const hasMonsters = Array.isArray(state.players) &&
+                    state.players.some(p => (p.team && p.team.length > 0) || (p.box && p.box.length > 0));
+                state.starterFlowCompleted = hasMonsters;
+            }
+
             return state;
         }
 
@@ -9092,7 +9109,7 @@
         function mmEl(id){ return document.getElementById(id); }
 
         function mmCloseAllOverlays(){
-            ["mmIntro","mmMenu","mmNewGame","mmConfig","mmTherapist","mmSavesScreen","mmSlotPicker","mmStartChoice"].forEach(id => {
+            ["mmIntro","mmMenu","mmNewGame","mmConfig","mmTherapist","mmSavesScreen","mmSlotPicker","mmStartChoice","mmStarterFlow"].forEach(id => {
                 const el = mmEl(id);
                 if (el) {
                     el.classList.remove("show");
@@ -9941,14 +9958,8 @@
                 // Create players
                 MM_NEW.players.forEach((p, idx) => {
                     const playerId = `p_${Date.now()}_${idx}`;
-                    
-                    // Find a starter monster of the same class
-                    const starterTemplate = MONSTER_CATALOG.find(m => 
-                        m.class && p.class && m.class.toLowerCase() === p.class.toLowerCase()
-                    ) || MONSTER_CATALOG[0]; // Fallback to first monster if no match
-                    
-                    // Create player first (Award API needs player object)
-                    // Recursos iniciais: mesmos valores que addPlayer() para consistência
+
+                    // Criar jogador sem monstrinho inicial — será concedido pelo fluxo de starter
                     const player = {
                         id: playerId,
                         name: p.name,
@@ -9957,6 +9968,7 @@
                         afterlifeCurrency: 0,
                         team: [],
                         box: [],
+                        starterGranted: false,
                         inventory: {
                             'CLASTERORB_COMUM': 5,    // ClasterOrb Comum x5
                             'CLASTERORB_INCOMUM': 2,  // ClasterOrb Incomum x2
@@ -9972,24 +9984,14 @@
                         GameFlow.ensureQuestState(player);
                         GameFlow.autoActivateFirstQuest(player);
                     }
-                    
-                    // COMMIT 8 (Wave A): Use Award API for canonical monster creation
-                    const starterMonster = awardMonster(
-                        starterTemplate.id,  // templateId
-                        1,                   // level
-                        null,                // rarity (use template default)
-                        'party',             // destination
-                        player               // player object
-                    );
-                    
-                    if (!starterMonster) {
-                        console.error('Failed to award starter monster to new player:', p.name);
-                    }
                 });
 
                 // Save difficulty
                 if (!GameState.config) GameState.config = {};
                 GameState.config.difficulty = MM_NEW.difficulty;
+
+                // Fluxo inicial de starter: marcar como pendente
+                GameState.starterFlowCompleted = false;
 
                 // Save to localStorage
                 saveToLocalStorage();
@@ -10019,8 +10021,8 @@
                 return;
             }
 
-            // Feature 4.1.1: Show tutorial choice instead of going directly to game
-            mmPostGameStartFlow();
+            // Iniciar fluxo de escolha de classe + ovo inicial
+            mmStartStarterFlow();
         }
 
         // ===== Feature 4.3: Save Slots + Export/Import =====
@@ -10637,6 +10639,173 @@
             return mmShowStartChoiceOverlay(true);
         }
 
+        // ===== FLUXO INICIAL: Escolha de Classe + Ovo Starter =====
+
+        // Mapeamento classe → monstrinho inicial do catálogo oficial
+        const STARTER_BY_CLASS = {
+            'Bardo':      { monsterId: 'MON_011', eggName: 'Ovo Harmônico', eggEmoji: '🥚🎵' },
+            'Guerreiro':  { monsterId: 'MON_002', eggName: 'Ovo da Guarda', eggEmoji: '🥚⚔️' },
+            'Mago':       { monsterId: 'MON_003', eggName: 'Ovo Arcano',    eggEmoji: '🥚🔮' },
+            'Curandeiro': { monsterId: 'MON_004', eggName: 'Ovo Vital',     eggEmoji: '🥚💚' },
+            'Caçador':    { monsterId: 'MON_005', eggName: 'Ovo Selvagem',  eggEmoji: '🥚🏹' },
+            'Animalista': { monsterId: 'MON_006', eggName: 'Ovo Primal',    eggEmoji: '🥚🐾' },
+            'Bárbaro':    { monsterId: 'MON_007', eggName: 'Ovo Feroz',     eggEmoji: '🥚⚡' },
+            'Ladino':     { monsterId: 'MON_008', eggName: 'Ovo Sombrio',   eggEmoji: '🥚🌑' },
+        };
+
+        // Estado interno do fluxo de starter
+        const MM_STARTER = { playerIndex: 0, phase: 'choose' };
+
+        function mmStartStarterFlow() {
+            // Segurança: se todos já têm starter, não repetir
+            const allDone = !GameState.players ||
+                GameState.players.every(p => p.starterGranted);
+            if (allDone || GameState.starterFlowCompleted) {
+                GameState.starterFlowCompleted = true;
+                saveToLocalStorage();
+                mmPostGameStartFlow();
+                return;
+            }
+
+            // Começar pelo primeiro jogador sem starter
+            const first = GameState.players.findIndex(p => !p.starterGranted);
+            MM_STARTER.playerIndex = first >= 0 ? first : 0;
+            MM_STARTER.phase = 'choose';
+
+            mmShow("mmStarterFlow");
+            mmRenderStarterFlow();
+        }
+
+        function mmRenderStarterFlow() {
+            const player = GameState.players[MM_STARTER.playerIndex];
+            if (!player) { mmFinishStarterFlow(); return; }
+
+            const title = document.getElementById("mmStarterFlowTitle");
+            const body = document.getElementById("mmStarterFlowBody");
+            if (!body) return;
+
+            if (MM_STARTER.phase === 'choose') {
+                if (title) title.textContent = `🎭 ${player.name} — Escolha sua Classe`;
+
+                const classCards = MM_CLASSES.map(cls => {
+                    const info = STARTER_BY_CLASS[cls];
+                    const tmpl = info ? MONSTER_CATALOG.find(m => m.id === info.monsterId) : null;
+                    const selected = player.class === cls;
+                    return `<div class="starter-class-card ${selected ? 'starter-class-card-sel' : ''}"
+                                onclick="mmStarterSelectClass('${escapeHtml(cls)}')">
+                        <div class="starter-class-emoji">${tmpl ? tmpl.emoji : '❓'}</div>
+                        <div class="starter-class-name">${escapeHtml(cls)}</div>
+                        <div class="starter-class-egg">${info ? escapeHtml(info.eggName) : ''}</div>
+                    </div>`;
+                }).join('');
+
+                body.innerHTML = `
+                    <p class="mm-sub">Jogador <strong>${escapeHtml(player.name)}</strong> — qual classe você vai jogar?</p>
+                    <div class="starter-class-grid">${classCards}</div>
+                    <div class="mm-row mt-12">
+                        <button class="mm-btn" onclick="mmStarterConfirmClass()">✅ Confirmar Classe</button>
+                    </div>
+                `;
+
+            } else if (MM_STARTER.phase === 'egg') {
+                const info = STARTER_BY_CLASS[player.class] || STARTER_BY_CLASS['Guerreiro'];
+                const tmpl = MONSTER_CATALOG.find(m => m.id === info.monsterId);
+                if (title) title.textContent = `${info.eggEmoji} ${player.name} recebeu um ovo!`;
+
+                body.innerHTML = `
+                    <div class="starter-egg-reveal">
+                        <div class="starter-egg-big">${info.eggEmoji}</div>
+                        <div class="starter-egg-name">${escapeHtml(info.eggName)}</div>
+                        <div class="starter-egg-cls">Classe: <strong>${escapeHtml(player.class)}</strong></div>
+                        ${tmpl ? `<div class="starter-egg-hint">Monstrinho: ${tmpl.emoji} <em>${escapeHtml(tmpl.name)}</em></div>` : ''}
+                    </div>
+                    <div class="mm-row mt-12">
+                        <button class="mm-btn mm-btn-hatch" onclick="mmStarterHatchEgg()">🌟 Chocar o Ovo!</button>
+                    </div>
+                `;
+
+            } else if (MM_STARTER.phase === 'hatched') {
+                const info = STARTER_BY_CLASS[player.class] || STARTER_BY_CLASS['Guerreiro'];
+                const tmpl = MONSTER_CATALOG.find(m => m.id === info.monsterId);
+                const isLast = MM_STARTER.playerIndex >= GameState.players.filter(p => !p.starterGranted || p === player).length - 1;
+                const btnLabel = (MM_STARTER.playerIndex >= GameState.players.length - 1) ? '🚀 Começar Aventura!' : `➡️ Próximo Jogador`;
+                if (title) title.textContent = `🎉 Nasceu!`;
+
+                body.innerHTML = `
+                    <div class="starter-hatch-reveal">
+                        <div class="starter-hatch-big">${tmpl ? tmpl.emoji : '🔮'}</div>
+                        <div class="starter-hatch-name">${tmpl ? escapeHtml(tmpl.name) : 'Monstrinho'}</div>
+                        <div class="starter-hatch-info">Nível 1 · ${escapeHtml(player.class)} · Comum</div>
+                        <div class="starter-hatch-msg">✨ ${escapeHtml(player.name)} recebeu ${tmpl ? escapeHtml(tmpl.name) : 'o monstrinho'}!</div>
+                    </div>
+                    <div class="mm-row mt-12">
+                        <button class="mm-btn" onclick="mmStarterNextPlayer()">${btnLabel}</button>
+                    </div>
+                `;
+            }
+        }
+
+        function mmStarterSelectClass(cls) {
+            const player = GameState.players[MM_STARTER.playerIndex];
+            if (player) player.class = cls;
+            mmRenderStarterFlow();
+        }
+
+        function mmStarterConfirmClass() {
+            MM_STARTER.phase = 'egg';
+            mmRenderStarterFlow();
+        }
+
+        function mmStarterHatchEgg() {
+            const player = GameState.players[MM_STARTER.playerIndex];
+            if (!player || player.starterGranted) {
+                MM_STARTER.phase = 'hatched';
+                mmRenderStarterFlow();
+                return;
+            }
+
+            const cls = player.class || MM_CLASSES[0];
+            const info = STARTER_BY_CLASS[cls] || STARTER_BY_CLASS[MM_CLASSES[0]];
+
+            const mon = awardMonster(info.monsterId, 1, null, 'party', player);
+            if (mon) {
+                player.starterGranted = true;
+                player.starterMonsterId = info.monsterId;
+            } else {
+                console.error('[mmStarterHatchEgg] awardMonster falhou para', info.monsterId);
+            }
+
+            MM_STARTER.phase = 'hatched';
+            mmRenderStarterFlow();
+        }
+
+        function mmStarterNextPlayer() {
+            MM_STARTER.playerIndex++;
+
+            // Pular jogadores que já têm starter
+            while (MM_STARTER.playerIndex < GameState.players.length &&
+                   GameState.players[MM_STARTER.playerIndex].starterGranted) {
+                MM_STARTER.playerIndex++;
+            }
+
+            if (MM_STARTER.playerIndex >= GameState.players.length) {
+                mmFinishStarterFlow();
+                return;
+            }
+
+            MM_STARTER.phase = 'choose';
+            mmRenderStarterFlow();
+        }
+
+        function mmFinishStarterFlow() {
+            GameState.starterFlowCompleted = true;
+            saveToLocalStorage();
+            if (GameState.saveSlot) {
+                try { StorageManager.saveSlot(GameState.saveSlot, mmBuildSaveEnvelope()); } catch(e) {}
+            }
+            mmPostGameStartFlow();
+        }
+
         function mmShowStartChoiceOverlay(show){
             const el = document.getElementById("mmStartChoice");
             if (!el) return;
@@ -10734,6 +10903,12 @@
         window.mmOpenMestre = mmOpenMestre;
         window.mmRenderTherapistPanel = mmRenderTherapistPanel;
         window.mmSetTherapistMode = mmSetTherapistMode;
+        // Fluxo inicial de starter
+        window.mmStartStarterFlow = mmStartStarterFlow;
+        window.mmStarterSelectClass = mmStarterSelectClass;
+        window.mmStarterConfirmClass = mmStarterConfirmClass;
+        window.mmStarterHatchEgg = mmStarterHatchEgg;
+        window.mmStarterNextPlayer = mmStarterNextPlayer;
         window.mmTherGiveMonster = mmTherGiveMonster;
         window.mmTherGiveItem = mmTherGiveItem;
         window.mmTherGiveXP = mmTherGiveXP;
