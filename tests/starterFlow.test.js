@@ -28,11 +28,11 @@ const CATALOG = monstersJson.monsters;
 // Mantido em sincronia com a constante no index.html
 const STARTER_BY_CLASS = {
     'Bardo':      { monsterId: 'MON_011', eggName: 'Ovo Harmônico', eggEmoji: '🥚🎵' },
-    'Guerreiro':  { monsterId: 'MON_002', eggName: 'Ovo da Guarda', eggEmoji: '🥚⚔️' },
-    'Mago':       { monsterId: 'MON_003', eggName: 'Ovo Arcano',    eggEmoji: '🥚🔮' },
+    'Guerreiro':  { monsterId: 'MON_010', eggName: 'Ovo da Guarda', eggEmoji: '🥚⚔️' },
+    'Mago':       { monsterId: 'MON_014', eggName: 'Ovo Arcano',    eggEmoji: '🥚🔮' },
     'Curandeiro': { monsterId: 'MON_028', eggName: 'Ovo Vital',     eggEmoji: '🥚🌿' },
-    'Caçador':    { monsterId: 'MON_005', eggName: 'Ovo Selvagem',  eggEmoji: '🥚🏹' },
-    'Animalista': { monsterId: 'MON_006', eggName: 'Ovo Primal',    eggEmoji: '🥚🐾' },
+    'Caçador':    { monsterId: 'MON_013', eggName: 'Ovo Selvagem',  eggEmoji: '🥚🏹' },
+    'Animalista': { monsterId: 'MON_012', eggName: 'Ovo Primal',    eggEmoji: '🥚🐾' },
     'Bárbaro':    { monsterId: 'MON_029', eggName: 'Ovo Feroz',     eggEmoji: '🥚🐯' },
     'Ladino':     { monsterId: 'MON_030', eggName: 'Ovo Sombrio',   eggEmoji: '🥚🦊' },
 };
@@ -388,11 +388,11 @@ describe('Starters revisados — novas linhas evolutivas no catálogo', () => {
         expect(STARTER_BY_CLASS['Ladino'].monsterId).not.toBe('MON_008');
     });
 
-    it('starters mantidos não foram alterados', () => {
-        expect(STARTER_BY_CLASS['Guerreiro'].monsterId).toBe('MON_002');
-        expect(STARTER_BY_CLASS['Mago'].monsterId).toBe('MON_003');
-        expect(STARTER_BY_CLASS['Caçador'].monsterId).toBe('MON_005');
-        expect(STARTER_BY_CLASS['Animalista'].monsterId).toBe('MON_006');
-        expect(STARTER_BY_CLASS['Bardo'].monsterId).toBe('MON_011');
+    it('starters canônicos antigos (5) não foram alterados', () => {
+        expect(STARTER_BY_CLASS['Guerreiro'].monsterId).toBe('MON_010');   // Ferrozimon
+        expect(STARTER_BY_CLASS['Mago'].monsterId).toBe('MON_014');        // Lagartomon
+        expect(STARTER_BY_CLASS['Caçador'].monsterId).toBe('MON_013');     // Miaumon
+        expect(STARTER_BY_CLASS['Animalista'].monsterId).toBe('MON_012'); // Luvursomon
+        expect(STARTER_BY_CLASS['Bardo'].monsterId).toBe('MON_011');       // Dinomon
     });
 });
