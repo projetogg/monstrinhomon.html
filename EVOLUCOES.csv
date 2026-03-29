@@ -32,3 +32,9 @@ EVO_030,MON_026,MON_026B,15,True,Cascalhimon → Muralhimon.
 EVO_031,MON_026B,MON_026C,30,True,Muralhimon → Bastiaomon.
 EVO_032,MON_027,MON_027B,15,True,Zunzumon → Melodimon.
 EVO_033,MON_027B,MON_027C,30,True,Melodimon → Rainhassommon.
+EVO_034,MON_028,MON_028B,12,True,Nutrilo → Silvelio.
+EVO_035,MON_028B,MON_028C,25,True,Silvelio → Auravelo.
+EVO_036,MON_029,MON_029B,12,True,Tigrumo → Rugigron.
+EVO_037,MON_029B,MON_029C,25,True,Rugigron → Bestigrar.
+EVO_038,MON_030,MON_030B,12,True,Furtilhon → Velurino.
+EVO_039,MON_030B,MON_030C,25,True,Velurino → Sombrifur.

@@ -30,11 +30,11 @@ const STARTER_BY_CLASS = {
     'Bardo':      { monsterId: 'MON_011', eggName: 'Ovo Harmônico', eggEmoji: '🥚🎵' },
     'Guerreiro':  { monsterId: 'MON_002', eggName: 'Ovo da Guarda', eggEmoji: '🥚⚔️' },
     'Mago':       { monsterId: 'MON_003', eggName: 'Ovo Arcano',    eggEmoji: '🥚🔮' },
-    'Curandeiro': { monsterId: 'MON_004', eggName: 'Ovo Vital',     eggEmoji: '🥚💚' },
+    'Curandeiro': { monsterId: 'MON_028', eggName: 'Ovo Vital',     eggEmoji: '🥚🌿' },
     'Caçador':    { monsterId: 'MON_005', eggName: 'Ovo Selvagem',  eggEmoji: '🥚🏹' },
     'Animalista': { monsterId: 'MON_006', eggName: 'Ovo Primal',    eggEmoji: '🥚🐾' },
-    'Bárbaro':    { monsterId: 'MON_007', eggName: 'Ovo Feroz',     eggEmoji: '🥚⚡' },
-    'Ladino':     { monsterId: 'MON_008', eggName: 'Ovo Sombrio',   eggEmoji: '🥚🌑' },
+    'Bárbaro':    { monsterId: 'MON_029', eggName: 'Ovo Feroz',     eggEmoji: '🥚🐯' },
+    'Ladino':     { monsterId: 'MON_030', eggName: 'Ovo Sombrio',   eggEmoji: '🥚🦊' },
 };
 
 const ALL_CLASSES = Object.keys(STARTER_BY_CLASS);
@@ -300,5 +300,99 @@ describe('Fluxo multi-jogador', () => {
         state.starterFlowCompleted = true;
 
         expect(state.starterFlowCompleted).toBe(true);
+    });
+});
+
+describe('Starters revisados — novas linhas evolutivas no catálogo', () => {
+    // IDs esperados das três novas linhas
+    const NEW_LINES = {
+        Curandeiro: { base: 'MON_028', evo1: 'MON_028B', evo2: 'MON_028C', names: ['Nutrilo', 'Silvelio', 'Auravelo'] },
+        Bárbaro:    { base: 'MON_029', evo1: 'MON_029B', evo2: 'MON_029C', names: ['Tigrumo', 'Rugigron', 'Bestigrar'] },
+        Ladino:     { base: 'MON_030', evo1: 'MON_030B', evo2: 'MON_030C', names: ['Furtilhon', 'Velurino', 'Sombrifur'] },
+    };
+
+    it('todos os monstros das novas linhas existem no catálogo', () => {
+        const ids = CATALOG.map(m => m.id);
+        Object.entries(NEW_LINES).forEach(([cls, line]) => {
+            expect(ids, `${cls} base ${line.base}`).toContain(line.base);
+            expect(ids, `${cls} evo1 ${line.evo1}`).toContain(line.evo1);
+            expect(ids, `${cls} evo2 ${line.evo2}`).toContain(line.evo2);
+        });
+    });
+
+    it('base de cada nova linha tem a classe correta', () => {
+        Object.entries(NEW_LINES).forEach(([cls, line]) => {
+            const tmpl = CATALOG.find(m => m.id === line.base);
+            expect(tmpl.class, `${line.base} deve ser ${cls}`).toBe(cls);
+        });
+    });
+
+    it('base de cada nova linha tem raridade Comum', () => {
+        Object.entries(NEW_LINES).forEach(([cls, line]) => {
+            const tmpl = CATALOG.find(m => m.id === line.base);
+            expect(tmpl.rarity, `${line.base} deve ser Comum`).toBe('Comum');
+        });
+    });
+
+    it('nomes das novas linhas batem com o catálogo', () => {
+        Object.entries(NEW_LINES).forEach(([, line]) => {
+            [line.base, line.evo1, line.evo2].forEach((id, i) => {
+                const tmpl = CATALOG.find(m => m.id === id);
+                expect(tmpl.name, `${id} nome`).toBe(line.names[i]);
+            });
+        });
+    });
+
+    it('cadeia evolutiva das novas linhas está correta (evolvesTo)', () => {
+        Object.entries(NEW_LINES).forEach(([cls, line]) => {
+            const base = CATALOG.find(m => m.id === line.base);
+            const evo1 = CATALOG.find(m => m.id === line.evo1);
+            expect(base.evolvesTo, `${line.base} → ${line.evo1}`).toBe(line.evo1);
+            expect(evo1.evolvesTo, `${line.evo1} → ${line.evo2}`).toBe(line.evo2);
+        });
+    });
+
+    it('estágio final das novas linhas não tem evolvesTo', () => {
+        Object.values(NEW_LINES).forEach(line => {
+            const evo2 = CATALOG.find(m => m.id === line.evo2);
+            expect(evo2.evolvesTo, `${line.evo2} não deve ter evolvesTo`).toBeUndefined();
+        });
+    });
+
+    it('campos obrigatórios de runtime estão presentes em todos os estágios', () => {
+        Object.values(NEW_LINES).forEach(line => {
+            [line.base, line.evo1, line.evo2].forEach(id => {
+                const tmpl = CATALOG.find(m => m.id === id);
+                expect(tmpl.baseHp,  `${id} baseHp`).toBeGreaterThan(0);
+                expect(tmpl.baseAtk, `${id} baseAtk`).toBeGreaterThan(0);
+                expect(tmpl.baseDef, `${id} baseDef`).toBeGreaterThan(0);
+                expect(tmpl.baseSpd, `${id} baseSpd`).toBeGreaterThan(0);
+                expect(tmpl.baseEne, `${id} baseEne`).toBeGreaterThan(0);
+                expect(tmpl.emoji,   `${id} emoji`).toBeTruthy();
+            });
+        });
+    });
+
+    it('starter revisado de Curandeiro é MON_028 (Nutrilo), não MON_004', () => {
+        expect(STARTER_BY_CLASS['Curandeiro'].monsterId).toBe('MON_028');
+        expect(STARTER_BY_CLASS['Curandeiro'].monsterId).not.toBe('MON_004');
+    });
+
+    it('starter revisado de Bárbaro é MON_029 (Tigrumo), não MON_007', () => {
+        expect(STARTER_BY_CLASS['Bárbaro'].monsterId).toBe('MON_029');
+        expect(STARTER_BY_CLASS['Bárbaro'].monsterId).not.toBe('MON_007');
+    });
+
+    it('starter revisado de Ladino é MON_030 (Furtilhon), não MON_008', () => {
+        expect(STARTER_BY_CLASS['Ladino'].monsterId).toBe('MON_030');
+        expect(STARTER_BY_CLASS['Ladino'].monsterId).not.toBe('MON_008');
+    });
+
+    it('starters mantidos não foram alterados', () => {
+        expect(STARTER_BY_CLASS['Guerreiro'].monsterId).toBe('MON_002');
+        expect(STARTER_BY_CLASS['Mago'].monsterId).toBe('MON_003');
+        expect(STARTER_BY_CLASS['Caçador'].monsterId).toBe('MON_005');
+        expect(STARTER_BY_CLASS['Animalista'].monsterId).toBe('MON_006');
+        expect(STARTER_BY_CLASS['Bardo'].monsterId).toBe('MON_011');
     });
 });

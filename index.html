@@ -938,7 +938,19 @@
             { id: 'MON_027', name: 'Zunzumon', class: 'Bardo', rarity: 'Comum', baseHp: 22, baseAtk: 4, baseDef: 4, baseSpd: 11, baseEne: 8, emoji: '🐝', evolvesTo: 'MON_027B', evolvesAt: 15 },
             { id: 'MON_027B', name: 'Melodimon', class: 'Bardo', rarity: 'Incomum', baseHp: 28, baseAtk: 6, baseDef: 4, baseSpd: 14, baseEne: 10, emoji: '🎶', evolvesTo: 'MON_027C', evolvesAt: 30 },
             { id: 'MON_027C', name: 'Rainhassommon', class: 'Bardo', rarity: 'Raro', baseHp: 36, baseAtk: 8, baseDef: 6, baseSpd: 15, baseEne: 12, emoji: '🎭' },
-            { id: 'MON_100', name: 'Rato-de-Lama', class: 'Guerreiro', rarity: 'Comum', baseHp: 20, baseAtk: 5, baseDef: 3, baseSpd: 4, baseEne: 4, emoji: '🐀' }
+            { id: 'MON_100', name: 'Rato-de-Lama', class: 'Guerreiro', rarity: 'Comum', baseHp: 20, baseAtk: 5, baseDef: 3, baseSpd: 4, baseEne: 4, emoji: '🐀' },
+            // Linha Curandeiro oficial: Nutrilo → Silvelio → Auravelo
+            { id: 'MON_028',  name: 'Nutrilo',  class: 'Curandeiro', rarity: 'Comum',   baseHp: 28, baseAtk: 3, baseDef: 5, baseSpd: 5, baseEne: 11, emoji: '🌿', evolvesTo: 'MON_028B', evolvesAt: 12 },
+            { id: 'MON_028B', name: 'Silvelio', class: 'Curandeiro', rarity: 'Incomum',  baseHp: 37, baseAtk: 5, baseDef: 7, baseSpd: 6, baseEne: 14, emoji: '🌸', evolvesTo: 'MON_028C', evolvesAt: 25 },
+            { id: 'MON_028C', name: 'Auravelo', class: 'Curandeiro', rarity: 'Raro',     baseHp: 48, baseAtk: 7, baseDef: 10, baseSpd: 8, baseEne: 17, emoji: '✨' },
+            // Linha Bárbaro oficial: Tigrumo → Rugigron → Bestigrar
+            { id: 'MON_029',  name: 'Tigrumo',  class: 'Bárbaro',   rarity: 'Comum',   baseHp: 34, baseAtk: 9, baseDef: 4, baseSpd: 5, baseEne: 5, emoji: '🐯', evolvesTo: 'MON_029B', evolvesAt: 12 },
+            { id: 'MON_029B', name: 'Rugigron', class: 'Bárbaro',   rarity: 'Incomum',  baseHp: 46, baseAtk: 13, baseDef: 6, baseSpd: 6, baseEne: 6, emoji: '🦁', evolvesTo: 'MON_029C', evolvesAt: 25 },
+            { id: 'MON_029C', name: 'Bestigrar', class: 'Bárbaro',  rarity: 'Raro',     baseHp: 60, baseAtk: 17, baseDef: 9, baseSpd: 7, baseEne: 7, emoji: '🐻' },
+            // Linha Ladino oficial: Furtilhon → Velurino → Sombrifur
+            { id: 'MON_030',  name: 'Furtilhon', class: 'Ladino',   rarity: 'Comum',   baseHp: 24, baseAtk: 8, baseDef: 3, baseSpd: 10, baseEne: 6, emoji: '🦊', evolvesTo: 'MON_030B', evolvesAt: 12 },
+            { id: 'MON_030B', name: 'Velurino',  class: 'Ladino',   rarity: 'Incomum',  baseHp: 31, baseAtk: 11, baseDef: 5, baseSpd: 13, baseEne: 8, emoji: '🌑', evolvesTo: 'MON_030C', evolvesAt: 25 },
+            { id: 'MON_030C', name: 'Sombrifur', class: 'Ladino',   rarity: 'Raro',     baseHp: 40, baseAtk: 15, baseDef: 7, baseSpd: 16, baseEne: 10, emoji: '👤' }
         ];
 
         // ENE REGEN CONSTANTS por classe (fallback)
@@ -10646,11 +10658,11 @@
             'Bardo':      { monsterId: 'MON_011', eggName: 'Ovo Harmônico', eggEmoji: '🥚🎵' },
             'Guerreiro':  { monsterId: 'MON_002', eggName: 'Ovo da Guarda', eggEmoji: '🥚⚔️' },
             'Mago':       { monsterId: 'MON_003', eggName: 'Ovo Arcano',    eggEmoji: '🥚🔮' },
-            'Curandeiro': { monsterId: 'MON_004', eggName: 'Ovo Vital',     eggEmoji: '🥚💚' },
+            'Curandeiro': { monsterId: 'MON_028', eggName: 'Ovo Vital',     eggEmoji: '🥚🌿' },
             'Caçador':    { monsterId: 'MON_005', eggName: 'Ovo Selvagem',  eggEmoji: '🥚🏹' },
             'Animalista': { monsterId: 'MON_006', eggName: 'Ovo Primal',    eggEmoji: '🥚🐾' },
-            'Bárbaro':    { monsterId: 'MON_007', eggName: 'Ovo Feroz',     eggEmoji: '🥚⚡' },
-            'Ladino':     { monsterId: 'MON_008', eggName: 'Ovo Sombrio',   eggEmoji: '🥚🌑' },
+            'Bárbaro':    { monsterId: 'MON_029', eggName: 'Ovo Feroz',     eggEmoji: '🥚🐯' },
+            'Ladino':     { monsterId: 'MON_030', eggName: 'Ovo Sombrio',   eggEmoji: '🥚🦊' },
         };
 
         // Estado interno do fluxo de starter

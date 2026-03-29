@@ -7,7 +7,7 @@
  * Cobertura:
  *  - Carregamento por ID via dataLoader (monstros novos do bootstrap)
  *  - Resolução funcional de evolução (cadeias completas)
- *  - Seleção de monstros em pools (todos os 55 são elegíveis)
+ *  - Seleção de monstros em pools (todos os 64 são elegíveis)
  *  - getMonsterSkills retorna skills válidas para todas as classes presentes
  *  - Ausência de fallback indevido para catálogos antigos
  */
@@ -60,7 +60,7 @@ describe('Catálogo Funcional — Carregamento via DataLoader', () => {
         clearCache();
     });
 
-    it('loadMonsters deve carregar todos os 55 monstros do JSON', async () => {
+    it('loadMonsters deve carregar todos os 64 monstros do JSON', async () => {
         global.fetch = vi.fn(() =>
             Promise.resolve({
                 ok: true,
@@ -71,7 +71,7 @@ describe('Catálogo Funcional — Carregamento via DataLoader', () => {
         const map = await loadMonsters();
 
         expect(map).toBeInstanceOf(Map);
-        expect(map.size).toBe(55);
+        expect(map.size).toBe(64);
     });
 
     it('monstros do bootstrap devem ser acessíveis por ID após carregamento', async () => {
@@ -102,7 +102,7 @@ describe('Catálogo Funcional — Carregamento via DataLoader', () => {
         }
     });
 
-    it('todos os 55 monstros devem passar validateMonsterSchema', () => {
+    it('todos os 64 monstros devem passar validateMonsterSchema', () => {
         for (const m of allMonsters) {
             expect(
                 validateMonsterSchema(m),
@@ -203,11 +203,11 @@ describe('Catálogo Funcional — Pool de Encontros', () => {
 
     const allMonsters = loadMonstersJsonRaw().monsters;
 
-    it('todos os 55 monstros devem estar disponíveis como pool de encontro', () => {
+    it('todos os 64 monstros devem estar disponíveis como pool de encontro', () => {
         // Simula a seleção aleatória do index.html (linha 3439)
         // O jogo usa MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)]
         // Verificar que nenhum monstro fica inacessível
-        expect(allMonsters.length).toBe(55);
+        expect(allMonsters.length).toBe(64);
         for (const m of allMonsters) {
             expect(m.id).toBeTruthy();
             expect(m.baseHp).toBeGreaterThan(0);
