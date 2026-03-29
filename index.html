@@ -144,8 +144,7 @@
                     <select id="encounterPlayer" onchange="renderEncounterQuestHint(this.value)">
                         <option value="">-- Selecione --</option>
                     </select>
-                    <!-- Fix #8: Hint de quests ativas do jogador selecionado -->
-                    <div id="encounterQuestHint"></div>
+                    <!-- Fix #8: Hint de quests ativas do jogador selecionado (usa #encounterQuestHint acima) -->
                 </div>
                 
                 <!-- Para encontros em grupo (trainer/boss) -->
@@ -7994,46 +7993,6 @@
             }
         }
 
-        /**
-         * Fix #8: Renderiza hint de quests ativas no tab de Encontro.
-         * Chamado quando o jogador seleciona um participante.
-         * @param {string} playerId - ID do jogador selecionado (ou '' para nenhum)
-         */
-        function renderEncounterQuestHint(playerId) {
-            try {
-                const container = document.getElementById('encounterQuestHint');
-                if (!container) return;
-
-                if (!playerId || !window.GameFlow) {
-                    container.innerHTML = '';
-                    return;
-                }
-
-                const player = GameState.players?.find(p => p.id === playerId);
-                if (!player) { container.innerHTML = ''; return; }
-
-                const quests = GameFlow.getActiveQuestsSummary(player);
-                if (quests.length === 0) {
-                    container.innerHTML = `<div class="opacity-70 text-small mt-5">📋 ${player.name} não tem quests ativas.</div>`;
-                    return;
-                }
-
-                const items = quests.map(q => {
-                    const pct = Math.min(100, Math.floor((q.progress / q.needed) * 100));
-                    return `<div class="mb-5">
-                        <strong>${q.quest.nome}</strong>: ${q.progress}/${q.needed}
-                        <div class="progress-bar h-10 mt-3">
-                            <div class="progress-fill xp" style="width: ${pct}%"></div>
-                        </div>
-                    </div>`;
-                }).join('');
-                container.innerHTML = `<div class="card mt-10"><h4 class="m-0 mb-6">📋 Quests Ativas — ${player.name}:</h4>${items}</div>`;
-            } catch (error) {
-                console.warn('[renderEncounterQuestHint] Erro:', error);
-            }
-        }
-        window.renderEncounterQuestHint = renderEncounterQuestHint;
-        
         function updateEncounterUI() {
             try {
                 const type = document.getElementById('encounterType')?.value;
@@ -8353,6 +8312,7 @@
             `;
             hintPanel.classList.remove('is-hidden');
         }
+        window.renderEncounterQuestHint = renderEncounterQuestHint;
 
         /**
          * FASE 1 POKEMON: Renderiza seção de Conquistas
@@ -10900,6 +10860,7 @@
         window.mmSkipTutorialFromChoice = mmSkipTutorialFromChoice;
         window.mmStartTutorialFromChoice = mmStartTutorialFromChoice;
         window.mmStartTutorial = mmStartTutorial;
+        window.exitTutorial = exitTutorial; // Auditoria: handler do botão "Sair" do tutorial
         window.mmOpenSaves = mmOpenSaves;
         window.mmCloseSaves = mmCloseSaves;
         window.mmSaveToSlot = mmSaveToSlot;
