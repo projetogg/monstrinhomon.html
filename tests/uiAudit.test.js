@@ -142,7 +142,7 @@ describe('Auditoria UI — Window Exports para onclick handlers', () => {
         const critical = [
             'switchTab', 'mmShowMainMenu', 'mmCloseAllOverlays',
             'mmContinue', 'mmOpenMestre', 'mmOpenSaves',
-            'mmFinishNewGame', 'mmStartTutorial',
+            'mmFinishNewGame', 'mmStartTutorial', 'mmSaveNow',
         ];
         for (const fn of critical) {
             expect(windowExports.has(fn), `${fn} deveria estar em window`).toBe(true);
