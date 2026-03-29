@@ -18,61 +18,110 @@
 
     <div class="app-container">
         <div class="header">
-            <div class="header-top">
-                <h1>🎮 Monstrinhomon 🌟</h1>
-                <button id="headerMestreBtn" class="tab-button mestre-btn" onclick="mmOpenMestre()">🧑‍🏫 Mestre</button>
+            <div class="header-logo">
+                <h1 class="game-title">Monstrinhomon</h1>
+                <p class="game-subtitle">RPG Terapêutico Infantil</p>
             </div>
-            <div class="tabs">
-                <button class="tab-button" onclick="mmShowMainMenu()">📱 Menu</button>
-                <button class="tab-button active" data-tab="home" onclick="switchTab('home')">🏠 Início</button>
-                <button class="tab-button" data-tab="players" onclick="switchTab('players')">👥 Grupo</button>
-                <button class="tab-button" data-tab="encounter" onclick="switchTab('encounter')">⚔️ Batalha</button>
-                <button class="tab-button" data-tab="box" onclick="switchTab('box')">📦 Box</button>
-                <button class="tab-button" data-tab="shop" onclick="switchTab('shop')">🛒 Loja</button>
-                <button class="tab-button" data-tab="partyDex" onclick="switchTab('partyDex')">📘 Monstrodex</button>
-            </div>
+            <nav class="navbar" role="navigation" aria-label="Navegação principal">
+                <button class="tab-button nav-btn" onclick="mmShowMainMenu()" aria-label="Menu principal">
+                    <span class="nav-icon">📱</span><span class="nav-label">Menu</span>
+                </button>
+                <button class="tab-button nav-btn active" data-tab="home" onclick="switchTab('home')" aria-label="Início">
+                    <span class="nav-icon">🏠</span><span class="nav-label">Home</span>
+                </button>
+                <button class="tab-button nav-btn" data-tab="players" onclick="switchTab('players')" aria-label="Grupo">
+                    <span class="nav-icon">👥</span><span class="nav-label">Grupo</span>
+                </button>
+                <button class="tab-button nav-btn" data-tab="encounter" onclick="switchTab('encounter')" aria-label="Batalha">
+                    <span class="nav-icon">⚔️</span><span class="nav-label">Batalha</span>
+                </button>
+                <button class="tab-button nav-btn" data-tab="box" onclick="switchTab('box')" aria-label="Caixa">
+                    <span class="nav-icon">📦</span><span class="nav-label">Caixa</span>
+                </button>
+                <button class="tab-button nav-btn" data-tab="shop" onclick="switchTab('shop')" aria-label="Loja">
+                    <span class="nav-icon">🛒</span><span class="nav-label">Loja</span>
+                </button>
+                <button class="tab-button nav-btn" data-tab="partyDex" onclick="switchTab('partyDex')" aria-label="Monstrodex">
+                    <span class="nav-icon">📘</span><span class="nav-label">Monstrodex</span>
+                </button>
+                <button id="headerMestreBtn" class="tab-button nav-btn nav-btn--mestre" onclick="mmOpenMestre()" aria-label="Painel Mestre">
+                    <span class="nav-icon">🧑‍🏫</span><span class="nav-label">Mestre</span>
+                </button>
+            </nav>
         </div>
 
         <div id="tabHome" class="tab-content active">
-            <h2>Welcome to Monstrinhomon! 🎉</h2>
-            <p class="intro-text">A therapeutic game for young trainers.</p>
-            
-            <div class="card">
-                <h3>Quick Stats</h3>
-                <div id="homeStats">
-                    <div class="stat-box">Active Players: <span id="statPlayers">0</span></div>
-                    <div class="stat-box">Total Monsters: <span id="statMonsters">0</span></div>
-                    <div class="stat-box">Session Active: <span id="statSession">No</span></div>
+            <!-- Boas-vindas -->
+            <div class="home-welcome">
+                <h2 class="welcome-title">Bem-vindo! 🎉</h2>
+                <p class="welcome-subtitle">Capture, batalhe e evolua seus Monstrinhos nesta aventura terapêutica.</p>
+            </div>
+
+            <!-- Grid principal do dashboard -->
+            <div class="dashboard-grid">
+
+                <!-- Card: Estatísticas Rápidas -->
+                <div class="card dashboard-card">
+                    <h3 class="card-title">📊 Estatísticas</h3>
+                    <div id="homeStats" class="home-stats-row">
+                        <div class="home-stat-item">
+                            <span class="home-stat-value" id="statPlayers">0</span>
+                            <span class="home-stat-label">Jogadores Ativos</span>
+                        </div>
+                        <div class="home-stat-item">
+                            <span class="home-stat-value" id="statMonsters">0</span>
+                            <span class="home-stat-label">Total de Monstros</span>
+                        </div>
+                        <div class="home-stat-item">
+                            <span class="home-stat-value" id="statSession">Não</span>
+                            <span class="home-stat-label">Sessão Ativa</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <!-- FASE UX: Painel de Quests Ativas -->
-            <div class="card">
-                <h3>📋 Quests Ativas</h3>
-                <div id="questTrackerContent">
-                    <p class="text-muted">Nenhuma quest ativa.</p>
+                <!-- FASE UX: Missões Ativas -->
+                <div class="card dashboard-card">
+                    <h3 class="card-title">📋 Missões Ativas</h3>
+                    <div id="questTrackerContent">
+                        <p class="text-muted">Nenhuma quest ativa.</p>
+                    </div>
                 </div>
-            </div>
 
-            <!-- FASE 1 POKEMON: Monstródex -->
-            <div class="card">
-                <h3>📖 Monstródex</h3>
-                <div id="monstrodexStats"></div>
-            </div>
-
-            <!-- FASE 1 POKEMON: Livro de Conquistas -->
-            <div class="card">
-                <h3>🏆 Livro de Conquistas</h3>
-                <div id="achievementsStats"></div>
-            </div>
-
-            <div class="card">
-                <h3>Ações Rápidas</h3>
-                <div class="flex">
-                    <button class="btn btn-large btn-success" onclick="switchTab('players')">👥 Grupo</button>
-                    <button class="btn btn-large btn-secondary" onclick="switchTab('encounter')">⚔️ Batalha</button>
-                    <button class="btn btn-large" onclick="mmOpenMestre()">🧑‍🏫 Painel Mestre</button>
+                <!-- FASE 1 POKEMON: Monstródex -->
+                <div class="card dashboard-card">
+                    <h3 class="card-title">📖 Monstrodex</h3>
+                    <div id="monstrodexStats"></div>
                 </div>
+
+                <!-- FASE 1 POKEMON: Livro de Conquistas -->
+                <div class="card dashboard-card">
+                    <h3 class="card-title">🏆 Conquistas</h3>
+                    <div id="achievementsStats"></div>
+                </div>
+
+                <!-- Card: Painel Mestre (destaque) -->
+                <div class="card dashboard-card dashboard-card--mestre">
+                    <h3 class="card-title">🧑‍🏫 Painel Mestre</h3>
+                    <p class="card-desc">Gerencie sessões, objetivos terapêuticos e configure o jogo para a sessão.</p>
+                    <button class="btn btn-mestre" onclick="mmOpenMestre()">Entrar no Painel Mestre</button>
+                </div>
+
+            </div>
+
+            <!-- Ações Rápidas (parte inferior) -->
+            <div class="quick-actions">
+                <button class="quick-action-btn quick-action--grupo" onclick="switchTab('players')">
+                    <span class="qa-icon">👥</span>
+                    <span class="qa-label">Grupo</span>
+                </button>
+                <button class="quick-action-btn quick-action--batalha" onclick="switchTab('encounter')">
+                    <span class="qa-icon">⚔️</span>
+                    <span class="qa-label">Batalha</span>
+                </button>
+                <button class="quick-action-btn quick-action--dex" onclick="switchTab('partyDex')">
+                    <span class="qa-icon">📘</span>
+                    <span class="qa-label">Monstrodex</span>
+                </button>
             </div>
         </div>
 
@@ -8232,7 +8281,7 @@
                 
                 if (statPlayers) statPlayers.textContent = GameState.players?.length || 0;
                 if (statMonsters) statMonsters.textContent = GameState.monsters?.length || 0;
-                if (statSession) statSession.textContent = GameState.currentSession ? 'Yes' : 'No';
+                if (statSession) statSession.textContent = GameState.currentSession ? 'Sim' : 'Não';
                 
                 // FASE 1 POKEMON: Renderizar Monstródex
                 renderMonstrodex();
