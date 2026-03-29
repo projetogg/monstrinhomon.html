@@ -8,6 +8,7 @@
     <title>Monstrinhomon - Therapeutic Game</title>
     <link rel="stylesheet" href="css/main.css">
     <script src="js/storage.js"></script>
+    <script src="js/saveLayer.js"></script>
 </head>
 <body>
     <div id="errorPanel" class="error-panel">
@@ -412,6 +413,15 @@
     <div id="mmSavesScreen" class="mm-overlay is-hidden">
         <div class="mm-card max-w-820">
             <div class="mm-title">📂 Gerenciar Saves</div>
+
+            <!-- Botão "Salvar agora" — camada canônica, valida após salvar -->
+            <div class="d-flex flex-gap-10 align-center justify-center mt-10 mb-4">
+                <button class="mm-btn" onclick="mmSaveNow()" style="font-size:1.05em;padding:10px 24px;">
+                    💾 Salvar agora
+                </button>
+                <span id="mmSaveNowInfo" class="opacity-75 font-size-12"></span>
+            </div>
+
             <div id="mmSavesSlots" class="d-grid grid-gap-12 mt-12 grid-cols-1"></div>
 
             <div class="d-flex flex-gap-10 flex-wrap mt-15">
@@ -430,7 +440,7 @@
             </div>
 
             <div class="opacity-75 font-size-12 mt-10">
-                Dica: Exportar/Importar é ideal para backup e trocar de dispositivo (iPad).
+                Dica: "Salvar agora" grava na fonte de verdade e espelha no slot ativo. Exportar/Importar é ideal para backup e trocar de dispositivo (iPad).
             </div>
         </div>
     </div>
@@ -10053,22 +10063,12 @@
                 // Fluxo inicial de starter: marcar como pendente
                 GameState.starterFlowCompleted = false;
 
-                // Save to localStorage
-                saveToLocalStorage();
-                
-                // Feature 4.3: Also save to chosen slot if specified
-                if (GameState.saveSlot) {
-                    const envelope = mmBuildSaveEnvelope();
-                    const key = MM_SAVE_KEYS[GameState.saveSlot];
-                    if (key) {
-                        try {
-                            // PR3: Save via StorageManager with auto-backup
-                            StorageManager.saveSlot(GameState.saveSlot, envelope);
-                        } catch (e) {
-                            console.error("Failed to save to slot", e);
-                            alert(`⚠️ Jogo criado, mas falhou ao salvar no Slot ${GameState.saveSlot}`);
-                        }
-                    }
+                // Salva via camada canônica: auto-save + espelha no slot ativo (se houver)
+                const saveResult = SaveLayer.saveActiveGame(GameState, mmBuildSaveEnvelope);
+                if (!saveResult.autoSaved) {
+                    alert("⚠️ Falha ao salvar o jogo!");
+                } else if (!saveResult.slotSaved && saveResult.slot) {
+                    alert(`⚠️ Jogo criado, mas falhou ao salvar no Slot ${saveResult.slot}`);
                 }
                 
                 // Update UI
@@ -10161,14 +10161,47 @@
 
         function mmSaveToSlot(slot) {
             if (!confirm(`Salvar o jogo atual no Slot ${slot}? Isso vai sobrescrever.`)) return;
-            const env = mmBuildSaveEnvelope();
-            if (mmWriteSlot(slot, env)) {
+            // Define slot ativo e salva via camada canônica (auto-save + slot)
+            SaveLayer.setActiveSlot(slot);
+            const result = SaveLayer.saveActiveGame(GameState, mmBuildSaveEnvelope);
+            if (result.autoSaved && result.slotSaved) {
                 showToast(`💾 Salvo no Slot ${slot}!`);
                 mmRenderSavesScreen();
             } else {
                 alert("Falha ao salvar no slot.");
             }
         }
+
+        /**
+         * mmSaveNow — save manual via camada canônica.
+         * Salva auto-save + slot ativo, valida leitura, informa slot e horário.
+         */
+        function mmSaveNow() {
+            const result = SaveLayer.saveActiveGame(GameState, mmBuildSaveEnvelope);
+            const slot = result.slot;
+            const ts = new Date().toLocaleTimeString('pt-BR');
+
+            if (result.autoSaved) {
+                // Valida leitura após salvar (garante integridade)
+                const check = SaveLayer.loadActiveGame();
+                if (!check.loaded) {
+                    showToast('⚠️ Save gravado mas verificação falhou. Verifique o armazenamento.');
+                    return;
+                }
+                let msg = `✅ Salvo às ${ts}`;
+                if (slot) msg += ` · Slot ${slot}`;
+                showToast(msg);
+            } else {
+                alert('❌ Falha ao salvar o jogo. Verifique o armazenamento do dispositivo.');
+            }
+
+            // Atualiza tela de saves se estiver aberta
+            const savesEl = document.getElementById('mmSavesScreen');
+            if (savesEl && !savesEl.classList.contains('is-hidden')) {
+                mmRenderSavesScreen();
+            }
+        }
+        window.mmSaveNow = mmSaveNow;
 
         function mmLoadFromSlot(slot) {
             const env = mmReadSlot(slot);
@@ -10182,11 +10215,10 @@
                 // Update GameState properties instead of reassigning
                 Object.assign(GameState, env.state);
                 
-                // Update slot tracking
-                GameState.saveSlot = slot;
-                StorageManager.setLastSlot(slot); // PR3
+                // Atualiza slot ativo via camada canônica (GameState.saveSlot + StorageManager.lastSlot)
+                SaveLayer.setActiveSlot(slot);
                 
-                saveToLocalStorage();  // Update the main save too
+                saveToLocalStorage();  // Sincroniza auto-save com o slot carregado
                 
                 // Update all views
                 if (typeof updateAllViews === "function") updateAllViews();
@@ -10275,10 +10307,14 @@
             const host = document.getElementById("mmSavesSlots");
             if (!host) return;
 
+            const activeSlot = SaveLayer.getActiveSlot();
+
             const slotHtml = [1, 2, 3].map(slot => {
                 const env = mmReadSlot(slot);
                 const empty = !env || !env.state;
                 const date = env?.timestamp ? new Date(env.timestamp).toLocaleString('pt-BR') : "";
+                const isActive = activeSlot === slot;
+                const activeBadge = isActive ? `<span style="color:#4ade80;font-weight:bold;margin-left:8px;">● Ativo</span>` : "";
                 
                 const meta = empty
                     ? `<div class="mm-slot-meta">Vazio</div>`
@@ -10289,8 +10325,8 @@
                        </div>`;
 
                 return `
-                    <div class="mm-slot">
-                        <h3>Slot ${slot}</h3>
+                    <div class="mm-slot${isActive ? ' mm-slot-active' : ''}">
+                        <h3>Slot ${slot}${activeBadge}</h3>
                         ${meta}
                         <div class="mm-slot-actions">
                             <button class="mm-btn w-auto" ${empty ? "disabled" : ""} onclick="mmLoadFromSlot(${slot})">📂 Carregar</button>
