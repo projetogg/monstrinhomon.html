@@ -1474,18 +1474,18 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 
 /* ===== MENU PRINCIPAL — Novo layout header + dashboard ===== */
 
-/* --- Header: logo + navbar em coluna --- */
+/* --- Header: logo + navbar em linha (horizontal em tablet+) --- */
 .header {
     background: white;
     border-radius: 20px;
-    padding: 18px 24px 12px;
-    margin-bottom: 20px;
+    padding: 14px 20px;
+    margin-bottom: 16px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.15);
 }
 
 .header-logo {
     text-align: center;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
 }
 
 .game-title {
@@ -1577,35 +1577,52 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     line-height: 1;
 }
 
-/* --- Home Tab: boas-vindas e dashboard --- */
-.home-welcome {
-    margin-bottom: 20px;
+/* --- Home Tab: barra de status + dashboard --- */
+.home-topbar {
+    margin-bottom: 12px;
 }
 
-.welcome-title {
-    font-size: 1.6em;
-    font-weight: 800;
-    color: var(--primary);
-    margin: 0 0 4px;
+.home-session-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.875em;
+    font-weight: 600;
+    color: #555;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border: 1px solid #eee;
 }
 
-.welcome-subtitle {
-    font-size: 0.95em;
-    color: #666;
-    margin: 0;
+.session-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.session-dot--active {
+    background: var(--success);
+    box-shadow: 0 0 0 3px rgba(0, 184, 148, 0.2);
+}
+
+.session-dot--inactive {
+    background: #ccc;
 }
 
 /* Dashboard grid: 2 colunas, responsivo */
 .dashboard-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-    margin-bottom: 20px;
+    gap: 12px;
+    margin-bottom: 16px;
 }
 
 .dashboard-card {
     margin: 0;
-    padding: 18px;
+    padding: 14px;
     border-radius: 16px;
     background: #fafbff;
     border: 1px solid #eeeeff;
@@ -1616,7 +1633,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     font-size: 1em;
     font-weight: 700;
     color: var(--dark);
-    margin: 0 0 12px;
+    margin: 0 0 8px;
 }
 
 .card-desc {
@@ -1667,21 +1684,21 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 
 .home-stat-item {
     flex: 1;
-    min-width: 80px;
+    min-width: 70px;
     text-align: center;
     background: white;
-    border-radius: 12px;
-    padding: 12px 8px;
+    border-radius: 10px;
+    padding: 8px 6px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.07);
 }
 
 .home-stat-value {
     display: block;
-    font-size: 1.6em;
+    font-size: 1.3em;
     font-weight: 800;
     color: var(--primary);
     line-height: 1;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
 }
 
 .home-stat-label {
@@ -1702,18 +1719,18 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 
 .quick-action-btn {
     flex: 1;
-    min-width: 100px;
+    min-width: 80px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
-    padding: 18px 12px;
+    gap: 5px;
+    padding: 10px 10px;
     border: none;
-    border-radius: 16px;
+    border-radius: 14px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s;
-    min-height: 80px;
+    min-height: 52px;
 }
 
 .quick-action-btn:hover,
@@ -1728,7 +1745,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 }
 
 .qa-icon {
-    font-size: 1.8em;
+    font-size: 1.4em;
     line-height: 1;
 }
 
@@ -1972,17 +1989,43 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 
 /* --- Melhorias iPad horizontal --- */
 @media (min-width: 768px) {
+    /* Header em linha: logo à esquerda, nav à direita */
+    .header {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 10px 18px;
+    }
+
+    .header-logo {
+        text-align: left;
+        margin-bottom: 0;
+        flex-shrink: 0;
+    }
+
     .game-title {
-        font-size: 2.4em;
+        font-size: 1.7em;
     }
 
     .navbar {
-        gap: 10px;
+        flex: 1;
+        gap: 6px;
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 2px;
+        /* Oculta scrollbar visualmente mas mantém funcionalidade */
+        scrollbar-width: none;
+    }
+
+    .navbar::-webkit-scrollbar {
+        display: none;
     }
 
     .nav-btn {
-        padding: 10px 20px;
-        font-size: 15px;
+        padding: 8px 14px;
+        font-size: 13px;
     }
 
     /* Layout em grid para tela de grupo em telas maiores */
@@ -1996,35 +2039,30 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
         margin: 0;
     }
 
-    /* Dashboard: 3 colunas em tablets */
+    /* Dashboard: 3 colunas em tablets — quest span 2, mestre span 1 */
     .dashboard-grid {
         grid-template-columns: repeat(3, 1fr);
     }
 
+    .dashboard-card--quest {
+        grid-column: span 2;
+    }
+
     .dashboard-card--mestre {
-        grid-column: span 3;
+        grid-column: span 1;
     }
 }
 
 @media (min-width: 1024px) and (orientation: landscape) {
     .game-title {
-        font-size: 2.6em;
+        font-size: 1.8em;
     }
 
     .app-container {
         max-width: 1280px;
     }
 
-    /* Dashboard: 4 colunas em desktop */
-    .dashboard-grid {
-        grid-template-columns: repeat(4, 1fr);
-    }
-
-    .dashboard-card--mestre {
-        grid-column: span 2;
-    }
-
-    /* Painel Mestre: ainda mais largo em paisagem grande */
+    /* Painel Mestre: janela maior em paisagem */
     .mm-card-mestre {
         width: min(780px, calc(100vw - 40px));
     }

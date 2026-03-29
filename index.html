@@ -51,10 +51,12 @@
         </div>
 
         <div id="tabHome" class="tab-content active">
-            <!-- Boas-vindas -->
-            <div class="home-welcome">
-                <h2 class="welcome-title">Bem-vindo! 🎉</h2>
-                <p class="welcome-subtitle">Capture, batalhe e evolua seus Monstrinhos nesta aventura terapêutica.</p>
+            <!-- Barra de status compacta -->
+            <div class="home-topbar">
+                <span class="home-session-indicator" id="homeSessionIndicator" role="status" aria-live="polite">
+                    <span class="session-dot session-dot--inactive" id="homeSessionDot" aria-hidden="true"></span>
+                    <span id="homeSessionLabel">Sem sessão ativa</span>
+                </span>
             </div>
 
             <!-- Grid principal do dashboard -->
@@ -66,21 +68,21 @@
                     <div id="homeStats" class="home-stats-row">
                         <div class="home-stat-item">
                             <span class="home-stat-value" id="statPlayers">0</span>
-                            <span class="home-stat-label">Jogadores Ativos</span>
+                            <span class="home-stat-label">Jogadores</span>
                         </div>
                         <div class="home-stat-item">
                             <span class="home-stat-value" id="statMonsters">0</span>
-                            <span class="home-stat-label">Total de Monstros</span>
+                            <span class="home-stat-label">Monstros</span>
                         </div>
                         <div class="home-stat-item">
-                            <span class="home-stat-value" id="statSession">Não</span>
-                            <span class="home-stat-label">Sessão Ativa</span>
+                            <span class="home-stat-value" id="statSession">—</span>
+                            <span class="home-stat-label">Sessão</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- FASE UX: Missões Ativas -->
-                <div class="card dashboard-card">
+                <!-- FASE UX: Missões Ativas (span 2 em tablet+) -->
+                <div class="card dashboard-card dashboard-card--quest">
                     <h3 class="card-title">📋 Missões Ativas</h3>
                     <div id="questTrackerContent">
                         <p class="text-muted">Nenhuma quest ativa.</p>
@@ -99,10 +101,9 @@
                     <div id="achievementsStats"></div>
                 </div>
 
-                <!-- Card: Painel Mestre (destaque) -->
+                <!-- Card: Painel Mestre -->
                 <div class="card dashboard-card dashboard-card--mestre">
                     <h3 class="card-title">🧑‍🏫 Painel Mestre</h3>
-                    <p class="card-desc">Gerencie sessões, objetivos terapêuticos e configure o jogo para a sessão.</p>
                     <button class="btn btn-mestre" onclick="mmOpenMestre()">Entrar no Painel Mestre</button>
                 </div>
 
@@ -8282,6 +8283,21 @@
                 if (statPlayers) statPlayers.textContent = GameState.players?.length || 0;
                 if (statMonsters) statMonsters.textContent = GameState.monsters?.length || 0;
                 if (statSession) statSession.textContent = GameState.currentSession ? 'Sim' : 'Não';
+
+                // Atualiza barra de status compacta no topo da Home
+                const sessionDot = document.getElementById('homeSessionDot');
+                const sessionLabel = document.getElementById('homeSessionLabel');
+                if (sessionDot && sessionLabel) {
+                    if (GameState.currentSession) {
+                        sessionDot.className = 'session-dot session-dot--active';
+                        const playerCount = GameState.players?.length || 0;
+                        const sessionName = GameState.currentSession.name || 'Sessão Ativa';
+                        sessionLabel.textContent = `${sessionName} • ${playerCount} jogador${playerCount !== 1 ? 'es' : ''}`;
+                    } else {
+                        sessionDot.className = 'session-dot session-dot--inactive';
+                        sessionLabel.textContent = 'Sem sessão ativa — configure no Painel Mestre';
+                    }
+                }
                 
                 // FASE 1 POKEMON: Renderizar Monstródex
                 renderMonstrodex();
