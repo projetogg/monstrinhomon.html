@@ -8321,10 +8321,14 @@
                         sessionDot.className = 'session-dot session-dot--active';
                         const playerCount = GameState.players?.length || 0;
                         const sessionName = GameState.currentSession.name || 'Sessão Ativa';
-                        sessionLabel.textContent = `${sessionName} • ${playerCount} jogador${playerCount !== 1 ? 'es' : ''}`;
+                        const labelText = `${sessionName} • ${playerCount} jogador${playerCount !== 1 ? 'es' : ''}`;
+                        sessionLabel.textContent = labelText;
+                        sessionLabel.title = labelText;
                     } else {
                         sessionDot.className = 'session-dot session-dot--inactive';
-                        sessionLabel.textContent = 'Sem sessão ativa — configure no Painel Mestre';
+                        const labelText = 'Sem sessão ativa — configure no Painel Mestre';
+                        sessionLabel.textContent = labelText;
+                        sessionLabel.title = labelText;
                     }
                 }
                 
@@ -8401,16 +8405,17 @@
                 for (const { quest, progress, needed } of summary) {
                     const pct = needed > 0 ? Math.min(100, Math.round((progress / needed) * 100)) : 0;
                     const playerName = player.name || player.nome || player.id;
+                    const progressText = `Progresso: ${progress}/${needed} · 💰${quest.rewardGold} · ⭐${quest.rewardXp}XP`;
                     entries.push(`
                         <div class="quest-tracker-entry">
                             <div class="quest-header">
-                                <strong>${quest.nome}</strong>
-                                <span class="text-small text-muted">(${playerName})</span>
+                                <strong title="${quest.nome}">${quest.nome}</strong>
+                                <span class="text-small text-muted" title="${playerName}">(${playerName})</span>
                             </div>
                             <div class="quest-progress-bar">
                                 <div class="quest-progress-fill" style="width:${pct}%"></div>
                             </div>
-                            <div class="text-small">Progresso: ${progress}/${needed} · 💰${quest.rewardGold} · ⭐${quest.rewardXp}XP</div>
+                            <div class="text-small" title="${progressText}">${progressText}</div>
                         </div>
                     `);
                 }
