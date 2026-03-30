@@ -289,6 +289,46 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     .battle-main-actions { justify-content: center; }
 }
 
+/* ============================= */
+/* SETUP DE ENCONTRO — Compacto  */
+/* ============================= */
+/* Override do .card padrão para o card de configuração de encontro */
+.encounter-setup {
+    padding: 12px 16px;
+    margin: 6px 0 10px;
+}
+.encounter-setup h3 {
+    font-size: 16px;
+    margin: 0 0 10px;
+}
+/* Linha inline: select de tipo + botão Iniciar */
+.encounter-setup-inline {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+.encounter-setup-inline select,
+.encounter-setup-inline .btn {
+    flex-shrink: 0;
+}
+.encounter-setup-inline > select { flex: 1; min-width: 180px; }
+/* Bloco de seleção de jogador (wild) */
+.encounter-setup-player {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.encounter-setup-player label {
+    font-size: 13px;
+    white-space: nowrap;
+}
+.encounter-setup-player select { flex: 1; min-width: 140px; }
+/* Bloco de grupo (trainer/boss) — mantém mt menor */
+.encounter-setup-group { margin-top: 8px; }
+
 .therapist-panel {
     border: 3px dashed var(--warning); border-radius: 20px; padding: 20px;
     margin: 20px 0; background: #fffbea;

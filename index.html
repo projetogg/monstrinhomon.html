@@ -189,35 +189,37 @@
             <h2>⚔️ Batalha</h2>
 
             <!-- FASE UX: Dica de objetivo da quest ativa -->
-            <div id="encounterQuestHint" class="card quest-hint-card is-hidden">
-                <h4 style="margin:0 0 6px">📋 Objetivo da Quest</h4>
-                <div id="encounterQuestHintContent"></div>
+            <div id="encounterQuestHint" class="card quest-hint-card encounter-setup is-hidden">
+                <span style="font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;opacity:0.7">📋 Quest Ativa</span>
+                <div id="encounterQuestHintContent" style="margin-top:4px"></div>
             </div>
 
-            <div class="card" id="encounterSetupCard">
-                <h3>Start New Encounter</h3>
-                <select id="encounterType" onchange="updateEncounterUI()">
-                    <option value="wild">🌟 Wild Monster (Individual Capture)</option>
-                    <option value="trainer">👤 Trainer Battle (Group)</option>
-                    <option value="boss">👹 Boss Battle (Group)</option>
-                    <option value="event">📖 Narrative Event</option>
-                </select>
-                
+            <div class="card encounter-setup" id="encounterSetupCard">
+                <h3>⚔️ Novo Encontro</h3>
+                <div class="encounter-setup-inline">
+                    <select id="encounterType" onchange="updateEncounterUI()">
+                        <option value="wild">🌟 Monstrinho Selvagem</option>
+                        <option value="trainer">👤 Batalha de Treinador</option>
+                        <option value="boss">👹 Boss</option>
+                        <option value="event">📖 Evento Narrativo</option>
+                    </select>
+                    <button class="btn btn-success" onclick="startEncounter()">▶ Iniciar</button>
+                </div>
+
                 <!-- Para encontros individuais (wild) -->
-                <div id="playerSelectDiv" class="mt-15">
-                    <label><strong>Selecionar Jogador (Encontro Individual):</strong></label>
+                <div id="playerSelectDiv" class="encounter-setup-player">
+                    <label>👤 Jogador:</label>
                     <select id="encounterPlayer" onchange="renderEncounterQuestHint(this.value)">
                         <option value="">-- Selecione --</option>
                     </select>
-                    <!-- Fix #8: Hint de quests ativas do jogador selecionado (usa #encounterQuestHint acima) -->
                 </div>
-                
+
                 <!-- Para encontros em grupo (trainer/boss) -->
-                <div id="groupSelectDiv" class="is-hidden mt-15">
-                    <label><strong>Select Participants (1-6):</strong></label>
-                    <div id="groupParticipantsList" class="mt-10"></div>
-                    <div class="mt-10">
-                        <label><strong>Enemy Level:</strong></label>
+                <div id="groupSelectDiv" class="is-hidden encounter-setup-group">
+                    <label class="text-small"><strong>Participantes (1-6):</strong></label>
+                    <div id="groupParticipantsList" class="mt-8"></div>
+                    <div class="mt-8">
+                        <label class="text-small"><strong>Nível do inimigo:</strong></label>
                         <select id="enemyLevel">
                             <option value="1">1</option>
                             <option value="3">3</option>
@@ -228,7 +230,7 @@
                             <option value="20">20</option>
                         </select>
                     </div>
-                    
+
                     <!-- Team Reorder UI -->
                     <div class="team-reorder-section">
                         <h4 class="m-0">⚔️ Organize Equipes</h4>
@@ -236,8 +238,6 @@
                         <div id="teamReorderContainer"></div>
                     </div>
                 </div>
-                
-                <button class="btn btn-success" onclick="startEncounter()">Start Encounter</button>
             </div>
 
             <div id="encounterPanel" class="is-hidden"></div>
@@ -2179,7 +2179,7 @@
                     'Místico': 18, 'Lendário': 25
                 },
                 // Threshold do captureScore (0-100) necessário para captura por raridade
-                // Reflete a dificuldade de captura multi-eixo (HP + Agressividade + Abertura)
+                // Reflete a dificuldade do sistema dual-track (HP 50pts + Agressividade 50pts)
                 captureScoreThreshold: {
                     'Comum': 35, 'Incomum': 45, 'Raro': 58,
                     'Místico': 72, 'Lendário': 85
@@ -6207,7 +6207,7 @@
         /**
          * Executa uma ação de captura específica da classe do jogador.
          *
-         * A ação afeta o estado do selvagem (aggression/openness) sem causar dano,
+         * A ação afeta a agressividade do selvagem sem causar dano,
          * permitindo que classes de suporte contribuam para a captura.
          * Após a ação, o selvagem contra-ataca (como após um ataque normal).
          */
@@ -6357,16 +6357,15 @@
                 player.inventory[selectedOrbId]--;
                 encounter.log.push(`${orbInfo.emoji} ${player.name} usou ${orbInfo.name}! (Restam: ${player.inventory[selectedOrbId]})`);
                 
-                // Calcular captureScore multi-eixo (HP + Agressividade + Abertura + Orb)
+                // Calcular captureScore dual-track (HP + Agressividade + Orb)
                 const score  = calculateCaptureScore(monster, orbInfo.capture_bonus_pp);
                 const needed = GameState.config?.captureScoreThreshold?.[monster.rarity] ?? 45;
                 const readiness = getCaptureReadinessLabel(score);
                 
                 encounter.log.push(
                     `🎯 ${readiness.emoji} ${readiness.text} — Score: ${score}/100 (precisava: ${needed}) ` +
-                    `[HP:${Math.round((1-monster.hp/monster.hpMax)*60)}pts | ` +
-                    `Calma:${Math.round((1-(monster.aggression??100)/100)*20)}pts | ` +
-                    `Abertura:${Math.round((monster.openness??0)/100*20)}pts | ` +
+                    `[HP:${Math.round((1-monster.hp/monster.hpMax)*50)}pts | ` +
+                    `Calma:${Math.round((1-(monster.aggression??100)/100)*50)}pts | ` +
                     `Orb:+${orbInfo.capture_bonus_pp}pts]`
                 );
                 

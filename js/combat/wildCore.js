@@ -222,11 +222,12 @@ export function checkCriticalRoll(d20Roll) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SISTEMA DE CAPTURA SELVAGEM — Multi-eixo
+// SISTEMA DE CAPTURA SELVAGEM — Dual-track 50/50
 //
-// Capture Score = f(HP, Agressividade, Abertura) + bônus de orb
-// Cada eixo contribui independentemente, permitindo que classes de suporte
-// (Curandeiro, Bardo, Animalista) capturem sem depender de dano bruto.
+// Capture Score = f(HP, Agressividade) + bônus de orb
+// - Trilha Física (HP): até 50 pontos, classes ofensivas capturam via dano
+// - Trilha Comportamental (Agressividade): até 50 pontos, classes de suporte
+//   capturam via ações comportamentais sem depender de dano bruto.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
