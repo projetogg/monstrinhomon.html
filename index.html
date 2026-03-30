@@ -6182,16 +6182,12 @@
                 const success = score >= needed;
                 
                 display.innerHTML = `
-                    <span style="color: ${success ? '#2e7d32' : '#c62828'}; font-weight: bold;">
-                        ${readiness.emoji} ${readiness.text}
-                    </span>
-                    <br><small>
-                        Score: <strong>${score}/100</strong> (precisa: ${needed})
-                        <br>HP (Física): ${Math.round((1 - monster.hp/monster.hpMax)*50)}pts |
-                        Calma (Comportamental): ${Math.round((1-(monster.aggression??100)/100)*50)}pts |
-                        Orb: +${orbInfo.capture_bonus_pp}pts
-                        <br>${success ? '✅ Captura possível!' : '❌ Score insuficiente'}
-                    </small>
+                    <div class="battle-capture-status-label" style="color:${success ? '#2e7d32' : '#c62828'}">
+                        ${readiness.emoji} ${readiness.text} — ${score}/${needed} ${success ? '✅' : '❌'}
+                    </div>
+                    <div class="battle-capture-breakdown">
+                        HP ${Math.round((1-monster.hp/monster.hpMax)*50)} · Calma ${Math.round((1-(monster.aggression??100)/100)*50)} · Orb +${orbInfo.capture_bonus_pp}
+                    </div>
                 `;
             } catch (error) {
                 console.error('Failed to update capture threshold:', error);

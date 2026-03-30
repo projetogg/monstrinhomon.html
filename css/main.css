@@ -242,6 +242,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
+    align-items: start;
 }
 .battle-sec-panel {
     background: rgba(255,255,255,0.06);
@@ -282,11 +283,29 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .battle-arena--centered { text-align: center; }
 .battle-result-title { font-size: 24px; margin-bottom: 4px; }
 
+/* Status de captura no painel secundário */
+.battle-capture-status-label {
+    font-size: 11px; font-weight: bold;
+}
+.battle-capture-breakdown {
+    font-size: 10px; opacity: 0.65; margin-top: 1px;
+}
+   compactar padding sem alterar o grid de 2 colunas.
+   760px cobre tablets em retrato antes do breakpoint de empilhamento (600px). */
+@media (max-width: 760px) {
+    .battle-arena { padding: 8px; gap: 6px; }
+    .battle-combatant-box { padding: 8px 10px; }
+    .battle-combatant-name { font-size: 14px; }
+    .battle-sec-panel { padding: 6px 8px; }
+}
+
 @media (max-width: 600px) {
     .battle-combatants,
     .battle-secondary-row { grid-template-columns: 1fr; }
     .battle-actions-row { flex-direction: column; align-items: stretch; }
     .battle-main-actions { justify-content: center; }
+    .battle-main-actions .btn { font-size: 14px; padding: 9px 14px; }
+    .battle-dice-input { width: 60px; height: 40px; font-size: 18px; }
 }
 
 /* ============================= */
