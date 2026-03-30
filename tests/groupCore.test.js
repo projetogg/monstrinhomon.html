@@ -621,3 +621,108 @@ describe('pickEnemyTargetByDEF - IA v1 (Seleção por DEF)', () => {
     expect(counts.p3).toBeGreaterThan(0); // Top3
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Regressão: calculateTurnOrder usa activeIndex, não team[0]
+// (BUG FIX: usando team[0] resultava em SPD/HP errados quando jogador trocou monstro)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('calculateTurnOrder - usa activeIndex (regressão BUG FIX)', () => {
+  const mockRollD20 = () => 10;
+
+  it('deve usar SPD do monstro ativo (activeIndex=1), não de team[0]', () => {
+    const enc = {
+      participants: ['p1'],
+      enemies: [{ name: 'Inimigo', hp: 50, spd: 5 }]
+    };
+    // team[0] morto SPD=3, team[1] ativo SPD=15
+    const playersData = [
+      {
+        id: 'p1',
+        name: 'Ana',
+        activeIndex: 1,
+        team: [
+          { hp: 0,  spd: 3  },  // índice 0: morto
+          { hp: 50, spd: 15 }   // índice 1: ativo
+        ]
+      }
+    ];
+
+    const order = calculateTurnOrder(enc, playersData, mockRollD20);
+
+    // Jogadora deve aparecer com SPD=15 (monstro ativo), não SPD=3 (team[0])
+    const playerActor = order.find(a => a.id === 'p1');
+    expect(playerActor).toBeDefined();
+    expect(playerActor.spd).toBe(15);
+    // Com SPD=15 > inimigo SPD=5, jogadora deve ser primeiro
+    expect(order[0].id).toBe('p1');
+  });
+
+  it('deve excluir jogador quando monstro ATIVO (activeIndex) tem hp=0', () => {
+    const enc = {
+      participants: ['p1'],
+      enemies: [{ name: 'Inimigo', hp: 50, spd: 5 }]
+    };
+    // team[0] vivo SPD=12, mas activeIndex=1 que tem hp=0
+    const playersData = [
+      {
+        id: 'p1',
+        name: 'Bob',
+        activeIndex: 1,
+        team: [
+          { hp: 50, spd: 12 }, // índice 0: vivo, mas NÃO é o ativo
+          { hp: 0,  spd: 15 }  // índice 1: ativo, mas morto
+        ]
+      }
+    ];
+
+    const order = calculateTurnOrder(enc, playersData, mockRollD20);
+
+    // Jogador deve ser EXCLUÍDO porque o monstro ativo está morto
+    const playerActor = order.find(a => a.id === 'p1');
+    expect(playerActor).toBeUndefined();
+    expect(order).toHaveLength(1); // apenas o inimigo
+  });
+
+  it('deve incluir jogador com activeIndex=0 (comportamento padrão)', () => {
+    const enc = {
+      participants: ['p1'],
+      enemies: []
+    };
+    const playersData = [
+      {
+        id: 'p1',
+        name: 'Cris',
+        activeIndex: 0,
+        team: [{ hp: 50, spd: 8 }]
+      }
+    ];
+
+    const order = calculateTurnOrder(enc, playersData, mockRollD20);
+
+    expect(order).toHaveLength(1);
+    expect(order[0].id).toBe('p1');
+    expect(order[0].spd).toBe(8);
+  });
+
+  it('deve usar team[0] como fallback quando activeIndex não está definido', () => {
+    const enc = {
+      participants: ['p1'],
+      enemies: []
+    };
+    // Sem activeIndex — deve usar índice 0 como fallback
+    const playersData = [
+      {
+        id: 'p1',
+        name: 'Diego',
+        team: [{ hp: 50, spd: 7 }]
+      }
+    ];
+
+    const order = calculateTurnOrder(enc, playersData, mockRollD20);
+
+    expect(order).toHaveLength(1);
+    expect(order[0].id).toBe('p1');
+    expect(order[0].spd).toBe(7);
+  });
+});

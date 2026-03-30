@@ -570,7 +570,17 @@
         
         // Make Combat available globally for the wrapper
         window.Combat = Combat;
-        
+
+        // ── Aliases de Captura Selvagem (fonte única: wildCore.js) ─────────────────
+        // BRIDGE: expõe funções canônicas de wildCore.js no escopo inline do módulo.
+        // Elimina cópias duplicadas que causavam o bloqueio de runtime anterior.
+        const CAPTURE_ACTIONS          = Combat.Wild.Core.CAPTURE_ACTIONS;
+        const calculateCaptureScore    = Combat.Wild.Core.calculateCaptureScore;
+        const getCaptureReadinessLabel = Combat.Wild.Core.getCaptureReadinessLabel;
+        const applyCaptureAction       = Combat.Wild.Core.applyCaptureAction;
+        // Threshold de agressividade para resolução comportamental (trilha B)
+        const AGGR_TERMINAL = 0;
+
         // CAMADA 3: Add TargetSelection to Combat namespace
         window.Combat.TargetSelection = TargetSelection;
         
@@ -1128,14 +1138,14 @@
 
         // POWER BÁSICO por classe (ataque sem habilidade)
         const BASIC_ATTACK_POWER = {
-            'Guerreiro': 12,
-            'Mago': 11,
-            'Curandeiro': 10,
-            'Bárbaro': 14,
-            'Ladino': 12,
-            'Bardo': 11,
-            'Caçador': 13,
-            'Animalista': 12
+            'Guerreiro': 7,
+            'Mago': 7,
+            'Curandeiro': 8,
+            'Bárbaro': 9,
+            'Ladino': 8,
+            'Bardo': 7,
+            'Caçador': 8,
+            'Animalista': 7
         };
 
         // SKILL DEFINITIONS (inline - por classe e estágio)
@@ -1346,14 +1356,14 @@
             // ========================================================================
             
             BASIC_ATTACK_POWER: {
-                'Guerreiro': 12,
-                'Mago': 11,
-                'Curandeiro': 10,
-                'Bárbaro': 14,
-                'Ladino': 12,
-                'Bardo': 11,
-                'Caçador': 13,
-                'Animalista': 12
+                'Guerreiro': 7,
+                'Mago': 7,
+                'Curandeiro': 8,
+                'Bárbaro': 9,
+                'Ladino': 8,
+                'Bardo': 7,
+                'Caçador': 8,
+                'Animalista': 7
             },
             
             ENERGY_REGEN: {
@@ -2167,6 +2177,12 @@
                 fleeBase: {
                     'Comum': 10, 'Incomum': 12, 'Raro': 15,
                     'Místico': 18, 'Lendário': 25
+                },
+                // Threshold do captureScore (0-100) necessário para captura por raridade
+                // Reflete a dificuldade de captura multi-eixo (HP + Agressividade + Abertura)
+                captureScoreThreshold: {
+                    'Comum': 35, 'Incomum': 45, 'Raro': 58,
+                    'Místico': 72, 'Lendário': 85
                 },
                 medalTiers: { bronze: 5, silver: 12, gold: 25 },
                 friendshipConfig: {
@@ -3750,6 +3766,10 @@
                     
                     // FASE 1 POKEMON: Gerar shiny (1% chance)
                     encounter.wildMonster.isShiny = generateShinyChance();
+                    
+                    // Inicializar estado de captura multi-eixo
+                    encounter.wildMonster.aggression = 100; // começa totalmente agressivo
+                    encounter.wildMonster.openness   = 0;   // começa totalmente fechado
                     
                     // FASE 1 POKEMON: Marcar como visto no Monstródex
                     updateMonstrodex('see', randomMonster.id);
@@ -5961,14 +5981,28 @@
                                 <div><strong>PODER:</strong> ${monster.poder}</div>
                                 <div><strong>⚡ ENE:</strong> ${monster.ene || 0}/${monster.eneMax || 0}</div>
                             </div>
-                            <div class="progress-bar mt-10">
-                                <div class="progress-fill hp" style="width: ${(monster.hp / monster.hpMax) * 100}%">
-                                    ${monster.hp}/${monster.hpMax} HP (${Math.floor(hpPercent * 100)}%)
+                            <div class="mt-8">
+                                <div><small>❤️ HP (Trilha Física)</small></div>
+                                <div class="progress-bar mt-4">
+                                    <div class="progress-fill hp" style="width: ${(monster.hp / monster.hpMax) * 100}%">
+                                        ${monster.hp}/${monster.hpMax} HP (${Math.floor(hpPercent * 100)}%)
+                                    </div>
                                 </div>
                             </div>
-                            ${canCapture ? 
-                                '<div class="color-success mt-5">✅ HP baixo! Pode tentar captura!</div>' : 
-                                `<div class="color-warning mt-5">⚠️ Abaixe HP para ${Math.floor(baseThreshold * 100)}% para capturar</div>`
+                            <div class="mt-8">
+                                <div><small>😤 Agressividade (Trilha Comportamental): <strong>${monster.aggression ?? 100}</strong>/100</small></div>
+                                <div class="progress-bar h-10 mt-4">
+                                    <div class="progress-fill" style="width:${monster.aggression??100}%;background:#e53935;"></div>
+                                </div>
+                            </div>
+                            ${encounter.behaviorallyResolved ?
+                                '<div class="color-success mt-5 text-bold">🌿 Calmo/Rendido! Trilha Comportamental concluída!</div>' :
+                                (() => {
+                                    const scoreNow = calculateCaptureScore(monster, 0);
+                                    const neededNow = GameState.config?.captureScoreThreshold?.[monster.rarity] ?? 45;
+                                    const rd = getCaptureReadinessLabel(scoreNow);
+                                    return `<div class="mt-5"><strong>${rd.emoji} ${rd.text}</strong> (Score: ${scoreNow}/${neededNow})</div>`;
+                                })()
                             }
                         </div>
                         
@@ -5985,27 +6019,47 @@
                                 const incomum = player.inventory?.['CLASTERORB_INCOMUM'] || 0;
                                 const rara = player.inventory?.['CLASTERORB_RARA'] || 0;
                                 const hasAnyOrb = comum > 0 || incomum > 0 || rara > 0;
+                                const captureAction = CAPTURE_ACTIONS[player.class];
+                                const scoreNow = calculateCaptureScore(monster, 0);
+                                const neededNow = GameState.config?.captureScoreThreshold?.[monster.rarity] ?? 45;
                                 
                                 return `
                                 <div class="capture-system-box">
-                                    <strong class="capture-system-title">🎯 Sistema de Captura</strong>
-                                    <div class="mt-10">
-                                        <div><strong>HP% Selvagem:</strong> ${Math.floor(hpPercent * 100)}%</div>
-                                        <div><strong>Base Threshold (${monster.rarity}):</strong> ${Math.floor(baseThreshold * 100)}%</div>
-                                        <div><strong>Bônus HP Baixo (≤25%):</strong> ${hpPercent <= 0.25 ? '+10%' : '0%'}</div>
+                                    <strong class="capture-system-title">🎯 Sistema de Captura — Duas Trilhas</strong>
+                                    <div class="mt-6">
+                                        <small>❤️ Trilha Física: reduz HP | 😤 Trilha Comportamental: reduz Agressividade</small>
                                     </div>
+                                    <div class="mt-10">
+                                        <div><small>Score atual: <strong>${scoreNow}/100</strong> | Necessário: <strong>${neededNow}</strong></small></div>
+                                        <div class="progress-bar h-12 mt-4">
+                                            <div class="progress-fill" style="width:${Math.min(100,scoreNow)}%;background:${scoreNow>=neededNow?'#2e7d32':'#f57f17'};"></div>
+                                        </div>
+                                    </div>
+
+                                    ${captureAction ? `
+                                    <div class="mt-10">
+                                        <strong>🎭 Ação Comportamental (${player.class}):</strong>
+                                        <button class="btn btn-secondary mt-6 w-100"
+                                                onclick="useCaptureAction()"
+                                                ${playerMonster && playerMonster.hp > 0 && monster.hp > 0 && !encounter.behaviorallyResolved ? '' : 'disabled'}
+                                                title="Reduz Agressividade em ${Math.abs(captureAction.aggDelta)} pontos">
+                                            ${captureAction.emoji} ${captureAction.name}
+                                            <small>(Agressividade ${captureAction.aggDelta})</small>
+                                        </button>
+                                    </div>
+                                    ` : ''}
                                     
                                     ${hasAnyOrb ? `
                                     <div class="mt-10">
                                         <label class="text-bold">Escolha sua ClasterOrb:</label>
                                         <select id="captureOrbSelect" onchange="updateCaptureThreshold()" class="orb-select">
-                                            ${comum > 0 ? `<option value="CLASTERORB_COMUM">⚪ Comum (${comum}x) - +0% bonus</option>` : ''}
-                                            ${incomum > 0 ? `<option value="CLASTERORB_INCOMUM">🔵 Incomum (${incomum}x) - +10% bônus</option>` : ''}
-                                            ${rara > 0 ? `<option value="CLASTERORB_RARA">🟣 Rara (${rara}x) - +20% bônus</option>` : ''}
+                                            ${comum > 0 ? `<option value="CLASTERORB_COMUM">⚪ Comum (${comum}x) - +0pts</option>` : ''}
+                                            ${incomum > 0 ? `<option value="CLASTERORB_INCOMUM">🔵 Incomum (${incomum}x) - +10pts</option>` : ''}
+                                            ${rara > 0 ? `<option value="CLASTERORB_RARA">🟣 Rara (${rara}x) - +20pts</option>` : ''}
                                         </select>
                                     </div>
                                     <div id="captureThresholdDisplay" class="capture-threshold-box">
-                                        <strong>Threshold Final:</strong> <span id="finalThresholdValue">Calculando...</span>
+                                        <strong>Score com Orb:</strong> <span id="finalThresholdValue">Calculando...</span>
                                     </div>
                                     ` : `
                                     <div class="capture-warning">
@@ -6153,21 +6207,22 @@
                 const orbInfo = CLASTERORBS[selectedOrbId];
                 if (!orbInfo) return;
                 
-                // Calcular threshold
-                const hpPercent = monster.hp / monster.hpMax;
-                const baseThreshold = GameState.config?.captureThreshold?.[monster.rarity] || 0.35;
-                const orbBonus = orbInfo.capture_bonus_pp / 100; // Converter pp para decimal
-                const lowHpBonus = hpPercent <= 0.25 ? 0.10 : 0;
-                const thresholdFinal = Math.min(0.95, baseThreshold + orbBonus + lowHpBonus);
+                // Calcular captureScore multi-eixo
+                const score = calculateCaptureScore(monster, orbInfo.capture_bonus_pp);
+                const needed = GameState.config?.captureScoreThreshold?.[monster.rarity] ?? 45;
+                const readiness = getCaptureReadinessLabel(score);
+                const success = score >= needed;
                 
-                // Atualizar display
                 display.innerHTML = `
-                    <span class="hp-threshold-text" style="color: ${hpPercent <= thresholdFinal ? '#2e7d32' : '#c62828'};">
-                        ${Math.floor(thresholdFinal * 100)}%
+                    <span style="color: ${success ? '#2e7d32' : '#c62828'}; font-weight: bold;">
+                        ${readiness.emoji} ${readiness.text}
                     </span>
                     <br><small>
-                        (Base ${Math.floor(baseThreshold * 100)}% + Orb ${orbInfo.capture_bonus_pp}% + HP ${Math.floor(lowHpBonus * 100)}%)
-                        <br>${hpPercent <= thresholdFinal ? '✅ Captura provável!' : '❌ HP muito alto'}
+                        Score: <strong>${score}/100</strong> (precisa: ${needed})
+                        <br>HP (Física): ${Math.round((1 - monster.hp/monster.hpMax)*50)}pts |
+                        Calma (Comportamental): ${Math.round((1-(monster.aggression??100)/100)*50)}pts |
+                        Orb: +${orbInfo.capture_bonus_pp}pts
+                        <br>${success ? '✅ Captura possível!' : '❌ Score insuficiente'}
                     </small>
                 `;
             } catch (error) {
@@ -6177,6 +6232,110 @@
 
         // Expose updateCaptureThreshold globally
         window.updateCaptureThreshold = updateCaptureThreshold;
+
+        /**
+         * Executa uma ação de captura específica da classe do jogador.
+         *
+         * A ação afeta o estado do selvagem (aggression/openness) sem causar dano,
+         * permitindo que classes de suporte contribuam para a captura.
+         * Após a ação, o selvagem contra-ataca (como após um ataque normal).
+         */
+        function useCaptureAction() {
+            try {
+                const encounter = GameState.currentEncounter;
+                if (!encounter?.wildMonster) return;
+
+                const monster = encounter.wildMonster;
+                const playerId = encounter.selectedPlayerId;
+                const player = GameState.players.find(p => p.id === playerId);
+
+                if (!player) { alert('Nenhum jogador selecionado.'); return; }
+
+                const playerMonster = _getActiveMonsterOfPlayer(player);
+                if (!playerMonster || playerMonster.hp <= 0) {
+                    alert('❌ Seu monstrinho está desmaiado!'); return;
+                }
+
+                if (monster.hp <= 0) {
+                    alert('❌ Selvagem já está desmaiado — não pode usar ação de captura.'); return;
+                }
+
+                // Bloquear se já resolvido comportamentalmente
+                if (encounter.behaviorallyResolved) {
+                    alert('✅ Selvagem já está calmo! Use uma ClasterOrb para capturar.'); return;
+                }
+
+                // Obter ação da classe do jogador
+                const action = CAPTURE_ACTIONS[player.class];
+                if (!action) {
+                    alert(`❌ Classe ${player.class} não tem ação de captura definida.`); return;
+                }
+
+                encounter.log = encounter.log || [];
+
+                // Aplicar ação ao selvagem
+                const aggBefore = monster.aggression ?? 100;
+                applyCaptureAction(monster, action);
+
+                encounter.log.push(
+                    `${action.emoji} ${player.name} usou ${action.name}! ` +
+                    `Agressividade: ${aggBefore} → ${monster.aggression}`
+                );
+
+                // ── TRILHA COMPORTAMENTAL: resolução quando agressividade chega ao terminal ──
+                if (monster.aggression <= AGGR_TERMINAL) {
+                    monster.aggression = 0;
+                    encounter.behaviorallyResolved = true;
+                    encounter.log.push(
+                        `🌿 ${monster.name} está completamente calmo/rendido! ` +
+                        `(Trilha Comportamental) Pronto para captura!`
+                    );
+                    // Conceder XP pela resolução comportamental
+                    handleVictoryRewards(encounter);
+                    // Manter encounter ativo para que o jogador use uma ClasterOrb
+                    saveToLocalStorage();
+                    renderEncounter();
+                    return;
+                }
+
+                // Selvagem contra-ataca SOMENTE se ainda não rendido
+                const enemyRoll = Math.floor(Math.random() * 20) + 1;
+                const enemyHit  = enemyRoll === 1 ? false :
+                                  enemyRoll === 20 ? true :
+                                  checkHit(enemyRoll, monster, playerMonster);
+                encounter.log.push(`🎲 ${monster.name} rola ${enemyRoll} (ATK: ${monster.atk})`);
+
+                const enemyIsCrit = (enemyRoll === 20);
+                const enemyIsFail = (enemyRoll === 1);
+                if (enemyIsCrit) Audio.playSfx?.('crit');
+                else if (enemyIsFail || !enemyHit) Audio.playSfx?.('miss');
+                else Audio.playSfx?.('hit');
+
+                if (enemyHit) {
+                    const basicPower = MM_TABLES.getBasicAttackPower(monster.class);
+                    const powerUsed  = enemyIsCrit ? basicPower * 2 : basicPower;
+                    const damage     = calculateDamage(monster, playerMonster, () => powerUsed,
+                                           GameState.config?.classAdvantages);
+                    playerMonster.hp = Math.max(0, playerMonster.hp - damage);
+                    encounter.log.push(`💥 ${monster.name} contra-ataca! Causa ${damage} de dano!`);
+
+                    if (playerMonster.hp <= 0) {
+                        encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
+                        playerMonster.status = 'fainted';
+                        encounter.result = 'defeat';
+                        encounter.active = false;
+                    }
+                } else {
+                    encounter.log.push(`❌ ${monster.name} erra o contra-ataque!`);
+                }
+
+                saveToLocalStorage();
+                renderEncounter();
+            } catch (error) {
+                showError('Capture action failed', error.stack);
+            }
+        }
+        window.useCaptureAction = useCaptureAction;
 
         function attemptCapture() {
             try {
@@ -6227,30 +6386,24 @@
                 player.inventory[selectedOrbId]--;
                 encounter.log.push(`${orbInfo.emoji} ${player.name} usou ${orbInfo.name}! (Restam: ${player.inventory[selectedOrbId]})`);
                 
-                // Calcular threshold de captura
-                const hpPercent = monster.hp / monster.hpMax;
-                const baseThreshold = GameState.config?.captureThreshold?.[monster.rarity] || 0.35;
+                // Calcular captureScore multi-eixo (HP + Agressividade + Abertura + Orb)
+                const score  = calculateCaptureScore(monster, orbInfo.capture_bonus_pp);
+                const needed = GameState.config?.captureScoreThreshold?.[monster.rarity] ?? 45;
+                const readiness = getCaptureReadinessLabel(score);
                 
-                // Bônus se HP <= 25%
-                let lowHpBonus = 0;
-                if (hpPercent <= 0.25) {
-                    lowHpBonus = 0.10;
-                    encounter.log.push(`✨ HP crítico! Bônus de +10% na captura!`);
-                }
-                
-                // Bônus da orb (em decimal: 0, 0.05, 0.10)
-                const orbBonus = orbInfo.capture_bonus_pp / 100;
-                
-                const thresholdFinal = Math.min(0.95, baseThreshold + orbBonus + lowHpBonus);
-                
-                encounter.log.push(`HP: ${Math.floor(hpPercent * 100)}% | Base: ${Math.floor(baseThreshold * 100)}% | Orb: +${orbInfo.capture_bonus_pp}% | HP Bonus: +${Math.floor(lowHpBonus * 100)}%`);
-                encounter.log.push(`🎯 Threshold Final: ${Math.floor(thresholdFinal * 100)}%`);
+                encounter.log.push(
+                    `🎯 ${readiness.emoji} ${readiness.text} — Score: ${score}/100 (precisava: ${needed}) ` +
+                    `[HP:${Math.round((1-monster.hp/monster.hpMax)*60)}pts | ` +
+                    `Calma:${Math.round((1-(monster.aggression??100)/100)*20)}pts | ` +
+                    `Abertura:${Math.round((monster.openness??0)/100*20)}pts | ` +
+                    `Orb:+${orbInfo.capture_bonus_pp}pts]`
+                );
                 
                 // FASE 1 POKEMON: Rastrear tentativa de captura
                 updateStats('captureAttempts', 1);
                 
-                // Captura determinística: sucesso se HP% <= Threshold_final
-                if (hpPercent <= thresholdFinal) {
+                // Captura determinística: sucesso se captureScore >= needed
+                if (score >= needed) {
                     encounter.log.push(`✅ SUCESSO! ${monster.name} foi capturado!`);
                     
                     // Feature 4.4: Capture success sound
@@ -6813,6 +6966,10 @@
          * @param {number} params.damageMult - Multiplicador (1.0 padrão, 1.10 vantagem, 0.90 desvantagem)
          * @returns {number} Dano final (mínimo 1)
          * 
+         * FÓRMULA (alinhada com GAME_RULES.md):
+         * base = ATK + POWER - DEF
+         * final = max(1, floor(base * damageMult))
+         * 
          * VANTAGEM DE CLASSE (Dano):
          * - Vantagem: 1.10 (110% do dano base)
          * - Desvantagem: 0.90 (90% do dano base)
@@ -6820,22 +6977,16 @@
          * 
          * EXEMPLO:
          * ATK=10, DEF=5, POWER=15
-         * ratio = 10/(10+5) = 0.666
-         * baseD = floor(15 * 0.666) = floor(9.99) = 9
-         * finalD = floor(9 * 1.0) = 9
+         * base = 10 + 15 - 5 = 20
+         * finalD = max(1, floor(20 * 1.0)) = 20
          */
         function calcDamage({ atk, def, power, damageMult = 1.0 }) {
             try {
-                // ratio = ATK / (ATK + DEF)
-                const ratio = atk / (atk + def);
+                // FÓRMULA: ATK + POWER - DEF (GAME_RULES.md)
+                const base = atk + power - def;
                 
-                // danoBase = floor(POWER * ratio)
-                const baseD = Math.floor(power * ratio);
-                
-                // Aplicar multiplicador de classe
-                const finalD = Math.floor(baseD * damageMult);
-                
-                // Dano mínimo sempre 1
+                // Aplicar multiplicador de classe e garantir dano mínimo 1
+                const finalD = Math.floor(base * damageMult);
                 return Math.max(1, finalD);
             } catch (error) {
                 console.error('Damage calculation failed:', error);
@@ -11076,6 +11227,14 @@
         window.mmTherGiveAfterlifeQuick = mmTherGiveAfterlifeQuick;
         window.toggleTherapistMode = toggleTherapistMode;
         window.Audio = Audio;
+        // Batalha em grupo: handlers gerados por groupUI.js via onclick inline
+        window.enterAttackMode = enterAttackMode;
+        window.enterSkillMode = enterSkillMode;
+        window.handleEnemyClick = handleEnemyClick;
+        window.groupPassTurn = groupPassTurn;
+        window.groupFlee = groupFlee;
+        window.groupUseItem = groupUseItem;
+        window.cancelTargetSelection = cancelTargetSelection;
 
         // Initialize on load
         // PR-BOOT-FIX: Usa readyState para evitar race condition caso o evento

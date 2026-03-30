@@ -56,8 +56,9 @@ export function checkHit(d20Roll, attacker, defender, classAdvantages) {
  * @param {number} params.damageMult - Multiplicador (1.0 padrão, 1.10 vantagem, 0.90 desvantagem)
  * @returns {number} Dano final (mínimo 1)
  * 
- * FÓRMULA BASE: floor(POWER * (ATK / (ATK + DEF))) * damageMult
- * DANO MÍNIMO: sempre 1
+ * FÓRMULA (alinhada com GAME_RULES.md):
+ * base = ATK + POWER - DEF
+ * final = max(1, floor(base * damageMult))
  * 
  * VANTAGEM DE CLASSE (Dano):
  * - Vantagem: 1.10 (110% do dano base)
@@ -66,22 +67,16 @@ export function checkHit(d20Roll, attacker, defender, classAdvantages) {
  * 
  * EXEMPLO:
  * ATK=10, DEF=5, POWER=15
- * ratio = 10/(10+5) = 0.666
- * baseD = floor(15 * 0.666) = floor(9.99) = 9
- * finalD = floor(9 * 1.0) = 9
+ * base = 10 + 15 - 5 = 20
+ * finalD = max(1, floor(20 * 1.0)) = 20
  */
 export function calcDamage({ atk, def, power, damageMult = 1.0 }) {
     try {
-        // ratio = ATK / (ATK + DEF)
-        const ratio = atk / (atk + def);
+        // FÓRMULA: ATK + POWER - DEF (GAME_RULES.md)
+        const base = atk + power - def;
         
-        // danoBase = floor(POWER * ratio)
-        const baseD = Math.floor(power * ratio);
-        
-        // Aplicar multiplicador de classe
-        const finalD = Math.floor(baseD * damageMult);
-        
-        // Dano mínimo sempre 1
+        // Aplicar multiplicador de classe e garantir dano mínimo 1
+        const finalD = Math.floor(base * damageMult);
         return Math.max(1, finalD);
     } catch (error) {
         console.error('Damage calculation failed:', error);
@@ -224,4 +219,96 @@ export function checkCriticalRoll(d20Roll) {
         isCrit20: d20Roll === 20,
         isFail1: d20Roll === 1
     };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SISTEMA DE CAPTURA SELVAGEM — Multi-eixo
+//
+// Capture Score = f(HP, Agressividade, Abertura) + bônus de orb
+// Cada eixo contribui independentemente, permitindo que classes de suporte
+// (Curandeiro, Bardo, Animalista) capturem sem depender de dano bruto.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Ações de captura por classe.
+ *
+ * Design de duas trilhas:
+ * - Trilha Física   (HP):         classes ofensivas são naturalmente mais eficientes
+ * - Trilha Comportamental (Agressividade): classes de suporte são naturalmente mais eficientes
+ *
+ * aggDelta  — redução de agressividade por ação (negativo = acalma o selvagem)
+ * openDelta — mantido por retrocompatibilidade, sem efeito no score atual
+ */
+export const CAPTURE_ACTIONS = {
+    // Suporte — trilha comportamental forte
+    Curandeiro: { id: 'calm',       name: 'Acalmar',       emoji: '🌿', aggDelta: -40, openDelta:  0 },
+    Bardo:      { id: 'sing',       name: 'Melodia Suave', emoji: '🎵', aggDelta: -35, openDelta:  0 },
+    Animalista: { id: 'bond',       name: 'Criar Vínculo', emoji: '🐾', aggDelta: -30, openDelta:  0 },
+    // Híbrido — redução moderada de agressividade
+    Ladino:     { id: 'distract',   name: 'Distrair',      emoji: '🌑', aggDelta: -25, openDelta:  0 },
+    Mago:       { id: 'charm',      name: 'Enfeitiçar',    emoji: '🔮', aggDelta: -20, openDelta:  0 },
+    // Ofensivo — conter fisicamente, reduz menos agressividade
+    Guerreiro:  { id: 'contain',    name: 'Conter',        emoji: '⚔️', aggDelta: -20, openDelta:  0 },
+    Caçador:    { id: 'trap',       name: 'Imobilizar',    emoji: '🏹', aggDelta: -20, openDelta:  0 },
+    Bárbaro:    { id: 'intimidate', name: 'Intimidar',     emoji: '⚡', aggDelta: -15, openDelta:  0 },
+};
+
+/**
+ * Calcula o Capture Score para um selvagem — sistema de duas trilhas.
+ *
+ * Fórmula simplificada (HP + Agressividade, contribuição igual):
+ *   hpScore    = (1 - hp/hpMax) * 50   → 0 HP cheio, 50 HP = 0
+ *   aggrScore  = (1 - aggression/100) * 50 → 0 totalmente agressivo, 50 totalmente calmo
+ *   finalScore = min(100, hpScore + aggrScore + orbBonusPp)
+ *
+ * Isso permite que:
+ * - Classes ofensivas cheguem ao score reduzindo HP
+ * - Classes de suporte cheguem ao score reduzindo Agressividade
+ * - Ambas as estratégias têm igual peso máximo (50 pontos cada)
+ *
+ * @param {object} monster      - Monstrinho selvagem (com hp, hpMax, aggression?)
+ * @param {number} orbBonusPp   - Bônus da orb em pontos percentuais (0, 10 ou 20)
+ * @returns {number} Capture Score (0–100)
+ */
+export function calculateCaptureScore(monster, orbBonusPp = 0) {
+    if (!monster) return 0;
+    const hp         = Number(monster?.hp   ?? 0);
+    const hpMax      = Number(monster?.hpMax ?? 1);
+    const aggression = Math.min(100, Math.max(0, Number(monster?.aggression ?? 100)));
+
+    const hpFactor  = Math.max(0, 1 - hp / hpMax);
+    const hpScore   = hpFactor * 50;
+    const aggrScore = (1 - aggression / 100) * 50;
+
+    return Math.min(100, Math.round(hpScore + aggrScore + orbBonusPp));
+}
+
+/**
+ * Retorna rótulo de prontidão para captura com base no score.
+ *
+ * @param {number} score - Capture Score (0–100)
+ * @returns {{ text: string, emoji: string, css: string }}
+ */
+export function getCaptureReadinessLabel(score) {
+    if (score < 25) return { text: 'Muito arisco',        emoji: '🔴', css: 'danger' };
+    if (score < 45) return { text: 'Instável',            emoji: '🟡', css: 'warning' };
+    if (score < 65) return { text: 'Vulnerável',          emoji: '🟢', css: 'success' };
+    if (score < 80) return { text: 'Pronto para captura', emoji: '🔵', css: 'info' };
+    return               { text: 'Captura quase certa',  emoji: '✅', css: 'success-dark' };
+}
+
+/**
+ * Aplica uma ação de captura ao estado do selvagem.
+ * ATENÇÃO: muta `wildMonster` diretamente (não é função pura).
+ *
+ * @param {object} wildMonster - Estado mutável do selvagem
+ * @param {object} action      - Entrada de CAPTURE_ACTIONS (aggDelta)
+ */
+export function applyCaptureAction(wildMonster, action) {
+    if (!wildMonster || !action) return;
+    wildMonster.aggression = Math.max(0, Math.min(100, (wildMonster.aggression ?? 100) + action.aggDelta));
+    // openDelta mantido por retrocompatibilidade; openness não afeta o score atual
+    if (action.openDelta !== undefined && wildMonster.openness !== undefined) {
+        wildMonster.openness = Math.max(0, Math.min(100, (wildMonster.openness ?? 0) + action.openDelta));
+    }
 }
