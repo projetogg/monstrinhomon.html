@@ -556,7 +556,17 @@
         
         // Make Combat available globally for the wrapper
         window.Combat = Combat;
-        
+
+        // ── Aliases de Captura Selvagem (fonte única: wildCore.js) ─────────────────
+        // BRIDGE: expõe funções canônicas de wildCore.js no escopo inline do módulo.
+        // Elimina cópias duplicadas que causavam o bloqueio de runtime anterior.
+        const CAPTURE_ACTIONS          = Combat.Wild.Core.CAPTURE_ACTIONS;
+        const calculateCaptureScore    = Combat.Wild.Core.calculateCaptureScore;
+        const getCaptureReadinessLabel = Combat.Wild.Core.getCaptureReadinessLabel;
+        const applyCaptureAction       = Combat.Wild.Core.applyCaptureAction;
+        // Threshold de agressividade para resolução comportamental (trilha B)
+        const AGGR_TERMINAL = 0;
+
         // CAMADA 3: Add TargetSelection to Combat namespace
         window.Combat.TargetSelection = TargetSelection;
         
@@ -5957,27 +5967,29 @@
                                 <div><strong>PODER:</strong> ${monster.poder}</div>
                                 <div><strong>⚡ ENE:</strong> ${monster.ene || 0}/${monster.eneMax || 0}</div>
                             </div>
-                            <div class="progress-bar mt-10">
-                                <div class="progress-fill hp" style="width: ${(monster.hp / monster.hpMax) * 100}%">
-                                    ${monster.hp}/${monster.hpMax} HP (${Math.floor(hpPercent * 100)}%)
+                            <div class="mt-8">
+                                <div><small>❤️ HP (Trilha Física)</small></div>
+                                <div class="progress-bar mt-4">
+                                    <div class="progress-fill hp" style="width: ${(monster.hp / monster.hpMax) * 100}%">
+                                        ${monster.hp}/${monster.hpMax} HP (${Math.floor(hpPercent * 100)}%)
+                                    </div>
                                 </div>
                             </div>
                             <div class="mt-8">
-                                <div><small>😤 Agressividade: <strong>${monster.aggression ?? 100}</strong>/100</small></div>
-                                <div class="progress-bar h-10">
+                                <div><small>😤 Agressividade (Trilha Comportamental): <strong>${monster.aggression ?? 100}</strong>/100</small></div>
+                                <div class="progress-bar h-10 mt-4">
                                     <div class="progress-fill" style="width:${monster.aggression??100}%;background:#e53935;"></div>
                                 </div>
-                                <div class="mt-4"><small>💚 Abertura: <strong>${monster.openness ?? 0}</strong>/100</small></div>
-                                <div class="progress-bar h-10">
-                                    <div class="progress-fill" style="width:${monster.openness??0}%;background:#2e7d32;"></div>
-                                </div>
                             </div>
-                            ${(() => {
-                                const scoreNow = calculateCaptureScore(monster, 0);
-                                const neededNow = GameState.config?.captureScoreThreshold?.[monster.rarity] ?? 45;
-                                const rd = getCaptureReadinessLabel(scoreNow);
-                                return `<div class="mt-5"><strong>${rd.emoji} ${rd.text}</strong> (Score: ${scoreNow}/${neededNow})</div>`;
-                            })()}
+                            ${encounter.behaviorallyResolved ?
+                                '<div class="color-success mt-5 text-bold">🌿 Calmo/Rendido! Trilha Comportamental concluída!</div>' :
+                                (() => {
+                                    const scoreNow = calculateCaptureScore(monster, 0);
+                                    const neededNow = GameState.config?.captureScoreThreshold?.[monster.rarity] ?? 45;
+                                    const rd = getCaptureReadinessLabel(scoreNow);
+                                    return `<div class="mt-5"><strong>${rd.emoji} ${rd.text}</strong> (Score: ${scoreNow}/${neededNow})</div>`;
+                                })()
+                            }
                         </div>
                         
                         <h4>Escolha sua Ação:</h4>
@@ -5999,7 +6011,10 @@
                                 
                                 return `
                                 <div class="capture-system-box">
-                                    <strong class="capture-system-title">🎯 Sistema de Captura Multi-Eixo</strong>
+                                    <strong class="capture-system-title">🎯 Sistema de Captura — Duas Trilhas</strong>
+                                    <div class="mt-6">
+                                        <small>❤️ Trilha Física: reduz HP | 😤 Trilha Comportamental: reduz Agressividade</small>
+                                    </div>
                                     <div class="mt-10">
                                         <div><small>Score atual: <strong>${scoreNow}/100</strong> | Necessário: <strong>${neededNow}</strong></small></div>
                                         <div class="progress-bar h-12 mt-4">
@@ -6009,13 +6024,13 @@
 
                                     ${captureAction ? `
                                     <div class="mt-10">
-                                        <strong>🎭 Ação de Captura (${player.class}):</strong>
+                                        <strong>🎭 Ação Comportamental (${player.class}):</strong>
                                         <button class="btn btn-secondary mt-6 w-100"
                                                 onclick="useCaptureAction()"
-                                                ${playerMonster && playerMonster.hp > 0 && monster.hp > 0 ? '' : 'disabled class="opacity-50"'}
-                                                title="Agressividade ${captureAction.aggDelta} | Abertura +${captureAction.openDelta}">
+                                                ${playerMonster && playerMonster.hp > 0 && monster.hp > 0 && !encounter.behaviorallyResolved ? '' : 'disabled'}
+                                                title="Reduz Agressividade em ${Math.abs(captureAction.aggDelta)} pontos">
                                             ${captureAction.emoji} ${captureAction.name}
-                                            <small>(Calma${captureAction.aggDelta} | Abertura+${captureAction.openDelta})</small>
+                                            <small>(Agressividade ${captureAction.aggDelta})</small>
                                         </button>
                                     </div>
                                     ` : ''}
@@ -6190,9 +6205,8 @@
                     </span>
                     <br><small>
                         Score: <strong>${score}/100</strong> (precisa: ${needed})
-                        <br>HP: ${Math.round((1 - monster.hp/monster.hpMax)*60)}pts |
-                        Calma: ${Math.round((1-(monster.aggression??100)/100)*20)}pts |
-                        Abertura: ${Math.round((monster.openness??0)/100*20)}pts |
+                        <br>HP (Física): ${Math.round((1 - monster.hp/monster.hpMax)*50)}pts |
+                        Calma (Comportamental): ${Math.round((1-(monster.aggression??100)/100)*50)}pts |
                         Orb: +${orbInfo.capture_bonus_pp}pts
                         <br>${success ? '✅ Captura possível!' : '❌ Score insuficiente'}
                     </small>
@@ -6232,6 +6246,11 @@
                     alert('❌ Selvagem já está desmaiado — não pode usar ação de captura.'); return;
                 }
 
+                // Bloquear se já resolvido comportamentalmente
+                if (encounter.behaviorallyResolved) {
+                    alert('✅ Selvagem já está calmo! Use uma ClasterOrb para capturar.'); return;
+                }
+
                 // Obter ação da classe do jogador
                 const action = CAPTURE_ACTIONS[player.class];
                 if (!action) {
@@ -6241,46 +6260,59 @@
                 encounter.log = encounter.log || [];
 
                 // Aplicar ação ao selvagem
-                const aggBefore  = monster.aggression ?? 100;
-                const openBefore = monster.openness   ?? 0;
+                const aggBefore = monster.aggression ?? 100;
                 applyCaptureAction(monster, action);
 
                 encounter.log.push(
                     `${action.emoji} ${player.name} usou ${action.name}! ` +
-                    `(Calma: ${aggBefore}→${monster.aggression} | Abertura: ${openBefore}→${monster.openness})`
+                    `Agressividade: ${aggBefore} → ${monster.aggression}`
                 );
 
-                // Selvagem contra-ataca após a ação (mesmo comportamento do attackWild)
-                if (monster.hp > 0) {
-                    const enemyRoll = Math.floor(Math.random() * 20) + 1;
-                    const enemyHit  = enemyRoll === 1 ? false :
-                                      enemyRoll === 20 ? true :
-                                      checkHit(enemyRoll, monster, playerMonster);
-                    encounter.log.push(`🎲 ${monster.name} rola ${enemyRoll} (ATK: ${monster.atk})`);
+                // ── TRILHA COMPORTAMENTAL: resolução quando agressividade chega ao terminal ──
+                if (monster.aggression <= AGGR_TERMINAL) {
+                    monster.aggression = 0;
+                    encounter.behaviorallyResolved = true;
+                    encounter.log.push(
+                        `🌿 ${monster.name} está completamente calmo/rendido! ` +
+                        `(Trilha Comportamental) Pronto para captura!`
+                    );
+                    // Conceder XP pela resolução comportamental
+                    handleVictoryRewards(encounter);
+                    // Manter encounter ativo para que o jogador use uma ClasterOrb
+                    saveToLocalStorage();
+                    renderEncounter();
+                    return;
+                }
 
-                    const enemyIsCrit = (enemyRoll === 20);
-                    const enemyIsFail = (enemyRoll === 1);
-                    if (enemyIsCrit) Audio.playSfx?.('crit');
-                    else if (enemyIsFail || !enemyHit) Audio.playSfx?.('miss');
-                    else Audio.playSfx?.('hit');
+                // Selvagem contra-ataca SOMENTE se ainda não rendido
+                const enemyRoll = Math.floor(Math.random() * 20) + 1;
+                const enemyHit  = enemyRoll === 1 ? false :
+                                  enemyRoll === 20 ? true :
+                                  checkHit(enemyRoll, monster, playerMonster);
+                encounter.log.push(`🎲 ${monster.name} rola ${enemyRoll} (ATK: ${monster.atk})`);
 
-                    if (enemyHit) {
-                        const basicPower = MM_TABLES.getBasicAttackPower(monster.class);
-                        const powerUsed  = enemyIsCrit ? basicPower * 2 : basicPower;
-                        const damage     = calculateDamage(monster, playerMonster, () => powerUsed,
-                                               GameState.config?.classAdvantages);
-                        playerMonster.hp = Math.max(0, playerMonster.hp - damage);
-                        encounter.log.push(`💥 ${monster.name} contra-ataca! Causa ${damage} de dano!`);
+                const enemyIsCrit = (enemyRoll === 20);
+                const enemyIsFail = (enemyRoll === 1);
+                if (enemyIsCrit) Audio.playSfx?.('crit');
+                else if (enemyIsFail || !enemyHit) Audio.playSfx?.('miss');
+                else Audio.playSfx?.('hit');
 
-                        if (playerMonster.hp <= 0) {
-                            encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
-                            playerMonster.status = 'fainted';
-                            encounter.result = 'defeat';
-                            encounter.active = false;
-                        }
-                    } else {
-                        encounter.log.push(`❌ ${monster.name} erra o contra-ataque!`);
+                if (enemyHit) {
+                    const basicPower = MM_TABLES.getBasicAttackPower(monster.class);
+                    const powerUsed  = enemyIsCrit ? basicPower * 2 : basicPower;
+                    const damage     = calculateDamage(monster, playerMonster, () => powerUsed,
+                                           GameState.config?.classAdvantages);
+                    playerMonster.hp = Math.max(0, playerMonster.hp - damage);
+                    encounter.log.push(`💥 ${monster.name} contra-ataca! Causa ${damage} de dano!`);
+
+                    if (playerMonster.hp <= 0) {
+                        encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
+                        playerMonster.status = 'fainted';
+                        encounter.result = 'defeat';
+                        encounter.active = false;
                     }
+                } else {
+                    encounter.log.push(`❌ ${monster.name} erra o contra-ataque!`);
                 }
 
                 saveToLocalStorage();

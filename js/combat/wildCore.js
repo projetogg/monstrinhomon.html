@@ -231,49 +231,56 @@ export function checkCriticalRoll(d20Roll) {
 
 /**
  * Ações de captura por classe.
- * Cada classe tem uma ação única que afeta o estado do selvagem (aggression/openness).
  *
- * aggDelta  — redução de agressividade (negativo = acalma)
- * openDelta — aumento de abertura (positivo = mais receptivo à captura)
+ * Design de duas trilhas:
+ * - Trilha Física   (HP):         classes ofensivas são naturalmente mais eficientes
+ * - Trilha Comportamental (Agressividade): classes de suporte são naturalmente mais eficientes
+ *
+ * aggDelta  — redução de agressividade por ação (negativo = acalma o selvagem)
+ * openDelta — mantido por retrocompatibilidade, sem efeito no score atual
  */
 export const CAPTURE_ACTIONS = {
-    Curandeiro: { id: 'calm',       name: 'Acalmar',       emoji: '🌿', aggDelta: -35, openDelta:  5 },
-    Bardo:      { id: 'sing',       name: 'Melodia Suave', emoji: '🎵', aggDelta: -10, openDelta: 30 },
-    Ladino:     { id: 'distract',   name: 'Distrair',      emoji: '🌑', aggDelta: -20, openDelta: 15 },
-    Caçador:    { id: 'trap',       name: 'Imobilizar',    emoji: '🏹', aggDelta: -25, openDelta:  5 },
-    Mago:       { id: 'charm',      name: 'Enfeitiçar',    emoji: '🔮', aggDelta:  -5, openDelta: 30 },
-    Guerreiro:  { id: 'contain',    name: 'Conter',        emoji: '⚔️', aggDelta: -25, openDelta:  0 },
-    Bárbaro:    { id: 'intimidate', name: 'Intimidar',     emoji: '⚡', aggDelta: -20, openDelta:  0 },
-    Animalista: { id: 'bond',       name: 'Criar Vínculo', emoji: '🐾', aggDelta:  -5, openDelta: 40 },
+    // Suporte — trilha comportamental forte
+    Curandeiro: { id: 'calm',       name: 'Acalmar',       emoji: '🌿', aggDelta: -40, openDelta:  0 },
+    Bardo:      { id: 'sing',       name: 'Melodia Suave', emoji: '🎵', aggDelta: -35, openDelta:  0 },
+    Animalista: { id: 'bond',       name: 'Criar Vínculo', emoji: '🐾', aggDelta: -30, openDelta:  0 },
+    // Híbrido — redução moderada de agressividade
+    Ladino:     { id: 'distract',   name: 'Distrair',      emoji: '🌑', aggDelta: -25, openDelta:  0 },
+    Mago:       { id: 'charm',      name: 'Enfeitiçar',    emoji: '🔮', aggDelta: -20, openDelta:  0 },
+    // Ofensivo — conter fisicamente, reduz menos agressividade
+    Guerreiro:  { id: 'contain',    name: 'Conter',        emoji: '⚔️', aggDelta: -20, openDelta:  0 },
+    Caçador:    { id: 'trap',       name: 'Imobilizar',    emoji: '🏹', aggDelta: -20, openDelta:  0 },
+    Bárbaro:    { id: 'intimidate', name: 'Intimidar',     emoji: '⚡', aggDelta: -15, openDelta:  0 },
 };
 
 /**
- * Calcula o Capture Score para um selvagem.
+ * Calcula o Capture Score para um selvagem — sistema de duas trilhas.
  *
- * Fórmula:
- *   hpScore    = (1 - hp/hpMax) * 60   → 0 quando HP cheio, 60 quando HP 0
- *   aggrScore  = (1 - aggression/100) * 20 → 0 quando 100% agressivo, 20 quando calmo
- *   openScore  = (openness/100) * 20   → 0 quando fechado, 20 quando totalmente aberto
- *   baseScore  = hpScore + aggrScore + openScore   (0–100)
- *   finalScore = min(100, baseScore + orbBonusPp)
+ * Fórmula simplificada (HP + Agressividade, contribuição igual):
+ *   hpScore    = (1 - hp/hpMax) * 50   → 0 HP cheio, 50 HP = 0
+ *   aggrScore  = (1 - aggression/100) * 50 → 0 totalmente agressivo, 50 totalmente calmo
+ *   finalScore = min(100, hpScore + aggrScore + orbBonusPp)
  *
- * @param {object} monster      - Monstrinho selvagem (com hp, hpMax, aggression?, openness?)
+ * Isso permite que:
+ * - Classes ofensivas cheguem ao score reduzindo HP
+ * - Classes de suporte cheguem ao score reduzindo Agressividade
+ * - Ambas as estratégias têm igual peso máximo (50 pontos cada)
+ *
+ * @param {object} monster      - Monstrinho selvagem (com hp, hpMax, aggression?)
  * @param {number} orbBonusPp   - Bônus da orb em pontos percentuais (0, 10 ou 20)
  * @returns {number} Capture Score (0–100)
  */
 export function calculateCaptureScore(monster, orbBonusPp = 0) {
+    if (!monster) return 0;
     const hp         = Number(monster?.hp   ?? 0);
     const hpMax      = Number(monster?.hpMax ?? 1);
     const aggression = Math.min(100, Math.max(0, Number(monster?.aggression ?? 100)));
-    const openness   = Math.min(100, Math.max(0, Number(monster?.openness   ?? 0)));
 
-    const hpFactor   = Math.max(0, 1 - hp / hpMax);
-    const hpScore    = hpFactor * 60;
-    const aggrScore  = (1 - aggression / 100) * 20;
-    const openScore  = (openness / 100) * 20;
+    const hpFactor  = Math.max(0, 1 - hp / hpMax);
+    const hpScore   = hpFactor * 50;
+    const aggrScore = (1 - aggression / 100) * 50;
 
-    const base = hpScore + aggrScore + openScore;
-    return Math.min(100, Math.round(base + orbBonusPp));
+    return Math.min(100, Math.round(hpScore + aggrScore + orbBonusPp));
 }
 
 /**
@@ -291,15 +298,17 @@ export function getCaptureReadinessLabel(score) {
 }
 
 /**
- * Aplica uma ação de captura ao estado do selvagem (puro, sem side effects).
+ * Aplica uma ação de captura ao estado do selvagem.
+ * ATENÇÃO: muta `wildMonster` diretamente (não é função pura).
  *
  * @param {object} wildMonster - Estado mutável do selvagem
- * @param {object} action      - Entrada de CAPTURE_ACTIONS (aggDelta, openDelta)
+ * @param {object} action      - Entrada de CAPTURE_ACTIONS (aggDelta)
  */
 export function applyCaptureAction(wildMonster, action) {
     if (!wildMonster || !action) return;
-    const aggression = Number(wildMonster.aggression ?? 100);
-    const openness   = Number(wildMonster.openness   ?? 0);
-    wildMonster.aggression = Math.max(0, Math.min(100, aggression + action.aggDelta));
-    wildMonster.openness   = Math.max(0, Math.min(100, openness   + action.openDelta));
+    wildMonster.aggression = Math.max(0, Math.min(100, (wildMonster.aggression ?? 100) + action.aggDelta));
+    // openDelta mantido por retrocompatibilidade; openness não afeta o score atual
+    if (action.openDelta !== undefined && wildMonster.openness !== undefined) {
+        wildMonster.openness = Math.max(0, Math.min(100, (wildMonster.openness ?? 0) + action.openDelta));
+    }
 }
