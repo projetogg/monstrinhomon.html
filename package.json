@@ -8,10 +8,18 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
   },
-  "keywords": ["game", "therapy", "monsters"],
+  "keywords": [
+    "game",
+    "therapy",
+    "monsters"
+  ],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "playwright-chromium": "^1.58.2",
     "vitest": "^1.2.0"
+  },
+  "dependencies": {
+    "playwright": "^1.58.2"
   }
 }
