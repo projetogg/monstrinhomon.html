@@ -1528,6 +1528,8 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
     white-space: nowrap;
     min-height: 40px;
+    /* Override min-width herdado de .tab-button — pills da navbar crescem naturalmente */
+    min-width: unset;
 }
 
 .nav-btn:hover,
@@ -1618,6 +1620,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
     margin-bottom: 14px;
+    align-items: start; /* Impede que cards menores se estiquem para igualar o mais alto */
 }
 
 .dashboard-card {
@@ -1713,7 +1716,8 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 
 .home-stat-item {
     flex: 1;
-    min-width: 60px;
+    /* min-width pequeno garante 3 itens numa linha mesmo em colunas estreitas (~147px) */
+    min-width: 40px;
     text-align: center;
     background: white;
     border-radius: 10px;
@@ -1774,7 +1778,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 
 /* Limite de altura no card de Quests para evitar crescimento infinito */
 #questTrackerContent {
-    max-height: 150px;
+    max-height: 175px;
     overflow-y: auto;
     scrollbar-width: thin;
 }
@@ -1792,6 +1796,26 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     border-radius: 4px;
 }
 
+/* Impede quebra de linha no texto de progresso das quests */
+.quest-tracker-entry .text-small {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Impede que o título da quest quebre linha em colunas estreitas */
+.quest-header {
+    overflow: hidden;
+}
+
+.quest-header strong {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+}
+
 /* Contador "+N quests" quando há mais do que 2 */
 .quest-more-hint {
     font-size: 0.78em;
@@ -1799,6 +1823,10 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     font-weight: 600;
     padding-top: 5px;
     text-align: right;
+    /* Impede que o hint quebre linha */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Botões de Ação Rápida — faixa compacta */
@@ -2132,7 +2160,9 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 
     /* Dashboard: 4 colunas em tablets (iPad horizontal) */
     .dashboard-grid {
-        grid-template-columns: repeat(4, 1fr);
+        /* minmax(0, 1fr) em vez de 1fr para forçar colunas iguais
+           independente do tamanho intrínseco do conteúdo */
+        grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 
     /* Linha 1: 4 cards de resumo (span 1 cada) — já é o padrão
