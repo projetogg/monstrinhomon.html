@@ -63,9 +63,11 @@
             <!-- Grid principal do dashboard -->
             <div class="dashboard-grid">
 
-                <!-- Card: Estatísticas Rápidas -->
+                <!-- Linha 1: 4 cards de resumo (1 col cada em tablet+) -->
+
+                <!-- Card: Estatísticas da Sessão -->
                 <div class="card dashboard-card">
-                    <h3 class="card-title">📊 Estatísticas</h3>
+                    <h3 class="card-title">📊 Sessão</h3>
                     <div id="homeStats" class="home-stats-row">
                         <div class="home-stat-item">
                             <span class="home-stat-value" id="statPlayers">0</span>
@@ -77,35 +79,61 @@
                         </div>
                         <div class="home-stat-item">
                             <span class="home-stat-value" id="statSession">—</span>
-                            <span class="home-stat-label">Sessão</span>
+                            <span class="home-stat-label">Ativa</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- FASE UX: Missões Ativas (span 2 em tablet+) -->
-                <div class="card dashboard-card dashboard-card--quest">
-                    <h3 class="card-title">📋 Missões Ativas</h3>
+                <!-- Card: Missões Ativas (máx 2 entradas + contador) -->
+                <div class="card dashboard-card">
+                    <h3 class="card-title">📋 Missões</h3>
                     <div id="questTrackerContent">
                         <p class="text-muted">Nenhuma quest ativa.</p>
                     </div>
                 </div>
 
-                <!-- FASE 1 POKEMON: Monstródex -->
+                <!-- Card: Monstrodex -->
                 <div class="card dashboard-card">
                     <h3 class="card-title">📖 Monstrodex</h3>
                     <div id="monstrodexStats"></div>
                 </div>
 
-                <!-- FASE 1 POKEMON: Livro de Conquistas -->
+                <!-- Card: Conquistas (mini-grid 3×2) -->
                 <div class="card dashboard-card">
                     <h3 class="card-title">🏆 Conquistas</h3>
                     <div id="achievementsStats"></div>
                 </div>
 
-                <!-- Card: Painel Mestre -->
+                <!-- Linha 2: Painel Mestre (span 2) + Ações Rápidas (span 2) -->
+
+                <!-- Card: Painel Mestre — layout horizontal compacto -->
                 <div class="card dashboard-card dashboard-card--mestre">
-                    <h3 class="card-title">🧑‍🏫 Painel Mestre</h3>
-                    <button class="btn btn-mestre" onclick="mmOpenMestre()">Entrar no Painel Mestre</button>
+                    <div class="mestre-card-inner">
+                        <div class="mestre-card-info">
+                            <h3 class="card-title">🧑‍🏫 Painel Mestre</h3>
+                            <p class="mestre-card-desc">Sessão, quests e terapia</p>
+                        </div>
+                        <button class="btn btn-mestre" onclick="mmOpenMestre()">Abrir</button>
+                    </div>
+                </div>
+
+                <!-- Card: Ações Rápidas — faixa compacta de atalhos -->
+                <div class="card dashboard-card dashboard-card--actions">
+                    <h3 class="card-title">⚡ Ir para</h3>
+                    <div class="quick-actions">
+                        <button class="quick-action-btn quick-action--grupo" onclick="switchTab('players')">
+                            <span class="qa-icon">👥</span>
+                            <span class="qa-label">Grupo</span>
+                        </button>
+                        <button class="quick-action-btn quick-action--batalha" onclick="switchTab('encounter')">
+                            <span class="qa-icon">⚔️</span>
+                            <span class="qa-label">Batalha</span>
+                        </button>
+                        <button class="quick-action-btn quick-action--dex" onclick="switchTab('partyDex')">
+                            <span class="qa-icon">📘</span>
+                            <span class="qa-label">Dex</span>
+                        </button>
+                    </div>
                 </div>
 
             </div>
@@ -8350,6 +8378,7 @@
         /**
          * FASE UX: Renderiza painel de quests ativas na Home.
          * Usa GameFlow.getActiveQuestsSummary() para leitura pura sem mutação.
+         * Exibe no máximo 2 entradas; mostra contador se houver mais.
          */
         function renderQuestTrackerPanel() {
             const container = document.getElementById('questTrackerContent');
@@ -8378,19 +8407,28 @@
                                 <strong>${quest.nome}</strong>
                                 <span class="text-small text-muted">(${playerName})</span>
                             </div>
-                            <div class="text-small">${quest.descricao || ''}</div>
                             <div class="quest-progress-bar">
                                 <div class="quest-progress-fill" style="width:${pct}%"></div>
                             </div>
-                            <div class="text-small">Progresso: ${progress}/${needed} &nbsp;|&nbsp; 💰 ${quest.rewardGold} &nbsp;⭐ ${quest.rewardXp} XP</div>
+                            <div class="text-small">Progresso: ${progress}/${needed} · 💰${quest.rewardGold} · ⭐${quest.rewardXp}XP</div>
                         </div>
                     `);
                 }
             }
 
-            container.innerHTML = entries.length > 0
-                ? entries.join('')
-                : '<p class="text-muted">Nenhuma quest ativa no momento.</p>';
+            if (entries.length === 0) {
+                container.innerHTML = '<p class="text-muted">Nenhuma quest ativa no momento.</p>';
+                return;
+            }
+
+            const MAX_VISIBLE = 2;
+            const visible = entries.slice(0, MAX_VISIBLE);
+            const extra = entries.length - MAX_VISIBLE;
+            let html = visible.join('');
+            if (extra > 0) {
+                html += `<div class="quest-more-hint">+${extra} quest${extra > 1 ? 's' : ''} — veja o Grupo</div>`;
+            }
+            container.innerHTML = html;
         }
 
         /**
@@ -8435,7 +8473,7 @@
         window.renderEncounterQuestHint = renderEncounterQuestHint;
 
         /**
-         * FASE 1 POKEMON: Renderiza seção de Conquistas
+         * FASE 1 POKEMON: Renderiza seção de Conquistas em mini-grid 3×2
          */
         function renderAchievements() {
             try {
@@ -8456,27 +8494,36 @@
                 const totalBattles = stats.battlesWon + stats.battlesLost;
                 const winRate = totalBattles > 0 ? Math.floor((stats.battlesWon / totalBattles) * 100) : 0;
                 const captureRate = stats.captureAttempts > 0 ? Math.floor((stats.capturesSuccessful / stats.captureAttempts) * 100) : 0;
+                const xpK = stats.totalXpGained >= 1000
+                    ? (Math.floor(stats.totalXpGained / 100) / 10).toString().replace(/\.0$/, '') + 'k'
+                    : stats.totalXpGained;
                 
-                let html = `<div class="home-stats-row">
-                    <div class="home-stat-item">
-                        <span class="home-stat-value">${stats.battlesWon}</span>
-                        <span class="home-stat-label">Vitórias</span>
+                container.innerHTML = `<div class="stats-mini-grid">
+                    <div class="stat-mini">
+                        <span class="stat-mini-value">${stats.battlesWon}</span>
+                        <span class="stat-mini-label">Vitórias</span>
                     </div>
-                    <div class="home-stat-item">
-                        <span class="home-stat-value">${winRate}%</span>
-                        <span class="home-stat-label">Taxa Vitória</span>
+                    <div class="stat-mini">
+                        <span class="stat-mini-value">${stats.battlesLost}</span>
+                        <span class="stat-mini-label">Derrotas</span>
                     </div>
-                    <div class="home-stat-item">
-                        <span class="home-stat-value">${stats.currentWinStreak}</span>
-                        <span class="home-stat-label">Sequência</span>
+                    <div class="stat-mini">
+                        <span class="stat-mini-value">${winRate}%</span>
+                        <span class="stat-mini-label">Taxa Vit.</span>
                     </div>
-                    <div class="home-stat-item">
-                        <span class="home-stat-value">${captureRate}%</span>
-                        <span class="home-stat-label">Taxa Captura</span>
+                    <div class="stat-mini">
+                        <span class="stat-mini-value">${captureRate}%</span>
+                        <span class="stat-mini-label">Captura</span>
+                    </div>
+                    <div class="stat-mini">
+                        <span class="stat-mini-value">${xpK}</span>
+                        <span class="stat-mini-label">XP Total</span>
+                    </div>
+                    <div class="stat-mini">
+                        <span class="stat-mini-value">${stats.totalMoneyEarned || 0}</span>
+                        <span class="stat-mini-label">Moedas</span>
                     </div>
                 </div>`;
-                
-                container.innerHTML = html;
             } catch (error) {
                 console.error('Error rendering achievements:', error);
             }
