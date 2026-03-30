@@ -238,7 +238,7 @@ describe('applyCaptureAction — aplicar ação ao selvagem', () => {
 
     it('agressividade não ultrapassa 100 (ações com delta positivo hipotético)', () => {
         const mon = makeMon({ aggression: 95 });
-        applyCaptureAction(mon, { aggDelta: 20, openDelta: 0 });
+        applyCaptureAction(mon, { aggDelta: 20 });
         expect(mon.aggression).toBe(100);
     });
 
@@ -389,5 +389,78 @@ describe('Regressão de runtime — funções não devem ser undefined', () => {
         for (const cls of expected) {
             expect(CAPTURE_ACTIONS[cls]).toBeDefined();
         }
+    });
+});
+
+// ── Contrato de getCaptureReadinessLabel ─────────────────────────────────
+
+describe('Contrato de getCaptureReadinessLabel — sempre retorna objeto { text, emoji, css }', () => {
+
+    const testScores = [0, 10, 24, 25, 44, 45, 64, 65, 79, 80, 100];
+
+    it.each(testScores)('score %i → retorna objeto (não string)', (score) => {
+        const label = getCaptureReadinessLabel(score);
+        expect(typeof label).toBe('object');
+        expect(label).not.toBeNull();
+    });
+
+    it.each(testScores)('score %i → tem propriedade text (string não vazia)', (score) => {
+        const label = getCaptureReadinessLabel(score);
+        expect(typeof label.text).toBe('string');
+        expect(label.text.length).toBeGreaterThan(0);
+    });
+
+    it.each(testScores)('score %i → tem propriedade emoji (string não vazia)', (score) => {
+        const label = getCaptureReadinessLabel(score);
+        expect(typeof label.emoji).toBe('string');
+        expect(label.emoji.length).toBeGreaterThan(0);
+    });
+
+    it.each(testScores)('score %i → tem propriedade css (string não vazia)', (score) => {
+        const label = getCaptureReadinessLabel(score);
+        expect(typeof label.css).toBe('string');
+        expect(label.css.length).toBeGreaterThan(0);
+    });
+});
+
+// ── openness removido — ausência não quebra o sistema ─────────────────────
+
+describe('openness removido — ausência não quebra o sistema', () => {
+
+    it('calculateCaptureScore funciona sem campo openness no monster', () => {
+        const mon = { hp: 50, hpMax: 100, aggression: 50 }; // sem openness
+        expect(() => calculateCaptureScore(mon)).not.toThrow();
+        expect(calculateCaptureScore(mon)).toBe(50); // 25 + 25
+    });
+
+    it('applyCaptureAction não cria campo openness em monster sem ele', () => {
+        const mon = { hp: 100, hpMax: 100, aggression: 80 }; // sem openness
+        applyCaptureAction(mon, CAPTURE_ACTIONS.Curandeiro);
+        expect('openness' in mon).toBe(false);
+    });
+
+    it('CAPTURE_ACTIONS não tem propriedade openDelta', () => {
+        for (const [cls, action] of Object.entries(CAPTURE_ACTIONS)) {
+            expect('openDelta' in action).toBe(false);
+        }
+    });
+
+    it('fórmula HP usa coeficiente 50 (não 60)', () => {
+        // Verificação explícita do coeficiente 50 da trilha física
+        const mon = makeMon({ hp: 0, aggression: 100 }); // HP = 0, aggr máx
+        // hpScore = (1 - 0/100) * 50 = 50; aggrScore = 0 → total = 50
+        expect(calculateCaptureScore(mon)).toBe(50);
+    });
+
+    it('fórmula Agressividade usa coeficiente 50 (não 20)', () => {
+        // Verificação explícita do coeficiente 50 da trilha comportamental
+        const mon = makeMon({ hp: 100, aggression: 0 }); // HP cheio, aggr = 0
+        // hpScore = 0; aggrScore = (1 - 0/100) * 50 = 50 → total = 50
+        expect(calculateCaptureScore(mon)).toBe(50);
+    });
+
+    it('fórmula 50/50: ambas trilhas combinadas chegam a 100', () => {
+        const mon = makeMon({ hp: 0, aggression: 0 }); // ambas trilhas no max
+        expect(calculateCaptureScore(mon)).toBe(100);
     });
 });

@@ -2179,7 +2179,7 @@
                     'Místico': 18, 'Lendário': 25
                 },
                 // Threshold do captureScore (0-100) necessário para captura por raridade
-                // Reflete a dificuldade do sistema dual-track (HP 50pts + Agressividade 50pts)
+                // Reflete a dificuldade de captura multi-eixo (HP + Agressividade)
                 captureScoreThreshold: {
                     'Comum': 35, 'Incomum': 45, 'Raro': 58,
                     'Místico': 72, 'Lendário': 85
@@ -3769,7 +3769,6 @@
                     
                     // Inicializar estado de captura multi-eixo
                     encounter.wildMonster.aggression = 100; // começa totalmente agressivo
-                    encounter.wildMonster.openness   = 0;   // começa totalmente fechado
                     
                     // FASE 1 POKEMON: Marcar como visto no Monstródex
                     updateMonstrodex('see', randomMonster.id);
@@ -5939,11 +5938,9 @@
                     return;
                 }
                 
-                // Calcular threshold de captura
+                // Percentagem de HP para exibição (trilha física)
                 const hpPercent = monster.hp / monster.hpMax;
-                const baseThreshold = GameState.config?.captureThreshold?.[monster.rarity] || 0.35;
-                const canCapture = hpPercent <= baseThreshold;
-
+                
                 // Dados do lado do jogador
                 const pmHpPct   = playerMonster ? Math.max(0, Math.min(100, (playerMonster.hp / playerMonster.hpMax) * 100)) : 0;
                 const pmEnePct  = playerMonster && playerMonster.eneMax ? Math.max(0, Math.min(100, ((playerMonster.ene || 0) / playerMonster.eneMax) * 100)) : 0;
@@ -6207,7 +6204,7 @@
         /**
          * Executa uma ação de captura específica da classe do jogador.
          *
-         * A ação afeta a agressividade do selvagem sem causar dano,
+         * A ação afeta o estado do selvagem (aggression) sem causar dano,
          * permitindo que classes de suporte contribuam para a captura.
          * Após a ação, o selvagem contra-ataca (como após um ataque normal).
          */
@@ -6271,13 +6268,10 @@
 
                 // Selvagem contra-ataca SOMENTE se ainda não rendido
                 const enemyRoll = Math.floor(Math.random() * 20) + 1;
-                const enemyHit  = enemyRoll === 1 ? false :
-                                  enemyRoll === 20 ? true :
-                                  checkHit(enemyRoll, monster, playerMonster);
+                const { hit: enemyHit, isCrit: enemyIsCrit, isFail: enemyIsFail } =
+                    _resolveEnemyD20Hit(enemyRoll, monster, playerMonster);
                 encounter.log.push(`🎲 ${monster.name} rola ${enemyRoll} (ATK: ${monster.atk})`);
 
-                const enemyIsCrit = (enemyRoll === 20);
-                const enemyIsFail = (enemyRoll === 1);
                 if (enemyIsCrit) Audio.playSfx?.('crit');
                 else if (enemyIsFail || !enemyHit) Audio.playSfx?.('miss');
                 else Audio.playSfx?.('hit');
@@ -6285,8 +6279,17 @@
                 if (enemyHit) {
                     const basicPower = MM_TABLES.getBasicAttackPower(monster.class);
                     const powerUsed  = enemyIsCrit ? basicPower * 2 : basicPower;
-                    const damage     = calculateDamage(monster, playerMonster, () => powerUsed,
-                                           GameState.config?.classAdvantages);
+                    // BUG FIX: usar calcDamage diretamente com poder customizado
+                    // (calculateDamage() não aceita poder como parâmetro — args extras são ignorados)
+                    const atkMods = getBuffModifiers(monster);
+                    const effAtk  = Math.max(1, monster.atk + atkMods.atk);
+                    const defMods = getBuffModifiers(playerMonster);
+                    const effDef  = Math.max(1, playerMonster.def + defMods.def);
+                    const classAdv = GameState.config?.classAdvantages?.[monster.class];
+                    let damageMult = 1.0;
+                    if (classAdv?.strong === playerMonster.class) damageMult = 1.10;
+                    else if (classAdv?.weak === playerMonster.class) damageMult = 0.90;
+                    const damage = calcDamage({ atk: effAtk, def: effDef, power: powerUsed, damageMult });
                     playerMonster.hp = Math.max(0, playerMonster.hp - damage);
                     encounter.log.push(`💥 ${monster.name} contra-ataca! Causa ${damage} de dano!`);
 
@@ -6357,15 +6360,15 @@
                 player.inventory[selectedOrbId]--;
                 encounter.log.push(`${orbInfo.emoji} ${player.name} usou ${orbInfo.name}! (Restam: ${player.inventory[selectedOrbId]})`);
                 
-                // Calcular captureScore dual-track (HP + Agressividade + Orb)
+                // Calcular captureScore multi-eixo (HP + Agressividade + Orb)
                 const score  = calculateCaptureScore(monster, orbInfo.capture_bonus_pp);
                 const needed = GameState.config?.captureScoreThreshold?.[monster.rarity] ?? 45;
                 const readiness = getCaptureReadinessLabel(score);
                 
                 encounter.log.push(
                     `🎯 ${readiness.emoji} ${readiness.text} — Score: ${score}/100 (precisava: ${needed}) ` +
-                    `[HP:${Math.round((1-monster.hp/monster.hpMax)*50)}pts | ` +
-                    `Calma:${Math.round((1-(monster.aggression??100)/100)*50)}pts | ` +
+                    `[Trilha Física:${Math.round((1-monster.hp/monster.hpMax)*50)}pts | ` +
+                    `Trilha Comportamental:${Math.round((1-(monster.aggression??100)/100)*50)}pts | ` +
                     `Orb:+${orbInfo.capture_bonus_pp}pts]`
                 );
                 
@@ -6438,12 +6441,11 @@
                         
                         // Monstrinho selvagem ataca imediatamente
                         const enemyRoll = Math.floor(Math.random() * 20) + 1;
-                        const enemyHit = enemyRoll === 1 ? false : (enemyRoll === 20 ? true : checkHit(enemyRoll, monster, playerMonster));
+                        const { hit: enemyHit, isCrit: enemyIsCrit, isFail: enemyIsFail } =
+                            _resolveEnemyD20Hit(enemyRoll, monster, playerMonster);
                         encounter.log.push(`🎲 ${monster.name} rola ${enemyRoll} (ATK: ${monster.atk})`);
                         
                         // Feature 4.4: Enemy counter-attack sound (wild - after failed capture)
-                        const enemyIsCrit = (enemyRoll === 20);
-                        const enemyIsFail = (enemyRoll === 1);
                         if (enemyIsCrit) {
                             Audio.playSfx("crit");
                         } else if (enemyIsFail || !enemyHit) {
@@ -6453,7 +6455,19 @@
                         }
                         
                         if (enemyHit) {
-                            const damage = calculateDamage(monster, playerMonster);
+                            // BUG FIX: usar calcDamage com power dobrado para crits
+                            // (calculateDamage() não aceita power customizado)
+                            const basicPower = MM_TABLES.getBasicAttackPower(monster.class);
+                            const powerUsed  = enemyIsCrit ? basicPower * 2 : basicPower;
+                            const atkMods = getBuffModifiers(monster);
+                            const effAtk  = Math.max(1, monster.atk + atkMods.atk);
+                            const defMods = getBuffModifiers(playerMonster);
+                            const effDef  = Math.max(1, playerMonster.def + defMods.def);
+                            const classAdv = GameState.config?.classAdvantages?.[monster.class];
+                            let damageMult = 1.0;
+                            if (classAdv?.strong === playerMonster.class) damageMult = 1.10;
+                            else if (classAdv?.weak === playerMonster.class) damageMult = 0.90;
+                            const damage = calcDamage({ atk: effAtk, def: effDef, power: powerUsed, damageMult });
                             playerMonster.hp = Math.max(0, playerMonster.hp - damage);
                             encounter.log.push(`💥 ${monster.name} acerta! Causa ${damage} de dano!`);
                             
@@ -6585,13 +6599,11 @@
                     } else {
                         // Ataque básico
                         const enemyRoll = Math.floor(Math.random() * 20) + 1;
-                        encounter.log.push(`🎲 ${wildMonster.name} rolls ${enemyRoll} (ATK: ${wildMonster.atk})`);
-                        
-                        const enemyHit = enemyRoll === 1 ? false : (enemyRoll === 20 ? true : checkHit(enemyRoll, wildMonster, playerMonster));
+                        const { hit: enemyHit, isCrit: enemyIsCrit, isFail: enemyIsFail } =
+                            _resolveEnemyD20Hit(enemyRoll, wildMonster, playerMonster);
+                        encounter.log.push(`🎲 ${wildMonster.name} rola ${enemyRoll} (ATK: ${wildMonster.atk})`);
                         
                         // Feature 4.4: Enemy counter-attack sound (wild - after item)
-                        const enemyIsCrit = (enemyRoll === 20);
-                        const enemyIsFail = (enemyRoll === 1);
                         if (enemyIsCrit) {
                             Audio.playSfx("crit");
                         } else if (enemyIsFail || !enemyHit) {
@@ -6601,8 +6613,8 @@
                         }
                         
                         if (enemyHit) {
-                            // Commit 12 (Wave C12.3.2): Use MM_TABLES for basic attack power
-                            const power = MM_TABLES.getBasicAttackPower(wildMonster.class);
+                            const basicPower = MM_TABLES.getBasicAttackPower(wildMonster.class);
+                            const powerUsed  = enemyIsCrit ? basicPower * 2 : basicPower;
                             
                             const atkMods = getBuffModifiers(wildMonster);
                             const effectiveAtk = Math.max(1, wildMonster.atk + atkMods.atk);
@@ -6621,7 +6633,7 @@
                             const damage = calcDamage({
                                 atk: effectiveAtk,
                                 def: effectiveDef,
-                                power: power,
+                                power: powerUsed,
                                 damageMult: damageMult
                             });
                             
@@ -6651,10 +6663,10 @@
                                 return;
                             }
                         } else {
-                            if (enemyRoll === 1) {
+                            if (enemyIsFail) {
                                 encounter.log.push(`💀 FALHA CRÍTICA! ${wildMonster.name} erra!`);
                             } else {
-                                encounter.log.push(`❌ ${wildMonster.name} misses!`);
+                                encounter.log.push(`❌ ${wildMonster.name} erra!`);
                             }
                         }
                     }
@@ -6850,13 +6862,29 @@
                 } else {
                     // Ataque básico do selvagem
                     const enemyRoll = Math.floor(Math.random() * 20) + 1;
-                    const enemyHit = checkHit(enemyRoll, wildMonster, playerMonster);
+                    const { hit: enemyHit, isCrit: enemyIsCrit, isFail: enemyIsFail } =
+                        _resolveEnemyD20Hit(enemyRoll, wildMonster, playerMonster);
                     encounter.log.push(`🎲 ${wildMonster.name} rola ${enemyRoll} (ATK: ${wildMonster.atk})`);
-                    
+
+                    if (enemyIsCrit) Audio.playSfx?.('crit');
+                    else if (enemyIsFail || !enemyHit) Audio.playSfx?.('miss');
+                    else Audio.playSfx?.('hit');
+
                     if (enemyHit) {
-                        const mods = getBuffModifiers(wildMonster);
-                        const effectiveAtk = wildMonster.atk + mods.atk;
-                        const damage = calculateDamage(wildMonster, playerMonster);
+                        const basicPower = MM_TABLES.getBasicAttackPower(wildMonster.class);
+                        const powerUsed  = enemyIsCrit ? basicPower * 2 : basicPower;
+
+                        const atkMods = getBuffModifiers(wildMonster);
+                        const effectiveAtk = Math.max(1, wildMonster.atk + atkMods.atk);
+                        const defMods = getBuffModifiers(playerMonster);
+                        const effectiveDef = Math.max(1, playerMonster.def + defMods.def);
+
+                        const classAdv = GameState.config?.classAdvantages?.[wildMonster.class];
+                        let damageMult = 1.0;
+                        if (classAdv?.strong === playerMonster.class) damageMult = 1.10;
+                        else if (classAdv?.weak === playerMonster.class) damageMult = 0.90;
+
+                        const damage = calcDamage({ atk: effectiveAtk, def: effectiveDef, power: powerUsed, damageMult });
                         playerMonster.hp = Math.max(0, playerMonster.hp - damage);
                         encounter.log.push(`💥 ${wildMonster.name} acerta! Causa ${damage} de dano!`);
                         
@@ -6868,7 +6896,11 @@
                             // BUG FIX: Manter encounter para exibir resultado
                         }
                     } else {
-                        encounter.log.push(`❌ ${wildMonster.name} erra!`);
+                        if (enemyIsFail) {
+                            encounter.log.push(`💀 FALHA CRÍTICA! ${wildMonster.name} erra!`);
+                        } else {
+                            encounter.log.push(`❌ ${wildMonster.name} erra!`);
+                        }
                     }
                 }
                 
@@ -6965,13 +6997,32 @@
         }
 
         /**
-         * Wrapper de compatibilidade - calcula dano com ataque básico
-         * Aplica automaticamente buffs e vantagens de classe
-         * 
+         * Resolve o resultado de um d20 de contra-ataque inimigo.
+         * Centraliza as regras especiais: d20=1 → sempre erra, d20=20 → sempre acerta.
+         *
+         * @param {number} roll     - Resultado do d20 (1-20)
+         * @param {object} attacker - Monstrinho atacante
+         * @param {object} defender - Monstrinho defensor
+         * @returns {{ hit: boolean, isCrit: boolean, isFail: boolean }}
+         */
+        function _resolveEnemyD20Hit(roll, attacker, defender) {
+            const isCrit = (roll === 20);
+            const isFail = (roll === 1);
+            const hit = isFail ? false : (isCrit ? true : checkHit(roll, attacker, defender));
+            return { hit, isCrit, isFail };
+        }
+
+        /**
+         * Wrapper de compatibilidade - calcula dano com ataque básico.
+         * Aplica automaticamente buffs e vantagens de classe.
+         *
+         * Use esta função para ataques básicos padrão (sem controle de power).
+         * Para crits (power dobrado) ou qualquer power customizado, use calcDamage() diretamente.
+         *
          * @param {object} attacker - Monstrinho atacante
          * @param {object} defender - Monstrinho defensor
          * @returns {number} Dano final
-         * 
+         *
          * FLUXO:
          * 1. Obtém stats base (atk, def)
          * 2. Aplica modificadores de buffs
