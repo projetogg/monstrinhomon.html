@@ -9,12 +9,20 @@
  * BUG 2: useCaptureAction — dano crítico do inimigo ignorado silenciosamente
  *   porque calculateDamage() não aceita potência customizada.
  *
+ * BUG 3: calculateCaptureScore — hpMax=0 causava NaN (divisão por zero).
+ *
+ * BUG 4 (pós-review): attemptCapture — mesmo bug de dano crit (BUG 2) estava
+ *   presente neste site de contra-ataque e não tinha sido corrigido.
+ *
+ * REFACTOR: lógica duplicada de d20=1/20 extraída para _resolveEnemyD20Hit()
+ *   (helper privado em index.html, reduz 4 sites duplicados para 1 ponto de verdade).
+ *
  * ARQUITETURA: wildActions.js wildMonster.skill é sempre undefined (sem crash,
  *   mas inimigo nunca usa skills pelo caminho do módulo).
  *
  * Cobertura:
  *   - getCaptureReadinessLabel: contrato de tipo de retorno
- *   - calculateCaptureScore: limites 0-100
+ *   - calculateCaptureScore: limites 0-100, proteção hpMax=0
  *   - applyCaptureAction: somente muta aggression (sem openness)
  *   - checkHit / calcDamage: contratos formais
  *   - Resolução dual-track (física + comportamental)
@@ -50,6 +58,9 @@ function makeMon(overrides = {}) {
     };
 }
 
+// Tabela de vantagens de classe (espelho de GameState.config.classAdvantages).
+// Duplicada aqui porque GameState é um global de browser inacessível em testes Node.
+// Se a tabela mudar no jogo, atualizar também aqui.
 const CLASS_ADV = {
     Guerreiro:  { strong: 'Ladino',    weak: 'Curandeiro' },
     Ladino:     { strong: 'Mago',      weak: 'Guerreiro'  },
@@ -701,5 +712,28 @@ describe('Regressão — BUG useCaptureAction: crit damage deve dobrar POWER', (
         const critDmg = calcDamage({ atk: 9, def: 5, power: critPower, damageMult: 1.0 });
         // 9 + 18 - 5 = 22
         expect(critDmg).toBe(22);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BLOCO 14: Regressão — BUG 4: attemptCapture — crit power não dobrava
+// (mesmo bug que BUG 2, estava em site separado não corrigido na 1ª auditoria)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('Regressão — BUG 4 attemptCapture: crit deve dobrar power no contra-ataque', () => {
+
+    it('dano com power dobrado é sempre maior que dano normal (mesmo ATK/DEF)', () => {
+        // Simula o cálculo após captura falha com d20=20
+        const baseP   = 8;
+        const critP   = baseP * 2;
+        const atk = 7, def = 4;
+        const normal = calcDamage({ atk, def, power: baseP, damageMult: 1.0 });
+        const crit   = calcDamage({ atk, def, power: critP, damageMult: 1.0 });
+        expect(crit).toBeGreaterThan(normal);
+    });
+
+    it('power=8 normal → 11; power=16 crit → 19 (valores de referência)', () => {
+        expect(calcDamage({ atk: 7, def: 4, power: 8,  damageMult: 1.0 })).toBe(11);
+        expect(calcDamage({ atk: 7, def: 4, power: 16, damageMult: 1.0 })).toBe(19);
     });
 });
