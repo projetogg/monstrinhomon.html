@@ -275,7 +275,7 @@ export const CAPTURE_ACTIONS = {
 export function calculateCaptureScore(monster, orbBonusPp = 0) {
     if (!monster) return 0;
     const hp         = Number(monster?.hp   ?? 0);
-    const hpMax      = Number(monster?.hpMax ?? 1);
+    const hpMax      = Math.max(1, Number(monster?.hpMax ?? 1)); // clamp mínimo 1 (evita NaN por divisão por zero)
     const aggression = Math.min(100, Math.max(0, Number(monster?.aggression ?? 100)));
 
     const hpFactor  = Math.max(0, 1 - hp / hpMax);
