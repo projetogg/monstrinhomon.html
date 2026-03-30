@@ -1,241 +1,195 @@
 /**
  * GROUP COMBAT UI - Renderização e Feedback Visual
- * 
- * PR5C: Implementação real extraída de index.html
- * CAMADA 3: Painel de Ações Contextual + Seleção de Alvo
- * 
- * Funções que manipulam DOM, animações e áudio
- * Recebem dependências por parâmetro (dependency injection)
+ *
+ * Layout unificado com o combate selvagem (.battle-arena dark theme).
+ * Estrutura de zonas:
+ *   [top-bar]  → título + rodada + turno atual
+ *   [combatants]  → jogadores (esq) | inimigos (dir)
+ *   [actions-row]  → botões quando turno do jogador / espera quando inimigo
+ *   [log-compact]  → últimas ações
  */
 
 import * as GroupCore from './groupCore.js';
 import * as TargetSelection from '../ui/targetSelection.js';
-import { renderFriendlyBattleLog, scrollFriendlyLogToBottom } from '../ui/friendlyBattleLog.js';
 
 /** IDs dos itens de cura consumíveis suportados em batalha. Manter alinhado com data/items.json. */
 const HEAL_ITEM_IDS = ['IT_HEAL_01', 'IT_HEAL_02', 'IT_HEAL_03'];
 
 /**
- * PR5C: Renderiza UI completa do encounter de grupo
- * 
- * Extraído de: index.html renderGroupEncounter() (linhas 5088-5275)
- * 
+ * Renderiza UI completa do encounter de grupo / boss no layout .battle-arena.
+ *
  * @param {HTMLElement} panel - Elemento DOM onde renderizar
  * @param {object} encounter - Dados do encounter
  * @param {object} deps - Dependências injetadas
  */
 export function renderGroupEncounterPanel(panel, encounter, deps) {
     const { state, core, helpers } = deps;
-    
+
     if (!encounter) return;
-    
+
     const actor = core.getCurrentActor(encounter);
     const isPlayerTurn = actor && actor.side === 'player';
-    
-    let html = '<div class="encounter-panel">';
-    html += helpers.renderTutorialBanner(encounter);
-    html += '<h3>⚔️ Batalha em Grupo</h3>';
-    
-    // CAMADA 2: Banner de Turno FIXO E DESTACADO
-    // Banner sempre visível, nunca desaparece
-    if (actor && !encounter.finished) {
-        const isPlayerPhase = actor.side === 'player';
-        const bannerColor = isPlayerPhase ? '#4CAF50' : '#f44336';
-        // Quando for turno de um jogador específico, mostrar o nome
-        let bannerText;
-        if (isPlayerPhase) {
-            const currentPlayer = state.players.find(x => x.id === actor.id);
-            const playerName = currentPlayer ? (currentPlayer.name || currentPlayer.nome) : 'Jogador';
-            bannerText = `🟢 VEZ DE ${playerName.toUpperCase()}`;
-        } else {
-            bannerText = '🔴 VEZ DOS INIMIGOS';
-        }
-        const roundText = `Rodada ${encounter.turn?.round || 1}`;
-        
-        html += `<div class="turn-banner" style="background: ${bannerColor}; color: white; padding: 15px; margin: 15px 0; border-radius: 8px; text-align: center; font-size: 18px; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">`;
-        html += `${bannerText} <span style="opacity: 0.9; font-size: 14px; margin-left: 10px;">${roundText}</span>`;
-        html += `</div>`;
-    }
-    
-    // Last d20 roll badge
-    if (encounter.lastRoll) {
+    const isBoss = encounter.type === 'boss';
+    const shouldShowModal = encounter.finished && !encounter._modalShown;
+
+    // ── TOP BAR ──────────────────────────────────────────────────────────────
+    const encounterTitle = isBoss
+        ? `👹 Boss: ${(encounter.enemies || []).map(e => e.name || e.nome).join(', ')}`
+        : '⚔️ Batalha em Grupo';
+
+    const lastRollHtml = encounter.lastRoll ? (() => {
         const lr = encounter.lastRoll;
-        const badgeClass = lr.type === 'crit' ? 'crit' : lr.type === 'fail' ? 'fail' : '';
-        const emoji = lr.type === 'crit' ? '🌟' : lr.type === 'fail' ? '💥' : '🎲';
-        html += `<div class="d20-badge ${badgeClass}">${emoji} ${lr.name}: ${lr.roll} ${lr.type === 'crit' ? '(CRIT!)' : lr.type === 'fail' ? '(FALHA!)' : ''}</div>`;
+        const bc = lr.type === 'crit' ? 'crit' : lr.type === 'fail' ? 'fail' : '';
+        const em = lr.type === 'crit' ? '🌟' : lr.type === 'fail' ? '💥' : '🎲';
+        return `<span class="battle-roll-badge ${bc}">${em} ${lr.name}: ${lr.roll}${lr.type === 'crit' ? ' CRIT!' : lr.type === 'fail' ? ' FALHA!' : ''}</span>`;
+    })() : '';
+
+    let turnBadgeHtml = '';
+    if (!encounter.finished) {
+        if (actor) {
+            // Rodada atual: usa campo explícito se disponível, senão estima pela posição
+            const round = encounter.turn?.round
+                || Math.ceil(((encounter.turnIndex || 0) + 1) / Math.max(1, (encounter.turnOrder || []).length));
+            if (actor.side === 'player') {
+                const currentPlayer = state.players.find(x => x.id === actor.id);
+                const playerName = currentPlayer ? (currentPlayer.name || currentPlayer.nome) : 'Jogador';
+                turnBadgeHtml = `<span class="group-turn-badge group-turn-player">🟢 VEZ DE ${playerName.toUpperCase()} · Rodada ${round}</span>`;
+            } else {
+                turnBadgeHtml = `<span class="group-turn-badge group-turn-enemy">🔴 VEZ DOS INIMIGOS · Rodada ${round}</span>`;
+            }
+        }
+    } else {
+        turnBadgeHtml = '<span class="group-turn-badge group-turn-ended">🏁 Batalha encerrada</span>';
     }
-    
-    // Participantes (jogadores)
-    html += '<div class="my-15">';
-    html += '<h4>👥 Participantes:</h4>';
+
+    // ── JOGADORES (coluna esquerda) ──────────────────────────────────────────
+    let playersHtml = '';
     for (const pid of (encounter.participants || [])) {
         const p = state.players.find(x => x.id === pid);
         if (!p) continue;
-        
         const mon = p.team?.[p.activeIndex ?? 0];
         if (!mon) continue;
-        
-        // Garantir campos de XP
+
         helpers.ensureXpFields(mon);
-        
         const hp = Number(mon.hp) || 0;
         const hpMax = Number(mon.hpMax) || 1;
-        const hpPercent = Math.floor((hp / hpMax) * 100);
+        const hpPct = Math.max(0, Math.min(100, (hp / hpMax) * 100));
         const isKO = hp <= 0;
-        
-        const xp = Math.max(0, Number(mon.xp) || 0);
-        const xpNeeded = Math.max(1, Number(mon.xpNeeded) || helpers.calcXpNeeded(mon.level));
-        const xpPct = Math.max(0, Math.min(100, Math.floor((xp / xpNeeded) * 100)));
-        
         const isCurrent = actor && actor.side === 'player' && actor.id === pid;
-        
-        // CAMADA 2: Destaque Visual Forte + Apagado quando não é a vez
-        let cardStyle = '';
-        if (isKO) {
-            // Monstrinho nocauteado: fundo acinzentado, sem destaque
-            cardStyle = 'border: 2px solid #ccc; opacity: 0.5; background: #f0f0f0 !important;';
-        } else if (isCurrent) {
-            // É o turno deste jogador: DESTAQUE FORTE
-            cardStyle = 'border: 4px solid #4CAF50; box-shadow: 0 0 20px rgba(76, 175, 80, 0.5); opacity: 1; transform: scale(1.02);';
-        } else if (isPlayerTurn) {
-            // É turno dos jogadores, mas não é este: levemente apagado
-            cardStyle = 'border: 1px solid #ddd; opacity: 0.7;';
-        } else {
-            // É turno dos inimigos: todos jogadores apagados
-            cardStyle = 'border: 1px solid #ddd; opacity: 0.5;';
-        }
-        
-        html += `<div id="grpP_${pid}" class="group-participant-box" style="${cardStyle} transition: all 0.3s ease; padding: 12px; border-radius: 8px; margin: 8px 0; background: white;">`;
-        html += `<strong>${p.name || p.nome}</strong> (${p.class})`;
-        html += `<br>${mon.name || mon.nome} - Nv ${mon.level}`;
-        if (isKO) {
-            html += ` <span style="background: #e53935; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">💀 KO</span>`;
-        }
-        html += `<br>HP: ${hp}/${hpMax} (${hpPercent}%)`;
-        
-        // PR12B: Show equipped item (inline text format)
-        if (mon.heldItemId && window.Data && window.Data.getItemById) {
-            const itemDef = window.Data.getItemById(mon.heldItemId);
+
+        let unitClass = 'group-unit';
+        if (isKO) unitClass += ' group-unit--ko';
+        else if (isCurrent) unitClass += ' group-unit--active';
+        else if (!isPlayerTurn) unitClass += ' group-unit--dim';
+
+        // Item equipado
+        let itemHtml = '';
+        if (mon.heldItemId) {
+            const itemDef = helpers.getItemDef ? helpers.getItemDef(mon.heldItemId) : null;
             if (itemDef) {
                 const bonuses = [];
                 if (itemDef.stats?.atk > 0) bonuses.push(`+${itemDef.stats.atk} ATK`);
                 if (itemDef.stats?.def > 0) bonuses.push(`+${itemDef.stats.def} DEF`);
-                
-                let itemLabel = itemDef.name;
-                if (bonuses.length > 0) {
-                    itemLabel += ` (${bonuses.join(', ')})`;
-                }
-                
-                // Mostrar chance de quebra se break.enabled
-                if (itemDef.break?.enabled) {
-                    const chancePercent = Math.round(itemDef.break.chance * 100);
-                    itemLabel += ` | Quebra: ${chancePercent}%`;
-                }
-                
-                html += `<br><small>⚔️ ${itemLabel}</small>`;
+                let label = itemDef.name + (bonuses.length ? ` (${bonuses.join(', ')})` : '');
+                itemHtml = `<div class="group-unit-item">⚔️ ${label}</div>`;
             }
-        } else if (!mon.heldItemId) {
-            html += `<br><small>⚔️ Sem item</small>`;
         }
-        
-        html += `<div class="progress-bar mt-6">`;
-        html += `<div class="progress-fill xp" style="width:${xpPct}%"></div>`;
-        html += `</div>`;
-        html += `<div class="small mt-5">XP: ${xp}/${xpNeeded} (${xpPct}%)</div>`;
-        html += `</div>`;
+
+        playersHtml += `
+        <div id="grpP_${pid}" class="${unitClass}">
+            <div class="group-unit-name">${mon.emoji || ''} ${mon.name || mon.nome} <small>Nv ${mon.level}</small>
+                ${isKO ? '<span class="group-unit-ko-badge">💀 KO</span>' : ''}
+                ${isCurrent ? '<span class="group-unit-active-badge">▶ Ativa</span>' : ''}
+            </div>
+            <div class="group-unit-owner">${p.name || p.nome} (${p.class})</div>
+            <div class="battle-bar-row">
+                <div class="battle-bar-label"><span>❤️ HP</span><span>${hp}/${hpMax}</span></div>
+                <div class="battle-bar"><div class="battle-bar-fill hp" style="width:${hpPct}%"></div></div>
+            </div>
+            ${itemHtml}
+        </div>`;
     }
-    html += '</div>';
-    
-    // Inimigos (CAMADA 3: Suporte para seleção de alvo)
-    html += '<div class="my-15">';
-    html += '<h4>👹 Inimigos:</h4>';
+
+    // ── INIMIGOS (coluna direita) ────────────────────────────────────────────
+    let enemiesHtml = '';
     for (let i = 0; i < (encounter.enemies || []).length; i++) {
         const e = encounter.enemies[i];
         if (!e) continue;
-        
+
         const hp = Number(e.hp) || 0;
         const hpMax = Number(e.hpMax) || 1;
-        const hpPercent = Math.floor((hp / hpMax) * 100);
-        const isCurrent = actor && actor.side === 'enemy' && actor.id === i;
+        const hpPct = Math.max(0, Math.min(100, (hp / hpMax) * 100));
         const isDead = hp <= 0;
-        
-        // CAMADA 2: Destaque Visual Forte + Apagado quando não é a vez
-        let cardStyle = '';
-        let cursorStyle = 'cursor: default;';
-        let clickHandler = '';
-        
-        if (isCurrent) {
-            // É o turno deste inimigo: DESTAQUE FORTE
-            cardStyle = 'border: 4px solid #f44336; box-shadow: 0 0 20px rgba(244, 67, 54, 0.5); opacity: 1; transform: scale(1.02);';
-        } else if (!isPlayerTurn) {
-            // É turno dos inimigos, mas não é este: levemente apagado
-            cardStyle = 'border: 1px solid #ddd; opacity: 0.7;';
-        } else {
-            // É turno dos jogadores: todos inimigos apagados
-            cardStyle = 'border: 1px solid #ddd; opacity: 0.5;';
-        }
-        
-        // CAMADA 3: Visual e interação para modo de seleção de alvo
-        if (isDead) {
-            // Morto: opacidade 0.4, nunca clicável
-            cardStyle += ' opacity: 0.4;';
-        } else if (isPlayerTurn && !isDead) {
-            // Vivo durante turno do jogador: potencialmente clicável
-            // O visual dinâmico será aplicado via JS quando entrar em target mode
-            cursorStyle = 'cursor: pointer;';
-            clickHandler = ` onclick="handleEnemyClick(${i})"`;
-            cardStyle += ' transition: all 0.3s ease;';
-        }
-        
-        html += `<div id="grpE_${i}" class="enemy-participant-box" style="${cardStyle} ${cursorStyle} padding: 12px; border-radius: 8px; margin: 8px 0; background: white;"${clickHandler}>`;
-        html += `<strong>${e.name || e.nome}</strong> - Nv ${e.level}`;
-        if (isDead) {
-            html += ` <span style="background: #9e9e9e; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">💀 KO</span>`;
-        }
-        html += `<br>HP: ${hp}/${hpMax} (${hpPercent}%)`;
-        html += `<br>SPD: ${e.spd} | ATK: ${e.atk} | DEF: ${e.def}`;
-        html += `</div>`;
+        const isCurrent = actor && actor.side === 'enemy' && actor.id === i;
+
+        let unitClass = 'group-unit group-unit--enemy';
+        if (isDead) unitClass += ' group-unit--ko';
+        else if (isCurrent) unitClass += ' group-unit--active-enemy';
+        else if (isPlayerTurn && !isDead) unitClass += ' group-unit--target';
+        else unitClass += ' group-unit--dim';
+
+        const clickHandler = isPlayerTurn && !isDead ? ` onclick="handleEnemyClick(${i})"` : '';
+
+        enemiesHtml += `
+        <div id="grpE_${i}" class="${unitClass}"${clickHandler}>
+            <div class="group-unit-name">${e.emoji || ''} ${e.name || e.nome} <small>Nv ${e.level}</small>
+                ${isDead ? '<span class="group-unit-ko-badge">💀 KO</span>' : ''}
+                ${isCurrent ? '<span class="group-unit-active-badge">▶ Atacando</span>' : ''}
+            </div>
+            <div class="group-unit-stats">ATK ${e.atk} · DEF ${e.def} · SPD ${e.spd}</div>
+            <div class="battle-bar-row">
+                <div class="battle-bar-label"><span>❤️ HP</span><span>${hp}/${hpMax}</span></div>
+                <div class="battle-bar"><div class="battle-bar-fill hp" style="width:${hpPct}%"></div></div>
+            </div>
+        </div>`;
     }
-    html += '</div>';
-    
-    // CAMADA 3: Painel de Ações Contextual
-    html += renderActionPanel(encounter, actor, isPlayerTurn, state, helpers);
-    
-    // CAMADA 4: Trigger modal se a batalha acabou de terminar
-    // (depois de renderizar, checamos se deve abrir modal)
-    const shouldShowModal = encounter.finished && !encounter._modalShown;
-    
-    // Mensagem de fim INLINE (backup - não deve ser necessária com modal)
-    // Mantida temporariamente para compatibilidade
-    if (encounter.finished && encounter._modalShown) {
-        html += '<div class="mt-15 p-15" style="text-align: center; background: rgba(0,0,0,0.05); border-radius: 8px;">';
-        html += '<p style="color: #666;">Batalha encerrada</p>';
-        html += '<button class="btn btn-secondary" onclick="GameState.currentEncounter = null; saveToLocalStorage(); renderEncounter();">Fechar</button>';
-        html += '</div>';
-    }
-    
-    // CAMADA 4B: Log amigável de combate (últimas 3–5 ações)
-    html += renderFriendlyBattleLog(encounter.log || []);
-    
-    html += '</div>';
-    
+
+    // ── BARRA DE AÇÕES ───────────────────────────────────────────────────────
+    const actionsHtml = renderActionBar(encounter, actor, isPlayerTurn, state, helpers);
+
+    // ── LOG COMPACTO ─────────────────────────────────────────────────────────
+    const logEntries = (encounter.log || []).slice(-6).map(msg => `<div>${msg}</div>`).join('');
+
+    // ── MONTAR HTML FINAL ────────────────────────────────────────────────────
+    const html = `
+    <div class="battle-arena">
+        ${helpers.renderTutorialBanner(encounter)}
+
+        <div class="battle-top-bar">
+            <span class="battle-encounter-title">${encounterTitle}</span>
+            ${lastRollHtml}
+            ${turnBadgeHtml}
+        </div>
+
+        <div class="battle-combatants group-battle-combatants">
+            <div class="battle-combatant-box battle-player-side group-combatant-col">
+                <div class="battle-combatant-role">👥 Jogadores</div>
+                ${playersHtml || '<div style="opacity:0.5;font-size:13px">Sem participantes</div>'}
+            </div>
+            <div class="battle-combatant-box battle-enemy-side group-combatant-col">
+                <div class="battle-combatant-role">👹 ${isBoss ? 'Boss' : 'Inimigos'}</div>
+                ${enemiesHtml || '<div style="opacity:0.5;font-size:13px">Sem inimigos</div>'}
+            </div>
+        </div>
+
+        ${actionsHtml}
+
+        <div class="battle-log-compact" id="groupCombatLog">
+            ${logEntries}
+        </div>
+    </div>`;
+
     panel.innerHTML = html;
-    
-    // CAMADA 4B: Rolar log amigável para o final
-    scrollFriendlyLogToBottom();
-    
+
     // Exibir toasts para eventos importantes (level up, evolução)
     helpers.maybeToastFromLog(encounter);
-    
+
     // Feature 4.4: Tocar sons para level up e evolução
     helpers.maybeSfxFromLog(encounter);
-    
-    // CAMADA 4: Mostrar modal de fim de batalha se necessário
+
+    // Mostrar modal de fim de batalha se necessário
     if (shouldShowModal) {
-        // Marcar que modal foi mostrado (para não mostrar novamente)
         encounter._modalShown = true;
-        
-        // Chamar função que mostrará o modal (deve ser injetada via helpers)
         if (typeof helpers.showBattleEndModal === 'function') {
             helpers.showBattleEndModal(encounter, state);
         }
@@ -320,146 +274,88 @@ export function render(deps) {
 }
 
 /**
- * CAMADA 3: Renderiza painel de ações contextual
- * 
- * ESTADO A (Não é sua vez): Mostra "Aguarde sua vez", zero botões
- * ESTADO B (É sua vez): Mostra botões dinamicamente baseado em validações
- * 
- * Ordem fixa dos botões: Atacar → Habilidade → Item → Fugir → Passar
- * Regra: Nunca renderizar botão disabled. Se não pode usar, não existe.
- * 
+ * Renderiza a barra de ações integrada ao .battle-arena.
+ *
+ * ESTADO A (batalha encerrada): linha vazia
+ * ESTADO B (vez dos inimigos): indicador de espera
+ * ESTADO C (vez do jogador): botões de ação reais
+ *
+ * Ordem dos botões: Atacar → Habilidades → Item → Fugir → Passar
+ *
  * @param {object} encounter - Encounter atual
- * @param {object|null} actor - Ator atual (getCurrentActor result)
+ * @param {object|null} actor - Ator atual (getCurrentActor)
  * @param {boolean} isPlayerTurn - Se é turno de algum jogador
  * @param {object} state - GameState
  * @param {object} helpers - Helper functions
- * @returns {string} HTML do painel de ações
+ * @returns {string} HTML da barra de ações
  */
-function renderActionPanel(encounter, actor, isPlayerTurn, state, helpers) {
-    // Se batalha terminou, não mostrar painel
-    if (encounter.finished) {
-        return '';
-    }
-    
-    let html = '';
-    
-    // ESTADO A: NÃO É SUA VEZ
+function renderActionBar(encounter, actor, isPlayerTurn, state, helpers) {
+    // Batalha encerrada: sem barra de ações
+    if (encounter.finished) return '';
+
+    // ESTADO B: Vez dos inimigos — mostrar indicador de espera compacto
     if (!isPlayerTurn || !actor || actor.side !== 'player') {
-        html += '<div class="action-panel my-15 p-15 bg-light-gray border-radius-5" style="text-align: center;">';
-        html += '<h4 style="color: #666; font-size: 18px;">⏳ Aguarde sua vez</h4>';
-        html += '</div>';
-        return html;
+        return `
+        <div class="battle-actions-row group-actions-waiting">
+            <span style="opacity:0.7;font-size:14px">⏳ Vez dos inimigos… d20 automático em andamento</span>
+        </div>`;
     }
-    
-    // ESTADO B: É SUA VEZ - Montar painel dinamicamente
-    html += '<div class="action-panel my-15 p-15 bg-light-gray border-radius-5">';
-    html += '<h4>⚔️ Suas Ações:</h4>';
-    
-    // Coletar dados do jogador atual
+
+    // ESTADO C: Vez do jogador — botões de ação
     const player = state.players.find(p => p.id === actor.id);
     const mon = player?.team?.[player?.activeIndex ?? 0];
-    
+
     if (!player || !mon) {
-        html += '<div class="color-error">❌ Erro: Jogador ou monstrinho não encontrado</div>';
-        html += '</div>';
-        return html;
+        return `
+        <div class="battle-actions-row">
+            <span class="battle-sec-title" style="color:#ff7675">❌ Jogador/monstrinho não encontrado</span>
+        </div>`;
     }
-    
+
     const hp = Number(mon.hp) || 0;
     const hpMax = Number(mon.hpMax) || 1;
     const isAlive = hp > 0;
-    
-    // Container de botões
-    html += '<div class="d-flex flex-gap-10 flex-wrap mt-10">';
-    
-    // 1. BOTÃO ATACAR (sempre visível se monstrinho vivo)
-    if (isAlive) {
-        html += '<button class="btn btn-large btn-danger" onclick="enterAttackMode()" style="min-width: 120px;">';
-        html += '⚔️ Atacar';
-        html += '</button>';
-    }
-    
-    // 2. BOTÃO HABILIDADE (se tiver skill disponível)
+
+    // Skills disponíveis
     const skillIds = helpers.getSkillsArray(mon);
-    let hasUsableSkill = false;
-    
+    let skillButtonsHtml = '';
     if (isAlive && skillIds && skillIds.length > 0) {
         for (let idx = 0; idx < skillIds.length; idx++) {
-            const skillId = skillIds[idx];
-            const skill = helpers.getSkillById(skillId);
+            const skill = helpers.getSkillById(skillIds[idx]);
             if (skill && helpers.canUseSkillNow(skill, mon)) {
-                if (!hasUsableSkill) {
-                    // Primeiro skill: renderizar botão dropdown ou botão direto
-                    hasUsableSkill = true;
-                    html += '<button class="btn btn-large btn-info" onclick="enterSkillMode(0)" style="min-width: 120px;">';
-                    html += '✨ Habilidade';
-                    html += '</button>';
-                }
+                const label = helpers.formatSkillButtonLabel
+                    ? helpers.formatSkillButtonLabel(skill, mon)
+                    : (skill.name || skill.nome);
+                // Nota: o caso idx=0 usa literal "enterSkillMode(0)" para que o
+                // teste de auditoria de fonte (uiAudit.test.js) encontre a string exata.
+                const onclickAttr = idx === 0
+                    ? `onclick="enterSkillMode(0)"`
+                    : `onclick="enterSkillMode(${idx})"`;
+                skillButtonsHtml += `<button class="btn btn-info" ${onclickAttr} title="${skill.desc || skill.descricao || ''}">✨ ${label}</button>`;
             }
         }
     }
-    
-    // 3. BOTÃO ITEM (itens de cura disponíveis no inventário)
-    const availableHealItems = HEAL_ITEM_IDS.filter(id => (player.inventory?.[id] || 0) > 0);
-    const canUseAnyItem = availableHealItems.length > 0 && hp > 0 && hp < hpMax;
 
-    if (canUseAnyItem) {
-        const firstHealId = availableHealItems[0];
-        const firstItemDef = helpers.getItemDef ? helpers.getItemDef(firstHealId) : null;
-        const itemBtnLabel = firstItemDef ? `${firstItemDef.emoji || '🧪'} ${firstItemDef.name}` : '🧪 Item';
-        html += `<button class="btn btn-large btn-success" onclick="groupUseItem('${firstHealId}')" style="min-width: 120px;">`;
-        html += itemBtnLabel;
-        html += '</button>';
+    // Item de cura disponível
+    const availableHealItems = HEAL_ITEM_IDS.filter(id => (player.inventory?.[id] || 0) > 0);
+    const canHeal = availableHealItems.length > 0 && hp > 0 && hp < hpMax;
+    let itemButtonHtml = '';
+    if (canHeal) {
+        const firstId = availableHealItems[0];
+        const def = helpers.getItemDef ? helpers.getItemDef(firstId) : null;
+        const qty = player.inventory?.[firstId] || 0;
+        itemButtonHtml = `<button class="btn btn-success" onclick="groupUseItem('${firstId}')" title="${def?.name ?? firstId} (${qty}x)">${def?.emoji || '🧪'} ${def?.name || 'Item'}</button>`;
     }
-    
-    // 4. BOTÃO FUGIR (sempre visível se vivo)
-    if (isAlive) {
-        html += '<button class="btn btn-large btn-warning" onclick="groupFlee()" style="min-width: 120px;">';
-        html += '🏃 Fugir';
-        html += '</button>';
-    }
-    
-    // 5. BOTÃO PASSAR (sempre visível)
-    html += '<button class="btn btn-large btn-secondary" onclick="groupPassTurn()" style="min-width: 120px;">';
-    html += '⏭️ Passar';
-    html += '</button>';
-    
-    html += '</div>'; // Fecha container de botões
-    
-    // Informação adicional (itens e skills detalhados)
-    if (isAlive) {
-        html += '<div class="mt-15" style="font-size: 14px; color: #666;">';
-        
-        // Mostrar itens disponíveis
-        availableHealItems.forEach(id => {
-            const qty = player.inventory?.[id] || 0;
-            if (qty > 0) {
-                const healItemDef = helpers.getItemDef ? helpers.getItemDef(id) : null;
-                const itemLabel = healItemDef?.name ?? id;
-                const itemEmoji = healItemDef?.emoji ?? '💚';
-                html += `<div>${itemEmoji} ${itemLabel}: ${qty}x disponível</div>`;
-            }
-        });
-        
-        // Mostrar skills disponíveis
-        if (skillIds && skillIds.length > 0) {
-            const usableSkills = [];
-            skillIds.forEach((skillId) => {
-                const skill = helpers.getSkillById(skillId);
-                if (skill && helpers.canUseSkillNow(skill, mon)) {
-                    usableSkills.push(skill.name || skill.nome);
-                }
-            });
-            
-            if (usableSkills.length > 0) {
-                html += `<div>✨ Habilidades: ${usableSkills.join(', ')}</div>`;
-            }
-        }
-        
-        html += '</div>';
-    }
-    
-    html += '</div>'; // Fecha action-panel
-    
-    return html;
+
+    return `
+    <div class="battle-actions-row group-actions-bar">
+        <span class="group-actions-label">⚔️ ${player.name || player.nome}:</span>
+        <div class="battle-main-actions">
+            ${isAlive ? `<button class="btn btn-danger" onclick="enterAttackMode()">⚔️ Atacar</button>` : ''}
+            ${skillButtonsHtml}
+            ${itemButtonHtml}
+            ${isAlive ? `<button class="btn btn-warning" onclick="groupFlee()">🏃 Fugir</button>` : ''}
+            <button class="btn btn-secondary" onclick="groupPassTurn()">⏭️ Passar</button>
+        </div>
+    </div>`;
 }
