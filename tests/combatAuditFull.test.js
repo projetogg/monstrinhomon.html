@@ -173,7 +173,8 @@ describe('calculateCaptureScore — limites 0–100 e fórmula dual-track', () =
     });
 
     it('hpMax = 0 → sem divisão por zero, score = 50 (hpMax clampado a 1)', () => {
-        // hpMax é clampado a 1 para evitar NaN; hp=0/hpMax=1 → hpFactor=1 → hpScore=50
+        // hpMax é clampado a Math.max(1, hpMax) para evitar NaN.
+        // Com hpMax=1 e hp=0: hpFactor=1 → hpScore=50. aggression=100 → aggrScore=0. Total=50.
         expect(() => calculateCaptureScore(makeMon({ hpMax: 0, hp: 0 }))).not.toThrow();
         expect(calculateCaptureScore(makeMon({ hpMax: 0, hp: 0 }))).toBe(50);
     });
@@ -307,11 +308,9 @@ describe('checkHit — contratos formais', () => {
     });
 
     it('d20 + ATK < DEF → miss', () => {
-        // d20=1 e ATK=7 → 8 >= 4 → true segundo fórmula, mas d20=1 é tratado
-        // EXTERNAMENTE pelo caller; checkHit em si retorna true
-        // Aqui verificamos que DEF alta faz miss:
+        // Guerreiro (att) ataca Curandeiro (bigDef): desvantagem → -2 ATK
+        // 3 + 7 - 2(desvantagem Guerreiro<Curandeiro) = 8 < 20 → miss
         const bigDef = { class: 'Curandeiro', def: 20, buffs: [] };
-        // 3 + 7 + 2(vantagem Guerreiro>Ladino via bigDef class Curandeiro) = 3+7-2=8 < 20
         expect(checkHit(3, att, bigDef, CLASS_ADV)).toBe(false);
     });
 

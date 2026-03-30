@@ -6311,17 +6311,17 @@
                 if (enemyHit) {
                     const basicPower = MM_TABLES.getBasicAttackPower(monster.class);
                     const powerUsed  = enemyIsCrit ? basicPower * 2 : basicPower;
-                    // BUG FIX: usar calcDamage diretamente para que o poder dobrado no crítico
-                    // seja realmente aplicado (calculateDamage() ignora parâmetros extras)
-                    const atkMods2 = getBuffModifiers(monster);
-                    const effAtk2  = Math.max(1, monster.atk + atkMods2.atk);
-                    const defMods2 = getBuffModifiers(playerMonster);
-                    const effDef2  = Math.max(1, playerMonster.def + defMods2.def);
-                    const classAdv2 = GameState.config?.classAdvantages?.[monster.class];
-                    let damageMult2 = 1.0;
-                    if (classAdv2?.strong === playerMonster.class) damageMult2 = 1.10;
-                    else if (classAdv2?.weak === playerMonster.class) damageMult2 = 0.90;
-                    const damage = calcDamage({ atk: effAtk2, def: effDef2, power: powerUsed, damageMult: damageMult2 });
+                    // BUG FIX: usar calcDamage diretamente com poder customizado
+                    // (calculateDamage() não aceita poder como parâmetro — args extras são ignorados)
+                    const atkMods = getBuffModifiers(monster);
+                    const effAtk  = Math.max(1, monster.atk + atkMods.atk);
+                    const defMods = getBuffModifiers(playerMonster);
+                    const effDef  = Math.max(1, playerMonster.def + defMods.def);
+                    const classAdv = GameState.config?.classAdvantages?.[monster.class];
+                    let damageMult = 1.0;
+                    if (classAdv?.strong === playerMonster.class) damageMult = 1.10;
+                    else if (classAdv?.weak === playerMonster.class) damageMult = 0.90;
+                    const damage = calcDamage({ atk: effAtk, def: effDef, power: powerUsed, damageMult });
                     playerMonster.hp = Math.max(0, playerMonster.hp - damage);
                     encounter.log.push(`💥 ${monster.name} contra-ataca! Causa ${damage} de dano!`);
 
