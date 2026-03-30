@@ -63,9 +63,11 @@
             <!-- Grid principal do dashboard -->
             <div class="dashboard-grid">
 
-                <!-- Card: Estatísticas Rápidas -->
+                <!-- Linha 1: 4 cards de resumo (1 col cada em tablet+) -->
+
+                <!-- Card: Estatísticas da Sessão -->
                 <div class="card dashboard-card">
-                    <h3 class="card-title">📊 Estatísticas</h3>
+                    <h3 class="card-title">📊 Sessão</h3>
                     <div id="homeStats" class="home-stats-row">
                         <div class="home-stat-item">
                             <span class="home-stat-value" id="statPlayers">0</span>
@@ -77,54 +79,66 @@
                         </div>
                         <div class="home-stat-item">
                             <span class="home-stat-value" id="statSession">—</span>
-                            <span class="home-stat-label">Sessão</span>
+                            <span class="home-stat-label">Ativa</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- FASE UX: Missões Ativas (span 2 em tablet+) -->
-                <div class="card dashboard-card dashboard-card--quest">
-                    <h3 class="card-title">📋 Missões Ativas</h3>
+                <!-- Card: Missões Ativas (máx 2 entradas + contador) -->
+                <div class="card dashboard-card">
+                    <h3 class="card-title">📋 Missões</h3>
                     <div id="questTrackerContent">
                         <p class="text-muted">Nenhuma quest ativa.</p>
                     </div>
                 </div>
 
-                <!-- FASE 1 POKEMON: Monstródex -->
+                <!-- Card: Monstrodex -->
                 <div class="card dashboard-card">
                     <h3 class="card-title">📖 Monstrodex</h3>
                     <div id="monstrodexStats"></div>
                 </div>
 
-                <!-- FASE 1 POKEMON: Livro de Conquistas -->
+                <!-- Card: Conquistas (mini-grid 3×2) -->
                 <div class="card dashboard-card">
                     <h3 class="card-title">🏆 Conquistas</h3>
                     <div id="achievementsStats"></div>
                 </div>
 
-                <!-- Card: Painel Mestre -->
+                <!-- Linha 2: Painel Mestre (span 2) + Ações Rápidas (span 2) -->
+
+                <!-- Card: Painel Mestre — layout horizontal compacto -->
                 <div class="card dashboard-card dashboard-card--mestre">
-                    <h3 class="card-title">🧑‍🏫 Painel Mestre</h3>
-                    <button class="btn btn-mestre" onclick="mmOpenMestre()">Entrar no Painel Mestre</button>
+                    <div class="mestre-card-inner">
+                        <div class="mestre-card-info">
+                            <h3 class="card-title">🧑‍🏫 Painel Mestre</h3>
+                            <p class="mestre-card-desc">Sessão, quests e terapia</p>
+                        </div>
+                        <button class="btn btn-mestre" onclick="mmOpenMestre()">Abrir</button>
+                    </div>
+                </div>
+
+                <!-- Card: Ações Rápidas — faixa compacta de atalhos -->
+                <div class="card dashboard-card dashboard-card--actions">
+                    <h3 class="card-title">⚡ Ir para</h3>
+                    <div class="quick-actions">
+                        <button class="quick-action-btn quick-action--grupo" onclick="switchTab('players')">
+                            <span class="qa-icon">👥</span>
+                            <span class="qa-label">Grupo</span>
+                        </button>
+                        <button class="quick-action-btn quick-action--batalha" onclick="switchTab('encounter')">
+                            <span class="qa-icon">⚔️</span>
+                            <span class="qa-label">Batalha</span>
+                        </button>
+                        <button class="quick-action-btn quick-action--dex" onclick="switchTab('partyDex')">
+                            <span class="qa-icon">📘</span>
+                            <span class="qa-label">Dex</span>
+                        </button>
+                    </div>
                 </div>
 
             </div>
 
-            <!-- Ações Rápidas (parte inferior) -->
-            <div class="quick-actions">
-                <button class="quick-action-btn quick-action--grupo" onclick="switchTab('players')">
-                    <span class="qa-icon">👥</span>
-                    <span class="qa-label">Grupo</span>
-                </button>
-                <button class="quick-action-btn quick-action--batalha" onclick="switchTab('encounter')">
-                    <span class="qa-icon">⚔️</span>
-                    <span class="qa-label">Batalha</span>
-                </button>
-                <button class="quick-action-btn quick-action--dex" onclick="switchTab('partyDex')">
-                    <span class="qa-icon">📘</span>
-                    <span class="qa-label">Monstrodex</span>
-                </button>
-            </div>
+
         </div>
 
         <div id="tabSession" class="tab-content">
@@ -8307,10 +8321,14 @@
                         sessionDot.className = 'session-dot session-dot--active';
                         const playerCount = GameState.players?.length || 0;
                         const sessionName = GameState.currentSession.name || 'Sessão Ativa';
-                        sessionLabel.textContent = `${sessionName} • ${playerCount} jogador${playerCount !== 1 ? 'es' : ''}`;
+                        const labelText = `${sessionName} • ${playerCount} jogador${playerCount !== 1 ? 'es' : ''}`;
+                        sessionLabel.textContent = labelText;
+                        sessionLabel.title = labelText;
                     } else {
                         sessionDot.className = 'session-dot session-dot--inactive';
-                        sessionLabel.textContent = 'Sem sessão ativa — configure no Painel Mestre';
+                        const labelText = 'Sem sessão ativa — configure no Painel Mestre';
+                        sessionLabel.textContent = labelText;
+                        sessionLabel.title = labelText;
                     }
                 }
                 
@@ -8340,54 +8358,20 @@
                 const seenCount = monstrodex.seen.length;
                 const capturedCount = monstrodex.captured.length;
                 
-                const seenPercent = totalMonsters > 0 ? Math.floor((seenCount / totalMonsters) * 100) : 0;
-                const capturedPercent = totalMonsters > 0 ? Math.floor((capturedCount / totalMonsters) * 100) : 0;
-                
-                // Estatísticas por classe
-                const classCounts = {};
-                MONSTER_CATALOG.forEach(mon => {
-                    const cls = mon.class || 'Unknown';
-                    if (!classCounts[cls]) {
-                        classCounts[cls] = { total: 0, seen: 0, captured: 0 };
-                    }
-                    classCounts[cls].total++;
-                    if (monstrodex.seen.includes(mon.id)) classCounts[cls].seen++;
-                    if (monstrodex.captured.includes(mon.id)) classCounts[cls].captured++;
-                });
-                
-                let html = `
-                    <div class="stats-grid-200">
-                        <div class="stat-box">
-                            <strong>👁️ Vistos:</strong> ${seenCount}/${totalMonsters} (${seenPercent}%)
-                            <div class="progress-bar progress-bar-spacing">
-                                <div class="progress-fill" style="width: ${seenPercent}%; background: #2196F3;"></div>
-                            </div>
-                        </div>
-                        <div class="stat-box">
-                            <strong>✅ Capturados:</strong> ${capturedCount}/${totalMonsters} (${capturedPercent}%)
-                            <div class="progress-bar progress-bar-spacing">
-                                <div class="progress-fill" style="width: ${capturedPercent}%; background: #4CAF50;"></div>
-                            </div>
-                        </div>
+                let html = `<div class="home-stats-row">
+                    <div class="home-stat-item">
+                        <span class="home-stat-value">${seenCount}</span>
+                        <span class="home-stat-label">Vistos</span>
                     </div>
-                    
-                    <details class="mt-10">
-                        <summary class="details-summary">📊 Progresso por Classe</summary>
-                        <div class="mt-10">
-                            ${Object.entries(classCounts).map(([cls, counts]) => {
-                                const pct = counts.total > 0 ? Math.floor((counts.captured / counts.total) * 100) : 0;
-                                return `
-                                    <div class="mb-8">
-                                        <strong>${cls}:</strong> ${counts.captured}/${counts.total}
-                                        <div class="progress-bar progress-bar-spacing-sm">
-                                            <div class="progress-fill" style="width: ${pct}%; background: #9C27B0;"></div>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </details>
-                `;
+                    <div class="home-stat-item">
+                        <span class="home-stat-value">${capturedCount}</span>
+                        <span class="home-stat-label">Capturados</span>
+                    </div>
+                    <div class="home-stat-item">
+                        <span class="home-stat-value">${totalMonsters}</span>
+                        <span class="home-stat-label">Total</span>
+                    </div>
+                </div>`;
                 
                 container.innerHTML = html;
             } catch (error) {
@@ -8398,6 +8382,7 @@
         /**
          * FASE UX: Renderiza painel de quests ativas na Home.
          * Usa GameFlow.getActiveQuestsSummary() para leitura pura sem mutação.
+         * Exibe no máximo 2 entradas; mostra contador se houver mais.
          */
         function renderQuestTrackerPanel() {
             const container = document.getElementById('questTrackerContent');
@@ -8420,25 +8405,35 @@
                 for (const { quest, progress, needed } of summary) {
                     const pct = needed > 0 ? Math.min(100, Math.round((progress / needed) * 100)) : 0;
                     const playerName = player.name || player.nome || player.id;
+                    const progressText = `Progresso: ${progress}/${needed} · 💰${quest.rewardGold} · ⭐${quest.rewardXp}XP`;
                     entries.push(`
                         <div class="quest-tracker-entry">
                             <div class="quest-header">
-                                <strong>${quest.nome}</strong>
-                                <span class="text-small text-muted">(${playerName})</span>
+                                <strong title="${quest.nome}">${quest.nome}</strong>
+                                <span class="text-small text-muted" title="${playerName}">(${playerName})</span>
                             </div>
-                            <div class="text-small">${quest.descricao || ''}</div>
                             <div class="quest-progress-bar">
                                 <div class="quest-progress-fill" style="width:${pct}%"></div>
                             </div>
-                            <div class="text-small">Progresso: ${progress}/${needed} &nbsp;|&nbsp; 💰 ${quest.rewardGold} &nbsp;⭐ ${quest.rewardXp} XP</div>
+                            <div class="text-small" title="${progressText}">${progressText}</div>
                         </div>
                     `);
                 }
             }
 
-            container.innerHTML = entries.length > 0
-                ? entries.join('')
-                : '<p class="text-muted">Nenhuma quest ativa no momento.</p>';
+            if (entries.length === 0) {
+                container.innerHTML = '<p class="text-muted">Nenhuma quest ativa no momento.</p>';
+                return;
+            }
+
+            const MAX_VISIBLE = 2;
+            const visible = entries.slice(0, MAX_VISIBLE);
+            const extra = entries.length - MAX_VISIBLE;
+            let html = visible.join('');
+            if (extra > 0) {
+                html += `<div class="quest-more-hint">+${extra} quest${extra > 1 ? 's' : ''} — veja o Grupo</div>`;
+            }
+            container.innerHTML = html;
         }
 
         /**
@@ -8483,7 +8478,7 @@
         window.renderEncounterQuestHint = renderEncounterQuestHint;
 
         /**
-         * FASE 1 POKEMON: Renderiza seção de Conquistas
+         * FASE 1 POKEMON: Renderiza seção de Conquistas em mini-grid 3×2
          */
         function renderAchievements() {
             try {
@@ -8504,45 +8499,36 @@
                 const totalBattles = stats.battlesWon + stats.battlesLost;
                 const winRate = totalBattles > 0 ? Math.floor((stats.battlesWon / totalBattles) * 100) : 0;
                 const captureRate = stats.captureAttempts > 0 ? Math.floor((stats.capturesSuccessful / stats.captureAttempts) * 100) : 0;
+                const xpK = stats.totalXpGained >= 1000
+                    ? (Math.floor(stats.totalXpGained / 100) / 10).toString().replace(/\.0$/, '') + 'k'
+                    : stats.totalXpGained;
                 
-                let html = `
-                    <div class="stats-grid-180">
-                        <div class="stat-box">
-                            <div class="stat-value success">⚔️ ${stats.battlesWon}</div>
-                            <div class="stat-label">Vitórias</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-value danger">💀 ${stats.battlesLost}</div>
-                            <div class="stat-label">Derrotas</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-value info">📊 ${winRate}%</div>
-                            <div class="stat-label">Taxa de Vitória</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-value warning">🔥 ${stats.currentWinStreak}</div>
-                            <div class="stat-label">Sequência Atual</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-value purple">🏆 ${stats.highestWinStreak}</div>
-                            <div class="stat-label">Melhor Sequência</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-value success">🎯 ${captureRate}%</div>
-                            <div class="stat-label">Taxa de Captura</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-value violet">✨ ${stats.totalXpGained}</div>
-                            <div class="stat-label">XP Total</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-value gold">💰 ${stats.totalMoneyEarned}</div>
-                            <div class="stat-label">Moedas Ganhas</div>
-                        </div>
+                container.innerHTML = `<div class="stats-mini-grid">
+                    <div class="stat-mini">
+                        <span class="stat-mini-value">${stats.battlesWon}</span>
+                        <span class="stat-mini-label">Vitórias</span>
                     </div>
-                `;
-                
-                container.innerHTML = html;
+                    <div class="stat-mini">
+                        <span class="stat-mini-value">${stats.battlesLost}</span>
+                        <span class="stat-mini-label">Derrotas</span>
+                    </div>
+                    <div class="stat-mini">
+                        <span class="stat-mini-value">${winRate}%</span>
+                        <span class="stat-mini-label">Taxa Vit.</span>
+                    </div>
+                    <div class="stat-mini">
+                        <span class="stat-mini-value">${captureRate}%</span>
+                        <span class="stat-mini-label">Captura</span>
+                    </div>
+                    <div class="stat-mini">
+                        <span class="stat-mini-value">${xpK}</span>
+                        <span class="stat-mini-label">XP Total</span>
+                    </div>
+                    <div class="stat-mini">
+                        <span class="stat-mini-value">${stats.totalMoneyEarned || 0}</span>
+                        <span class="stat-mini-label">Moedas</span>
+                    </div>
+                </div>`;
             } catch (error) {
                 console.error('Error rendering achievements:', error);
             }
