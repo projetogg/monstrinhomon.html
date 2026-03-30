@@ -2789,7 +2789,7 @@
                 // COMMIT 8 (Wave A): Use Award API for canonical monster creation
                 const monster = awardMonster(
                     starterTemplate.id,  // templateId
-                    5,                   // level
+                    1,                   // level (igual ao fluxo principal de novo jogo)
                     null,                // rarity (use template default)
                     'party',             // destination
                     player               // player object
@@ -3592,6 +3592,32 @@
         }
 
         // SESSION MANAGEMENT
+        // Cria e ativa uma sessão com um nome; retorna o objeto session criado.
+        function mmCreateDefaultSession(name) {
+            name = (name || '').trim() || 'Sessão';
+            const playerIds = (GameState.players || []).map(p => p?.id).filter(id => id);
+            const session = {
+                id: Date.now(),
+                name: name,
+                createdAt: new Date().toISOString(),
+                completedAt: null,
+                players: playerIds,
+                turnOrder: [...playerIds],
+                currentTurnIndex: 0,
+                encountersLog: [],
+                therapy: { perPlayer: {} }
+            };
+            (GameState.players || []).forEach(player => {
+                if (player?.id) {
+                    session.therapy.perPlayer[player.id] = { pm: 0, medals: [], logs: [], completedObjectives: [] };
+                }
+            });
+            GameState.sessions = GameState.sessions || [];
+            GameState.sessions.push(session);
+            GameState.currentSession = session;
+            return session;
+        }
+
         function createSession() {
             try {
                 const name = document.getElementById('sessionName')?.value?.trim();
@@ -3685,8 +3711,13 @@
                 }
                 
                 if (!GameState.currentSession) {
-                    alert('Please create a session first');
-                    return;
+                    // Auto-criar sessão para não bloquear o usuário
+                    if (!GameState.players || GameState.players.length === 0) {
+                        alert('Adicione jogadores antes de iniciar um encontro');
+                        return;
+                    }
+                    mmCreateDefaultSession('Sessão');
+                    saveToLocalStorage();
                 }
                 
                 // Para encontros em grupo (trainer/boss), usar sistema de grupo
@@ -10995,7 +11026,8 @@
             // Começar pelo primeiro jogador sem starter
             const first = GameState.players.findIndex(p => !p.starterGranted);
             MM_STARTER.playerIndex = first >= 0 ? first : 0;
-            MM_STARTER.phase = 'choose';
+            // Classe já foi escolhida em MM_NEW step 2 — pular direto para o ovo
+            MM_STARTER.phase = 'egg';
 
             mmShow("mmStarterFlow");
             mmRenderStarterFlow();
@@ -11118,12 +11150,20 @@
                 return;
             }
 
-            MM_STARTER.phase = 'choose';
+            // Classe já foi escolhida em MM_NEW step 2 — pular direto para o ovo
+            MM_STARTER.phase = 'egg';
             mmRenderStarterFlow();
         }
 
         function mmFinishStarterFlow() {
             GameState.starterFlowCompleted = true;
+
+            // Auto-criar sessão se ainda não existir — garante que batalhas funcionem
+            // sem que o usuário precise descobrir o Modo Mestre
+            if (!GameState.currentSession && GameState.players && GameState.players.length > 0) {
+                mmCreateDefaultSession('Sessão');
+            }
+
             saveToLocalStorage(); // Persiste no auto-save (fonte de verdade)
             // Grava snapshot no slot manual associado (se houver) via camada canônica
             SaveLayer.syncMainStateAndSlot(GameState, mmBuildSaveEnvelope);
