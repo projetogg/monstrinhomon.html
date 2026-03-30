@@ -189,35 +189,37 @@
             <h2>⚔️ Batalha</h2>
 
             <!-- FASE UX: Dica de objetivo da quest ativa -->
-            <div id="encounterQuestHint" class="card quest-hint-card is-hidden">
-                <h4 style="margin:0 0 6px">📋 Objetivo da Quest</h4>
-                <div id="encounterQuestHintContent"></div>
+            <div id="encounterQuestHint" class="card quest-hint-card encounter-setup is-hidden">
+                <span style="font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;opacity:0.7">📋 Quest Ativa</span>
+                <div id="encounterQuestHintContent" style="margin-top:4px"></div>
             </div>
 
-            <div class="card">
-                <h3>Start New Encounter</h3>
-                <select id="encounterType" onchange="updateEncounterUI()">
-                    <option value="wild">🌟 Wild Monster (Individual Capture)</option>
-                    <option value="trainer">👤 Trainer Battle (Group)</option>
-                    <option value="boss">👹 Boss Battle (Group)</option>
-                    <option value="event">📖 Narrative Event</option>
-                </select>
-                
+            <div class="card encounter-setup" id="encounterSetupCard">
+                <h3>⚔️ Novo Encontro</h3>
+                <div class="encounter-setup-inline">
+                    <select id="encounterType" onchange="updateEncounterUI()">
+                        <option value="wild">🌟 Monstrinho Selvagem</option>
+                        <option value="trainer">👤 Batalha de Treinador</option>
+                        <option value="boss">👹 Boss</option>
+                        <option value="event">📖 Evento Narrativo</option>
+                    </select>
+                    <button class="btn btn-success" onclick="startEncounter()">▶ Iniciar</button>
+                </div>
+
                 <!-- Para encontros individuais (wild) -->
-                <div id="playerSelectDiv" class="mt-15">
-                    <label><strong>Selecionar Jogador (Encontro Individual):</strong></label>
+                <div id="playerSelectDiv" class="encounter-setup-player">
+                    <label>👤 Jogador:</label>
                     <select id="encounterPlayer" onchange="renderEncounterQuestHint(this.value)">
                         <option value="">-- Selecione --</option>
                     </select>
-                    <!-- Fix #8: Hint de quests ativas do jogador selecionado (usa #encounterQuestHint acima) -->
                 </div>
-                
+
                 <!-- Para encontros em grupo (trainer/boss) -->
-                <div id="groupSelectDiv" class="is-hidden mt-15">
-                    <label><strong>Select Participants (1-6):</strong></label>
-                    <div id="groupParticipantsList" class="mt-10"></div>
-                    <div class="mt-10">
-                        <label><strong>Enemy Level:</strong></label>
+                <div id="groupSelectDiv" class="is-hidden encounter-setup-group">
+                    <label class="text-small"><strong>Participantes (1-6):</strong></label>
+                    <div id="groupParticipantsList" class="mt-8"></div>
+                    <div class="mt-8">
+                        <label class="text-small"><strong>Nível do inimigo:</strong></label>
                         <select id="enemyLevel">
                             <option value="1">1</option>
                             <option value="3">3</option>
@@ -228,7 +230,7 @@
                             <option value="20">20</option>
                         </select>
                     </div>
-                    
+
                     <!-- Team Reorder UI -->
                     <div class="team-reorder-section">
                         <h4 class="m-0">⚔️ Organize Equipes</h4>
@@ -236,8 +238,6 @@
                         <div id="teamReorderContainer"></div>
                     </div>
                 </div>
-                
-                <button class="btn btn-success" onclick="startEncounter()">Start Encounter</button>
             </div>
 
             <div id="encounterPanel" class="is-hidden"></div>
@@ -5842,9 +5842,12 @@
                 if (!panel) return;
                 
                 const encounter = GameState.currentEncounter;
+                const setupCard = document.getElementById('encounterSetupCard');
+                const questHint = document.getElementById('encounterQuestHint');
                 
                 if (!encounter) {
                     hideEl(panel);
+                    if (setupCard) showEl(setupCard);
                     return;
                 }
 
@@ -5858,9 +5861,13 @@
 
                 if (!encounter.active && !isFinishedGroup && !isInactiveWild) {
                     hideEl(panel);
+                    if (setupCard) showEl(setupCard);
                     return;
                 }
                 
+                // Ocultar card de configuração durante o encontro para maximizar espaço
+                if (setupCard) hideEl(setupCard);
+                if (questHint) hideEl(questHint);
                 showEl(panel);
                 
                 if (encounter.type === 'wild') {
@@ -5904,29 +5911,27 @@
                     const resultEmoji = result === 'victory' ? '🏆' : result === 'fled' ? '🏃' : '😵';
                     const resultTitle = result === 'victory' ? 'Vitória!' : result === 'fled' ? 'Fugiu!' : 'Derrota!';
                     const lastLogs = (encounter.log || []).slice(-12);
-                    const logHtml = lastLogs.map(msg =>
-                        `<div class="log-entry">${msg}</div>`
-                    ).join('');
+                    const logHtml = lastLogs.map(msg => `<div>${msg}</div>`).join('');
                     let xpBar = '';
                     if (playerMonster) {
                         const xpCurrent = playerMonster.xp || 0;
                         const xpNeeded = playerMonster.xpNeeded || calcXpNeeded(playerMonster.level);
                         const xpPct = Math.max(0, Math.min(100, (xpCurrent / xpNeeded) * 100));
                         xpBar = `
-                            <div class="player-select-box mt-10">
+                            <div class="battle-result-xp-box">
                                 <strong>${playerMonster.emoji || ''} ${playerMonster.name} (Nv ${playerMonster.level})</strong>
-                                <div class="progress-bar h-15 mt-5">
-                                    <div class="progress-fill xp" style="width: ${xpPct}%"></div>
+                                <div class="battle-bar-row" style="margin-top:8px">
+                                    <div class="battle-bar-label"><span>✨ XP</span><span>${xpCurrent}/${xpNeeded} (${Math.floor(xpPct)}%)</span></div>
+                                    <div class="battle-bar"><div class="battle-bar-fill xp" style="width:${xpPct}%"></div></div>
                                 </div>
-                                <small><strong>XP:</strong> ${xpCurrent}/${xpNeeded} (${Math.floor(xpPct)}%)</small>
                             </div>`;
                     }
                     panel.innerHTML = `
-                        <div class="encounter-panel">
-                            <h3>${resultEmoji} ${resultTitle}</h3>
+                        <div class="battle-arena battle-arena--centered">
+                            <h3 class="battle-result-title">${resultEmoji} ${resultTitle}</h3>
                             ${xpBar}
-                            <div class="battle-log mt-10">${logHtml}</div>
-                            <div class="flex-center mt-15">
+                            <div class="battle-log-compact battle-log-result">${logHtml}</div>
+                            <div class="flex-center mt-12">
                                 <button class="btn btn-primary btn-large" onclick="closeBattleResult()">✅ Continuar</button>
                             </div>
                         </div>`;
@@ -5936,236 +5941,202 @@
                 // Percentagem de HP para exibição (trilha física)
                 const hpPercent = monster.hp / monster.hpMax;
                 
-                const html = `
-                    <div class="encounter-panel">
-                        ${renderTutorialBanner(encounter)}
-                        <h3>${monster.emoji} ${monster.name} selvagem apareceu!</h3>
-                        ${encounter.lastRoll ? (() => {
-                            const lr = encounter.lastRoll;
-                            const badgeClass = lr.type === 'crit' ? 'crit' : lr.type === 'fail' ? 'fail' : '';
-                            const emoji = lr.type === 'crit' ? '🌟' : lr.type === 'fail' ? '💥' : '🎲';
-                            return `<div class="d20-badge ${badgeClass}">${emoji} ${lr.name}: ${lr.roll} ${lr.type === 'crit' ? '(CRIT!)' : lr.type === 'fail' ? '(FALHA!)' : ''}</div>`;
-                        })() : ''}
-                        ${player ? `<p><strong>Jogador:</strong> ${player.name} (${player.class})</p>` : ''}
-                        ${playerMonster ? (() => {
-                            const xpCurrent = playerMonster.xp || 0;
-                            const xpNeeded = playerMonster.xpNeeded || calcXpNeeded(playerMonster.level);
-                            const xpPercent = Math.max(0, Math.min(100, (xpCurrent / xpNeeded) * 100));
-                            
-                            return `
-                        <div id="wildPlayerBox" class="player-select-box">
-                            <p><strong>Seu Monstrinho:</strong> ${playerMonster.emoji} ${playerMonster.name} (Nv ${playerMonster.level})</p>
-                            <div><strong>HP:</strong> ${playerMonster.hp}/${playerMonster.hpMax}</div>
-                            <div><strong>⚡ ENE:</strong> ${playerMonster.ene || 0}/${playerMonster.eneMax || 0}</div>
-                            <div class="progress-bar h-15 mt-5">
-                                <div class="progress-fill xp" style="width: ${xpPercent}%"></div>
-                            </div>
-                            <small><strong>XP:</strong> ${xpCurrent}/${xpNeeded} (${Math.floor(xpPercent)}%)</small>
-                            ${formatEquippedItemDisplay(playerMonster.heldItemId)}
-                        </div>
-                        `;
-                        })() : ''}
-                        
-                        <div id="wildEnemyBox" class="monster-card enemy-box ${monster.class}">
-                            <div class="font-size-48">${monster.emoji}</div>
-                            <strong>${monster.name}</strong>
-                            ${monster.isShiny ? '<div class="badge badge-shiny">⭐ SHINY ⭐</div>' : ''}
-                            <div class="badge badge-${monster.rarity}">${monster.rarity}</div>
-                            <div><strong>Classe:</strong> ${monster.class}</div>
-                            <div><strong>Level:</strong> ${monster.level}</div>
-                            <div class="mt-8">
-                                <div><strong>ATK:</strong> ${monster.atk} | <strong>DEF:</strong> ${monster.def}</div>
-                                <div><strong>PODER:</strong> ${monster.poder}</div>
-                                <div><strong>⚡ ENE:</strong> ${monster.ene || 0}/${monster.eneMax || 0}</div>
-                            </div>
-                            <div class="mt-8">
-                                <div><small>❤️ HP (Trilha Física)</small></div>
-                                <div class="progress-bar mt-4">
-                                    <div class="progress-fill hp" style="width: ${(monster.hp / monster.hpMax) * 100}%">
-                                        ${monster.hp}/${monster.hpMax} HP (${Math.floor(hpPercent * 100)}%)
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mt-8">
-                                <div><small>😤 Agressividade (Trilha Comportamental): <strong>${monster.aggression ?? 100}</strong>/100</small></div>
-                                <div class="progress-bar h-10 mt-4">
-                                    <div class="progress-fill" style="width:${monster.aggression??100}%;background:#e53935;"></div>
-                                </div>
-                            </div>
-                            ${encounter.behaviorallyResolved ?
-                                '<div class="color-success mt-5 text-bold">🌿 Calmo/Rendido! Trilha Comportamental concluída!</div>' :
-                                (() => {
-                                    const scoreNow = calculateCaptureScore(monster, 0);
-                                    const neededNow = GameState.config?.captureScoreThreshold?.[monster.rarity] ?? 45;
-                                    const rd = getCaptureReadinessLabel(scoreNow);
-                                    return `<div class="mt-5"><strong>${rd.emoji} ${rd.text}</strong> (Score: ${scoreNow}/${neededNow})</div>`;
-                                })()
-                            }
-                        </div>
-                        
-                        <h4>Escolha sua Ação:</h4>
-                        <div class="flex-center-col">
-                            <div class="my-10">
-                                <label class="d20-label">🎲 Enter your d20 roll:</label>
-                                <input type="number" id="diceRoll" min="1" max="20" placeholder="1-20" 
-                                       class="d20-input">
-                            </div>
-                            
-                            ${player ? (() => {
-                                const comum = player.inventory?.['CLASTERORB_COMUM'] || 0;
-                                const incomum = player.inventory?.['CLASTERORB_INCOMUM'] || 0;
-                                const rara = player.inventory?.['CLASTERORB_RARA'] || 0;
-                                const hasAnyOrb = comum > 0 || incomum > 0 || rara > 0;
-                                const captureAction = CAPTURE_ACTIONS[player.class];
-                                const scoreNow = calculateCaptureScore(monster, 0);
-                                const neededNow = GameState.config?.captureScoreThreshold?.[monster.rarity] ?? 45;
-                                
-                                return `
-                                <div class="capture-system-box">
-                                    <strong class="capture-system-title">🎯 Sistema de Captura — Duas Trilhas</strong>
-                                    <div class="mt-6">
-                                        <small>❤️ Trilha Física: reduz HP | 😤 Trilha Comportamental: reduz Agressividade</small>
-                                    </div>
-                                    <div class="mt-10">
-                                        <div><small>Score atual: <strong>${scoreNow}/100</strong> | Necessário: <strong>${neededNow}</strong></small></div>
-                                        <div class="progress-bar h-12 mt-4">
-                                            <div class="progress-fill" style="width:${Math.min(100,scoreNow)}%;background:${scoreNow>=neededNow?'#2e7d32':'#f57f17'};"></div>
-                                        </div>
-                                    </div>
+                // Dados do lado do jogador
+                const pmHpPct   = playerMonster ? Math.max(0, Math.min(100, (playerMonster.hp / playerMonster.hpMax) * 100)) : 0;
+                const pmEnePct  = playerMonster && playerMonster.eneMax ? Math.max(0, Math.min(100, ((playerMonster.ene || 0) / playerMonster.eneMax) * 100)) : 0;
+                const pmXpCurr  = playerMonster ? (playerMonster.xp || 0) : 0;
+                const pmXpNeed  = playerMonster ? (playerMonster.xpNeeded || calcXpNeeded(playerMonster.level)) : 1;
+                const pmXpPct   = Math.max(0, Math.min(100, (pmXpCurr / pmXpNeed) * 100));
 
-                                    ${captureAction ? `
-                                    <div class="mt-10">
-                                        <strong>🎭 Ação Comportamental (${player.class}):</strong>
-                                        <button class="btn btn-secondary mt-6 w-100"
-                                                onclick="useCaptureAction()"
-                                                ${playerMonster && playerMonster.hp > 0 && monster.hp > 0 && !encounter.behaviorallyResolved ? '' : 'disabled'}
-                                                title="Reduz Agressividade em ${Math.abs(captureAction.aggDelta)} pontos">
-                                            ${captureAction.emoji} ${captureAction.name}
-                                            <small>(Agressividade ${captureAction.aggDelta})</small>
-                                        </button>
-                                    </div>
-                                    ` : ''}
-                                    
-                                    ${hasAnyOrb ? `
-                                    <div class="mt-10">
-                                        <label class="text-bold">Escolha sua ClasterOrb:</label>
-                                        <select id="captureOrbSelect" onchange="updateCaptureThreshold()" class="orb-select">
-                                            ${comum > 0 ? `<option value="CLASTERORB_COMUM">⚪ Comum (${comum}x) - +0pts</option>` : ''}
-                                            ${incomum > 0 ? `<option value="CLASTERORB_INCOMUM">🔵 Incomum (${incomum}x) - +10pts</option>` : ''}
-                                            ${rara > 0 ? `<option value="CLASTERORB_RARA">🟣 Rara (${rara}x) - +20pts</option>` : ''}
-                                        </select>
-                                    </div>
-                                    <div id="captureThresholdDisplay" class="capture-threshold-box">
-                                        <strong>Score com Orb:</strong> <span id="finalThresholdValue">Calculando...</span>
-                                    </div>
-                                    ` : `
-                                    <div class="capture-warning">
-                                        <strong>❌ Sem ClasterOrbs!</strong><br>
-                                        Você não tem orbes de captura disponíveis.
-                                    </div>
-                                    `}
-                                    
-                                    <div class="mt-10">
-                                        <strong>📦 Inventário:</strong> 
-                                        ⚪ ${comum} | 🔵 ${incomum} | 🟣 ${rara} | 
-                                        💚 ${player.inventory?.['IT_HEAL_01'] || 0} | 🍖 ${player.inventory?.['IT_HEAL_02'] || 0} | ✨ ${player.inventory?.['IT_HEAL_03'] || 0}
-                                    </div>
-                                </div>
-                                `;
+                // Score de captura (sem orb) para exibir no painel do inimigo
+                const scoreNow  = calculateCaptureScore(monster, 0);
+                const neededNow = GameState.config?.captureScoreThreshold?.[monster.rarity] ?? 45;
+                const rd        = getCaptureReadinessLabel(scoreNow);
+
+                // Dados de inventário do jogador
+                const comum   = player?.inventory?.['CLASTERORB_COMUM']   || 0;
+                const incomum = player?.inventory?.['CLASTERORB_INCOMUM'] || 0;
+                const rara    = player?.inventory?.['CLASTERORB_RARA']    || 0;
+                const hasAnyOrb = comum > 0 || incomum > 0 || rara > 0;
+                const captureAction = player ? CAPTURE_ACTIONS[player.class] : null;
+
+                // Vantagem de classe (inline)
+                const advantageHtml = playerMonster && monster ? (() => {
+                    const adv = getClassAdvantage(playerMonster.class, monster.class);
+                    return adv.cssClass !== 'neutral'
+                        ? `<span class="battle-advantage-inline ${adv.cssClass}">${adv.text}</span>`
+                        : '';
+                })() : '';
+
+                // Habilidades
+                const skillsHtml = playerMonster ? (() => {
+                    const skillIds = getSkillsArray(playerMonster);
+                    if (!skillIds || skillIds.length === 0) return '<small style="opacity:0.5">Sem habilidades</small>';
+                    return `<div style="display:flex;gap:5px;flex-wrap:wrap">
+                        ${skillIds.map((skillId, idx) => {
+                            const skill = getSkillById(skillId);
+                            if (!skill) return '';
+                            const label = formatSkillButtonLabel(skill, playerMonster);
+                            const canUse = canUseSkillNow(skill, playerMonster) && playerMonster.hp > 0;
+                            const tutAllows = tutorialAllows("skill");
+                            const tooltip = !tutAllows ? 'Tutorial: ainda não liberado' : (canUse ? (skill.desc || skill.descricao || '') : 'Sem ENE');
+                            return `<button class="btn btn-primary" onclick="useSkillWild(${idx})"
+                                    ${!canUse || !tutAllows ? 'disabled' : ''} title="${tooltip}">${label}</button>`;
+                        }).join('')}
+                    </div>`;
+                })() : '<small style="opacity:0.5">—</small>';
+
+                // Itens de cura
+                const WILD_HEAL_ITEMS = [
+                    { id: 'IT_HEAL_01', emoji: '💚', name: 'Petisco de Cura' },
+                    { id: 'IT_HEAL_02', emoji: '🍖', name: 'Ração Revigorante' },
+                    { id: 'IT_HEAL_03', emoji: '✨', name: 'Elixir Máximo' },
+                ];
+                const availableHeals = player ? WILD_HEAL_ITEMS.filter(h => (player.inventory?.[h.id] || 0) > 0) : [];
+                const canHeal = playerMonster && playerMonster.hp > 0 && playerMonster.hp < playerMonster.hpMax;
+                const tutItem = tutorialAllows("item");
+
+                const html = `
+                    <div class="battle-arena">
+                        ${renderTutorialBanner(encounter)}
+
+                        <!-- Barra de contexto superior -->
+                        <div class="battle-top-bar">
+                            <span class="battle-encounter-title">${monster.emoji} ${monster.name} selvagem${monster.isShiny ? ' ⭐ SHINY' : ''} apareceu!</span>
+                            ${encounter.lastRoll ? (() => {
+                                const lr = encounter.lastRoll;
+                                const bc = lr.type === 'crit' ? 'crit' : lr.type === 'fail' ? 'fail' : '';
+                                const em = lr.type === 'crit' ? '🌟' : lr.type === 'fail' ? '💥' : '🎲';
+                                return `<span class="battle-roll-badge ${bc}">${em} ${lr.name}: ${lr.roll}${lr.type === 'crit' ? ' CRIT!' : lr.type === 'fail' ? ' FALHA!' : ''}</span>`;
                             })() : ''}
-                            
-                            <div class="flex-center">
-                                ${player && (player.inventory?.['CLASTERORB_COMUM'] > 0 || player.inventory?.['CLASTERORB_INCOMUM'] > 0 || player.inventory?.['CLASTERORB_RARA'] > 0) ? 
-                                    `<button class="btn btn-success btn-large" onclick="attemptCapture()" ${tutorialAllows("capture") ? "" : "disabled title='Tutorial: ainda não liberado'"}>🎯 Tentar Capturar</button>` :
-                                    `<button class="btn btn-success btn-large opacity-50" disabled>🎯 Sem Orbes</button>`
-                                }
-                                ${playerMonster && monster ? (() => {
-                                    // FASE 1 POKEMON: Indicador Visual de Vantagem de Classe
-                                    const advantage = getClassAdvantage(playerMonster.class, monster.class);
-                                    const advantageHtml = advantage.cssClass !== 'neutral' ? 
-                                        `<div class="class-advantage-indicator ${advantage.cssClass}">${advantage.text}</div>` : '';
-                                    
-                                    return `
-                                        ${advantageHtml}
-                                        <button class="btn btn-danger btn-large" onclick="attackWild()" ${tutorialAllows("attack") ? "" : "disabled title='Tutorial: ainda não liberado'"}>⚔️ Atacar</button>
-                                    `;
-                                })() : '<button class="btn btn-danger btn-large" onclick="attackWild()">⚔️ Atacar</button>'}
-                                <button class="btn btn-warning btn-large" onclick="fleeEncounter()" ${tutorialAllows("flee") ? "" : "disabled title='Tutorial: ainda não liberado'"}>🏃 Fugir</button>
+                            ${player ? `<span style="opacity:0.75">👤 ${player.name} (${player.class})</span>` : ''}
+                        </div>
+
+                        <!-- Combatentes lado a lado -->
+                        <div class="battle-combatants">
+                            <!-- Lado do jogador -->
+                            <div class="battle-combatant-box battle-player-side" id="wildPlayerBox">
+                                <div class="battle-combatant-role">👤 Seu Monstrinho</div>
+                                ${playerMonster ? `
+                                <div class="battle-combatant-name">${playerMonster.emoji || ''} ${playerMonster.name} <small>Nv ${playerMonster.level}</small></div>
+                                <div class="battle-bar-row">
+                                    <div class="battle-bar-label"><span>❤️ HP</span><span>${playerMonster.hp}/${playerMonster.hpMax}</span></div>
+                                    <div class="battle-bar"><div class="battle-bar-fill hp" style="width:${pmHpPct}%"></div></div>
+                                </div>
+                                <div class="battle-bar-row">
+                                    <div class="battle-bar-label"><span>⚡ ENE</span><span>${playerMonster.ene || 0}/${playerMonster.eneMax || 0}</span></div>
+                                    <div class="battle-bar"><div class="battle-bar-fill ene" style="width:${pmEnePct}%"></div></div>
+                                </div>
+                                <div class="battle-bar-row">
+                                    <div class="battle-bar-label"><span>✨ XP</span><span>${Math.floor(pmXpPct)}%</span></div>
+                                    <div class="battle-bar"><div class="battle-bar-fill xp" style="width:${pmXpPct}%"></div></div>
+                                </div>
+                                ${formatEquippedItemDisplay(playerMonster.heldItemId)}
+                                ` : `<div style="opacity:0.5;margin-top:6px">Sem monstrinho ativo</div>`}
                             </div>
-                            
-                            ${playerMonster && player ? (() => {
-                                // Todos os itens de cura suportados em batalha selvagem
-                                const WILD_HEAL_ITEMS = [
-                                    { id: 'IT_HEAL_01', emoji: '💚', name: 'Petisco de Cura' },
-                                    { id: 'IT_HEAL_02', emoji: '🍖', name: 'Ração Revigorante' },
-                                    { id: 'IT_HEAL_03', emoji: '✨', name: 'Elixir Máximo' },
-                                ];
-                                const availableHeals = WILD_HEAL_ITEMS.filter(h => (player.inventory?.[h.id] || 0) > 0);
-                                const canHeal = playerMonster.hp > 0 && playerMonster.hp < playerMonster.hpMax;
-                                const tutAllows = tutorialAllows("item");
-                                
-                                return `
-                                <div class="heal-box">
-                                    <strong class="font-size-16 text-bold">💚 Usar Item de Cura</strong>
-                                    <div class="mt-10">
-                                        <div><strong>HP atual:</strong> ${playerMonster.hp}/${playerMonster.hpMax}</div>
-                                        ${!canHeal && playerMonster.hp <= 0 ? 
-                                            `<div class="color-error mt-5">❌ Monstrinho desmaiado, não pode usar item</div>` :
-                                            !canHeal && playerMonster.hp >= playerMonster.hpMax ?
-                                            `<div class="color-warning mt-5">⚠️ HP já está cheio</div>` : ''
-                                        }
-                                    </div>
-                                    ${availableHeals.length === 0 ? `<div class="color-error mt-5">❌ Sem itens de cura disponíveis</div>` : ''}
+
+                            <!-- Lado do inimigo -->
+                            <div class="battle-combatant-box battle-enemy-side" id="wildEnemyBox">
+                                <div class="battle-combatant-role">⚔️ Inimigo</div>
+                                <div class="battle-combatant-name">${monster.emoji} ${monster.name} <small>Nv ${monster.level}</small></div>
+                                <div class="battle-stat-row">
+                                    <span class="badge badge-${monster.rarity}">${monster.rarity}</span>
+                                    <span>${monster.class}</span>
+                                    ${monster.isShiny ? '<span class="badge badge-shiny">⭐ Shiny</span>' : ''}
+                                </div>
+                                <div class="battle-stat-row">
+                                    <span>ATK ${monster.atk}</span><span>DEF ${monster.def}</span><span>PWR ${monster.poder}</span>
+                                </div>
+                                <div class="battle-bar-row">
+                                    <div class="battle-bar-label"><span>❤️ HP</span><span>${monster.hp}/${monster.hpMax} (${Math.floor(hpPercent*100)}%)</span></div>
+                                    <div class="battle-bar"><div class="battle-bar-fill hp" style="width:${hpPercent*100}%"></div></div>
+                                </div>
+                                <div class="battle-bar-row">
+                                    <div class="battle-bar-label"><span>😤 Agressividade</span><span>${monster.aggression ?? 100}/100</span></div>
+                                    <div class="battle-bar"><div class="battle-bar-fill aggr" style="width:${monster.aggression ?? 100}%"></div></div>
+                                </div>
+                                <div class="battle-capture-note">
+                                    ${encounter.behaviorallyResolved
+                                        ? '<span style="color:#00b894">🌿 Calmo/Rendido!</span>'
+                                        : `${rd.emoji} <strong>${rd.text}</strong> (${scoreNow}/${neededNow})`
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Linha de ações: d20 + botões principais -->
+                        <div class="battle-actions-row">
+                            <div class="battle-dice-section">
+                                <span class="battle-dice-label">🎲</span>
+                                <input type="number" id="diceRoll" min="1" max="20" placeholder="d20"
+                                       class="battle-dice-input">
+                            </div>
+                            ${advantageHtml}
+                            <div class="battle-main-actions">
+                                ${playerMonster && monster
+                                    ? `<button class="btn btn-danger" onclick="attackWild()" ${tutorialAllows("attack") ? "" : "disabled title='Tutorial: ainda não liberado'"}>⚔️ Atacar</button>`
+                                    : `<button class="btn btn-danger" onclick="attackWild()">⚔️ Atacar</button>`
+                                }
+                                ${hasAnyOrb
+                                    ? `<button class="btn btn-success" onclick="attemptCapture()" ${tutorialAllows("capture") ? "" : "disabled title='Tutorial: ainda não liberado'"}>🎯 Capturar</button>`
+                                    : `<button class="btn btn-success opacity-50" disabled title="Sem ClasterOrbs">🎯 Capturar</button>`
+                                }
+                                <button class="btn btn-warning" onclick="fleeEncounter()" ${tutorialAllows("flee") ? "" : "disabled title='Tutorial: ainda não liberado'"}>🏃 Fugir</button>
+                            </div>
+                        </div>
+
+                        <!-- Painel secundário: habilidades | itens & captura -->
+                        <div class="battle-secondary-row">
+                            <!-- Habilidades -->
+                            <div class="battle-sec-panel">
+                                <div class="battle-sec-title">✨ Habilidades</div>
+                                ${skillsHtml}
+                            </div>
+
+                            <!-- Itens de cura + Sistema de captura -->
+                            <div class="battle-sec-panel">
+                                <div class="battle-sec-title">💚 Itens & Captura</div>
+                                ${availableHeals.length > 0 ? `
+                                <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">
                                     ${availableHeals.map(h => {
                                         const qty = player.inventory?.[h.id] || 0;
                                         const canUse = canHeal && qty > 0;
-                                        return `
-                                        <button class="btn btn-primary mt-8 w-100"
+                                        return `<button class="btn btn-primary"
                                                 onclick="useItemInBattle('${h.id}')"
-                                                ${!canUse || !tutAllows ? 'disabled class="opacity-50"' : ''}
-                                                ${!tutAllows ? 'title="Tutorial: ainda não liberado"' : ''}>
-                                            ${h.emoji} ${h.name} (${qty}x)
+                                                ${!canUse || !tutItem ? 'disabled' : ''}
+                                                ${!tutItem ? 'title="Tutorial: ainda não liberado"' : `title="${h.name} (${qty}x)"`}>
+                                            ${h.emoji} ${qty}x
                                         </button>`;
                                     }).join('')}
-                                </div>
-                                `;
-                            })() : ''}
-                            
-                            ${playerMonster ? (() => {
-                                // Feature 3.7: Use skill catalog and getSkillsArray
-                                const skillIds = getSkillsArray(playerMonster);
-                                if (!skillIds || skillIds.length === 0) return '';
-                                
-                                return `
-                                <div class="skills-box">
-                                    <strong class="skills-title">✨ Habilidades</strong>
-                                    <div class="flex-center flex-gap-10 mt-10">
-                                        ${skillIds.map((skillId, idx) => {
-                                            const skill = getSkillById(skillId);
-                                            if (!skill) return '';
-                                            
-                                            const label = formatSkillButtonLabel(skill, playerMonster);
-                                            const canUse = canUseSkillNow(skill, playerMonster) && playerMonster.hp > 0;
-                                            const tutAllows = tutorialAllows("skill");
-                                            const tooltip = !tutAllows ? 'Tutorial: ainda não liberado' : (canUse ? (skill.desc || skill.descricao || '') : 'Sem ENE');
-                                            
-                                            return `
-                                            <button class="btn btn-primary" 
-                                                    onclick="useSkillWild(${idx})" 
-                                                    ${!canUse || !tutAllows ? 'disabled class="opacity-50"' : ''}
-                                                    title="${tooltip}">
-                                                ${label}
-                                            </button>
-                                            `;
-                                        }).join('')}
-                                    </div>
-                                </div>
-                                `;
-                            })() : ''}
+                                </div>` : ''}
+                                ${player ? (() => {
+                                    if (!hasAnyOrb) return `<div style="font-size:12px;opacity:0.6;margin-bottom:4px">❌ Sem ClasterOrbs</div>`;
+                                    return `
+                                    <select id="captureOrbSelect" onchange="updateCaptureThreshold()"
+                                            style="width:100%;padding:4px;font-size:12px;min-height:32px;margin-bottom:4px">
+                                        ${comum   > 0 ? `<option value="CLASTERORB_COMUM">⚪ Comum (${comum}x)</option>` : ''}
+                                        ${incomum > 0 ? `<option value="CLASTERORB_INCOMUM">🔵 Incomum (${incomum}x)</option>` : ''}
+                                        ${rara    > 0 ? `<option value="CLASTERORB_RARA">🟣 Rara (${rara}x)</option>` : ''}
+                                    </select>
+                                    <div id="captureThresholdDisplay" style="font-size:11px;padding:2px 0">
+                                        <span id="finalThresholdValue">Calculando...</span>
+                                    </div>`;
+                                })() : ''}
+                                ${captureAction ? `
+                                <div style="margin-top:6px">
+                                    <button class="btn btn-secondary" style="width:100%"
+                                            onclick="useCaptureAction()"
+                                            ${playerMonster && playerMonster.hp > 0 && monster.hp > 0 && !encounter.behaviorallyResolved ? '' : 'disabled'}
+                                            title="${captureAction.name}: Agressividade ${captureAction.aggDelta}">
+                                        ${captureAction.emoji} ${captureAction.name} <small>(Aggr ${captureAction.aggDelta})</small>
+                                    </button>
+                                </div>` : ''}
+                            </div>
                         </div>
-                        
-                        <div class="combat-log mt-20 p-15 bg-light-gray border-radius-12 max-h-300 overflow-auto" id="combatLog">
-                            ${(encounter.log || []).map(entry => `<div class="py-8 border-bottom-gray">${entry}</div>`).join('')}
+
+                        <!-- Log de combate compacto -->
+                        <div class="battle-log-compact" id="combatLog">
+                            ${(encounter.log || []).slice(-6).map(entry => `<div>${entry}</div>`).join('')}
                         </div>
                     </div>
                 `;
