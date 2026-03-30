@@ -56,8 +56,9 @@ export function checkHit(d20Roll, attacker, defender, classAdvantages) {
  * @param {number} params.damageMult - Multiplicador (1.0 padrão, 1.10 vantagem, 0.90 desvantagem)
  * @returns {number} Dano final (mínimo 1)
  * 
- * FÓRMULA BASE: floor(POWER * (ATK / (ATK + DEF))) * damageMult
- * DANO MÍNIMO: sempre 1
+ * FÓRMULA (alinhada com GAME_RULES.md):
+ * base = ATK + POWER - DEF
+ * final = max(1, floor(base * damageMult))
  * 
  * VANTAGEM DE CLASSE (Dano):
  * - Vantagem: 1.10 (110% do dano base)
@@ -66,22 +67,16 @@ export function checkHit(d20Roll, attacker, defender, classAdvantages) {
  * 
  * EXEMPLO:
  * ATK=10, DEF=5, POWER=15
- * ratio = 10/(10+5) = 0.666
- * baseD = floor(15 * 0.666) = floor(9.99) = 9
- * finalD = floor(9 * 1.0) = 9
+ * base = 10 + 15 - 5 = 20
+ * finalD = max(1, floor(20 * 1.0)) = 20
  */
 export function calcDamage({ atk, def, power, damageMult = 1.0 }) {
     try {
-        // ratio = ATK / (ATK + DEF)
-        const ratio = atk / (atk + def);
+        // FÓRMULA: ATK + POWER - DEF (GAME_RULES.md)
+        const base = atk + power - def;
         
-        // danoBase = floor(POWER * ratio)
-        const baseD = Math.floor(power * ratio);
-        
-        // Aplicar multiplicador de classe
-        const finalD = Math.floor(baseD * damageMult);
-        
-        // Dano mínimo sempre 1
+        // Aplicar multiplicador de classe e garantir dano mínimo 1
+        const finalD = Math.floor(base * damageMult);
         return Math.max(1, finalD);
     } catch (error) {
         console.error('Damage calculation failed:', error);

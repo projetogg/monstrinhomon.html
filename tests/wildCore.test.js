@@ -84,54 +84,58 @@ describe('checkHit - Verificação de Acerto', () => {
 });
 
 describe('calcDamage - Cálculo de Dano', () => {
+  // FÓRMULA (GAME_RULES.md): max(1, floor((ATK + POWER - DEF) * damageMult))
+
   it('deve calcular dano básico corretamente', () => {
     // ATK=10, DEF=5, POWER=15
-    // ratio = 10/(10+5) = 0.6666...
-    // baseD = floor(15 * 0.6666...) = floor(10) = 10
-    // finalD = floor(10 * 1.0) = 10
+    // base = 10 + 15 - 5 = 20
+    // finalD = max(1, floor(20 * 1.0)) = 20
     const damage = calcDamage({ atk: 10, def: 5, power: 15, damageMult: 1.0 });
-    expect(damage).toBe(10);
+    expect(damage).toBe(20);
   });
 
   it('deve aplicar multiplicador de vantagem (+10%)', () => {
     // ATK=10, DEF=10, POWER=20
-    // ratio = 10/(10+10) = 0.5
-    // baseD = floor(20 * 0.5) = 10
-    // finalD = floor(10 * 1.10) = floor(11) = 11
+    // base = 10 + 20 - 10 = 20
+    // finalD = floor(20 * 1.10) = floor(22) = 22
     const damage = calcDamage({ atk: 10, def: 10, power: 20, damageMult: 1.10 });
-    expect(damage).toBe(11);
+    expect(damage).toBe(22);
   });
 
   it('deve aplicar multiplicador de desvantagem (-10%)', () => {
     // ATK=10, DEF=10, POWER=20
-    // ratio = 10/(10+10) = 0.5
-    // baseD = floor(20 * 0.5) = 10
-    // finalD = floor(10 * 0.90) = floor(9) = 9
+    // base = 10 + 20 - 10 = 20
+    // finalD = floor(20 * 0.90) = floor(18) = 18
     const damage = calcDamage({ atk: 10, def: 10, power: 20, damageMult: 0.90 });
-    expect(damage).toBe(9);
+    expect(damage).toBe(18);
   });
 
   it('deve retornar dano mínimo de 1 quando DEF é muito alta', () => {
     // ATK=5, DEF=100, POWER=10
-    // ratio = 5/105 = 0.047
-    // baseD = floor(10 * 0.047) = floor(0.47) = 0
-    // finalD = max(1, 0) = 1
+    // base = 5 + 10 - 100 = -85
+    // finalD = max(1, floor(-85 * 1.0)) = max(1, -85) = 1
     const damage = calcDamage({ atk: 5, def: 100, power: 10, damageMult: 1.0 });
     expect(damage).toBe(1);
   });
 
   it('deve calcular dano alto quando ATK >> DEF', () => {
     // ATK=50, DEF=5, POWER=30
-    // ratio = 50/(50+5) = 0.909
-    // baseD = floor(30 * 0.909) = floor(27.27) = 27
-    // finalD = 27
+    // base = 50 + 30 - 5 = 75
+    // finalD = floor(75 * 1.0) = 75
     const damage = calcDamage({ atk: 50, def: 5, power: 30, damageMult: 1.0 });
-    expect(damage).toBe(27);
+    expect(damage).toBe(75);
   });
 
   it('deve usar multiplicador padrão 1.0 se não fornecido', () => {
+    // ATK=10, DEF=10, POWER=20 → base=20, finalD=20
     const damage = calcDamage({ atk: 10, def: 10, power: 20 });
-    expect(damage).toBe(10);
+    expect(damage).toBe(20);
+  });
+
+  it('dano mínimo 1 mesmo com damageMult < 1 e base negativa', () => {
+    // ATK=2, DEF=20, POWER=5 → base=2+5-20=-13, desvantagem 0.9 → floor(-11.7)=-12 → 1
+    const damage = calcDamage({ atk: 2, def: 20, power: 5, damageMult: 0.9 });
+    expect(damage).toBe(1);
   });
 });
 
@@ -299,11 +303,10 @@ describe('calculateDamage - Wrapper Completo', () => {
     };
     
     // POWER=12 (Guerreiro), vantagem 1.10
-    // ratio = 10/20 = 0.5
-    // baseD = floor(12 * 0.5) = 6
-    // finalD = floor(6 * 1.10) = floor(6.6) = 6
+    // base = ATK(10) + POWER(12) - DEF(10) = 12
+    // finalD = floor(12 * 1.10) = floor(13.2) = 13
     const damage = calculateDamage(attacker, defender, getBasicPower, classAdvantages);
-    expect(damage).toBe(6);
+    expect(damage).toBe(13);
   });
 
   it('deve aplicar buffs de ATK', () => {
@@ -320,10 +323,10 @@ describe('calculateDamage - Wrapper Completo', () => {
     
     // ATK efetivo: 10 + 5 = 15
     // POWER=10 (Mago)
-    // ratio = 15/25 = 0.6
-    // baseD = floor(10 * 0.6) = 6
+    // base = 15 + 10 - 10 = 15
+    // finalD = max(1, floor(15 * 1.0)) = 15
     const damage = calculateDamage(attacker, defender, getBasicPower, classAdvantages);
-    expect(damage).toBe(6);
+    expect(damage).toBe(15);
   });
 
   it('deve retornar dano mínimo de 1', () => {

@@ -222,7 +222,10 @@ export function calculateTurnOrder(enc, playersData, rollD20Fn) {
         const p = playersData.find(x => x.id === pid);
         if (!p) continue;
         
-        const mon = p.team?.[0];
+        // BUG FIX: usar activeIndex para obter o monstro realmente em campo
+        // team?.[0] era incorreto quando o jogador já trocou de monstro
+        const activeIdx = typeof p.activeIndex === 'number' ? p.activeIndex : 0;
+        const mon = p.team?.[activeIdx];
         if (!mon) continue;
         
         const hp = Number(mon.hp) || 0;

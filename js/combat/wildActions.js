@@ -10,6 +10,20 @@ import * as WildUI from './wildUI.js';
 import { initializeBattleParticipation, markAsParticipated, processBattleItemBreakage } from './itemBreakage.js';
 
 /**
+ * Rola d20 usando função injetada ou fallback para Math.random.
+ * Centraliza o fallback para evitar duplicação entre funções de IA.
+ *
+ * @param {object} dependencies - Dependências do combate
+ * @returns {number} Valor do d20 (1-20)
+ */
+function rollEnemyD20(dependencies) {
+    if (typeof dependencies.rollD20 === 'function') {
+        return dependencies.rollD20();
+    }
+    return Math.floor(Math.random() * 20) + 1;
+}
+
+/**
  * Inicializa participação de batalha para wild 1v1
  * Deve ser chamado no início do encounter
  * 
@@ -251,18 +265,20 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
     wildMonster.ene -= wildSkill.energy_cost;
     encounter.log.push(`✨ ${wildMonster.name} usa ${wildSkill.name}! (-${wildSkill.energy_cost} ENE)`);
     
-    const enemyRoll = Math.floor(Math.random() * 20) + 1;
-    const enemyHit = WildCore.checkHit(enemyRoll, wildMonster, playerMonster, dependencies.classAdvantages);
+    // Usar rollEnemyD20 centralizado (injeta dependencies.rollD20 ou fallback Math.random)
+    const enemyRoll = rollEnemyD20(dependencies);
+    const alwaysMiss = (enemyRoll === 1);
+    const isCrit = (enemyRoll === 20);
+    const enemyHit = !alwaysMiss && (isCrit || WildCore.checkHit(enemyRoll, wildMonster, playerMonster, dependencies.classAdvantages));
     encounter.log.push(`🎲 ${wildMonster.name} rolls ${enemyRoll}`);
     
     // Gravar roll
     if (dependencies.recordD20Roll) {
-        const enemyRollType = enemyRoll === 20 ? 'crit' : enemyRoll === 1 ? 'fail' : 'normal';
+        const enemyRollType = isCrit ? 'crit' : alwaysMiss ? 'fail' : 'normal';
         dependencies.recordD20Roll(encounter, wildMonster.name, enemyRoll, enemyRollType);
     }
     
     if (enemyHit) {
-        // Bug Fix #1 & #2: Usar fórmula correta com ratio e vantagem de classe
         const atkMods = WildCore.getBuffModifiers(wildMonster);
         const effectiveAtk = Math.max(1, wildMonster.atk + atkMods.atk);
         
@@ -290,11 +306,15 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
         // PR11B: Marcar que o selvagem participou (causou dano)
         markAsParticipated(wildMonster);
         
-        WildUI.showDamageFeedback('wildPlayerBox', damage, enemyRoll === 20, dependencies.ui);
+        WildUI.showDamageFeedback('wildPlayerBox', damage, isCrit, dependencies.ui);
         
         return { defeated: playerMonster.hp <= 0 };
     } else {
-        encounter.log.push(`❌ ${wildSkill.name} erra!`);
+        if (alwaysMiss) {
+            encounter.log.push(`💀 FALHA CRÍTICA! ${wildMonster.name} erra!`);
+        } else {
+            encounter.log.push(`❌ ${wildSkill.name} erra!`);
+        }
         WildUI.showMissFeedback('wildEnemyBox', dependencies.ui);
         return { defeated: false };
     }
@@ -304,13 +324,16 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
  * Processa ataque básico do inimigo
  */
 function processEnemyBasicAttack(encounter, wildMonster, playerMonster, dependencies) {
-    const enemyRoll = Math.floor(Math.random() * 20) + 1;
-    const enemyHit = WildCore.checkHit(enemyRoll, wildMonster, playerMonster, dependencies.classAdvantages);
+    // Usar rollEnemyD20 centralizado (injeta dependencies.rollD20 ou fallback Math.random)
+    const enemyRoll = rollEnemyD20(dependencies);
+    const alwaysMiss = (enemyRoll === 1);
+    const isCrit = (enemyRoll === 20);
+    const enemyHit = !alwaysMiss && (isCrit || WildCore.checkHit(enemyRoll, wildMonster, playerMonster, dependencies.classAdvantages));
     encounter.log.push(`🎲 Wild ${wildMonster.name} rolls ${enemyRoll} (ATK: ${wildMonster.atk})`);
     
     // Gravar roll
     if (dependencies.recordD20Roll) {
-        const enemyRollType = enemyRoll === 20 ? 'crit' : enemyRoll === 1 ? 'fail' : 'normal';
+        const enemyRollType = isCrit ? 'crit' : alwaysMiss ? 'fail' : 'normal';
         dependencies.recordD20Roll(encounter, wildMonster.name, enemyRoll, enemyRollType);
     }
     
@@ -329,11 +352,15 @@ function processEnemyBasicAttack(encounter, wildMonster, playerMonster, dependen
         // PR11B: Marcar que o selvagem participou (causou dano)
         markAsParticipated(wildMonster);
         
-        WildUI.showDamageFeedback('wildPlayerBox', damage, enemyRoll === 20, dependencies.ui);
+        WildUI.showDamageFeedback('wildPlayerBox', damage, isCrit, dependencies.ui);
         
         return { defeated: playerMonster.hp <= 0 };
     } else {
-        encounter.log.push(`❌ ${wildMonster.name} misses!`);
+        if (alwaysMiss) {
+            encounter.log.push(`💀 FALHA CRÍTICA! ${wildMonster.name} erra!`);
+        } else {
+            encounter.log.push(`❌ ${wildMonster.name} misses!`);
+        }
         WildUI.showMissFeedback('wildEnemyBox', dependencies.ui);
         return { defeated: false };
     }

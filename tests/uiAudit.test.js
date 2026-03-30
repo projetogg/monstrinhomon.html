@@ -202,9 +202,8 @@ describe('Auditoria UI — Integridade de onchange handlers', () => {
 // Estes handlers DEVEM estar exportados no window de index.html.
 // Sem os exports, o browser lança ReferenceError e a batalha trava.
 
-import { readFileSync } from 'fs';
 const groupUISource = readFileSync(
-    new URL('../js/combat/groupUI.js', import.meta.url),
+    join(process.cwd(), 'js/combat/groupUI.js'),
     'utf-8'
 );
 
