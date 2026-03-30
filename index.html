@@ -110,21 +110,7 @@
 
             </div>
 
-            <!-- Ações Rápidas (parte inferior) -->
-            <div class="quick-actions">
-                <button class="quick-action-btn quick-action--grupo" onclick="switchTab('players')">
-                    <span class="qa-icon">👥</span>
-                    <span class="qa-label">Grupo</span>
-                </button>
-                <button class="quick-action-btn quick-action--batalha" onclick="switchTab('encounter')">
-                    <span class="qa-icon">⚔️</span>
-                    <span class="qa-label">Batalha</span>
-                </button>
-                <button class="quick-action-btn quick-action--dex" onclick="switchTab('partyDex')">
-                    <span class="qa-icon">📘</span>
-                    <span class="qa-label">Monstrodex</span>
-                </button>
-            </div>
+
         </div>
 
         <div id="tabSession" class="tab-content">
@@ -8340,54 +8326,20 @@
                 const seenCount = monstrodex.seen.length;
                 const capturedCount = monstrodex.captured.length;
                 
-                const seenPercent = totalMonsters > 0 ? Math.floor((seenCount / totalMonsters) * 100) : 0;
-                const capturedPercent = totalMonsters > 0 ? Math.floor((capturedCount / totalMonsters) * 100) : 0;
-                
-                // Estatísticas por classe
-                const classCounts = {};
-                MONSTER_CATALOG.forEach(mon => {
-                    const cls = mon.class || 'Unknown';
-                    if (!classCounts[cls]) {
-                        classCounts[cls] = { total: 0, seen: 0, captured: 0 };
-                    }
-                    classCounts[cls].total++;
-                    if (monstrodex.seen.includes(mon.id)) classCounts[cls].seen++;
-                    if (monstrodex.captured.includes(mon.id)) classCounts[cls].captured++;
-                });
-                
-                let html = `
-                    <div class="stats-grid-200">
-                        <div class="stat-box">
-                            <strong>👁️ Vistos:</strong> ${seenCount}/${totalMonsters} (${seenPercent}%)
-                            <div class="progress-bar progress-bar-spacing">
-                                <div class="progress-fill" style="width: ${seenPercent}%; background: #2196F3;"></div>
-                            </div>
-                        </div>
-                        <div class="stat-box">
-                            <strong>✅ Capturados:</strong> ${capturedCount}/${totalMonsters} (${capturedPercent}%)
-                            <div class="progress-bar progress-bar-spacing">
-                                <div class="progress-fill" style="width: ${capturedPercent}%; background: #4CAF50;"></div>
-                            </div>
-                        </div>
+                let html = `<div class="home-stats-row">
+                    <div class="home-stat-item">
+                        <span class="home-stat-value">${seenCount}</span>
+                        <span class="home-stat-label">Vistos</span>
                     </div>
-                    
-                    <details class="mt-10">
-                        <summary class="details-summary">📊 Progresso por Classe</summary>
-                        <div class="mt-10">
-                            ${Object.entries(classCounts).map(([cls, counts]) => {
-                                const pct = counts.total > 0 ? Math.floor((counts.captured / counts.total) * 100) : 0;
-                                return `
-                                    <div class="mb-8">
-                                        <strong>${cls}:</strong> ${counts.captured}/${counts.total}
-                                        <div class="progress-bar progress-bar-spacing-sm">
-                                            <div class="progress-fill" style="width: ${pct}%; background: #9C27B0;"></div>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </details>
-                `;
+                    <div class="home-stat-item">
+                        <span class="home-stat-value">${capturedCount}</span>
+                        <span class="home-stat-label">Capturados</span>
+                    </div>
+                    <div class="home-stat-item">
+                        <span class="home-stat-value">${totalMonsters}</span>
+                        <span class="home-stat-label">Total</span>
+                    </div>
+                </div>`;
                 
                 container.innerHTML = html;
             } catch (error) {
@@ -8505,42 +8457,24 @@
                 const winRate = totalBattles > 0 ? Math.floor((stats.battlesWon / totalBattles) * 100) : 0;
                 const captureRate = stats.captureAttempts > 0 ? Math.floor((stats.capturesSuccessful / stats.captureAttempts) * 100) : 0;
                 
-                let html = `
-                    <div class="stats-grid-180">
-                        <div class="stat-box">
-                            <div class="stat-value success">⚔️ ${stats.battlesWon}</div>
-                            <div class="stat-label">Vitórias</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-value danger">💀 ${stats.battlesLost}</div>
-                            <div class="stat-label">Derrotas</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-value info">📊 ${winRate}%</div>
-                            <div class="stat-label">Taxa de Vitória</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-value warning">🔥 ${stats.currentWinStreak}</div>
-                            <div class="stat-label">Sequência Atual</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-value purple">🏆 ${stats.highestWinStreak}</div>
-                            <div class="stat-label">Melhor Sequência</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-value success">🎯 ${captureRate}%</div>
-                            <div class="stat-label">Taxa de Captura</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-value violet">✨ ${stats.totalXpGained}</div>
-                            <div class="stat-label">XP Total</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-value gold">💰 ${stats.totalMoneyEarned}</div>
-                            <div class="stat-label">Moedas Ganhas</div>
-                        </div>
+                let html = `<div class="home-stats-row">
+                    <div class="home-stat-item">
+                        <span class="home-stat-value">${stats.battlesWon}</span>
+                        <span class="home-stat-label">Vitórias</span>
                     </div>
-                `;
+                    <div class="home-stat-item">
+                        <span class="home-stat-value">${winRate}%</span>
+                        <span class="home-stat-label">Taxa Vitória</span>
+                    </div>
+                    <div class="home-stat-item">
+                        <span class="home-stat-value">${stats.currentWinStreak}</span>
+                        <span class="home-stat-label">Sequência</span>
+                    </div>
+                    <div class="home-stat-item">
+                        <span class="home-stat-value">${captureRate}%</span>
+                        <span class="home-stat-label">Taxa Captura</span>
+                    </div>
+                </div>`;
                 
                 container.innerHTML = html;
             } catch (error) {
