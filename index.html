@@ -6311,8 +6311,17 @@
                 if (enemyHit) {
                     const basicPower = MM_TABLES.getBasicAttackPower(monster.class);
                     const powerUsed  = enemyIsCrit ? basicPower * 2 : basicPower;
-                    const damage     = calculateDamage(monster, playerMonster, () => powerUsed,
-                                           GameState.config?.classAdvantages);
+                    // BUG FIX: usar calcDamage diretamente para que o poder dobrado no crítico
+                    // seja realmente aplicado (calculateDamage() ignora parâmetros extras)
+                    const atkMods2 = getBuffModifiers(monster);
+                    const effAtk2  = Math.max(1, monster.atk + atkMods2.atk);
+                    const defMods2 = getBuffModifiers(playerMonster);
+                    const effDef2  = Math.max(1, playerMonster.def + defMods2.def);
+                    const classAdv2 = GameState.config?.classAdvantages?.[monster.class];
+                    let damageMult2 = 1.0;
+                    if (classAdv2?.strong === playerMonster.class) damageMult2 = 1.10;
+                    else if (classAdv2?.weak === playerMonster.class) damageMult2 = 0.90;
+                    const damage = calcDamage({ atk: effAtk2, def: effDef2, power: powerUsed, damageMult: damageMult2 });
                     playerMonster.hp = Math.max(0, playerMonster.hp - damage);
                     encounter.log.push(`💥 ${monster.name} contra-ataca! Causa ${damage} de dano!`);
 
@@ -6383,7 +6392,7 @@
                 player.inventory[selectedOrbId]--;
                 encounter.log.push(`${orbInfo.emoji} ${player.name} usou ${orbInfo.name}! (Restam: ${player.inventory[selectedOrbId]})`);
                 
-                // Calcular captureScore multi-eixo (HP + Agressividade + Abertura + Orb)
+                // Calcular captureScore multi-eixo (HP + Agressividade + Orb)
                 const score  = calculateCaptureScore(monster, orbInfo.capture_bonus_pp);
                 const needed = GameState.config?.captureScoreThreshold?.[monster.rarity] ?? 45;
                 const readiness = getCaptureReadinessLabel(score);
@@ -6876,13 +6885,34 @@
                 } else {
                     // Ataque básico do selvagem
                     const enemyRoll = Math.floor(Math.random() * 20) + 1;
-                    const enemyHit = checkHit(enemyRoll, wildMonster, playerMonster);
+                    // BUG FIX: aplicar regras d20=1 (sempre erra) e d20=20 (sempre acerta)
+                    // consistente com useCaptureAction, attemptCapture e useItemInBattle
+                    const enemyIsCrit = (enemyRoll === 20);
+                    const enemyIsFail = (enemyRoll === 1);
+                    const enemyHit = enemyIsFail ? false :
+                                     (enemyIsCrit ? true :
+                                     checkHit(enemyRoll, wildMonster, playerMonster));
                     encounter.log.push(`🎲 ${wildMonster.name} rola ${enemyRoll} (ATK: ${wildMonster.atk})`);
-                    
+
+                    if (enemyIsCrit) Audio.playSfx?.('crit');
+                    else if (enemyIsFail || !enemyHit) Audio.playSfx?.('miss');
+                    else Audio.playSfx?.('hit');
+
                     if (enemyHit) {
-                        const mods = getBuffModifiers(wildMonster);
-                        const effectiveAtk = wildMonster.atk + mods.atk;
-                        const damage = calculateDamage(wildMonster, playerMonster);
+                        const basicPower = MM_TABLES.getBasicAttackPower(wildMonster.class);
+                        const powerUsed  = enemyIsCrit ? basicPower * 2 : basicPower;
+
+                        const atkMods = getBuffModifiers(wildMonster);
+                        const effectiveAtk = Math.max(1, wildMonster.atk + atkMods.atk);
+                        const defMods = getBuffModifiers(playerMonster);
+                        const effectiveDef = Math.max(1, playerMonster.def + defMods.def);
+
+                        const classAdv = GameState.config?.classAdvantages?.[wildMonster.class];
+                        let damageMult = 1.0;
+                        if (classAdv?.strong === playerMonster.class) damageMult = 1.10;
+                        else if (classAdv?.weak === playerMonster.class) damageMult = 0.90;
+
+                        const damage = calcDamage({ atk: effectiveAtk, def: effectiveDef, power: powerUsed, damageMult });
                         playerMonster.hp = Math.max(0, playerMonster.hp - damage);
                         encounter.log.push(`💥 ${wildMonster.name} acerta! Causa ${damage} de dano!`);
                         
@@ -6894,7 +6924,11 @@
                             // BUG FIX: Manter encounter para exibir resultado
                         }
                     } else {
-                        encounter.log.push(`❌ ${wildMonster.name} erra!`);
+                        if (enemyIsFail) {
+                            encounter.log.push(`💀 FALHA CRÍTICA! ${wildMonster.name} erra!`);
+                        } else {
+                            encounter.log.push(`❌ ${wildMonster.name} erra!`);
+                        }
                     }
                 }
                 
