@@ -2179,7 +2179,7 @@
                     'Místico': 18, 'Lendário': 25
                 },
                 // Threshold do captureScore (0-100) necessário para captura por raridade
-                // Reflete a dificuldade de captura multi-eixo (HP + Agressividade + Abertura)
+                // Reflete a dificuldade de captura multi-eixo (HP + Agressividade)
                 captureScoreThreshold: {
                     'Comum': 35, 'Incomum': 45, 'Raro': 58,
                     'Místico': 72, 'Lendário': 85
@@ -3769,7 +3769,6 @@
                     
                     // Inicializar estado de captura multi-eixo
                     encounter.wildMonster.aggression = 100; // começa totalmente agressivo
-                    encounter.wildMonster.openness   = 0;   // começa totalmente fechado
                     
                     // FASE 1 POKEMON: Marcar como visto no Monstródex
                     updateMonstrodex('see', randomMonster.id);
@@ -5934,10 +5933,8 @@
                     return;
                 }
                 
-                // Calcular threshold de captura
+                // Percentagem de HP para exibição (trilha física)
                 const hpPercent = monster.hp / monster.hpMax;
-                const baseThreshold = GameState.config?.captureThreshold?.[monster.rarity] || 0.35;
-                const canCapture = hpPercent <= baseThreshold;
                 
                 const html = `
                     <div class="encounter-panel">
@@ -6236,7 +6233,7 @@
         /**
          * Executa uma ação de captura específica da classe do jogador.
          *
-         * A ação afeta o estado do selvagem (aggression/openness) sem causar dano,
+         * A ação afeta o estado do selvagem (aggression) sem causar dano,
          * permitindo que classes de suporte contribuam para a captura.
          * Após a ação, o selvagem contra-ataca (como após um ataque normal).
          */
@@ -6393,9 +6390,8 @@
                 
                 encounter.log.push(
                     `🎯 ${readiness.emoji} ${readiness.text} — Score: ${score}/100 (precisava: ${needed}) ` +
-                    `[HP:${Math.round((1-monster.hp/monster.hpMax)*60)}pts | ` +
-                    `Calma:${Math.round((1-(monster.aggression??100)/100)*20)}pts | ` +
-                    `Abertura:${Math.round((monster.openness??0)/100*20)}pts | ` +
+                    `[Trilha Física:${Math.round((1-monster.hp/monster.hpMax)*50)}pts | ` +
+                    `Trilha Comportamental:${Math.round((1-(monster.aggression??100)/100)*50)}pts | ` +
                     `Orb:+${orbInfo.capture_bonus_pp}pts]`
                 );
                 

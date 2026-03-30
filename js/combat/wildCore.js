@@ -222,11 +222,14 @@ export function checkCriticalRoll(d20Roll) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SISTEMA DE CAPTURA SELVAGEM — Multi-eixo
+// SISTEMA DE CAPTURA SELVAGEM — Duas Trilhas
 //
-// Capture Score = f(HP, Agressividade, Abertura) + bônus de orb
-// Cada eixo contribui independentemente, permitindo que classes de suporte
-// (Curandeiro, Bardo, Animalista) capturem sem depender de dano bruto.
+// Capture Score = f(HP, Agressividade) + bônus de orb
+// Trilha Física          (HP):          hpScore   = (1 - hp/hpMax) * 50
+// Trilha Comportamental  (Agressividade): aggrScore = (1 - aggression/100) * 50
+// Ambas as trilhas têm peso máximo igual (50 pontos cada).
+// Classes de suporte (Curandeiro, Bardo, Animalista) chegam ao score pela
+// trilha comportamental sem depender de dano bruto.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -236,21 +239,20 @@ export function checkCriticalRoll(d20Roll) {
  * - Trilha Física   (HP):         classes ofensivas são naturalmente mais eficientes
  * - Trilha Comportamental (Agressividade): classes de suporte são naturalmente mais eficientes
  *
- * aggDelta  — redução de agressividade por ação (negativo = acalma o selvagem)
- * openDelta — mantido por retrocompatibilidade, sem efeito no score atual
+ * aggDelta — redução de agressividade por ação (negativo = acalma o selvagem)
  */
 export const CAPTURE_ACTIONS = {
     // Suporte — trilha comportamental forte
-    Curandeiro: { id: 'calm',       name: 'Acalmar',       emoji: '🌿', aggDelta: -40, openDelta:  0 },
-    Bardo:      { id: 'sing',       name: 'Melodia Suave', emoji: '🎵', aggDelta: -35, openDelta:  0 },
-    Animalista: { id: 'bond',       name: 'Criar Vínculo', emoji: '🐾', aggDelta: -30, openDelta:  0 },
+    Curandeiro: { id: 'calm',       name: 'Acalmar',       emoji: '🌿', aggDelta: -40 },
+    Bardo:      { id: 'sing',       name: 'Melodia Suave', emoji: '🎵', aggDelta: -35 },
+    Animalista: { id: 'bond',       name: 'Criar Vínculo', emoji: '🐾', aggDelta: -30 },
     // Híbrido — redução moderada de agressividade
-    Ladino:     { id: 'distract',   name: 'Distrair',      emoji: '🌑', aggDelta: -25, openDelta:  0 },
-    Mago:       { id: 'charm',      name: 'Enfeitiçar',    emoji: '🔮', aggDelta: -20, openDelta:  0 },
+    Ladino:     { id: 'distract',   name: 'Distrair',      emoji: '🌑', aggDelta: -25 },
+    Mago:       { id: 'charm',      name: 'Enfeitiçar',    emoji: '🔮', aggDelta: -20 },
     // Ofensivo — conter fisicamente, reduz menos agressividade
-    Guerreiro:  { id: 'contain',    name: 'Conter',        emoji: '⚔️', aggDelta: -20, openDelta:  0 },
-    Caçador:    { id: 'trap',       name: 'Imobilizar',    emoji: '🏹', aggDelta: -20, openDelta:  0 },
-    Bárbaro:    { id: 'intimidate', name: 'Intimidar',     emoji: '⚡', aggDelta: -15, openDelta:  0 },
+    Guerreiro:  { id: 'contain',    name: 'Conter',        emoji: '⚔️', aggDelta: -20 },
+    Caçador:    { id: 'trap',       name: 'Imobilizar',    emoji: '🏹', aggDelta: -20 },
+    Bárbaro:    { id: 'intimidate', name: 'Intimidar',     emoji: '⚡', aggDelta: -15 },
 };
 
 /**
@@ -307,8 +309,4 @@ export function getCaptureReadinessLabel(score) {
 export function applyCaptureAction(wildMonster, action) {
     if (!wildMonster || !action) return;
     wildMonster.aggression = Math.max(0, Math.min(100, (wildMonster.aggression ?? 100) + action.aggDelta));
-    // openDelta mantido por retrocompatibilidade; openness não afeta o score atual
-    if (action.openDelta !== undefined && wildMonster.openness !== undefined) {
-        wildMonster.openness = Math.max(0, Math.min(100, (wildMonster.openness ?? 0) + action.openDelta));
-    }
 }
