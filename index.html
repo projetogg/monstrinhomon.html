@@ -48,22 +48,22 @@
                 <button id="headerMestreBtn" class="tab-button nav-btn nav-btn--mestre" onclick="mmOpenMestre()" aria-label="Painel Mestre">
                     <span class="nav-icon">🧑‍🏫</span><span class="nav-label">Mestre</span>
                 </button>
-                <!-- Seletor global de perspectiva de jogador -->
-                <div class="player-chip-wrapper player-chip-wrapper--hidden" id="playerChipWrapper">
-                    <button class="player-chip" id="playerPerspectiveChip"
-                            onclick="togglePlayerPerspectiveDropdown(event)"
-                            aria-label="Selecionar perspectiva de jogador"
-                            aria-expanded="false"
-                            aria-haspopup="listbox">
-                        <span class="nav-icon">👤</span>
-                        <span id="playerChipName">Jogador</span>
-                        <span class="player-chip-arrow">▾</span>
-                    </button>
-                    <div class="player-chip-dropdown" id="playerChipDropdown" hidden role="listbox" aria-label="Jogadores">
-                        <!-- populado pelo JS -->
-                    </div>
-                </div>
             </nav>
+            <!-- Seletor global de perspectiva de jogador — fora da navbar para não causar scroll lateral -->
+            <div class="player-chip-wrapper player-chip-wrapper--hidden" id="playerChipWrapper">
+                <button class="player-chip" id="playerPerspectiveChip"
+                        onclick="togglePlayerPerspectiveDropdown(event)"
+                        aria-label="Selecionar perspectiva de jogador"
+                        aria-expanded="false"
+                        aria-haspopup="listbox">
+                    <span class="nav-icon">👤</span>
+                    <span id="playerChipName">Jogador</span>
+                    <span class="player-chip-arrow">▾</span>
+                </button>
+                <div class="player-chip-dropdown" id="playerChipDropdown" hidden role="listbox" aria-label="Jogadores">
+                    <!-- populado pelo JS -->
+                </div>
+            </div>
         </div>
 
         <div id="tabHome" class="tab-content active">
@@ -323,28 +323,18 @@
 
         <div id="tabBox" class="tab-content">
             <h2>Box (PC) 📦</h2>
-            
+
             <div class="card">
                 <h3>📍 Status</h3>
                 <div id="boxStatus">
-                    <p><strong>Jogador Ativo:</strong> <span id="boxActivePlayer">-</span></p>
+                    <p><strong>Jogador:</strong> <span id="boxActivePlayer">-</span></p>
                     <p><strong>Equipe:</strong> <span id="boxTeamCount">0/6</span></p>
                     <p><strong>Box Total:</strong> <span id="boxTotalCount">0/100</span></p>
                 </div>
             </div>
 
             <div class="card">
-                <h3>📖 Página da Box</h3>
-                <div class="mb-10">
-                    <label><strong>Visualizar página de:</strong></label>
-                    <select id="boxPageSelect" onchange="onBoxPageChange()">
-                        <option value="">-- Selecione --</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="card">
-                <h3>🎒 Sua Equipe</h3>
+                <h3>🎒 Equipe</h3>
                 <div id="boxTeamList" class="box-grid">
                     <p class="text-center">Carregando...</p>
                 </div>
@@ -693,7 +683,6 @@
         window.updateCaptureThreshold = updateCaptureThreshold;
         window.sendToBox = sendToBox;
         window.withdrawFromBox = withdrawFromBox;
-        window.onBoxPageChange = onBoxPageChange;
         window.toggleObjectiveForPlayer = toggleObjectiveForPlayer;
         window.onShopPlayerChange = onShopPlayerChange;
         window.sellItem = sellItem;
@@ -7136,47 +7125,31 @@
         // ========================================================================
 
         /**
-         * Get active player for Box operations with proper fallbacks
-         * Priority: getCurrentPlayer() > ui.activePlayerId > players[0]
+         * Retorna o jogador de perspectiva atual para operações da Caixa.
+         * Prioridade: perspectivePlayerId → players[0]
+         * Não usa getCurrentPlayer/activePlayerId — a Caixa é dirigida pela perspectiva global.
          */
         function getActivePlayerForBox() {
-            try {
-                if (typeof getCurrentPlayer === "function") {
-                    const p = getCurrentPlayer();
-                    if (p && p.id) return p;
-                }
-            } catch {}
-
-            const uiId = GameState.ui?.activePlayerId;
-            if (uiId) {
-                const p = GameState.players.find(x => x.id === uiId);
+            const perspId = GameState.ui?.perspectivePlayerId;
+            if (perspId) {
+                const p = GameState.players.find(x => x.id === perspId);
                 if (p) return p;
             }
-
             return GameState.players[0] || null;
         }
 
         /**
-         * Ensure Box UI state is properly initialized
+         * Garante que o estado da Caixa está inicializado.
+         * boxViewedPlayerId segue SEMPRE perspectivePlayerId (fonte única de verdade).
          */
         function ensureBoxUIState() {
             if (!GameState.ui) GameState.ui = {};
 
-            const fallbackId = GameState.players?.[0]?.id || null;
-
-            if (!GameState.ui.activePlayerId ||
-                !GameState.players.some(p => p.id === GameState.ui.activePlayerId)) {
-                GameState.ui.activePlayerId = fallbackId;
-            }
-
-            // Sincronizar perspectiva global
+            // Garante perspectiva global válida
             ensurePerspectivePlayerId();
 
-            // boxViewedPlayerId segue a perspectiva global da UI
-            if (!GameState.ui.boxViewedPlayerId ||
-                !GameState.players.some(p => p.id === GameState.ui.boxViewedPlayerId)) {
-                GameState.ui.boxViewedPlayerId = GameState.ui.perspectivePlayerId || GameState.ui.activePlayerId;
-            }
+            // boxViewedPlayerId é sempre espelho da perspectiva global
+            GameState.ui.boxViewedPlayerId = GameState.ui.perspectivePlayerId;
 
             if (typeof GameState.ui.boxPageIndex !== 'number') {
                 GameState.ui.boxPageIndex = 0;
@@ -7272,23 +7245,6 @@
         }
 
         /**
-         * Handle box page selector change
-         */
-        function onBoxPageChange() {
-            const select = document.getElementById('boxPageSelect');
-            if (!select) return;
-
-            const playerId = select.value;
-            if (playerId && GameState.ui) {
-                // Sincronizar perspectiva global quando o dropdown interno da Caixa é usado
-                GameState.ui.boxViewedPlayerId = playerId;
-                GameState.ui.perspectivePlayerId = playerId;
-                updatePlayerChip();
-                renderBoxTab();
-            }
-        }
-
-        /**
          * Render Box tab content
          */
         function renderBoxTab() {
@@ -7311,15 +7267,14 @@
                     return;
                 }
 
-                // Get the viewed player (the one selected in the dropdown)
-                const viewedPlayerId = GameState.ui.boxViewedPlayerId;
+                // O jogador da perspectiva global é a única fonte de verdade da Caixa
+                const viewedPlayerId = GameState.ui.boxViewedPlayerId; // sincronizado com perspectivePlayerId
                 const viewedPlayer = GameState.players.find(p => p.id === viewedPlayerId) || activePlayer;
 
-                // Update status - show info about the VIEWED player
+                // Atualiza status
                 const teamCount = viewedPlayer.team?.length || 0;
                 const TEAM_MAX = GameState.config?.maxTeamSize || 6;
                 
-                // Count box monsters for the viewed player
                 const viewedPlayerBoxCount = GameState.sharedBox?.filter(slot => slot.ownerPlayerId === viewedPlayerId).length || 0;
                 const BOX_MAX_TOTAL = 100;
 
@@ -7331,21 +7286,6 @@
                 if (boxTeamCount) boxTeamCount.textContent = `${teamCount}/${TEAM_MAX}`;
                 if (boxTotalCount) boxTotalCount.textContent = `${viewedPlayerBoxCount}/${BOX_MAX_TOTAL}`;
 
-                // Populate page selector
-                const pageSelect = document.getElementById('boxPageSelect');
-                if (pageSelect) {
-                    pageSelect.innerHTML = '<option value="">-- Selecione --</option>';
-                    GameState.players.forEach(player => {
-                        const option = document.createElement('option');
-                        option.value = player.id;
-                        option.textContent = player.name;
-                        if (player.id === GameState.ui.boxViewedPlayerId) {
-                            option.selected = true;
-                        }
-                        pageSelect.appendChild(option);
-                    });
-                }
-
                 // Render team of the viewed player
                 const teamList = document.getElementById('boxTeamList');
                 if (teamList && viewedPlayer.team && viewedPlayer.team.length > 0) {
@@ -7353,23 +7293,17 @@
                     viewedPlayer.team.forEach((monster, index) => {
                         if (!monster) return;
                         
-                        const isOwnMonster = activePlayer.id === viewedPlayer.id;
                         const slotDiv = document.createElement('div');
                         slotDiv.className = 'box-slot';
-                        
-                        // Only allow sending to box if it's the active player's monster
-                        const buttonHtml = isOwnMonster 
-                            ? `<button class="btn btn-warning box-slot-btn" onclick="sendToBox(${index})">
-                                📦 Enviar para Box
-                               </button>`
-                            : `<div class="box-slot-owner">🔒 Não é seu</div>`;
                         
                         slotDiv.innerHTML = `
                             <div class="box-slot-emoji">${monster.emoji || '🐾'}</div>
                             <div class="box-slot-name">${monster.name || 'Sem Nome'}</div>
                             <div class="box-slot-class">${monster.class || '?'}</div>
                             <div class="box-slot-level">Nv. ${monster.level || 1}</div>
-                            ${buttonHtml}
+                            <button class="btn btn-warning box-slot-btn" onclick="sendToBox(${index})">
+                                📦 Enviar para Box
+                            </button>
                         `;
                         teamList.appendChild(slotDiv);
                     });
@@ -7389,27 +7323,22 @@
                             const monster = slot.monster;
                             if (!monster) return;
                             
-                            const isOwner = activePlayer.id === slot.ownerPlayerId;
                             const slotDiv = document.createElement('div');
-                            slotDiv.className = isOwner ? 'box-slot' : 'box-slot locked';
+                            slotDiv.className = 'box-slot';
                             
                             let buttonHtml = '';
-                            if (isOwner) {
-                                if (teamCount < TEAM_MAX) {
-                                    buttonHtml = `
-                                        <button class="btn btn-success box-slot-btn" onclick="withdrawFromBox('${slot.slotId}')">
-                                            ⬆️ Retirar
-                                        </button>
-                                    `;
-                                } else {
-                                    buttonHtml = `
-                                        <button class="btn box-slot-btn" disabled>
-                                            Equipe Cheia
-                                        </button>
-                                    `;
-                                }
+                            if (teamCount < TEAM_MAX) {
+                                buttonHtml = `
+                                    <button class="btn btn-success box-slot-btn" onclick="withdrawFromBox('${slot.slotId}')">
+                                        ⬆️ Retirar
+                                    </button>
+                                `;
                             } else {
-                                buttonHtml = `<div class="box-slot-owner">🔒 Não é seu</div>`;
+                                buttonHtml = `
+                                    <button class="btn box-slot-btn" disabled>
+                                        Equipe Cheia
+                                    </button>
+                                `;
                             }
                             
                             slotDiv.innerHTML = `
@@ -7489,7 +7418,6 @@
         // Make Box functions globally available
         window.sendToBox = sendToBox;
         window.withdrawFromBox = withdrawFromBox;
-        window.onBoxPageChange = onBoxPageChange;
 
         // THERAPY MANAGEMENT
         function addObjective() {

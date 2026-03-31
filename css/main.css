@@ -1886,9 +1886,13 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     line-height: 1;
 }
 
-/* --- Player Perspective Chip (seletor global de jogador na navbar) --- */
+/* --- Player Perspective Chip (seletor global de jogador — fora da navbar) --- */
 .player-chip-wrapper {
     position: relative;
+    /* Em mobile (block layout): margem superior discreta */
+    margin-top: 8px;
+    display: flex;
+    justify-content: flex-end;
 }
 
 .player-chip-wrapper--hidden {
@@ -1911,6 +1915,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     white-space: nowrap;
     min-height: 36px;
     line-height: 1;
+    flex-shrink: 0;
 }
 
 .player-chip:hover,
@@ -2518,7 +2523,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 
 /* --- Melhorias iPad horizontal --- */
 @media (min-width: 768px) {
-    /* Header em linha: logo à esquerda, nav à direita */
+    /* Header em linha: logo à esquerda, nav ao centro, chip à direita */
     .header {
         display: flex;
         align-items: center;
@@ -2557,6 +2562,12 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
         font-size: 13px;
     }
 
+    /* Chip fora da navbar — alinhado ao final da linha do header */
+    .player-chip-wrapper {
+        margin-top: 0;
+        flex-shrink: 0;
+        /* O dropdown abre para baixo/esquerda — já cobre esse caso com right:0 */
+    }
     /* Layout em grid para tela de grupo em telas maiores */
     #playersList {
         display: grid;
