@@ -5491,17 +5491,25 @@
          * @param {Object} enc - Encounter (wild ou group)
          */
         function handleVictoryRewards(enc) {
-            // XP e recompensas base
+            // XP e recompensas base (idempotente via enc.rewardsGranted)
             Progression.Actions.handleVictoryRewards(createProgressionDeps(), enc);
 
             // REGRA DE DESIGN: batalhas selvagens NÃO concedem ouro.
             // Ouro vem de: treinadores (50g), bosses (100g), quests e venda de drops.
-            
-            // Sistema de Drops: gerar e conceder itens após vitória
-            processVictoryDrops(enc);
 
-            // Sistema de Quests: atualizar progresso após vitória
-            processQuestProgressFromEncounter(enc, null);
+            // Para batalhas em grupo/boss: money, drops e quest progress são tratados
+            // por Combat.Group.Rewards.processGroupVictoryRewards (chamado de
+            // showBattleEndModalWrapper), que itera sobre TODOS os participantes.
+            // Não processar aqui evita que drops/quests sejam aplicados apenas ao
+            // jogador[0] antes do modal, causando recompensa parcial e duplicação.
+            const isGroup = enc.type === 'group_trainer' || enc.type === 'boss';
+            if (!isGroup) {
+                // Sistema de Drops: gerar e conceder itens após vitória selvagem
+                processVictoryDrops(enc);
+
+                // Sistema de Quests: atualizar progresso após vitória selvagem
+                processQuestProgressFromEncounter(enc, null);
+            }
         }
         
         /**
@@ -5615,69 +5623,40 @@
         }
         
         /**
+         * Cria dependências para processGroupVictoryRewards (DI canônico).
+         * Segue o mesmo padrão de createGroupCombatDeps / createProgressionDeps.
+         */
+        function createGroupRewardsDeps() {
+            return {
+                state: GameState,
+                helpers: {
+                    awardMoney: (player, amount) => awardMoney(amount, player),
+                    getDropTableForEncounter: (type, localId) =>
+                        Data.getDropTableForEncounter(type, localId),
+                    generateDrops: (tableId) => Data.generateDrops(tableId),
+                    addDropsToInventory: (player, drops) =>
+                        Data.addDropsToInventory(player, drops),
+                    formatDropsLog: (drops) => Data.formatDropsLog(drops),
+                    handlePostEncounterFlow: (player, enc, capturedId, questDeps) =>
+                        GameFlow.handlePostEncounterFlow(player, enc, capturedId, questDeps),
+                    createQuestDeps: createQuestDeps
+                }
+            };
+        }
+
+        /**
          * CAMADA 4: Mostra modal de fim de batalha
+         * Wrapper fino: delega recompensas para Combat.Group.Rewards,
+         * exibe modal via BattleEndModal, e limpa o encontro ao fechar.
          */
         async function showBattleEndModalWrapper(encounter, state) {
             try {
-                // Constantes de recompensas
-                const REWARDS = {
-                    TRAINER: { xp: 30, money: 50 },
-                    BOSS: { xp: 50, money: 100 }
-                };
-                
-                // Preparar dados de recompensas
-                const participants = [];
-                
-                if (encounter.result === 'victory') {
-                    // Obter participantes elegíveis (não fugiram)
-                    const eligiblePlayerIds = encounter.participants || [];
-                    const rewards = encounter.kind === 'boss' ? REWARDS.BOSS : REWARDS.TRAINER;
-                    
-                    for (const pid of eligiblePlayerIds) {
-                        const player = state.players.find(p => p.id === pid);
-                        if (player) {
-                            // Aplicar recompensa de moedas ao jogador
-                            awardMoney(rewards.money, player);
-                            participants.push({
-                                playerName: player.name || player.nome || pid,
-                                xp: rewards.xp,
-                                money: rewards.money
-                            });
-                        }
-                    }
-                    
-                    // Sistema de Drops: gerar itens para cada participante
-                    const dropTableId = Data.getDropTableForEncounter(encounter.kind || encounter.type, encounter.localId || null);
-                    if (dropTableId) {
-                        for (const pid of eligiblePlayerIds) {
-                            const player = state.players.find(p => p.id === pid);
-                            if (!player) continue;
-                            
-                            const drops = Data.generateDrops(dropTableId);
-                            if (drops.length > 0) {
-                                Data.addDropsToInventory(player, drops);
-                                const logLines = Data.formatDropsLog(drops);
-                                encounter.log = encounter.log || [];
-                                encounter.log.push(`📦 Drops de ${player.name || player.nome}:`);
-                                for (const line of logLines.slice(1)) {
-                                    encounter.log.push(line);
-                                }
-                            }
-                        }
-                    }
-
-                    // Sistema de Quests: atualizar progresso para cada participante
-                    for (const pid of eligiblePlayerIds) {
-                        const player = state.players.find(p => p.id === pid);
-                        if (!player) continue;
-                        const questDeps = createQuestDeps();
-                        const result = GameFlow.handlePostEncounterFlow(player, encounter, null, questDeps);
-                        for (const line of result.log) {
-                            encounter.log = encounter.log || [];
-                            encounter.log.push(line);
-                        }
-                    }
-                }
+                // Processar recompensas de grupo (money, drops, quest progress)
+                // de forma idempotente para TODOS os participantes.
+                const { participants } = Combat.Group.Rewards.processGroupVictoryRewards(
+                    encounter,
+                    createGroupRewardsDeps()
+                );
                 
                 // Mostrar modal (com log do encontro para drops + progresso de quests)
                 await BattleEndModal.showBattleEndModal({
@@ -5721,7 +5700,7 @@
                         maybeToastFromLog: maybeToastFromLog,
                         maybeSfxFromLog: maybeSfxFromLog,
                         formatEquippedItemDisplay: formatEquippedItemDisplay,
-                    showBattleEndModal: showBattleEndModalWrapper,
+                        showBattleEndModal: showBattleEndModalWrapper,
                         getItemDef: getItemDef,
                         // FIX: Passar estado de seleção de alvo para renderActionBar
                         isInTargetMode: () => window.Combat?.TargetSelection?.isInTargetMode?.() ?? false,
