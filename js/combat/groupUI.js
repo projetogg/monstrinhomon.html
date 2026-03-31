@@ -278,7 +278,8 @@ export function render(deps) {
  *
  * ESTADO A (batalha encerrada): linha vazia
  * ESTADO B (vez dos inimigos): indicador de espera
- * ESTADO C (vez do jogador): botões de ação reais
+ * ESTADO C (seleção de alvo): instrução de clique em inimigo + cancelar
+ * ESTADO D (vez do jogador): botões de ação reais
  *
  * Ordem dos botões: Atacar → Habilidades → Item → Fugir → Passar
  *
@@ -301,7 +302,23 @@ function renderActionBar(encounter, actor, isPlayerTurn, state, helpers) {
         </div>`;
     }
 
-    // ESTADO C: Vez do jogador — botões de ação
+    // ESTADO C: Modo seleção de alvo — instrução clara + botão cancelar
+    if (helpers.isInTargetMode && helpers.isInTargetMode()) {
+        const actionType = helpers.getTargetActionType ? helpers.getTargetActionType() : 'attack';
+        const actionLabel = actionType === 'skill'
+            ? '✨ Clique em um inimigo para usar a habilidade'
+            : '⚔️ Clique em um inimigo para atacar';
+        return `
+        <div class="battle-actions-row group-actions-bar">
+            <span class="group-actions-label">🎯 Selecionando alvo:</span>
+            <div class="battle-main-actions">
+                <span style="font-size:14px;opacity:0.9">${actionLabel}</span>
+                <button class="btn btn-secondary" onclick="cancelTargetSelection()">✖ Cancelar</button>
+            </div>
+        </div>`;
+    }
+
+    // ESTADO D: Vez do jogador — botões de ação
     const player = state.players.find(p => p.id === actor.id);
     const mon = player?.team?.[player?.activeIndex ?? 0];
 
@@ -347,6 +364,13 @@ function renderActionBar(encounter, actor, isPlayerTurn, state, helpers) {
         itemButtonHtml = `<button class="btn btn-success" onclick="groupUseItem('${firstId}')" title="${def?.name ?? firstId} (${qty}x)">${def?.emoji || '🧪'} ${def?.name || 'Item'}</button>`;
     }
 
+    // Fuga: desabilitada em batalhas boss
+    const isBoss = encounter.type === 'boss';
+    const fleeAllowed = !isBoss && (encounter.rules?.allowFlee !== false);
+    const fleeButtonHtml = isAlive && fleeAllowed
+        ? `<button class="btn btn-warning" onclick="groupFlee()">🏃 Fugir</button>`
+        : '';
+
     return `
     <div class="battle-actions-row group-actions-bar">
         <span class="group-actions-label">⚔️ ${player.name || player.nome}:</span>
@@ -354,7 +378,7 @@ function renderActionBar(encounter, actor, isPlayerTurn, state, helpers) {
             ${isAlive ? `<button class="btn btn-danger" onclick="enterAttackMode()">⚔️ Atacar</button>` : ''}
             ${skillButtonsHtml}
             ${itemButtonHtml}
-            ${isAlive ? `<button class="btn btn-warning" onclick="groupFlee()">🏃 Fugir</button>` : ''}
+            ${fleeButtonHtml}
             <button class="btn btn-secondary" onclick="groupPassTurn()">⏭️ Passar</button>
         </div>
     </div>`;

@@ -510,8 +510,11 @@ export function advanceGroupTurn(enc, deps) {
         const actor = core.getCurrentActor(enc);
         if (!actor) break;
         
-        // Validar se ator ainda está vivo
+        // Validar se ator ainda está vivo e ainda está participando
         if (actor.side === "player") {
+            // FIX: pular jogadores que fugiram (não estão mais em enc.participants)
+            if (!enc.participants?.includes(actor.id)) continue;
+
             const p = state.players.find(x => x.id === actor.id);
             // BUG FIX: usar monstro ativo (activeIndex), não sempre team[0]
             // Após troca de monstro, team[0] pode estar morto mas activeIndex aponta para um vivo
