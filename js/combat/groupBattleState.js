@@ -1,4 +1,19 @@
 /**
+ * ⚠️ DEPRECATED — Este módulo NÃO é usado pelo pipeline real de combate.
+ *
+ * Este arquivo foi um protótipo arquitetural de estado imutável para o
+ * combate em grupo. Ele NUNCA foi conectado à UI real do jogo.
+ *
+ * PIPELINE CANÔNICO: groupCore.js + groupActions.js + groupUI.js
+ *   - Estado real: objeto "encounter" criado por GroupCore.createGroupEncounter()
+ *   - Armazenado em: GameState.currentEncounter
+ *   - Testes reais: tests/groupCombatUnified.test.js, tests/groupCore.test.js
+ *
+ * Este módulo pode ser removido em uma refatoração futura.
+ * NÃO adicionar novas funcionalidades aqui.
+ */
+
+/**
  * GROUP BATTLE STATE (v1.0) - Estrutura Completa
  * 
  * A batalha em grupo é um "objeto de estado" que guarda tudo que está 

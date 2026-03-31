@@ -1,620 +1,336 @@
 /**
- * GROUP BATTLE STATE TESTS
- * 
- * Testes para a estrutura GroupBattleState (v1.0)
- * Cobertura: createGroupBattleState, addLogEntry, requestReinforcement,
- * playerFlees, applyReinforcementsIfAny, setTurnPhase, incrementRound,
- * endBattle, getActiveParticipants, getRewardEligiblePlayers, validateState
+ * GROUP ENCOUNTER STATE TESTS
+ *
+ * Testes para a estrutura de estado canônica do combate em grupo.
+ * Pipeline canônico: groupCore.createGroupEncounter() + validateGroupEncounter()
+ *
+ * Estes testes substituem os testes do protótipo deprecated GroupBattleState.
+ * Cobertura: createGroupEncounter, validateGroupEncounter, assertValidActor,
+ *            getCurrentActor, hasAlivePlayers, hasAliveEnemies
  */
 
 import { describe, it, expect } from 'vitest';
 import {
-    createGroupBattleState,
-    addLogEntry,
-    requestReinforcement,
-    playerFlees,
-    applyReinforcementsIfAny,
-    setTurnPhase,
-    incrementRound,
-    endBattle,
-    getActiveParticipants,
-    getRewardEligiblePlayers,
-    validateState
-} from '../js/combat/groupBattleState.js';
+    createGroupEncounter,
+    validateGroupEncounter,
+    assertValidActor,
+    getCurrentActor,
+    hasAlivePlayers,
+    hasAliveEnemies,
+    isAlive
+} from '../js/combat/groupCore.js';
 
-describe('createGroupBattleState - Criação de Estado', () => {
-    it('deve criar estado válido para batalha trainer', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1", "p2", "p3"],
-            initialParticipants: ["p1", "p2"],
-            enemies: [
-                { name: "Inimigo 1", hp: 50, hpMax: 50, spd: 5, atk: 5, def: 5, class: "Guerreiro" }
-            ]
+// ── Helpers ──────────────────────────────────────────────────────────────
+
+function makeEnemy(overrides = {}) {
+    return { name: 'Inimigo', hp: 40, hpMax: 40, atk: 5, def: 5, spd: 5, class: 'Guerreiro', ...overrides };
+}
+
+function makePlayer(id, monHp = 30) {
+    return {
+        id,
+        name: `Jogador ${id}`,
+        class: 'Guerreiro',
+        team: [{ name: 'Mon', hp: monHp, hpMax: 30, atk: 5, def: 5, spd: 5 }],
+        activeIndex: 0
+    };
+}
+
+// ── createGroupEncounter ──────────────────────────────────────────────────
+
+describe('createGroupEncounter - Fábrica Canônica', () => {
+
+    it('deve criar encounter trainer com campos canônicos corretos', () => {
+        const enc = createGroupEncounter({
+            participantIds: ['p1', 'p2'],
+            type: 'group_trainer',
+            enemies: [makeEnemy()]
         });
 
-        expect(state.id).toMatch(/^GB_/);
-        expect(state.kind).toBe("trainer");
-        expect(state.status).toBe("active");
-        expect(state.roster.eligiblePlayerIds).toEqual(["p1", "p2", "p3"]);
-        expect(state.roster.participants).toHaveLength(2);
-        expect(state.roster.notJoined).toEqual(["p3"]);
-        expect(state.teams.enemies).toHaveLength(1);
-        expect(state.log).toHaveLength(1);
-        expect(state.log[0].type).toBe("BATTLE_START");
+        expect(enc.type).toBe('group_trainer');
+        expect(enc.active).toBe(true);
+        expect(enc.finished).toBe(false);
+        expect(enc.result).toBeNull();
+        expect(enc.participants).toEqual(['p1', 'p2']);
+        expect(enc.enemies).toHaveLength(1);
+        expect(enc.turnOrder).toEqual([]);
+        expect(enc.turnIndex).toBe(0);
+        expect(enc.currentActor).toBeNull();
+        expect(enc.rewardsGranted).toBe(false);
+        expect(typeof enc.id).toBe('number');
     });
 
-    it('deve criar estado válido para batalha boss', () => {
-        const state = createGroupBattleState({
-            kind: "boss",
-            eligiblePlayerIds: ["p1", "p2"],
-            initialParticipants: ["p1", "p2"],
-            enemies: [
-                { name: "Boss", hp: 100, hpMax: 100, spd: 10, atk: 10, def: 10, class: "Bárbaro", type: "boss" }
-            ]
+    it('deve criar encounter boss com tipo correto', () => {
+        const enc = createGroupEncounter({
+            participantIds: ['p1'],
+            type: 'boss',
+            enemies: [makeEnemy({ name: 'Boss', hp: 200 })]
         });
 
-        expect(state.kind).toBe("boss");
-        expect(state.teams.enemies[0].type).toBe("boss");
+        expect(enc.type).toBe('boss');
+        expect(enc.enemies[0].name).toBe('Boss');
     });
 
-    it('deve aplicar regras padrão corretamente', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        expect(state.rules.allowCapture).toBe(false);
-        expect(state.rules.allowItems).toBe(true);
-        expect(state.rules.allowFlee).toBe(true);
-        expect(state.rules.fleeIsIndividual).toBe(true);
-        expect(state.rules.allowLateJoin).toBe(true);
-        expect(state.rules.oneActiveMonsterPerPlayer).toBe(true);
+    it('deve criar cópia independente de participantIds', () => {
+        const ids = ['p1', 'p2'];
+        const enc = createGroupEncounter({ participantIds: ids, type: 'group_trainer', enemies: [makeEnemy()] });
+        ids.push('p3');
+        expect(enc.participants).toHaveLength(2); // não foi afetado pela mutação
     });
 
-    it('deve permitir sobrescrever regras padrão', () => {
-        const state = createGroupBattleState({
-            kind: "boss",
-            eligiblePlayerIds: ["p1"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }],
-            rules: {
-                allowFlee: false,
-                allowLateJoin: false
-            }
-        });
-
-        expect(state.rules.allowFlee).toBe(false);
-        expect(state.rules.allowLateJoin).toBe(false);
-        // Outros valores devem manter o padrão
-        expect(state.rules.allowItems).toBe(true);
+    it('deve criar cópia independente de enemies', () => {
+        const enemyArr = [makeEnemy()];
+        const enc = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: enemyArr });
+        enemyArr.push(makeEnemy());
+        expect(enc.enemies).toHaveLength(1); // não foi afetado
     });
 
-    it('deve inicializar participantes com metadata', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1", "p2"],
-            initialParticipants: ["p1", "p2"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        expect(state.roster.participants[0]).toEqual({
-            playerId: "p1",
-            joinedAtRound: 1,
-            isActive: true
-        });
-        expect(state.roster.participants[1]).toEqual({
-            playerId: "p2",
-            joinedAtRound: 1,
-            isActive: true
-        });
+    it('deve inicializar recentTargets como objeto vazio', () => {
+        const enc = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [makeEnemy()] });
+        expect(enc.recentTargets).toEqual({});
     });
 
-    it('deve lançar erro se kind for inválido', () => {
-        expect(() => {
-            createGroupBattleState({
-                kind: "invalid",
-                eligiblePlayerIds: ["p1"],
-                initialParticipants: ["p1"],
-                enemies: []
-            });
-        }).toThrow("kind deve ser 'trainer' ou 'boss'");
+    it('deve lançar erro se participantIds for vazio', () => {
+        expect(() => createGroupEncounter({ participantIds: [], type: 'group_trainer', enemies: [makeEnemy()] }))
+            .toThrow('participantIds deve ser array não vazio');
     });
 
-    it('deve lançar erro se eligiblePlayerIds estiver vazio', () => {
-        expect(() => {
-            createGroupBattleState({
-                kind: "trainer",
-                eligiblePlayerIds: [],
-                initialParticipants: ["p1"],
-                enemies: []
-            });
-        }).toThrow("eligiblePlayerIds deve ser array não vazio");
+    it('deve lançar erro se participantIds não for array', () => {
+        expect(() => createGroupEncounter({ participantIds: 'p1', type: 'group_trainer', enemies: [makeEnemy()] }))
+            .toThrow('participantIds deve ser array não vazio');
     });
 
-    it('deve lançar erro se initialParticipants não estiver em eligiblePlayerIds', () => {
-        expect(() => {
-            createGroupBattleState({
-                kind: "trainer",
-                eligiblePlayerIds: ["p1", "p2"],
-                initialParticipants: ["p1", "p3"],
-                enemies: []
-            });
-        }).toThrow("Participante p3 não está em eligiblePlayerIds");
+    it('deve lançar erro se type for inválido', () => {
+        expect(() => createGroupEncounter({ participantIds: ['p1'], type: 'wild', enemies: [makeEnemy()] }))
+            .toThrow("type deve ser 'group_trainer' ou 'boss'");
     });
 
-    it('deve processar inimigos corretamente', () => {
-        const state = createGroupBattleState({
-            kind: "boss",
-            eligiblePlayerIds: ["p1"],
-            initialParticipants: ["p1"],
-            enemies: [
-                { name: "Boss", hp: 100, hpMax: 100, spd: 10, type: "boss" },
-                { name: "Minion", hp: 50, hpMax: 50, spd: 5 }
-            ]
-        });
+    it('deve lançar erro se type for undefined', () => {
+        expect(() => createGroupEncounter({ participantIds: ['p1'], enemies: [makeEnemy()] }))
+            .toThrow("type deve ser 'group_trainer' ou 'boss'");
+    });
 
-        expect(state.teams.enemies).toHaveLength(2);
-        expect(state.teams.enemies[0].enemyId).toBe("E1");
-        expect(state.teams.enemies[0].type).toBe("boss");
-        expect(state.teams.enemies[1].enemyId).toBe("E2");
-        expect(state.teams.enemies[1].type).toBe("minion");
+    it('deve lançar erro se enemies for vazio', () => {
+        expect(() => createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [] }))
+            .toThrow('enemies deve ser array não vazio');
+    });
+
+    it('deve lançar erro se enemies não for array', () => {
+        expect(() => createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: null }))
+            .toThrow('enemies deve ser array não vazio');
+    });
+
+    it('deve gerar IDs únicos em chamadas consecutivas', () => {
+        const enc1 = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [makeEnemy()] });
+        const enc2 = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [makeEnemy()] });
+        // IDs são únicos graças ao contador monotónico (timestamp * 1000 + contador)
+        expect(typeof enc1.id).toBe('number');
+        expect(typeof enc2.id).toBe('number');
+        expect(enc1.id).not.toBe(enc2.id);
     });
 });
 
-describe('addLogEntry - Adicionar Log', () => {
-    it('deve adicionar entrada ao log', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
+// ── validateGroupEncounter ────────────────────────────────────────────────
+
+describe('validateGroupEncounter - Validação de Estrutura', () => {
+
+    it('deve retornar valid=true para encounter bem inicializado', () => {
+        const enc = createGroupEncounter({
+            participantIds: ['p1'],
+            type: 'group_trainer',
+            enemies: [makeEnemy()]
         });
+        enc.turnOrder = [{ side: 'player', id: 'p1', name: 'Ana', spd: 5 }];
 
-        const newState = addLogEntry(state, "ACTION", "Jogador atacou", { dmg: 10 });
-
-        expect(newState.log).toHaveLength(2);
-        expect(newState.log[1].type).toBe("ACTION");
-        expect(newState.log[1].text).toBe("Jogador atacou");
-        expect(newState.log[1].meta).toEqual({ dmg: 10 });
-        expect(newState.log[1].t).toBeGreaterThan(0);
-    });
-
-    it('não deve modificar o estado original', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        const originalLogLength = state.log.length;
-        addLogEntry(state, "ACTION", "Test");
-
-        expect(state.log.length).toBe(originalLogLength);
-    });
-});
-
-describe('requestReinforcement - Solicitar Reforço', () => {
-    it('deve adicionar jogador à fila de reforços', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1", "p2", "p3"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        const newState = requestReinforcement(state, "p2");
-
-        expect(newState.roster.reinforcementsQueue).toHaveLength(1);
-        expect(newState.roster.reinforcementsQueue[0]).toEqual({
-            playerId: "p2",
-            requestedAtRound: 1
-        });
-        expect(newState.roster.notJoined).not.toContain("p2");
-        expect(newState.log[1].type).toBe("REINFORCEMENT_REQUEST");
-    });
-
-    it('deve lançar erro se jogador não estiver em notJoined', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1", "p2"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        expect(() => {
-            requestReinforcement(state, "p1"); // p1 já está participando
-        }).toThrow("não pode pedir reforço");
-    });
-
-    it('não deve duplicar reforço se já estiver na fila', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1", "p2"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        const state2 = requestReinforcement(state, "p2");
-        const state3 = requestReinforcement(state2, "p2");
-
-        expect(state3.roster.reinforcementsQueue).toHaveLength(1);
-    });
-});
-
-describe('playerFlees - Jogador Foge', () => {
-    it('deve marcar jogador como fugido', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1", "p2"],
-            initialParticipants: ["p1", "p2"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        const newState = playerFlees(state, "p1");
-
-        expect(newState.roster.escaped).toHaveLength(1);
-        expect(newState.roster.escaped[0]).toEqual({
-            playerId: "p1",
-            escapedAtRound: 1
-        });
-        
-        const p1Participant = newState.roster.participants.find(p => p.playerId === "p1");
-        expect(p1Participant.isActive).toBe(false);
-        expect(newState.log[1].type).toBe("FLEE");
-    });
-
-    it('deve lançar erro se jogador não estiver ativo', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1", "p2"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        expect(() => {
-            playerFlees(state, "p2"); // p2 não entrou na batalha
-        }).toThrow("não pode fugir");
-    });
-});
-
-describe('applyReinforcementsIfAny - Aplicar Reforços', () => {
-    it('deve mover reforços da fila para participantes', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1", "p2", "p3"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        const state2 = requestReinforcement(state, "p2");
-        const state3 = requestReinforcement(state2, "p3");
-        const state4 = applyReinforcementsIfAny(state3);
-
-        expect(state4.roster.participants).toHaveLength(3);
-        expect(state4.roster.reinforcementsQueue).toHaveLength(0);
-        
-        const p2Participant = state4.roster.participants.find(p => p.playerId === "p2");
-        expect(p2Participant).toBeDefined();
-        expect(p2Participant.joinedAtRound).toBe(1);
-        expect(p2Participant.isActive).toBe(true);
-    });
-
-    it('não deve fazer nada se fila estiver vazia', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        const newState = applyReinforcementsIfAny(state);
-
-        expect(newState.roster.participants).toHaveLength(1);
-        expect(newState.log.length).toBe(1); // Sem novos logs
-    });
-
-    it('não deve aplicar reforços se allowLateJoin for false', () => {
-        const state = createGroupBattleState({
-            kind: "boss",
-            eligiblePlayerIds: ["p1", "p2"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }],
-            rules: { allowLateJoin: false }
-        });
-
-        const state2 = {
-            ...state,
-            roster: {
-                ...state.roster,
-                reinforcementsQueue: [{
-                    playerId: "p2",
-                    requestedAtRound: 1
-                }]
-            }
-        };
-
-        const state3 = applyReinforcementsIfAny(state2);
-
-        expect(state3.roster.participants).toHaveLength(1);
-        expect(state3.roster.reinforcementsQueue).toHaveLength(1);
-    });
-});
-
-describe('setTurnPhase - Mudar Fase', () => {
-    it('deve mudar fase para "players"', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        const newState = setTurnPhase(state, "players");
-
-        expect(newState.turn.phase).toBe("players");
-        expect(newState.turn.visibleBanner).toBe("Vez dos Jogadores");
-        expect(newState.log[1].type).toBe("TURN_PHASE");
-    });
-
-    it('deve mudar fase para "enemies"', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        const newState = setTurnPhase(state, "enemies");
-
-        expect(newState.turn.phase).toBe("enemies");
-        expect(newState.turn.visibleBanner).toBe("Vez dos Inimigos");
-    });
-
-    it('deve lançar erro para fase inválida', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        expect(() => {
-            setTurnPhase(state, "invalid");
-        }).toThrow("phase deve ser 'players' ou 'enemies'");
-    });
-});
-
-describe('incrementRound - Incrementar Rodada', () => {
-    it('deve incrementar contador de rodada', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        expect(state.turn.round).toBe(1);
-
-        const newState = incrementRound(state);
-
-        expect(newState.turn.round).toBe(2);
-        expect(newState.log[1].type).toBe("ROUND_START");
-        expect(newState.log[1].text).toContain("Rodada 2");
-    });
-});
-
-describe('endBattle - Finalizar Batalha', () => {
-    it('deve finalizar batalha com vitória', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        const newState = endBattle(state, "victory");
-
-        expect(newState.status).toBe("ended");
-        expect(newState.log[1].type).toBe("BATTLE_END");
-        expect(newState.log[1].text).toContain("Vitória");
-        expect(newState.log[1].meta.result).toBe("victory");
-    });
-
-    it('deve finalizar batalha com derrota', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        const newState = endBattle(state, "defeat");
-
-        expect(newState.status).toBe("ended");
-        expect(newState.log[1].text).toContain("Derrota");
-        expect(newState.log[1].meta.result).toBe("defeat");
-    });
-
-    it('deve lançar erro para resultado inválido', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        expect(() => {
-            endBattle(state, "draw");
-        }).toThrow("result deve ser 'victory', 'defeat' ou 'retreat'");
-    });
-});
-
-describe('getActiveParticipants - Participantes Ativos', () => {
-    it('deve retornar todos participantes inicialmente', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1", "p2"],
-            initialParticipants: ["p1", "p2"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        const active = getActiveParticipants(state);
-
-        expect(active).toHaveLength(2);
-    });
-
-    it('deve excluir jogadores que fugiram', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1", "p2"],
-            initialParticipants: ["p1", "p2"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        const state2 = playerFlees(state, "p1");
-        const active = getActiveParticipants(state2);
-
-        expect(active).toHaveLength(1);
-        expect(active[0].playerId).toBe("p2");
-    });
-});
-
-describe('getRewardEligiblePlayers - Elegíveis para Recompensa', () => {
-    it('deve retornar IDs dos participantes ativos', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1", "p2", "p3"],
-            initialParticipants: ["p1", "p2"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        const eligible = getRewardEligiblePlayers(state);
-
-        expect(eligible).toEqual(["p1", "p2"]);
-    });
-
-    it('não deve incluir jogadores que fugiram', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1", "p2"],
-            initialParticipants: ["p1", "p2"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        const state2 = playerFlees(state, "p1");
-        const eligible = getRewardEligiblePlayers(state2);
-
-        expect(eligible).toEqual(["p2"]);
-    });
-
-    it('deve incluir reforços que entraram', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1", "p2", "p3"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        const state2 = requestReinforcement(state, "p2");
-        const state3 = applyReinforcementsIfAny(state2);
-        const eligible = getRewardEligiblePlayers(state3);
-
-        expect(eligible).toEqual(["p1", "p2"]);
-    });
-});
-
-describe('validateState - Validar Estado', () => {
-    it('deve validar estado correto', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        const result = validateState(state);
-
+        const result = validateGroupEncounter(enc);
         expect(result.valid).toBe(true);
         expect(result.errors).toHaveLength(0);
     });
 
-    it('deve detectar id faltando', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        delete state.id;
-        const result = validateState(state);
-
+    it('deve retornar valid=false para encounter null', () => {
+        const result = validateGroupEncounter(null);
         expect(result.valid).toBe(false);
-        expect(result.errors).toContain("id é obrigatório");
+        expect(result.errors[0]).toMatch(/null/);
     });
 
-    it('deve detectar kind inválido', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        state.kind = "invalid";
-        const result = validateState(state);
-
+    it('deve detectar type inválido', () => {
+        const enc = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [makeEnemy()] });
+        enc.type = 'wild';
+        const result = validateGroupEncounter(enc);
         expect(result.valid).toBe(false);
-        expect(result.errors).toContain("kind deve ser 'trainer' ou 'boss'");
+        expect(result.errors.some(e => e.includes('type'))).toBe(true);
     });
 
-    it('deve detectar status inválido', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        state.status = "paused";
-        const result = validateState(state);
-
+    it('deve detectar participants vazio', () => {
+        const enc = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [makeEnemy()] });
+        enc.participants = [];
+        const result = validateGroupEncounter(enc);
         expect(result.valid).toBe(false);
-        expect(result.errors).toContain("status deve ser 'active' ou 'ended'");
+        expect(result.errors.some(e => e.includes('participants'))).toBe(true);
     });
 
-    it('deve detectar roster faltando', () => {
-        const state = createGroupBattleState({
-            kind: "trainer",
-            eligiblePlayerIds: ["p1"],
-            initialParticipants: ["p1"],
-            enemies: [{ name: "E1", hp: 50, hpMax: 50, spd: 5 }]
-        });
-
-        delete state.roster;
-        const result = validateState(state);
-
+    it('deve detectar enemies vazio', () => {
+        const enc = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [makeEnemy()] });
+        enc.enemies = [];
+        const result = validateGroupEncounter(enc);
         expect(result.valid).toBe(false);
-        expect(result.errors).toContain("roster é obrigatório");
+        expect(result.errors.some(e => e.includes('enemies'))).toBe(true);
     });
 
-    it('deve detectar múltiplos erros', () => {
-        const state = {
-            kind: "invalid",
-            status: "wrong",
-            roster: null,
-            teams: null,
-            turn: null,
-            log: null
-        };
-
-        const result = validateState(state);
-
+    it('deve detectar turnOrder não-array', () => {
+        const enc = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [makeEnemy()] });
+        enc.turnOrder = null;
+        const result = validateGroupEncounter(enc);
         expect(result.valid).toBe(false);
-        expect(result.errors.length).toBeGreaterThan(3);
+        expect(result.errors.some(e => e.includes('turnOrder'))).toBe(true);
+    });
+
+    it('deve detectar turnIndex não-número', () => {
+        const enc = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [makeEnemy()] });
+        enc.turnIndex = '0';
+        const result = validateGroupEncounter(enc);
+        expect(result.valid).toBe(false);
+        expect(result.errors.some(e => e.includes('turnIndex'))).toBe(true);
+    });
+
+    it('deve acumular múltiplos erros', () => {
+        const enc = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [makeEnemy()] });
+        enc.type = 'bad';
+        enc.participants = [];
+        const result = validateGroupEncounter(enc);
+        expect(result.errors.length).toBeGreaterThanOrEqual(2);
+    });
+});
+
+// ── assertValidActor ──────────────────────────────────────────────────────
+
+describe('assertValidActor - Guard de Ator', () => {
+
+    it('não deve lançar erro quando ator e turnOrder são válidos', () => {
+        const enc = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [makeEnemy()] });
+        enc.turnOrder = [{ side: 'player', id: 'p1', name: 'Ana', spd: 5 }];
+        const actor = getCurrentActor(enc);
+
+        expect(() => assertValidActor(actor, enc, 'teste')).not.toThrow();
+    });
+
+    it('deve lançar erro descritivo quando turnOrder é vazio', () => {
+        const enc = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [makeEnemy()] });
+        // turnOrder vazio (padrão da fábrica)
+
+        expect(() => assertValidActor(null, enc, 'inicioTurno'))
+            .toThrow('turnOrder vazio');
+    });
+
+    it('deve lançar erro descritivo quando actor é null mesmo com turnOrder preenchido', () => {
+        const enc = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [makeEnemy()] });
+        enc.turnOrder = [{ side: 'player', id: 'p1', name: 'Ana', spd: 5 }];
+        enc.turnIndex = 99; // fora do array
+
+        const actor = getCurrentActor(enc); // retorna null
+        expect(actor).toBeNull();
+
+        expect(() => assertValidActor(actor, enc, 'contextoTeste'))
+            .toThrow('currentActor é null');
+    });
+
+    it('deve lançar erro quando encounter é null', () => {
+        expect(() => assertValidActor(null, null, 'teste'))
+            .toThrow();
+    });
+});
+
+// ── getCurrentActor ───────────────────────────────────────────────────────
+
+describe('getCurrentActor - Leitura de Ator Atual', () => {
+
+    it('deve retornar ator no índice correto', () => {
+        const enc = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [makeEnemy()] });
+        enc.turnOrder = [
+            { side: 'player', id: 'p1', name: 'Ana', spd: 8 },
+            { side: 'enemy',  id: 0,    name: 'Inimigo', spd: 3 }
+        ];
+        enc.turnIndex = 1;
+
+        const actor = getCurrentActor(enc);
+        expect(actor.side).toBe('enemy');
+        expect(actor.id).toBe(0);
+    });
+
+    it('deve retornar null quando enc é null', () => {
+        expect(getCurrentActor(null)).toBeNull();
+    });
+
+    it('deve retornar null quando turnOrder é vazio', () => {
+        const enc = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [makeEnemy()] });
+        expect(getCurrentActor(enc)).toBeNull();
+    });
+
+    it('deve retornar null quando turnIndex está fora do array', () => {
+        const enc = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [makeEnemy()] });
+        enc.turnOrder = [{ side: 'player', id: 'p1', name: 'Ana', spd: 5 }];
+        enc.turnIndex = 5;
+        expect(getCurrentActor(enc)).toBeNull();
+    });
+});
+
+// ── hasAlivePlayers / hasAliveEnemies ─────────────────────────────────────
+
+describe('hasAlivePlayers - Detecção de Jogadores Vivos', () => {
+
+    it('deve retornar true quando jogador participante tem monstro vivo', () => {
+        const enc = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [makeEnemy()] });
+        const players = [makePlayer('p1', 25)];
+        expect(hasAlivePlayers(enc, players)).toBe(true);
+    });
+
+    it('deve retornar false quando monstro está com HP=0', () => {
+        const enc = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [makeEnemy()] });
+        const players = [makePlayer('p1', 0)];
+        expect(hasAlivePlayers(enc, players)).toBe(false);
+    });
+
+    it('deve ignorar jogadores que não estão em participants', () => {
+        const enc = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [makeEnemy()] });
+        const players = [
+            makePlayer('p1', 0),  // participante com HP=0
+            makePlayer('p2', 30)  // NÃO participante com HP>0
+        ];
+        // Apenas p1 está em participants — resultado deve ser false
+        expect(hasAlivePlayers(enc, players)).toBe(false);
+    });
+
+    it('deve retornar true se qualquer participante tem monstro vivo', () => {
+        const enc = createGroupEncounter({ participantIds: ['p1', 'p2'], type: 'group_trainer', enemies: [makeEnemy()] });
+        const players = [makePlayer('p1', 0), makePlayer('p2', 30)];
+        expect(hasAlivePlayers(enc, players)).toBe(true);
+    });
+});
+
+describe('hasAliveEnemies - Detecção de Inimigos Vivos', () => {
+
+    it('deve retornar true quando há inimigo vivo', () => {
+        const enc = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [makeEnemy({ hp: 20 })] });
+        expect(hasAliveEnemies(enc)).toBe(true);
+    });
+
+    it('deve retornar false quando todos os inimigos estão com HP=0', () => {
+        const enc = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [makeEnemy({ hp: 0 })] });
+        expect(hasAliveEnemies(enc)).toBe(false);
+    });
+
+    it('deve retornar true se pelo menos um inimigo está vivo', () => {
+        const enc = createGroupEncounter({
+            participantIds: ['p1'],
+            type: 'group_trainer',
+            enemies: [makeEnemy({ hp: 0 }), makeEnemy({ hp: 15 })]
+        });
+        expect(hasAliveEnemies(enc)).toBe(true);
+    });
+
+    it('deve retornar false para enemies array vazio', () => {
+        const enc = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [makeEnemy()] });
+        enc.enemies = []; // simular estado inválido pós-batalha
+        expect(hasAliveEnemies(enc)).toBe(false);
     });
 });
