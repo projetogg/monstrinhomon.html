@@ -1,4 +1,19 @@
 /**
+ * ⚠️ DEPRECATED — Este módulo NÃO é usado pelo pipeline real de combate.
+ *
+ * Este arquivo foi um protótipo arquitetural de loop imutável para o
+ * combate em grupo. Ele NUNCA foi conectado à UI real do jogo.
+ *
+ * PIPELINE CANÔNICO: groupCore.js + groupActions.js + groupUI.js
+ *   - Loop real: advanceGroupTurn() em groupActions.js
+ *   - Ações reais: executePlayerAttackGroup(), executeEnemyTurnGroup(), etc.
+ *   - Testes reais: tests/groupCombatUnified.test.js
+ *
+ * Este módulo pode ser removido em uma refatoração futura.
+ * NÃO adicionar novas funcionalidades aqui.
+ */
+
+/**
  * GROUP BATTLE LOOP (v1.0) - Funções de Transição de Estado
  * 
  * PASSO 3: Loop de batalha em grupo usando GroupBattleState

@@ -3,6 +3,15 @@
  * 
  * PR5B: Implementação real das funções puras do combate em grupo/boss
  * 
+ * ── PIPELINE CANÔNICO ────────────────────────────────────────────────────
+ * Este módulo (junto com groupActions.js e groupUI.js) É O PIPELINE REAL.
+ * O estado canônico de batalha é o objeto "encounter" criado por
+ * createGroupEncounter() e armazenado em GameState.currentEncounter.
+ *
+ * groupBattleState.js / groupBattleLoop.js são DEPRECATED e NÃO são
+ * usados pela UI real — existem apenas como protótipo arquitetural.
+ * ─────────────────────────────────────────────────────────────────────────
+ * 
  * Todas as funções aqui são 100% determinísticas e testáveis
  * ZERO side effects (sem DOM, sem state mutation, sem I/O)
  * 
@@ -311,4 +320,121 @@ export function isAlive(entity) {
  */
 export function clamp(n, min, max) {
     return Math.max(min, Math.min(max, n));
+}
+
+// ── PIPELINE CANÔNICO: FÁBRICA E VALIDAÇÃO ───────────────────────────────
+
+/**
+ * Cria um novo encounter de grupo/boss (objeto de estado canônico).
+ *
+ * PURE: Não acessa GameState nem DOM. Todos os dados são passados como
+ * parâmetros. O caller é responsável por:
+ *   1. calcular turnOrder via calculateTurnOrder()
+ *   2. definir currentActor via getCurrentActor()
+ *   3. atribuir o resultado a GameState.currentEncounter
+ *
+ * @param {Object}   params
+ * @param {string[]} params.participantIds - IDs dos jogadores participantes
+ * @param {'group_trainer'|'boss'} params.type - Tipo do encontro
+ * @param {Object[]} params.enemies - Array de objetos de inimigo (já instanciados)
+ * @returns {Object} Encounter canônico pronto para uso
+ */
+export function createGroupEncounter({ participantIds, type, enemies }) {
+    // ── Guards de entrada ─────────────────────────────────────────────────
+    if (!Array.isArray(participantIds) || participantIds.length === 0) {
+        throw new Error('createGroupEncounter: participantIds deve ser array não vazio');
+    }
+    if (type !== 'group_trainer' && type !== 'boss') {
+        throw new Error("createGroupEncounter: type deve ser 'group_trainer' ou 'boss'");
+    }
+    if (!Array.isArray(enemies) || enemies.length === 0) {
+        throw new Error('createGroupEncounter: enemies deve ser array não vazio');
+    }
+
+    return {
+        id: Date.now(),
+        type,
+        active: true,
+        finished: false,
+        result: null,
+        log: [],
+        participants: [...participantIds],
+        enemies: [...enemies],
+        // ── Controle de turno ─────────────────────────────────────────────
+        // Preenchidos após calculateTurnOrder() + getCurrentActor()
+        turnOrder: [],
+        turnIndex: 0,
+        currentActor: null,
+        // ── Flags de idempotência ─────────────────────────────────────────
+        rewardsGranted: false,
+        _winSfxPlayed: false,
+        _loseSfxPlayed: false,
+        _modalShown: false,
+        // ── IA targeting ─────────────────────────────────────────────────
+        recentTargets: {}
+    };
+}
+
+/**
+ * Valida que um encounter está bem inicializado.
+ *
+ * PURE: Apenas leitura — retorna lista de erros sem lançar exceção,
+ * para que o caller decida como lidar (throw, log, abort).
+ *
+ * @param {Object} enc - Encounter a validar
+ * @returns {{ valid: boolean, errors: string[] }}
+ */
+export function validateGroupEncounter(enc) {
+    const errors = [];
+
+    if (!enc) {
+        return { valid: false, errors: ['encounter é null ou undefined'] };
+    }
+    if (enc.type !== 'group_trainer' && enc.type !== 'boss') {
+        errors.push("type deve ser 'group_trainer' ou 'boss'");
+    }
+    if (!Array.isArray(enc.participants) || enc.participants.length === 0) {
+        errors.push('participants deve ser array não vazio');
+    }
+    if (!Array.isArray(enc.enemies) || enc.enemies.length === 0) {
+        errors.push('enemies deve ser array não vazio');
+    }
+    if (!Array.isArray(enc.turnOrder)) {
+        errors.push('turnOrder deve ser array (chame calculateTurnOrder antes)');
+    }
+    if (typeof enc.turnIndex !== 'number') {
+        errors.push('turnIndex deve ser number');
+    }
+    if (typeof enc.finished !== 'boolean') {
+        errors.push('finished deve ser boolean');
+    }
+
+    return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Guard: verifica que o ator atual é válido para processar.
+ *
+ * Lança erro descritivo se o encounter não está pronto — facilita
+ * diagnóstico de bugs de inicialização antes de chegarem à UI.
+ *
+ * @param {Object|null} actor - Resultado de getCurrentActor(enc)
+ * @param {Object} enc        - Encounter atual (para mensagem de erro)
+ * @param {string} context    - Nome da função chamadora (para o log)
+ * @throws {Error} Se o ator for nulo ou o turnOrder estiver vazio
+ */
+export function assertValidActor(actor, enc, context = 'processamento de turno') {
+    if (!enc || !Array.isArray(enc.turnOrder) || enc.turnOrder.length === 0) {
+        throw new Error(
+            `[${context}] turnOrder vazio ou encounter mal inicializado. ` +
+            `Chame calculateTurnOrder() antes de iniciar o loop de combate.`
+        );
+    }
+    if (!actor) {
+        throw new Error(
+            `[${context}] currentActor é null no turnIndex=${enc.turnIndex} ` +
+            `(turnOrder.length=${enc.turnOrder.length}). ` +
+            `Verifique se todos os atores estão vivos ao calcular a ordem.`
+        );
+    }
 }

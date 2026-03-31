@@ -7,6 +7,16 @@
  * PR5A: Group/Boss combat (stubs apenas - implementação em PR futuro)
  * PR##: GroupBattleState v1.0 (estrutura completa)
  * PASSO 3: GroupBattleLoop v1.0 (loop de batalha)
+ *
+ * ── PIPELINE CANÔNICO ────────────────────────────────────────────────────
+ * Combat.Group.Core    → groupCore.js    (funções puras, createGroupEncounter)
+ * Combat.Group.Actions → groupActions.js (loop + ações de combate)
+ * Combat.Group.UI      → groupUI.js      (renderização)
+ *
+ * Combat.Group.BattleState / BattleLoop → DEPRECATED (protótipos não usados)
+ *   Não usam o estado real (GameState.currentEncounter). Mantidos apenas
+ *   por compatibilidade. NÃO adicionar novas funcionalidades neles.
+ * ─────────────────────────────────────────────────────────────────────────
  */
 
 import * as WildCore from './wildCore.js';

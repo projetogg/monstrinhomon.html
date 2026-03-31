@@ -3884,21 +3884,13 @@
                     window.PartyDex.markDexSeen(GameState, randomMonster.id);
                 }
                 
-                // Criar encounter de grupo
-                const encounter = {
-                    id: Date.now(),
+                // Criar encounter de grupo via fábrica canônica de groupCore
+                // (estrutura única, sem duplicação de campos)
+                const encounter = GroupCore.createGroupEncounter({
+                    participantIds: selectedPlayerIds,
                     type: encounterType === 'boss' ? 'boss' : 'group_trainer',
-                    active: true,
-                    log: [],
-                    participants: selectedPlayerIds,
-                    enemies: [enemy],
-                    turnOrder: [],
-                    turnIndex: 0,
-                    currentActor: null,
-                    finished: false,
-                    result: null,
-                    rewardsGranted: false  // Previne duplicação de XP
-                };
+                    enemies: [enemy]
+                });
                 
                 // Inicializar campos de toast
                 initializeEncounterToast(encounter);

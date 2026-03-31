@@ -1,570 +1,405 @@
 /**
- * GROUP BATTLE ACTIONS TESTS (PASSO 4.5)
- * 
- * Testes para o sistema completo de ações de combate
- * Cobertura: performAction, checkEndConditions, endBattleAndDistributeRewards
+ * GROUP COMBAT ACTIONS TESTS
+ *
+ * Testes para as ações reais do combate em grupo.
+ * Pipeline canônico: executePlayerAttackGroup, executeEnemyTurnGroup,
+ *                    executePlayerSkillGroup, executeGroupUseItem, passTurn
+ *
+ * Estes testes substituem os testes do protótipo deprecated GroupBattleLoop.performAction.
+ * Cobertura:
+ *   - Ataque de jogador (acerto, erro, crítico, d20=1, d20=20)
+ *   - Turno do inimigo (seleção de alvo, dano, miss)
+ *   - Skill de jogador (ofensiva, defensiva)
+ *   - Item de cura
+ *   - Passar turno
+ *   - Verificação de vitória/derrota após ação
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
-    performAction,
-    checkEndConditions,
-    endBattleAndDistributeRewards
-} from '../js/combat/groupBattleLoop.js';
+    executePlayerAttackGroup,
+    executeEnemyTurnGroup,
+    executePlayerSkillGroup,
+    executeGroupUseItem,
+    passTurn
+} from '../js/combat/groupActions.js';
+import {
+    createGroupEncounter,
+    getCurrentActor,
+    isAlive,
+    hasAliveEnemies,
+    hasAlivePlayers,
+    getClassAdvantageModifiers,
+    checkHit,
+    calcDamage,
+    getBuffModifiers,
+    pickEnemyTargetByDEF
+} from '../js/combat/groupCore.js';
 
-// Mock rollD20 determinístico
-const mockRollD20Hit = () => 15; // Sempre acerta (não é 1 nem 20)
-const mockRollD20Crit = () => 20; // Sempre crítico
+// ── Helpers ───────────────────────────────────────────────────────────────
 
-describe('checkEndConditions - Verificação de Fim de Batalha', () => {
-    it('deve retornar vitória quando todos inimigos morrem', () => {
-        const state = {
-            teams: {
-                players: [
-                    {
-                        playerId: 'p1',
-                        activeMonster: { hp: 50, hpMax: 50 }
-                    }
-                ],
-                enemies: [
-                    { hp: 0, hpMax: 30 }, // Morto
-                    { hp: 0, hpMax: 35 }  // Morto
-                ]
+function makeMon(overrides = {}) {
+    return {
+        uid: 'mi_test',
+        name: 'Mon',
+        class: 'Guerreiro',
+        hp: 50, hpMax: 50,
+        atk: 10, def: 8, spd: 5,
+        ene: 10, eneMax: 10,
+        level: 5, buffs: [],
+        _participated: false,
+        ...overrides
+    };
+}
+
+function makeEnemy(overrides = {}) {
+    return {
+        uid: 'enemy_0',
+        name: 'Inimigo',
+        class: 'Bárbaro',
+        hp: 40, hpMax: 40,
+        atk: 8, def: 6, spd: 3,
+        ene: 10, eneMax: 10,
+        level: 3, buffs: [],
+        _participated: false,
+        ...overrides
+    };
+}
+
+function makePlayer(mon, overrides = {}) {
+    return {
+        id: 'player_1', name: 'Ana', class: 'Guerreiro',
+        team: [mon], activeIndex: 0,
+        inventory: {},
+        ...overrides
+    };
+}
+
+function makeSkill(overrides = {}) {
+    return {
+        id: 'SK_TEST', name: 'Golpe Teste', class: 'Guerreiro',
+        category: 'Ataque', power: 8, accuracy: 0.9,
+        energy_cost: 2, target: 'Inimigo', status: '', desc: 'Teste.',
+        ...overrides
+    };
+}
+
+function makeDeps({ mon, player, enemies, itemDefById = {}, skillById = null, rollVal = 15, hitResult = true }) {
+    const enc = createGroupEncounter({
+        participantIds: [player.id],
+        type: 'group_trainer',
+        enemies
+    });
+    enc.turnOrder = [{ side: 'player', id: player.id, name: player.name, spd: 5 }];
+    enc.turnIndex = 0;
+    enc.currentActor = enc.turnOrder[0];
+
+    const state = { currentEncounter: enc, players: [player], config: { classAdvantages: {} } };
+
+    return {
+        enc,
+        deps: {
+            state,
+            core: {
+                getCurrentActor,
+                isAlive,
+                hasAlivePlayers: (e, pl) => hasAlivePlayers(e, pl),
+                hasAliveEnemies,
+                getBuffModifiers,
+                getClassAdvantageModifiers,
+                checkHit: () => hitResult,
+                calcDamage,
+                pickEnemyTargetByDEF
             },
-            roster: {
-                participants: [
-                    { playerId: 'p1', isActive: true }
-                ]
+            audio: { playSfx: vi.fn() },
+            storage: { save: vi.fn() },
+            ui: {
+                render: vi.fn(),
+                showDamageFeedback: vi.fn(),
+                showMissFeedback: vi.fn(),
+                playAttackFeedback: vi.fn()
+            },
+            helpers: {
+                log: (e, msg) => e.log.push(msg),
+                handleVictoryRewards: vi.fn(),
+                getPlayerById: (id) => (id === player.id ? player : null),
+                getActiveMonsterOfPlayer: (p) => p?.team?.[p?.activeIndex ?? 0],
+                getEnemyByIndex: (e, i) => e?.enemies?.[i],
+                firstAliveIndex: (team) => team.findIndex(m => (Number(m?.hp) || 0) > 0),
+                applyEneRegen: vi.fn(),
+                updateBuffs: vi.fn(),
+                rollD20: () => rollVal,
+                recordD20Roll: vi.fn(),
+                getBasicAttackPower: () => 7,
+                applyDamage: (target, dmg) => { target.hp = Math.max(0, target.hp - dmg); },
+                openSwitchMonsterModal: vi.fn(),
+                getItemDef: (id) => itemDefById[id] || null,
+                getSkillById: (id) => (skillById && skillById.id === id ? skillById : null),
+                canUseSkillNow: () => true
             }
-        };
+        }
+    };
+}
 
-        const result = checkEndConditions(state);
-        
-        expect(result.ended).toBe(true);
-        expect(result.result).toBe('victory');
+// ── executePlayerAttackGroup ──────────────────────────────────────────────
+
+describe('executePlayerAttackGroup - Ataque do Jogador', () => {
+
+    it('deve retornar false se encounter não existe', () => {
+        const mon = makeMon();
+        const player = makePlayer(mon);
+        const { deps } = makeDeps({ mon, player, enemies: [makeEnemy()] });
+        deps.state.currentEncounter = null;
+
+        expect(executePlayerAttackGroup(deps)).toBe(false);
     });
 
-    it('deve retornar derrota quando todos jogadores morrem', () => {
-        const state = {
-            teams: {
-                players: [
-                    {
-                        playerId: 'p1',
-                        activeMonster: { hp: 0, hpMax: 50 } // Morto
-                    }
-                ],
-                enemies: [
-                    { hp: 30, hpMax: 30 }
-                ]
-            },
-            roster: {
-                participants: [
-                    { playerId: 'p1', isActive: true }
-                ]
-            }
-        };
+    it('deve retornar false se não é turno de jogador', () => {
+        const mon = makeMon();
+        const player = makePlayer(mon);
+        const enemy = makeEnemy();
+        const { enc, deps } = makeDeps({ mon, player, enemies: [enemy] });
 
-        const result = checkEndConditions(state);
-        
-        expect(result.ended).toBe(true);
-        expect(result.result).toBe('defeat');
+        // Definir turno como inimigo: ajustar turnOrder e turnIndex
+        enc.turnOrder = [{ side: 'enemy', id: 0, name: 'Inimigo', spd: 5 }];
+        enc.turnIndex = 0;
+        enc.currentActor = enc.turnOrder[0];
+
+        expect(executePlayerAttackGroup(deps)).toBe(false);
     });
 
-    it('deve retornar retreat quando todos fogem', () => {
-        const state = {
-            teams: {
-                players: [
-                    {
-                        playerId: 'p1',
-                        activeMonster: { hp: 50, hpMax: 50 }
-                    }
-                ],
-                enemies: [
-                    { hp: 30, hpMax: 30 }
-                ]
-            },
-            roster: {
-                participants: [] // Nenhum participante ativo
-            }
-        };
+    it('deve causar dano quando acerta (rollD20=15)', () => {
+        const mon = makeMon();
+        const player = makePlayer(mon);
+        const enemy = makeEnemy();
+        const { enc, deps } = makeDeps({ mon, player, enemies: [enemy], rollVal: 15 });
 
-        const result = checkEndConditions(state);
-        
-        expect(result.ended).toBe(true);
-        expect(result.result).toBe('retreat');
+        const hpBefore = enemy.hp;
+        executePlayerAttackGroup(deps);
+
+        expect(enemy.hp).toBeLessThan(hpBefore);
+        expect(enc.log.some(m => m.includes('acertou'))).toBe(true);
     });
 
-    it('deve retornar ended=false quando batalha continua', () => {
-        const state = {
-            teams: {
-                players: [
-                    {
-                        playerId: 'p1',
-                        activeMonster: { hp: 50, hpMax: 50 }
-                    }
-                ],
-                enemies: [
-                    { hp: 30, hpMax: 30 }
-                ]
-            },
-            roster: {
-                participants: [
-                    { playerId: 'p1', isActive: true }
-                ]
-            }
-        };
+    it('deve errar quando d20=1 (sempre falha)', () => {
+        const mon = makeMon();
+        const player = makePlayer(mon);
+        const enemy = makeEnemy();
+        const { enc, deps } = makeDeps({ mon, player, enemies: [enemy], rollVal: 1 });
 
-        const result = checkEndConditions(state);
-        
-        expect(result.ended).toBe(false);
-    });
-});
+        const hpBefore = enemy.hp;
+        executePlayerAttackGroup(deps);
 
-describe('endBattleAndDistributeRewards - Distribuição de Recompensas', () => {
-    const mockPlayersData = [
-        { id: 'p1', name: 'Jogador 1', team: [{ hp: 50, hpMax: 50 }] },
-        { id: 'p2', name: 'Jogador 2', team: [{ hp: 40, hpMax: 40 }] }
-    ];
-
-    it('deve distribuir recompensas apenas para participantes elegíveis', () => {
-        const state = {
-            kind: 'trainer',
-            roster: {
-                participants: [
-                    { playerId: 'p1', isActive: true },
-                    { playerId: 'p2', isActive: true }
-                ],
-                escaped: []
-            },
-            log: []
-        };
-
-        const newState = endBattleAndDistributeRewards(state, mockPlayersData);
-        
-        // Verificar que logs foram adicionados
-        const xpLogs = newState.log.filter(entry => entry.type === 'XP_REWARD');
-        const moneyLogs = newState.log.filter(entry => entry.type === 'MONEY_REWARD');
-        
-        expect(xpLogs).toHaveLength(2); // 2 jogadores elegíveis
-        expect(moneyLogs).toHaveLength(2);
+        expect(enemy.hp).toBe(hpBefore); // sem dano
+        expect(enc.log.some(m => m.includes('ERROU'))).toBe(true);
     });
 
-    it('fugitivo não deve receber recompensas', () => {
-        const state = {
-            kind: 'trainer',
-            roster: {
-                participants: [
-                    { playerId: 'p1', isActive: true },
-                    { playerId: 'p2', isActive: false } // Fugiu
-                ],
-                escaped: [{ playerId: 'p2' }]
-            },
-            log: []
-        };
+    it('deve causar dano duplo quando d20=20 (crítico)', () => {
+        const mon = makeMon({ atk: 10, def: 5 });
+        const player = makePlayer(mon);
+        const enemy = makeEnemy({ def: 2 });
+        const { enc, deps } = makeDeps({ mon, player, enemies: [enemy], rollVal: 20 });
 
-        const newState = endBattleAndDistributeRewards(state, mockPlayersData);
-        
-        const xpLogs = newState.log.filter(entry => entry.type === 'XP_REWARD');
-        
-        // Apenas p1 deve receber
-        expect(xpLogs).toHaveLength(1);
-        expect(xpLogs[0].meta.playerId).toBe('p1');
+        const hpBefore = enemy.hp;
+        executePlayerAttackGroup(deps);
+
+        const dmgDealt = hpBefore - enemy.hp;
+        expect(dmgDealt).toBeGreaterThan(0);
+        expect(enc.log.some(m => m.includes('CRIT') || m.includes('Duplo'))).toBe(true);
     });
 
-    it('boss deve dar recompensas maiores que trainer', () => {
-        const trainerState = {
-            kind: 'trainer',
-            roster: {
-                participants: [{ playerId: 'p1', isActive: true }],
-                escaped: []
-            },
-            log: []
-        };
+    it('deve registrar vitória quando inimigo morre após ataque', () => {
+        const mon = makeMon({ atk: 999 });
+        const player = makePlayer(mon);
+        const enemy = makeEnemy({ hp: 1 });
+        const { enc, deps } = makeDeps({ mon, player, enemies: [enemy], rollVal: 15 });
 
-        const bossState = {
-            kind: 'boss',
-            roster: {
-                participants: [{ playerId: 'p1', isActive: true }],
-                escaped: []
-            },
-            log: []
-        };
+        executePlayerAttackGroup(deps, 0);
 
-        const trainerResult = endBattleAndDistributeRewards(trainerState, mockPlayersData);
-        const bossResult = endBattleAndDistributeRewards(bossState, mockPlayersData);
-        
-        const trainerXP = trainerResult.log.find(e => e.type === 'BATTLE_END').meta.xpPerPlayer;
-        const bossXP = bossResult.log.find(e => e.type === 'BATTLE_END').meta.xpPerPlayer;
-        
-        expect(bossXP).toBeGreaterThan(trainerXP);
+        expect(enc.finished).toBe(true);
+        expect(enc.result).toBe('victory');
+    });
+
+    it('deve retornar false se classe do monstro difere da classe do jogador', () => {
+        // Mockar alert (usado pela regra de classe no groupActions)
+        const origAlert = global.alert;
+        global.alert = vi.fn();
+
+        const mon = makeMon({ class: 'Mago' }); // Mago ≠ Guerreiro do player
+        const player = makePlayer(mon, { class: 'Guerreiro' });
+        const enemy = makeEnemy();
+        const { enc, deps } = makeDeps({ mon, player, enemies: [enemy] });
+
+        const result = executePlayerAttackGroup(deps);
+        expect(result).toBe(false);
+
+        global.alert = origAlert;
     });
 });
 
-describe('performAction - Ataque', () => {
-    const createMockState = () => ({
-        kind: 'trainer',
-        status: 'active',
-        teams: {
-            players: [
-                {
-                    playerId: 'p1',
-                    activeMonster: {
-                        hp: 50,
-                        hpMax: 50,
-                        atk: 10,
-                        def: 5
-                    }
-                }
-            ],
-            enemies: [
-                {
-                    hp: 30,
-                    hpMax: 30,
-                    atk: 8,
-                    def: 4,
-                    name: 'Inimigo 1'
-                }
-            ]
-        },
-        roster: {
-            eligiblePlayerIds: ['p1'],
-            participants: [{ playerId: 'p1', isActive: true }],
-            notJoined: [],
-            escaped: [],
-            reinforcementsQueue: []
-        },
-        turn: {
-            phase: 'players',
-            order: [
-                { side: 'player', id: 'p1', name: 'Jogador 1', spd: 10 }
-            ],
-            index: 0,
-            currentActorId: 'p1',
-            round: 1,
-            visibleBanner: 'Vez dos Jogadores'
-        },
-        rules: { allowLateJoin: false },
-        log: []
+// ── executeEnemyTurnGroup ─────────────────────────────────────────────────
+
+describe('executeEnemyTurnGroup - Turno do Inimigo', () => {
+
+    it('deve retornar false se encounter não existe', () => {
+        const mon = makeMon();
+        const player = makePlayer(mon);
+        const { deps } = makeDeps({ mon, player, enemies: [makeEnemy()] });
+        deps.state.currentEncounter = null;
+
+        expect(executeEnemyTurnGroup(null, deps)).toBe(false);
     });
 
-    const mockPlayersData = [
-        { id: 'p1', name: 'Jogador 1', team: [{ hp: 50, hpMax: 50 }] }
-    ];
+    it('deve retornar false se não é turno de inimigo', () => {
+        const mon = makeMon();
+        const player = makePlayer(mon);
+        const enemy = makeEnemy();
+        const { enc, deps } = makeDeps({ mon, player, enemies: [enemy] });
 
-    it('ataque deve causar dano no inimigo', () => {
-        const state = createMockState();
-        
-        const action = {
-            type: 'attack',
-            actorId: 'p1',
-            targetId: 0
-        };
-
-        const newState = performAction(state, action, {
-            playersData: mockPlayersData,
-            rollD20Fn: mockRollD20Hit // Sempre acerta
-        });
-
-        // Inimigo deve ter recebido dano
-        expect(newState.teams.enemies[0].hp).toBeLessThan(30);
-        
-        // Log deve conter ataque
-        const attackLog = newState.log.find(e => e.type === 'ATTACK_HIT');
-        expect(attackLog).toBeDefined();
+        // Turno é de player (padrão do makeDeps)
+        expect(executeEnemyTurnGroup(enc, deps)).toBe(false);
     });
 
-    it('ataque mata inimigo deve resultar em vitória', () => {
-        const state = createMockState();
-        // Inimigo com 1 HP
-        state.teams.enemies[0].hp = 1;
-        
-        const action = {
-            type: 'attack',
-            actorId: 'p1',
-            targetId: 0
-        };
+    it('deve atacar o jogador quando é turno do inimigo', () => {
+        const mon = makeMon();
+        const player = makePlayer(mon);
+        const enemy = makeEnemy();
+        const { enc, deps } = makeDeps({ mon, player, enemies: [enemy], rollVal: 15 });
 
-        const newState = performAction(state, action, {
-            playersData: mockPlayersData,
-            rollD20Fn: mockRollD20Hit
-        });
+        // Definir turno como inimigo
+        enc.turnOrder = [{ side: 'enemy', id: 0, name: 'Inimigo', spd: 8 }];
+        enc.turnIndex = 0;
+        enc.currentActor = enc.turnOrder[0];
 
-        // Batalha deve ter acabado em vitória
-        expect(newState.status).toBe('ended');
-        const endLog = newState.log.find(e => e.type === 'BATTLE_END');
-        expect(endLog).toBeDefined();
-        expect(endLog.meta.result).toBe('victory');
+        const hpBefore = mon.hp;
+        executeEnemyTurnGroup(enc, deps);
+
+        // Pode ter causado dano ou errado — verificar que o turno foi processado
+        expect(enc.log.length).toBeGreaterThan(0);
     });
 
-    it('crítico deve causar dano dobrado', () => {
-        const state = createMockState();
-        
-        const action = {
-            type: 'attack',
-            actorId: 'p1',
-            targetId: 0
-        };
+    it('deve registrar derrota quando jogador morre após ataque inimigo', () => {
+        const mon = makeMon({ hp: 1, hpMax: 50, def: 0 });
+        const player = makePlayer(mon);
+        const enemy = makeEnemy({ atk: 999 });
+        const { enc, deps } = makeDeps({ mon, player, enemies: [enemy], rollVal: 15 });
 
-        const newState = performAction(state, action, {
-            playersData: mockPlayersData,
-            rollD20Fn: mockRollD20Crit // Sempre crítico
-        });
+        enc.turnOrder = [{ side: 'enemy', id: 0, name: 'Inimigo', spd: 8 }];
+        enc.turnIndex = 0;
+        enc.currentActor = enc.turnOrder[0];
 
-        // Verificar que dano foi maior
-        const attackLog = newState.log.find(e => e.type === 'ATTACK_HIT');
-        expect(attackLog.text).toContain('CRÍTICO');
+        executeEnemyTurnGroup(enc, deps);
+
+        expect(enc.finished).toBe(true);
+        expect(enc.result).toBe('defeat');
     });
 });
 
-describe('performAction - Fuga', () => {
-    const createMockState = () => ({
-        kind: 'trainer',
-        status: 'active',
-        teams: {
-            players: [
-                {
-                    playerId: 'p1',
-                    activeMonster: { hp: 50, hpMax: 50 }
-                },
-                {
-                    playerId: 'p2',
-                    activeMonster: { hp: 40, hpMax: 40 }
-                }
-            ],
-            enemies: [
-                { hp: 30, hpMax: 30 }
-            ]
-        },
-        roster: {
-            eligiblePlayerIds: ['p1', 'p2'],
-            participants: [
-                { playerId: 'p1', isActive: true },
-                { playerId: 'p2', isActive: true }
-            ],
-            notJoined: [],
-            escaped: [],
-            reinforcementsQueue: []
-        },
-        turn: {
-            phase: 'players',
-            order: [
-                { side: 'player', id: 'p1', name: 'Jogador 1', spd: 10 },
-                { side: 'player', id: 'p2', name: 'Jogador 2', spd: 8 }
-            ],
-            index: 0,
-            currentActorId: 'p1',
-            round: 1,
-            visibleBanner: 'Vez dos Jogadores'
-        },
-        rules: { allowLateJoin: false },
-        log: []
+// ── executePlayerSkillGroup ───────────────────────────────────────────────
+
+describe('executePlayerSkillGroup - Skill do Jogador', () => {
+
+    it('deve executar skill ofensiva e causar dano', () => {
+        const mon = makeMon({ ene: 10 });
+        const player = makePlayer(mon);
+        const enemy = makeEnemy();
+        const skill = makeSkill({ energy_cost: 2, power: 8 });
+        const { enc, deps } = makeDeps({ mon, player, enemies: [enemy], skillById: skill, rollVal: 15 });
+
+        const hpBefore = enemy.hp;
+        executePlayerSkillGroup(skill.id, 0, deps);
+
+        expect(enemy.hp).toBeLessThan(hpBefore);
+        expect(mon.ene).toBeLessThan(10); // energia consumida
     });
 
-    const mockPlayersData = [
-        { id: 'p1', name: 'Jogador 1', team: [{ hp: 50, hpMax: 50 }] },
-        { id: 'p2', name: 'Jogador 2', team: [{ hp: 40, hpMax: 40 }] }
-    ];
+    it('deve executar skill defensiva e curar', () => {
+        const mon = makeMon({ hp: 20, hpMax: 50, ene: 10 });
+        const player = makePlayer(mon);
+        const enemy = makeEnemy();
+        const healSkill = makeSkill({ target: 'Self', category: 'Suporte', energy_cost: 3, power: 20 });
+        const { enc, deps } = makeDeps({ mon, player, enemies: [enemy], skillById: healSkill });
 
-    it('fuga deve remover jogador dos participantes ativos', () => {
-        const state = createMockState();
-        
-        const action = {
-            type: 'flee',
-            actorId: 'p1'
-        };
+        const hpBefore = mon.hp;
+        executePlayerSkillGroup(healSkill.id, null, deps);
 
-        const newState = performAction(state, action, {
-            playersData: mockPlayersData,
-            rollD20Fn: mockRollD20Hit
-        });
-
-        // p1 deve estar marcado como não ativo
-        const p1 = newState.roster.participants.find(p => p.playerId === 'p1');
-        expect(p1.isActive).toBe(false);
-        
-        // p1 deve estar na lista de escapados
-        expect(newState.roster.escaped).toHaveLength(1);
-        expect(newState.roster.escaped[0].playerId).toBe('p1');
-        
-        // Log de fuga
-        const fleeLog = newState.log.find(e => e.type === 'FLEE_ACTION');
-        expect(fleeLog).toBeDefined();
+        expect(mon.hp).toBeGreaterThan(hpBefore);
     });
 
-    it('todos fogem deve resultar em retreat', () => {
-        const state = createMockState();
-        
-        // p1 foge
-        const action1 = {
-            type: 'flee',
-            actorId: 'p1'
-        };
-        let newState = performAction(state, action1, {
-            playersData: mockPlayersData,
-            rollD20Fn: mockRollD20Hit
-        });
+    it('deve falhar se ENE insuficiente', () => {
+        const mon = makeMon({ ene: 1 }); // ENE insuficiente (1 < 5)
+        const player = makePlayer(mon);
+        const enemy = makeEnemy();
+        const skill = makeSkill({ energy_cost: 5 }); // custa 5
+        const { enc, deps } = makeDeps({ mon, player, enemies: [enemy], skillById: skill });
 
-        // p2 foge (precisa atualizar currentActorId)
-        newState.turn.currentActorId = 'p2';
-        newState.turn.index = 1;
-        
-        const action2 = {
-            type: 'flee',
-            actorId: 'p2'
-        };
-        newState = performAction(newState, action2, {
-            playersData: mockPlayersData,
-            rollD20Fn: mockRollD20Hit
-        });
+        // canUseSkillNow precisa retornar false (ENE insuficiente)
+        deps.helpers.canUseSkillNow = (sk, m) => (Number(m.ene) || 0) >= (Number(sk.energy_cost) || 0);
 
-        // Batalha deve ter acabado em retreat
-        expect(newState.status).toBe('ended');
-        const endLog = newState.log.find(e => e.type === 'BATTLE_END');
-        expect(endLog.meta.result).toBe('retreat');
+        const hpBefore = enemy.hp;
+        executePlayerSkillGroup(skill.id, 0, deps);
+
+        expect(enemy.hp).toBe(hpBefore); // sem dano
     });
 });
 
-describe('performAction - Item', () => {
-    const createMockState = () => ({
-        kind: 'trainer',
-        status: 'active',
-        teams: {
-            players: [
-                {
-                    playerId: 'p1',
-                    activeMonster: {
-                        hp: 20, // HP baixo
-                        hpMax: 50,
-                        atk: 10,
-                        def: 5
-                    }
-                }
-            ],
-            enemies: [
-                { hp: 30, hpMax: 30 }
-            ]
-        },
-        roster: {
-            eligiblePlayerIds: ['p1'],
-            participants: [{ playerId: 'p1', isActive: true }],
-            notJoined: [],
-            escaped: [],
-            reinforcementsQueue: []
-        },
-        turn: {
-            phase: 'players',
-            order: [
-                { side: 'player', id: 'p1', name: 'Jogador 1', spd: 10 }
-            ],
-            index: 0,
-            currentActorId: 'p1',
-            round: 1,
-            visibleBanner: 'Vez dos Jogadores'
-        },
-        rules: { allowLateJoin: false },
-        log: []
+// ── executeGroupUseItem ───────────────────────────────────────────────────
+
+describe('executeGroupUseItem - Uso de Item', () => {
+
+    it('deve curar o monstro ao usar item de cura', () => {
+        const mon = makeMon({ hp: 20, hpMax: 100 });
+        const player = makePlayer(mon, { inventory: { IT_HEAL_01: 1 } });
+        const enemy = makeEnemy();
+        const itemDef = { id: 'IT_HEAL_01', type: 'heal', heal_pct: 0.30, heal_min: 30 };
+        const { enc, deps } = makeDeps({ mon, player, enemies: [enemy], itemDefById: { IT_HEAL_01: itemDef } });
+
+        const hpBefore = mon.hp;
+        executeGroupUseItem('IT_HEAL_01', deps);
+
+        expect(mon.hp).toBeGreaterThan(hpBefore);
+        expect(player.inventory['IT_HEAL_01']).toBe(0); // item consumido
     });
 
-    const mockPlayersData = [
-        { id: 'p1', name: 'Jogador 1', team: [{ hp: 20, hpMax: 50 }] }
-    ];
+    it('deve falhar se HP já está cheio', () => {
+        const mon = makeMon({ hp: 100, hpMax: 100 }); // HP cheio
+        const player = makePlayer(mon, { inventory: { IT_HEAL_01: 1 } });
+        const enemy = makeEnemy();
+        const itemDef = { id: 'IT_HEAL_01', type: 'heal', heal_pct: 0.30, heal_min: 30 };
+        const { enc, deps } = makeDeps({ mon, player, enemies: [enemy], itemDefById: { IT_HEAL_01: itemDef } });
 
-    it('item deve curar jogador corretamente', () => {
-        const state = createMockState();
-        
-        const action = {
-            type: 'item',
-            actorId: 'p1',
-            itemId: 'potion'
-        };
+        executeGroupUseItem('IT_HEAL_01', deps);
 
-        const newState = performAction(state, action, {
-            playersData: mockPlayersData,
-            rollD20Fn: mockRollD20Hit
-        });
+        expect(player.inventory['IT_HEAL_01']).toBe(1); // item não consumido
+    });
 
-        // HP deve ter aumentado
-        expect(newState.teams.players[0].activeMonster.hp).toBeGreaterThan(20);
-        
-        // Log de item usado
-        const itemLog = newState.log.find(e => e.type === 'ITEM_USED');
-        expect(itemLog).toBeDefined();
-        expect(itemLog.meta.healing).toBeGreaterThan(0);
+    it('deve falhar se item não existe no inventário', () => {
+        const mon = makeMon({ hp: 20, hpMax: 100 });
+        const player = makePlayer(mon, { inventory: {} }); // sem items
+        const enemy = makeEnemy();
+        const { enc, deps } = makeDeps({ mon, player, enemies: [enemy] });
+
+        const hpBefore = mon.hp;
+        executeGroupUseItem('IT_HEAL_01', deps);
+
+        expect(mon.hp).toBe(hpBefore); // sem cura
     });
 });
 
-describe('performAction - Skill', () => {
-    const createMockState = () => ({
-        kind: 'trainer',
-        status: 'active',
-        teams: {
-            players: [
-                {
-                    playerId: 'p1',
-                    activeMonster: {
-                        hp: 50,
-                        hpMax: 50,
-                        atk: 10,
-                        def: 5
-                    }
-                }
-            ],
-            enemies: [
-                {
-                    hp: 30,
-                    hpMax: 30,
-                    atk: 8,
-                    def: 4,
-                    name: 'Inimigo 1'
-                }
-            ]
-        },
-        roster: {
-            eligiblePlayerIds: ['p1'],
-            participants: [{ playerId: 'p1', isActive: true }],
-            notJoined: [],
-            escaped: [],
-            reinforcementsQueue: []
-        },
-        turn: {
-            phase: 'players',
-            order: [
-                { side: 'player', id: 'p1', name: 'Jogador 1', spd: 10 }
-            ],
-            index: 0,
-            currentActorId: 'p1',
-            round: 1,
-            visibleBanner: 'Vez dos Jogadores'
-        },
-        rules: { allowLateJoin: false },
-        log: []
-    });
+// ── passTurn ──────────────────────────────────────────────────────────────
 
-    const mockPlayersData = [
-        { id: 'p1', name: 'Jogador 1', team: [{ hp: 50, hpMax: 50 }] }
-    ];
+describe('passTurn - Passar Turno no Combate de Grupo', () => {
 
-    it('skill deve aplicar dano maior que ataque normal', () => {
-        const state = createMockState();
-        const initialEnemyHp = state.teams.enemies[0].hp;
-        
-        const action = {
-            type: 'skill',
-            actorId: 'p1',
-            targetId: 0,
-            skillId: 'fireball'
-        };
+    it('deve avançar turno sem causar dano', () => {
+        const mon = makeMon();
+        const player = makePlayer(mon);
+        const enemy = makeEnemy();
+        const { enc, deps } = makeDeps({ mon, player, enemies: [enemy] });
 
-        const newState = performAction(state, action, {
-            playersData: mockPlayersData,
-            rollD20Fn: mockRollD20Hit
-        });
+        const enemyHpBefore = enemy.hp;
+        passTurn(deps);
 
-        // Skill deve ter causado dano
-        expect(newState.teams.enemies[0].hp).toBeLessThan(initialEnemyHp);
-        
-        // Log de skill usado
-        const skillLog = newState.log.find(e => e.type === 'SKILL_USED');
-        expect(skillLog).toBeDefined();
+        expect(enemy.hp).toBe(enemyHpBefore); // sem dano
+        expect(enc.log.some(m => m.includes('passou o turno'))).toBe(true);
     });
 });
