@@ -5944,8 +5944,8 @@
                                 </div>
                                 <div class="battle-capture-note">
                                     ${encounter.behaviorallyResolved
-                                        ? '<span style="color:#00b894">🌿 Calmo/Rendido!</span>'
-                                        : `${rd.emoji} <strong>${rd.text}</strong> (${scoreNow}/${neededNow})`
+                                        ? '<span style="color:#00b894">🌿 Calmo/Rendido! → Use uma ClasterOrb para capturar!</span>'
+                                        : `${rd.emoji} <strong>${rd.text}</strong> — ${scoreNow} pontos (precisa ${neededNow})`
                                     }
                                 </div>
                             </div>
@@ -5954,9 +5954,9 @@
                         <!-- Linha de ações: d20 + botões principais -->
                         <div class="battle-actions-row">
                             <div class="battle-dice-section">
-                                <span class="battle-dice-label">🎲</span>
-                                <input type="number" id="diceRoll" min="1" max="20" placeholder="d20"
-                                       class="battle-dice-input">
+                                <label class="battle-dice-label" for="diceRoll" title="Role o dado físico d20 e digite o resultado aqui antes de atacar">🎲 d20:</label>
+                                <input type="number" id="diceRoll" min="1" max="20" placeholder="1–20"
+                                       class="battle-dice-input" title="Role o dado físico d20 e digite o resultado (1 a 20)">
                             </div>
                             ${advantageHtml}
                             <div class="battle-main-actions">
@@ -6014,8 +6014,8 @@
                                     <button class="btn btn-secondary" style="width:100%"
                                             onclick="useCaptureAction()"
                                             ${playerMonster && playerMonster.hp > 0 && monster.hp > 0 && !encounter.behaviorallyResolved ? '' : 'disabled'}
-                                            title="${captureAction.name}: Agressividade ${captureAction.aggDelta}">
-                                        ${captureAction.emoji} ${captureAction.name} <small>(Aggr ${captureAction.aggDelta})</small>
+                                            title="${captureAction.name}: reduz a Agressividade em ${Math.abs(captureAction.aggDelta)} pontos">
+                                        ${captureAction.emoji} ${captureAction.name} <small>(↓ Agressividade)</small>
                                     </button>
                                 </div>` : ''}
                             </div>
@@ -6070,7 +6070,7 @@
                 
                 display.innerHTML = `
                     <div class="battle-capture-status-label" style="color:${success ? '#2e7d32' : '#c62828'}">
-                        ${readiness.emoji} ${readiness.text} — ${score}/${needed} ${success ? '✅' : '❌'}
+                        ${readiness.emoji} ${readiness.text} — ${score} pontos ${success ? `✅ (suficiente!)` : `❌ (precisa ${needed})`}
                     </div>
                     <div class="battle-capture-breakdown">
                         HP ${Math.round((1-monster.hp/monster.hpMax)*50)} · Calma ${Math.round((1-(monster.aggression??100)/100)*50)} · Orb +${orbInfo.capture_bonus_pp}
@@ -6333,7 +6333,7 @@
                 // 2. Capturar input do usuário
                 const d20Roll = Combat.Wild.UI.getCombatInputRoll();
                 if (!d20Roll) {
-                    alert('Digite um valor de rolagem entre 1 e 20');
+                    alert('🎲 Role o dado físico d20, depois digite o resultado (1 a 20) no campo de dado e clique Atacar!');
                     return;
                 }
                 Combat.Wild.UI.clearCombatInput();
@@ -10331,7 +10331,7 @@
             {
                 id: "tut_attack",
                 title: "Tutorial 1/3 — Ataque básico",
-                instructions: "Clique em ATACAR 2 vezes para vencer.",
+                instructions: "🎲 Role o dado d20 físico, digite o resultado no campo de dado e clique em <strong>⚔️ ATACAR</strong>. Faça isso 2 vezes!",
                 required: { attack: 2 },
                 lock: { attack:true, skill:false, item:false, capture:false, flee:false, pass:false },
                 start: () => startTutorialEncounter_Attack()
@@ -10339,7 +10339,7 @@
             {
                 id: "tut_skill",
                 title: "Tutorial 2/3 — Habilidades",
-                instructions: "Use 1 habilidade (gasta ENE) para vencer.",
+                instructions: "Clique em uma das habilidades no painel abaixo para usá-la. Habilidades gastam <strong>⚡ ENE</strong> (energia) — não precisa rolar o dado!",
                 required: { skill: 1 },
                 lock: { attack:true, skill:true, item:false, capture:false, flee:false, pass:false },
                 start: () => startTutorialEncounter_Skill()
@@ -10347,7 +10347,7 @@
             {
                 id: "tut_capture",
                 title: "Tutorial 3/3 — Captura",
-                instructions: "Capture o monstrinho! Baixe o HP (Trilha Física) OU use sua ação de classe para acalmar a Agressividade (Trilha Comportamental). Quando o score estiver alto, use uma ClasterOrb!",
+                instructions: "Capture o monstrinho! <br>• <strong>Trilha Física:</strong> use ⚔️ Atacar para baixar o HP (role o d20!). <br>• <strong>Trilha Comportamental:</strong> use sua ação de classe (painel direito) para reduzir a Agressividade. <br>Quando o score estiver alto, selecione uma <strong>ClasterOrb</strong> no painel direito e clique em <strong>🎯 Capturar</strong>!",
                 required: { capture: 1 },
                 lock: { attack:true, skill:true, item:false, capture:true, flee:false, pass:false },
                 start: () => startTutorialEncounter_Capture()
