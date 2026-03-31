@@ -82,8 +82,10 @@ function makeDeps(players, overrides = {}) {
             addDropsToInventory: (player, drops) => {
                 dropLog.push({ playerId: player.id, drops });
             },
+            // Simula o formato real: primeira linha é cabeçalho '🎁 Drops:'
+            // As linhas seguintes são os itens — o caller faz .slice(1)
             formatDropsLog: (drops) =>
-                drops.map(d => `  • ${d.qty}x ${d.name}`),
+                ['🎁 Drops:', ...drops.map(d => `   📦 ${d.name} x${d.qty}`)],
             handlePostEncounterFlow: (player, enc, id, deps) => {
                 questLog.push({ playerId: player.id });
                 return { log: [], completed: [], activated: [] };
@@ -467,7 +469,7 @@ describe('processGroupVictoryRewards — robustez', () => {
 
         // Só p1 deve aparecer
         expect(participants).toHaveLength(1);
-        expect(participants[0].playerName).toContain('p1');
+        expect(participants[0].playerName).toBe('Jogador p1');
         // Money só para p1
         expect(deps._spies.moneyLog).toHaveLength(1);
         expect(deps._spies.moneyLog[0].playerId).toBe('p1');
