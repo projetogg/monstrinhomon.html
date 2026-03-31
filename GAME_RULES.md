@@ -458,27 +458,41 @@ xp_earned = (battleXpBase + level_enemy * 2) * rarity_multiplier
 
 ## ARQUITETURA CANÔNICA v2
 
-A versão 2 do sistema de combate foi especificada em quatro documentos canônicos localizados em `/docs/`:
+A versão 2 do sistema de combate foi especificada em cinco documentos canônicos localizados em `/docs/`:
 
 | Documento | Descrição |
 |-----------|-----------|
-| [`docs/COMBATE_FORMULA_V2.md`](docs/COMBATE_FORMULA_V2.md) | Fórmulas de ataque (d20 bilateral), defesa, ajuste de nível, dano, faixas de acerto |
+| [`docs/COMBATE_FORMULA_V2.md`](docs/COMBATE_FORMULA_V2.md) | Fórmula de combate (d20 bilateral, DEF parcial, faixas de RC, ModNível discreto) |
 | [`docs/HABILIDADES_POR_CLASSE_V2.md`](docs/HABILIDADES_POR_CLASSE_V2.md) | 4 slots de habilidade por classe (8 classes), progressão por nível, custo de ENE, assinaturas exclusivas |
 | [`docs/POSICIONAMENTO_V2.md`](docs/POSICIONAMENTO_V2.md) | Grade frente/meio/trás, alcance por classe, aggro, proteção, troca de posição e de Monstrinhomon |
 | [`docs/TABELA_ENCONTROS_V2.md`](docs/TABELA_ENCONTROS_V2.md) | Pontos de exploração, chances de encontro, raridade, recompensas, individual vs. coletivo |
+| [`docs/ATRIBUTOS_BASE_POR_CLASSE_V2.md`](docs/ATRIBUTOS_BASE_POR_CLASSE_V2.md) | Atributos-base Lv1 por classe, crescimento por nível, simulações de balanceamento |
 
 ### Principais mudanças da v1 para a v2
 
-- **d20 bilateral:** ataque E defesa rolam d20. RC = Ataque − Defesa.
-- **Faixas de resultado:** Falha Total / Raspão / Acerto Normal / Acerto Forte.
-- **Ajuste de nível:** diferença de nível gera Ajuste de Poder (AP) na rolagem de ataque.
+- **d20 bilateral:** ataque E defesa rolam d20. `RC = Ataque − Defesa`.
+- **DEF dividida em dois papéis:** `DEF_confronto = ceil(DEF/2)` no hit; `Mitigação = floor(DEF/2)` no dano.
+- **5 faixas de resultado:** Falha Total / Contato Neutralizado / Acerto Reduzido / Acerto Normal / Acerto Forte.
+- **ModNível discreto:** tabela de passos (0→±1→±2→±3→±4→±5), máximo ±5.
+- **Nova fórmula de dano:** `DanoBase = PWR + ATK − Mitigação` (sem ratio).
 - **4 slots de habilidade:** Slot 1 (básico, sem ENE) + Slot 2 + Slot 3 + Slot 4 (assinatura exclusiva).
 - **Posicionamento em grupo:** frente/meio/trás com bônus de defesa e regras de alcance por classe.
 - **Exploração individual:** cada jogador escolhe um ponto de busca antes do combate.
+- **Tabela de atributos-base** por classe derivada do catálogo real de Monstrinhos.
 
 ---
 
 ## CHANGELOG
+
+### v2.1 (2026-03-31)
+- Revisão de balanceamento da fórmula de combate (`COMBATE_FORMULA_V2.md`)
+  - DEF dividida: `DEF_confronto = ceil(DEF/2)` no confronto, `Mitigação = floor(DEF/2)` no dano
+  - Faixas revisadas: 5 categorias (inclui "Contato Neutralizado")
+  - ModNível discreto substituiu AP contínuo (máx ±5 em vez de ±10)
+  - Fórmula de dano: `DanoBase = PWR + ATK − Mitigação` (sem ratio)
+  - Crítico: ataque 20 natural = +4 RC +20% dano; defesa 20 natural = +5 RC defensivo
+  - Regra de Superioridade Real (diferença ≥10 lv): Contato Neut. → Acerto Red.
+  - Novo documento `ATRIBUTOS_BASE_POR_CLASSE_V2.md` com tabela prática
 
 ### v2.0 (2026-03-31)
 - Arquitetura Canônica do Combate v2 especificada (4 documentos em `/docs/`)

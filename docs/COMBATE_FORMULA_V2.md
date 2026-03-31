@@ -1,27 +1,33 @@
 # Documento 1 — Fórmula de Combate Canônica v2
 
 > **Status:** Canônico — Aprovado para implementação  
-> **Versão:** 2.0  
+> **Versão:** 2.1 (revisão de balanceamento — DEF parcial)  
 > **Última atualização:** 2026-03-31
 
 ---
 
-## 1. Princípio Central
+## Princípio de Balanceamento
 
-O combate do Monstrinhomon resolve cada ação em quatro camadas:
+Ataque, Defesa, Nível e Sorte não entram com o mesmo peso em todas as etapas.
 
-```
-Camada 1: Iniciativa — quem age primeiro
-Camada 2: Resolução — ataque vs. defesa (d20 bilateral)
-Camada 3: Dano — calculado a partir do resultado do confronto
-Camada 4: Efeitos — buffs, debuffs, status, posicionamento
-```
+| Elemento | Confronto | Dano |
+|----------|-----------|------|
+| d20 | **Forte** | Fraco (via faixa) |
+| ATK | Médio | **Forte** |
+| DEF | Médio — meia escala | Médio — meia escala |
+| Nível | Discreto (±5 max) | Discreto |
+| PWR da ação | — | **Forte** |
 
-Nenhum dos dois lados é apenas passivo. Ambos rolam d20 em todo confronto.
+Isso separa funções:
+- o **d20** decide a qualidade do contato;
+- o **ATK** pressiona confronto e dano;
+- a **DEF** influencia confronto e mitigação, mas em meia escala (não esmaga o dano);
+- o **nível** corrige hierarquia sem matar a sorte;
+- o **PWR** da ação define o peso ofensivo real.
 
 ---
 
-## 2. Estrutura de Atributos de Combate
+## 1. Estrutura de Atributos de Combate
 
 Cada Monstrinhomon em batalha possui:
 
@@ -30,10 +36,38 @@ Cada Monstrinhomon em batalha possui:
 | Pontos de Vida | HP | Vida atual / máxima |
 | Energia | ENE | Combustível para habilidades especiais |
 | Ataque | ATK | Poder ofensivo base |
-| Defesa | DEF | Resistência ao dano |
+| Defesa | DEF | Resistência defensiva |
 | Agilidade | AGI | Determina ordem de turno |
+| Poder da Ação | PWR | Potência base da ação usada |
+| Nível | LVL | Hierarquia de progressão |
 | Alcance | ALC | Linhas que pode atingir (ver Posicionamento v2) |
 | Posição | POS | Frente / Meio / Trás |
+
+---
+
+## 2. Os Dois Papéis da Defesa
+
+A **DEF** participa em dois momentos diferentes — com pesos diferentes:
+
+### Papel 1 — DEF de Confronto
+Representa bloquear, esquivar, amortecer a entrada do golpe.
+
+```
+DEF_confronto = ceil(DEF / 2)
+```
+
+Exemplos: DEF 4 → 2 | DEF 6 → 3 | DEF 8 → 4 | DEF 10 → 5
+
+### Papel 2 — Mitigação de Dano
+Representa reduzir o impacto após o golpe já ter entrado.
+
+```
+Mitigação = floor(DEF / 2)
+```
+
+Exemplos: DEF 4 → 2 | DEF 6 → 3 | DEF 8 → 4 | DEF 10 → 5
+
+> **Regra de segurança:** 1 ponto de DEF não pode valer mais do que 1 ponto de ATK no efeito total médio. A divisão por 2 em cada etapa garante isso.
 
 ---
 
@@ -53,222 +87,327 @@ Em caso de empate: Monstrinhomon do jogador age antes do inimigo.
 
 ---
 
-## 4. Resolução do Confronto (d20 Bilateral)
+## 4. Etapa A — Validar Ação
 
-Quando um Monstrinhomon ataca:
+Antes de resolver o confronto, verificar:
 
-### 4.1 Rolagem Bilateral
-```
-Rolagem de Ataque  = d20 + ATK_atacante + ajuste_de_nível + bônus_classe + buffs_ativos
-Rolagem de Defesa  = d20 + DEF_defensor + bônus_posição + buffs_defensivos
-```
+1. **Alcance** — alvo está dentro do alcance da ação e posição?
+2. **Posição** — Monstrinhomon está em posição válida para a ação?
+3. **Energia** — ENE atual ≥ custo da habilidade (se aplicável)?
+4. **Alvo válido** — alvo não está desmaiado ou imune?
 
-### 4.2 Resultado de Confronto (RC)
-```
-RC = Rolagem de Ataque − Rolagem de Defesa
-```
-
-### 4.3 Faixas de RC
-
-| RC | Categoria | Efeito |
-|----|-----------|--------|
-| RC ≤ −6 | **Falha Total** | Ataque não entra. Nenhum dano. |
-| −5 ≤ RC ≤ −1 | **Raspão** | Dano mínimo (ver seção 6.2). |
-| 0 ≤ RC ≤ 7 | **Acerto Normal** | Dano padrão calculado. |
-| RC ≥ 8 | **Acerto Forte** | Dano aumentado (ver seção 6.3). |
-
-### 4.4 Regra do Dado Natural
-- **d20 natural = 20 (atacante):** Acerto automático. RC = +8 (Acerto Forte), independente da defesa.
-- **d20 natural = 1 (atacante):** Falha automática. RC = −10. Nenhum dano.
-- **d20 natural = 20 (defensor):** Defesa excepcional. RC reduzido em 10 adicionalmente (pode converter Acerto em Falha).
-- **d20 natural = 1 (defensor):** Defesa falha. RC aumentado em +5 adicionalmente.
+Se qualquer validação falhar, a ação não acontece.
 
 ---
 
-## 5. Ajuste de Nível
+## 5. Etapa B — Resolver o Confronto (d20 Bilateral)
 
-O nível importa de verdade. A diferença de nível gera um Ajuste de Poder (AP):
+### 5.1 Fórmula do Confronto
 
-### 5.1 Cálculo do Ajuste
 ```
-dif = nível_atacante − nível_defensor
-
-AP = clamp(dif * 0.7, −10, +10)
+ResultadoConfronto (RC) =
+  (d20A + ATK + BônusAção + ModNível + ModClasse + BuffOfensivo)
+  −
+  (d20D + DEF_confronto + ModPosição + BuffDefensivo)
 ```
 
-> Esse valor é somado à **Rolagem de Ataque** antes de calcular RC.
+Onde `DEF_confronto = ceil(DEF_defensor / 2)`.
 
-### 5.2 Tabela Resumida
+### 5.2 Modificador de Nível (ModNível)
 
-| Diferença de Nível | Ajuste de Poder (AP) |
-|--------------------|----------------------|
-| −15 ou menos | −10 |
-| −10 | −7 |
-| −5 | −3,5 |
-| 0 | 0 |
-| +5 | +3,5 |
-| +10 | +7 |
-| +15 ou mais | +10 |
+Baseado na **diferença líquida** entre atacante e defensor.  
+Aplicado uma vez, como saldo líquido na fórmula:
 
-### 5.3 Impacto Real
+| Diferença de Nível (ataque − defesa) | ModNível |
+|--------------------------------------|---------|
+| ≤ −20 | −5 |
+| −15 a −19 | −4 |
+| −10 a −14 | −3 |
+| −6 a −9 | −2 |
+| −3 a −5 | −1 |
+| −2 a +2 | 0 |
+| +3 a +5 | +1 |
+| +6 a +9 | +2 |
+| +10 a +14 | +3 |
+| +15 a +19 | +4 |
+| ≥ +20 | +5 |
 
-- Diferença pequena (1–3 níveis): efeito leve, sorte pode virar.
-- Diferença moderada (4–7 níveis): efeito perceptível, mas reversível com dado alto.
-- Diferença grande (8–12 níveis): improvável que o mais fraco cause dano relevante.
-- Diferença extrema (13+ níveis): quase impossível, exceto crítico natural 20.
+> O bônus máximo de nível é **±5**. Isso preserva o impacto do d20.
+
+### 5.3 Faixas do Resultado de Confronto
+
+| RC | Categoria | Efeito no Dano |
+|----|-----------|----------------|
+| ≤ −8 | **Falha Total** | 0 |
+| −7 a −3 | **Contato Neutralizado** | 0 ou 1 (ver seção 7) |
+| −2 a +3 | **Acerto Reduzido** | 60% do DanoBase (mín. 1) |
+| +4 a +10 | **Acerto Normal** | 100% do DanoBase |
+| ≥ +11 | **Acerto Forte** | 125% do DanoBase |
+
+### 5.4 Regras dos Dados Naturais
+
+| Evento | Efeito no RC |
+|--------|-------------|
+| Atacante tira **20 natural** | +4 no RC; +20% no dano final |
+| Atacante tira **1 natural** | −6 no RC (pode causar Falha Total) |
+| Defensor tira **20 natural** | +5 no confronto defensivo (subtrai 5 do RC) |
+| Defensor tira **1 natural** | −4 no confronto defensivo (soma 4 ao RC) |
+
+> Não há "acerto automático" ou "falha automática" absoluta — os dados naturais ajustam muito o RC, mas os atributos ainda importam.
 
 ---
 
-## 6. Cálculo de Dano
+## 6. Etapa C — Calcular o Dano
 
-### 6.1 Fórmula Base
+### 6.1 Fórmula do Dano Base
+
 ```
-PODER = poder da habilidade usada (ou PODER_BÁSICO se ataque sem energia)
-
-ratio    = ATK_atacante / (ATK_atacante + DEF_defensor)
-danoBase = Math.floor(PODER × ratio × mult_classe × mult_nível)
+DanoBase = PWR + ATK_atacante + ModNívelDano − Mitigação
 ```
 
-**Onde:**
+Onde:
+- `PWR` = poder da ação usada (ver seção 9)
+- `Mitigação = floor(DEF_defensor / 2)`
+- `ModNívelDano` = ModNível da tabela acima (mesmo valor do confronto)
+
+**DanoBase mínimo antes do multiplicador:** 1 (se houve acerto válido).
+
+### 6.2 Multiplicador por Faixa
+
+| Categoria | Multiplicador | Observação |
+|-----------|--------------|-----------|
+| Falha Total | ×0 | Sem dano |
+| Contato Neutralizado | ×0 | Com possibilidade de 1 fixo |
+| Acerto Reduzido | ×0.60 | Mínimo 1 |
+| Acerto Normal | ×1.00 | — |
+| Acerto Forte | ×1.25 | — |
+
 ```
-mult_classe  = 1.10 se vantagem de classe, 0.90 se desvantagem, 1.00 se neutro
-mult_nível   = clamp( (nível_atacante / nível_defensor) ^ 0.5, 0.70, 1.40 )
+DanoFinal = max(minDano, floor(DanoBase × multiplicador_faixa))
 ```
 
-### 6.2 Dano por Categoria de RC
+- Se Falha Total ou Contato Neutralizado → `DanoFinal = 0` (ou 1, ver seção 7)
+- Se qualquer Acerto → `DanoFinal = max(1, DanoBase × mult)`
 
-| Categoria | Modificador de Dano |
-|-----------|---------------------|
-| Falha Total | 0 |
-| Raspão | max(1, Math.floor(danoBase × 0.30)) |
-| Acerto Normal | max(1, danoBase) |
-| Acerto Forte | max(1, Math.floor(danoBase × 1.40)) |
+### 6.3 Bônus de Crítico no Dano
 
-### 6.3 Dano Mínimo Universal
-- **Sempre 1** — mesmo em desvantagem extrema com raspão.
-- Exceção: Falha Total → 0 dano.
-
-### 6.4 Dano Ilusório (Alvo Muito Superior)
-Quando `nível_defensor − nível_atacante ≥ 10`:
-- Mesmo que RC seja "Acerto Normal", o dano máximo é limitado a `min(danoCalculado, 2)`.
-- O combate ainda pode continuar; a criança sente que "quase não dói".
+Quando o atacante tirou **20 natural**: `DanoFinal × 1.20` (após o multiplicador de faixa).
 
 ---
 
-## 7. Poder Base por Tipo de Ação
+## 7. Regras Especiais de Nível
 
-| Tipo | Poder Base (PODER_BÁSICO) | Custo ENE |
-|------|--------------------------|-----------|
-| Ataque Básico (sem evolução) | 10–14 (por classe) | 0 |
-| Habilidade Tier I | 16–20 | 3–5 |
-| Habilidade Tier II | 22–28 | 5–8 |
-| Habilidade Tier III | 30–38 | 8–12 |
-| Assinatura de Classe | 24–36 (efeito especial) | 8–14 |
+### 7.1 Contato Neutralizado — Dano 0 ou 1
 
-### 7.1 PODER_BÁSICO por Classe
+"Contato Neutralizado" normalmente resulta em 0 dano.  
+Porém, se o atacante **não** estiver 10 ou mais níveis abaixo do defensor:
+- O dano pode ser 1 (representa um toque simbólico).
 
-| Classe | PODER_BÁSICO | Justificativa |
-|--------|-------------|---------------|
-| Guerreiro | 13 | Linha de frente consistente |
-| Bárbaro | 14 | Maior dano bruto |
-| Mago | 11 | Compensado por habilidades fortes |
-| Curandeiro | 10 | Menor ataque; foco em suporte |
-| Ladino | 12 | Rápido, preciso |
-| Bardo | 11 | Modesto; buffa aliados |
-| Caçador | 12 | Alcance longo, dano constante |
-| Animalista | 12 | Versátil |
+### 7.2 Dano Ilusório (Atacante Muito Inferior)
+
+Se `LVL_defensor − LVL_atacante ≥ 10` e o resultado for **Contato Neutralizado** ou **Acerto Reduzido**:
+
+```
+DanoFinal = 1
+```
+
+O fraco pode encaixar um golpe por sorte, mas não fere seriamente um muito superior.
+
+### 7.3 Superioridade Real (Atacante Muito Superior)
+
+Se `LVL_atacante − LVL_defensor ≥ 10`:
+- Um resultado de **Contato Neutralizado** sobe para **Acerto Reduzido** automaticamente.
+- Exceção: se o atacante tirou **1 natural** ou o defensor tirou **20 natural**, a regra não se aplica.
+
+Isso impede que monstros muito fortes sejam frustrados por pequenas oscilações do dado.
 
 ---
 
-## 8. Vantagem de Classe no Acerto
+## 8. Balanceamento de Classe no Confronto e no Dano
 
-O ciclo de vantagens é:
+### 8.1 Ciclo de Vantagens
 ```
 Guerreiro > Ladino > Mago > Bárbaro > Caçador > Bardo > Curandeiro > Guerreiro
 Animalista: neutro contra todos
 ```
 
-| Situação | Bônus/Penalidade no ATK (Rolagem de Ataque) | Mult. Dano |
-|----------|---------------------------------------------|-----------|
+### 8.2 Efeito da Vantagem/Desvantagem
+
+| Situação | ModClasse (Confronto) | Mult. Dano |
+|----------|-----------------------|-----------|
 | Vantagem | +2 | ×1.10 |
 | Neutro | 0 | ×1.00 |
 | Desvantagem | −2 | ×0.90 |
 
 ---
 
-## 9. Modo de Dado
+## 9. Poder Base por Tipo de Ação (PWR)
 
-### 9.1 Automático
+| Tipo | PWR típico | Custo ENE |
+|------|-----------|-----------|
+| Ataque Básico (sem evolução) | 4–5 | 0 |
+| Habilidade Tier I | 8–10 | 3–5 |
+| Habilidade Tier II | 12–16 | 5–8 |
+| Habilidade Tier III | 18–22 | 8–12 |
+| Assinatura de Classe | 14–20 (+ efeito especial) | 8–14 |
+
+> **Nota sobre PWR:** Na nova fórmula, o dano já soma ATK diretamente (`DanoBase = PWR + ATK − Mitigação`). Por isso os valores de PWR são menores que na v2.0 — o ATK não entra mais como "ratio", entra como soma direta.
+
+### 9.1 PWR do Ataque Básico por Classe
+
+| Classe | PWR Básico | ATK típico Lv1 | DanoBase esperado Lv1 (vs DEF 4) |
+|--------|-----------|---------------|----------------------------------|
+| Guerreiro | 4 | 7 | 4+7−2 = **9** |
+| Bárbaro | 5 | 8 | 5+8−2 = **11** |
+| Mago | 4 | 8 | 4+8−2 = **10** |
+| Curandeiro | 3 | 4 | 3+4−2 = **5** |
+| Ladino | 4 | 7 | 4+7−2 = **9** |
+| Bardo | 3 | 6 | 3+6−2 = **7** |
+| Caçador | 4 | 7 | 4+7−2 = **9** |
+| Animalista | 4 | 6 | 4+6−2 = **8** |
+
+---
+
+## 10. Modo de Dado
+
+### 10.1 Automático
 - Sistema rola d20 internamente via `Math.random()`.
 - Sem interação da criança.
 
-### 9.2 Manual
+### 10.2 Manual
 - Criança rola dado físico d20 e informa o valor ao sistema.
-- O sistema aceita o valor e calcula.
+- O sistema aceita o valor e calcula normalmente.
 - O terapeuta/mestre pode mediar.
 
-> Ambos os modos valem para **Rolagem de Ataque** e **Rolagem de Defesa**.
+> Ambos os modos valem para a **Rolagem de Ataque** e a **Rolagem de Defesa**.
 
 ---
 
-## 10. Buffs e Debuffs no Cálculo
+## 11. Buffs e Debuffs no Cálculo
 
-### 10.1 Buffs Ofensivos (somados à Rolagem de Ataque)
-- Aumento de ATK: `+X ao ATK_atacante` (entra no ratio e no AP)
-- Precisão Reforçada: `+X direto na Rolagem de Ataque`
+### 11.1 Buffs Ofensivos
+Entram como `BuffOfensivo` na fórmula do Confronto:
+- Aumento de ATK: somado ao ATK antes de entrar na fórmula (afeta confronto e dano).
+- Precisão Reforçada: somado diretamente ao confronto (só afeta RC, não dano).
 
-### 10.2 Buffs Defensivos (somados à Rolagem de Defesa)
-- Aumento de DEF: `+X ao DEF_defensor`
-- Escudo/Proteção: `+X direto na Rolagem de Defesa`
+### 11.2 Buffs Defensivos
+Entram como `BuffDefensivo` na fórmula do Confronto:
+- Aumento de DEF: somado ao DEF antes de calcular DEF_confronto e Mitigação.
+- Escudo/Proteção: somado diretamente ao confronto (só afeta RC, não dano).
 
-### 10.3 Debuffs
-- Redução de ATK/DEF: subtração no respectivo atributo antes do cálculo.
-- Vulnerabilidade: converte mult_dano para `×1.20` (cumulativo com vantagem de classe).
+### 11.3 Debuffs
+- Redução de ATK/DEF: subtração antes do cálculo.
+- Vulnerabilidade: `DanoFinal × 1.20` (cumulativo com vantagem de classe).
 
-### 10.4 Limites
+### 11.4 Limites
 - ATK nunca cai abaixo de 1.
-- DEF nunca cai abaixo de 0.
-- Nenhum buff pode fazer RC garantido sem rolagem (d20 sempre importa).
+- DEF nunca cai abaixo de 0 (DEF_confronto e Mitigação mínimos = 0).
+- Nenhum buff pode garantir RC fixo — o d20 sempre importa.
 
 ---
 
-## 11. Fluxo Completo de um Turno de Ataque
+## 12. Regras de Habilidades Defensivas
+
+Toda habilidade do tipo "proteger aliado" deve ter custo real para evitar que classes defensivas sejam boas em tudo ao mesmo tempo:
+
+- **Custo de energia obrigatório.**
+- **Duração de 1 turno** (não persiste automaticamente).
+- **Exige posição Frente** para redirecionar dano de aliados na mesma linha.
+- **Penalidade de ação:** ao usar Proteção Total, o Guerreiro não pode usar habilidades ofensivas no turno seguinte.
+
+---
+
+## 13. Fluxo Completo de um Turno de Ataque
 
 ```
-1. Verificar ordem (AGI)
-2. Atacante escolhe ação (básico / habilidade / item / fuga)
-3. Se ação de dano:
-   a. Verificar energia (se habilidade)
-   b. Modo de dado: automático ou manual?
-   c. Rolagem de Ataque = d20 + ATK + AP_nível + bônus_classe + buffs
-   d. Rolagem de Defesa = d20 + DEF_defensor + bônus_posição + buffs_defesa
-   e. RC = Rolagem de Ataque − Rolagem de Defesa
-   f. Verificar naturais (20/1)
-   g. Classificar RC → Falha / Raspão / Normal / Forte
-   h. Calcular danoFinal
-   i. Aplicar dano ilusório se diferença extrema
-4. Atualizar HP, ENE, efeitos ativos
-5. Verificar derrota / troca / captura
-6. Passar turno
+Etapa A — Validar ação
+  1. Alcance válido?
+  2. Posição válida?
+  3. ENE suficiente?
+  4. Alvo válido?
+
+Etapa B — Resolver Confronto
+  5. Atacante escolhe modo de dado (automático / manual)
+  6. d20A → Rolagem de Ataque = d20A + ATK + BônusAção + ModNível + ModClasse + BuffOfensivo
+  7. d20D → Rolagem de Defesa = d20D + DEF_confronto + ModPosição + BuffDefensivo
+  8. RC = Rolagem de Ataque − Rolagem de Defesa
+  9. Aplicar dado natural (20/1 de cada lado)
+ 10. Classificar RC → Falha Total / Contato Neutralizado / Acerto Reduzido / Normal / Forte
+ 11. Aplicar regra de Superioridade Real se aplicável
+
+Etapa C — Calcular Dano
+ 12. DanoBase = PWR + ATK + ModNívelDano − Mitigação
+ 13. DanoFinal = DanoBase × multiplicador_faixa
+ 14. Aplicar crítico (+20% se d20A=20)
+ 15. Aplicar Dano Ilusório se aplicável
+ 16. Garantir mínimo 1 se houve Acerto
+
+Etapa D — Resolver Efeitos
+ 17. Atualizar HP, ENE, buffs/debuffs ativos
+ 18. Verificar derrota / troca / captura / posição
+ 19. Passar turno
 ```
 
 ---
 
-## 12. Resumo das Constantes
+## 14. Exemplo Prático — Guerreiro vs Bárbaro (mesmo nível)
+
+**Guerreiro (defensor):** ATK 7, DEF 10, LVL 20  
+**Bárbaro (atacante):** ATK 8, DEF 4, LVL 20, PWR 5 (ataque básico)
+
+**Confronto:**
+```
+DEF_confronto Guerreiro = ceil(10/2) = 5
+ModNível = 0 (mesmo nível)
+d20A = 12, d20D = 9
+
+RC = (12 + 8 + 0 + 0 + 0) − (9 + 5 + 0 + 0)
+RC = 20 − 14 = +6 → Acerto Normal
+```
+
+**Dano:**
+```
+Mitigação Guerreiro = floor(10/2) = 5
+DanoBase = 5 (PWR) + 8 (ATK) + 0 − 5 = 8
+DanoFinal = 8 × 1.00 = 8
+```
+
+**Guerreiro (atacante) vs Bárbaro (defensor):**
+```
+DEF_confronto Bárbaro = ceil(4/2) = 2
+d20A = 10, d20D = 8
+
+RC = (10 + 7 + 0) − (8 + 2 + 0) = 17 − 10 = +7 → Acerto Normal
+
+Mitigação Bárbaro = floor(4/2) = 2
+DanoBase = 4 (PWR) + 7 (ATK) − 2 = 9
+DanoFinal = 9
+```
+
+**Resultado:** O Guerreiro resiste mais (mít. 5 vs 2), mas o Bárbaro ainda causa dano real. Nenhum dos dois é invulnerável.
+
+---
+
+## 15. Resumo das Constantes
 
 | Constante | Valor |
 |-----------|-------|
-| d20 natural crítico (ataque) | RC mínimo +8, acerto automático |
-| d20 natural 1 (ataque) | Falha automática, RC −10 |
-| d20 natural 20 (defesa) | RC −10 adicional |
-| d20 natural 1 (defesa) | RC +5 adicional |
-| Ajuste de Nível (por nível) | 0.7 por nível de diferença, clamp −10/+10 |
-| Mult. nível (dano) | (atk_lv/def_lv)^0.5, clamp 0.70–1.40 |
-| Dano mínimo universal | 1 (exceto Falha Total) |
-| Dano ilusório (dif ≥ 10 lv) | máximo 2 mesmo em Acerto Normal |
-| Raspão mult. | ×0.30 |
-| Acerto Forte mult. | ×1.40 |
-| Vantagem de classe ATK | +2 |
-| Desvantagem de classe ATK | −2 |
-| Vantagem de classe dano | ×1.10 |
-| Desvantagem de classe dano | ×0.90 |
+| DEF no confronto | `ceil(DEF / 2)` |
+| Mitigação no dano | `floor(DEF / 2)` |
+| ModNível máximo | ±5 (por tabela discreta) |
+| Ataque natural 20 | +4 RC, +20% dano final |
+| Ataque natural 1 | −6 RC |
+| Defesa natural 20 | −5 RC (favorece defensor) |
+| Defesa natural 1 | +4 RC (prejudica defensor) |
+| Falha Total (RC) | ≤ −8 → 0 dano |
+| Contato Neutralizado (RC) | −7 a −3 → 0 ou 1 dano |
+| Acerto Reduzido (RC) | −2 a +3 → ×0.60 (mín 1) |
+| Acerto Normal (RC) | +4 a +10 → ×1.00 |
+| Acerto Forte (RC) | ≥ +11 → ×1.25 |
+| Dano ilusório (atac. ≥10 lv abaixo) | DanoFinal = 1 em Contato Neut. ou Acerto Red. |
+| Superioridade (atac. ≥10 lv acima) | Contato Neut. → Acerto Red. (exceto nat. 1/20) |
+| Dano mínimo universal (acerto válido) | 1 |
+| Vantagem de classe (confronto) | +2 |
+| Desvantagem de classe (confronto) | −2 |
+| Vantagem de classe (dano) | ×1.10 |
+| Desvantagem de classe (dano) | ×0.90 |
