@@ -221,6 +221,29 @@ export function checkCriticalRoll(d20Roll) {
     };
 }
 
+/**
+ * Resolve o resultado de um d20 aplicando as regras especiais de crítico e falha.
+ *
+ * - d20 = 1  → isFail=true  → sempre erra (falha crítica), independente de ATK/DEF
+ * - d20 = 20 → isCrit=true  → sempre acerta (acerto crítico), independente de ATK/DEF
+ * - d20 2-19 → resolve normalmente via checkHit()
+ *
+ * Esta é a função canônica para resolver contra-ataques inimigos.
+ * Substitui `_resolveEnemyD20Hit` que estava inline no index.html.
+ *
+ * @param {number} roll            - Resultado do d20 (1-20)
+ * @param {object} attacker        - Monstrinho atacante
+ * @param {object} defender        - Monstrinho defensor
+ * @param {object} classAdvantages - Tabela de vantagens de classe (opcional)
+ * @returns {{ hit: boolean, isCrit: boolean, isFail: boolean }}
+ */
+export function resolveD20Hit(roll, attacker, defender, classAdvantages) {
+    const isCrit = (roll === 20);
+    const isFail = (roll === 1);
+    const hit = isFail ? false : (isCrit ? true : checkHit(roll, attacker, defender, classAdvantages));
+    return { hit, isCrit, isFail };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // SISTEMA DE CAPTURA SELVAGEM — Duas Trilhas
 //

@@ -6096,59 +6096,33 @@
                 if (!playerMonster || playerMonster.hp <= 0) {
                     alert('❌ Seu monstrinho está desmaiado!'); return;
                 }
-
                 if (monster.hp <= 0) {
                     alert('❌ Selvagem já está desmaiado — não pode usar ação de captura.'); return;
                 }
-
-                // Bloquear se já resolvido comportamentalmente
                 if (encounter.behaviorallyResolved) {
                     alert('✅ Selvagem já está calmo! Use uma ClasterOrb para capturar.'); return;
                 }
-
-                // Obter ação da classe do jogador
-                const action = CAPTURE_ACTIONS[player.class];
-                if (!action) {
+                if (!CAPTURE_ACTIONS[player.class]) {
                     alert(`❌ Classe ${player.class} não tem ação de captura definida.`); return;
                 }
 
-                encounter.log = encounter.log || [];
+                const result = Combat.Wild.Actions.executeWildCaptureAction({
+                    encounter, player, playerMonster,
+                    dependencies: {
+                        captureActions: CAPTURE_ACTIONS,
+                        aggrTerminal: AGGR_TERMINAL,
+                        handleVictoryRewards,
+                        tutorialOnAction,
+                        eneRegenData: ENE_REGEN_BY_CLASS,
+                        classAdvantages: GameState.config?.classAdvantages || {},
+                        getBasicPower: (cls) => MM_TABLES.getBasicAttackPower(cls),
+                        audio: Audio,
+                    },
+                });
 
-                // Aplicar ação ao selvagem
-                const aggBefore = monster.aggression ?? 100;
-                applyCaptureAction(monster, action);
-
-                encounter.log.push(
-                    `${action.emoji} ${player.name} usou ${action.name}! ` +
-                    `Agressividade: ${aggBefore} → ${monster.aggression}`
-                );
-
-                // ── TRILHA COMPORTAMENTAL: resolução quando agressividade chega ao terminal ──
-                if (monster.aggression <= AGGR_TERMINAL) {
-                    monster.aggression = 0;
-                    encounter.behaviorallyResolved = true;
-                    encounter.log.push(
-                        `🌿 ${monster.name} está completamente calmo/rendido! ` +
-                        `(Trilha Comportamental) Pronto para captura!`
-                    );
-                    // Conceder XP pela resolução comportamental
-                    handleVictoryRewards(encounter);
-                    // Feature 4.2: Tutorial hook — resolução comportamental conta como "capture"
-                    tutorialOnAction("capture");
-                    // Manter encounter ativo para que o jogador use uma ClasterOrb
-                    saveToLocalStorage();
-                    renderEncounter();
+                if (!result.success) {
+                    console.error('useCaptureAction: executeWildCaptureAction falhou', result);
                     return;
-                }
-
-                // Selvagem contra-ataca SOMENTE se ainda não rendido
-                encounter.log.push(`⚔️ ${monster.name} reage!`);
-                const counterResult = _enemyWildCounterattack(encounter, monster, playerMonster);
-                if (counterResult.defeated) {
-                    encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
-                    playerMonster.status = 'fainted';
-                    encounter.result = 'defeat';
-                    encounter.active = false;
                 }
 
                 saveToLocalStorage();
@@ -6269,105 +6243,51 @@
             try {
                 const encounter = GameState.currentEncounter;
                 if (!encounter?.wildMonster) return;
-                
+
                 const playerId = encounter.selectedPlayerId;
                 const player = GameState.players.find(p => p.id === playerId);
-                if (!player) {
-                    alert('Nenhum jogador selecionado para este encontro');
-                    return;
-                }
-                
+                if (!player) { alert('Nenhum jogador selecionado para este encontro'); return; }
+
                 const playerMonster = _getActiveMonsterOfPlayer(player);
-                if (!playerMonster) {
-                    alert('Jogador não tem monstrinhos no time');
-                    return;
-                }
-                
-                // VALIDAÇÕES (GAME_RULES.md)
-                
-                // 1. Validar HP > 0 (monstrinho não desmaiado)
+                if (!playerMonster) { alert('Jogador não tem monstrinhos no time'); return; }
+
                 if (playerMonster.hp <= 0) {
-                    alert('❌ Não pode usar item! Monstrinho está desmaiado (HP = 0).');
-                    return;
+                    alert('❌ Não pode usar item! Monstrinho está desmaiado (HP = 0).'); return;
                 }
-                
-                // 2. Validar HP < HPMax (não usar se já está cheio)
                 if (playerMonster.hp >= playerMonster.hpMax) {
-                    alert('⚠️ HP já está no máximo! Não é necessário usar item de cura.');
-                    return;
+                    alert('⚠️ HP já está no máximo! Não é necessário usar item de cura.'); return;
                 }
-                
-                // 3. Validar item disponível no inventário
+
                 player.inventory = player.inventory || {};
-                const itemCount = player.inventory[itemId] || 0;
-                
-                // Obter definição do item para nome e fórmula de cura
                 const itemDef = getItemDef(itemId);
                 const itemName = itemDef?.name || itemId;
-                const healPct  = Number(itemDef?.heal_pct) || 0.30;
-                const healMin  = Number(itemDef?.heal_min) || 30;
-                const itemEmoji = itemDef?.emoji || '💚';
-                
-                if (itemCount <= 0) {
-                    alert(`❌ Você não tem ${itemName} disponível!`);
+                if ((player.inventory[itemId] || 0) <= 0) {
+                    alert(`❌ Você não tem ${itemName} disponível!`); return;
+                }
+
+                const result = Combat.Wild.Actions.executeWildItemUse({
+                    encounter, player, playerMonster, itemId,
+                    dependencies: {
+                        getItemDef,
+                        updateFriendship,
+                        tutorialOnAction,
+                        audio: Audio,
+                        onHealVisualFeedback: (actualHeal) => {
+                            setTimeout(() => showFloatingText('wildPlayerBox', `+${actualHeal}`, 'heal'), 50);
+                        },
+                        eneRegenData: ENE_REGEN_BY_CLASS,
+                        classAdvantages: GameState.config?.classAdvantages || {},
+                        getBasicPower: (cls) => MM_TABLES.getBasicAttackPower(cls),
+                    },
+                });
+
+                if (!result.success) {
+                    console.error('useItemInBattle: executeWildItemUse falhou', result);
                     return;
                 }
-                
-                encounter.log = encounter.log || [];
-                
-                // CONSUMIR 1 unidade do item
-                player.inventory[itemId]--;
-                encounter.log.push(`${itemEmoji} ${player.name} usou ${itemName}! (Restam: ${player.inventory[itemId]})`);
-                
-                // APLICAR CURA usando fórmula do itemDef
-                const healAmount = Math.max(healMin, Math.floor(playerMonster.hpMax * healPct));
-                const hpBefore = playerMonster.hp;
-                playerMonster.hp = Math.min(playerMonster.hpMax, playerMonster.hp + healAmount);
-                const actualHeal = playerMonster.hp - hpBefore;
-                
-                encounter.log.push(`✨ ${playerMonster.name} recuperou ${actualHeal} HP! (${playerMonster.hp}/${playerMonster.hpMax})`);
-                
-                // SISTEMA DE AMIZADE: Ganhar amizade ao usar item de cura
-                updateFriendship(playerMonster, 'useHealItem');
-                
-                // Feature 4.2: Tutorial hook
-                tutorialOnAction("item");
-                
-                // Feature 4.4: Heal sound
-                Audio.playSfx("heal");
-                
-                // SALVAR ESTADO
+
                 saveToLocalStorage();
                 renderEncounter();
-                
-                // Feature 3.8: Visual feedback for healing
-                setTimeout(() => {
-                    showFloatingText('wildPlayerBox', `+${actualHeal}`, 'heal');
-                }, 50);
-                
-                // INIMIGO ATACA (contra-ataque automático após usar item)
-                if (encounter.wildMonster.hp > 0) {
-                    encounter.log.push(`⚔️ Vez do inimigo...`);
-                    const counterResult = _enemyWildCounterattack(encounter, encounter.wildMonster, playerMonster);
-                    if (counterResult.defeated) {
-                        // SISTEMA DE AMIZADE: Perder amizade ao desmaiar
-                        updateFriendship(playerMonster, 'faint');
-                        encounter.log.push(`💀 ${playerMonster.name} desmaiou! Derrota!`);
-                        // Feature 4.4: Defeat sound (com idempotência)
-                        if (!encounter._loseSfxPlayed) {
-                            Audio.playSfx("lose");
-                            encounter._loseSfxPlayed = true;
-                        }
-                        playerMonster.status = 'fainted';
-                        encounter.result = 'defeat';
-                        encounter.active = false;
-                    }
-                }
-                
-                // RENDER atualizado
-                saveToLocalStorage();
-                renderEncounter();
-                
             } catch (error) {
                 showError('Failed to use item in battle', error.stack);
             }
@@ -6465,91 +6385,54 @@
             try {
                 const encounter = GameState.currentEncounter;
                 if (!encounter?.wildMonster) return;
-                
+
                 const playerId = encounter.selectedPlayerId;
                 const player = GameState.players.find(p => p.id === playerId);
                 if (!player) return;
-                
+
                 const playerMonster = _getActiveMonsterOfPlayer(player);
-                if (!playerMonster) {
-                    alert('No monster available');
-                    return;
-                }
+                if (!playerMonster) { alert('No monster available'); return; }
 
-                // Validar que o monstrinho do jogador não está desmaiado
                 if (playerMonster.hp <= 0) {
-                    alert('❌ Seu monstrinho está desmaiado! Não pode usar habilidade.');
-                    return;
+                    alert('❌ Seu monstrinho está desmaiado! Não pode usar habilidade.'); return;
                 }
-
-                // GAME_RULES.md: Validar que monstrinho é da mesma classe do jogador
                 if (playerMonster.class !== player.class) {
                     alert(`⚠️ Você só pode usar monstrinhos da classe ${player.class} em batalha!\n\nEste ${playerMonster.name} é da classe ${playerMonster.class}.\nTroque-o por um monstrinho da sua classe.`);
                     return;
                 }
-                
-                // Obter habilidades disponíveis
+
                 const skills = getMonsterSkills(playerMonster);
                 if (!skills || skillIndex >= skills.length || !skills[skillIndex]) {
-                    alert('Skill not available');
-                    return;
+                    alert('Skill not available'); return;
                 }
-                
-                const skill = skills[skillIndex];
-                
-                // Validar ENE suficiente
-                if ((playerMonster.ene || 0) < skill.cost) {
-                    alert(`❌ ENE insuficiente! Precisa de ${skill.cost} ENE.`);
-                    return;
+                if ((playerMonster.ene || 0) < skills[skillIndex].cost) {
+                    alert(`❌ ENE insuficiente! Precisa de ${skills[skillIndex].cost} ENE.`); return;
                 }
-                
-                encounter.log = encounter.log || [];
-                
-                // ENE REGEN no início do turno
-                applyEneRegen(playerMonster, encounter);
-                
-                // Atualizar buffs
-                updateBuffs(playerMonster);
-                
-                // Usar habilidade
-                const success = useSkill(playerMonster, skill, encounter.wildMonster, encounter);
-                
-                if (!success) {
+
+                const result = Combat.Wild.Actions.executeWildSkill({
+                    encounter, player, playerMonster, skillIndex,
+                    dependencies: {
+                        getMonsterSkills,
+                        useSkill,
+                        handleVictoryRewards,
+                        tutorialOnAction,
+                        markAsParticipated: (m) => Combat.ItemBreakage.markAsParticipated(m),
+                        eneRegenData: ENE_REGEN_BY_CLASS,
+                        classAdvantages: GameState.config?.classAdvantages || {},
+                        getBasicPower: (cls) => MM_TABLES.getBasicAttackPower(cls),
+                        audio: Audio,
+                    },
+                });
+
+                if (!result.success) {
                     alert('Falha ao usar habilidade');
                     return;
                 }
 
-                // PR11B: Marcar que o monstro do jogador participou (executou ação)
-                Combat.ItemBreakage.markAsParticipated(playerMonster);
-                
-                // Feature 4.2: Tutorial hook
-                tutorialOnAction("skill");
-                
-                // Verificar se o selvagem foi derrotado
-                if (encounter.wildMonster.hp <= 0) {
-                    encounter.log.push(`🏆 ${encounter.wildMonster.name} foi derrotado!`);
-                    handleVictoryRewards(encounter);
-                    encounter.active = false;
-                    encounter.result = 'victory';
-                    // BUG FIX: Não limpar encounter imediatamente — renderWildEncounter
-                    // exibirá o painel de resultado com XP ganho. Jogador fecha com "Continuar".
-                    saveToLocalStorage();
-                    renderEncounter();
-                    return;
+                if (result.result === 'victory' || result.result === 'defeat') {
+                    encounter.result = result.result;
                 }
-                
-                // Fase 2: Contra-ataque do selvagem
-                const { defeated: skillCounterDefeated } = _enemyWildCounterattack(
-                    encounter, encounter.wildMonster, playerMonster
-                );
-                if (skillCounterDefeated) {
-                    encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
-                    playerMonster.status = 'fainted';
-                    encounter.active = false;
-                    encounter.result = 'defeat';
-                    // BUG FIX: Manter encounter para exibir resultado
-                }
-                
+
                 saveToLocalStorage();
                 renderEncounter();
             } catch (error) {
@@ -6646,85 +6529,13 @@
          * Resolve o resultado de um d20 de contra-ataque inimigo.
          * Centraliza as regras especiais: d20=1 → sempre erra, d20=20 → sempre acerta.
          *
-         * @param {number} roll     - Resultado do d20 (1-20)
-         * @param {object} attacker - Monstrinho atacante
-         * @param {object} defender - Monstrinho defensor
-         * @returns {{ hit: boolean, isCrit: boolean, isFail: boolean }}
+         * @deprecated Função movida para WildCore.resolveD20Hit (wildCore.js).
+         *             Mantida apenas para compatibilidade com código legado.
+         *             Novos caminhos devem usar Combat.Wild.Core.resolveD20Hit.
          */
         function _resolveEnemyD20Hit(roll, attacker, defender) {
-            const isCrit = (roll === 20);
-            const isFail = (roll === 1);
-            const hit = isFail ? false : (isCrit ? true : checkHit(roll, attacker, defender));
-            return { hit, isCrit, isFail };
-        }
-
-        /**
-         * Executa o turno completo do selvagem como contra-ataque após ação do jogador.
-         *
-         * Centraliza a lógica duplicada que existia em useSkillWild, useItemInBattle e
-         * useCaptureAction, garantindo comportamento consistente em todos os caminhos.
-         *
-         * Aplica ENE regen e buffs do inimigo, verifica IA (50% skill), rola d20,
-         * calcula e aplica dano. NÃO trata a consequência de derrota (fica com o caller).
-         *
-         * @param {object} encounter     - Encontro atual (muta encounter.log)
-         * @param {object} wildMonster   - Monstrinho selvagem (muta hp, ene, buffs)
-         * @param {object} playerMonster - Monstrinho do jogador (muta hp)
-         * @returns {{ defeated: boolean }} true se playerMonster.hp chegou a 0
-         */
-        function _enemyWildCounterattack(encounter, wildMonster, playerMonster) {
-            try {
-                // Aplicar ENE regen do selvagem
-                applyEneRegen(wildMonster, encounter);
-
-                // Atualizar buffs do selvagem
-                updateBuffs(wildMonster);
-
-                // IA: 50% chance de usar habilidade se tiver ENE
-                const wildSkills = getMonsterSkills(wildMonster);
-                const canUseSkill = wildSkills && wildSkills.length > 0 &&
-                    (wildMonster.ene || 0) >= wildSkills[0].cost;
-                const shouldUseSkill = canUseSkill && Math.random() < 0.5;
-
-                if (shouldUseSkill) {
-                    useSkill(wildMonster, wildSkills[0], playerMonster, encounter);
-                } else {
-                    // Ataque básico
-                    const enemyRoll = Math.floor(Math.random() * 20) + 1;
-                    const { hit: enemyHit, isCrit: enemyIsCrit, isFail: enemyIsFail } =
-                        _resolveEnemyD20Hit(enemyRoll, wildMonster, playerMonster);
-                    encounter.log.push(`🎲 ${wildMonster.name} rola ${enemyRoll} (ATK: ${wildMonster.atk})`);
-
-                    if (enemyIsCrit) Audio.playSfx?.('crit');
-                    else if (enemyIsFail || !enemyHit) Audio.playSfx?.('miss');
-                    else Audio.playSfx?.('hit');
-
-                    if (enemyHit) {
-                        const basicPower = MM_TABLES.getBasicAttackPower(wildMonster.class);
-                        const powerUsed  = enemyIsCrit ? basicPower * 2 : basicPower;
-                        const atkMods    = getBuffModifiers(wildMonster);
-                        const effAtk     = Math.max(1, wildMonster.atk + atkMods.atk);
-                        const defMods    = getBuffModifiers(playerMonster);
-                        const effDef     = Math.max(1, playerMonster.def + defMods.def);
-                        const classAdv   = GameState.config?.classAdvantages?.[wildMonster.class];
-                        let damageMult   = 1.0;
-                        if (classAdv?.strong === playerMonster.class) damageMult = 1.10;
-                        else if (classAdv?.weak === playerMonster.class) damageMult = 0.90;
-                        const damage = calcDamage({ atk: effAtk, def: effDef, power: powerUsed, damageMult });
-                        playerMonster.hp = Math.max(0, playerMonster.hp - damage);
-                        encounter.log.push(`💥 ${wildMonster.name} acerta! Causa ${damage} de dano!`);
-                    } else {
-                        encounter.log.push(enemyIsFail
-                            ? `💀 FALHA CRÍTICA! ${wildMonster.name} erra!`
-                            : `❌ ${wildMonster.name} erra!`);
-                    }
-                }
-
-                return { defeated: playerMonster.hp <= 0 };
-            } catch (error) {
-                console.error(`Erro no contra-ataque do selvagem (${wildMonster?.name || 'desconhecido'}):`, error);
-                return { defeated: false };
-            }
+            return Combat.Wild.Core.resolveD20Hit(roll, attacker, defender,
+                GameState.config?.classAdvantages || {});
         }
 
         /**
