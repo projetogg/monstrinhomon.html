@@ -3917,6 +3917,20 @@
                 
                 saveToLocalStorage();
                 renderEncounter();
+                
+                // FIX: Se o primeiro ator é um inimigo, auto-executar o turno do inimigo.
+                // Sem isso, o combate fica travado em "⏳ Vez dos inimigos" para sempre
+                // quando o inimigo tem SPD maior que todos os jogadores.
+                // O delay de 300ms permite que o primeiro renderEncounter() acima
+                // complete a pintura do DOM antes de mutar o estado com o turno do inimigo.
+                if (firstActor && firstActor.side === 'enemy' && !encounter.finished) {
+                    setTimeout(() => {
+                        const enc = GameState.currentEncounter;
+                        if (enc && !enc.finished) {
+                            processEnemyTurnGroup(enc);
+                        }
+                    }, 300);
+                }
             } catch (error) {
                 showError('Failed to start group encounter', error.stack);
             }
@@ -3984,11 +3998,11 @@
                 // Entrar em modo de seleção de alvo
                 window.Combat.TargetSelection.enterTargetMode('attack');
                 
-                // Aplicar visual de modo de seleção
-                applyTargetSelectionVisuals();
-                
-                // Re-renderizar para mostrar instruções
+                // FIX: Re-renderizar ANTES de aplicar visuais.
+                // renderEncounter() agora exibe o ESTADO C (seleção de alvo) via renderActionBar,
+                // que lê isInTargetMode() dos deps. Depois do render, aplicar visuais de destaque.
                 renderEncounter();
+                applyTargetSelectionVisuals();
             } catch (error) {
                 showError('Failed to enter attack mode', error.stack);
             }
@@ -4035,11 +4049,9 @@
                 // Entrar em modo de seleção de alvo (para skills ofensivas)
                 window.Combat.TargetSelection.enterTargetMode('skill', skillId);
                 
-                // Aplicar visual de modo de seleção
-                applyTargetSelectionVisuals();
-                
-                // Re-renderizar para mostrar instruções
+                // FIX: Re-renderizar ANTES de aplicar visuais (mesma ordem de enterAttackMode)
                 renderEncounter();
+                applyTargetSelectionVisuals();
             } catch (error) {
                 showError('Failed to enter skill mode', error.stack);
             }
@@ -4164,6 +4176,12 @@
             try {
                 const enc = _getGroupEncounter();
                 if (!enc || enc.finished) return;
+                
+                // FIX: Fuga bloqueada em batalhas boss
+                if (enc.type === 'boss') {
+                    alert('⚠️ Não é possível fugir de uma batalha contra um Boss!');
+                    return;
+                }
                 
                 const actor = getCurrentActor(enc);
                 if (!actor || actor.side !== 'player') return;
@@ -5869,7 +5887,10 @@
                         maybeSfxFromLog: maybeSfxFromLog,
                         formatEquippedItemDisplay: formatEquippedItemDisplay,
                     showBattleEndModal: showBattleEndModalWrapper,
-                        getItemDef: getItemDef
+                        getItemDef: getItemDef,
+                        // FIX: Passar estado de seleção de alvo para renderActionBar
+                        isInTargetMode: () => window.Combat?.TargetSelection?.isInTargetMode?.() ?? false,
+                        getTargetActionType: () => window.Combat?.TargetSelection?.getActionType?.() ?? null
                     }
                 };
                 Combat.Group.UI.renderGroupEncounterPanel(panel, encounter, deps);
