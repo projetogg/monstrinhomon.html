@@ -11,6 +11,7 @@
 
 import * as GroupCore from './groupCore.js';
 import * as TargetSelection from '../ui/targetSelection.js';
+import { executePlayerAttackGroup, executePlayerSkillGroup } from './groupActions.js';
 
 /** IDs dos itens de cura consumíveis suportados em batalha. Manter alinhado com data/items.json. */
 const HEAL_ITEM_IDS = ['IT_HEAL_01', 'IT_HEAL_02', 'IT_HEAL_03'];
@@ -382,4 +383,146 @@ function renderActionBar(encounter, actor, isPlayerTurn, state, helpers) {
             <button class="btn btn-secondary" onclick="groupPassTurn()">⏭️ Passar</button>
         </div>
     </div>`;
+}
+
+// ── Controle de Modo Alvo (Target Selection) ────────────────────────────────
+
+/**
+ * Entra em modo de seleção de alvo para ataque físico.
+ *
+ * Valida que é turno do jogador, ativa TargetSelection, re-renderiza
+ * e aplica destaques visuais nos cards de inimigo.
+ *
+ * @param {object} enc  - Encounter atual (GameState.currentEncounter)
+ * @param {object} deps - Dependências injetadas (createGroupCombatDeps)
+ * @returns {{ ok: boolean, reason?: string }}
+ */
+export function enterAttackMode(enc, deps) {
+    if (!enc || enc.finished) return { ok: false, reason: 'no_encounter' };
+
+    const actor = deps.core.getCurrentActor(enc);
+    if (!actor || actor.side !== 'player') return { ok: false, reason: 'not_player_turn' };
+
+    TargetSelection.enterTargetMode('attack');
+    deps.ui?.render?.();
+    applyTargetSelectionVisuals(enc);
+    return { ok: true };
+}
+
+/**
+ * Entra em modo de seleção de alvo para skill, ou executa diretamente
+ * se a skill tem alvo 'Self' / 'Aliado' (sem necessidade de selecionar inimigo).
+ *
+ * @param {number} skillIndex - Índice da skill no array de skills do monstro ativo
+ * @param {object} enc        - Encounter atual
+ * @param {object} deps       - Dependências injetadas (requer helpers.getSkillsArray + getSkillById)
+ * @returns {{ ok: boolean, reason?: string, direct?: boolean }}
+ */
+export function enterSkillMode(skillIndex, enc, deps) {
+    if (!enc || enc.finished) return { ok: false, reason: 'no_encounter' };
+
+    const actor = deps.core.getCurrentActor(enc);
+    if (!actor || actor.side !== 'player') return { ok: false, reason: 'not_player_turn' };
+
+    const player = deps.helpers.getPlayerById(actor.id);
+    const mon = deps.helpers.getActiveMonsterOfPlayer(player);
+    if (!mon) return { ok: false, reason: 'no_monster' };
+
+    const skillIds = deps.helpers.getSkillsArray(mon);
+    const skillId = skillIds[skillIndex];
+    if (!skillId) return { ok: false, reason: 'no_skill' };
+
+    const skill = deps.helpers.getSkillById(skillId);
+    const skillTarget = skill?.target || '';
+
+    // Skills de suporte (Self/Aliado) não precisam de seleção de inimigo
+    if (skillTarget === 'Self' || skillTarget === 'Aliado') {
+        executePlayerSkillGroup(skillId, null, deps);
+        return { ok: true, direct: true };
+    }
+
+    // Skills ofensivas: entrar em modo de seleção de alvo
+    TargetSelection.enterTargetMode('skill', skillId);
+    deps.ui?.render?.();
+    applyTargetSelectionVisuals(enc);
+    return { ok: true };
+}
+
+/**
+ * Aplica destaques visuais nos cards de inimigo durante seleção de alvo.
+ * Inimigos vivos ficam com borda azul/clicável; mortos ficam opacos.
+ *
+ * Deve ser chamada após renderizar o encounter (DOM dos cards já existe).
+ *
+ * @param {object} enc - Encounter atual (para iterar enc.enemies)
+ */
+export function applyTargetSelectionVisuals(enc) {
+    if (!enc || !enc.enemies) return;
+
+    enc.enemies.forEach((enemy, idx) => {
+        const card = document.getElementById(`grpE_${idx}`);
+        if (!card) return;
+
+        const isDead = (enemy.hp || 0) <= 0;
+
+        if (isDead) {
+            card.style.opacity = '0.4';
+            card.style.cursor = 'default';
+            card.style.border = '1px solid #ddd';
+        } else {
+            card.style.opacity = '1';
+            card.style.cursor = 'pointer';
+            card.style.border = '3px solid #2196F3';
+            card.style.boxShadow = '0 0 15px rgba(33, 150, 243, 0.5)';
+        }
+    });
+}
+
+/**
+ * Processa clique em um card de inimigo durante seleção de alvo.
+ *
+ * - Se não estiver em modo alvo: ignora
+ * - Verifica que é turno do jogador e inimigo está vivo
+ * - Executa ataque ou skill conforme actionType
+ * - Sai do modo alvo e re-renderiza
+ *
+ * @param {number} enemyIndex - Índice do inimigo clicado (enc.enemies[enemyIndex])
+ * @param {object} enc        - Encounter atual
+ * @param {object} deps       - Dependências injetadas
+ * @returns {{ ok: boolean, reason?: string } | undefined}
+ */
+export function handleEnemyClick(enemyIndex, enc, deps) {
+    if (!TargetSelection.isInTargetMode()) return;
+
+    if (!enc || enc.finished) return;
+
+    const actor = deps.core.getCurrentActor(enc);
+    if (!actor || actor.side !== 'player') return { ok: false, reason: 'not_player_turn' };
+
+    const enemy = enc.enemies[enemyIndex];
+    if (!enemy || (enemy.hp || 0) <= 0) return { ok: false, reason: 'enemy_dead' };
+
+    const actionType = TargetSelection.getActionType();
+
+    if (actionType === 'attack') {
+        executePlayerAttackGroup(deps, enemyIndex);
+    } else if (actionType === 'skill') {
+        const skillId = TargetSelection.getSelectedSkillId();
+        executePlayerSkillGroup(skillId, enemyIndex, deps);
+    }
+
+    TargetSelection.exitTargetMode();
+    deps.ui?.render?.();
+
+    return { ok: true };
+}
+
+/**
+ * Cancela o modo de seleção de alvo e re-renderiza.
+ *
+ * @param {object} deps - Dependências injetadas (requer deps.ui.render)
+ */
+export function cancelTargetMode(deps) {
+    TargetSelection.exitTargetMode();
+    deps.ui?.render?.();
 }

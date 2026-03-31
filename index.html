@@ -3970,241 +3970,83 @@
             }
         }
 
-        // ==================== CAMADA 3: Target Selection Mode ====================
+        // ==================== CAMADA 3: Target Selection Mode (wrappers finos) ====================
+        // Lógica canônica em Combat.Group.UI (groupUI.js).
+        // index.html mantém apenas pontes mínimas de integração DOM / onclick.
 
-        /**
-         * Entra em modo de seleção de alvo para ataque
-         */
+        /** Ponte onclick: entra em modo de seleção de alvo para ataque. */
         function enterAttackMode() {
             try {
-                // Verificar que é turno do jogador
                 const enc = _getGroupEncounter();
-                if (!enc || enc.finished) return;
-                
-                const actor = getCurrentActor(enc);
-                if (!actor || actor.side !== 'player') {
-                    alert('⚠️ Não é sua vez!');
-                    return;
-                }
-                
-                // Entrar em modo de seleção de alvo
-                window.Combat.TargetSelection.enterTargetMode('attack');
-                
-                // FIX: Re-renderizar ANTES de aplicar visuais.
-                // renderEncounter() agora exibe o ESTADO C (seleção de alvo) via renderActionBar,
-                // que lê isInTargetMode() dos deps. Depois do render, aplicar visuais de destaque.
-                renderEncounter();
-                applyTargetSelectionVisuals();
+                const deps = createGroupCombatDeps();
+                const result = Combat.Group.UI.enterAttackMode(enc, deps);
+                if (result?.reason === 'not_player_turn') alert('⚠️ Não é sua vez!');
             } catch (error) {
                 showError('Failed to enter attack mode', error.stack);
             }
         }
 
-        /**
-         * Entra em modo de seleção de alvo para skill
-         */
+        /** Ponte onclick: entra em modo de seleção de alvo para skill (ou executa diretamente se Self/Aliado). */
         function enterSkillMode(skillIndex) {
             try {
-                // Verificar que é turno do jogador
                 const enc = _getGroupEncounter();
-                if (!enc || enc.finished) return;
-                
-                const actor = getCurrentActor(enc);
-                if (!actor || actor.side !== 'player') {
-                    alert('⚠️ Não é sua vez!');
-                    return;
-                }
-                
-                const player = _getPlayerById(actor.id);
-                const mon = _getActiveMonsterOfPlayer(player);
-                if (!mon) return;
-                
-                // Obter skill
-                const skillIds = getSkillsArray(mon);
-                const skillId = skillIds[skillIndex];
-                
-                if (!skillId) {
-                    alert('⚠️ Habilidade não encontrada!');
-                    return;
-                }
-
-                // CAMADA 4C: Skills Self/Aliado não precisam de seleção de inimigo
-                const skill = getSkillById(skillId);
-                const skillTarget = skill?.target || '';
-                if (skillTarget === 'Self' || skillTarget === 'Aliado') {
-                    // Executar diretamente sem modo de seleção
-                    const deps = createGroupCombatDeps();
-                    Combat.Group.Actions.executePlayerSkillGroup(skillId, null, deps);
-                    return;
-                }
-                
-                // Entrar em modo de seleção de alvo (para skills ofensivas)
-                window.Combat.TargetSelection.enterTargetMode('skill', skillId);
-                
-                // FIX: Re-renderizar ANTES de aplicar visuais (mesma ordem de enterAttackMode)
-                renderEncounter();
-                applyTargetSelectionVisuals();
+                const deps = createGroupCombatDeps();
+                const result = Combat.Group.UI.enterSkillMode(skillIndex, enc, deps);
+                if (result?.reason === 'not_player_turn') alert('⚠️ Não é sua vez!');
+                else if (result?.reason === 'no_skill') alert('⚠️ Habilidade não encontrada!');
             } catch (error) {
                 showError('Failed to enter skill mode', error.stack);
             }
         }
 
-        /**
-         * Aplica visual de modo de seleção aos inimigos
-         */
-        function applyTargetSelectionVisuals() {
-            const enc = _getGroupEncounter();
-            if (!enc || !enc.enemies) return;
-            
-            // Aplicar visual a cada card de inimigo
-            enc.enemies.forEach((enemy, idx) => {
-                const card = document.getElementById(`grpE_${idx}`);
-                if (!card) return;
-                
-                const isDead = (enemy.hp || 0) <= 0;
-                
-                if (isDead) {
-                    // Morto: opacidade 0.4, não clicável
-                    card.style.opacity = '0.4';
-                    card.style.cursor = 'default';
-                    card.style.border = '1px solid #ddd';
-                } else {
-                    // Vivo: destacar como alvo válido
-                    card.style.opacity = '1';
-                    card.style.cursor = 'pointer';
-                    card.style.border = '3px solid #2196F3';
-                    card.style.boxShadow = '0 0 15px rgba(33, 150, 243, 0.5)';
-                }
-            });
-        }
-
-        /**
-         * Manipula clique em inimigo (seleção de alvo)
-         */
+        /** Ponte onclick: processa clique em card de inimigo durante seleção de alvo. */
         function handleEnemyClick(enemyIndex) {
             try {
-                // Verificar se está em modo de seleção
-                if (!window.Combat.TargetSelection.isInTargetMode()) {
-                    // Não está em modo de seleção, ignorar clique
-                    return;
-                }
-                
                 const enc = _getGroupEncounter();
-                if (!enc || enc.finished) return;
-                
-                const actor = getCurrentActor(enc);
-                if (!actor || actor.side !== 'player') {
-                    alert('⚠️ Não é sua vez!');
-                    return;
-                }
-                
-                // Verificar que inimigo está vivo
-                const enemy = enc.enemies[enemyIndex];
-                if (!enemy || (enemy.hp || 0) <= 0) {
-                    alert('⚠️ Este inimigo já foi derrotado!');
-                    return;
-                }
-                
-                // Obter tipo de ação
-                const actionType = window.Combat.TargetSelection.getActionType();
-                
-                if (actionType === 'attack') {
-                    // Executar ataque
-                    executeAttackOnTarget(enemyIndex);
-                } else if (actionType === 'skill') {
-                    // Executar skill
-                    const skillId = window.Combat.TargetSelection.getSelectedSkillId();
-                    executeSkillOnTarget(enemyIndex, skillId);
-                }
-                
-                // Sair do modo de seleção
-                window.Combat.TargetSelection.exitTargetMode();
-                
-                // Re-renderizar (UI trava após ação)
-                renderEncounter();
+                const deps = createGroupCombatDeps();
+                const result = Combat.Group.UI.handleEnemyClick(enemyIndex, enc, deps);
+                if (result?.reason === 'not_player_turn') alert('⚠️ Não é sua vez!');
+                else if (result?.reason === 'enemy_dead') alert('⚠️ Este inimigo já foi derrotado!');
             } catch (error) {
                 showError('Failed to handle enemy click', error.stack);
             }
         }
 
-        /**
-         * Executa ataque no alvo selecionado
-         */
-        function executeAttackOnTarget(enemyIndex) {
-            try {
-                const deps = createGroupCombatDeps();
-                // CAMADA 4C: Passar enemyIndex para atacar o alvo selecionado
-                Combat.Group.Actions.executePlayerAttackGroup(deps, enemyIndex);
-            } catch (error) {
-                showError('Failed to execute attack', error.stack);
-            }
-        }
-
-        /**
-         * Executa skill no alvo selecionado
-         */
-        function executeSkillOnTarget(enemyIndex, skillId) {
-            try {
-                // CAMADA 4C: Execução real de skill com alvo específico
-                const deps = createGroupCombatDeps();
-                Combat.Group.Actions.executePlayerSkillGroup(skillId, enemyIndex, deps);
-            } catch (error) {
-                showError('Failed to execute skill', error.stack);
-            }
-        }
-
-        /**
-         * Cancela modo de seleção de alvo
-         */
+        /** Ponte onclick: cancela seleção de alvo. */
         function cancelTargetSelection() {
-            window.Combat.TargetSelection.exitTargetMode();
-            renderEncounter();
+            try {
+                const deps = createGroupCombatDeps();
+                Combat.Group.UI.cancelTargetMode(deps);
+            } catch (error) {
+                showError('Failed to cancel target selection', error.stack);
+            }
         }
 
         /**
-         * Função de fuga em combate de grupo
+         * Ponte onclick: fuga em combate de grupo.
+         * Exibe diálogo de confirmação (UI) e delega lógica ao módulo canônico.
          */
         function groupFlee() {
             try {
                 const enc = _getGroupEncounter();
                 if (!enc || enc.finished) return;
-                
-                // FIX: Fuga bloqueada em batalhas boss
+
                 if (enc.type === 'boss') {
                     alert('⚠️ Não é possível fugir de uma batalha contra um Boss!');
                     return;
                 }
-                
+
                 const actor = getCurrentActor(enc);
                 if (!actor || actor.side !== 'player') return;
-                
+
                 const player = _getPlayerById(actor.id);
                 if (!player) return;
-                
-                // Confirmar fuga
-                const confirm = window.confirm(`${player.name || player.nome}: Tem certeza que deseja fugir da batalha?`);
-                if (!confirm) return;
-                
-                // Processar fuga (remove jogador da batalha)
-                _log(enc, `🏃 ${player.name || player.nome} fugiu da batalha!`);
-                
-                // Remove participante
-                if (enc.participants) {
-                    enc.participants = enc.participants.filter(pid => pid !== player.id);
-                }
-                
-                // Verificar se todos fugiram
-                if (!enc.participants || enc.participants.length === 0) {
-                    enc.finished = true;
-                    enc.result = 'retreat';
-                    _log(enc, '🏁 Todos os participantes fugiram. Batalha encerrada.');
-                } else {
-                    // Avançar turno
-                    advanceTurn(enc);
-                }
-                
-                saveToLocalStorage();
-                renderEncounter();
+
+                const confirmed = window.confirm(`${player.name || player.nome}: Tem certeza que deseja fugir da batalha?`);
+                if (!confirmed) return;
+
+                const deps = createGroupCombatDeps();
+                Combat.Group.Actions.executeGroupFlee(deps);
             } catch (error) {
                 showError('Failed to flee', error.stack);
             }
@@ -4446,6 +4288,7 @@
                     openSwitchMonsterModal: openSwitchMonsterModal,
                     handleVictoryRewards: handleVictoryRewards,
                     getSkillById: getSkillById,
+                    getSkillsArray: getSkillsArray,
                     canUseSkillNow: canUseSkillNow,
                     getItemDef: getItemDef
                 }
