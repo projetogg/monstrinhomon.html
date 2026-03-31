@@ -122,11 +122,11 @@ describe('createGroupEncounter - Fábrica Canônica', () => {
 
     it('deve gerar IDs únicos em chamadas consecutivas', () => {
         const enc1 = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [makeEnemy()] });
-        // pequena pausa para garantir IDs diferentes (Date.now())
         const enc2 = createGroupEncounter({ participantIds: ['p1'], type: 'group_trainer', enemies: [makeEnemy()] });
-        // IDs podem ser iguais se executados no mesmo milissegundo, mas devem ser numbers
+        // IDs são únicos graças ao contador monotónico (timestamp * 1000 + contador)
         expect(typeof enc1.id).toBe('number');
         expect(typeof enc2.id).toBe('number');
+        expect(enc1.id).not.toBe(enc2.id);
     });
 });
 

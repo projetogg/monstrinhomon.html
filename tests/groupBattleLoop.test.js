@@ -331,8 +331,6 @@ describe('advanceGroupTurn - Avanço de Turno', () => {
 
         // Para este teste, usar mock que não auto-executa inimigo
         const { deps } = makeDeps({ players: [player], enc });
-        // Sobrescrever executeEnemyTurnGroup para não auto-executar
-        const origExecuteEnemy = deps.core.getCurrentActor;
 
         advanceGroupTurn(enc, deps);
 

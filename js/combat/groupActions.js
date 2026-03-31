@@ -427,10 +427,15 @@ export function advanceGroupTurn(enc, deps) {
     // ── Guard: encounter mal inicializado ─────────────────────────────────
     // Se turnOrder estiver vazio ou ausente, o encounter não foi preparado
     // corretamente. Logar e abortar em vez de silenciar o bug.
+    // CAUSA PROVÁVEL: calculateTurnOrder() não foi chamado antes do loop.
     if (!enc) return;
     if (!enc.turnOrder || enc.turnOrder.length === 0) {
         if (typeof console !== 'undefined') {
-            console.error('[advanceGroupTurn] turnOrder vazio — encounter mal inicializado:', enc?.id);
+            console.error(
+                '[advanceGroupTurn] turnOrder vazio — encounter mal inicializado:',
+                enc?.id,
+                '— Chame calculateTurnOrder() antes de iniciar o loop de combate.'
+            );
         }
         return;
     }

@@ -322,6 +322,9 @@ export function clamp(n, min, max) {
     return Math.max(min, Math.min(max, n));
 }
 
+// Contador monotónico para garantir IDs únicos mesmo em chamadas no mesmo ms
+let _encIdCounter = 0;
+
 // ── PIPELINE CANÔNICO: FÁBRICA E VALIDAÇÃO ───────────────────────────────
 
 /**
@@ -352,7 +355,8 @@ export function createGroupEncounter({ participantIds, type, enemies }) {
     }
 
     return {
-        id: Date.now(),
+        // ID único: timestamp + contador monotónico — evita colisões em testes rápidos
+        id: Date.now() * 1000 + (++_encIdCounter % 1000),
         type,
         active: true,
         finished: false,
