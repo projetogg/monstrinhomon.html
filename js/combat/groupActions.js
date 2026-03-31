@@ -579,6 +579,56 @@ export function passTurn(deps) {
 }
 
 /**
+ * Processa fuga de um jogador no combate em grupo.
+ *
+ * Lógica canônica: verificação de boss, remoção do participante,
+ * detecção de fim de batalha (todos fugiram → retreat), avanço de turno.
+ * A confirmação UI (window.confirm) fica no wrapper de index.html.
+ *
+ * Retorna { ok, reason? }:
+ *   reason: 'no_encounter' | 'boss_no_flee' | 'not_player_turn' | 'no_player'
+ *
+ * @param {object} deps - Dependências injetadas (mesmo padrão dos demais actions)
+ * @returns {{ ok: boolean, reason?: string }}
+ */
+export function executeGroupFlee(deps) {
+    const { state, core, helpers, storage, ui } = deps;
+    const enc = state.currentEncounter;
+    if (!enc || enc.finished) return { ok: false, reason: 'no_encounter' };
+
+    if (enc.type === 'boss') {
+        return { ok: false, reason: 'boss_no_flee' };
+    }
+
+    const actor = core.getCurrentActor(enc);
+    if (!actor || actor.side !== 'player') return { ok: false, reason: 'not_player_turn' };
+
+    const player = helpers.getPlayerById(actor.id);
+    if (!player) return { ok: false, reason: 'no_player' };
+
+    helpers.log(enc, `🏃 ${player.name || player.nome} fugiu da batalha!`);
+
+    // Remover participante
+    if (enc.participants) {
+        enc.participants = enc.participants.filter(pid => pid !== player.id);
+    }
+
+    // Verificar se todos fugiram
+    if (!enc.participants || enc.participants.length === 0) {
+        enc.finished = true;
+        enc.result = 'retreat';
+        helpers.log(enc, '🏁 Todos os participantes fugiram. Batalha encerrada.');
+    } else {
+        advanceGroupTurn(enc, deps);
+    }
+
+    storage?.save?.();
+    ui?.render?.();
+
+    return { ok: true };
+}
+
+/**
  * CAMADA 4C: Executa skill real do jogador em combate de grupo
  *
  * Suporta:
