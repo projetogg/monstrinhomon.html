@@ -456,7 +456,38 @@ xp_earned = (battleXpBase + level_enemy * 2) * rarity_multiplier
 
 ---
 
+## ARQUITETURA CANÔNICA v2
+
+A versão 2 do sistema de combate foi especificada em quatro documentos canônicos localizados em `/docs/`:
+
+| Documento | Descrição |
+|-----------|-----------|
+| [`docs/COMBATE_FORMULA_V2.md`](docs/COMBATE_FORMULA_V2.md) | Fórmulas de ataque (d20 bilateral), defesa, ajuste de nível, dano, faixas de acerto |
+| [`docs/HABILIDADES_POR_CLASSE_V2.md`](docs/HABILIDADES_POR_CLASSE_V2.md) | 4 slots de habilidade por classe (8 classes), progressão por nível, custo de ENE, assinaturas exclusivas |
+| [`docs/POSICIONAMENTO_V2.md`](docs/POSICIONAMENTO_V2.md) | Grade frente/meio/trás, alcance por classe, aggro, proteção, troca de posição e de Monstrinhomon |
+| [`docs/TABELA_ENCONTROS_V2.md`](docs/TABELA_ENCONTROS_V2.md) | Pontos de exploração, chances de encontro, raridade, recompensas, individual vs. coletivo |
+
+### Principais mudanças da v1 para a v2
+
+- **d20 bilateral:** ataque E defesa rolam d20. RC = Ataque − Defesa.
+- **Faixas de resultado:** Falha Total / Raspão / Acerto Normal / Acerto Forte.
+- **Ajuste de nível:** diferença de nível gera Ajuste de Poder (AP) na rolagem de ataque.
+- **4 slots de habilidade:** Slot 1 (básico, sem ENE) + Slot 2 + Slot 3 + Slot 4 (assinatura exclusiva).
+- **Posicionamento em grupo:** frente/meio/trás com bônus de defesa e regras de alcance por classe.
+- **Exploração individual:** cada jogador escolhe um ponto de busca antes do combate.
+
+---
+
 ## CHANGELOG
+
+### v2.0 (2026-03-31)
+- Arquitetura Canônica do Combate v2 especificada (4 documentos em `/docs/`)
+- d20 bilateral (ataque + defesa) com faixas de RC
+- Sistema de 4 slots de habilidade com assinatura exclusiva por classe
+- Posicionamento em grupo (frente/meio/trás) com alcance por classe
+- Tabela de exploração com pontos de busca individuais por jogador
+- Ajuste de Poder por diferença de nível
+- Dano ilusório para diferença extrema de nível
 
 ### v1.0 (2026-01-27)
 - Definição inicial das regras oficiais
@@ -469,5 +500,5 @@ xp_earned = (battleXpBase + level_enemy * 2) * rarity_multiplier
 
 ---
 
-**Última atualização**: 2026-01-27
-**Versão**: 1.0.0
+**Última atualização**: 2026-03-31
+**Versão**: 2.0.0
