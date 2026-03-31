@@ -65,7 +65,7 @@ Os valores foram derivados dos dados reais de `data/monsters.json` (Nível 1) e 
 
 | Ponto Forte | Ponto Fraco |
 |-------------|-------------|
-| ATK alto para suporte de dano | DEF mínima (1 de confronto, 1 de mitição) |
+| ATK alto para suporte de dano | DEF mínima (1 de confronto, 1 de mitigação) |
 | ENE alto — usa mais habilidades | HP baixo |
 | Habilidades de controle (debuff, root) | Precisa de proteção na linha de trás |
 | Alcance longo | Depende de ENE para burst real |
