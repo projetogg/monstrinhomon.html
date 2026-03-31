@@ -25,6 +25,7 @@ import * as WildUI from './wildUI.js';
 import * as GroupCore from './groupCore.js';
 import * as GroupActions from './groupActions.js';
 import * as GroupUI from './groupUI.js';
+import * as GroupIntegration from './groupIntegration.js';
 import * as ItemBreakage from './itemBreakage.js';
 import * as GroupBattleState from './groupBattleState.js';
 import * as GroupBattleLoop from './groupBattleLoop.js';
@@ -41,6 +42,7 @@ export const Combat = {
         Actions: GroupActions,
         UI: GroupUI,
         Rewards: GroupRewards,
+        Integration: GroupIntegration,
         BattleState: GroupBattleState,
         BattleLoop: GroupBattleLoop
     },

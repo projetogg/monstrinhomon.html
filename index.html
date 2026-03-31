@@ -4256,21 +4256,20 @@
         // ==================== FASE 3.A: Player Attack ====================
 
         /**
-         * PR5C: Criar objeto de dependências para injetar nas actions
+         * Monta objeto de dependências para as actions de combate em grupo.
+         * Ponte fina: delega estruturação para Combat.Group.Integration.buildGroupCombatDeps().
          */
         function createGroupCombatDeps() {
-            return {
+            return Combat.Group.Integration.buildGroupCombatDeps({
                 state: GameState,
                 core: GroupCore,
-                ui: {
-                    render: renderEncounter,
+                audio: Audio,
+                render: renderEncounter,
+                save: saveToLocalStorage,
+                uiFns: {
                     showDamageFeedback: Combat.Group.UI.showDamageFeedback,
                     showMissFeedback: Combat.Group.UI.showMissFeedback,
                     playAttackFeedback: Combat.Group.UI.playAttackFeedback
-                },
-                audio: Audio,
-                storage: {
-                    save: saveToLocalStorage
                 },
                 helpers: {
                     getPlayerById: _getPlayerById,
@@ -4290,9 +4289,10 @@
                     getSkillById: getSkillById,
                     getSkillsArray: getSkillsArray,
                     canUseSkillNow: canUseSkillNow,
-                    getItemDef: getItemDef
+                    getItemDef: getItemDef,
+                    showToast: showToast
                 }
-            };
+            });
         }
 
         /**
@@ -5623,13 +5623,13 @@
         }
         
         /**
-         * Cria dependências para processGroupVictoryRewards (DI canônico).
-         * Segue o mesmo padrão de createGroupCombatDeps / createProgressionDeps.
+         * Monta dependências para processGroupVictoryRewards.
+         * Ponte fina: delega estruturação para Combat.Group.Integration.buildGroupRewardsDeps().
          */
         function createGroupRewardsDeps() {
-            return {
+            return Combat.Group.Integration.buildGroupRewardsDeps({
                 state: GameState,
-                helpers: {
+                rewardHelpers: {
                     awardMoney: (player, amount) => awardMoney(amount, player),
                     getDropTableForEncounter: (type, localId) =>
                         Data.getDropTableForEncounter(type, localId),
@@ -5641,7 +5641,7 @@
                         GameFlow.handlePostEncounterFlow(player, enc, capturedId, questDeps),
                     createQuestDeps: createQuestDeps
                 }
-            };
+            });
         }
 
         /**
@@ -5680,15 +5680,19 @@
         }
         
         /**
-         * PR5C: WRAPPER - Combat.Group.UI.renderGroupEncounterPanel()
-         * Renderiza UI do encounter de grupo
+         * Renderiza UI do encounter de grupo.
+         * Ponte fina: monta deps via Combat.Group.Integration.buildGroupUIRenderDeps()
+         * e delega para Combat.Group.UI.renderGroupEncounterPanel().
          */
         function renderGroupEncounter(panel, encounter) {
             try {
-                const deps = {
+                const deps = Combat.Group.Integration.buildGroupUIRenderDeps({
                     state: GameState,
                     core: GroupCore,
-                    helpers: {
+                    showBattleEnd: showBattleEndModalWrapper,
+                    isInTargetMode: () => window.Combat?.TargetSelection?.isInTargetMode?.() ?? false,
+                    getTargetActionType: () => window.Combat?.TargetSelection?.getActionType?.() ?? null,
+                    uiHelpers: {
                         renderTutorialBanner: renderTutorialBanner,
                         ensureXpFields: ensureXpFields,
                         calcXpNeeded: calcXpNeeded,
@@ -5700,13 +5704,9 @@
                         maybeToastFromLog: maybeToastFromLog,
                         maybeSfxFromLog: maybeSfxFromLog,
                         formatEquippedItemDisplay: formatEquippedItemDisplay,
-                        showBattleEndModal: showBattleEndModalWrapper,
-                        getItemDef: getItemDef,
-                        // FIX: Passar estado de seleção de alvo para renderActionBar
-                        isInTargetMode: () => window.Combat?.TargetSelection?.isInTargetMode?.() ?? false,
-                        getTargetActionType: () => window.Combat?.TargetSelection?.getActionType?.() ?? null
+                        getItemDef: getItemDef
                     }
-                };
+                });
                 Combat.Group.UI.renderGroupEncounterPanel(panel, encounter, deps);
             } catch (error) {
                 showError('Failed to render group encounter', error.stack);

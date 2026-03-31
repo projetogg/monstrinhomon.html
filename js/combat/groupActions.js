@@ -471,8 +471,10 @@ export function advanceGroupTurn(enc, deps) {
         processBattleItemBreakage(allPlayerMonsters, {
             log: (msg) => helpers.log(enc, msg),
             notify: (monster, itemDef) => {
-                if (typeof window.showToast === 'function') {
-                    window.showToast(`💥 ${itemDef.name} quebrou!`, 'warning');
+                // Preferir showToast injetado via deps; fallback para window.showToast (global legado)
+                const toastFn = helpers.showToast ?? (typeof window !== 'undefined' ? window.showToast : null);
+                if (typeof toastFn === 'function') {
+                    toastFn(`💥 ${itemDef.name} quebrou!`, 'warning');
                 }
             }
         });
@@ -504,8 +506,10 @@ export function advanceGroupTurn(enc, deps) {
         processBattleItemBreakage(allPlayerMonsters, {
             log: (msg) => helpers.log(enc, msg),
             notify: (monster, itemDef) => {
-                if (typeof window.showToast === 'function') {
-                    window.showToast(`💥 ${itemDef.name} quebrou!`, 'warning');
+                // Preferir showToast injetado via deps; fallback para window.showToast (global legado)
+                const toastFn = helpers.showToast ?? (typeof window !== 'undefined' ? window.showToast : null);
+                if (typeof toastFn === 'function') {
+                    toastFn(`💥 ${itemDef.name} quebrou!`, 'warning');
                 }
             }
         });
