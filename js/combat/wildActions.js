@@ -402,6 +402,128 @@ function handleVictory(encounter, player, playerMonster, dependencies) {
 }
 
 /**
+ * Executa uma tentativa de captura de monstrinho selvagem.
+ *
+ * Pipeline canônico:
+ * 1. Consome 1 ClasterOrb do inventário do jogador
+ * 2. Calcula o capture score (Trilha Física + Trilha Comportamental + bônus de Orb)
+ * 3. Se score >= threshold → captura bem-sucedida:
+ *    - delega side-effects de posse a dependencies.onCaptureSuccess(player, monster, logFn)
+ *    - dispara tutorialOnAction("capture") e updateStats
+ *    - marca encounter.active = false
+ * 4. Se score < threshold → falha:
+ *    - selvagem reage com um ataque imediato básico (sem ENE regen — é uma reação, não um turno completo)
+ *    - usa processEnemyCounterattack, que respeita d20=1/20, vantagem de classe e crit
+ *    - se jogador for derrotado, marca derrota e encounter.active = false
+ *
+ * Diferença intencional vs _enemyWildCounterattack (index.html):
+ * - Captura falha → reação imediata (sem ENE regen, sem buff update, sem skill check)
+ * - Outros turnos  → turno completo do inimigo (ENE regen + buffs + IA skill)
+ * Isso é um design deliberado: o selvagem reage com raiva, não executa um turno estratégico.
+ *
+ * Nota: tutorialOnAction("capture") é chamado somente em sucesso de captura por ClasterOrb.
+ * Se o encuentro já foi resolvido comportamentalmente (behaviorallyResolved), useCaptureAction
+ * já terá chamado tutorialOnAction("capture") naquele momento — a chamada aqui é harmless
+ * porque o tutorial estará inativo (getTutorialStep() retorna null) e a função retorna cedo.
+ *
+ * @param {object} params
+ * @param {object} params.encounter      - Encontro atual (muta log, active, result)
+ * @param {object} params.player         - Jogador (muta inventory)
+ * @param {object} params.playerMonster  - Monstrinho ativo do jogador (pode ser null)
+ * @param {object} params.orbInfo        - { id, name, emoji, capture_bonus_pp }
+ * @param {object} params.dependencies   - Dependências injetadas:
+ *   captureThreshold {number}       score mínimo para esta raridade (ex: 35 para Comum)
+ *   onCaptureSuccess {function}     (player, monster, logFn) → void — side-effects de posse
+ *   tutorialOnAction {function?}    (type) → void
+ *   updateStats {function?}         (key, delta) → void
+ *   audio {object?}                 { playSfx }
+ *   classAdvantages {object}        tabela de vantagens de classe
+ *   getBasicPower {function}        (monsterClass) → number
+ *   rollD20 {function?}             () → number (opcional, fallback Math.random)
+ *   recordD20Roll {function?}       (enc, name, roll, type) → void (opcional)
+ * @returns {{ success: boolean, captured: boolean, result: string }}
+ *   Retorna sempre um objeto de resultado:
+ *   - success=false + result='no_encounter'  → wildMonster ausente
+ *   - success=false + result='error'         → exceção interna
+ *   - success=true  + result='captured'      → captura bem-sucedida
+ *   - success=true  + result='ongoing'       → falha, encounter continua ativo
+ *   - success=true  + result='defeat'        → falha + jogador derrotado no contra-ataque
+ */
+export function executeWildCapture({ encounter, player, playerMonster, orbInfo, dependencies }) {
+    try {
+        const monster = encounter?.wildMonster;
+        if (!monster) return { success: false, captured: false, result: 'no_encounter' };
+
+        encounter.log = encounter.log || [];
+
+        // 1. Consumir 1 orb
+        player.inventory = player.inventory || {};
+        player.inventory[orbInfo.id] = (player.inventory[orbInfo.id] || 1) - 1;
+        encounter.log.push(
+            `${orbInfo.emoji} ${player.name} usou ${orbInfo.name}! (Restam: ${player.inventory[orbInfo.id]})`
+        );
+
+        // 2. Calcular score dual-track (HP + Agressividade + Orb)
+        const score   = WildCore.calculateCaptureScore(monster, orbInfo.capture_bonus_pp);
+        const needed  = dependencies.captureThreshold ?? 45;
+        const readiness = WildCore.getCaptureReadinessLabel(score);
+
+        encounter.log.push(
+            `🎯 ${readiness.emoji} ${readiness.text} — Score: ${score}/100 (precisava: ${needed}) ` +
+            `[Trilha Física:${Math.round((1 - monster.hp / monster.hpMax) * 50)}pts | ` +
+            `Trilha Comportamental:${Math.round((1 - (monster.aggression ?? 100) / 100) * 50)}pts | ` +
+            `Orb:+${orbInfo.capture_bonus_pp}pts]`
+        );
+
+        if (dependencies.updateStats) dependencies.updateStats('captureAttempts', 1);
+
+        if (score >= needed) {
+            // ── CAPTURA BEM-SUCEDIDA ──────────────────────────────────────────────
+            encounter.log.push(`✅ SUCESSO! ${monster.name} foi capturado!`);
+            if (dependencies.audio?.playSfx) dependencies.audio.playSfx('capture_ok');
+
+            monster.ownerId = player.id;
+
+            // Side-effects de posse (team/box/Dex): delegados ao caller para isolar globals
+            if (dependencies.onCaptureSuccess) {
+                dependencies.onCaptureSuccess(player, monster, (msg) => encounter.log.push(msg));
+            }
+
+            if (dependencies.updateStats) dependencies.updateStats('capturesSuccessful', 1);
+            if (dependencies.tutorialOnAction) dependencies.tutorialOnAction('capture');
+
+            encounter.active = false;
+            return { success: true, captured: true, result: 'captured' };
+
+        } else {
+            // ── CAPTURA FALHOU — selvagem reage com ataque imediato ──────────────
+            encounter.log.push(`❌ FALHA! ${monster.name} quebrou livre!`);
+            if (dependencies.audio?.playSfx) dependencies.audio.playSfx('capture_fail');
+
+            if (playerMonster && playerMonster.hp > 0) {
+                encounter.log.push(`⚡ ${monster.name} contra-ataca!`);
+                // Reação imediata: sem ENE regen / buff update (design intencional)
+                const counterResult = processEnemyCounterattack(
+                    encounter, monster, playerMonster, dependencies
+                );
+                if (counterResult.defeated) {
+                    encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
+                    playerMonster.status = 'fainted';
+                    encounter.result = 'defeat';
+                    encounter.active = false;
+                    return { success: true, captured: false, result: 'defeat' };
+                }
+            }
+
+            return { success: true, captured: false, result: 'ongoing' };
+        }
+    } catch (error) {
+        console.error('Capture execution failed:', error);
+        return { success: false, captured: false, result: 'error' };
+    }
+}
+
+/**
  * Processa derrota
  */
 function handleDefeat(encounter, player, playerMonster, dependencies) {

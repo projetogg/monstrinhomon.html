@@ -6163,175 +6163,100 @@
             try {
                 const encounter = GameState.currentEncounter;
                 if (!encounter?.wildMonster) return;
-                
+
                 const monster = encounter.wildMonster;
                 const playerId = encounter.selectedPlayerId;
                 const player = GameState.players.find(p => p.id === playerId);
-                
+
                 if (!player) {
                     alert('No player selected for this encounter');
                     return;
                 }
-                
-                // Validação: HP > 0 obrigatório
+
+                // Validação: HP > 0 obrigatório (capturar desmaiado é proibido)
                 if (monster.hp <= 0) {
                     alert('❌ Não pode capturar um monstrinho desmaiado! HP deve ser > 0.');
                     return;
                 }
-                
-                // Obter ClasterOrb selecionada
+
+                // Obter ClasterOrb selecionada (dependência de DOM — fica no wrapper)
                 const select = document.getElementById('captureOrbSelect');
                 if (!select) {
                     alert('❌ Erro ao ler seleção de ClasterOrb.');
                     return;
                 }
-                
+
                 const selectedOrbId = select.value;
                 const orbInfo = CLASTERORBS[selectedOrbId];
                 if (!orbInfo) {
                     alert('❌ ClasterOrb inválida.');
                     return;
                 }
-                
-                // Validação: precisa ter a orb selecionada
+
+                // Validação: precisa ter a orb no inventário
                 player.inventory = player.inventory || {};
-                const orbCount = player.inventory[selectedOrbId] || 0;
-                
-                if (orbCount <= 0) {
+                if ((player.inventory[selectedOrbId] || 0) <= 0) {
                     alert(`❌ Você não tem ${orbInfo.name}!`);
                     return;
                 }
-                
-                encounter.log = encounter.log || [];
-                
-                // SEMPRE CONSOME 1 item (mesmo se falhar)
-                player.inventory[selectedOrbId]--;
-                encounter.log.push(`${orbInfo.emoji} ${player.name} usou ${orbInfo.name}! (Restam: ${player.inventory[selectedOrbId]})`);
-                
-                // Calcular captureScore multi-eixo (HP + Agressividade + Orb)
-                const score  = calculateCaptureScore(monster, orbInfo.capture_bonus_pp);
-                const needed = GameState.config?.captureScoreThreshold?.[monster.rarity] ?? 45;
-                const readiness = getCaptureReadinessLabel(score);
-                
-                encounter.log.push(
-                    `🎯 ${readiness.emoji} ${readiness.text} — Score: ${score}/100 (precisava: ${needed}) ` +
-                    `[Trilha Física:${Math.round((1-monster.hp/monster.hpMax)*50)}pts | ` +
-                    `Trilha Comportamental:${Math.round((1-(monster.aggression??100)/100)*50)}pts | ` +
-                    `Orb:+${orbInfo.capture_bonus_pp}pts]`
-                );
-                
-                // FASE 1 POKEMON: Rastrear tentativa de captura
-                updateStats('captureAttempts', 1);
-                
-                // Captura determinística: sucesso se captureScore >= needed
-                if (score >= needed) {
-                    encounter.log.push(`✅ SUCESSO! ${monster.name} foi capturado!`);
-                    
-                    // Feature 4.4: Capture success sound
-                    Audio.playSfx("capture_ok");
-                    
-                    monster.ownerId = player.id;
-                    
-                    player.team = player.team || [];
-                    
-                    if (player.team.length < (GameState.config?.maxTeamSize || 6)) {
-                        player.team.push(monster);
-                        encounter.log.push(`${monster.name} foi adicionado ao time de ${player.name}!`);
-                    } else {
-                        // PR15A: Use sharedBox instead of player.box
-                        const boxResult = addToSharedBox(player.id, monster);
-                        if (boxResult.success) {
-                            encounter.log.push(`${monster.name} foi enviado para a caixa de ${player.name}!`);
-                        } else {
-                            encounter.log.push(`❌ Erro: ${boxResult.message}`);
-                        }
-                    }
-                    
-                    GameState.monsters = GameState.monsters || [];
-                    GameState.monsters.push(monster);
-                    
-                    // FASE 1 POKEMON: Rastrear captura bem-sucedida
-                    updateStats('capturesSuccessful', 1);
-                    
-                    // FASE 1 POKEMON: Adicionar ao Monstródex como capturado
-                    if (monster.monsterId || monster.templateId) {
-                        updateMonstrodex('capture', monster.monsterId || monster.templateId);
-                    }
-                    
-                    // PR16A: Mark as captured in PartyDex and check milestones
-                    if (window.PartyDex && (monster.monsterId || monster.templateId)) {
-                        const templateId = monster.monsterId || monster.templateId;
-                        window.PartyDex.onMonsterAddedToGroup(GameState, templateId, {
-                            showToast: showToast,
-                            saveToLocalStorage: saveToLocalStorage
-                        });
-                    }
-                    
-                    // Feature 4.2: Tutorial hook
-                    tutorialOnAction("capture");
 
-                    // Sistema de Quests: atualizar progresso após captura bem-sucedida
+                const playerMonster = _getActiveMonsterOfPlayer(player);
+
+                // Montar dependências para o módulo
+                const dependencies = {
+                    captureThreshold: GameState.config?.captureScoreThreshold?.[monster.rarity] ?? 45,
+                    classAdvantages: GameState.config?.classAdvantages || {},
+                    getBasicPower: (cls) => MM_TABLES.getBasicAttackPower(cls),
+                    audio: Audio,
+                    updateStats,
+                    tutorialOnAction,
+                    // Side-effects de posse: adição ao time/caixa, Monstrodex, PartyDex
+                    onCaptureSuccess: (pl, mon, logFn) => {
+                        pl.team = pl.team || [];
+                        if (pl.team.length < (GameState.config?.maxTeamSize || 6)) {
+                            pl.team.push(mon);
+                            logFn(`${mon.name} foi adicionado ao time de ${pl.name}!`);
+                        } else {
+                            const boxResult = addToSharedBox(pl.id, mon);
+                            logFn(boxResult.success
+                                ? `${mon.name} foi enviado para a caixa de ${pl.name}!`
+                                : `❌ Erro: ${boxResult.message}`);
+                        }
+                        GameState.monsters = GameState.monsters || [];
+                        GameState.monsters.push(mon);
+                        if (mon.monsterId || mon.templateId) {
+                            updateMonstrodex('capture', mon.monsterId || mon.templateId);
+                        }
+                        if (window.PartyDex && (mon.monsterId || mon.templateId)) {
+                            window.PartyDex.onMonsterAddedToGroup(
+                                GameState,
+                                mon.monsterId || mon.templateId,
+                                { showToast, saveToLocalStorage }
+                            );
+                        }
+                    },
+                };
+
+                const result = Combat.Wild.Actions.executeWildCapture({
+                    encounter,
+                    player,
+                    playerMonster,
+                    orbInfo,  // já contém .id, .name, .emoji, .capture_bonus_pp
+                    dependencies,
+                });
+
+                if (!result.success) {
+                    console.error('attemptCapture: executeWildCapture falhou', result);
+                    return;
+                }
+
+                if (result.captured) {
+                    // Quests: processado após captura, antes de null-ar o encounter
                     const capturedTemplateId = monster.templateId || monster.monsterId || null;
                     processQuestProgressFromEncounter(encounter, capturedTemplateId);
-                    
-                    encounter.active = false;
                     GameState.currentEncounter = null;
-                } else {
-                    // FALHA: Monstrinho realiza 1 ataque básico IMEDIATO
-                    encounter.log.push(`❌ FALHA! ${monster.name} quebrou livre!`);
-                    
-                    // Feature 4.4: Capture fail sound
-                    Audio.playSfx("capture_fail");
-                    
-                    const playerMonster = _getActiveMonsterOfPlayer(player);
-                    if (playerMonster && playerMonster.hp > 0) {
-                        encounter.log.push(`⚡ ${monster.name} contra-ataca!`);
-                        
-                        // Monstrinho selvagem ataca imediatamente
-                        const enemyRoll = Math.floor(Math.random() * 20) + 1;
-                        const { hit: enemyHit, isCrit: enemyIsCrit, isFail: enemyIsFail } =
-                            _resolveEnemyD20Hit(enemyRoll, monster, playerMonster);
-                        encounter.log.push(`🎲 ${monster.name} rola ${enemyRoll} (ATK: ${monster.atk})`);
-                        
-                        // Feature 4.4: Enemy counter-attack sound (wild - after failed capture)
-                        if (enemyIsCrit) {
-                            Audio.playSfx("crit");
-                        } else if (enemyIsFail || !enemyHit) {
-                            Audio.playSfx("miss");
-                        } else {
-                            Audio.playSfx("hit");
-                        }
-                        
-                        if (enemyHit) {
-                            // BUG FIX: usar calcDamage com power dobrado para crits
-                            // (calculateDamage() não aceita power customizado)
-                            const basicPower = MM_TABLES.getBasicAttackPower(monster.class);
-                            const powerUsed  = enemyIsCrit ? basicPower * 2 : basicPower;
-                            const atkMods = getBuffModifiers(monster);
-                            const effAtk  = Math.max(1, monster.atk + atkMods.atk);
-                            const defMods = getBuffModifiers(playerMonster);
-                            const effDef  = Math.max(1, playerMonster.def + defMods.def);
-                            const classAdv = GameState.config?.classAdvantages?.[monster.class];
-                            let damageMult = 1.0;
-                            if (classAdv?.strong === playerMonster.class) damageMult = 1.10;
-                            else if (classAdv?.weak === playerMonster.class) damageMult = 0.90;
-                            const damage = calcDamage({ atk: effAtk, def: effDef, power: powerUsed, damageMult });
-                            playerMonster.hp = Math.max(0, playerMonster.hp - damage);
-                            encounter.log.push(`💥 ${monster.name} acerta! Causa ${damage} de dano!`);
-                            
-                            if (playerMonster.hp <= 0) {
-                                encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
-                                playerMonster.status = 'fainted';
-                                // BUG FIX: marcar derrota sem nulifar encounter para mostrar painel de resultado
-                                encounter.result = 'defeat';
-                                encounter.active = false;
-                            }
-                        } else {
-                            encounter.log.push(`❌ ${monster.name} erra o ataque!`);
-                        }
-                    }
                 }
-                
+
                 saveToLocalStorage();
                 renderEncounter();
             } catch (error) {
