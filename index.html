@@ -716,7 +716,7 @@
 
         function copyError() {
             const text = document.getElementById('errorMessage').innerText;
-            navigator.clipboard.writeText(text).catch(e => alert('Copy failed: ' + e));
+            navigator.clipboard.writeText(text).catch(e => alert('Falha ao copiar: ' + e));
         }
 
         // ===== Feature 4.4: Audio (MVP without audio files) =====
@@ -2311,7 +2311,7 @@
                 
             } catch (error) {
                 console.error('[System] Critical error in loadGame:', error);
-                alert('Error loading game. Check console for details.');
+                alert('Erro ao carregar o jogo. Verifique o console para detalhes.');
                 return false;
             }
         }
@@ -2446,7 +2446,7 @@
                     navigator.clipboard.writeText(saveData).then(() => {
                         alert('✅ Save data copied to clipboard!\n\nYou can also download it as a file.');
                     }).catch(() => {
-                        alert('⚠️ Could not copy to clipboard, but you can download the file.');
+                        alert('⚠️ Não foi possível copiar para a área de transferência, mas você pode baixar o arquivo.');
                     });
                 }
                 
@@ -2462,7 +2462,7 @@
                 console.log('[Therapist] Save exported successfully');
             } catch (error) {
                 console.error('[Therapist] Export failed:', error);
-                alert('❌ Export failed: ' + error.message);
+                alert('❌ Exportação falhou: ' + error.message);
             }
         }
 
@@ -2483,7 +2483,7 @@
                 console.log('[Therapist] Ready to import save - paste JSON and click Load');
             } catch (error) {
                 console.error('[Therapist] Import UI failed:', error);
-                alert('❌ Import failed: ' + error.message);
+                alert('❌ Importação falhou: ' + error.message);
             }
         }
 
@@ -2493,7 +2493,7 @@
                 const jsonText = textarea?.value?.trim();
                 
                 if (!jsonText) {
-                    alert('⚠️ Please paste JSON data first');
+                    alert('⚠️ Cole os dados JSON antes de importar');
                     return;
                 }
                 
@@ -2503,7 +2503,7 @@
                     saveData = JSON.parse(jsonText);
                 } catch (parseError) {
                     console.error('[Therapist] Invalid JSON:', parseError);
-                    alert('❌ Invalid JSON format:\n' + parseError.message);
+                    alert('❌ Formato JSON inválido:\n' + parseError.message);
                     return;
                 }
                 
@@ -2558,7 +2558,7 @@
                 
             } catch (error) {
                 console.error('[Therapist] Load failed:', error);
-                alert('❌ Load failed: ' + error.message);
+                alert('❌ Falha ao carregar: ' + error.message);
             }
         }
 
@@ -2728,12 +2728,12 @@
                 const playerClass = document.getElementById('playerClass')?.value;
                 
                 if (!name) {
-                    alert('Please enter a player name');
+                    alert('Digite o nome do jogador');
                     return;
                 }
                 
                 if (!playerClass) {
-                    alert('Please select a class');
+                    alert('Selecione uma classe para o jogador');
                     return;
                 }
                 
@@ -2775,27 +2775,31 @@
 
         function giveStarterMonster(player) {
             try {
-                // Busca monstrinho inicial da mesma classe do jogador
-                const classMonsters = MONSTER_CATALOG.filter(m => 
-                    m?.class === player?.class && m?.rarity === 'Comum'
-                );
-                
-                // Se não encontrar da mesma classe, pega qualquer starter comum
-                const starterTemplate = classMonsters.length > 0 ? classMonsters[0] : 
-                    MONSTER_CATALOG.find(m => m?.rarity === 'Comum');
-                
-                if (!starterTemplate) return;
-                
-                // COMMIT 8 (Wave A): Use Award API for canonical monster creation
+                // Usa o mesmo mapa de STARTER_BY_CLASS do fluxo de novo jogo para consistência
+                const info = STARTER_BY_CLASS?.[player?.class];
+                let templateId = info?.monsterId;
+
+                // Fallback: primeira criatura comum da mesma classe
+                if (!templateId) {
+                    const classMonster = MONSTER_CATALOG.find(m => m?.class === player?.class && m?.rarity === 'Comum')
+                        || MONSTER_CATALOG.find(m => m?.rarity === 'Comum');
+                    templateId = classMonster?.id;
+                }
+
+                if (!templateId) return;
+
                 const monster = awardMonster(
-                    starterTemplate.id,  // templateId
-                    1,                   // level (igual ao fluxo principal de novo jogo)
-                    null,                // rarity (use template default)
-                    'party',             // destination
-                    player               // player object
+                    templateId,  // templateId (mesmo que mmStarterHatchEgg)
+                    5,           // nível 5 — igual ao fluxo principal de novo jogo
+                    null,        // raridade padrão do template
+                    'party',     // destino
+                    player       // jogador
                 );
-                
-                if (!monster) {
+
+                if (monster) {
+                    player.starterGranted = true;
+                    player.starterMonsterId = templateId;
+                } else {
                     console.error('Failed to award starter monster via Award API');
                 }
             } catch (error) {
@@ -3597,7 +3601,7 @@
             name = (name || '').trim() || 'Sessão';
             const playerIds = (GameState.players || []).map(p => p?.id).filter(id => id);
             const session = {
-                id: Date.now(),
+                id: `sess_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
                 name: name,
                 createdAt: new Date().toISOString(),
                 completedAt: null,
@@ -3623,12 +3627,12 @@
                 const name = document.getElementById('sessionName')?.value?.trim();
                 
                 if (!name) {
-                    alert('Please enter a session name');
+                    alert('Digite o nome da sessão');
                     return;
                 }
                 
                 if (!GameState.players || GameState.players.length === 0) {
-                    alert('Please add players first');
+                    alert('Adicione jogadores antes de criar uma sessão');
                     return;
                 }
                 
@@ -3688,7 +3692,7 @@
             try {
                 if (!GameState.currentSession) return;
                 
-                if (confirm('End this session?')) {
+                if (confirm('Encerrar esta sessão?')) {
                     GameState.currentSession.completedAt = new Date().toISOString();
                     GameState.currentSession = null;
                     
@@ -3706,7 +3710,7 @@
                 const type = document.getElementById('encounterType')?.value;
                 
                 if (!type) {
-                    alert('Please select encounter type');
+                    alert('Selecione o tipo de encontro');
                     return;
                 }
                 
@@ -3745,13 +3749,13 @@
                 if (type === 'wild') {
                     const selectedPlayerId = document.getElementById('encounterPlayer')?.value;
                     if (!selectedPlayerId) {
-                        alert('Please select a player for individual encounter');
+                        alert('Selecione um jogador para o encontro individual');
                         return;
                     }
                     
                     const player = GameState.players.find(p => p.id === selectedPlayerId);
                     if (!player || !player.team || player.team.length === 0) {
-                        alert('Selected player has no monsters in team');
+                        alert('O jogador selecionado não tem monstrinhos no time');
                         return;
                     }
                     
@@ -3787,7 +3791,14 @@
                     
                     // Wave B1: enemy instances now use factory
                     const randomMonster = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
-                    const level = Math.floor(Math.random() * 10) + 1;
+                    // Nível do inimigo escalado pelo nível máximo do time do jogador (±1)
+                    // Isso evita inimigos absurdamente acima ou abaixo do nível do jogador
+                    const playerMaxLevel = (player?.team?.length > 0)
+                        ? Math.max(...player.team.map(m => m.level || 1))
+                        : 5;
+                    const difficultyOffset = GameState.config?.difficulty === 'hard' ? 2
+                        : GameState.config?.difficulty === 'easy' ? -1 : 0;
+                    const level = Math.max(1, playerMaxLevel + difficultyOffset + Math.floor(Math.random() * 3) - 1);
                     encounter.wildMonster = createMonsterInstanceFromTemplate(
                         randomMonster.id,  // Template ID from catalog
                         level, 
@@ -6738,7 +6749,7 @@
                 // 2. Capturar input do usuário
                 const d20Roll = Combat.Wild.UI.getCombatInputRoll();
                 if (!d20Roll) {
-                    alert('Please enter a valid roll between 1 and 20');
+                    alert('Digite um valor de rolagem entre 1 e 20');
                     return;
                 }
                 Combat.Wild.UI.clearCombatInput();
@@ -6844,7 +6855,7 @@
                 const success = useSkill(playerMonster, skill, encounter.wildMonster, encounter);
                 
                 if (!success) {
-                    alert('Failed to use skill');
+                    alert('Falha ao usar habilidade');
                     return;
                 }
                 
@@ -7490,7 +7501,7 @@
                 const weight = parseInt(document.getElementById('objectiveWeight')?.value || '1');
                 
                 if (!text) {
-                    alert('Please enter objective description');
+                    alert('Digite a descrição do objetivo');
                     return;
                 }
                 
@@ -9368,8 +9379,8 @@
 
         function clearAllData() {
             try {
-                if (confirm('Are you sure? This will delete ALL data!')) {
-                    if (confirm('Really sure? This cannot be undone!')) {
+                if (confirm('Tem certeza? Isso apagará TODOS os dados!')) {
+                    if (confirm('Confirmar exclusão? Esta ação não pode ser desfeita!')) {
                         StorageManager.remove(StorageManager.StorageKeys.STATE); // PR3
                         location.reload();
                     }
@@ -9537,8 +9548,24 @@
                 host.innerHTML = `
                     ${mestreToggleHtml}
                     <div class="mestre-disabled-hint">
-                        Ative o Modo Mestre acima para acessar os controles de sessão e jogadores.
+                        Ative o Modo Mestre acima para acessar recompensas e controles avançados.
                     </div>
+                    ${hasGame ? `
+                    <details class="mestre-section" open>
+                        <summary class="mestre-section-header">📋 Sessão & Objetivos</summary>
+                        <div class="mestre-section-body">
+                            <div class="therapist-mestre-box">
+                                <div class="mm-row">
+                                    <button class="mm-btn flex-1" onclick="mmCloseAllOverlays(); switchTab('session');">📋 Gerenciar Sessão</button>
+                                    <button class="mm-btn flex-1" onclick="mmCloseAllOverlays(); switchTab('therapy');">🎯 Objetivos</button>
+                                </div>
+                                <div class="mm-row mt-8">
+                                    <button class="mm-btn flex-1" onclick="mmCloseAllOverlays(); switchTab('report');">📊 Relatório</button>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+                    ` : ''}
                     <div class="mm-row mt-12">
                         <button class="mm-btn flex-1" onclick="mmShowMainMenu()">📱 Menu Principal</button>
                     </div>
@@ -9587,8 +9614,24 @@
                     <select id="mmTherPlayer" class="mm-input">${playerOptions}</select>
                 </div>
 
-                <!-- Seção: Recompensas Rápidas -->
+                <!-- Seção: Sessão & Terapia — ação principal do terapeuta, aberta por padrão -->
                 <details class="mestre-section" open>
+                    <summary class="mestre-section-header">📋 Sessão & Objetivos</summary>
+                    <div class="mestre-section-body">
+                        <div class="therapist-mestre-box">
+                            <div class="mm-row">
+                                <button class="mm-btn flex-1" onclick="mmCloseAllOverlays(); switchTab('session');">📋 Gerenciar Sessão</button>
+                                <button class="mm-btn flex-1" onclick="mmCloseAllOverlays(); switchTab('therapy');">🎯 Objetivos Terapêuticos</button>
+                            </div>
+                            <div class="mm-row mt-8">
+                                <button class="mm-btn flex-1" onclick="mmCloseAllOverlays(); switchTab('report');">📊 Relatório</button>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+                <!-- Seção: Recompensas Rápidas -->
+                <details class="mestre-section">
                     <summary class="mestre-section-header">🎁 Recompensas Rápidas</summary>
                     <div class="mestre-section-body">
                         <div class="therapist-mestre-box">
@@ -9670,22 +9713,6 @@
                                     <option value="box">Forçar Caixa</option>
                                 </select>
                                 <button class="mm-btn w-auto" onclick="mmTherGiveMonster()">Conceder</button>
-                            </div>
-                        </div>
-                    </div>
-                </details>
-
-                <!-- Seção: Sessão & Terapia -->
-                <details class="mestre-section">
-                    <summary class="mestre-section-header">📋 Sessão & Objetivos</summary>
-                    <div class="mestre-section-body">
-                        <div class="therapist-mestre-box">
-                            <div class="mm-row">
-                                <button class="mm-btn flex-1" onclick="mmCloseAllOverlays(); switchTab('session');">📋 Gerenciar Sessão</button>
-                                <button class="mm-btn flex-1" onclick="mmCloseAllOverlays(); switchTab('therapy');">🎯 Objetivos Terapêuticos</button>
-                            </div>
-                            <div class="mm-row mt-8">
-                                <button class="mm-btn flex-1" onclick="mmCloseAllOverlays(); switchTab('report');">📊 Relatório</button>
                             </div>
                         </div>
                     </div>
@@ -10166,7 +10193,7 @@
                             <option value="medium" ${MM_NEW.difficulty==="medium"?"selected":""}>Médio</option>
                             <option value="hard" ${MM_NEW.difficulty==="hard"?"selected":""}>Difícil</option>
                         </select>
-                        <div class="mm-hint">MVP: afeta encontros futuros conforme seu sistema de difficulty.</div>
+                        <div class="mm-hint">Afeta o nível dos inimigos encontrados: Fácil = -1 nível, Médio = igual, Difícil = +2 níveis.</div>
                     </div>
                 `;
                 return;
@@ -11026,7 +11053,12 @@
             // Começar pelo primeiro jogador sem starter
             const first = GameState.players.findIndex(p => !p.starterGranted);
             MM_STARTER.playerIndex = first >= 0 ? first : 0;
-            // Classe já foi escolhida em MM_NEW step 2 — pular direto para o ovo
+            // Classe já foi escolhida em MM_NEW step 2 — pular direto para o ovo.
+            // Se, por algum motivo, a classe não estiver definida, aplicar a primeira disponível.
+            const firstPlayer = GameState.players[MM_STARTER.playerIndex];
+            if (firstPlayer && !firstPlayer.class) {
+                firstPlayer.class = MM_CLASSES[0];
+            }
             MM_STARTER.phase = 'egg';
 
             mmShow("mmStarterFlow");
@@ -11092,7 +11124,7 @@
                     <div class="starter-hatch-reveal">
                         <div class="starter-hatch-big">${tmpl ? tmpl.emoji : '🔮'}</div>
                         <div class="starter-hatch-name">${tmpl ? escapeHtml(tmpl.name) : 'Monstrinho'}</div>
-                        <div class="starter-hatch-info">Nível 1 · ${escapeHtml(player.class)} · Comum</div>
+                        <div class="starter-hatch-info">Nível 5 · ${escapeHtml(player.class)} · Comum</div>
                         <div class="starter-hatch-msg">✨ ${escapeHtml(player.name)} recebeu ${tmpl ? escapeHtml(tmpl.name) : 'o monstrinho'}!</div>
                     </div>
                     <div class="mm-row mt-12">
@@ -11124,7 +11156,7 @@
             const cls = player.class || MM_CLASSES[0];
             const info = STARTER_BY_CLASS[cls] || STARTER_BY_CLASS[MM_CLASSES[0]];
 
-            const mon = awardMonster(info.monsterId, 1, null, 'party', player);
+            const mon = awardMonster(info.monsterId, 5, null, 'party', player);
             if (mon) {
                 player.starterGranted = true;
                 player.starterMonsterId = info.monsterId;
@@ -11151,6 +11183,11 @@
             }
 
             // Classe já foi escolhida em MM_NEW step 2 — pular direto para o ovo
+            // Se a classe não estiver definida, aplicar a primeira disponível como fallback
+            const nextPlayer = GameState.players[MM_STARTER.playerIndex];
+            if (nextPlayer && !nextPlayer.class) {
+                nextPlayer.class = MM_CLASSES[0];
+            }
             MM_STARTER.phase = 'egg';
             mmRenderStarterFlow();
         }
@@ -11161,6 +11198,7 @@
             // Auto-criar sessão se ainda não existir — garante que batalhas funcionem
             // sem que o usuário precise descobrir o Modo Mestre
             if (!GameState.currentSession && GameState.players && GameState.players.length > 0) {
+                console.log('[Sistema] Sessão padrão criada automaticamente após fluxo de starter.');
                 mmCreateDefaultSession('Sessão');
             }
 
