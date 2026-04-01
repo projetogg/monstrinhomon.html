@@ -573,9 +573,13 @@
         // PR16B: Import PartyDex UI module
         import * as PartyDexUI from './js/ui/partyDexUI.js';
 
-        // Canon Loader — Fase 1: carrega dados canônicos (classes, matchups, skills MVP)
+        // Canon Loader — Fases 1 e 2: carrega dados canônicos (classes, matchups, skills MVP, species, evolution, progression)
         import * as CanonLoader from './js/canon/canonLoader.js';
         window.CanonLoader = CanonLoader;
+
+        // Species Bridge — Fase 3: ponte runtime → espécie canônica + aplicação de offsets
+        import * as SpeciesBridge from './js/canon/speciesBridge.js';
+        window.SpeciesBridge = SpeciesBridge;
 
         // Inicia o carregamento canônico imediatamente após o parse do módulo,
         // antes de qualquer chamada a init(). Isso garante que o fetch já estará
@@ -2931,14 +2935,42 @@
                 const rarityMult = GameState.config?.rarityPower?.[finalRarity] || 1.0;
                 const levelMult = (1 + (level - 1) * 0.1);
                 
-                const hpMax = Math.floor((template.baseHp || 30) * levelMult);
-                const atk = Math.floor((template.baseAtk || 5) * levelMult * rarityMult);
-                const def = Math.floor((template.baseDef || 3) * levelMult * rarityMult);
-                const spd = Math.floor((template.baseSpd || 5) * levelMult * rarityMult);
-                const poder = Math.floor(atk * 0.5);
+                const baseHpMax  = Math.floor((template.baseHp  || 30) * levelMult);
+                const baseAtk    = Math.floor((template.baseAtk || 5)  * levelMult * rarityMult);
+                const baseDef    = Math.floor((template.baseDef || 3)  * levelMult * rarityMult);
+                const baseSpd    = Math.floor((template.baseSpd || 5)  * levelMult * rarityMult);
+                const basePoder  = Math.floor(baseAtk * 0.5);
                 
                 // 5. Calcular ENE usando fórmula canônica: floor(10 + 2*(level-1))
-                const eneMax = Math.floor(10 + 2 * (level - 1));
+                const baseEneMax = Math.floor(10 + 2 * (level - 1));
+
+                // 5b. Aplicar offsets canônicos de espécie (Fase 3)
+                // Fallback seguro: se SpeciesBridge não estiver disponível ou não houver
+                // mapeamento para este template, os stats continuam sem modificação.
+                let canonSpeciesId = null;
+                let canonAppliedOffsets = null;
+                let finalHpMax  = baseHpMax;
+                let finalAtk    = baseAtk;
+                let finalDef    = baseDef;
+                let finalSpd    = baseSpd;
+                let finalEneMax = baseEneMax;
+                try {
+                    if (typeof window !== 'undefined' && window.SpeciesBridge) {
+                        const bridgeResult = window.SpeciesBridge.resolveAndApply(
+                            templateId,
+                            { hpMax: baseHpMax, atk: baseAtk, def: baseDef, spd: baseSpd, eneMax: baseEneMax }
+                        );
+                        finalHpMax  = bridgeResult.stats.hpMax;
+                        finalAtk    = bridgeResult.stats.atk;
+                        finalDef    = bridgeResult.stats.def;
+                        finalSpd    = bridgeResult.stats.spd;
+                        finalEneMax = bridgeResult.stats.eneMax;
+                        canonSpeciesId      = bridgeResult.canonSpeciesId;
+                        canonAppliedOffsets = bridgeResult.canonAppliedOffsets;
+                    }
+                } catch (bridgeErr) {
+                    console.warn('[Factory] speciesBridge falhou; usando stats legados.', bridgeErr);
+                }
                 
                 // 6. Criar instância com campos canônicos
                 const instance = {
@@ -2961,18 +2993,18 @@
                     xpNeeded: calculateXPNeeded(level),
                     
                     // HP (schema canônico)
-                    hp: hpMax,          // ✅ Canônico (não currentHp)
-                    hpMax: hpMax,       // ✅ Canônico (não maxHp)
+                    hp: finalHpMax,          // ✅ Canônico (não currentHp)
+                    hpMax: finalHpMax,       // ✅ Canônico (não maxHp)
                     
                     // ENE (schema canônico)
-                    ene: eneMax,        // ✅ Começa cheio
-                    eneMax: eneMax,     // ✅ Canônico
+                    ene: finalEneMax,        // ✅ Começa cheio
+                    eneMax: finalEneMax,     // ✅ Canônico
                     
                     // Stats de combate
-                    atk: atk,
-                    def: def,
-                    spd: spd,
-                    poder: poder,
+                    atk: finalAtk,
+                    def: finalDef,
+                    spd: finalSpd,
+                    poder: basePoder,
                     
                     // Estado
                     status: 'healthy',
@@ -2985,7 +3017,11 @@
                     friendship: DEFAULT_FRIENDSHIP,     // Padrão: neutro (0-100)
                     
                     // FASE 1 POKEMON: Shiny (1% chance se selvagem)
-                    isShiny: false      // Padrão false, será sobrescrito se necessário
+                    isShiny: false,      // Padrão false, será sobrescrito se necessário
+                    
+                    // Canon species metadata (Fase 3) — null quando não há mapeamento
+                    canonSpeciesId: canonSpeciesId,
+                    canonAppliedOffsets: canonAppliedOffsets,
                 };
                 
                 // 7. Aplicar overrides (ex: nickname personalizado, ownerId, etc.)
