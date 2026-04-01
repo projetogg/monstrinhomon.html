@@ -1,14 +1,15 @@
 /**
- * CANON LOADER — Fase 1 de integração da camada canônica de dados
+ * CANON LOADER — Fases 1 e 2 de integração da camada canônica de dados
  *
  * Carrega os arquivos JSON de design/canon/ e expõe funções de consulta.
  * Escopo MVP Fase 1: classes, matchups e habilidades das 4 classes centrais.
+ * Escopo Fase 2: espécies, linhas evolutivas e marcos de progressão por nível.
  *
  * O que este módulo NÃO faz (reservado para fases posteriores):
  *  - substituição da fórmula de combate (faixas canônicas)
- *  - migração total de skills.json
- *  - integração de espécies e evoluções
+ *  - migração total de skills.json ou monsters.json
  *  - refactor de wildCore.js / groupActions.js
+ *  - integração completa de espécies ao catálogo runtime
  */
 
 // ---------------------------------------------------------------------------
@@ -37,7 +38,7 @@ const MVP_PHASE1_CLASSES = new Set(['Guerreiro', 'Bárbaro', 'Mago', 'Curandeiro
 // ---------------------------------------------------------------------------
 // Cache em memória — evita fetches repetidos
 // ---------------------------------------------------------------------------
-let _canonData = null; // { classes, matchups, skillsMvp }
+let _canonData = null; // { classes, matchups, skillsMvp, species, evolutionLines, levelProgression }
 
 // Pre-carregamento: promise iniciada imediatamente no parse do módulo.
 // Isso garante que o carregamento comece o mais cedo possível — antes de init().
@@ -147,13 +148,74 @@ function _indexMvpSkills(skillsArray) {
 }
 
 // ---------------------------------------------------------------------------
+// Fase 2 — Transformação: species, evolution_lines, level_progression
+// ---------------------------------------------------------------------------
+
+/**
+ * Indexa array de espécies canônicas por ID e por nome PT-BR.
+ * @param {Array} speciesArray
+ * @returns {{ byId: Object, byPtbr: Object }}
+ */
+function _indexSpecies(speciesArray) {
+    const byId   = {};
+    const byPtbr = {};
+    for (const sp of speciesArray) {
+        byId[sp.id] = sp;
+        if (sp.name_pt) byPtbr[sp.name_pt] = sp;
+    }
+    return { byId, byPtbr };
+}
+
+/**
+ * Indexa linhas evolutivas por line_id, class_id e por species_id de cada estágio.
+ * @param {Array} linesArray
+ * @returns {{ byLineId: Object, byClassId: Object, bySpeciesId: Object }}
+ */
+function _indexEvolutionLines(linesArray) {
+    const byLineId    = {};
+    const byClassId   = {};
+    const bySpeciesId = {};
+
+    for (const line of linesArray) {
+        byLineId[line.line_id]    = line;
+        byClassId[line.class_id]  = line;
+
+        for (const stage of (line.stages || [])) {
+            if (stage.species_id) {
+                bySpeciesId[stage.species_id] = line;
+            }
+        }
+    }
+
+    return { byLineId, byClassId, bySpeciesId };
+}
+
+/**
+ * Indexa marcos de progressão por nível.
+ * Retorna { byLevel: { [level]: string[] }, classGrowthRules: Object }
+ * @param {Object} progressionJson - conteúdo de level_progression.json
+ * @returns {{ byLevel: Object, classGrowthRules: Object }}
+ */
+function _indexLevelProgression(progressionJson) {
+    const byLevel          = {};
+    const milestones       = progressionJson.levels_1_to_30 || [];
+    const classGrowthRules = progressionJson.class_growth_rules || {};
+
+    for (const entry of milestones) {
+        byLevel[entry.level] = entry.unlocks || [];
+    }
+
+    return { byLevel, classGrowthRules };
+}
+
+// ---------------------------------------------------------------------------
 // API pública
 // ---------------------------------------------------------------------------
 
 /**
  * Inicia o carregamento canônico o mais cedo possível (chamado no parse do módulo).
  * Idempotente: chamadas repetidas retornam a mesma promise.
- * @returns {Promise<{ classes, matchups, skillsMvp }>}
+ * @returns {Promise<{ classes, matchups, skillsMvp, species, evolutionLines, levelProgression }>}
  */
 export function startCanonBoot() {
     if (!_canonBootPromise) {
@@ -163,9 +225,9 @@ export function startCanonBoot() {
 }
 
 /**
- * Carrega todos os arquivos de cânone da Fase 1.
+ * Carrega todos os arquivos de cânone (Fases 1 e 2).
  * Idempotente: chamadas subsequentes retornam o cache.
- * @returns {Promise<{ classes: Object, matchups: Object, skillsMvp: Object }>}
+ * @returns {Promise<{ classes: Object, matchups: Object, skillsMvp: Object, species: Object, evolutionLines: Object, levelProgression: Object }>}
  */
 export async function loadCanonData() {
     return startCanonBoot();
@@ -201,29 +263,31 @@ export async function applyCanonToConfig(config) {
 // ---------------------------------------------------------------------------
 
 /**
- * Efetua o carregamento real dos 3 JSONs e preenche _canonData.
+ * Efetua o carregamento real dos 6 JSONs e preenche _canonData.
  * @private
  */
 async function _loadCanonDataInternal() {
     if (_canonData) return _canonData;
 
-    const [classesRaw, matchupsRaw, skillsMvpRaw] = await Promise.all([
+    const [classesRaw, matchupsRaw, skillsMvpRaw, speciesRaw, evolutionLinesRaw, levelProgressionRaw] = await Promise.all([
         _fetchJson('design/canon/classes.json'),
         _fetchJson('design/canon/class_matchups.json'),
         _fetchJson('design/canon/skills_mvp_phase1.json'),
+        _fetchJson('design/canon/species.json'),
+        _fetchJson('design/canon/evolution_lines.json'),
+        _fetchJson('design/canon/level_progression.json'),
     ]);
 
-    const classIndex    = _indexClasses(classesRaw);
-    const matchups      = matchupsRaw;
-    const skillsByClass = _indexMvpSkills(skillsMvpRaw);
-
     _canonData = {
-        classes:   classIndex,
-        matchups:  matchups,
-        skillsMvp: skillsByClass,
+        classes:          _indexClasses(classesRaw),
+        matchups:         matchupsRaw,
+        skillsMvp:        _indexMvpSkills(skillsMvpRaw),
+        species:          _indexSpecies(speciesRaw),
+        evolutionLines:   _indexEvolutionLines(evolutionLinesRaw),
+        levelProgression: _indexLevelProgression(levelProgressionRaw),
     };
 
-    console.log('[canonLoader] Dados canônicos carregados (Fase 1 MVP).');
+    console.log('[canonLoader] Dados canônicos carregados (Fases 1 e 2).');
     return _canonData;
 }
 
@@ -275,6 +339,100 @@ export function getMvpSkillsByClass(classNameOrId) {
 export function _resetCanonCache() {
     _canonData = null;
     _canonBootPromise = null;
+}
+
+// ---------------------------------------------------------------------------
+// Fase 2 — API pública: espécies, linhas evolutivas, progressão por nível
+// ---------------------------------------------------------------------------
+
+/**
+ * Retorna os dados canônicos de uma espécie.
+ * Divergência: não há mapeamento automático entre IDs runtime (ex: m_luma)
+ * e IDs canônicos (ex: moonquill). A ponte deve ser feita pelo runtime quando necessário.
+ *
+ * @param {string} speciesId - ID canônico (ex: 'shieldhorn') ou nome PT-BR (ex: 'Escudicorno')
+ * @returns {Object|null}
+ */
+export function getSpeciesData(speciesId) {
+    if (!_canonData) {
+        console.warn('[canonLoader] getSpeciesData chamado antes de loadCanonData()');
+        return null;
+    }
+    const { byId, byPtbr } = _canonData.species;
+    return byId[speciesId] || byPtbr[speciesId] || null;
+}
+
+/**
+ * Retorna a linha evolutiva de uma espécie ou linha.
+ * Aceita: line_id (ex: 'shieldhorn_line'), species_id de qualquer estágio, ou class_id.
+ *
+ * @param {string} idOrLineId
+ * @returns {Object|null}
+ */
+export function getEvolutionLine(idOrLineId) {
+    if (!_canonData) {
+        console.warn('[canonLoader] getEvolutionLine chamado antes de loadCanonData()');
+        return null;
+    }
+    const { byLineId, byClassId, bySpeciesId } = _canonData.evolutionLines;
+    return byLineId[idOrLineId] || bySpeciesId[idOrLineId] || byClassId[idOrLineId] || null;
+}
+
+/**
+ * Retorna os marcos de desbloqueio para um nível específico.
+ * Cobertura: levels 1-30 (Fase 2). Níveis 31-100 retornam array vazio.
+ *
+ * @param {number} level
+ * @returns {string[]} lista de unlocks (ex: ['slot_1', 'slot_2'])
+ */
+export function getLevelMilestones(level) {
+    if (!_canonData) {
+        console.warn('[canonLoader] getLevelMilestones chamado antes de loadCanonData()');
+        return [];
+    }
+    return _canonData.levelProgression.byLevel[level] || [];
+}
+
+/**
+ * Retorna todos os marcos de progressão indexados por nível.
+ * @returns {Object} { [level]: string[] }
+ */
+export function getAllLevelMilestones() {
+    if (!_canonData) {
+        console.warn('[canonLoader] getAllLevelMilestones chamado antes de loadCanonData()');
+        return {};
+    }
+    return _canonData.levelProgression.byLevel;
+}
+
+/**
+ * Retorna a regra de crescimento de stats para uma classe canônica.
+ * @param {string} classIdOrPtbr - ID canônico (ex: 'warrior') ou nome PT-BR (ex: 'Guerreiro')
+ * @returns {string|null} descrição textual da regra de crescimento
+ */
+export function getClassGrowthRule(classIdOrPtbr) {
+    if (!_canonData) {
+        console.warn('[canonLoader] getClassGrowthRule chamado antes de loadCanonData()');
+        return null;
+    }
+    const id = CLASS_MAP_PTBR_TO_ID[classIdOrPtbr] || classIdOrPtbr;
+    return _canonData.levelProgression.classGrowthRules[id] || null;
+}
+
+/**
+ * Retorna os offsets de stats de uma espécie aplicados sobre os stats base da classe.
+ * Os offsets são aditivos (ex: hp+1, atk-1).
+ *
+ * Uso consultivo: o motor atual não aplica esses offsets automaticamente.
+ * A integração completa está reservada para Fase 3+.
+ *
+ * @param {string} speciesId - ID canônico ou nome PT-BR da espécie
+ * @returns {{ hp: number, atk: number, def: number, ene: number, agi: number }|null}
+ */
+export function getSpeciesStatOffsets(speciesId) {
+    const sp = getSpeciesData(speciesId);
+    if (!sp) return null;
+    return sp.base_stat_offsets || null;
 }
 
 /**

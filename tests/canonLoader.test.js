@@ -1,8 +1,9 @@
 /**
- * CANON LOADER TESTS (Fase 1)
+ * CANON LOADER TESTS (Fases 1 e 2)
  *
  * Testes para js/canon/canonLoader.js
- * Cobertura: mapeamento de classes, transformação de matchups, indexação de habilidades MVP
+ * Cobertura: mapeamento de classes, transformação de matchups, indexação de habilidades MVP,
+ *            espécies, linhas evolutivas e marcos de progressão por nível
  *
  * Esses testes exercitam as funções puras/síncronas do módulo.
  * As funções assíncronas (loadCanonData) são testadas via mocks de fetch.
@@ -18,6 +19,12 @@ import {
     loadCanonData,
     startCanonBoot,
     applyCanonToConfig,
+    getSpeciesData,
+    getEvolutionLine,
+    getLevelMilestones,
+    getAllLevelMilestones,
+    getClassGrowthRule,
+    getSpeciesStatOffsets,
     _resetCanonCache,
 } from '../js/canon/canonLoader.js';
 
@@ -72,17 +79,83 @@ const MOCK_SKILLS_MVP = [
     { id: 'bard_song',            class_id: 'bard',      slot: 1, name_pt: 'Canção',           unlock_level: 1,  energy_cost: 0, power: 2 },
 ];
 
+// Fase 2 — Mock data: espécies, linhas evolutivas, progressão
+const MOCK_SPECIES = [
+    {
+        id: 'shieldhorn', name_pt: 'Escudicorno', class_id: 'warrior', rarity: 'comum',
+        archetype: 'tank_puro',
+        base_stat_offsets: { hp: 1, atk: -1, def: 1, ene: 0, agi: 0 },
+        passive: 'Quando está na frente, recebe +1 de mitigação no primeiro ataque sofrido por turno.',
+        kit_swap: { replace_skill_id: 'warrior_basic_strike', with_concept: 'Básico mais pesado e menos veloz' },
+    },
+    {
+        id: 'emberfang', name_pt: 'Presabrasa', class_id: 'barbarian', rarity: 'incomum',
+        archetype: 'burst_agressivo',
+        base_stat_offsets: { hp: 0, atk: 1, def: -1, ene: 0, agi: 1 },
+        passive: 'Ao usar habilidade ofensiva, recebe +1 no confronto se estiver com HP acima de 70%.',
+        kit_swap: { replace_skill_id: 'barbarian_berserk', with_concept: 'Explosão de 1 turno ainda mais agressiva' },
+    },
+    {
+        id: 'moonquill', name_pt: 'Plumalua', class_id: 'mage', rarity: 'comum',
+        archetype: 'controle_leve',
+        base_stat_offsets: { hp: 0, atk: 0, def: 0, ene: 1, agi: 0 },
+        passive: 'Se aplicar debuff, ganha +1 AGI até o próximo turno.',
+        kit_swap: { replace_skill_id: 'mage_arcane_storm', with_concept: 'Assinatura com menos dano e mais controle' },
+    },
+];
+
+const MOCK_EVOLUTION_LINES = [
+    {
+        line_id: 'shieldhorn_line', class_id: 'warrior',
+        stages: [
+            { stage: 1, species_id: 'shieldhorn', name_pt: 'Escudicorno', level_at: 1 },
+            { stage: 2, name_pt: 'Basticorno', level_at: 12 },
+            { stage: 3, name_pt: 'Aegishorn',  level_at: 25 },
+        ],
+        progression_identity: 'Cada evolução reforça sustentação e proteção.',
+    },
+    {
+        line_id: 'emberfang_line', class_id: 'barbarian',
+        stages: [
+            { stage: 1, species_id: 'emberfang', name_pt: 'Presabrasa',   level_at: 1 },
+            { stage: 2, name_pt: 'Furiagume',    level_at: 12 },
+            { stage: 3, name_pt: 'Infernomord',  level_at: 25 },
+        ],
+        progression_identity: 'Aumenta burst e risco; nunca vira tank.',
+    },
+];
+
+const MOCK_LEVEL_PROGRESSION = {
+    levels_1_to_30: [
+        { level: 1,  unlocks: ['slot_1'] },
+        { level: 5,  unlocks: ['slot_2'] },
+        { level: 10, unlocks: ['slot_1_or_2_upgrade'] },
+        { level: 15, unlocks: ['slot_3'] },
+        { level: 22, unlocks: ['slot_2_or_3_upgrade'] },
+        { level: 30, unlocks: ['slot_4'] },
+    ],
+    class_growth_rules: {
+        warrior:   'Priorizar HP/DEF, ATK moderado, AGI baixa',
+        barbarian: 'Priorizar ATK, HP bom, DEF moderada/baixa',
+        mage:      'Priorizar ENE/ATK, baixa sustentação',
+        healer:    'Priorizar ENE, HP moderado, ATK baixo',
+    },
+};
+
 // ---------------------------------------------------------------------------
 // Helpers para mock de fetch
 // ---------------------------------------------------------------------------
 
-function makeFetchMock(classesData, matchupsData, skillsData) {
+function makeFetchMock(classesData, matchupsData, skillsData, speciesData, evolutionLinesData, levelProgressionData) {
     return vi.fn(async (url) => {
         const urlStr = String(url);
         let data;
-        if (urlStr.includes('classes.json'))          data = classesData;
-        else if (urlStr.includes('class_matchups'))   data = matchupsData;
-        else if (urlStr.includes('skills_mvp'))       data = skillsData;
+        if (urlStr.includes('classes.json'))           data = classesData;
+        else if (urlStr.includes('class_matchups'))    data = matchupsData;
+        else if (urlStr.includes('skills_mvp'))        data = skillsData;
+        else if (urlStr.includes('species.json'))      data = speciesData;
+        else if (urlStr.includes('evolution_lines'))   data = evolutionLinesData;
+        else if (urlStr.includes('level_progression')) data = levelProgressionData;
         else throw new Error('URL inesperada: ' + urlStr);
         return { ok: true, json: async () => data };
     });
@@ -169,7 +242,7 @@ describe('canonLoader — loadCanonData()', () => {
 
     beforeEach(() => {
         _resetCanonCache();
-        global.fetch = makeFetchMock(MOCK_CLASSES, MOCK_MATCHUPS, MOCK_SKILLS_MVP);
+        global.fetch = makeFetchMock(MOCK_CLASSES, MOCK_MATCHUPS, MOCK_SKILLS_MVP, MOCK_SPECIES, MOCK_EVOLUTION_LINES, MOCK_LEVEL_PROGRESSION);
     });
 
     afterEach(() => {
@@ -188,8 +261,8 @@ describe('canonLoader — loadCanonData()', () => {
     it('deve ser idempotente (cache evita fetch duplo)', async () => {
         await loadCanonData();
         await loadCanonData();
-        // fetch deve ter sido chamado apenas 3 vezes (uma por arquivo)
-        expect(global.fetch).toHaveBeenCalledTimes(3);
+        // fetch deve ter sido chamado 6 vezes (uma por arquivo: 3 Fase 1 + 3 Fase 2)
+        expect(global.fetch).toHaveBeenCalledTimes(6);
     });
 
     it('getClassStats deve funcionar após carregar (por nome PT-BR)', async () => {
@@ -218,7 +291,7 @@ describe('canonLoader — getClassAdvantages()', () => {
 
     beforeEach(async () => {
         _resetCanonCache();
-        global.fetch = makeFetchMock(MOCK_CLASSES, MOCK_MATCHUPS, MOCK_SKILLS_MVP);
+        global.fetch = makeFetchMock(MOCK_CLASSES, MOCK_MATCHUPS, MOCK_SKILLS_MVP, MOCK_SPECIES, MOCK_EVOLUTION_LINES, MOCK_LEVEL_PROGRESSION);
         await loadCanonData();
     });
 
@@ -272,7 +345,7 @@ describe('canonLoader — getMvpSkillsByClass()', () => {
 
     beforeEach(async () => {
         _resetCanonCache();
-        global.fetch = makeFetchMock(MOCK_CLASSES, MOCK_MATCHUPS, MOCK_SKILLS_MVP);
+        global.fetch = makeFetchMock(MOCK_CLASSES, MOCK_MATCHUPS, MOCK_SKILLS_MVP, MOCK_SPECIES, MOCK_EVOLUTION_LINES, MOCK_LEVEL_PROGRESSION);
         await loadCanonData();
     });
 
@@ -368,7 +441,7 @@ describe('canonLoader — startCanonBoot()', () => {
 
     beforeEach(() => {
         _resetCanonCache();
-        global.fetch = makeFetchMock(MOCK_CLASSES, MOCK_MATCHUPS, MOCK_SKILLS_MVP);
+        global.fetch = makeFetchMock(MOCK_CLASSES, MOCK_MATCHUPS, MOCK_SKILLS_MVP, MOCK_SPECIES, MOCK_EVOLUTION_LINES, MOCK_LEVEL_PROGRESSION);
     });
 
     afterEach(() => {
@@ -381,8 +454,8 @@ describe('canonLoader — startCanonBoot()', () => {
         const p2 = startCanonBoot();
         expect(p1).toBe(p2);
         await p1;
-        // fetch deve ter sido chamado apenas 3 vezes no total
-        expect(global.fetch).toHaveBeenCalledTimes(3);
+        // fetch deve ter sido chamado 6 vezes no total (3 Fase 1 + 3 Fase 2)
+        expect(global.fetch).toHaveBeenCalledTimes(6);
     });
 
     it('deve carregar os dados quando aguardado', async () => {
@@ -397,7 +470,7 @@ describe('canonLoader — applyCanonToConfig()', () => {
 
     beforeEach(() => {
         _resetCanonCache();
-        global.fetch = makeFetchMock(MOCK_CLASSES, MOCK_MATCHUPS, MOCK_SKILLS_MVP);
+        global.fetch = makeFetchMock(MOCK_CLASSES, MOCK_MATCHUPS, MOCK_SKILLS_MVP, MOCK_SPECIES, MOCK_EVOLUTION_LINES, MOCK_LEVEL_PROGRESSION);
     });
 
     afterEach(() => {
@@ -421,8 +494,8 @@ describe('canonLoader — applyCanonToConfig()', () => {
         startCanonBoot(); // simula o início precoce no parse do módulo
         const config = { classAdvantages: {} };
         await applyCanonToConfig(config);
-        // fetch chamado apenas 3 vezes (não duplicado)
-        expect(global.fetch).toHaveBeenCalledTimes(3);
+        // fetch chamado 6 vezes (não duplicado — promise compartilhada entre startCanonBoot e applyCanonToConfig)
+        expect(global.fetch).toHaveBeenCalledTimes(6);
         expect(config.classAdvantages['Guerreiro']).toBeDefined();
     });
 
@@ -446,6 +519,263 @@ describe('canonLoader — applyCanonToConfig()', () => {
         // Config não modificada — fallback seguro
         expect(config.classAdvantages['Guerreiro'].weak).toBe('Curandeiro');
         expect(warn).toHaveBeenCalledWith(expect.stringContaining('applyCanonToConfig falhou'), expect.any(Error));
+        warn.mockRestore();
+    });
+});
+
+// ===========================================================================
+// Fase 2 — getSpeciesData()
+// ===========================================================================
+
+describe('canonLoader — getSpeciesData() (Fase 2)', () => {
+
+    beforeEach(async () => {
+        _resetCanonCache();
+        global.fetch = makeFetchMock(MOCK_CLASSES, MOCK_MATCHUPS, MOCK_SKILLS_MVP, MOCK_SPECIES, MOCK_EVOLUTION_LINES, MOCK_LEVEL_PROGRESSION);
+        await loadCanonData();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        delete global.fetch;
+    });
+
+    it('deve retornar espécie por ID canônico', () => {
+        const sp = getSpeciesData('shieldhorn');
+        expect(sp).not.toBeNull();
+        expect(sp.id).toBe('shieldhorn');
+        expect(sp.class_id).toBe('warrior');
+        expect(sp.archetype).toBe('tank_puro');
+    });
+
+    it('deve retornar espécie por nome PT-BR', () => {
+        const sp = getSpeciesData('Escudicorno');
+        expect(sp).not.toBeNull();
+        expect(sp.id).toBe('shieldhorn');
+    });
+
+    it('deve retornar espécie Presabrasa por ID', () => {
+        const sp = getSpeciesData('emberfang');
+        expect(sp).not.toBeNull();
+        expect(sp.name_pt).toBe('Presabrasa');
+        expect(sp.rarity).toBe('incomum');
+    });
+
+    it('deve retornar null para ID inexistente', () => {
+        expect(getSpeciesData('especie_desconhecida')).toBeNull();
+    });
+
+    it('deve retornar null antes de loadCanonData()', () => {
+        _resetCanonCache();
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        expect(getSpeciesData('shieldhorn')).toBeNull();
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining('getSpeciesData'));
+        warn.mockRestore();
+    });
+});
+
+// ===========================================================================
+// Fase 2 — getSpeciesStatOffsets()
+// ===========================================================================
+
+describe('canonLoader — getSpeciesStatOffsets() (Fase 2)', () => {
+
+    beforeEach(async () => {
+        _resetCanonCache();
+        global.fetch = makeFetchMock(MOCK_CLASSES, MOCK_MATCHUPS, MOCK_SKILLS_MVP, MOCK_SPECIES, MOCK_EVOLUTION_LINES, MOCK_LEVEL_PROGRESSION);
+        await loadCanonData();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        delete global.fetch;
+    });
+
+    it('deve retornar offsets de shieldhorn (hp+1, atk-1, def+1)', () => {
+        const offsets = getSpeciesStatOffsets('shieldhorn');
+        expect(offsets).toEqual({ hp: 1, atk: -1, def: 1, ene: 0, agi: 0 });
+    });
+
+    it('deve retornar offsets de emberfang (atk+1, def-1, agi+1)', () => {
+        const offsets = getSpeciesStatOffsets('emberfang');
+        expect(offsets).toEqual({ hp: 0, atk: 1, def: -1, ene: 0, agi: 1 });
+    });
+
+    it('deve aceitar nome PT-BR', () => {
+        const offsets = getSpeciesStatOffsets('Escudicorno');
+        expect(offsets).not.toBeNull();
+        expect(offsets.def).toBe(1);
+    });
+
+    it('deve retornar null para espécie inexistente', () => {
+        expect(getSpeciesStatOffsets('fantasma')).toBeNull();
+    });
+});
+
+// ===========================================================================
+// Fase 2 — getEvolutionLine()
+// ===========================================================================
+
+describe('canonLoader — getEvolutionLine() (Fase 2)', () => {
+
+    beforeEach(async () => {
+        _resetCanonCache();
+        global.fetch = makeFetchMock(MOCK_CLASSES, MOCK_MATCHUPS, MOCK_SKILLS_MVP, MOCK_SPECIES, MOCK_EVOLUTION_LINES, MOCK_LEVEL_PROGRESSION);
+        await loadCanonData();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        delete global.fetch;
+    });
+
+    it('deve retornar linha por line_id', () => {
+        const line = getEvolutionLine('shieldhorn_line');
+        expect(line).not.toBeNull();
+        expect(line.line_id).toBe('shieldhorn_line');
+        expect(line.stages).toHaveLength(3);
+    });
+
+    it('deve retornar linha por species_id do estágio 1', () => {
+        const line = getEvolutionLine('shieldhorn');
+        expect(line).not.toBeNull();
+        expect(line.line_id).toBe('shieldhorn_line');
+    });
+
+    it('deve retornar linha de emberfang por species_id', () => {
+        const line = getEvolutionLine('emberfang');
+        expect(line).not.toBeNull();
+        expect(line.line_id).toBe('emberfang_line');
+    });
+
+    it('deve retornar linha por class_id', () => {
+        const line = getEvolutionLine('warrior');
+        expect(line).not.toBeNull();
+        expect(line.line_id).toBe('shieldhorn_line');
+    });
+
+    it('deve retornar null para linha inexistente', () => {
+        expect(getEvolutionLine('especie_sem_linha')).toBeNull();
+    });
+
+    it('deve retornar o estágio correto de nível de evolução', () => {
+        const line = getEvolutionLine('shieldhorn_line');
+        expect(line.stages[0].level_at).toBe(1);
+        expect(line.stages[1].level_at).toBe(12);
+        expect(line.stages[2].level_at).toBe(25);
+    });
+
+    it('deve retornar null antes de loadCanonData()', () => {
+        _resetCanonCache();
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        expect(getEvolutionLine('shieldhorn_line')).toBeNull();
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining('getEvolutionLine'));
+        warn.mockRestore();
+    });
+});
+
+// ===========================================================================
+// Fase 2 — getLevelMilestones() e getAllLevelMilestones()
+// ===========================================================================
+
+describe('canonLoader — getLevelMilestones() (Fase 2)', () => {
+
+    beforeEach(async () => {
+        _resetCanonCache();
+        global.fetch = makeFetchMock(MOCK_CLASSES, MOCK_MATCHUPS, MOCK_SKILLS_MVP, MOCK_SPECIES, MOCK_EVOLUTION_LINES, MOCK_LEVEL_PROGRESSION);
+        await loadCanonData();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        delete global.fetch;
+    });
+
+    it('deve retornar slot_1 no nível 1', () => {
+        expect(getLevelMilestones(1)).toEqual(['slot_1']);
+    });
+
+    it('deve retornar slot_2 no nível 5', () => {
+        expect(getLevelMilestones(5)).toEqual(['slot_2']);
+    });
+
+    it('deve retornar slot_3 no nível 15', () => {
+        expect(getLevelMilestones(15)).toEqual(['slot_3']);
+    });
+
+    it('deve retornar slot_4 no nível 30', () => {
+        expect(getLevelMilestones(30)).toEqual(['slot_4']);
+    });
+
+    it('deve retornar array vazio para nível sem milestone', () => {
+        expect(getLevelMilestones(7)).toEqual([]);
+    });
+
+    it('deve retornar array vazio para nível acima de 30 (Fase 2 cobre apenas 1-30)', () => {
+        expect(getLevelMilestones(50)).toEqual([]);
+        expect(getLevelMilestones(100)).toEqual([]);
+    });
+
+    it('getAllLevelMilestones deve retornar todos os marcos indexados por nível', () => {
+        const all = getAllLevelMilestones();
+        expect(all[1]).toEqual(['slot_1']);
+        expect(all[5]).toEqual(['slot_2']);
+        expect(all[30]).toEqual(['slot_4']);
+        // Nível sem marco não aparece na tabela
+        expect(all[7]).toBeUndefined();
+    });
+
+    it('deve retornar array vazio antes de loadCanonData()', () => {
+        _resetCanonCache();
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        expect(getLevelMilestones(1)).toEqual([]);
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining('getLevelMilestones'));
+        warn.mockRestore();
+    });
+});
+
+// ===========================================================================
+// Fase 2 — getClassGrowthRule()
+// ===========================================================================
+
+describe('canonLoader — getClassGrowthRule() (Fase 2)', () => {
+
+    beforeEach(async () => {
+        _resetCanonCache();
+        global.fetch = makeFetchMock(MOCK_CLASSES, MOCK_MATCHUPS, MOCK_SKILLS_MVP, MOCK_SPECIES, MOCK_EVOLUTION_LINES, MOCK_LEVEL_PROGRESSION);
+        await loadCanonData();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        delete global.fetch;
+    });
+
+    it('deve retornar regra de crescimento por ID canônico', () => {
+        const rule = getClassGrowthRule('warrior');
+        expect(rule).toContain('HP/DEF');
+    });
+
+    it('deve retornar regra de crescimento por nome PT-BR', () => {
+        const rule = getClassGrowthRule('Guerreiro');
+        expect(rule).toContain('HP/DEF');
+    });
+
+    it('deve retornar regra de Bárbaro', () => {
+        const rule = getClassGrowthRule('barbarian');
+        expect(rule).toContain('ATK');
+    });
+
+    it('deve retornar null para classe sem regra definida na Fase 2', () => {
+        // Bardo, Ladino, Caçador, Animalista não têm regra nos dados de mock
+        expect(getClassGrowthRule('bard')).toBeNull();
+    });
+
+    it('deve retornar null antes de loadCanonData()', () => {
+        _resetCanonCache();
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        expect(getClassGrowthRule('warrior')).toBeNull();
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining('getClassGrowthRule'));
         warn.mockRestore();
     });
 });
