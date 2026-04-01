@@ -576,6 +576,11 @@
         // Canon Loader — Fase 1: carrega dados canônicos (classes, matchups, skills MVP)
         import * as CanonLoader from './js/canon/canonLoader.js';
         window.CanonLoader = CanonLoader;
+
+        // Inicia o carregamento canônico imediatamente após o parse do módulo,
+        // antes de qualquer chamada a init(). Isso garante que o fetch já estará
+        // em andamento quando init() fizer await applyCanonToConfig().
+        CanonLoader.startCanonBoot();
         
         // Make Combat available globally for the wrapper
         window.Combat = Combat;
@@ -1650,7 +1655,7 @@
 
         // ============================================================================
         // INITIALIZATION
-        function init() {
+        async function init() {
             try {
                 loadFromLocalStorage();
                 
@@ -1693,25 +1698,11 @@
                     console.log('[Init] Egg hatch modal loaded successfully');
                 }
 
-                // Fase 1 — Integração canônica: carrega dados de design/canon/
-                // de forma não-bloqueante; atualiza classAdvantages quando pronto.
-                // Nota: existe uma janela de corrida entre a resolução desta Promise
-                // e o início do primeiro combate. Se um combate começar antes do
-                // carregamento terminar, o motor usará a tabela hardcoded abaixo.
-                // Isso é aceitável na Fase 1 — o comportamento é consistente
-                // dentro de cada sessão de combate uma vez iniciada.
-                if (window.CanonLoader && window.CanonLoader.loadCanonData) {
-                    window.CanonLoader.loadCanonData().then(() => {
-                        const canonAdvantages = window.CanonLoader.getClassAdvantages();
-                        if (canonAdvantages && Object.keys(canonAdvantages).length > 0) {
-                            GameState.config.classAdvantages = canonAdvantages;
-                            console.log('[Canon] classAdvantages atualizado via cânone.');
-                        }
-                    }).catch(err => {
-                        // Falha silenciosa: motor continua com tabela hardcoded
-                        console.warn('[Canon] Falha ao carregar dados canônicos. Usando tabela hardcoded.', err);
-                    });
-                }
+                // Boot canônico — Fase 1
+                // Aguarda a leitura dos JSONs canônicos (já iniciada no parse do módulo)
+                // e aplica classAdvantages ao config ANTES de updateAllViews().
+                // Se o carregamento falhar, a config permanece com a tabela hardcoded.
+                await CanonLoader.applyCanonToConfig(GameState.config);
 
                 updateAllViews();
                 mmUpdateTherapistUI(); // Update therapist mode UI
@@ -10940,8 +10931,8 @@
         // DOMContentLoaded já tenha disparado antes do módulo terminar de avaliar.
         // Estado 'interactive' é suficiente pois o app só precisa de elementos DOM;
         // CSS e imagens não são requisito para a inicialização do JavaScript.
-        function bootApp() {
-            init();   // Carrega estado salvo e renderiza views
+        async function bootApp() {
+            await init();  // Aguarda boot canônico + estado salvo antes de mostrar intro
             mmBoot(); // Mostra overlay de introdução
         }
         if (document.readyState === 'loading') {

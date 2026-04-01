@@ -16,6 +16,8 @@ import {
     classIdFromPtbr,
     classPtbrFromId,
     loadCanonData,
+    startCanonBoot,
+    applyCanonToConfig,
     _resetCanonCache,
 } from '../js/canon/canonLoader.js';
 
@@ -306,7 +308,9 @@ describe('canonLoader — getMvpSkillsByClass()', () => {
     });
 
     it('habilidade de Bardo (fora do MVP fase 1) não deve aparecer', () => {
-        // Bardo está fora do subconjunto MVP Fase 1 (Guerreiro, Bárbaro, Mago, Curandeiro)
+        // Verificação: MOCK_SKILLS_MVP contém a entrada do Bardo (bard_song)
+        expect(MOCK_SKILLS_MVP.some(s => s.class_id === 'bard')).toBe(true);
+        // Mesmo com a entrada presente no arquivo, _indexMvpSkills deve filtrá-la
         const skills = getMvpSkillsByClass('Bardo');
         expect(skills).toEqual([]);
     });
@@ -357,5 +361,91 @@ describe('canonLoader — tratamento de erro em loadCanonData()', () => {
     it('deve lançar erro se fetch rejeitar', async () => {
         global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
         await expect(loadCanonData()).rejects.toThrow('Network error');
+    });
+});
+
+describe('canonLoader — startCanonBoot()', () => {
+
+    beforeEach(() => {
+        _resetCanonCache();
+        global.fetch = makeFetchMock(MOCK_CLASSES, MOCK_MATCHUPS, MOCK_SKILLS_MVP);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        delete global.fetch;
+    });
+
+    it('deve retornar a mesma promise em chamadas múltiplas (idempotente)', async () => {
+        const p1 = startCanonBoot();
+        const p2 = startCanonBoot();
+        expect(p1).toBe(p2);
+        await p1;
+        // fetch deve ter sido chamado apenas 3 vezes no total
+        expect(global.fetch).toHaveBeenCalledTimes(3);
+    });
+
+    it('deve carregar os dados quando aguardado', async () => {
+        await startCanonBoot();
+        // Após o boot, getClassAdvantages deve funcionar
+        const adv = getClassAdvantages();
+        expect(adv['Guerreiro']).toBeDefined();
+    });
+});
+
+describe('canonLoader — applyCanonToConfig()', () => {
+
+    beforeEach(() => {
+        _resetCanonCache();
+        global.fetch = makeFetchMock(MOCK_CLASSES, MOCK_MATCHUPS, MOCK_SKILLS_MVP);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        delete global.fetch;
+    });
+
+    it('deve sobrescrever classAdvantages no config após carregar', async () => {
+        const config = {
+            classAdvantages: {
+                'Guerreiro': { strong: 'Ladino', weak: 'Curandeiro' }, // tabela legada
+            }
+        };
+        await applyCanonToConfig(config);
+        // Deve ter substituído pela tabela canônica
+        expect(config.classAdvantages['Guerreiro'].weak).toBe('Mago');
+        expect(config.classAdvantages['Mago']).toBeDefined();
+    });
+
+    it('deve funcionar com startCanonBoot já iniciado (sem fetch duplo)', async () => {
+        startCanonBoot(); // simula o início precoce no parse do módulo
+        const config = { classAdvantages: {} };
+        await applyCanonToConfig(config);
+        // fetch chamado apenas 3 vezes (não duplicado)
+        expect(global.fetch).toHaveBeenCalledTimes(3);
+        expect(config.classAdvantages['Guerreiro']).toBeDefined();
+    });
+
+    it('deve ser seguro com config null (não lança erro)', async () => {
+        await expect(applyCanonToConfig(null)).resolves.toBeUndefined();
+    });
+
+    it('deve ser seguro com config undefined (não lança erro)', async () => {
+        await expect(applyCanonToConfig(undefined)).resolves.toBeUndefined();
+    });
+
+    it('não deve modificar config se o fetch falhar', async () => {
+        _resetCanonCache();
+        global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+        const originalAdvantages = { 'Guerreiro': { strong: 'Ladino', weak: 'Curandeiro' } };
+        const config = { classAdvantages: { ...originalAdvantages } };
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        await applyCanonToConfig(config);
+
+        // Config não modificada — fallback seguro
+        expect(config.classAdvantages['Guerreiro'].weak).toBe('Curandeiro');
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining('applyCanonToConfig falhou'), expect.any(Error));
+        warn.mockRestore();
     });
 });

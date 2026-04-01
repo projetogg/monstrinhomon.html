@@ -39,6 +39,11 @@ const MVP_PHASE1_CLASSES = new Set(['Guerreiro', 'Bárbaro', 'Mago', 'Curandeiro
 // ---------------------------------------------------------------------------
 let _canonData = null; // { classes, matchups, skillsMvp }
 
+// Pre-carregamento: promise iniciada imediatamente no parse do módulo.
+// Isso garante que o carregamento comece o mais cedo possível — antes de init().
+// A promise é reutilizada por qualquer chamada subsequente a loadCanonData().
+let _canonBootPromise = null;
+
 // ---------------------------------------------------------------------------
 // Helpers internos
 // ---------------------------------------------------------------------------
@@ -58,9 +63,9 @@ async function _fetchJson(path) {
             baseUrl = url.href;
         }
     } catch (err) {
-        // Falha no build da URL (ex: ambiente sem import.meta.url — testes Node).
-        // Nesse caso, o fetch usará um caminho relativo simples como fallback.
-        console.debug('[canonLoader] Construção de URL absoluta indisponível; usando caminho relativo.', err);
+        // Falha no build da URL (ex: ambiente Node sem suporte completo a import.meta.url).
+        // O fetch usará um caminho relativo simples como fallback.
+        console.debug('[canonLoader] URL absoluta indisponível; usando caminho relativo (ambiente Node).', err);
         baseUrl = '../../' + path;
     }
 
@@ -146,11 +151,60 @@ function _indexMvpSkills(skillsArray) {
 // ---------------------------------------------------------------------------
 
 /**
+ * Inicia o carregamento canônico o mais cedo possível (chamado no parse do módulo).
+ * Idempotente: chamadas repetidas retornam a mesma promise.
+ * @returns {Promise<{ classes, matchups, skillsMvp }>}
+ */
+export function startCanonBoot() {
+    if (!_canonBootPromise) {
+        _canonBootPromise = _loadCanonDataInternal();
+    }
+    return _canonBootPromise;
+}
+
+/**
  * Carrega todos os arquivos de cânone da Fase 1.
  * Idempotente: chamadas subsequentes retornam o cache.
  * @returns {Promise<{ classes: Object, matchups: Object, skillsMvp: Object }>}
  */
 export async function loadCanonData() {
+    return startCanonBoot();
+}
+
+/**
+ * Aplica dados canônicos a um objeto de configuração do GameState.
+ * Deve ser chamado com `await` dentro do boot, após loadFromLocalStorage().
+ *
+ * Comportamento de fallback: se o carregamento falhar, a config não é modificada
+ * e o motor continua com a tabela hardcoded existente.
+ *
+ * @param {Object} config - GameState.config (mutado no local)
+ * @returns {Promise<void>}
+ */
+export async function applyCanonToConfig(config) {
+    if (!config) return;
+    try {
+        await startCanonBoot();
+        const advantages = _buildClassAdvantagesFromCanon(_canonData.matchups);
+        if (advantages && Object.keys(advantages).length > 0) {
+            config.classAdvantages = advantages;
+            console.log('[canonLoader] classAdvantages aplicado via cânone.');
+        }
+    } catch (err) {
+        // Fallback seguro: config permanece inalterada com a tabela hardcoded de classAdvantages
+        console.warn('[canonLoader] applyCanonToConfig falhou; mantendo config legada.', err);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Implementação interna do carregamento
+// ---------------------------------------------------------------------------
+
+/**
+ * Efetua o carregamento real dos 3 JSONs e preenche _canonData.
+ * @private
+ */
+async function _loadCanonDataInternal() {
     if (_canonData) return _canonData;
 
     const [classesRaw, matchupsRaw, skillsMvpRaw] = await Promise.all([
@@ -159,8 +213,8 @@ export async function loadCanonData() {
         _fetchJson('design/canon/skills_mvp_phase1.json'),
     ]);
 
-    const classIndex  = _indexClasses(classesRaw);
-    const matchups    = matchupsRaw;
+    const classIndex    = _indexClasses(classesRaw);
+    const matchups      = matchupsRaw;
     const skillsByClass = _indexMvpSkills(skillsMvpRaw);
 
     _canonData = {
@@ -216,10 +270,11 @@ export function getMvpSkillsByClass(classNameOrId) {
 }
 
 /**
- * Reseta o cache (útil para testes).
+ * Reseta o cache e a promise de boot (útil para testes).
  */
 export function _resetCanonCache() {
     _canonData = null;
+    _canonBootPromise = null;
 }
 
 /**
