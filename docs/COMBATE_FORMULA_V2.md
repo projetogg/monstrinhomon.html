@@ -245,26 +245,25 @@ Animalista: neutro contra todos
 
 | Tipo | PWR típico | Custo ENE |
 |------|-----------|-----------|
-| Ataque Básico (sem evolução) | 4–5 | 0 |
-| Habilidade Tier I | 8–10 | 3–5 |
-| Habilidade Tier II | 12–16 | 5–8 |
-| Habilidade Tier III | 18–22 | 8–12 |
-| Assinatura de Classe | 14–20 (+ efeito especial) | 8–14 |
+| Ataque Básico (Slot 1) | 2–4 | 0 |
+| Habilidade Inicial (Slot 2) | 4–6 | 2 |
+| Habilidade Tática (Slot 3) | 0–6 | 3 |
+| Assinatura de Classe (Slot 4) | 5–8 (+ efeito especial) | 4 |
 
-> **Nota sobre PWR:** Na nova fórmula, o dano já soma ATK diretamente (`DanoBase = PWR + ATK − Mitigação`). Por isso os valores de PWR são menores que na v2.0 — o ATK não entra mais como "ratio", entra como soma direta.
+> **Nota sobre PWR:** Na nova fórmula, o dano já soma ATK diretamente (`DanoBase = PWR + ATK − Mitigação`). Por isso os valores de PWR são intencionalmente baixos (2–8) — o ATK não entra como "ratio", entra como soma direta. Habilidades de suporte, buff e controle podem ter PWR 0 e ainda assim serem fortíssimas.
 
 ### 9.1 PWR do Ataque Básico por Classe
 
-| Classe | PWR Básico | ATK típico Lv1 | DanoBase esperado Lv1 (vs DEF 4) |
-|--------|-----------|---------------|----------------------------------|
-| Guerreiro | 4 | 7 | 4+7−2 = **9** |
-| Bárbaro | 5 | 8 | 5+8−2 = **11** |
-| Mago | 4 | 8 | 4+8−2 = **10** |
-| Curandeiro | 3 | 4 | 3+4−2 = **5** |
-| Ladino | 4 | 7 | 4+7−2 = **9** |
-| Bardo | 3 | 6 | 3+6−2 = **7** |
-| Caçador | 4 | 7 | 4+7−2 = **9** |
-| Animalista | 4 | 6 | 4+6−2 = **8** |
+| Classe | PWR Básico | ATK Lv1 | DanoBase esperado Lv1 (vs DEF 4 → mit=2) |
+|--------|-----------|---------|-------------------------------------------|
+| Guerreiro | 3 | 5 | 3+5−2 = **6** |
+| Bárbaro | 4 | 8 | 4+8−2 = **10** |
+| Mago | 3 | 7 | 3+7−2 = **8** |
+| Curandeiro | 2 | 4 | 2+4−2 = **4** |
+| Ladino | 3 | 7 | 3+7−1 = **9** *(vs DEF 2 → mit=1)* |
+| Bardo | 2 | 4 | 2+4−2 = **4** |
+| Caçador | 3 | 6 | 3+6−2 = **7** |
+| Animalista | 3 | 6 | 3+6−2 = **7** |
 
 ---
 

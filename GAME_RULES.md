@@ -484,7 +484,17 @@ A versão 2 do sistema de combate foi especificada em cinco documentos canônico
 
 ## CHANGELOG
 
-### v2.2 (2026-04-01)
+### v2.3 (2026-04-01)
+- Kit canônico de habilidades por classe (`HABILIDADES_POR_CLASSE_V2.md` v2.1)
+  - Escala de PWR alinhada com nova escala de atributos: básico 2–3, habilidade 4–6, forte 7–8, assinatura 9+
+  - Nomes canônicos revisados por classe (ex: Golpe Firme, Pancada Selvagem, Rajada Arcana, Nota Cortante)
+  - Tabela de 4 slots com campos: slot/nome/nível/ENE/PWR/alcance/tipo/efeito/evolução
+  - Evoluções nomeadas por habilidade (ex: Golpe Firme → Investida de Guarda)
+  - Tabela-resumo geral com todos os slots por classe
+  - Regras fixas A–E: básico sempre útil, assinatura não é só dano, limitação obrigatória, suporte coletivo limitado, condicional > universal
+  - Progressão de desbloqueio consolidada: Lv1/5/10/15/22/30/40+
+
+
 - Tabela canônica definitiva de atributos-base por classe (`ATRIBUTOS_BASE_POR_CLASSE_V2.md` v2.1)
   - Escala nova: HP 16–26, ATK 3–8, DEF 2–8, ENE 3–8, AGI 2–8
   - Valores revisados: Guerreiro HP24/DEF8/ATK5/AGI3 · Bárbaro HP22/ATK8/DEF4 · Ladino HP17/ATK7/DEF2/AGI8

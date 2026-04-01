@@ -1,8 +1,8 @@
 # Documento 2 — Kit de Habilidades por Classe v2
 
 > **Status:** Canônico — Aprovado para implementação  
-> **Versão:** 2.0  
-> **Última atualização:** 2026-03-31
+> **Versão:** 2.1  
+> **Última atualização:** 2026-04-01
 
 ---
 
@@ -15,302 +15,252 @@ O conjunto final representa a identidade completa da sua classe.
 
 | Slot | Tipo | Energia | Descrição |
 |------|------|---------|-----------|
-| 1 | Ataque Básico (evoluído) | **0** | Ação permanente, sempre disponível |
+| 1 | Ataque Básico (evoluível) | **0** | Ação permanente, sempre disponível |
 | 2 | Habilidade Inicial | Sim | Primeiro poder especial desbloqueado |
 | 3 | Habilidade Tática | Sim | Poder secundário (dano, controle, mobilidade ou suporte) |
 | 4 | Assinatura de Classe | Sim | Ação exclusiva que define o papel da classe |
 
-### 1.2 Progressão de Desbloqueio (padrão)
+### 1.2 Escala de Poder Base (PWR)
 
-| Faixa de Nível | Evento |
-|----------------|--------|
-| Nível 1 | Slot 1 ativo (ataque básico) |
-| Nível 5 | Slot 2 desbloqueado (Habilidade Inicial Tier I) |
-| Nível 10 | Slot 1 evolui (ataque básico Tier II) |
-| Nível 15 | Slot 3 desbloqueado (Habilidade Tática Tier I) |
-| Nível 20 | Slot 2 evolui para Tier II |
-| Nível 30 | Slot 4 desbloqueado (Assinatura de Classe Tier I) |
-| Nível 40 | Slot 3 evolui para Tier II |
-| Nível 50 | Slot 1 evolui para Tier III (forma final) |
-| Nível 60 | Slot 4 evolui para Tier II (assinatura aprimorada) |
+| Faixa | Significado |
+|-------|-------------|
+| **2–3** | Básico leve |
+| **4** | Básico forte ou habilidade leve |
+| **5–6** | Habilidade média |
+| **7–8** | Habilidade forte |
+| **9+** | Assinatura muito impactante — exige condição, custo ou limitação |
 
-> Nota: esses valores podem ser ajustados por Monstrinhomon individual. A tabela acima é o padrão da classe.
+> **Regra importante:** nem toda habilidade forte precisa ter PWR alto.  
+> Buff, debuff, proteção, reposicionamento e cura podem ser fortíssimos com PWR baixo ou zero.
+
+### 1.3 Progressão de Desbloqueio
+
+| Nível | Evento |
+|------:|--------|
+| 1 | Slot 1 ativo (ataque básico) |
+| 5 | Slot 2 desbloqueado |
+| 10 | Evolução leve do Slot 1 ou 2 |
+| 15 | Slot 3 desbloqueado |
+| 22 | Evolução do Slot 2 ou 3 |
+| 30 | Slot 4 desbloqueado (Assinatura) |
+| 40+ | Evolução final / refinamento |
+
+> Early game é simples · Meio do jogo amplia a tomada de decisão · Mais tarde a identidade da classe fecha de verdade.
 
 ---
 
 ## 2. Guerreiro
 
-**Função canônica:** Proteger, sustentar linha de frente, absorver pressão, punir alvo próximo.
+**Função canônica:** Linha de frente, proteção, sustentação de pressão.  
+**Leitura:** o valor está na absorção e segurança tática — não em explodir dano.
 
-### Slots
+| Slot | Habilidade | Nível | ENE | PWR | Alcance | Tipo | Efeito | Evolução |
+|------|-----------|------:|----:|----:|---------|------|--------|----------|
+| 1 | Golpe Firme | 1 | 0 | 3 | Curto | Ofensiva básica | Ataque consistente corpo a corpo | Investida de Guarda |
+| 2 | Corte Pesado | 5 | 2 | 5 | Curto | Ofensiva | Golpe mais forte que o básico | Golpe Demolidor |
+| 3 | Postura Defensiva | 15 | 3 | 0 | Próprio | Defesa | Ganha bônus defensivo por 1 turno | Muralha de Ferro |
+| 4 | Proteger Aliado | 30 | 4 | 0 | Curto/aliado | Assinatura | Intercepta parte do dano de um aliado por 1 turno | Guarda Heroica |
 
-#### Slot 1 — Pancada de Escudo (Ataque Básico)
-| Tier | Nível | Poder | ENE | Efeito extra |
-|------|-------|-------|-----|--------------|
-| I | 1 | 13 | 0 | — |
-| II | 10 | 16 | 0 | Chance 20% de reduzir DEF inimigo em 1 por 1 turno |
-| III | 50 | 19 | 0 | Sempre reduz DEF inimigo em 1 por 1 turno |
+### Evoluções
 
-#### Slot 2 — Golpe de Espada
-| Tier | Nível | Poder | ENE | Efeito |
-|------|-------|-------|-----|--------|
-| I | 5 | 20 | 4 | Dano direto, alcance curto |
-| II | 20 | 28 | 6 | Dano direto + 30% chance de atordoar 1 turno |
-
-#### Slot 3 — Provocar
-| Tier | Nível | Poder | ENE | Efeito |
-|------|-------|-------|-----|--------|
-| I | 15 | 0 | 4 | Força inimigo a atacar o Guerreiro no próximo turno |
-| II | 40 | 0 | 5 | Força 2 inimigos a atacarem o Guerreiro no próximo turno |
-
-#### Slot 4 — Proteção Total *(Assinatura)*
-| Tier | Nível | Poder | ENE | Efeito exclusivo |
-|------|-------|-------|-----|-----------------|
-| I | 30 | 0 | 8 | No próximo turno, **50% do dano** dirigido a um aliado é redirecionado ao Guerreiro |
-| II | 60 | 0 | 10 | No próximo turno, **100% do dano** dirigido a um aliado é redirecionado ao Guerreiro; Guerreiro recebe +3 DEF temporária |
+| Habilidade | Evolução | Descrição da melhoria |
+|------------|----------|----------------------|
+| Golpe Firme | **Investida de Guarda** | Básico ganha leve bônus de confronto se estiver na posição Frente |
+| Corte Pesado | **Golpe Demolidor** | Mantém dano alto e pode aplicar enfraquecimento de DEF leve |
+| Postura Defensiva | **Muralha de Ferro** | Melhora o bônus defensivo e pode dividir proteção com aliado próximo |
+| Proteger Aliado | **Guarda Heroica** | Intercepta dano e concede escudo leve ao aliado |
 
 ---
 
 ## 3. Bárbaro
 
-**Função canônica:** Agressão bruta, pressão constante, risco alto/recompensa alta.
+**Função canônica:** Agressão pesada, pressão e burst.  
+**Leitura:** bate mais que o Guerreiro, mas não sustenta o mesmo. Depende de encaixar pressão.
 
-### Slots
+| Slot | Habilidade | Nível | ENE | PWR | Alcance | Tipo | Efeito | Evolução |
+|------|-----------|------:|----:|----:|---------|------|--------|----------|
+| 1 | Pancada Selvagem | 1 | 0 | 4 | Curto | Ofensiva básica | Ataque básico agressivo | Fúria Cortante |
+| 2 | Golpe Brutal | 5 | 2 | 6 | Curto | Ofensiva | Dano elevado de impacto | Destruidor de Ossos |
+| 3 | Fúria | 15 | 3 | 0 | Próprio | Buff | Aumenta ATK por 1 turno com contrapartida defensiva leve | Frenesi de Batalha |
+| 4 | Berserk | 30 | 4 | 7 | Curto | Assinatura | Grande explosão ofensiva com risco | Ira Colossal |
 
-#### Slot 1 — Porrada Bruta (Ataque Básico)
-| Tier | Nível | Poder | ENE | Efeito extra |
-|------|-------|-------|-----|--------------|
-| I | 1 | 14 | 0 | — |
-| II | 10 | 17 | 0 | +1 ATK temporário a si mesmo por 1 turno se acertar |
-| III | 50 | 20 | 0 | +2 ATK temporário + perde 1 DEF por turno (fúria passiva) |
+### Evoluções
 
-#### Slot 2 — Golpe Brutal
-| Tier | Nível | Poder | ENE | Efeito |
-|------|-------|-------|-----|--------|
-| I | 5 | 26 | 6 | Alto dano bruto |
-| II | 20 | 34 | 8 | Alto dano + ignora 2 pontos de DEF do alvo |
-
-#### Slot 3 — Grito de Fúria
-| Tier | Nível | Poder | ENE | Efeito |
-|------|-------|-------|-----|--------|
-| I | 15 | 0 | 4 | +3 ATK por 2 turnos, −1 DEF por 2 turnos (auto-buff) |
-| II | 40 | 0 | 5 | +5 ATK por 3 turnos, −2 DEF por 3 turnos |
-
-#### Slot 4 — Sobrecarga *(Assinatura)*
-| Tier | Nível | Poder | ENE | Efeito exclusivo |
-|------|-------|-------|-----|-----------------|
-| I | 30 | 30 | 12 | Dobra o ATK para este ataque; Bárbaro não pode usar habilidades no próximo turno |
-| II | 60 | 38 | 14 | Dobra ATK + ignora DEF completamente; 2 turnos sem habilidades depois |
+| Habilidade | Evolução | Descrição da melhoria |
+|------------|----------|----------------------|
+| Pancada Selvagem | **Fúria Cortante** | Básico com chance leve de pressionar mais em Acerto Forte |
+| Golpe Brutal | **Destruidor de Ossos** | Mais dano e pequeno debuff de DEF no alvo |
+| Fúria | **Frenesi de Batalha** | Buff ofensivo maior, risco maior |
+| Berserk | **Ira Colossal** | Burst mais alto, mas sempre com custo ou vulnerabilidade |
 
 ---
 
 ## 4. Mago
 
-**Função canônica:** Dano técnico, controle, efeitos especiais.
+**Função canônica:** Dano técnico, controle, efeito ofensivo.  
+**Leitura:** bom em habilidade e controle — não deve ser durável.
 
-### Slots
+| Slot | Habilidade | Nível | ENE | PWR | Alcance | Tipo | Efeito | Evolução |
+|------|-----------|------:|----:|----:|---------|------|--------|----------|
+| 1 | Rajada Arcana | 1 | 0 | 3 | Médio | Ofensiva básica | Ataque mágico padrão | Seta Mística |
+| 2 | Explosão Etérea | 5 | 2 | 5 | Médio | Ofensiva | Golpe mágico com boa pressão | Onda Arcana |
+| 3 | Prisão de Energia | 15 | 3 | 1 | Médio | Controle | Reduz AGI, trava reposicionamento ou dificulta fuga | Selo Arcano |
+| 4 | Tempestade Arcana | 30 | 4 | 6 | Médio/Área | Assinatura | Dano em área pequena ou dano + debuff | Cataclismo Etéreo |
 
-#### Slot 1 — Faísca Arcana (Ataque Básico)
-| Tier | Nível | Poder | ENE | Efeito extra |
-|------|-------|-------|-----|--------------|
-| I | 1 | 11 | 0 | — |
-| II | 10 | 14 | 0 | 20% chance de reduzir ATK inimigo em 1 por 1 turno |
-| III | 50 | 17 | 0 | Sempre reduz ATK inimigo em 1 por 1 turno |
+### Evoluções
 
-#### Slot 2 — Magia Elemental
-| Tier | Nível | Poder | ENE | Efeito |
-|------|-------|-------|-----|--------|
-| I | 5 | 22 | 4 | Dano mágico padrão |
-| II | 20 | 30 | 6 | Dano mágico + 25% chance de enraizar (ROOT) por 1 turno |
-
-#### Slot 3 — Onda de Choque
-| Tier | Nível | Poder | ENE | Efeito |
-|------|-------|-------|-----|--------|
-| I | 15 | 18 | 5 | Dano + reduz AGI do alvo em 2 por 2 turnos |
-| II | 40 | 24 | 7 | Dano + reduz AGI em 3 + −1 ATK por 2 turnos |
-
-#### Slot 4 — Explosão Arcana *(Assinatura)*
-| Tier | Nível | Poder | ENE | Efeito exclusivo |
-|------|-------|-------|-----|-----------------|
-| I | 30 | 36 | 12 | Burst de alto dano em 1 alvo; ignora bônus de posição defensiva |
-| II | 60 | 44 | 14 | Burst em 1 alvo ou dano reduzido (×0.6) em todos os inimigos (escolher) |
+| Habilidade | Evolução | Descrição da melhoria |
+|------------|----------|----------------------|
+| Rajada Arcana | **Seta Mística** | Básico melhora precisão e dano |
+| Explosão Etérea | **Onda Arcana** | Maior pressão ofensiva, pode aplicar vulnerabilidade leve |
+| Prisão de Energia | **Selo Arcano** | Controle mais forte e mais versátil |
+| Tempestade Arcana | **Cataclismo Etéreo** | Assinatura mais impactante, ainda sem exagero |
 
 ---
 
 ## 5. Curandeiro
 
-**Função canônica:** Sustentação, cura, suporte de grupo.
+**Função canônica:** Sustentação, recuperação, suporte.  
+**Leitura:** não pode ter dano alto e cura alta ao mesmo tempo.
 
-### Slots
+| Slot | Habilidade | Nível | ENE | PWR | Alcance | Tipo | Efeito | Evolução |
+|------|-----------|------:|----:|----:|---------|------|--------|----------|
+| 1 | Toque Vital | 1 | 0 | 2 | Médio | Ofensiva básica | Ataque simples de suporte | Luz Restauradora |
+| 2 | Cura Simples | 5 | 2 | 4 | Médio/aliado | Cura | Cura alvo único | Cura Restauradora |
+| 3 | Benção Suave | 15 | 3 | 0 | Médio/aliado | Buff | Redução de dano, regeneração leve ou escudo pequeno | Aura Protetora |
+| 4 | Cura em Área | 30 | 4 | 5 | Grupo | Assinatura | Cura vários aliados | Grande Onda Vital |
 
-#### Slot 1 — Toque Sagrado (Ataque Básico)
-| Tier | Nível | Poder | ENE | Efeito extra |
-|------|-------|-------|-----|--------------|
-| I | 1 | 10 | 0 | — |
-| II | 10 | 12 | 0 | Cura o Curandeiro em 2 HP ao acertar |
-| III | 50 | 14 | 0 | Cura o Curandeiro em 4 HP ao acertar |
+### Evoluções
 
-#### Slot 2 — Cura Simples
-| Tier | Nível | Poder | ENE | Efeito |
-|------|-------|-------|-----|--------|
-| I | 5 | 0 | 5 | Cura aliado: 15 HP fixos |
-| II | 20 | 0 | 7 | Cura aliado: 30 HP fixos |
-
-#### Slot 3 — Bênção
-| Tier | Nível | Poder | ENE | Efeito |
-|------|-------|-------|-----|--------|
-| I | 15 | 0 | 4 | +2 DEF a um aliado por 2 turnos |
-| II | 40 | 0 | 5 | +3 DEF + +1 ATK a um aliado por 3 turnos |
-
-#### Slot 4 — Cura em Área *(Assinatura)*
-| Tier | Nível | Poder | ENE | Efeito exclusivo |
-|------|-------|-------|-----|-----------------|
-| I | 30 | 0 | 10 | Cura **todos os aliados** em 12 HP |
-| II | 60 | 0 | 12 | Cura todos em 20 HP + remove 1 debuff de cada aliado |
+| Habilidade | Evolução | Descrição da melhoria |
+|------------|----------|----------------------|
+| Toque Vital | **Luz Restauradora** | Básico pode gerar microefeito de suporte (cura leve passiva) |
+| Cura Simples | **Cura Restauradora** | Cura melhor e pode remover debuff leve |
+| Benção Suave | **Aura Protetora** | Buff mais forte e mais limpo |
+| Cura em Área | **Grande Onda Vital** | Cura em grupo melhor, com pequeno extra funcional |
 
 ---
 
 ## 6. Bardo
 
-**Função canônica:** Buff, debuff, manipulação de ritmo de combate.
+**Função canônica:** Buff, debuff, ritmo e suporte coletivo.  
+**Leitura:** vale pelo coletivo — sozinho não deve parecer um atacante forte.
 
-### Slots
+| Slot | Habilidade | Nível | ENE | PWR | Alcance | Tipo | Efeito | Evolução |
+|------|-----------|------:|----:|----:|---------|------|--------|----------|
+| 1 | Nota Cortante | 1 | 0 | 2 | Longo | Ofensiva básica | Ataque sonoro à distância | Melodia Penetrante |
+| 2 | Canção de Coragem | 5 | 2 | 0 | Grupo/aliado | Buff | Aumenta ATK, confronto ou moral tática de aliados | Hino Inspirador |
+| 3 | Eco Desafinador | 15 | 3 | 1 | Longo | Debuff | Reduz ATK, AGI ou estabilidade do alvo | Balada da Ruína |
+| 4 | Concerto de Guerra | 30 | 4 | 0 | Grupo/Área | Assinatura | Buffa aliados e/ou debuffa inimigos por curto prazo | Sinfonia Suprema |
 
-#### Slot 1 — Nota Afiada (Ataque Básico)
-| Tier | Nível | Poder | ENE | Efeito extra |
-|------|-------|-------|-----|--------------|
-| I | 1 | 11 | 0 | Ataque sonoro à distância |
-| II | 10 | 14 | 0 | Reduz moral inimiga: −1 ATK por 1 turno (25% chance) |
-| III | 50 | 17 | 0 | Sempre aplica −1 ATK ao alvo por 1 turno |
+### Evoluções
 
-#### Slot 2 — Canção de Coragem
-| Tier | Nível | Poder | ENE | Efeito |
-|------|-------|-------|-----|--------|
-| I | 5 | 0 | 4 | +2 ATK a um aliado por 2 turnos |
-| II | 20 | 0 | 5 | +3 ATK a um aliado por 3 turnos |
-
-#### Slot 3 — Melodia Perturbadora
-| Tier | Nível | Poder | ENE | Efeito |
-|------|-------|-------|-----|--------|
-| I | 15 | 12 | 4 | Dano sonoro leve + reduz DEF inimigo em 2 por 2 turnos |
-| II | 40 | 16 | 5 | Dano + −3 DEF + −1 AGI por 2 turnos |
-
-#### Slot 4 — Sinfonia de Campo *(Assinatura)*
-| Tier | Nível | Poder | ENE | Efeito exclusivo |
-|------|-------|-------|-----|-----------------|
-| I | 30 | 0 | 10 | +2 ATK **a todos os aliados** e −2 ATK **a todos os inimigos** por 2 turnos |
-| II | 60 | 0 | 12 | +3 ATK a aliados, −3 ATK a inimigos, +1 AGI a aliados por 3 turnos |
+| Habilidade | Evolução | Descrição da melhoria |
+|------------|----------|----------------------|
+| Nota Cortante | **Melodia Penetrante** | Básico ganha melhor pressão à distância |
+| Canção de Coragem | **Hino Inspirador** | Buff melhor ou mais amplo (mais aliados ou mais turnos) |
+| Eco Desafinador | **Balada da Ruína** | Debuff mais relevante (múltiplos stats ou duração) |
+| Concerto de Guerra | **Sinfonia Suprema** | Efeito coletivo curto, forte e controlado |
 
 ---
 
 ## 7. Ladino
 
-**Função canônica:** Velocidade, precisão, finalização, infiltração tática.
+**Função canônica:** Velocidade, oportunidade, execução.  
+**Leitura:** precisa de setup ou oportunidade — dano máximo sempre quebraria o sistema.
 
-### Slots
+| Slot | Habilidade | Nível | ENE | PWR | Alcance | Tipo | Efeito | Evolução |
+|------|-----------|------:|----:|----:|---------|------|--------|----------|
+| 1 | Corte Rápido | 1 | 0 | 3 | Curto/Médio | Ofensiva básica | Ataque ágil e responsivo | Lâmina Veloz |
+| 2 | Golpe Sorrateiro | 5 | 2 | 5 | Curto | Ofensiva condicional | Dano maior em alvo vulnerável, lento ou exposto | Assalto Sombrio |
+| 3 | Passo Sombrio | 15 | 3 | 0 | Próprio | Mobilidade | Reposiciona, escapa de pressão ou ganha vantagem breve | Dança das Sombras |
+| 4 | Execução | 30 | 4 | 7 | Curto | Assinatura | Grande dano contra alvo fragilizado | Golpe Fatal |
 
-#### Slot 1 — Golpe Rápido (Ataque Básico)
-| Tier | Nível | Poder | ENE | Efeito extra |
-|------|-------|-------|-----|--------------|
-| I | 1 | 12 | 0 | Alta AGI; vai antes na maioria dos encontros |
-| II | 10 | 15 | 0 | 20% chance de atacar duas vezes no mesmo turno |
-| III | 50 | 18 | 0 | 35% chance de atacar duas vezes; o 2º ataque é sempre Acerto Normal mínimo |
+### Evoluções
 
-#### Slot 2 — Golpe Certeiro
-| Tier | Nível | Poder | ENE | Efeito |
-|------|-------|-------|-----|--------|
-| I | 5 | 20 | 4 | +4 à Rolagem de Ataque neste turno |
-| II | 20 | 26 | 5 | +6 à Rolagem de Ataque + ignora buffs defensivos do alvo |
-
-#### Slot 3 — Sombra Rápida
-| Tier | Nível | Poder | ENE | Efeito |
-|------|-------|-------|-----|--------|
-| I | 15 | 0 | 4 | Move o Ladino para qualquer posição gratuitamente; próximo ataque tem +2 ATK |
-| II | 40 | 0 | 5 | Move + invisibilidade por 1 turno (inimigos não podem mirar o Ladino) |
-
-#### Slot 4 — Execução *(Assinatura)*
-| Tier | Nível | Poder | ENE | Efeito exclusivo |
-|------|-------|-------|-----|-----------------|
-| I | 30 | 28 | 10 | Se o alvo estiver com HP ≤ 30%, o dano é multiplicado por ×2 |
-| II | 60 | 34 | 12 | Se HP ≤ 40%, dano ×2.5; se HP ≤ 20%, dano ×3 |
+| Habilidade | Evolução | Descrição da melhoria |
+|------------|----------|----------------------|
+| Corte Rápido | **Lâmina Veloz** | Básico melhor em alvos vulneráveis ou lentos |
+| Golpe Sorrateiro | **Assalto Sombrio** | Amplia condição de dano alto (mais situações válidas) |
+| Passo Sombrio | **Dança das Sombras** | Reposiciona melhor e pode dar bônus breve de AGI |
+| Execução | **Golpe Fatal** | Assinatura forte, ainda dependente de condição de HP |
 
 ---
 
 ## 8. Caçador
 
-**Função canônica:** Pressão à distância, foco de alvo, consistência de dano.
+**Função canônica:** Consistência ofensiva à distância, marcação, foco.  
+**Leitura:** consistente, não burst cego — o máximo depende de marcação e posição.
 
-### Slots
+| Slot | Habilidade | Nível | ENE | PWR | Alcance | Tipo | Efeito | Evolução |
+|------|-----------|------:|----:|----:|---------|------|--------|----------|
+| 1 | Disparo Preciso | 1 | 0 | 3 | Longo | Ofensiva básica | Ataque à distância estável | Flecha Certeira |
+| 2 | Tiro Reforçado | 5 | 2 | 5 | Longo | Ofensiva | Disparo mais forte | Flecha Perfurante |
+| 3 | Marcar Alvo | 15 | 3 | 0 | Longo | Tática | Alvo recebe penalidade defensiva ou bônus de dano dos aliados | Caçada Implacável |
+| 4 | Tiro do Predador | 30 | 4 | 6 | Longo | Assinatura | Grande ataque focado em alvo marcado ou exposto | Sentença do Caçador |
 
-#### Slot 1 — Flechada Básica (Ataque Básico)
-| Tier | Nível | Poder | ENE | Efeito extra |
-|------|-------|-------|-----|--------------|
-| I | 1 | 12 | 0 | Alcance longo |
-| II | 10 | 15 | 0 | Marca o alvo: próximo ataque ao mesmo alvo tem +2 |
-| III | 50 | 18 | 0 | Marca automática; 3 atacar o mesmo alvo concede Acerto Forte garantido |
+### Evoluções
 
-#### Slot 2 — Flecha Reforçada
-| Tier | Nível | Poder | ENE | Efeito |
-|------|-------|-------|-----|--------|
-| I | 5 | 22 | 4 | Dano à distância aumentado |
-| II | 20 | 30 | 6 | Dano + penetra 2 pontos de DEF |
-
-#### Slot 3 — Armadilha
-| Tier | Nível | Poder | ENE | Efeito |
-|------|-------|-------|-----|--------|
-| I | 15 | 0 | 4 | Reduz AGI do alvo em 3 por 2 turnos (alvo age por último) |
-| II | 40 | 0 | 5 | Reduz AGI em 4 + −1 DEF por 2 turnos |
-
-#### Slot 4 — Alvo Fixado *(Assinatura)*
-| Tier | Nível | Poder | ENE | Efeito exclusivo |
-|------|-------|-------|-----|-----------------|
-| I | 30 | 0 | 8 | Fixa o Caçador em 1 alvo: todos os ataques do Caçador neste turno e no próximo têm +4 ATK e ×1.20 dano contra esse alvo específico |
-| II | 60 | 0 | 10 | +6 ATK e ×1.35 dano; se o alvo tentar fugir ou trocar de posição, sofre dano automático (Tier II da Flecha Reforçada) |
+| Habilidade | Evolução | Descrição da melhoria |
+|------------|----------|----------------------|
+| Disparo Preciso | **Flecha Certeira** | Básico melhor contra alvos sem cobertura |
+| Tiro Reforçado | **Flecha Perfurante** | Ignora parte da mitigação do alvo |
+| Marcar Alvo | **Caçada Implacável** | Marca mais forte e duradoura; bônus maior para aliados |
+| Tiro do Predador | **Sentença do Caçador** | Assinatura poderosa com setup; combo obrigatório com marcação |
 
 ---
 
 ## 9. Animalista
 
-**Função canônica:** Versatilidade, adaptação, oscilação tática baseada em postura.
+**Função canônica:** Adaptação, versatilidade, resposta situacional.  
+**Leitura:** o mais difícil de balancear — o segredo é versatilidade, não supremacia.
 
-### Slots
+| Slot | Habilidade | Nível | ENE | PWR | Alcance | Tipo | Efeito | Evolução |
+|------|-----------|------:|----:|----:|---------|------|--------|----------|
+| 1 | Ataque Instintivo | 1 | 0 | 3 | Curto/Médio | Ofensiva básica | Ataque versátil, levemente adaptável | Garra Adaptativa |
+| 2 | Postura Selvagem | 5 | 2 | 0 | Próprio | Adaptativa | Escolhe bônus breve entre ATK, DEF ou AGI | Forma Instintiva |
+| 3 | Chamado da Natureza | 15 | 3 | 2 | Curto/Médio | Utilidade | Cura leve, ajuste de posição, limpeza simples ou empurrão tático | Resposta Primal |
+| 4 | Forma Bestial | 30 | 4 | 5 | Próprio | Assinatura | Transformação temporária com alteração do perfil de combate | Forma Alpha |
 
-#### Slot 1 — Investida Bestial (Ataque Básico)
-| Tier | Nível | Poder | ENE | Efeito extra |
-|------|-------|-------|-----|--------------|
-| I | 1 | 12 | 0 | Curto alcance, robusto |
-| II | 10 | 15 | 0 | +1 DEF ao Animalista por 1 turno se acertar |
-| III | 50 | 18 | 0 | +2 DEF permanente durante o turno em que acertar |
+### Evoluções
 
-#### Slot 2 — Instinto Selvagem
-| Tier | Nível | Poder | ENE | Efeito |
-|------|-------|-------|-----|--------|
-| I | 5 | 0 | 4 | +2 ATK ou +2 DEF (escolha do jogador) por 2 turnos |
-| II | 20 | 0 | 5 | +3 ATK ou +3 DEF ou +2 AGI por 3 turnos |
-
-#### Slot 3 — Garra Venenosa
-| Tier | Nível | Poder | ENE | Efeito |
-|------|-------|-------|-----|--------|
-| I | 15 | 16 | 5 | Dano + 30% chance de envenenar (POISON: −10% HP/turno por 2 turnos) |
-| II | 40 | 22 | 6 | Dano + 50% envenenamento por 3 turnos |
-
-#### Slot 4 — Postura Adaptada *(Assinatura)*
-| Tier | Nível | Poder | ENE | Efeito exclusivo |
-|------|-------|-------|-----|-----------------|
-| I | 30 | 0 | 8 | Alterna entre **Postura Fera** (+4 ATK, −2 DEF) ou **Postura Escudo** (+4 DEF, −2 ATK) por 3 turnos. Pode alterar posição livremente enquanto em postura. |
-| II | 60 | 0 | 10 | Adiciona **Postura Sombra** (invisível 1 turno, próximo ataque Acerto Forte garantido). Cooldown 4 turnos entre mudanças. |
+| Habilidade | Evolução | Descrição da melhoria |
+|------------|----------|----------------------|
+| Ataque Instintivo | **Garra Adaptativa** | Básico responde melhor à situação (bonus condicional por postura ativa) |
+| Postura Selvagem | **Forma Instintiva** | Postura mais forte (bônus maior, duração maior) |
+| Chamado da Natureza | **Resposta Primal** | Utilidade mais ampla (mais opções de efeito) |
+| Forma Bestial | **Forma Alpha** | Transformação mais impactante, sem virar "modo deus" |
 
 ---
 
-## 10. Regras Gerais de Energia e Habilidades
+## 10. Tabela-Resumo Geral
 
-### 10.1 Ataque Básico
-- Slot 1 **nunca gasta ENE**, independente do tier.
+| Classe | Slot 1 | Slot 2 | Slot 3 | Slot 4 |
+|--------|--------|--------|--------|--------|
+| Guerreiro | Golpe Firme | Corte Pesado | Postura Defensiva | Proteger Aliado |
+| Bárbaro | Pancada Selvagem | Golpe Brutal | Fúria | Berserk |
+| Mago | Rajada Arcana | Explosão Etérea | Prisão de Energia | Tempestade Arcana |
+| Curandeiro | Toque Vital | Cura Simples | Benção Suave | Cura em Área |
+| Bardo | Nota Cortante | Canção de Coragem | Eco Desafinador | Concerto de Guerra |
+| Ladino | Corte Rápido | Golpe Sorrateiro | Passo Sombrio | Execução |
+| Caçador | Disparo Preciso | Tiro Reforçado | Marcar Alvo | Tiro do Predador |
+| Animalista | Ataque Instintivo | Postura Selvagem | Chamado da Natureza | Forma Bestial |
+
+---
+
+## 11. Regras Gerais de Energia e Habilidades
+
+### 11.1 Ataque Básico
+
+- Slot 1 **nunca gasta ENE**, independente do nível ou evolução.
 - Sempre disponível mesmo com ENE = 0.
 - É a base de sustentação de qualquer classe.
+- **Regra A:** o ataque básico deve sempre parecer útil — nenhuma classe pode parecer "morta" sem energia.
 
-### 10.2 Regeneração de ENE por Turno
+### 11.2 Regeneração de ENE por Turno
+
 Ao início do turno do Monstrinhomon:
+
 ```
 eneGain = max(ene_regen_min, ceil(eneMax × ene_regen_pct))
 ene = min(eneMax, ene + eneGain)
@@ -327,24 +277,50 @@ ene = min(eneMax, ene + eneGain)
 | Bárbaro | 12% | 2 |
 | Guerreiro | 10% | 1 |
 
-### 10.3 Regra de Sustentabilidade
-- Nenhuma classe pode depender totalmente de ENE para ser útil.
-- Mesmo com ENE = 0, o Slot 1 garante participação ofensiva.
-- Posição e papel de classe ainda importam com ENE zerada.
+### 11.3 Bloqueio de Habilidade
 
-### 10.4 Bloqueio de Habilidade
 - Botão da habilidade fica desabilitado se `ene_atual < ene_custo`.
 - Interface exibe o custo de ENE claramente em cada botão.
 
 ---
 
-## 11. Evoluções de Habilidade
+## 12. Regras Fixas de Balanceamento
+
+### Regra A — Básico sempre útil
+
+Ataque básico nunca deve parecer inútil. Sem energia, a classe ainda precisa ter papel tático claro pelo Slot 1.
+
+### Regra B — Assinatura nunca é só "golpe com mais dano"
+
+A Slot 4 de cada classe deve definir um **papel tático único**, não apenas um número maior. Exemplos válidos: interceptação de dano, transformação de perfil, área de efeito, controle coletivo.
+
+### Regra C — Toda habilidade forte precisa de pelo menos uma limitação
+
+Limitações válidas: custo de ENE alto · posição específica · setup obrigatório · condição de alvo · duração curta · contrapartida de stats.
+
+### Regra D — Suporte coletivo não pode durar muitos turnos sem controle
+
+Buff/debuff em área com duração longa quebra o jogo. Limite recomendado: **2–3 turnos** para efeitos em grupo.
+
+### Regra E — Dano alto condicional é melhor do que dano alto universal
+
+Ladino (Execução vs HP baixo), Caçador (Tiro do Predador vs alvo marcado) — o burst depende de setup. Isso mantém o jogo justo e recompensa bom posicionamento.
+
+---
+
+## 13. Evoluções — Progressão Automática
 
 Habilidades evoluem automaticamente com o nível do Monstrinhomon.  
-Não é necessário ação do jogador — acontece automaticamente no Level Up.
+Não é necessária ação do jogador — acontece no Level Up.
 
-Exemplo:
-- Nivel 4: Slot 2 = Golpe de Espada I
-- Nivel 20+: Slot 2 = Golpe de Espada II (atualiza automaticamente)
+| Nível | Evento |
+|------:|--------|
+| 1 | Slot 1 Tier I (ataque básico inicial) |
+| 5 | Slot 2 desbloqueado |
+| 10 | Slot 1 → evolução leve (Tier II do básico) |
+| 15 | Slot 3 desbloqueado |
+| 22 | Evolução do Slot 2 (nome de evolução) |
+| 30 | Slot 4 desbloqueado (Assinatura) |
+| 40+ | Evolução final do Slot 3 e/ou 4 |
 
-O log de level up indica: `"🗡️ Golpe de Espada evoluiu para Tier II!"`
+O log de level up indica: `"🗡️ [Habilidade] evoluiu para [Nome da Evolução]!"`
