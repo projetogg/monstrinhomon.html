@@ -484,6 +484,16 @@ A versão 2 do sistema de combate foi especificada em cinco documentos canônico
 
 ## CHANGELOG
 
+### v2.2 (2026-04-01)
+- Tabela canônica definitiva de atributos-base por classe (`ATRIBUTOS_BASE_POR_CLASSE_V2.md` v2.1)
+  - Escala nova: HP 16–26, ATK 3–8, DEF 2–8, ENE 3–8, AGI 2–8
+  - Valores revisados: Guerreiro HP24/DEF8/ATK5/AGI3 · Bárbaro HP22/ATK8/DEF4 · Ladino HP17/ATK7/DEF2/AGI8
+  - Prioridades de crescimento por nível por classe (não crescimento igual para todos)
+  - Regras de teto relativo por classe (quem pode e não pode liderar cada eixo)
+  - Regras extras A/B/C: proteção com custo, ATK do tank cresce mais devagar, ferramentas anti-tank
+  - Projeções recalculadas para Lv10/25/50 com novos bases
+  - Simulações de balanceamento e análise de sustentabilidade atualizadas
+
 ### v2.1 (2026-03-31)
 - Revisão de balanceamento da fórmula de combate (`COMBATE_FORMULA_V2.md`)
   - DEF dividida: `DEF_confronto = ceil(DEF/2)` no confronto, `Mitigação = floor(DEF/2)` no dano
