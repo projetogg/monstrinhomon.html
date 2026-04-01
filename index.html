@@ -572,6 +572,10 @@
         
         // PR16B: Import PartyDex UI module
         import * as PartyDexUI from './js/ui/partyDexUI.js';
+
+        // Canon Loader — Fase 1: carrega dados canônicos (classes, matchups, skills MVP)
+        import * as CanonLoader from './js/canon/canonLoader.js';
+        window.CanonLoader = CanonLoader;
         
         // Make Combat available globally for the wrapper
         window.Combat = Combat;
@@ -1688,7 +1692,27 @@
                 if (window.showEggHatchModal) {
                     console.log('[Init] Egg hatch modal loaded successfully');
                 }
-                
+
+                // Fase 1 — Integração canônica: carrega dados de design/canon/
+                // de forma não-bloqueante; atualiza classAdvantages quando pronto.
+                // Nota: existe uma janela de corrida entre a resolução desta Promise
+                // e o início do primeiro combate. Se um combate começar antes do
+                // carregamento terminar, o motor usará a tabela hardcoded abaixo.
+                // Isso é aceitável na Fase 1 — o comportamento é consistente
+                // dentro de cada sessão de combate uma vez iniciada.
+                if (window.CanonLoader && window.CanonLoader.loadCanonData) {
+                    window.CanonLoader.loadCanonData().then(() => {
+                        const canonAdvantages = window.CanonLoader.getClassAdvantages();
+                        if (canonAdvantages && Object.keys(canonAdvantages).length > 0) {
+                            GameState.config.classAdvantages = canonAdvantages;
+                            console.log('[Canon] classAdvantages atualizado via cânone.');
+                        }
+                    }).catch(err => {
+                        // Falha silenciosa: motor continua com tabela hardcoded
+                        console.warn('[Canon] Falha ao carregar dados canônicos. Usando tabela hardcoded.', err);
+                    });
+                }
+
                 updateAllViews();
                 mmUpdateTherapistUI(); // Update therapist mode UI
                 

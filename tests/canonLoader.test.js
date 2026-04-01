@@ -1,0 +1,361 @@
+/**
+ * CANON LOADER TESTS (Fase 1)
+ *
+ * Testes para js/canon/canonLoader.js
+ * Cobertura: mapeamento de classes, transformação de matchups, indexação de habilidades MVP
+ *
+ * Esses testes exercitam as funções puras/síncronas do módulo.
+ * As funções assíncronas (loadCanonData) são testadas via mocks de fetch.
+ */
+
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import {
+    getClassStats,
+    getClassAdvantages,
+    getMvpSkillsByClass,
+    classIdFromPtbr,
+    classPtbrFromId,
+    loadCanonData,
+    _resetCanonCache,
+} from '../js/canon/canonLoader.js';
+
+// ---------------------------------------------------------------------------
+// Dados de teste que espelham os arquivos JSON reais
+// ---------------------------------------------------------------------------
+
+const MOCK_CLASSES = [
+    { id: 'warrior',   name_pt: 'Guerreiro',  role: 'tank_protecao',        base_stats: { hp: 24, atk: 5, def: 8 } },
+    { id: 'barbarian', name_pt: 'Bárbaro',    role: 'burst_pressao',        base_stats: { hp: 22, atk: 8, def: 4 } },
+    { id: 'mage',      name_pt: 'Mago',       role: 'ofensivo_tecnico',     base_stats: { hp: 18, atk: 7, def: 3 } },
+    { id: 'healer',    name_pt: 'Curandeiro', role: 'sustentacao',          base_stats: { hp: 19, atk: 4, def: 3 } },
+    { id: 'bard',      name_pt: 'Bardo',      role: 'buff_debuff',          base_stats: { hp: 18, atk: 4, def: 3 } },
+    { id: 'rogue',     name_pt: 'Ladino',     role: 'execucao_mobilidade',  base_stats: { hp: 17, atk: 7, def: 2 } },
+    { id: 'hunter',    name_pt: 'Caçador',    role: 'pressao_distancia',    base_stats: { hp: 19, atk: 6, def: 3 } },
+    { id: 'animalist', name_pt: 'Animalista', role: 'adaptacao',            base_stats: { hp: 21, atk: 6, def: 5 } },
+];
+
+const MOCK_MATCHUPS = {
+    version: '1.0',
+    classes_ptbr: {
+        'Guerreiro':  { strong_against: 'Ladino',     weak_against: 'Mago' },
+        'Bárbaro':    { strong_against: 'Curandeiro', weak_against: 'Guerreiro' },
+        'Mago':       { strong_against: 'Guerreiro',  weak_against: 'Caçador' },
+        'Curandeiro': { strong_against: 'Bárbaro',    weak_against: 'Bardo' },
+        'Bardo':      { strong_against: 'Curandeiro', weak_against: 'Animalista' },
+        'Ladino':     { strong_against: 'Caçador',    weak_against: 'Guerreiro' },
+        'Caçador':    { strong_against: 'Mago',       weak_against: 'Ladino' },
+        'Animalista': { strong_against: 'Bardo',      weak_against: 'Bárbaro' },
+    },
+    classes_canonical: {
+        warrior:   { strong_against: 'rogue',      weak_against: 'mage' },
+        barbarian: { strong_against: 'healer',     weak_against: 'warrior' },
+        mage:      { strong_against: 'warrior',    weak_against: 'hunter' },
+        healer:    { strong_against: 'barbarian',  weak_against: 'bard' },
+        bard:      { strong_against: 'healer',     weak_against: 'animalist' },
+        rogue:     { strong_against: 'hunter',     weak_against: 'warrior' },
+        hunter:    { strong_against: 'mage',       weak_against: 'rogue' },
+        animalist: { strong_against: 'bard',       weak_against: 'barbarian' },
+    },
+};
+
+const MOCK_SKILLS_MVP = [
+    { id: 'warrior_basic_strike', class_id: 'warrior',   slot: 1, name_pt: 'Golpe Firme',      unlock_level: 1,  energy_cost: 0, power: 3 },
+    { id: 'warrior_heavy_slash',  class_id: 'warrior',   slot: 2, name_pt: 'Corte Pesado',     unlock_level: 5,  energy_cost: 2, power: 5 },
+    { id: 'warrior_guard_ally',   class_id: 'warrior',   slot: 4, name_pt: 'Proteger Aliado',  unlock_level: 30, energy_cost: 4, power: 0 },
+    { id: 'mage_arcane_burst',    class_id: 'mage',      slot: 1, name_pt: 'Rajada Arcana',    unlock_level: 1,  energy_cost: 0, power: 3 },
+    { id: 'mage_ether_blast',     class_id: 'mage',      slot: 2, name_pt: 'Explosão Etérea',  unlock_level: 5,  energy_cost: 2, power: 5 },
+    { id: 'healer_light_touch',   class_id: 'healer',    slot: 1, name_pt: 'Toque de Luz',     unlock_level: 1,  energy_cost: 0, power: 2 },
+    { id: 'barbarian_wild_smash', class_id: 'barbarian', slot: 1, name_pt: 'Pancada Selvagem', unlock_level: 1,  energy_cost: 0, power: 4 },
+    // Classe fora do MVP deve ser ignorada
+    { id: 'bard_song',            class_id: 'bard',      slot: 1, name_pt: 'Canção',           unlock_level: 1,  energy_cost: 0, power: 2 },
+];
+
+// ---------------------------------------------------------------------------
+// Helpers para mock de fetch
+// ---------------------------------------------------------------------------
+
+function makeFetchMock(classesData, matchupsData, skillsData) {
+    return vi.fn(async (url) => {
+        const urlStr = String(url);
+        let data;
+        if (urlStr.includes('classes.json'))          data = classesData;
+        else if (urlStr.includes('class_matchups'))   data = matchupsData;
+        else if (urlStr.includes('skills_mvp'))       data = skillsData;
+        else throw new Error('URL inesperada: ' + urlStr);
+        return { ok: true, json: async () => data };
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Testes
+// ---------------------------------------------------------------------------
+
+describe('canonLoader — mapeamento de classes', () => {
+
+    it('deve converter nome PT-BR para ID canônico', () => {
+        expect(classIdFromPtbr('Guerreiro')).toBe('warrior');
+        expect(classIdFromPtbr('Bárbaro')).toBe('barbarian');
+        expect(classIdFromPtbr('Mago')).toBe('mage');
+        expect(classIdFromPtbr('Curandeiro')).toBe('healer');
+        expect(classIdFromPtbr('Bardo')).toBe('bard');
+        expect(classIdFromPtbr('Ladino')).toBe('rogue');
+        expect(classIdFromPtbr('Caçador')).toBe('hunter');
+        expect(classIdFromPtbr('Animalista')).toBe('animalist');
+    });
+
+    it('deve retornar null para classe desconhecida em classIdFromPtbr', () => {
+        expect(classIdFromPtbr('Dragão')).toBeNull();
+        expect(classIdFromPtbr('')).toBeNull();
+    });
+
+    it('deve converter ID canônico para nome PT-BR', () => {
+        expect(classPtbrFromId('warrior')).toBe('Guerreiro');
+        expect(classPtbrFromId('barbarian')).toBe('Bárbaro');
+        expect(classPtbrFromId('mage')).toBe('Mago');
+        expect(classPtbrFromId('healer')).toBe('Curandeiro');
+        expect(classPtbrFromId('bard')).toBe('Bardo');
+        expect(classPtbrFromId('rogue')).toBe('Ladino');
+        expect(classPtbrFromId('hunter')).toBe('Caçador');
+        expect(classPtbrFromId('animalist')).toBe('Animalista');
+    });
+
+    it('deve retornar null para ID desconhecido em classPtbrFromId', () => {
+        expect(classPtbrFromId('wizard')).toBeNull();
+        expect(classPtbrFromId('')).toBeNull();
+    });
+
+    it('mapeamento deve ser simétrico (PT-BR ↔ ID)', () => {
+        const ptbrNames = ['Guerreiro', 'Bárbaro', 'Mago', 'Curandeiro', 'Bardo', 'Ladino', 'Caçador', 'Animalista'];
+        for (const name of ptbrNames) {
+            const id = classIdFromPtbr(name);
+            expect(id).not.toBeNull();
+            expect(classPtbrFromId(id)).toBe(name);
+        }
+    });
+});
+
+describe('canonLoader — funções antes de loadCanonData()', () => {
+
+    beforeEach(() => {
+        _resetCanonCache();
+    });
+
+    it('getClassStats deve retornar null e emitir aviso antes de carregar', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const result = getClassStats('Guerreiro');
+        expect(result).toBeNull();
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining('getClassStats'));
+        warn.mockRestore();
+    });
+
+    it('getClassAdvantages deve retornar objeto vazio antes de carregar', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const result = getClassAdvantages();
+        expect(result).toEqual({});
+        warn.mockRestore();
+    });
+
+    it('getMvpSkillsByClass deve retornar array vazio antes de carregar', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const result = getMvpSkillsByClass('Guerreiro');
+        expect(result).toEqual([]);
+        warn.mockRestore();
+    });
+});
+
+describe('canonLoader — loadCanonData()', () => {
+
+    beforeEach(() => {
+        _resetCanonCache();
+        global.fetch = makeFetchMock(MOCK_CLASSES, MOCK_MATCHUPS, MOCK_SKILLS_MVP);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        delete global.fetch;
+    });
+
+    it('deve carregar sem lançar erros', async () => {
+        const data = await loadCanonData();
+        expect(data).toBeDefined();
+        expect(data.classes).toBeDefined();
+        expect(data.matchups).toBeDefined();
+        expect(data.skillsMvp).toBeDefined();
+    });
+
+    it('deve ser idempotente (cache evita fetch duplo)', async () => {
+        await loadCanonData();
+        await loadCanonData();
+        // fetch deve ter sido chamado apenas 3 vezes (uma por arquivo)
+        expect(global.fetch).toHaveBeenCalledTimes(3);
+    });
+
+    it('getClassStats deve funcionar após carregar (por nome PT-BR)', async () => {
+        await loadCanonData();
+        const stats = getClassStats('Guerreiro');
+        expect(stats).not.toBeNull();
+        expect(stats.id).toBe('warrior');
+        expect(stats.base_stats.hp).toBe(24);
+    });
+
+    it('getClassStats deve funcionar após carregar (por ID canônico)', async () => {
+        await loadCanonData();
+        const stats = getClassStats('warrior');
+        expect(stats).not.toBeNull();
+        expect(stats.name_pt).toBe('Guerreiro');
+    });
+
+    it('getClassStats deve retornar null para classe desconhecida', async () => {
+        await loadCanonData();
+        expect(getClassStats('Dragão')).toBeNull();
+        expect(getClassStats('wizard')).toBeNull();
+    });
+});
+
+describe('canonLoader — getClassAdvantages()', () => {
+
+    beforeEach(async () => {
+        _resetCanonCache();
+        global.fetch = makeFetchMock(MOCK_CLASSES, MOCK_MATCHUPS, MOCK_SKILLS_MVP);
+        await loadCanonData();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        delete global.fetch;
+    });
+
+    it('deve retornar tabela com todas as 8 classes', () => {
+        const adv = getClassAdvantages();
+        const classes = ['Guerreiro', 'Bárbaro', 'Mago', 'Curandeiro', 'Bardo', 'Ladino', 'Caçador', 'Animalista'];
+        for (const cls of classes) {
+            expect(adv[cls]).toBeDefined();
+        }
+    });
+
+    it('deve ter formato { strong, weak } compatível com o motor', () => {
+        const adv = getClassAdvantages();
+        for (const [, val] of Object.entries(adv)) {
+            expect(val).toHaveProperty('strong');
+            expect(val).toHaveProperty('weak');
+        }
+    });
+
+    it('Guerreiro deve ser forte contra Ladino e fraco contra Mago (cânone)', () => {
+        const adv = getClassAdvantages();
+        expect(adv['Guerreiro'].strong).toBe('Ladino');
+        expect(adv['Guerreiro'].weak).toBe('Mago');
+    });
+
+    it('Mago deve ser forte contra Guerreiro e fraco contra Caçador (cânone)', () => {
+        const adv = getClassAdvantages();
+        expect(adv['Mago'].strong).toBe('Guerreiro');
+        expect(adv['Mago'].weak).toBe('Caçador');
+    });
+
+    it('Bárbaro deve ser forte contra Curandeiro e fraco contra Guerreiro (cânone)', () => {
+        const adv = getClassAdvantages();
+        expect(adv['Bárbaro'].strong).toBe('Curandeiro');
+        expect(adv['Bárbaro'].weak).toBe('Guerreiro');
+    });
+
+    it('Curandeiro deve ser forte contra Bárbaro e fraco contra Bardo (cânone)', () => {
+        const adv = getClassAdvantages();
+        expect(adv['Curandeiro'].strong).toBe('Bárbaro');
+        expect(adv['Curandeiro'].weak).toBe('Bardo');
+    });
+});
+
+describe('canonLoader — getMvpSkillsByClass()', () => {
+
+    beforeEach(async () => {
+        _resetCanonCache();
+        global.fetch = makeFetchMock(MOCK_CLASSES, MOCK_MATCHUPS, MOCK_SKILLS_MVP);
+        await loadCanonData();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        delete global.fetch;
+    });
+
+    it('deve retornar habilidades do Guerreiro (por nome PT-BR)', () => {
+        const skills = getMvpSkillsByClass('Guerreiro');
+        expect(skills.length).toBeGreaterThan(0);
+        const ids = skills.map(s => s.id);
+        expect(ids).toContain('warrior_basic_strike');
+        expect(ids).toContain('warrior_heavy_slash');
+    });
+
+    it('deve retornar habilidades do Guerreiro (por ID canônico)', () => {
+        const skills = getMvpSkillsByClass('warrior');
+        expect(skills.length).toBeGreaterThan(0);
+        expect(skills[0].class_id).toBe('warrior');
+    });
+
+    it('deve retornar habilidades do Mago', () => {
+        const skills = getMvpSkillsByClass('Mago');
+        const ids = skills.map(s => s.id);
+        expect(ids).toContain('mage_arcane_burst');
+    });
+
+    it('deve retornar habilidades do Bárbaro', () => {
+        const skills = getMvpSkillsByClass('Bárbaro');
+        const ids = skills.map(s => s.id);
+        expect(ids).toContain('barbarian_wild_smash');
+    });
+
+    it('habilidade de Bardo (fora do MVP fase 1) não deve aparecer', () => {
+        // Bardo está fora do subconjunto MVP Fase 1 (Guerreiro, Bárbaro, Mago, Curandeiro)
+        const skills = getMvpSkillsByClass('Bardo');
+        expect(skills).toEqual([]);
+    });
+
+    it('classes fora do MVP fase 1 (Ladino, Caçador, Animalista) devem retornar array vazio', () => {
+        // Mesmo que existissem entradas no arquivo, seriam filtradas pelo MVP_PHASE1_CLASSES
+        for (const cls of ['Ladino', 'Caçador', 'Animalista']) {
+            expect(getMvpSkillsByClass(cls)).toEqual([]);
+        }
+    });
+
+    it('deve retornar array vazio para classe desconhecida', () => {
+        const skills = getMvpSkillsByClass('Dragão');
+        expect(skills).toEqual([]);
+    });
+
+    it('ataque básico do Guerreiro não deve ter custo de energia', () => {
+        const skills = getMvpSkillsByClass('Guerreiro');
+        const basic = skills.find(s => s.slot === 1);
+        expect(basic).toBeDefined();
+        expect(basic.energy_cost).toBe(0);
+    });
+
+    it('habilidade especial do Guerreiro (slot 2) deve ter custo de energia', () => {
+        const skills = getMvpSkillsByClass('Guerreiro');
+        const special = skills.find(s => s.slot === 2);
+        expect(special).toBeDefined();
+        expect(special.energy_cost).toBeGreaterThan(0);
+    });
+});
+
+describe('canonLoader — tratamento de erro em loadCanonData()', () => {
+
+    beforeEach(() => {
+        _resetCanonCache();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        delete global.fetch;
+    });
+
+    it('deve lançar erro se fetch falhar', async () => {
+        global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 404 });
+        await expect(loadCanonData()).rejects.toThrow('[canonLoader]');
+    });
+
+    it('deve lançar erro se fetch rejeitar', async () => {
+        global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+        await expect(loadCanonData()).rejects.toThrow('Network error');
+    });
+});

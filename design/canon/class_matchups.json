@@ -1,0 +1,30 @@
+{
+  "version": "1.0",
+  "source_of_truth_note": "Tabela canônica explícita de vantagens e desvantagens entre classes para integração gradual com o motor atual.",
+  "classes_ptbr": {
+    "Guerreiro": {"strong_against": "Ladino", "weak_against": "Mago"},
+    "Bárbaro": {"strong_against": "Curandeiro", "weak_against": "Guerreiro"},
+    "Mago": {"strong_against": "Guerreiro", "weak_against": "Caçador"},
+    "Curandeiro": {"strong_against": "Bárbaro", "weak_against": "Bardo"},
+    "Bardo": {"strong_against": "Curandeiro", "weak_against": "Animalista"},
+    "Ladino": {"strong_against": "Caçador", "weak_against": "Guerreiro"},
+    "Caçador": {"strong_against": "Mago", "weak_against": "Ladino"},
+    "Animalista": {"strong_against": "Bardo", "weak_against": "Bárbaro"}
+  },
+  "classes_canonical": {
+    "warrior": {"strong_against": "rogue", "weak_against": "mage"},
+    "barbarian": {"strong_against": "healer", "weak_against": "warrior"},
+    "mage": {"strong_against": "warrior", "weak_against": "hunter"},
+    "healer": {"strong_against": "barbarian", "weak_against": "bard"},
+    "bard": {"strong_against": "healer", "weak_against": "animalist"},
+    "rogue": {"strong_against": "hunter", "weak_against": "warrior"},
+    "hunter": {"strong_against": "mage", "weak_against": "rogue"},
+    "animalist": {"strong_against": "bard", "weak_against": "barbarian"}
+  },
+  "phase1_mvp_subset": {
+    "Guerreiro": {"strong_against": "nenhum_matchup_mvp_direto", "weak_against": "Mago"},
+    "Bárbaro": {"strong_against": "Curandeiro", "weak_against": "Guerreiro"},
+    "Mago": {"strong_against": "Guerreiro", "weak_against": "nenhum_matchup_mvp_direto"},
+    "Curandeiro": {"strong_against": "Bárbaro", "weak_against": "nenhum_matchup_mvp_direto"}
+  }
+}
