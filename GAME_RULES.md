@@ -456,7 +456,85 @@ xp_earned = (battleXpBase + level_enemy * 2) * rarity_multiplier
 
 ---
 
+## ARQUITETURA CANÔNICA v2
+
+A versão 2 do sistema de combate foi especificada em cinco documentos canônicos localizados em `/docs/`:
+
+| Documento | Descrição |
+|-----------|-----------|
+| [`docs/COMBATE_FORMULA_V2.md`](docs/COMBATE_FORMULA_V2.md) | Fórmula de combate (d20 bilateral, DEF parcial, faixas de RC, ModNível discreto) |
+| [`docs/HABILIDADES_POR_CLASSE_V2.md`](docs/HABILIDADES_POR_CLASSE_V2.md) | 4 slots de habilidade por classe (8 classes), progressão por nível, custo de ENE, assinaturas exclusivas |
+| [`docs/POSICIONAMENTO_V2.md`](docs/POSICIONAMENTO_V2.md) | Grade frente/meio/trás, alcance por classe, aggro, proteção, troca de posição e de Monstrinhomon |
+| [`docs/TABELA_ENCONTROS_V2.md`](docs/TABELA_ENCONTROS_V2.md) | Pontos de exploração, chances de encontro, raridade, recompensas, individual vs. coletivo |
+| [`docs/ATRIBUTOS_BASE_POR_CLASSE_V2.md`](docs/ATRIBUTOS_BASE_POR_CLASSE_V2.md) | Atributos-base Lv1 por classe, crescimento por nível, simulações de balanceamento |
+
+### Principais mudanças da v1 para a v2
+
+- **d20 bilateral:** ataque E defesa rolam d20. `RC = Ataque − Defesa`.
+- **DEF dividida em dois papéis:** `DEF_confronto = ceil(DEF/2)` no hit; `Mitigação = floor(DEF/2)` no dano.
+- **5 faixas de resultado:** Falha Total / Contato Neutralizado / Acerto Reduzido / Acerto Normal / Acerto Forte.
+- **ModNível discreto:** tabela de passos (0→±1→±2→±3→±4→±5), máximo ±5.
+- **Nova fórmula de dano:** `DanoBase = PWR + ATK − Mitigação` (sem ratio).
+- **4 slots de habilidade:** Slot 1 (básico, sem ENE) + Slot 2 + Slot 3 + Slot 4 (assinatura exclusiva).
+- **Posicionamento em grupo:** frente/meio/trás com bônus de defesa e regras de alcance por classe.
+- **Exploração individual:** cada jogador escolhe um ponto de busca antes do combate.
+- **Tabela de atributos-base** por classe derivada do catálogo real de Monstrinhos.
+
+---
+
 ## CHANGELOG
+
+### v2.4 (2026-04-01)
+- Matriz Mestra de Balanceamento do Combate (`MATRIZ_MESTRA_BALANCEAMENTO.md` v1.0)
+  - Matriz de papéis por classe: papel principal, força, fraqueza, estilo, risco de overpower
+  - Matriz de atributos-base Lv1 por classe (8 classes × 5 atributos + alcance)
+  - Matriz de habilidades por função (4 slots × 8 classes com função real e tipo de valor)
+  - Matriz de custos e pressão de energia por classe
+  - Análise de risco de overpower e contrapesos obrigatórios por classe
+  - Counters naturais: quem pressiona quem e por quê
+  - Fórmula canônica consolidada (confronto → faixa → dano base → multiplicador → regras especiais)
+  - 7 regras de design obrigatórias (DEF dividida, assinatura ≠ só dano, força com contrapartida, etc.)
+  - Tabela de comportamento esperado por classe
+  - Planilha operacional de balanceamento (32 linhas, uma por slot/classe, com colunas: atributo/custo/PWR/função/condição/risco/observação)
+
+
+- Kit canônico de habilidades por classe (`HABILIDADES_POR_CLASSE_V2.md` v2.1)
+  - Escala de PWR alinhada com nova escala de atributos: básico 2–3, habilidade 4–6, forte 7–8, assinatura 9+
+  - Nomes canônicos revisados por classe (ex: Golpe Firme, Pancada Selvagem, Rajada Arcana, Nota Cortante)
+  - Tabela de 4 slots com campos: slot/nome/nível/ENE/PWR/alcance/tipo/efeito/evolução
+  - Evoluções nomeadas por habilidade (ex: Golpe Firme → Investida de Guarda)
+  - Tabela-resumo geral com todos os slots por classe
+  - Regras fixas A–E: básico sempre útil, assinatura não é só dano, limitação obrigatória, suporte coletivo limitado, condicional > universal
+  - Progressão de desbloqueio consolidada: Lv1/5/10/15/22/30/40+
+
+
+- Tabela canônica definitiva de atributos-base por classe (`ATRIBUTOS_BASE_POR_CLASSE_V2.md` v2.1)
+  - Escala nova: HP 16–26, ATK 3–8, DEF 2–8, ENE 3–8, AGI 2–8
+  - Valores revisados: Guerreiro HP24/DEF8/ATK5/AGI3 · Bárbaro HP22/ATK8/DEF4 · Ladino HP17/ATK7/DEF2/AGI8
+  - Prioridades de crescimento por nível por classe (não crescimento igual para todos)
+  - Regras de teto relativo por classe (quem pode e não pode liderar cada eixo)
+  - Regras extras A/B/C: proteção com custo, ATK do tank cresce mais devagar, ferramentas anti-tank
+  - Projeções recalculadas para Lv10/25/50 com novos bases
+  - Simulações de balanceamento e análise de sustentabilidade atualizadas
+
+### v2.1 (2026-03-31)
+- Revisão de balanceamento da fórmula de combate (`COMBATE_FORMULA_V2.md`)
+  - DEF dividida: `DEF_confronto = ceil(DEF/2)` no confronto, `Mitigação = floor(DEF/2)` no dano
+  - Faixas revisadas: 5 categorias (inclui "Contato Neutralizado")
+  - ModNível discreto substituiu AP contínuo (máx ±5 em vez de ±10)
+  - Fórmula de dano: `DanoBase = PWR + ATK − Mitigação` (sem ratio)
+  - Crítico: ataque 20 natural = +4 RC +20% dano; defesa 20 natural = +5 RC defensivo
+  - Regra de Superioridade Real (diferença ≥10 lv): Contato Neut. → Acerto Red.
+  - Novo documento `ATRIBUTOS_BASE_POR_CLASSE_V2.md` com tabela prática
+
+### v2.0 (2026-03-31)
+- Arquitetura Canônica do Combate v2 especificada (4 documentos em `/docs/`)
+- d20 bilateral (ataque + defesa) com faixas de RC
+- Sistema de 4 slots de habilidade com assinatura exclusiva por classe
+- Posicionamento em grupo (frente/meio/trás) com alcance por classe
+- Tabela de exploração com pontos de busca individuais por jogador
+- Ajuste de Poder por diferença de nível
+- Dano ilusório para diferença extrema de nível
 
 ### v1.0 (2026-01-27)
 - Definição inicial das regras oficiais
@@ -469,5 +547,5 @@ xp_earned = (battleXpBase + level_enemy * 2) * rarity_multiplier
 
 ---
 
-**Última atualização**: 2026-01-27
-**Versão**: 1.0.0
+**Última atualização**: 2026-03-31
+**Versão**: 2.0.0
