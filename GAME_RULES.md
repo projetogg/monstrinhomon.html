@@ -484,7 +484,20 @@ A versão 2 do sistema de combate foi especificada em cinco documentos canônico
 
 ## CHANGELOG
 
-### v2.3 (2026-04-01)
+### v2.4 (2026-04-01)
+- Matriz Mestra de Balanceamento do Combate (`MATRIZ_MESTRA_BALANCEAMENTO.md` v1.0)
+  - Matriz de papéis por classe: papel principal, força, fraqueza, estilo, risco de overpower
+  - Matriz de atributos-base Lv1 por classe (8 classes × 5 atributos + alcance)
+  - Matriz de habilidades por função (4 slots × 8 classes com função real e tipo de valor)
+  - Matriz de custos e pressão de energia por classe
+  - Análise de risco de overpower e contrapesos obrigatórios por classe
+  - Counters naturais: quem pressiona quem e por quê
+  - Fórmula canônica consolidada (confronto → faixa → dano base → multiplicador → regras especiais)
+  - 7 regras de design obrigatórias (DEF dividida, assinatura ≠ só dano, força com contrapartida, etc.)
+  - Tabela de comportamento esperado por classe
+  - Planilha operacional de balanceamento (32 linhas, uma por slot/classe, com colunas: atributo/custo/PWR/função/condição/risco/observação)
+
+
 - Kit canônico de habilidades por classe (`HABILIDADES_POR_CLASSE_V2.md` v2.1)
   - Escala de PWR alinhada com nova escala de atributos: básico 2–3, habilidade 4–6, forte 7–8, assinatura 9+
   - Nomes canônicos revisados por classe (ex: Golpe Firme, Pancada Selvagem, Rajada Arcana, Nota Cortante)
