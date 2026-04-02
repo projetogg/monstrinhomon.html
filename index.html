@@ -2836,6 +2836,23 @@
             }
         }
 
+        /**
+         * @deprecated Função legada — use createMonsterInstanceFromTemplate() para novas criações.
+         *
+         * Riscos de divergência desta função:
+         *  - NÃO aplica offsets de espécie canônica (speciesBridge).
+         *  - NÃO registra canonSpeciesId / canonAppliedOffsets na instância.
+         *  - NÃO normaliza o schema via normalizeMonster().
+         *  - Usa campo "monsterId" em vez de "templateId" (legado).
+         *  - Usa "id" em vez de "instanceId" (legado).
+         *
+         * Mantida para compatibilidade com código legado que ainda a chama.
+         * Não remover sem auditar todos os callers; não adicionar novos callers.
+         *
+         * Único chamador conhecido (2026-04): nenhum chamador direto identificado.
+         * Pode ser removida com segurança após confirmar que todos os fluxos
+         * usam createMonsterInstanceFromTemplate() ou awardMonster().
+         */
         function createMonsterInstance(template, ownerId, level = 1) {
             try {
                 if (!template) return null;
@@ -7878,33 +7895,15 @@
                 const randomIndex = Math.floor(Math.random() * monsterPool.length);
                 const template = monsterPool[randomIndex];
                 
-                // Create monster instance
-                const newMonster = {
-                    id: `mi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                    monsterId: template.id,
-                    name: template.name,
-                    class: template.class,
-                    rarity: template.rarity,
-                    emoji: template.emoji || '❓',
-                    level: 1,
-                    xp: 0,
-                    hp: template.baseHp || 30,
-                    hpMax: template.baseHp || 30,
-                    atk: template.baseAtk || 5,
-                    def: template.baseDef || 3,
-                    spd: template.baseSpd || 5,
-                    ene: template.baseEne || 6,
-                    eneMax: template.baseEne || 6,
-                    heldItemId: null,
-                    buffs: []
-                };
-                
-                // Add evolution fields if present
-                if (template.evolvesTo) {
-                    newMonster.evolvesTo = template.evolvesTo;
-                }
-                if (template.evolvesAt) {
-                    newMonster.evolvesAt = template.evolvesAt;
+                // Criar instância via factory canônica (garante species bridge + schema correto)
+                const newMonster = createMonsterInstanceFromTemplate(
+                    template.id,   // templateId
+                    1,             // nível 1 para ovos
+                    template.rarity
+                );
+                if (!newMonster) {
+                    alert('❌ Falha ao criar instância do Monstrinhomon. Tente novamente.');
+                    return;
                 }
                 
                 // ============================================================================

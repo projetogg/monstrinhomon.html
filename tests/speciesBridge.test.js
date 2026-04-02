@@ -15,6 +15,9 @@ import {
     resolveCanonSpeciesId,
     applyStatOffsets,
     resolveAndApply,
+    getUnmappedTemplateIds,
+    getEligibleUnmappedTemplateIds,
+    getBridgeCoverageReport,
 } from '../js/canon/speciesBridge.js';
 
 // ---------------------------------------------------------------------------
@@ -281,5 +284,134 @@ describe('speciesBridge — resolveAndApply()', () => {
         const original = { ...BASE_STATS };
         resolveAndApply('MON_010', BASE_STATS);
         expect(BASE_STATS).toEqual(original);
+    });
+});
+
+// ===========================================================================
+// ===========================================================================
+// DRIFT DETECTION — Fase 3.1
+// ===========================================================================
+
+// Catálogo mínimo de teste — cobre casos de base stage + evoluções + classes variadas
+const SAMPLE_CATALOG = [
+    { id: 'MON_001', class: 'Bardo' },
+    { id: 'MON_002', class: 'Guerreiro' },
+    { id: 'MON_002B', class: 'Guerreiro' },
+    { id: 'MON_003', class: 'Mago' },          // mapeado → moonquill
+    { id: 'MON_004', class: 'Curandeiro' },    // mapeado → floracura
+    { id: 'MON_007', class: 'Bárbaro' },       // mapeado → emberfang
+    { id: 'MON_010', class: 'Guerreiro' },     // mapeado → shieldhorn
+    { id: 'MON_014', class: 'Mago' },          // não mapeado — elegível (Mago base)
+    { id: 'MON_014B', class: 'Mago' },         // não mapeado — evolução (não elegível)
+    { id: 'MON_005', class: 'Caçador' },       // não mapeado — classe sem species canônica
+];
+
+describe('speciesBridge — getUnmappedTemplateIds()', () => {
+
+    it('deve retornar lista de templates sem mapeamento', () => {
+        const unmapped = getUnmappedTemplateIds(SAMPLE_CATALOG);
+        expect(unmapped).toContain('MON_001');
+        expect(unmapped).toContain('MON_002');
+        expect(unmapped).toContain('MON_002B');
+        expect(unmapped).toContain('MON_014');
+        expect(unmapped).toContain('MON_005');
+    });
+
+    it('NÃO deve incluir templates mapeados na lista de unmapped', () => {
+        const unmapped = getUnmappedTemplateIds(SAMPLE_CATALOG);
+        expect(unmapped).not.toContain('MON_003');
+        expect(unmapped).not.toContain('MON_004');
+        expect(unmapped).not.toContain('MON_007');
+        expect(unmapped).not.toContain('MON_010');
+    });
+
+    it('deve retornar array vazio para catálogo vazio', () => {
+        expect(getUnmappedTemplateIds([])).toEqual([]);
+    });
+
+    it('deve retornar array vazio para catálogo null/undefined', () => {
+        expect(getUnmappedTemplateIds(null)).toEqual([]);
+        expect(getUnmappedTemplateIds(undefined)).toEqual([]);
+    });
+
+    it('deve ignorar entradas inválidas no catálogo', () => {
+        const messy = [null, undefined, { id: null }, { id: 'MON_005', class: 'Caçador' }];
+        const unmapped = getUnmappedTemplateIds(messy);
+        expect(unmapped).toContain('MON_005');
+        expect(unmapped).toHaveLength(1);
+    });
+});
+
+describe('speciesBridge — getEligibleUnmappedTemplateIds()', () => {
+
+    it('deve retornar templates de base stage com classe com species canônica', () => {
+        const eligible = getEligibleUnmappedTemplateIds(SAMPLE_CATALOG);
+        const eligibleIds = eligible.map(e => e.id);
+        // MON_002: Guerreiro base, não mapeado — elegível
+        expect(eligibleIds).toContain('MON_002');
+        // MON_014: Mago base, não mapeado — elegível
+        expect(eligibleIds).toContain('MON_014');
+    });
+
+    it('NÃO deve incluir evoluções (sufixo de letra) como elegíveis', () => {
+        const eligible = getEligibleUnmappedTemplateIds(SAMPLE_CATALOG);
+        const eligibleIds = eligible.map(e => e.id);
+        expect(eligibleIds).not.toContain('MON_002B');
+        expect(eligibleIds).not.toContain('MON_014B');
+    });
+
+    it('NÃO deve incluir classes sem species canônica', () => {
+        const eligible = getEligibleUnmappedTemplateIds(SAMPLE_CATALOG);
+        const eligibleIds = eligible.map(e => e.id);
+        expect(eligibleIds).not.toContain('MON_001'); // Bardo — sem species
+        expect(eligibleIds).not.toContain('MON_005'); // Caçador — sem species
+    });
+
+    it('NÃO deve incluir templates já mapeados', () => {
+        const eligible = getEligibleUnmappedTemplateIds(SAMPLE_CATALOG);
+        const eligibleIds = eligible.map(e => e.id);
+        expect(eligibleIds).not.toContain('MON_003'); // mapeado
+        expect(eligibleIds).not.toContain('MON_010'); // mapeado
+    });
+
+    it('deve retornar objetos com id e class', () => {
+        const eligible = getEligibleUnmappedTemplateIds(SAMPLE_CATALOG);
+        for (const entry of eligible) {
+            expect(entry).toHaveProperty('id');
+            expect(entry).toHaveProperty('class');
+        }
+    });
+
+    it('deve retornar array vazio para catálogo vazio', () => {
+        expect(getEligibleUnmappedTemplateIds([])).toEqual([]);
+    });
+});
+
+describe('speciesBridge — getBridgeCoverageReport()', () => {
+
+    it('deve contar total, mapeados e não mapeados corretamente', () => {
+        const report = getBridgeCoverageReport(SAMPLE_CATALOG);
+        expect(report.total).toBe(10);
+        expect(report.mapped).toBe(4);   // MON_003, MON_004, MON_007, MON_010
+        expect(report.unmapped).toBe(6); // MON_001, MON_002, MON_002B, MON_014, MON_014B, MON_005
+    });
+
+    it('deve incluir eligibleUnmapped no relatório', () => {
+        const report = getBridgeCoverageReport(SAMPLE_CATALOG);
+        expect(Array.isArray(report.eligibleUnmapped)).toBe(true);
+        expect(report.eligibleUnmapped.length).toBeGreaterThan(0);
+    });
+
+    it('deve retornar zeros para catálogo vazio', () => {
+        const report = getBridgeCoverageReport([]);
+        expect(report.total).toBe(0);
+        expect(report.mapped).toBe(0);
+        expect(report.unmapped).toBe(0);
+        expect(report.eligibleUnmapped).toEqual([]);
+    });
+
+    it('deve retornar zeros para argumento null', () => {
+        const report = getBridgeCoverageReport(null);
+        expect(report.total).toBe(0);
     });
 });

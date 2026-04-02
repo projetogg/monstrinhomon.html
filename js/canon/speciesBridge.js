@@ -10,6 +10,7 @@
  *  - Aplicação aditiva de offsets sobre stats base já calculados pelo runtime
  *  - Registro de metadados canônicos na instância (canonSpeciesId, canonAppliedOffsets)
  *  - Fallback seguro: instâncias sem mapeamento funcionam normalmente, sem offsets
+ *  - Detecção de drift: utilitários para identificar templates sem mapeamento (Fase 3.1)
  *
  * O que este módulo NÃO faz (reservado para fases futuras):
  *  - Passivas de espécie
@@ -17,6 +18,21 @@
  *  - Desbloqueio de slots por nível
  *  - Evolução automática
  *  - Substituição de monsters.json
+ *
+ * ── MANUTENÇÃO DO BRIDGE ─────────────────────────────────────────────────────
+ *
+ * Para adicionar um novo mapeamento:
+ *  1. Abra design/canon/species.json e confirme o species_id desejado.
+ *  2. Adicione uma entrada em RUNTIME_TO_CANON_SPECIES com justificativa.
+ *  3. Execute os testes: npx vitest run tests/speciesBridge.test.js
+ *  4. Confirme que getEligibleUnmappedTemplateIds() não lista mais esse template.
+ *
+ * Para detectar templates elegíveis sem mapeamento:
+ *  - Importe getEligibleUnmappedTemplateIds() e chame-a com o catálogo.
+ *  - Templates de estágio base (sem sufixo) e classe com espécie canônica
+ *    disponível são sinalizados como elegíveis para mapeamento futuro.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 
 import { getSpeciesStatOffsets } from './canonLoader.js';
@@ -61,6 +77,17 @@ export const RUNTIME_TO_CANON_SPECIES = {
     // Ninfolha: Curandeiro Comum, perfil de suporte sustentado
     'MON_004': 'floracura',
 };
+
+// ---------------------------------------------------------------------------
+// Classes de runtime que possuem ao menos uma espécie canônica disponível.
+// Atualizar se novas espécies forem adicionadas a design/canon/species.json.
+// ---------------------------------------------------------------------------
+const CLASSES_WITH_CANON_SPECIES = new Set([
+    'Guerreiro',   // shieldhorn (warrior)
+    'Bárbaro',     // emberfang (barbarian)
+    'Mago',        // moonquill (mage)
+    'Curandeiro',  // floracura (healer)
+]);
 
 // ---------------------------------------------------------------------------
 // Mapeamento de campos de offset canônico → nomes de stat no runtime
@@ -149,3 +176,72 @@ export function resolveAndApply(templateId, stats) {
     const { stats: adjusted, applied } = applyStatOffsets(stats, offsets);
     return { stats: adjusted, canonSpeciesId: speciesId, canonAppliedOffsets: applied };
 }
+
+// ---------------------------------------------------------------------------
+// Utilitários de governança / detecção de drift (Fase 3.1)
+// ---------------------------------------------------------------------------
+
+/**
+ * Retorna todos os templateIds do catálogo que ainda não têm mapeamento
+ * na tabela RUNTIME_TO_CANON_SPECIES.
+ *
+ * Útil para auditoria e para detectar drift quando novos templates são
+ * adicionados ao catálogo sem receber mapeamento de espécie.
+ *
+ * @param {Array<{id: string}>} catalog - Array de templates do MONSTER_CATALOG.
+ * @returns {string[]} Array de templateIds sem mapeamento.
+ */
+export function getUnmappedTemplateIds(catalog) {
+    if (!Array.isArray(catalog)) return [];
+    return catalog
+        .filter(t => t && t.id && !RUNTIME_TO_CANON_SPECIES[t.id])
+        .map(t => t.id);
+}
+
+/**
+ * Retorna os templateIds de estágio base (sem sufixo de letra) que ainda não
+ * têm mapeamento, MAS pertencem a uma classe que já possui espécie canônica.
+ *
+ * Estes são os candidatos prioritários para receber mapeamento futuro,
+ * pois são o estágio de entrada da linha evolutiva e têm classe com design
+ * canônico disponível.
+ *
+ * Heurística de estágio base: templateId sem sufixo de letra (ex: MON_002, não MON_002B).
+ *
+ * @param {Array<{id: string, class: string}>} catalog - Array de templates do MONSTER_CATALOG.
+ * @returns {Array<{id: string, class: string}>} Candidatos elegíveis sem mapeamento.
+ */
+export function getEligibleUnmappedTemplateIds(catalog) {
+    if (!Array.isArray(catalog)) return [];
+    return catalog.filter(t => {
+        if (!t || !t.id) return false;
+        if (RUNTIME_TO_CANON_SPECIES[t.id]) return false;          // já mapeado
+        if (!CLASSES_WITH_CANON_SPECIES.has(t.class)) return false; // classe sem species
+        // Estágio base: ID termina em dígito, sem sufixo de letra
+        return /^MON_\d+$/.test(t.id);
+    }).map(t => ({ id: t.id, class: t.class }));
+}
+
+/**
+ * Resumo de cobertura do bridge para diagnóstico.
+ * Retorna contagens e listas úteis para logging ou relatórios.
+ *
+ * @param {Array<{id: string, class: string}>} catalog
+ * @returns {{ total: number, mapped: number, unmapped: number, eligibleUnmapped: Array }}
+ */
+export function getBridgeCoverageReport(catalog) {
+    if (!Array.isArray(catalog)) {
+        return { total: 0, mapped: 0, unmapped: 0, eligibleUnmapped: [] };
+    }
+    const total = catalog.filter(t => t && t.id).length;
+    const unmappedIds = getUnmappedTemplateIds(catalog);
+    const eligible = getEligibleUnmappedTemplateIds(catalog);
+    return {
+        total,
+        mapped: total - unmappedIds.length,
+        unmapped: unmappedIds.length,
+        eligibleUnmapped: eligible,
+    };
+}
+
+
