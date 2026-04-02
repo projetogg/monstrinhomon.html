@@ -8,6 +8,7 @@
 import * as WildCore from './wildCore.js';
 import * as WildUI from './wildUI.js';
 import { initializeBattleParticipation, markAsParticipated, processBattleItemBreakage } from './itemBreakage.js';
+import { resolvePassiveModifier } from '../canon/speciesPassives.js';
 
 /**
  * Rola d20 usando função injetada ou fallback para Math.random.
@@ -93,7 +94,17 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
             }
             
             const atkMods = WildCore.getBuffModifiers(playerMonster);
-            const effectiveAtk = Math.max(1, playerMonster.atk + atkMods.atk);
+            let effectiveAtk = Math.max(1, playerMonster.atk + atkMods.atk);
+
+            // Passiva canônica — atacante (ex: emberfang +1 ATK se HP > 70%)
+            const atkPassive = resolvePassiveModifier(playerMonster, {
+                event: 'on_attack',
+                hpPct: playerMonster.hpMax > 0 ? playerMonster.hp / playerMonster.hpMax : 0,
+            });
+            if (atkPassive?.atkBonus) {
+                effectiveAtk = Math.max(1, effectiveAtk + atkPassive.atkBonus);
+                encounter.log.push(`✨ Passiva ${playerMonster.name}: +${atkPassive.atkBonus} ATK`);
+            }
             
             const defMods = WildCore.getBuffModifiers(encounter.wildMonster);
             const effectiveDef = Math.max(1, encounter.wildMonster.def + defMods.def);
@@ -104,12 +115,25 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
                 dependencies.classAdvantages
             );
             
-            const damage = WildCore.calcDamage({
+            let damage = WildCore.calcDamage({
                 atk: effectiveAtk,
                 def: effectiveDef,
                 power: power,
                 damageMult: classAdv.damageMult
             });
+
+            // Passiva canônica — defensor (ex: shieldhorn -1 dano recebido)
+            const defPassive = resolvePassiveModifier(encounter.wildMonster, {
+                event: 'on_hit_received',
+                hpPct: encounter.wildMonster.hpMax > 0 ? encounter.wildMonster.hp / encounter.wildMonster.hpMax : 0,
+            });
+            if (defPassive?.damageReduction) {
+                const reducedDamage = Math.max(1, damage - defPassive.damageReduction);
+                if (reducedDamage < damage) {
+                    encounter.log.push(`🛡️ Passiva ${encounter.wildMonster.name}: -${damage - reducedDamage} dano`);
+                }
+                damage = reducedDamage;
+            }
             
             // Aplicar dano
             encounter.wildMonster.hp = WildCore.applyDamageToHP(encounter.wildMonster.hp, damage);
@@ -280,7 +304,17 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
     
     if (enemyHit) {
         const atkMods = WildCore.getBuffModifiers(wildMonster);
-        const effectiveAtk = Math.max(1, wildMonster.atk + atkMods.atk);
+        let effectiveAtk = Math.max(1, wildMonster.atk + atkMods.atk);
+
+        // Passiva canônica — atacante selvagem (ex: emberfang +1 ATK se HP > 70%)
+        const atkPassive = resolvePassiveModifier(wildMonster, {
+            event: 'on_attack',
+            hpPct: wildMonster.hpMax > 0 ? wildMonster.hp / wildMonster.hpMax : 0,
+        });
+        if (atkPassive?.atkBonus) {
+            effectiveAtk = Math.max(1, effectiveAtk + atkPassive.atkBonus);
+            encounter.log.push(`✨ Passiva ${wildMonster.name}: +${atkPassive.atkBonus} ATK`);
+        }
         
         const defMods = WildCore.getBuffModifiers(playerMonster);
         const effectiveDef = Math.max(1, playerMonster.def + defMods.def);
@@ -291,12 +325,25 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
             dependencies.classAdvantages
         );
         
-        const damage = WildCore.calcDamage({
+        let damage = WildCore.calcDamage({
             atk: effectiveAtk,
             def: effectiveDef,
             power: wildSkill.power,
             damageMult: classAdv.damageMult
         });
+
+        // Passiva canônica — defensor (ex: shieldhorn -1 dano recebido)
+        const defPassive = resolvePassiveModifier(playerMonster, {
+            event: 'on_hit_received',
+            hpPct: playerMonster.hpMax > 0 ? playerMonster.hp / playerMonster.hpMax : 0,
+        });
+        if (defPassive?.damageReduction) {
+            const reducedDamage = Math.max(1, damage - defPassive.damageReduction);
+            if (reducedDamage < damage) {
+                encounter.log.push(`🛡️ Passiva ${playerMonster.name}: -${damage - reducedDamage} dano`);
+            }
+            damage = reducedDamage;
+        }
         
         playerMonster.hp = WildCore.applyDamageToHP(playerMonster.hp, damage);
         encounter.log.push(`💥 ${wildSkill.name} acerta! Causa ${damage} de dano!`);
@@ -338,14 +385,52 @@ function processEnemyBasicAttack(encounter, wildMonster, playerMonster, dependen
     }
     
     if (enemyHit) {
-        const damage = WildCore.calculateDamage(
-            wildMonster,
-            playerMonster,
-            dependencies.getBasicPower,
+        // Calcular ATK efetivo explicitamente para permitir injeção de passivas
+        const atkMods = WildCore.getBuffModifiers(wildMonster);
+        let effectiveAtk = Math.max(1, wildMonster.atk + atkMods.atk);
+
+        // Passiva canônica — atacante selvagem (ex: emberfang +1 ATK se HP > 70%)
+        const atkPassive = resolvePassiveModifier(wildMonster, {
+            event: 'on_attack',
+            hpPct: wildMonster.hpMax > 0 ? wildMonster.hp / wildMonster.hpMax : 0,
+        });
+        if (atkPassive?.atkBonus) {
+            effectiveAtk = Math.max(1, effectiveAtk + atkPassive.atkBonus);
+            encounter.log.push(`✨ Passiva ${wildMonster.name}: +${atkPassive.atkBonus} ATK`);
+        }
+
+        const defMods = WildCore.getBuffModifiers(playerMonster);
+        const effectiveDef = Math.max(1, playerMonster.def + defMods.def);
+
+        const classAdv = WildCore.getClassAdvantageModifiers(
+            wildMonster.class,
+            playerMonster.class,
             dependencies.classAdvantages
         );
+        const basicPower = dependencies.getBasicPower(wildMonster.class);
+
+        let damage = WildCore.calcDamage({
+            atk: effectiveAtk,
+            def: effectiveDef,
+            power: basicPower,
+            damageMult: classAdv.damageMult
+        });
+
+        // Passiva canônica — defensor (ex: shieldhorn -1 dano recebido)
+        const defPassive = resolvePassiveModifier(playerMonster, {
+            event: 'on_hit_received',
+            hpPct: playerMonster.hpMax > 0 ? playerMonster.hp / playerMonster.hpMax : 0,
+        });
+        if (defPassive?.damageReduction) {
+            const reducedDamage = Math.max(1, damage - defPassive.damageReduction);
+            if (reducedDamage < damage) {
+                encounter.log.push(`🛡️ Passiva ${playerMonster.name}: -${damage - reducedDamage} dano`);
+            }
+            damage = reducedDamage;
+        }
+
         playerMonster.hp = WildCore.applyDamageToHP(playerMonster.hp, damage);
-        encounter.log.push(`💥 ${wildMonster.name} hits! Deals ${damage} damage!`);
+        encounter.log.push(`💥 ${wildMonster.name} acerta! Causa ${damage} de dano!`);
         
         // PR11B: Marcar que o jogador participou (recebeu dano)
         markAsParticipated(playerMonster);

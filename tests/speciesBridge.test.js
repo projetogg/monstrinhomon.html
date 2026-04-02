@@ -73,6 +73,8 @@ const BASE_STATS = { hpMax: 30, atk: 7, def: 5, spd: 5, eneMax: 10 };
 describe('speciesBridge — tabela RUNTIME_TO_CANON_SPECIES', () => {
 
     it('deve conter os 12 mapeamentos definidos na Fase 3.2', () => {
+        // Valor 12 fixo e intencional: documenta o estado do bridge após Fase 3.2.
+        // Atualizar junto com cada novo mapeamento adicionado à tabela.
         expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(12);
     });
 
