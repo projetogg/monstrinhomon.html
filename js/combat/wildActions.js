@@ -137,7 +137,7 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
             
             // Aplicar dano
             encounter.wildMonster.hp = WildCore.applyDamageToHP(encounter.wildMonster.hp, damage);
-            encounter.log.push(`💥 ${playerMonster.name} hits! Deals ${damage} damage!`);
+            encounter.log.push(`💥 ${playerMonster.name} acerta! Causa ${damage} de dano!`);
             
             // PR11B: Marcar que o monstro selvagem participou (recebeu dano)
             markAsParticipated(encounter.wildMonster);
@@ -581,6 +581,30 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
         const success = dependencies.useSkill(playerMonster, skill, wildMonster, encounter);
         if (!success) return { success: false, result: 'invalid' };
 
+        // Passiva canônica — moonquill (+1 SPD ao aplicar debuff)
+        // Debuff = habilidade BUFF direcionada ao inimigo com poder negativo
+        const isDebuff =
+            skill.type === 'BUFF' &&
+            (skill.target === 'enemy' || skill.target === 'Inimigo') &&
+            (skill.power || 0) < 0;
+        const skillPassive = resolvePassiveModifier(playerMonster, {
+            event: 'on_skill_used',
+            hpPct: playerMonster.hpMax > 0 ? playerMonster.hp / playerMonster.hpMax : 0,
+            isDebuff,
+        });
+        if (skillPassive?.spdBuff) {
+            playerMonster.buffs = playerMonster.buffs || [];
+            playerMonster.buffs.push({
+                type: 'spd',
+                power: skillPassive.spdBuff.power,
+                duration: skillPassive.spdBuff.duration,
+                source: 'moonquill_passive',
+            });
+            encounter.log.push(
+                `✨ Passiva ${playerMonster.name}: +${skillPassive.spdBuff.power} SPD por ${skillPassive.spdBuff.duration} turno(s)`
+            );
+        }
+
         // Marcar participação (item breakage)
         if (dependencies.markAsParticipated) {
             dependencies.markAsParticipated(playerMonster);
@@ -756,6 +780,25 @@ export function executeWildItemUse({ encounter, player, playerMonster, itemId, d
         const hpBefore   = playerMonster.hp;
         playerMonster.hp = Math.min(playerMonster.hpMax, playerMonster.hp + healAmount);
         const actualHeal = playerMonster.hp - hpBefore;
+
+        // Passiva canônica — floracura (bônus na primeira cura do combate)
+        // passiveState é inicializado lazily no encounter para não poluir o objeto de encontro
+        // nos casos em que nenhuma passiva com estado dispara.
+        const passiveState = encounter.passiveState || (encounter.passiveState = {});
+        const healPassive = resolvePassiveModifier(playerMonster, {
+            event: 'on_heal_item',
+            hpPct: playerMonster.hpMax > 0 ? hpBefore / playerMonster.hpMax : 0,
+            isFirstHeal: !passiveState.floracuraHealUsed,
+        });
+        if (healPassive?.healBonus) {
+            const bonus = Math.min(healPassive.healBonus, playerMonster.hpMax - playerMonster.hp);
+            if (bonus > 0) {
+                playerMonster.hp += bonus;
+                encounter.log.push(`✨ Passiva ${playerMonster.name}: +${bonus} HP (primeira cura)`);
+            }
+            // Marca independentemente de bonus > 0 (HP pode já estar cheio)
+            passiveState.floracuraHealUsed = true;
+        }
 
         encounter.log.push(
             `✨ ${playerMonster.name} recuperou ${actualHeal} HP! (${playerMonster.hp}/${playerMonster.hpMax})`

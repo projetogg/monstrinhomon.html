@@ -177,14 +177,16 @@ describe('speciesPassives — getActivePassiveIds()', () => {
         expect(ids).toContain('emberfang');
     });
 
-    it('deve conter exatamente 2 passivas na Fase 4.0', () => {
-        expect(getActivePassiveIds()).toHaveLength(2);
+    it('deve conter exatamente 4 passivas na Fase 4.1', () => {
+        // Atualizado em Fase 4.1: moonquill e floracura implementadas.
+        // Atualizar junto com cada nova passiva adicionada.
+        expect(getActivePassiveIds()).toHaveLength(4);
     });
 
-    it('NÃO deve incluir passivas diferidas (moonquill, floracura)', () => {
+    it('deve incluir moonquill e floracura implementadas na Fase 4.1', () => {
         const ids = getActivePassiveIds();
-        expect(ids).not.toContain('moonquill');
-        expect(ids).not.toContain('floracura');
+        expect(ids).toContain('moonquill');
+        expect(ids).toContain('floracura');
     });
 });
 
@@ -198,12 +200,12 @@ describe('speciesPassives — hasPassive()', () => {
         expect(hasPassive('emberfang')).toBe(true);
     });
 
-    it('deve retornar false para moonquill (passiva diferida)', () => {
-        expect(hasPassive('moonquill')).toBe(false);
+    it('deve retornar true para moonquill (implementada na Fase 4.1)', () => {
+        expect(hasPassive('moonquill')).toBe(true);
     });
 
-    it('deve retornar false para floracura (passiva diferida)', () => {
-        expect(hasPassive('floracura')).toBe(false);
+    it('deve retornar true para floracura (implementada na Fase 4.1)', () => {
+        expect(hasPassive('floracura')).toBe(true);
     });
 
     it('deve retornar false para species desconhecido', () => {
