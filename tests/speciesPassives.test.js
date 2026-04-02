@@ -114,22 +114,23 @@ describe('speciesPassives — shieldhorn (damageReduction)', () => {
 
 describe('speciesPassives — emberfang (atkBonus)', () => {
 
-    it('deve retornar atkBonus: 1 quando HP > 70% no on_attack', () => {
+    it('deve retornar atkBonus: 1 quando HP > 70% e isOffensiveSkill=true', () => {
+        // Fase 4.2: emberfang exige isOffensiveSkill:true (skill DAMAGE)
         const instance = makeInstance('emberfang');
-        const mod = resolvePassiveModifier(instance, { event: 'on_attack', hpPct: 0.75 });
+        const mod = resolvePassiveModifier(instance, { event: 'on_attack', hpPct: 0.75, isOffensiveSkill: true });
         expect(mod).not.toBeNull();
         expect(mod.atkBonus).toBe(1);
     });
 
-    it('deve retornar atkBonus: 1 com HP = 100%', () => {
+    it('deve retornar atkBonus: 1 com HP = 100% e isOffensiveSkill=true', () => {
         const instance = makeInstance('emberfang');
-        const mod = resolvePassiveModifier(instance, { event: 'on_attack', hpPct: 1.0 });
+        const mod = resolvePassiveModifier(instance, { event: 'on_attack', hpPct: 1.0, isOffensiveSkill: true });
         expect(mod?.atkBonus).toBe(1);
     });
 
-    it('deve retornar atkBonus: 1 com HP = 71% (acima de 70%)', () => {
+    it('deve retornar atkBonus: 1 com HP = 71% e isOffensiveSkill=true (acima de 70%)', () => {
         const instance = makeInstance('emberfang');
-        const mod = resolvePassiveModifier(instance, { event: 'on_attack', hpPct: 0.71 });
+        const mod = resolvePassiveModifier(instance, { event: 'on_attack', hpPct: 0.71, isOffensiveSkill: true });
         expect(mod?.atkBonus).toBe(1);
     });
 
@@ -317,22 +318,22 @@ describe('speciesPassives — integração executeWildAttack (shieldhorn defenso
 
 describe('speciesPassives — integração executeWildAttack (emberfang atacante)', () => {
 
-    it('playerMonster emberfang com HP > 70% recebe +1 ATK (dano aumenta)', () => {
-        // HP > 70%: 80/80 = 100%
+    it('playerMonster emberfang em ATAQUE BÁSICO: NÃO recebe +1 ATK (Fase 4.2)', () => {
+        // Fase 4.2: emberfang só dispara em skill ofensiva, não em ataque básico
         const playerMon = makePlayerMon({ atk: 7, hp: 80, hpMax: 80, canonSpeciesId: 'emberfang' });
         const wild = makeWild({ hp: 50, hpMax: 80, def: 3 });
         const enc = makeEncounter(wild);
         const player = makePlayer();
         const deps = makeDependencies({ rollD20: () => 15 });
 
-        // Sem passiva: max(1, 7 + 10 - 3) = 14 → HP = 36
-        // Com passiva: max(1, 8 + 10 - 3) = 15 → HP = 35
+        // Sem bônus de emberfang em ataque básico: max(1, 7 + 10 - 3) = 14 → HP = 36
         executeWildAttack({ encounter: enc, player, playerMonster: playerMon, d20Roll: 15, dependencies: deps });
 
-        expect(enc.wildMonster.hp).toBe(35); // +1 ATK via emberfang
+        expect(enc.wildMonster.hp).toBe(36); // sem +1 ATK de emberfang em ataque básico
     });
 
-    it('log de combate deve registrar a passiva emberfang', () => {
+    it('log de combate NÃO deve registrar emberfang em ataque básico (Fase 4.2)', () => {
+        // Fase 4.2: emberfang não dispara em ataque básico → sem log de passiva
         const playerMon = makePlayerMon({ atk: 7, hp: 80, hpMax: 80, canonSpeciesId: 'emberfang' });
         const wild = makeWild({ hp: 50, hpMax: 80, def: 3 });
         const enc = makeEncounter(wild);
@@ -341,7 +342,7 @@ describe('speciesPassives — integração executeWildAttack (emberfang atacante
         executeWildAttack({ encounter: enc, player: makePlayer(), playerMonster: playerMon, d20Roll: 15, dependencies: deps });
 
         const hasEmberfangLog = enc.log.some(l => l.includes('✨') && l.includes('ATK'));
-        expect(hasEmberfangLog).toBe(true);
+        expect(hasEmberfangLog).toBe(false); // emberfang não disparou
     });
 
     it('playerMonster emberfang com HP = 70% NÃO recebe bônus', () => {

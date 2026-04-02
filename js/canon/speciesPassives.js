@@ -1,5 +1,5 @@
 /**
- * SPECIES PASSIVES — Fase 4 (4.0 + 4.1)
+ * SPECIES PASSIVES — Fase 4 (4.0 + 4.1 + 4.2)
  *
  * Sistema de passivas canônicas de espécie.
  *
@@ -8,6 +8,7 @@
  *  - Expõe uma função pura: resolvePassiveModifier(instance, context) → modifier | null
  *  - Fallback seguro: instâncias sem canonSpeciesId ou sem passiva retornam null.
  *  - Fase 4.1: suporta passivas com estado de combate via contexto (isFirstHeal, isDebuff).
+ *  - Fase 4.2: semântica de gatilho explícita (isOffensiveSkill, isFirstHitThisTurn).
  *    O estado em si (encounter.passiveState) é gerenciado pelo caller (wildActions.js).
  *
  * O que este módulo NÃO faz (reservado para fases futuras):
@@ -21,15 +22,19 @@
  *  1. Adicione uma entrada em PASSIVE_HANDLERS com o species_id como chave.
  *  2. O handler recebe (instance, context) e retorna um modifier ou null.
  *  3. modifier: { atkBonus?, damageReduction?, healBonus?, spdBuff? }
- *  4. context: { event, hpPct?, isFirstHeal?, isDebuff? }
+ *  4. context: { event, hpPct?, isOffensiveSkill?, isFirstHitThisTurn?, isFirstHeal?, isDebuff? }
  *  5. Execute os testes: npx vitest run tests/speciesPassives.test.js
  *
  * ── EVENTOS SUPORTADOS ────────────────────────────────────────────────────────
  *
- *  'on_attack'       — instância está atacando (jogador ou selvagem)
+ *  'on_attack'       — instância está atacando
+ *                      context.isOffensiveSkill: true = skill DAMAGE | false = ataque básico
  *  'on_hit_received' — instância está recebendo um hit confirmado
+ *                      context.isFirstHitThisTurn: true = primeiro hit da rodada (padrão)
  *  'on_heal_item'    — instância usou um item de cura (Fase 4.1)
- *  'on_skill_used'   — instância usou uma habilidade (Fase 4.1)
+ *                      context.isFirstHeal: true = primeira cura do combate
+ *  'on_skill_used'   — instância usou qualquer habilidade (Fase 4.1)
+ *                      context.isDebuff: true = skill BUFF com target enemy e power < 0
  *
  * ── MODIFICADORES SUPORTADOS ─────────────────────────────────────────────────
  *
@@ -41,10 +46,15 @@
  * ── ESTADO DE COMBATE (encounter.passiveState) ───────────────────────────────
  *
  *  Gerenciado PELO CALLER (wildActions.js), não por este módulo.
- *  Estrutura mínima para Fase 4.1:
- *    { floracuraHealUsed: boolean }
+ *  Estrutura para Fase 4.2:
+ *    {
+ *      floracuraHealUsed: boolean,         // Fase 4.1: bônus da primeira cura consumido
+ *      shieldhornBlockedThisTurn: boolean, // Fase 4.2: mitigação do turno já consumida
+ *    }
  *  O caller inicializa lazily, passa flags como contexto para os handlers,
  *  e atualiza o estado após o modifier ser aplicado.
+ *  shieldhornBlockedThisTurn é resetado no início de cada ciclo de ataque inimigo
+ *  (em processEnemyCounterattack).
  *
  * ─────────────────────────────────────────────────────────────────────────────
  */
@@ -55,7 +65,7 @@
 // Cada handler: (instance, context) → modifier | null
 // Retornar null = passiva não dispara nesta situação.
 //
-// PASSIVAS IMPLEMENTADAS (Fase 4.0):
+// PASSIVAS IMPLEMENTADAS (Fase 4.0 → refinadas em 4.2):
 //   shieldhorn — Guerreiro / tank_puro
 //   emberfang  — Bárbaro  / burst_agressivo
 //
@@ -70,13 +80,16 @@ const PASSIVE_HANDLERS = {
      * Passiva canônica: "Quando está na frente, recebe +1 de mitigação
      * no primeiro ataque sofrido por turno."
      *
-     * Implementação Fase 4.0 (simplificada):
-     *   Reduz todo dano recebido em 1 ponto (mínimo de dano final = 1).
-     *   A versão completa "apenas primeiro ataque por turno" requer tracking
-     *   de turno que ainda não existe no pipeline wild — diferido para Fase 4.2.
+     * Implementação Fase 4.2 (semântica canônica):
+     *   Reduz dano recebido em 1 ponto APENAS no primeiro hit do turno.
+     *   context.isFirstHitThisTurn (boolean, padrão: true se ausente) controla o gate.
+     *   O caller (wildActions.js) rastreia passiveState.shieldhornBlockedThisTurn
+     *   e reseta no início de cada ciclo de ataque inimigo (processEnemyCounterattack).
      */
     shieldhorn: (_instance, context) => {
         if (context.event !== 'on_hit_received') return null;
+        // isFirstHitThisTurn: undefined é tratado como true (compatível com callers antigos)
+        if (context.isFirstHitThisTurn === false) return null;
         return { damageReduction: 1 };
     },
 
@@ -86,13 +99,15 @@ const PASSIVE_HANDLERS = {
      * Passiva canônica: "Ao usar habilidade ofensiva, recebe +1 no confronto
      * se estiver com HP acima de 70%."
      *
-     * Implementação Fase 4.0 (simplificada):
-     *   Aplica +1 ATK em qualquer ataque (básico ou habilidade) quando HP > 70%.
-     *   A restrição "apenas habilidade ofensiva" requer tracking do tipo de ação
-     *   que ainda não é propagado ao módulo de passivas — diferido para Fase 4.2.
+     * Implementação Fase 4.2 (semântica canônica):
+     *   Aplica +1 ATK APENAS quando context.isOffensiveSkill === true (skill de DAMAGE).
+     *   NÃO dispara em ataque básico (isOffensiveSkill: false).
+     *   O caller passa isOffensiveSkill explicitamente em todos os pontos de integração.
      */
     emberfang: (_instance, context) => {
         if (context.event !== 'on_attack') return null;
+        // Apenas skill ofensiva (tipo DAMAGE) — não ataque básico
+        if (!context.isOffensiveSkill) return null;
         if ((context.hpPct ?? 0) > 0.70) {
             return { atkBonus: 1 };
         }
@@ -151,7 +166,14 @@ const PASSIVE_HANDLERS = {
  *  - o handler lança uma exceção.
  *
  * @param {{ canonSpeciesId?: string }} instance - Instância com metadado canônico.
- * @param {{ event: string, hpPct?: number, isFirstHeal?: boolean, isDebuff?: boolean }} context
+ * @param {{
+ *   event: string,
+ *   hpPct?: number,
+ *   isOffensiveSkill?: boolean,   // Fase 4.2: true = DAMAGE skill, false = basic attack
+ *   isFirstHitThisTurn?: boolean, // Fase 4.2: undefined/true = primeiro hit do turno
+ *   isFirstHeal?: boolean,        // Fase 4.1: true = primeira cura do combate
+ *   isDebuff?: boolean,           // Fase 4.1: true = skill debuff (BUFF+enemy+power<0)
+ * }} context
  * @returns {{ atkBonus?: number, damageReduction?: number, healBonus?: number, spdBuff?: { power: number, duration: number } }|null}
  */
 export function resolvePassiveModifier(instance, context) {

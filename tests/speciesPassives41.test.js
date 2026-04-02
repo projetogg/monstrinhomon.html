@@ -586,10 +586,10 @@ describe('speciesPassives 4.1 — impacto shieldhorn (simulação de 100 ataques
 
 describe('speciesPassives 4.1 — impacto emberfang (simulação de 100 ataques)', () => {
 
-    it('emberfang adiciona exatamente +1 ATK quando HP > 70%', () => {
-        const ATK = 7, BASIC_POWER = 10, DEF = 3;
-        // Dano base sem passiva: max(1, 7 + 10 - 3) = 14
-        // Com emberfang (HP 100% > 70%): max(1, 8 + 10 - 3) = 15
+    it('emberfang em ataque básico: NÃO adiciona +1 ATK (Fase 4.2)', () => {
+        // Fase 4.2: emberfang exige isOffensiveSkill:true — executeWildAttack é ataque básico
+        // Portanto ambos (sem passiva e com passiva) devem causar o mesmo dano
+        const ATK = 7, DEF = 3;
 
         let totalWithPassive = 0;
         let totalWithout = 0;
@@ -598,13 +598,13 @@ describe('speciesPassives 4.1 — impacto emberfang (simulação de 100 ataques)
             // SEM passiva
             const wildN = { id: 'w', name: 'W', class: 'Guerreiro', hp: 200, hpMax: 200, atk: ATK, def: DEF, poder: 8, ene: 5, eneMax: 20, aggression: 60, buffs: [], skill: null };
             const encN = makeEncounter(wildN);
-            const pmN = { id: 'pm', name: 'PM', class: 'Guerreiro', hp: 80, hpMax: 80, atk: ATK, def: DEF, ene: 10, eneMax: 20, buffs: [] }; // HP 100%, sem canonSpeciesId
+            const pmN = { id: 'pm', name: 'PM', class: 'Guerreiro', hp: 80, hpMax: 80, atk: ATK, def: DEF, ene: 10, eneMax: 20, buffs: [] };
             const playerN = { id: 'p', name: 'J', class: 'Guerreiro', inventory: {}, team: [], money: 0 };
             const hpBefore = wildN.hp;
             executeWildAttack({ encounter: encN, player: playerN, playerMonster: pmN, d20Roll: 15, dependencies: makeDepsForSimulation(1) });
             totalWithout += hpBefore - wildN.hp;
 
-            // COM emberfang (HP > 70%)
+            // COM emberfang (HP > 70%) — mas ataque básico → não dispara
             const wildP = { id: 'w', name: 'W', class: 'Guerreiro', hp: 200, hpMax: 200, atk: ATK, def: DEF, poder: 8, ene: 5, eneMax: 20, aggression: 60, buffs: [], skill: null };
             const encP = makeEncounter(wildP);
             const pmP = { id: 'pm', name: 'PM', class: 'Guerreiro', hp: 80, hpMax: 80, atk: ATK, def: DEF, ene: 10, eneMax: 20, buffs: [], canonSpeciesId: 'emberfang' };
@@ -617,10 +617,10 @@ describe('speciesPassives 4.1 — impacto emberfang (simulação de 100 ataques)
         const avgWithPassive = totalWithPassive / 100;
         const avgBonus = avgWithPassive - avgWithout;
 
-        expect(avgWithout).toBe(14);           // dano base = 14
-        expect(avgWithPassive).toBe(15);       // com emberfang = 15
-        expect(avgBonus).toBe(1);              // +1 dano por ataque
-        expect(avgBonus / avgWithout).toBeCloseTo(0.0714, 2); // ~7.14% de bônus
+        // Fase 4.2: emberfang não dispara em ataque básico → dano idêntico
+        expect(avgWithout).toBe(14);
+        expect(avgWithPassive).toBe(14); // sem bônus em ataque básico
+        expect(avgBonus).toBe(0);
     });
 
     it('emberfang NÃO dispara quando HP <= 70%', () => {
@@ -687,7 +687,8 @@ describe('speciesPassives 4.1 — regressão passivas Fase 4.0', () => {
         expect(hpBefore - wild.hp).toBe(13);
     });
 
-    it('emberfang ainda funciona após adição de floracura/moonquill', () => {
+    it('emberfang em ataque básico NÃO adiciona bônus após adição de floracura/moonquill (Fase 4.2)', () => {
+        // Fase 4.2: emberfang não dispara em ataque básico (executeWildAttack)
         const wild = {
             id: 'w', name: 'W', class: 'Guerreiro',
             hp: 50, hpMax: 80, atk: 6, def: 3, poder: 8,
@@ -698,10 +699,10 @@ describe('speciesPassives 4.1 — regressão passivas Fase 4.0', () => {
         const player = { id: 'p', name: 'J', class: 'Guerreiro', inventory: {}, team: [], money: 0 };
         const deps = makeDepsForSimulation(1);
 
-        // HP 100% > 70% → emberfang ativo: 8+10-3=15
+        // HP 100% > 70% mas é ataque básico → emberfang NÃO dispara: 7+10-3=14
         const hpBefore = wild.hp;
         executeWildAttack({ encounter: enc, player, playerMonster: pm, d20Roll: 15, dependencies: deps });
-        expect(hpBefore - wild.hp).toBe(15);
+        expect(hpBefore - wild.hp).toBe(14); // sem bônus de emberfang em ataque básico
     });
 
     it('sem canonSpeciesId: nenhuma passiva de Fase 4.1 interfere no combate padrão', () => {
