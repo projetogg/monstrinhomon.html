@@ -307,7 +307,32 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
         const enemyRollType = isCrit ? 'crit' : alwaysMiss ? 'fail' : 'normal';
         dependencies.recordD20Roll(encounter, wildMonster.name, enemyRoll, enemyRollType);
     }
-    
+
+    // Passiva canônica — moonquill (wild): +1 SPD ao aplicar debuff — Fase 4.3
+    // A skill foi "usada" (ENE consumido) independentemente de acertar ou errar.
+    // Simetria: mesmo critério de debuff usado no lado do player (executeWildSkill).
+    const isWildDebuff =
+        wildSkill.type === 'BUFF' &&
+        (wildSkill.target === 'enemy' || wildSkill.target === 'Inimigo') &&
+        (wildSkill.power || 0) < 0;
+    const wildSkillPassive = resolvePassiveModifier(wildMonster, {
+        event: 'on_skill_used',
+        skillType: wildSkill.type, // Fase 4.3: tipo da skill explícito
+        isDebuff: isWildDebuff,
+    });
+    if (wildSkillPassive?.spdBuff) {
+        wildMonster.buffs = wildMonster.buffs || [];
+        wildMonster.buffs.push({
+            type: 'spd',
+            power: wildSkillPassive.spdBuff.power,
+            duration: wildSkillPassive.spdBuff.duration,
+            source: 'moonquill_passive',
+        });
+        encounter.log.push(
+            `✨ Passiva ${wildMonster.name}: +${wildSkillPassive.spdBuff.power} SPD por ${wildSkillPassive.spdBuff.duration} turno(s)`
+        );
+    }
+
     if (enemyHit) {
         const atkMods = WildCore.getBuffModifiers(wildMonster);
         let effectiveAtk = Math.max(1, wildMonster.atk + atkMods.atk);
@@ -628,6 +653,7 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
         const skillPassive = resolvePassiveModifier(playerMonster, {
             event: 'on_skill_used',
             hpPct: playerMonster.hpMax > 0 ? playerMonster.hp / playerMonster.hpMax : 0,
+            skillType: skill.type,  // Fase 4.3: tipo da skill explícito no contexto
             isDebuff,
         });
         if (skillPassive?.spdBuff) {

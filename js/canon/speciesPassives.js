@@ -1,5 +1,5 @@
 /**
- * SPECIES PASSIVES — Fase 4 (4.0 + 4.1 + 4.2)
+ * SPECIES PASSIVES — Fase 4 (4.0 + 4.1 + 4.2 + 4.3)
  *
  * Sistema de passivas canônicas de espécie.
  *
@@ -10,6 +10,9 @@
  *  - Fase 4.1: suporta passivas com estado de combate via contexto (isFirstHeal, isDebuff).
  *  - Fase 4.2: semântica de gatilho explícita (isOffensiveSkill, isFirstHitThisTurn).
  *    O estado em si (encounter.passiveState) é gerenciado pelo caller (wildActions.js).
+ *  - Fase 4.3: contexto de on_skill_used enriquecido com skillType explícito.
+ *    moonquill integrado ao lado wild (processEnemySkillAttack).
+ *    floracura permanece assimétrica: wild não tem path de item de cura.
  *
  * O que este módulo NÃO faz (reservado para fases futuras):
  *  - Passivas em cadeia ou com múltiplos triggers por turno
@@ -34,6 +37,7 @@
  *  'on_heal_item'    — instância usou um item de cura (Fase 4.1)
  *                      context.isFirstHeal: true = primeira cura do combate
  *  'on_skill_used'   — instância usou qualquer habilidade (Fase 4.1)
+ *                      context.skillType: 'DAMAGE'|'BUFF'|'HEAL'|... (Fase 4.3: explícito)
  *                      context.isDebuff: true = skill BUFF com target enemy e power < 0
  *
  * ── MODIFICADORES SUPORTADOS ─────────────────────────────────────────────────
@@ -46,15 +50,23 @@
  * ── ESTADO DE COMBATE (encounter.passiveState) ───────────────────────────────
  *
  *  Gerenciado PELO CALLER (wildActions.js), não por este módulo.
- *  Estrutura para Fase 4.2:
- *    {
+ *  encounter.passiveState = {
  *      floracuraHealUsed: boolean,         // Fase 4.1: bônus da primeira cura consumido
  *      shieldhornBlockedThisTurn: boolean, // Fase 4.2: mitigação do turno já consumida
- *    }
+ *  }
  *  O caller inicializa lazily, passa flags como contexto para os handlers,
  *  e atualiza o estado após o modifier ser aplicado.
  *  shieldhornBlockedThisTurn é resetado no início de cada ciclo de ataque inimigo
  *  (em processEnemyCounterattack).
+ *
+ * ── SIMETRIA PLAYER / WILD (Fase 4.3) ────────────────────────────────────────
+ *
+ *  Passiva         | Player | Wild  | Motivo da assimetria (se houver)
+ *  --------------- | ------ | ----- | -----------------------------------------
+ *  shieldhorn      | ✅     | ✅    | Defensor recebe hit — ambos os lados suportam
+ *  emberfang       | ✅     | ✅    | Atacante usa skill — ambos os lados suportam
+ *  moonquill       | ✅     | ✅    | Wild usa skill debuff via processEnemySkillAttack
+ *  floracura       | ✅     | ❌    | Wild não tem path de item de cura no pipeline atual
  *
  * ─────────────────────────────────────────────────────────────────────────────
  */
@@ -172,6 +184,7 @@ const PASSIVE_HANDLERS = {
  *   isOffensiveSkill?: boolean,   // Fase 4.2: true = DAMAGE skill, false = basic attack
  *   isFirstHitThisTurn?: boolean, // Fase 4.2: undefined/true = primeiro hit do turno
  *   isFirstHeal?: boolean,        // Fase 4.1: true = primeira cura do combate
+ *   skillType?: string,           // Fase 4.3: tipo da skill ('DAMAGE'|'BUFF'|'HEAL'|...)
  *   isDebuff?: boolean,           // Fase 4.1: true = skill debuff (BUFF+enemy+power<0)
  * }} context
  * @returns {{ atkBonus?: number, damageReduction?: number, healBonus?: number, spdBuff?: { power: number, duration: number } }|null}
