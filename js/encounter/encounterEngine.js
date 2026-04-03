@@ -137,8 +137,12 @@ export function applyModifiers(baseWeights, modifiers = []) {
     return adjusted;
 }
 
-/**
- * Verifica se o encontro atual é um "spot raro" (encontro especial com bônus de raridade).
+// Bônus aplicados quando o encontro acontece em spot raro (em pontos percentuais)
+const RARE_SPOT_RARO_BONUS    = 15;
+const RARE_SPOT_MISTICO_BONUS =  5;
+const RARE_SPOT_COMUM_PENALTY = -15;
+
+/** (encontro especial com bônus de raridade).
  * A chance base é definida pela área (rareSpotBonus, em pontos percentuais adicionados a Raro).
  *
  * @param {number} rareSpotBonus - Bônus da área em pp (ex: 15 = 15% a mais de chance de spot raro)
@@ -169,13 +173,13 @@ export function findArea(areaId, locationsData) {
  *
  * @param {Object} speciesPoolsByRarity - Pools por raridade
  * @param {string} rarity - Raridade sorteada
- * @returns {{ species: string|null, resolvedRarity: string|null }}
+ * @returns {{ pool: Array<string>|null, resolvedRarity: string|null }}
  */
 export function resolveSpeciesPool(speciesPoolsByRarity, rarity) {
     if (!speciesPoolsByRarity || !rarity) return { pool: null, resolvedRarity: null };
 
     const rarityIndex = RARITY_ORDER.indexOf(rarity);
-    if (rarityIndex < 0) return { species: null, resolvedRarity: null };
+    if (rarityIndex < 0) return { pool: null, resolvedRarity: null };
 
     // Tentar a raridade sorteada primeiro; se vazia, descer para raridade inferior
     for (let i = rarityIndex; i >= 0; i--) {
@@ -230,9 +234,9 @@ export function generateWildEncounter(areaId, locationsData, options = {}) {
     let finalWeights = modifiedWeights;
     if (spotRaro && speciesPoolsByRarity['Raro']?.length > 0) {
         finalWeights = applyModifiers(modifiedWeights, [
-            { rarity: 'Raro', delta: 15 },
-            { rarity: 'Místico', delta: 5 },
-            { rarity: 'Comum', delta: -15 }
+            { rarity: 'Raro',    delta: RARE_SPOT_RARO_BONUS },
+            { rarity: 'Místico', delta: RARE_SPOT_MISTICO_BONUS },
+            { rarity: 'Comum',   delta: RARE_SPOT_COMUM_PENALTY }
         ]);
     }
 
