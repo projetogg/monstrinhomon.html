@@ -209,28 +209,65 @@
                 <div id="encounterQuestHintContent" style="margin-top:4px"></div>
             </div>
 
-            <div class="card encounter-setup" id="encounterSetupCard">
+            <!-- ═══════════════════════════════════════════════════════════
+                 MAPA DE NÓS — Camada 1: Mundo  (para encontros selvagens)
+                 ═══════════════════════════════════════════════════════════ -->
+            <div id="worldMapPanel" class="card">
+                <div class="wm-header">
+                    <h3 style="margin:0">🗺️ Mapa do Mundo</h3>
+                    <span class="wm-hint">Escolha um local para explorar</span>
+                </div>
+                <div id="worldMapGrid" class="wm-grid">
+                    <!-- Renderizado dinamicamente por renderWorldMapPanel() -->
+                </div>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════════
+                 SPOTS — Camada 2: Local selecionado
+                 ═══════════════════════════════════════════════════════════ -->
+            <div id="locationSpotsPanel" class="card is-hidden">
+                <div class="wm-header">
+                    <button class="btn btn-sm" onclick="backToWorldMap()" aria-label="Voltar ao mapa">← Mapa</button>
+                    <h3 id="locationSpotsTitle" style="margin:0;flex:1;text-align:center">Local</h3>
+                </div>
+                <p id="locationSpotsDesc" class="text-small text-muted" style="margin:4px 0 12px"></p>
+                <div id="spotsList" class="wm-spots-grid">
+                    <!-- Renderizado dinamicamente por renderLocationSpots() -->
+                </div>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════════
+                 SETUP — Camada 3: Confirmar jogador + Iniciar
+                 ═══════════════════════════════════════════════════════════ -->
+            <div class="card encounter-setup is-hidden" id="wildSetupPanel">
+                <div class="wm-header">
+                    <button class="btn btn-sm" onclick="backToSpots()" aria-label="Voltar ao local">← Local</button>
+                    <h3 id="wildSetupTitle" style="margin:0;flex:1;text-align:center">Spot</h3>
+                </div>
+                <p id="wildSetupDesc" class="text-small text-muted" style="margin:4px 0 12px"></p>
+                <div class="encounter-setup-inline">
+                    <label>👤 Jogador:</label>
+                    <select id="encounterPlayer" onchange="renderEncounterQuestHint(this.value)">
+                        <option value="">-- Selecione --</option>
+                    </select>
+                    <button class="btn btn-success" onclick="startEncounter()">▶ Iniciar</button>
+                </div>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════════
+                 SETUP LEGADO — Treinador / Boss / Evento (sem mapa)
+                 ═══════════════════════════════════════════════════════════ -->
+            <div class="card encounter-setup is-hidden" id="encounterSetupCard">
                 <h3>⚔️ Novo Encontro</h3>
                 <div class="encounter-setup-inline">
                     <select id="encounterType" onchange="updateEncounterUI()">
-                        <option value="wild">🌟 Monstrinho Selvagem</option>
                         <option value="trainer">👤 Batalha de Treinador</option>
                         <option value="boss">👹 Boss</option>
                         <option value="event">📖 Evento Narrativo</option>
                     </select>
                     <button class="btn btn-success" onclick="startEncounter()">▶ Iniciar</button>
                 </div>
-
-                <!-- Para encontros individuais (wild) -->
-                <div id="playerSelectDiv" class="encounter-setup-player">
-                    <label>👤 Jogador:</label>
-                    <select id="encounterPlayer" onchange="renderEncounterQuestHint(this.value)">
-                        <option value="">-- Selecione --</option>
-                    </select>
-                </div>
-
-                <!-- Para encontros em grupo (trainer/boss) -->
-                <div id="groupSelectDiv" class="is-hidden encounter-setup-group">
+                <div id="groupSelectDiv" class="encounter-setup-group">
                     <label class="text-small"><strong>Participantes (1-6):</strong></label>
                     <div id="groupParticipantsList" class="mt-8"></div>
                     <div class="mt-8">
@@ -245,13 +282,16 @@
                             <option value="20">20</option>
                         </select>
                     </div>
-
                     <!-- Team Reorder UI -->
                     <div class="team-reorder-section">
                         <h4 class="m-0">⚔️ Organize Equipes</h4>
                         <p class="text-small text-muted">Reordene o time de cada jogador. O primeiro monstrinho vivo será usado na batalha.</p>
                         <div id="teamReorderContainer"></div>
                     </div>
+                </div>
+                <!-- Link para abrir o mapa de nós novamente -->
+                <div style="margin-top:10px;text-align:center">
+                    <button class="btn btn-sm" onclick="showWorldMap()">🗺️ Encontro Selvagem</button>
                 </div>
             </div>
 
@@ -577,6 +617,14 @@
         import * as CanonLoader from './js/canon/canonLoader.js';
         window.CanonLoader = CanonLoader;
 
+        // World Map — Sistema de navegação por nós (mapa do mundo + spots)
+        import * as WorldMap from './js/encounter/worldMap.js';
+        window.WorldMap = WorldMap;
+
+        // Encounter Engine — Geração de encontros por área progressiva
+        import * as EncounterEngine from './js/encounter/encounterEngine.js';
+        window.EncounterEngine = EncounterEngine;
+
         // Species Bridge — Fase 3: ponte runtime → espécie canônica + aplicação de offsets
         import * as SpeciesBridge from './js/canon/speciesBridge.js';
         window.SpeciesBridge = SpeciesBridge;
@@ -714,6 +762,12 @@
         window.movePlayerTeamMember = movePlayerTeamMember;
         window.equipItem = equipItem;
         window.unequipItem = unequipItem;
+        // Mapa de nós — funções de navegação
+        window.selectWorldNode = selectWorldNode;
+        window.selectSpot      = selectSpot;
+        window.backToWorldMap  = backToWorldMap;
+        window.backToSpots     = backToSpots;
+        window.showWorldMap    = showWorldMap;
 
         // Destructure groupCore for easier access
         const GroupCore = Combat.Group.Core;
@@ -2391,6 +2445,11 @@
                 if (tabName === 'partyDex' && typeof window.renderPartyDexTab === 'function') {
                     window.renderPartyDexTab();
                 }
+
+                // Mapa de nós: ao abrir a aba Batalha, mostrar o mapa selvagem por padrão
+                if (tabName === 'encounter' && typeof showWorldMap === 'function') {
+                    showWorldMap();
+                }
                 
                 updateAllViews();
             } catch (error) {
@@ -3870,7 +3929,9 @@
         // ENCOUNTER MANAGEMENT
         function startEncounter() {
             try {
-                const type = document.getElementById('encounterType')?.value;
+                // Detectar se é encontro selvagem (via mapa de nós) ou encontro de grupo (legado)
+                const isWildViaMap = Boolean(_wm?.selectedSpotId && _wm?.selectedLocationId);
+                const type = isWildViaMap ? 'wild' : (document.getElementById('encounterType')?.value);
                 
                 if (!type) {
                     alert('Selecione o tipo de encontro');
@@ -3908,7 +3969,7 @@
                     return;
                 }
                 
-                // Para encontros individuais (captura), precisa selecionar jogador
+                // Para encontros individuais (captura selvagem)
                 if (type === 'wild') {
                     const selectedPlayerId = document.getElementById('encounterPlayer')?.value;
                     if (!selectedPlayerId) {
@@ -3952,21 +4013,54 @@
                         }
                     }
                     
-                    // Wave B1: enemy instances now use factory
-                    const randomMonster = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
-                    // Nível do inimigo escalado pelo nível máximo do time do jogador (±1)
-                    // Isso evita inimigos absurdamente acima ou abaixo do nível do jogador
-                    const playerMaxLevel = (player?.team?.length > 0)
-                        ? Math.max(...player.team.map(m => m.level || 1))
-                        : 5;
-                    const difficultyOffset = GameState.config?.difficulty === 'hard' ? 2
-                        : GameState.config?.difficulty === 'easy' ? -1 : 0;
-                    const level = Math.max(1, playerMaxLevel + difficultyOffset + Math.floor(Math.random() * 3) - 1);
+                    // ── Geração via encounterEngine (mapa de nós) ──────────────────
+                    // Se o jogador escolheu uma área e um spot, usar o motor de encontros
+                    // para selecionar espécie e nível de acordo com o tier da área.
+                    // Caso contrário (sem mapa carregado), fallback para seleção aleatória.
+                    let wildTemplateId = null;
+                    let wildLevel      = null;
+
+                    if (isWildViaMap && window.EncounterEngine && _wm.locationsData) {
+                        const spot      = window.WorldMap?.findSpot(_wm.selectedSpotId, _wm.locationsData);
+                        const spotMods  = window.WorldMap?.buildSpotModifiers(spot) ?? [];
+                        const generated = window.EncounterEngine.generateWildEncounter(
+                            _wm.selectedLocationId,
+                            _wm.locationsData,
+                            { modifiers: spotMods }
+                        );
+                        if (generated?.speciesId) {
+                            wildTemplateId = generated.speciesId;
+                            wildLevel      = generated.level;
+                            // Registrar localização visitada no estado do jogo
+                            if (!GameState.data) GameState.data = {};
+                            if (!Array.isArray(GameState.data.visitedLocations)) {
+                                GameState.data.visitedLocations = [];
+                            }
+                            if (!GameState.data.visitedLocations.includes(_wm.selectedLocationId)) {
+                                GameState.data.visitedLocations.push(_wm.selectedLocationId);
+                            }
+                        }
+                    }
+
+                    // Fallback: seleção aleatória (sem área selecionada ou encounterEngine indisponível)
+                    if (!wildTemplateId) {
+                        const randomMonster = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
+                        wildTemplateId = randomMonster.id;
+                        // Nível escalado pelo nível máximo do time do jogador (±1)
+                        const player2 = GameState.players.find(p => p.id === encounter.selectedPlayerId);
+                        const playerMaxLevel = (player2?.team?.length > 0)
+                            ? Math.max(...player2.team.map(m => m.level || 1))
+                            : 5;
+                        const difficultyOffset = GameState.config?.difficulty === 'hard' ? 2
+                            : GameState.config?.difficulty === 'easy' ? -1 : 0;
+                        wildLevel = Math.max(1, playerMaxLevel + difficultyOffset + Math.floor(Math.random() * 3) - 1);
+                    }
+
                     encounter.wildMonster = createMonsterInstanceFromTemplate(
-                        randomMonster.id,  // Template ID from catalog
-                        level, 
-                        null, // Use template's default rarity
-                        { id: 'wild_' + Date.now() } // Override with wild encounter ID
+                        wildTemplateId,
+                        wildLevel,
+                        null, // Usar raridade padrão do template
+                        { id: 'wild_' + Date.now() }
                     );
                     
                     // FASE 1 POKEMON: Gerar shiny (1% chance)
@@ -3976,11 +4070,11 @@
                     encounter.wildMonster.aggression = 100; // começa totalmente agressivo
                     
                     // FASE 1 POKEMON: Marcar como visto no Monstródex
-                    updateMonstrodex('see', randomMonster.id);
+                    updateMonstrodex('see', wildTemplateId);
                     
-                    // PR16A: Mark as seen in PartyDex (randomMonster.id is the template ID)
+                    // PR16A: Mark as seen in PartyDex
                     if (window.PartyDex) {
-                        window.PartyDex.markDexSeen(GameState, randomMonster.id);
+                        window.PartyDex.markDexSeen(GameState, wildTemplateId);
                     }
                 }
                 
@@ -8154,20 +8248,14 @@
         function updateEncounterUI() {
             try {
                 const type = document.getElementById('encounterType')?.value;
-                const playerSelectDiv = document.getElementById('playerSelectDiv');
                 const groupSelectDiv = document.getElementById('groupSelectDiv');
-                
-                if (!playerSelectDiv || !groupSelectDiv) return;
-                
-                if (type === 'wild') {
-                    showEl(playerSelectDiv);
-                    hideEl(groupSelectDiv);
-                } else if (type === 'trainer' || type === 'boss') {
-                    hideEl(playerSelectDiv);
+
+                if (!groupSelectDiv) return;
+
+                if (type === 'trainer' || type === 'boss') {
                     showEl(groupSelectDiv);
                     updateGroupParticipantsList();
                 } else {
-                    hideEl(playerSelectDiv);
                     hideEl(groupSelectDiv);
                 }
             } catch (error) {
@@ -8177,7 +8265,208 @@
         
         // Expose updateEncounterUI globally
         window.updateEncounterUI = updateEncounterUI;
-        
+
+        // ══════════════════════════════════════════════════════════════
+        // MAPA DE NÓS — Navegação por camadas (worldMap.js)
+        // ══════════════════════════════════════════════════════════════
+
+        /**
+         * Estado de navegação do mapa: qual nó e qual spot estão selecionados.
+         * Não é persistido — resetado ao abrir a aba Batalha.
+         */
+        const _wm = {
+            selectedLocationId: null,
+            selectedSpotId: null,
+            locationsData: null,    // cache do JSON carregado
+            worldMapNodes: null     // cache do worldMap.json
+        };
+
+        /** Carrega os dados de localização e do mapa (com cache). */
+        async function _wmLoadData() {
+            if (!_wm.locationsData) {
+                try {
+                    const [locRes, mapRes] = await Promise.all([
+                        fetch('./data/locations.json'),
+                        fetch('./data/worldMap.json')
+                    ]);
+                    const locJson = await locRes.json();
+                    const mapJson = await mapRes.json();
+                    _wm.locationsData   = locJson.locations;
+                    _wm.worldMapNodes   = mapJson.nodes;
+                } catch (e) {
+                    console.error('[WorldMap] Falha ao carregar dados:', e);
+                    _wm.locationsData   = [];
+                    _wm.worldMapNodes   = [];
+                }
+            }
+        }
+
+        /** Exibe o painel do mapa de nós (Camada 1) e esconde os outros. */
+        async function showWorldMap() {
+            await _wmLoadData();
+
+            const mapPanel   = document.getElementById('worldMapPanel');
+            const spotsPanel = document.getElementById('locationSpotsPanel');
+            const setupPanel = document.getElementById('wildSetupPanel');
+            const legacyPanel= document.getElementById('encounterSetupCard');
+
+            if (mapPanel)    showEl(mapPanel);
+            if (spotsPanel)  hideEl(spotsPanel);
+            if (setupPanel)  hideEl(setupPanel);
+            if (legacyPanel) hideEl(legacyPanel);
+
+            _wm.selectedLocationId = null;
+            _wm.selectedSpotId     = null;
+
+            renderWorldMapPanel();
+        }
+
+        /** Renderiza o grid de nós do mapa. */
+        function renderWorldMapPanel() {
+            const grid = document.getElementById('worldMapGrid');
+            if (!grid || !window.WorldMap) return;
+
+            const visitedLocations = new Set(
+                GameState.data?.visitedLocations ?? []
+            );
+
+            const enriched = window.WorldMap.getEnrichedNodes(
+                _wm.worldMapNodes ?? [],
+                _wm.locationsData ?? []
+            );
+
+            if (enriched.length === 0) {
+                grid.innerHTML = '<p class="text-small text-muted">Nenhum local disponível.</p>';
+                return;
+            }
+
+            grid.innerHTML = enriched.map(node => {
+                const unlocked  = window.WorldMap.isNodeUnlocked(node, visitedLocations);
+                const levelStr  = node.levelRange ? `Lv ${node.levelRange[0]}–${node.levelRange[1]}` : '';
+                const lockClass = unlocked ? '' : 'wm-node--locked';
+                const onclick   = unlocked ? `onclick="selectWorldNode('${node.nodeId}')"` : '';
+                const bgColor   = node.biomeColor ?? '#666';
+
+                return `
+                  <div class="wm-node ${lockClass}" ${onclick}
+                       style="background:${bgColor}"
+                       title="${node.description ?? ''}">
+                    <span class="wm-node__tier">${node.tier ?? ''}</span>
+                    <span class="wm-node__emoji">${node.biomeEmoji}</span>
+                    <span class="wm-node__name">${node.name}</span>
+                    <span class="wm-node__level">${levelStr}</span>
+                    ${!unlocked ? '<span class="wm-node__lock">🔒</span>' : ''}
+                  </div>`;
+            }).join('');
+        }
+
+        /** Camada 2 — ao clicar em um nó, mostra os spots do local. */
+        function selectWorldNode(locationId) {
+            if (!window.WorldMap || !_wm.locationsData) return;
+
+            _wm.selectedLocationId = locationId;
+            _wm.selectedSpotId     = null;
+
+            const mapPanel   = document.getElementById('worldMapPanel');
+            const spotsPanel = document.getElementById('locationSpotsPanel');
+            if (mapPanel)    hideEl(mapPanel);
+            if (spotsPanel)  showEl(spotsPanel);
+
+            // Preencher título e descrição do local
+            const loc = (_wm.locationsData ?? []).find(l => l.id === locationId);
+            const title = document.getElementById('locationSpotsTitle');
+            const desc  = document.getElementById('locationSpotsDesc');
+            if (title) title.textContent = `${window.WorldMap.BIOME_EMOJI[loc?.biome ?? ''] ?? '🗺️'} ${loc?.name ?? locationId}`;
+            if (desc)  desc.textContent  = loc?.description ?? '';
+
+            renderLocationSpots(locationId);
+        }
+
+        /** Renderiza os 3 spots de uma localização (Camada 2). */
+        function renderLocationSpots(locationId) {
+            const list = document.getElementById('spotsList');
+            if (!list || !window.WorldMap) return;
+
+            const spots = window.WorldMap.getSpotsForLocation(locationId, _wm.locationsData ?? []);
+
+            if (spots.length === 0) {
+                list.innerHTML = '<p class="text-small text-muted">Nenhum spot disponível aqui.</p>';
+                return;
+            }
+
+            list.innerHTML = spots.map(spot => `
+              <div class="wm-spot" onclick="selectSpot('${spot.id}')">
+                <span class="wm-spot__icon">${spot.icon}</span>
+                <div class="wm-spot__info">
+                  <p class="wm-spot__name">${spot.name}</p>
+                  <p class="wm-spot__profile">${spot.profile}</p>
+                  <p class="wm-spot__desc">${spot.description}</p>
+                </div>
+                <span class="wm-spot__arrow">›</span>
+              </div>
+            `).join('');
+        }
+
+        /** Camada 3 — ao clicar em um spot, mostra seleção de jogador + Iniciar. */
+        function selectSpot(spotId) {
+            if (!window.WorldMap) return;
+
+            _wm.selectedSpotId = spotId;
+
+            const spotsPanel = document.getElementById('locationSpotsPanel');
+            const setupPanel = document.getElementById('wildSetupPanel');
+            if (spotsPanel) hideEl(spotsPanel);
+            if (setupPanel) showEl(setupPanel);
+
+            // Preencher título e descrição do spot
+            const spot  = window.WorldMap.findSpot(spotId, _wm.locationsData ?? []);
+            const title = document.getElementById('wildSetupTitle');
+            const desc  = document.getElementById('wildSetupDesc');
+            if (title) title.textContent = `${spot?.icon ?? ''} ${spot?.name ?? spotId}`;
+            if (desc)  desc.textContent  = spot?.description ?? '';
+
+            // Atualizar dropdown de jogadores
+            _wmUpdatePlayerDropdown();
+        }
+
+        /** Atualiza o dropdown de jogadores no painel de setup selvagem. */
+        function _wmUpdatePlayerDropdown() {
+            const select = document.getElementById('encounterPlayer');
+            if (!select) return;
+            select.innerHTML = '<option value="">-- Selecione --</option>';
+            (GameState.players ?? []).forEach(p => {
+                if (!p) return;
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = `${p.name} (${p.class})`;
+                select.appendChild(opt);
+            });
+            if (select.options.length === 2) {
+                // Auto-seleciona se houver apenas 1 jogador
+                select.selectedIndex = 1;
+                renderEncounterQuestHint(select.value);
+            }
+        }
+
+        /** Volta do painel de spots para o mapa (botão ← Mapa). */
+        function backToWorldMap() {
+            _wm.selectedLocationId = null;
+            _wm.selectedSpotId     = null;
+            const mapPanel   = document.getElementById('worldMapPanel');
+            const spotsPanel = document.getElementById('locationSpotsPanel');
+            if (mapPanel)    showEl(mapPanel);
+            if (spotsPanel)  hideEl(spotsPanel);
+        }
+
+        /** Volta do painel de setup para os spots (botão ← Local). */
+        function backToSpots() {
+            _wm.selectedSpotId = null;
+            const spotsPanel = document.getElementById('locationSpotsPanel');
+            const setupPanel = document.getElementById('wildSetupPanel');
+            if (spotsPanel)  showEl(spotsPanel);
+            if (setupPanel)  hideEl(setupPanel);
+        }
+
         function updateGroupParticipantsList() {
             try {
                 const container = document.getElementById('groupParticipantsList');

@@ -9,22 +9,73 @@
       "description": "Área de tutorial, quase sem ameaça. Gramado tranquilo ideal para os primeiros passos.",
       "biome": "campos",
       "tier": "T0",
-      "levelRange": [1, 2],
-      "rarityWeights": { "Comum": 95, "Incomum": 5, "Raro": 0, "Místico": 0, "Lendário": 0 },
-      "speciesPoolsByRarity": {
-        "Comum":   ["MON_100", "MON_001", "MON_004"],
-        "Incomum": ["MON_002B"],
-        "Raro":    [],
-        "Místico": [],
-        "Lendário":[]
+      "levelRange": [
+        1,
+        2
+      ],
+      "rarityWeights": {
+        "Comum": 95,
+        "Incomum": 5,
+        "Raro": 0,
+        "Místico": 0,
+        "Lendário": 0
       },
-      "encounterTypeWeights": { "Selvagem": 90, "Item": 10, "Evento": 0, "Treinador": 0, "SpotRaro": 0 },
-      "allowedEvolutionStages": ["S1"],
+      "speciesPoolsByRarity": {
+        "Comum": [
+          "MON_100",
+          "MON_001",
+          "MON_004"
+        ],
+        "Incomum": [
+          "MON_002B"
+        ],
+        "Raro": [],
+        "Místico": [],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 90,
+        "Item": 10,
+        "Evento": 0,
+        "Treinador": 0,
+        "SpotRaro": 0
+      },
+      "allowedEvolutionStages": [
+        "S1"
+      ],
       "unlockRules": [],
-      "specialRules": ["tutorial_only"],
+      "specialRules": [
+        "tutorial_only"
+      ],
       "rareSpotBonus": 0,
       "bossRule": null,
-      "notes": "Tutorial. Aprender atacar, capturar e entender que áreas mudam o que aparece."
+      "notes": "Tutorial. Aprender atacar, capturar e entender que áreas mudam o que aparece.",
+      "spots": [
+        {
+          "id": "LOC_000_A",
+          "name": "Gramado Tranquilo",
+          "icon": "🌿",
+          "profile": "Captura segura",
+          "description": "Área plana e segura. Perfeita para aprender.",
+          "rarityModifiers": []
+        },
+        {
+          "id": "LOC_000_B",
+          "name": "Campinho Ensolarado",
+          "icon": "☀️",
+          "profile": "Mais itens",
+          "description": "Muitos itens brilhantes no chão.",
+          "rarityModifiers": []
+        },
+        {
+          "id": "LOC_000_C",
+          "name": "Riacho Inicial",
+          "icon": "💧",
+          "profile": "Mais eventos",
+          "description": "Um riachinho calmo com surpresas narrativas.",
+          "rarityModifiers": []
+        }
+      ]
     },
     {
       "id": "LOC_001",
@@ -32,22 +83,107 @@
       "description": "Área segura para aprender captura e batalha. Gramados abertos e ventos suaves.",
       "biome": "campos",
       "tier": "T1",
-      "levelRange": [1, 4],
-      "rarityWeights": { "Comum": 82, "Incomum": 16, "Raro": 2, "Místico": 0, "Lendário": 0 },
-      "speciesPoolsByRarity": {
-        "Comum":   ["MON_001", "MON_002", "MON_004", "MON_006", "MON_100"],
-        "Incomum": ["MON_011B", "MON_023B", "MON_002B"],
-        "Raro":    ["MON_023C"],
-        "Místico": [],
-        "Lendário":[]
+      "levelRange": [
+        1,
+        4
+      ],
+      "rarityWeights": {
+        "Comum": 82,
+        "Incomum": 16,
+        "Raro": 2,
+        "Místico": 0,
+        "Lendário": 0
       },
-      "encounterTypeWeights": { "Selvagem": 68, "Item": 15, "Evento": 10, "Treinador": 7, "SpotRaro": 0 },
-      "allowedEvolutionStages": ["S1", "S2"],
+      "speciesPoolsByRarity": {
+        "Comum": [
+          "MON_001",
+          "MON_002",
+          "MON_004",
+          "MON_006",
+          "MON_100"
+        ],
+        "Incomum": [
+          "MON_011B",
+          "MON_023B",
+          "MON_002B"
+        ],
+        "Raro": [
+          "MON_023C"
+        ],
+        "Místico": [],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 68,
+        "Item": 15,
+        "Evento": 10,
+        "Treinador": 7,
+        "SpotRaro": 0
+      },
+      "allowedEvolutionStages": [
+        "S1",
+        "S2"
+      ],
       "unlockRules": [],
-      "specialRules": ["raros_apenas_em_spot_ou_brilhante"],
+      "specialRules": [
+        "raros_apenas_em_spot_ou_brilhante"
+      ],
       "rareSpotBonus": 15,
       "bossRule": null,
-      "notes": "Primeiro ciclo de captura. Guerreiro/Bardo/Curandeiro/Animalista dominam."
+      "notes": "Primeiro ciclo de captura. Guerreiro/Bardo/Curandeiro/Animalista dominam.",
+      "spots": [
+        {
+          "id": "LOC_001_A",
+          "name": "Mato Baixo",
+          "icon": "🌱",
+          "profile": "Mais capturas",
+          "description": "Gramado aberto. Comum abundante, ótimo para capturar.",
+          "rarityModifiers": [
+            {
+              "rarity": "Comum",
+              "delta": 8
+            },
+            {
+              "rarity": "Incomum",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "id": "LOC_001_B",
+          "name": "Pedra Grande",
+          "icon": "🪨",
+          "profile": "Mais combate",
+          "description": "Monstros de pedra e terra. Mais treinadores por aqui.",
+          "rarityModifiers": [
+            {
+              "rarity": "Incomum",
+              "delta": 4
+            },
+            {
+              "rarity": "Comum",
+              "delta": -4
+            }
+          ]
+        },
+        {
+          "id": "LOC_001_C",
+          "name": "Beira do Riacho",
+          "icon": "🏞️",
+          "profile": "Mais raridade",
+          "description": "Espécies incomuns bebem água aqui. Chance de raridade maior.",
+          "rarityModifiers": [
+            {
+              "rarity": "Raro",
+              "delta": 6
+            },
+            {
+              "rarity": "Comum",
+              "delta": -6
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "LOC_001B",
@@ -55,22 +191,111 @@
       "description": "Campo mais afastado, vento mais forte e criaturas um pouco mais imprevisíveis.",
       "biome": "campos",
       "tier": "T2",
-      "levelRange": [3, 6],
-      "rarityWeights": { "Comum": 72, "Incomum": 22, "Raro": 6, "Místico": 0, "Lendário": 0 },
-      "speciesPoolsByRarity": {
-        "Comum":   ["MON_001", "MON_002", "MON_004", "MON_006", "MON_007", "MON_011", "MON_027"],
-        "Incomum": ["MON_011B", "MON_023B", "MON_027B", "MON_002B"],
-        "Raro":    ["MON_023C", "MON_027C"],
-        "Místico": [],
-        "Lendário":[]
+      "levelRange": [
+        3,
+        6
+      ],
+      "rarityWeights": {
+        "Comum": 72,
+        "Incomum": 22,
+        "Raro": 6,
+        "Místico": 0,
+        "Lendário": 0
       },
-      "encounterTypeWeights": { "Selvagem": 62, "Item": 12, "Evento": 12, "Treinador": 10, "SpotRaro": 4 },
-      "allowedEvolutionStages": ["S1", "S2"],
-      "unlockRules": ["LOC_001_visited"],
+      "speciesPoolsByRarity": {
+        "Comum": [
+          "MON_001",
+          "MON_002",
+          "MON_004",
+          "MON_006",
+          "MON_007",
+          "MON_011",
+          "MON_027"
+        ],
+        "Incomum": [
+          "MON_011B",
+          "MON_023B",
+          "MON_027B",
+          "MON_002B"
+        ],
+        "Raro": [
+          "MON_023C",
+          "MON_027C"
+        ],
+        "Místico": [],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 62,
+        "Item": 12,
+        "Evento": 12,
+        "Treinador": 10,
+        "SpotRaro": 4
+      },
+      "allowedEvolutionStages": [
+        "S1",
+        "S2"
+      ],
+      "unlockRules": [
+        "LOC_001_visited"
+      ],
       "specialRules": [],
       "rareSpotBonus": 10,
       "bossRule": null,
-      "notes": "Mostra que o mundo começa a abrir. Primeiras linhas evoluídas visíveis."
+      "notes": "Mostra que o mundo começa a abrir. Primeiras linhas evoluídas visíveis.",
+      "spots": [
+        {
+          "id": "LOC_001B_A",
+          "name": "Grama Alta",
+          "icon": "🌾",
+          "profile": "Mais capturas",
+          "description": "Monstros se escondem na vegetação densa.",
+          "rarityModifiers": [
+            {
+              "rarity": "Comum",
+              "delta": 6
+            },
+            {
+              "rarity": "Raro",
+              "delta": -4
+            }
+          ]
+        },
+        {
+          "id": "LOC_001B_B",
+          "name": "Moita Escura",
+          "icon": "🌑",
+          "profile": "Mais combate",
+          "description": "Monstros mais agressivos se agrupam aqui.",
+          "rarityModifiers": [
+            {
+              "rarity": "Incomum",
+              "delta": 6
+            },
+            {
+              "rarity": "Comum",
+              "delta": -4
+            }
+          ]
+        },
+        {
+          "id": "LOC_001B_C",
+          "name": "Clareira Ventosa",
+          "icon": "💨",
+          "profile": "Mais raridade",
+          "description": "Vento traz espécies de longe. Raro possível.",
+          "rarityModifiers": [
+            {
+              "rarity": "Raro",
+              "delta": 8
+            },
+            {
+              "rarity": "Comum",
+              "delta": -8
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "LOC_002",
@@ -78,22 +303,111 @@
       "description": "Floresta densa com fauna variada. Sons de pássaros e riachos entre as árvores.",
       "biome": "floresta",
       "tier": "T2",
-      "levelRange": [3, 8],
-      "rarityWeights": { "Comum": 70, "Incomum": 23, "Raro": 7, "Místico": 0, "Lendário": 0 },
-      "speciesPoolsByRarity": {
-        "Comum":   ["MON_006", "MON_023", "MON_004", "MON_020", "MON_005", "MON_001", "MON_011"],
-        "Incomum": ["MON_023B", "MON_020B", "MON_012B", "MON_011B"],
-        "Raro":    ["MON_023C", "MON_020C"],
-        "Místico": [],
-        "Lendário":[]
+      "levelRange": [
+        3,
+        8
+      ],
+      "rarityWeights": {
+        "Comum": 70,
+        "Incomum": 23,
+        "Raro": 7,
+        "Místico": 0,
+        "Lendário": 0
       },
-      "encounterTypeWeights": { "Selvagem": 66, "Item": 10, "Evento": 12, "Treinador": 8, "SpotRaro": 4 },
-      "allowedEvolutionStages": ["S1", "S2"],
+      "speciesPoolsByRarity": {
+        "Comum": [
+          "MON_006",
+          "MON_023",
+          "MON_004",
+          "MON_020",
+          "MON_005",
+          "MON_001",
+          "MON_011"
+        ],
+        "Incomum": [
+          "MON_023B",
+          "MON_020B",
+          "MON_012B",
+          "MON_011B"
+        ],
+        "Raro": [
+          "MON_023C",
+          "MON_020C"
+        ],
+        "Místico": [],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 66,
+        "Item": 10,
+        "Evento": 12,
+        "Treinador": 8,
+        "SpotRaro": 4
+      },
+      "allowedEvolutionStages": [
+        "S1",
+        "S2"
+      ],
       "unlockRules": [],
-      "specialRules": ["rareSpotBonus_se_quest_local_ativa"],
+      "specialRules": [
+        "rareSpotBonus_se_quest_local_ativa"
+      ],
       "rareSpotBonus": 5,
       "bossRule": null,
-      "notes": "Animalista/Curandeiro/Bardo/Caçador. Primeira área com identidade forte. Explorar compensa."
+      "notes": "Animalista/Curandeiro/Bardo/Caçador. Primeira área com identidade forte. Explorar compensa.",
+      "spots": [
+        {
+          "id": "LOC_002_A",
+          "name": "Clareira da Floresta",
+          "icon": "🌸",
+          "profile": "Captura fácil",
+          "description": "Clareira ensolarada. Monstros curiosos e acessíveis.",
+          "rarityModifiers": [
+            {
+              "rarity": "Comum",
+              "delta": 8
+            },
+            {
+              "rarity": "Raro",
+              "delta": -4
+            }
+          ]
+        },
+        {
+          "id": "LOC_002_B",
+          "name": "Trilha das Folhas",
+          "icon": "🍂",
+          "profile": "Mais combate",
+          "description": "Trilha estreita. Monstros mais espertos espreitam.",
+          "rarityModifiers": [
+            {
+              "rarity": "Incomum",
+              "delta": 5
+            },
+            {
+              "rarity": "Comum",
+              "delta": -5
+            }
+          ]
+        },
+        {
+          "id": "LOC_002_C",
+          "name": "Árvore Ancestral",
+          "icon": "🌳",
+          "profile": "Mais raridade",
+          "description": "Árvore milenar com criaturas escondidas nas raízes.",
+          "rarityModifiers": [
+            {
+              "rarity": "Raro",
+              "delta": 8
+            },
+            {
+              "rarity": "Comum",
+              "delta": -6
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "LOC_002B",
@@ -101,22 +415,116 @@
       "description": "Interior denso da floresta. Clareira escassas, criaturas mais fortes e suspeitas.",
       "biome": "floresta",
       "tier": "T3",
-      "levelRange": [6, 12],
-      "rarityWeights": { "Comum": 58, "Incomum": 28, "Raro": 12, "Místico": 2, "Lendário": 0 },
-      "speciesPoolsByRarity": {
-        "Comum":   ["MON_006", "MON_004", "MON_005", "MON_023", "MON_020", "MON_012", "MON_013"],
-        "Incomum": ["MON_023B", "MON_020B", "MON_012B", "MON_013B"],
-        "Raro":    ["MON_023C", "MON_020C", "MON_012C", "MON_013C"],
-        "Místico": [],
-        "Lendário":[]
+      "levelRange": [
+        6,
+        12
+      ],
+      "rarityWeights": {
+        "Comum": 58,
+        "Incomum": 28,
+        "Raro": 12,
+        "Místico": 2,
+        "Lendário": 0
       },
-      "encounterTypeWeights": { "Selvagem": 60, "Item": 8, "Evento": 14, "Treinador": 12, "SpotRaro": 6 },
-      "allowedEvolutionStages": ["S1", "S2", "S3"],
-      "unlockRules": ["LOC_002_visited"],
-      "specialRules": ["mistico_apenas_em_clareira_especial_ou_chuva_ou_quest"],
+      "speciesPoolsByRarity": {
+        "Comum": [
+          "MON_006",
+          "MON_004",
+          "MON_005",
+          "MON_023",
+          "MON_020",
+          "MON_012",
+          "MON_013"
+        ],
+        "Incomum": [
+          "MON_023B",
+          "MON_020B",
+          "MON_012B",
+          "MON_013B"
+        ],
+        "Raro": [
+          "MON_023C",
+          "MON_020C",
+          "MON_012C",
+          "MON_013C"
+        ],
+        "Místico": [],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 60,
+        "Item": 8,
+        "Evento": 14,
+        "Treinador": 12,
+        "SpotRaro": 6
+      },
+      "allowedEvolutionStages": [
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "unlockRules": [
+        "LOC_002_visited"
+      ],
+      "specialRules": [
+        "mistico_apenas_em_clareira_especial_ou_chuva_ou_quest"
+      ],
       "rareSpotBonus": 10,
       "bossRule": "boss_opcional_pequeno",
-      "notes": "Introduz raridade como expectativa plausível. Primeiras capturas 'uau'."
+      "notes": "Introduz raridade como expectativa plausível. Primeiras capturas 'uau'.",
+      "spots": [
+        {
+          "id": "LOC_002B_A",
+          "name": "Bosque Denso",
+          "icon": "🌲",
+          "profile": "Mais capturas",
+          "description": "Interior fechado. Monstros em abundância.",
+          "rarityModifiers": [
+            {
+              "rarity": "Comum",
+              "delta": 6
+            },
+            {
+              "rarity": "Místico",
+              "delta": -2
+            }
+          ]
+        },
+        {
+          "id": "LOC_002B_B",
+          "name": "Trilha Escura",
+          "icon": "🌑",
+          "profile": "Mais combate",
+          "description": "Pouca luz. Monstros mais perigosos espreitam.",
+          "rarityModifiers": [
+            {
+              "rarity": "Incomum",
+              "delta": 6
+            },
+            {
+              "rarity": "Comum",
+              "delta": -6
+            }
+          ]
+        },
+        {
+          "id": "LOC_002B_C",
+          "name": "Clareira da Chuva",
+          "icon": "🌧️",
+          "profile": "Mais raridade",
+          "description": "A chuva revela espécies raras. Alto risco, alta recompensa.",
+          "rarityModifiers": [
+            {
+              "rarity": "Raro",
+              "delta": 8
+            },
+            {
+              "rarity": "Comum",
+              "delta": -8
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "LOC_002C",
@@ -124,22 +532,121 @@
       "description": "Floresta milenar de sombras profundas. Criaturas antigas e furtivas habitam os galhos.",
       "biome": "floresta",
       "tier": "T4",
-      "levelRange": [10, 18],
-      "rarityWeights": { "Comum": 46, "Incomum": 32, "Raro": 18, "Místico": 4, "Lendário": 0 },
-      "speciesPoolsByRarity": {
-        "Comum":   ["MON_006", "MON_012", "MON_013", "MON_022", "MON_028", "MON_030"],
-        "Incomum": ["MON_012B", "MON_013B", "MON_022B", "MON_028B", "MON_030B"],
-        "Raro":    ["MON_012C", "MON_013C", "MON_022C", "MON_028C", "MON_030C"],
-        "Místico": ["MON_012D", "MON_013D"],
-        "Lendário":[]
+      "levelRange": [
+        10,
+        18
+      ],
+      "rarityWeights": {
+        "Comum": 46,
+        "Incomum": 32,
+        "Raro": 18,
+        "Místico": 4,
+        "Lendário": 0
       },
-      "encounterTypeWeights": { "Selvagem": 56, "Item": 7, "Evento": 15, "Treinador": 14, "SpotRaro": 8 },
-      "allowedEvolutionStages": ["S1", "S2", "S3", "S4"],
-      "unlockRules": ["LOC_002B_boss_derrotado"],
-      "specialRules": ["formas_sombrias_e_furtivas_maior_presenca"],
+      "speciesPoolsByRarity": {
+        "Comum": [
+          "MON_006",
+          "MON_012",
+          "MON_013",
+          "MON_022",
+          "MON_028",
+          "MON_030"
+        ],
+        "Incomum": [
+          "MON_012B",
+          "MON_013B",
+          "MON_022B",
+          "MON_028B",
+          "MON_030B"
+        ],
+        "Raro": [
+          "MON_012C",
+          "MON_013C",
+          "MON_022C",
+          "MON_028C",
+          "MON_030C"
+        ],
+        "Místico": [
+          "MON_012D",
+          "MON_013D"
+        ],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 56,
+        "Item": 7,
+        "Evento": 15,
+        "Treinador": 14,
+        "SpotRaro": 8
+      },
+      "allowedEvolutionStages": [
+        "S1",
+        "S2",
+        "S3",
+        "S4"
+      ],
+      "unlockRules": [
+        "LOC_002B_boss_derrotado"
+      ],
+      "specialRules": [
+        "formas_sombrias_e_furtivas_maior_presenca"
+      ],
       "rareSpotBonus": 12,
       "bossRule": "boss_ato",
-      "notes": "Alta densidade narrativa. Ladino/Caçador com maior presença. Prepara Ruínas."
+      "notes": "Alta densidade narrativa. Ladino/Caçador com maior presença. Prepara Ruínas.",
+      "spots": [
+        {
+          "id": "LOC_002C_A",
+          "name": "Raízes Antigas",
+          "icon": "🌿",
+          "profile": "Mais capturas",
+          "description": "Criaturas antigas habitam as raízes retorcidas.",
+          "rarityModifiers": [
+            {
+              "rarity": "Comum",
+              "delta": 5
+            }
+          ]
+        },
+        {
+          "id": "LOC_002C_B",
+          "name": "Noite Eterna",
+          "icon": "🌙",
+          "profile": "Mais combate",
+          "description": "A escuridão é permanente aqui. Combates intensos.",
+          "rarityModifiers": [
+            {
+              "rarity": "Incomum",
+              "delta": 8
+            },
+            {
+              "rarity": "Comum",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "id": "LOC_002C_C",
+          "name": "Coração da Floresta",
+          "icon": "💚",
+          "profile": "Mais raridade",
+          "description": "O centro misterioso. Criaturas Místicas surgem raramente.",
+          "rarityModifiers": [
+            {
+              "rarity": "Raro",
+              "delta": 7
+            },
+            {
+              "rarity": "Místico",
+              "delta": 3
+            },
+            {
+              "rarity": "Comum",
+              "delta": -10
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "LOC_003",
@@ -147,22 +654,113 @@
       "description": "Cavernas escuras repletas de minerais e monstros de pedra e metal.",
       "biome": "minas",
       "tier": "T3",
-      "levelRange": [6, 12],
-      "rarityWeights": { "Comum": 60, "Incomum": 27, "Raro": 11, "Místico": 2, "Lendário": 0 },
-      "speciesPoolsByRarity": {
-        "Comum":   ["MON_002", "MON_010", "MON_026", "MON_007", "MON_021", "MON_100"],
-        "Incomum": ["MON_010B", "MON_026B", "MON_021B", "MON_002B"],
-        "Raro":    ["MON_010C", "MON_026C", "MON_021C"],
-        "Místico": [],
-        "Lendário":[]
+      "levelRange": [
+        6,
+        12
+      ],
+      "rarityWeights": {
+        "Comum": 60,
+        "Incomum": 27,
+        "Raro": 11,
+        "Místico": 2,
+        "Lendário": 0
       },
-      "encounterTypeWeights": { "Selvagem": 64, "Item": 12, "Evento": 10, "Treinador": 10, "SpotRaro": 4 },
-      "allowedEvolutionStages": ["S1", "S2", "S3"],
+      "speciesPoolsByRarity": {
+        "Comum": [
+          "MON_002",
+          "MON_010",
+          "MON_026",
+          "MON_007",
+          "MON_021",
+          "MON_100"
+        ],
+        "Incomum": [
+          "MON_010B",
+          "MON_026B",
+          "MON_021B",
+          "MON_002B"
+        ],
+        "Raro": [
+          "MON_010C",
+          "MON_026C",
+          "MON_021C"
+        ],
+        "Místico": [],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 64,
+        "Item": 12,
+        "Evento": 10,
+        "Treinador": 10,
+        "SpotRaro": 4
+      },
+      "allowedEvolutionStages": [
+        "S1",
+        "S2",
+        "S3"
+      ],
       "unlockRules": [],
-      "specialRules": ["menor_chance_de_nada", "maior_chance_item_equipamento"],
+      "specialRules": [
+        "menor_chance_de_nada",
+        "maior_chance_item_equipamento"
+      ],
       "rareSpotBonus": 8,
       "bossRule": null,
-      "notes": "Guerreiro/Bárbaro. Defesa alta. Ensina que área pode alterar perfil tático dos encontros."
+      "notes": "Guerreiro/Bárbaro. Defesa alta. Ensina que área pode alterar perfil tático dos encontros.",
+      "spots": [
+        {
+          "id": "LOC_003_A",
+          "name": "Entrada da Caverna",
+          "icon": "🕳️",
+          "profile": "Mais capturas",
+          "description": "Início da mina. Monstros comuns guardam a entrada.",
+          "rarityModifiers": [
+            {
+              "rarity": "Comum",
+              "delta": 8
+            },
+            {
+              "rarity": "Raro",
+              "delta": -4
+            }
+          ]
+        },
+        {
+          "id": "LOC_003_B",
+          "name": "Galeria de Pedra",
+          "icon": "⛏️",
+          "profile": "Mais combate",
+          "description": "Galeria estreita. Guerreiros de pedra patrulham.",
+          "rarityModifiers": [
+            {
+              "rarity": "Incomum",
+              "delta": 5
+            },
+            {
+              "rarity": "Comum",
+              "delta": -5
+            }
+          ]
+        },
+        {
+          "id": "LOC_003_C",
+          "name": "Veia de Minério",
+          "icon": "💎",
+          "profile": "Mais raridade",
+          "description": "Minérios brilhantes atraem monstros raros.",
+          "rarityModifiers": [
+            {
+              "rarity": "Raro",
+              "delta": 8
+            },
+            {
+              "rarity": "Comum",
+              "delta": -8
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "LOC_003B",
@@ -170,22 +768,118 @@
       "description": "Camadas subterrâneas com formações cristalinas e monstros de armadura pesada.",
       "biome": "minas",
       "tier": "T4",
-      "levelRange": [10, 16],
-      "rarityWeights": { "Comum": 48, "Incomum": 31, "Raro": 17, "Místico": 4, "Lendário": 0 },
-      "speciesPoolsByRarity": {
-        "Comum":   ["MON_002", "MON_010", "MON_026", "MON_021", "MON_029"],
-        "Incomum": ["MON_010B", "MON_026B", "MON_021B", "MON_002B", "MON_029B"],
-        "Raro":    ["MON_010C", "MON_026C", "MON_021C", "MON_029C"],
-        "Místico": ["MON_010D"],
-        "Lendário":[]
+      "levelRange": [
+        10,
+        16
+      ],
+      "rarityWeights": {
+        "Comum": 48,
+        "Incomum": 31,
+        "Raro": 17,
+        "Místico": 4,
+        "Lendário": 0
       },
-      "encounterTypeWeights": { "Selvagem": 58, "Item": 10, "Evento": 12, "Treinador": 14, "SpotRaro": 6 },
-      "allowedEvolutionStages": ["S1", "S2", "S3", "S4"],
-      "unlockRules": ["LOC_003_boss_derrotado"],
-      "specialRules": ["maior_chance_item_equipamento"],
+      "speciesPoolsByRarity": {
+        "Comum": [
+          "MON_002",
+          "MON_010",
+          "MON_026",
+          "MON_021",
+          "MON_029"
+        ],
+        "Incomum": [
+          "MON_010B",
+          "MON_026B",
+          "MON_021B",
+          "MON_002B",
+          "MON_029B"
+        ],
+        "Raro": [
+          "MON_010C",
+          "MON_026C",
+          "MON_021C",
+          "MON_029C"
+        ],
+        "Místico": [
+          "MON_010D"
+        ],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 58,
+        "Item": 10,
+        "Evento": 12,
+        "Treinador": 14,
+        "SpotRaro": 6
+      },
+      "allowedEvolutionStages": [
+        "S1",
+        "S2",
+        "S3",
+        "S4"
+      ],
+      "unlockRules": [
+        "LOC_003_boss_derrotado"
+      ],
+      "specialRules": [
+        "maior_chance_item_equipamento"
+      ],
       "rareSpotBonus": 10,
       "bossRule": null,
-      "notes": "Primeiras formas realmente pesadas. Combates mais longos."
+      "notes": "Primeiras formas realmente pesadas. Combates mais longos.",
+      "spots": [
+        {
+          "id": "LOC_003B_A",
+          "name": "Câmara Profunda",
+          "icon": "🔮",
+          "profile": "Mais capturas",
+          "description": "Câmara subterrânea. Boa diversidade de monstros.",
+          "rarityModifiers": [
+            {
+              "rarity": "Comum",
+              "delta": 5
+            }
+          ]
+        },
+        {
+          "id": "LOC_003B_B",
+          "name": "Tunel dos Guerreiros",
+          "icon": "⚔️",
+          "profile": "Mais combate",
+          "description": "Monstros de aço defendem este corredor.",
+          "rarityModifiers": [
+            {
+              "rarity": "Incomum",
+              "delta": 7
+            },
+            {
+              "rarity": "Comum",
+              "delta": -7
+            }
+          ]
+        },
+        {
+          "id": "LOC_003B_C",
+          "name": "Fissura Cristalina",
+          "icon": "✨",
+          "profile": "Mais raridade",
+          "description": "Cristais raros emitem luz própria. Criaturas especiais os guardam.",
+          "rarityModifiers": [
+            {
+              "rarity": "Raro",
+              "delta": 8
+            },
+            {
+              "rarity": "Místico",
+              "delta": 2
+            },
+            {
+              "rarity": "Comum",
+              "delta": -8
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "LOC_003C",
@@ -193,22 +887,117 @@
       "description": "Câmaras profundas de cristal resplandecente. Zona premium de captura rara.",
       "biome": "minas",
       "tier": "T5",
-      "levelRange": [14, 22],
-      "rarityWeights": { "Comum": 36, "Incomum": 35, "Raro": 21, "Místico": 8, "Lendário": 0 },
-      "speciesPoolsByRarity": {
-        "Comum":   ["MON_010", "MON_026", "MON_021", "MON_029"],
-        "Incomum": ["MON_010B", "MON_026B", "MON_021B", "MON_029B"],
-        "Raro":    ["MON_010C", "MON_026C", "MON_021C", "MON_029C"],
-        "Místico": ["MON_010D"],
-        "Lendário":[]
+      "levelRange": [
+        14,
+        22
+      ],
+      "rarityWeights": {
+        "Comum": 36,
+        "Incomum": 35,
+        "Raro": 21,
+        "Místico": 8,
+        "Lendário": 0
       },
-      "encounterTypeWeights": { "Selvagem": 52, "Item": 8, "Evento": 16, "Treinador": 14, "SpotRaro": 10 },
-      "allowedEvolutionStages": ["S1", "S2", "S3", "S4"],
-      "unlockRules": ["LOC_003B_boss_derrotado", "ferramenta_exploracao"],
-      "specialRules": ["mistico_apenas_em_subcamara_ou_cristal_brilhante"],
+      "speciesPoolsByRarity": {
+        "Comum": [
+          "MON_010",
+          "MON_026",
+          "MON_021",
+          "MON_029"
+        ],
+        "Incomum": [
+          "MON_010B",
+          "MON_026B",
+          "MON_021B",
+          "MON_029B"
+        ],
+        "Raro": [
+          "MON_010C",
+          "MON_026C",
+          "MON_021C",
+          "MON_029C"
+        ],
+        "Místico": [
+          "MON_010D"
+        ],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 52,
+        "Item": 8,
+        "Evento": 16,
+        "Treinador": 14,
+        "SpotRaro": 10
+      },
+      "allowedEvolutionStages": [
+        "S1",
+        "S2",
+        "S3",
+        "S4"
+      ],
+      "unlockRules": [
+        "LOC_003B_boss_derrotado",
+        "ferramenta_exploracao"
+      ],
+      "specialRules": [
+        "mistico_apenas_em_subcamara_ou_cristal_brilhante"
+      ],
       "rareSpotBonus": 15,
       "bossRule": "boss_ato",
-      "notes": "Abrir só após boss, quest ou ferramenta de exploração. Risco de overgrind se liberar cedo."
+      "notes": "Abrir só após boss, quest ou ferramenta de exploração. Risco de overgrind se liberar cedo.",
+      "spots": [
+        {
+          "id": "LOC_003C_A",
+          "name": "Gruta dos Ecos",
+          "icon": "🌑",
+          "profile": "Mais capturas",
+          "description": "Sons estranhos. Monstros subterrâneos habitam as sombras.",
+          "rarityModifiers": [
+            {
+              "rarity": "Comum",
+              "delta": 5
+            }
+          ]
+        },
+        {
+          "id": "LOC_003C_B",
+          "name": "Corredor das Garras",
+          "icon": "🦇",
+          "profile": "Mais combate",
+          "description": "Criaturas das profundezas atacam sem aviso.",
+          "rarityModifiers": [
+            {
+              "rarity": "Incomum",
+              "delta": 8
+            },
+            {
+              "rarity": "Comum",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "id": "LOC_003C_C",
+          "name": "Câmara do Cristal",
+          "icon": "💠",
+          "profile": "Mais raridade",
+          "description": "Câmara secreta de cristal puro. Místicos aparecem raramente.",
+          "rarityModifiers": [
+            {
+              "rarity": "Raro",
+              "delta": 7
+            },
+            {
+              "rarity": "Místico",
+              "delta": 5
+            },
+            {
+              "rarity": "Comum",
+              "delta": -10
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "LOC_004",
@@ -216,22 +1005,123 @@
       "description": "Estruturas em ruínas de civilizações passadas, habitadas por monstros arcanos e sombrios.",
       "biome": "ruinas",
       "tier": "T4",
-      "levelRange": [10, 16],
-      "rarityWeights": { "Comum": 50, "Incomum": 30, "Raro": 16, "Místico": 4, "Lendário": 0 },
-      "speciesPoolsByRarity": {
-        "Comum":   ["MON_022", "MON_008", "MON_003", "MON_011", "MON_030", "MON_014"],
-        "Incomum": ["MON_022B", "MON_011B", "MON_030B", "MON_014B", "MON_024B"],
-        "Raro":    ["MON_022C", "MON_011C", "MON_030C", "MON_014C"],
-        "Místico": ["MON_011D", "MON_014D"],
-        "Lendário":[]
+      "levelRange": [
+        10,
+        16
+      ],
+      "rarityWeights": {
+        "Comum": 50,
+        "Incomum": 30,
+        "Raro": 16,
+        "Místico": 4,
+        "Lendário": 0
       },
-      "encounterTypeWeights": { "Selvagem": 55, "Item": 8, "Evento": 18, "Treinador": 12, "SpotRaro": 7 },
-      "allowedEvolutionStages": ["S1", "S2", "S3", "S4"],
+      "speciesPoolsByRarity": {
+        "Comum": [
+          "MON_022",
+          "MON_008",
+          "MON_003",
+          "MON_011",
+          "MON_030",
+          "MON_014"
+        ],
+        "Incomum": [
+          "MON_022B",
+          "MON_011B",
+          "MON_030B",
+          "MON_014B",
+          "MON_024B"
+        ],
+        "Raro": [
+          "MON_022C",
+          "MON_011C",
+          "MON_030C",
+          "MON_014C"
+        ],
+        "Místico": [
+          "MON_011D",
+          "MON_014D"
+        ],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 55,
+        "Item": 8,
+        "Evento": 18,
+        "Treinador": 12,
+        "SpotRaro": 7
+      },
+      "allowedEvolutionStages": [
+        "S1",
+        "S2",
+        "S3",
+        "S4"
+      ],
       "unlockRules": [],
-      "specialRules": ["mais_evento_que_item", "encontros_menos_previsiveis"],
+      "specialRules": [
+        "mais_evento_que_item",
+        "encontros_menos_previsiveis"
+      ],
       "rareSpotBonus": 10,
       "bossRule": null,
-      "notes": "Ladino/Mago/Bardo dominam. Mistério e controle. Alta densidade narrativa."
+      "notes": "Ladino/Mago/Bardo dominam. Mistério e controle. Alta densidade narrativa.",
+      "spots": [
+        {
+          "id": "LOC_004_A",
+          "name": "Portal Externo",
+          "icon": "🏛️",
+          "profile": "Mais capturas",
+          "description": "Entrada das ruínas. Monstros guardam o perímetro.",
+          "rarityModifiers": [
+            {
+              "rarity": "Comum",
+              "delta": 6
+            },
+            {
+              "rarity": "Místico",
+              "delta": -2
+            }
+          ]
+        },
+        {
+          "id": "LOC_004_B",
+          "name": "Salão Principal",
+          "icon": "🗿",
+          "profile": "Mais combate",
+          "description": "Salão central com múltiplos guardiões.",
+          "rarityModifiers": [
+            {
+              "rarity": "Incomum",
+              "delta": 6
+            },
+            {
+              "rarity": "Comum",
+              "delta": -6
+            }
+          ]
+        },
+        {
+          "id": "LOC_004_C",
+          "name": "Câmara Oculta",
+          "icon": "🔑",
+          "profile": "Mais raridade",
+          "description": "Câmara secreta atrás de um mural antigo. Místicos espreitam.",
+          "rarityModifiers": [
+            {
+              "rarity": "Raro",
+              "delta": 7
+            },
+            {
+              "rarity": "Místico",
+              "delta": 3
+            },
+            {
+              "rarity": "Comum",
+              "delta": -8
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "LOC_004B",
@@ -239,22 +1129,119 @@
       "description": "O coração das ruínas, onde o poder arcano é mais intenso e os guardiões mais fortes.",
       "biome": "ruinas",
       "tier": "T5",
-      "levelRange": [14, 22],
-      "rarityWeights": { "Comum": 38, "Incomum": 34, "Raro": 20, "Místico": 8, "Lendário": 0 },
-      "speciesPoolsByRarity": {
-        "Comum":   ["MON_022", "MON_008", "MON_003", "MON_030", "MON_014"],
-        "Incomum": ["MON_022B", "MON_030B", "MON_014B", "MON_011B"],
-        "Raro":    ["MON_022C", "MON_030C", "MON_014C", "MON_011C"],
-        "Místico": ["MON_011D", "MON_014D"],
-        "Lendário":[]
+      "levelRange": [
+        14,
+        22
+      ],
+      "rarityWeights": {
+        "Comum": 38,
+        "Incomum": 34,
+        "Raro": 20,
+        "Místico": 8,
+        "Lendário": 0
       },
-      "encounterTypeWeights": { "Selvagem": 48, "Item": 6, "Evento": 20, "Treinador": 16, "SpotRaro": 10 },
-      "allowedEvolutionStages": ["S1", "S2", "S3", "S4"],
-      "unlockRules": ["LOC_004_boss_derrotado"],
-      "specialRules": ["chance_miniboss", "menos_capturas_faceis"],
+      "speciesPoolsByRarity": {
+        "Comum": [
+          "MON_022",
+          "MON_008",
+          "MON_003",
+          "MON_030",
+          "MON_014"
+        ],
+        "Incomum": [
+          "MON_022B",
+          "MON_030B",
+          "MON_014B",
+          "MON_011B"
+        ],
+        "Raro": [
+          "MON_022C",
+          "MON_030C",
+          "MON_014C",
+          "MON_011C"
+        ],
+        "Místico": [
+          "MON_011D",
+          "MON_014D"
+        ],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 48,
+        "Item": 6,
+        "Evento": 20,
+        "Treinador": 16,
+        "SpotRaro": 10
+      },
+      "allowedEvolutionStages": [
+        "S1",
+        "S2",
+        "S3",
+        "S4"
+      ],
+      "unlockRules": [
+        "LOC_004_boss_derrotado"
+      ],
+      "specialRules": [
+        "chance_miniboss",
+        "menos_capturas_faceis"
+      ],
       "rareSpotBonus": 12,
       "bossRule": "boss_ato",
-      "notes": "Encontros quase 'elite' como rotina parcial. Forte preparação para boss de ato."
+      "notes": "Encontros quase 'elite' como rotina parcial. Forte preparação para boss de ato.",
+      "spots": [
+        {
+          "id": "LOC_004B_A",
+          "name": "Biblioteca Antiga",
+          "icon": "📚",
+          "profile": "Mais eventos",
+          "description": "Livros mágicos ativam eventos narrativos especiais.",
+          "rarityModifiers": [
+            {
+              "rarity": "Comum",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "id": "LOC_004B_B",
+          "name": "Sala do Trono",
+          "icon": "👑",
+          "profile": "Mais combate",
+          "description": "O trono chama guardiões ancestrais. Combate intenso.",
+          "rarityModifiers": [
+            {
+              "rarity": "Incomum",
+              "delta": 8
+            },
+            {
+              "rarity": "Comum",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "id": "LOC_004B_C",
+          "name": "Selo Sagrado",
+          "icon": "🌀",
+          "profile": "Mais raridade",
+          "description": "Energia ancestral concentrada. Místicos surgem com frequência.",
+          "rarityModifiers": [
+            {
+              "rarity": "Raro",
+              "delta": 6
+            },
+            {
+              "rarity": "Místico",
+              "delta": 5
+            },
+            {
+              "rarity": "Comum",
+              "delta": -8
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "LOC_005",
@@ -262,22 +1249,110 @@
       "description": "Praias e lagos cristalinos habitados por criaturas aquáticas e mágicas.",
       "biome": "costa",
       "tier": "T3",
-      "levelRange": [8, 14],
-      "rarityWeights": { "Comum": 58, "Incomum": 28, "Raro": 12, "Místico": 2, "Lendário": 0 },
-      "speciesPoolsByRarity": {
-        "Comum":   ["MON_024", "MON_020", "MON_025", "MON_004", "MON_005"],
-        "Incomum": ["MON_024B", "MON_020B", "MON_025B"],
-        "Raro":    ["MON_024C", "MON_020C", "MON_025C"],
-        "Místico": [],
-        "Lendário":[]
+      "levelRange": [
+        8,
+        14
+      ],
+      "rarityWeights": {
+        "Comum": 58,
+        "Incomum": 28,
+        "Raro": 12,
+        "Místico": 2,
+        "Lendário": 0
       },
-      "encounterTypeWeights": { "Selvagem": 62, "Item": 10, "Evento": 14, "Treinador": 10, "SpotRaro": 4 },
-      "allowedEvolutionStages": ["S1", "S2", "S3"],
+      "speciesPoolsByRarity": {
+        "Comum": [
+          "MON_024",
+          "MON_020",
+          "MON_025",
+          "MON_004",
+          "MON_005"
+        ],
+        "Incomum": [
+          "MON_024B",
+          "MON_020B",
+          "MON_025B"
+        ],
+        "Raro": [
+          "MON_024C",
+          "MON_020C",
+          "MON_025C"
+        ],
+        "Místico": [],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 62,
+        "Item": 10,
+        "Evento": 14,
+        "Treinador": 10,
+        "SpotRaro": 4
+      },
+      "allowedEvolutionStages": [
+        "S1",
+        "S2",
+        "S3"
+      ],
       "unlockRules": [],
-      "specialRules": ["modificador_clima_maré"],
+      "specialRules": [
+        "modificador_clima_maré"
+      ],
       "rareSpotBonus": 8,
       "bossRule": null,
-      "notes": "Mago/Curandeiro/Caçador. Rota paralela. Sensação de frescor de bioma."
+      "notes": "Mago/Curandeiro/Caçador. Rota paralela. Sensação de frescor de bioma.",
+      "spots": [
+        {
+          "id": "LOC_005_A",
+          "name": "Beira da Praia",
+          "icon": "🏖️",
+          "profile": "Mais capturas",
+          "description": "Monstros costeiros brincam na areia. Fácil de capturar.",
+          "rarityModifiers": [
+            {
+              "rarity": "Comum",
+              "delta": 8
+            },
+            {
+              "rarity": "Raro",
+              "delta": -4
+            }
+          ]
+        },
+        {
+          "id": "LOC_005_B",
+          "name": "Recife Raso",
+          "icon": "🐠",
+          "profile": "Mais combate",
+          "description": "Criaturas marinhas defensivas no recife.",
+          "rarityModifiers": [
+            {
+              "rarity": "Incomum",
+              "delta": 6
+            },
+            {
+              "rarity": "Comum",
+              "delta": -6
+            }
+          ]
+        },
+        {
+          "id": "LOC_005_C",
+          "name": "Grota Aquática",
+          "icon": "🌊",
+          "profile": "Mais raridade",
+          "description": "Grota úmida onde espécies raras se escondem.",
+          "rarityModifiers": [
+            {
+              "rarity": "Raro",
+              "delta": 8
+            },
+            {
+              "rarity": "Comum",
+              "delta": -8
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "LOC_005B",
@@ -285,22 +1360,113 @@
       "description": "Fundos de lagos e baías onde a luz quase não chega. Criaturas poderosas habitam as profundezas.",
       "biome": "costa",
       "tier": "T4",
-      "levelRange": [12, 20],
-      "rarityWeights": { "Comum": 46, "Incomum": 32, "Raro": 18, "Místico": 4, "Lendário": 0 },
-      "speciesPoolsByRarity": {
-        "Comum":   ["MON_024", "MON_020", "MON_025", "MON_028"],
-        "Incomum": ["MON_024B", "MON_020B", "MON_025B", "MON_028B"],
-        "Raro":    ["MON_024C", "MON_020C", "MON_025C", "MON_028C"],
-        "Místico": [],
-        "Lendário":[]
+      "levelRange": [
+        12,
+        20
+      ],
+      "rarityWeights": {
+        "Comum": 46,
+        "Incomum": 32,
+        "Raro": 18,
+        "Místico": 4,
+        "Lendário": 0
       },
-      "encounterTypeWeights": { "Selvagem": 58, "Item": 8, "Evento": 16, "Treinador": 12, "SpotRaro": 6 },
-      "allowedEvolutionStages": ["S1", "S2", "S3"],
-      "unlockRules": ["LOC_005_visited"],
-      "specialRules": ["eventos_maré_clima_boss_aquatico"],
+      "speciesPoolsByRarity": {
+        "Comum": [
+          "MON_024",
+          "MON_020",
+          "MON_025",
+          "MON_028"
+        ],
+        "Incomum": [
+          "MON_024B",
+          "MON_020B",
+          "MON_025B",
+          "MON_028B"
+        ],
+        "Raro": [
+          "MON_024C",
+          "MON_020C",
+          "MON_025C",
+          "MON_028C"
+        ],
+        "Místico": [],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 58,
+        "Item": 8,
+        "Evento": 16,
+        "Treinador": 12,
+        "SpotRaro": 6
+      },
+      "allowedEvolutionStages": [
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "unlockRules": [
+        "LOC_005_visited"
+      ],
+      "specialRules": [
+        "eventos_maré_clima_boss_aquatico"
+      ],
       "rareSpotBonus": 10,
       "bossRule": "boss_aquatico_opcional",
-      "notes": "Rota opcional de captura valiosa."
+      "notes": "Rota opcional de captura valiosa.",
+      "spots": [
+        {
+          "id": "LOC_005B_A",
+          "name": "Banco de Algas",
+          "icon": "🌿",
+          "profile": "Mais capturas",
+          "description": "Monstros aquáticos se alimentam nas algas.",
+          "rarityModifiers": [
+            {
+              "rarity": "Comum",
+              "delta": 6
+            }
+          ]
+        },
+        {
+          "id": "LOC_005B_B",
+          "name": "Corrente Perigosa",
+          "icon": "🌀",
+          "profile": "Mais combate",
+          "description": "Correntes fortes trazem predadores aquáticos.",
+          "rarityModifiers": [
+            {
+              "rarity": "Incomum",
+              "delta": 8
+            },
+            {
+              "rarity": "Comum",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "id": "LOC_005B_C",
+          "name": "Abismo Claro",
+          "icon": "🔵",
+          "profile": "Mais raridade",
+          "description": "Fundo cristalino esconde espécies raras das profundezas.",
+          "rarityModifiers": [
+            {
+              "rarity": "Raro",
+              "delta": 8
+            },
+            {
+              "rarity": "Místico",
+              "delta": 2
+            },
+            {
+              "rarity": "Comum",
+              "delta": -8
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "LOC_005C",
@@ -308,22 +1474,112 @@
       "description": "Lago escondido atrás de cachoeiras, com espécies raras nunca vistas antes.",
       "biome": "costa",
       "tier": "T5",
-      "levelRange": [18, 26],
-      "rarityWeights": { "Comum": 34, "Incomum": 36, "Raro": 22, "Místico": 8, "Lendário": 0 },
-      "speciesPoolsByRarity": {
-        "Comum":   ["MON_024", "MON_020", "MON_025", "MON_028"],
-        "Incomum": ["MON_024B", "MON_020B", "MON_025B", "MON_028B"],
-        "Raro":    ["MON_024C", "MON_020C", "MON_025C", "MON_028C"],
-        "Místico": [],
-        "Lendário":[]
+      "levelRange": [
+        18,
+        26
+      ],
+      "rarityWeights": {
+        "Comum": 34,
+        "Incomum": 36,
+        "Raro": 22,
+        "Místico": 8,
+        "Lendário": 0
       },
-      "encounterTypeWeights": { "Selvagem": 52, "Item": 7, "Evento": 18, "Treinador": 14, "SpotRaro": 9 },
-      "allowedEvolutionStages": ["S1", "S2", "S3"],
-      "unlockRules": ["LOC_005B_boss_derrotado", "ferramenta_exploracao"],
+      "speciesPoolsByRarity": {
+        "Comum": [
+          "MON_024",
+          "MON_020",
+          "MON_025",
+          "MON_028"
+        ],
+        "Incomum": [
+          "MON_024B",
+          "MON_020B",
+          "MON_025B",
+          "MON_028B"
+        ],
+        "Raro": [
+          "MON_024C",
+          "MON_020C",
+          "MON_025C",
+          "MON_028C"
+        ],
+        "Místico": [],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 52,
+        "Item": 7,
+        "Evento": 18,
+        "Treinador": 14,
+        "SpotRaro": 9
+      },
+      "allowedEvolutionStages": [
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "unlockRules": [
+        "LOC_005B_boss_derrotado",
+        "ferramenta_exploracao"
+      ],
       "specialRules": [],
       "rareSpotBonus": 14,
       "bossRule": "boss_oculto",
-      "notes": "Zona de recompensa alta. Não deve ser obrigatória cedo."
+      "notes": "Zona de recompensa alta. Não deve ser obrigatória cedo.",
+      "spots": [
+        {
+          "id": "LOC_005C_A",
+          "name": "Cachoeira Oculta",
+          "icon": "💦",
+          "profile": "Mais capturas",
+          "description": "Cachoeira secreta com espécies aquáticas únicas.",
+          "rarityModifiers": [
+            {
+              "rarity": "Comum",
+              "delta": 5
+            }
+          ]
+        },
+        {
+          "id": "LOC_005C_B",
+          "name": "Pedras do Lago",
+          "icon": "🪨",
+          "profile": "Mais combate",
+          "description": "Guardiões do lago protegem o acesso ao centro.",
+          "rarityModifiers": [
+            {
+              "rarity": "Incomum",
+              "delta": 8
+            },
+            {
+              "rarity": "Comum",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "id": "LOC_005C_C",
+          "name": "Centro do Lago",
+          "icon": "💎",
+          "profile": "Mais raridade",
+          "description": "Vórtice mágico no centro. Místicos surgem na superfície.",
+          "rarityModifiers": [
+            {
+              "rarity": "Raro",
+              "delta": 7
+            },
+            {
+              "rarity": "Místico",
+              "delta": 5
+            },
+            {
+              "rarity": "Comum",
+              "delta": -10
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "LOC_006",
@@ -331,22 +1587,117 @@
       "description": "Terreno hostil de lavas e rochas incandescentes. Apenas os mais fortes sobrevivem.",
       "biome": "vulcanico",
       "tier": "T4",
-      "levelRange": [15, 22],
-      "rarityWeights": { "Comum": 44, "Incomum": 33, "Raro": 19, "Místico": 4, "Lendário": 0 },
-      "speciesPoolsByRarity": {
-        "Comum":   ["MON_007", "MON_014", "MON_021", "MON_029"],
-        "Incomum": ["MON_014B", "MON_021B", "MON_029B"],
-        "Raro":    ["MON_014C", "MON_021C", "MON_029C"],
-        "Místico": ["MON_014D"],
-        "Lendário":[]
+      "levelRange": [
+        15,
+        22
+      ],
+      "rarityWeights": {
+        "Comum": 44,
+        "Incomum": 33,
+        "Raro": 19,
+        "Místico": 4,
+        "Lendário": 0
       },
-      "encounterTypeWeights": { "Selvagem": 60, "Item": 8, "Evento": 14, "Treinador": 14, "SpotRaro": 4 },
-      "allowedEvolutionStages": ["S1", "S2", "S3", "S4"],
+      "speciesPoolsByRarity": {
+        "Comum": [
+          "MON_007",
+          "MON_014",
+          "MON_021",
+          "MON_029"
+        ],
+        "Incomum": [
+          "MON_014B",
+          "MON_021B",
+          "MON_029B"
+        ],
+        "Raro": [
+          "MON_014C",
+          "MON_021C",
+          "MON_029C"
+        ],
+        "Místico": [
+          "MON_014D"
+        ],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 60,
+        "Item": 8,
+        "Evento": 14,
+        "Treinador": 14,
+        "SpotRaro": 4
+      },
+      "allowedEvolutionStages": [
+        "S1",
+        "S2",
+        "S3",
+        "S4"
+      ],
       "unlockRules": [],
-      "specialRules": ["menor_tolerancia_a_erro", "agressao_alta"],
+      "specialRules": [
+        "menor_tolerancia_a_erro",
+        "agressao_alta"
+      ],
       "rareSpotBonus": 8,
       "bossRule": null,
-      "notes": "Bárbaro/Mago ofensivo. Intensifica combates. Balanceamento fino como prioridade."
+      "notes": "Bárbaro/Mago ofensivo. Intensifica combates. Balanceamento fino como prioridade.",
+      "spots": [
+        {
+          "id": "LOC_006_A",
+          "name": "Borda da Lava",
+          "icon": "🌋",
+          "profile": "Mais capturas",
+          "description": "Monstros de fogo circulam pela borda quente.",
+          "rarityModifiers": [
+            {
+              "rarity": "Comum",
+              "delta": 5
+            },
+            {
+              "rarity": "Místico",
+              "delta": -2
+            }
+          ]
+        },
+        {
+          "id": "LOC_006_B",
+          "name": "Plataforma de Cinzas",
+          "icon": "💨",
+          "profile": "Mais combate",
+          "description": "Terreno instável e inimigos agressivos de fogo.",
+          "rarityModifiers": [
+            {
+              "rarity": "Incomum",
+              "delta": 7
+            },
+            {
+              "rarity": "Comum",
+              "delta": -7
+            }
+          ]
+        },
+        {
+          "id": "LOC_006_C",
+          "name": "Fissura Flamejante",
+          "icon": "🔥",
+          "profile": "Mais raridade",
+          "description": "Calor extremo. Apenas os mais fortes sobrevivem aqui.",
+          "rarityModifiers": [
+            {
+              "rarity": "Raro",
+              "delta": 8
+            },
+            {
+              "rarity": "Místico",
+              "delta": 2
+            },
+            {
+              "rarity": "Comum",
+              "delta": -8
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "LOC_006B",
@@ -354,22 +1705,114 @@
       "description": "O coração vulcânico. Magma ativo e monstros de fogo em seu pico de poder.",
       "biome": "vulcanico",
       "tier": "T5",
-      "levelRange": [20, 28],
-      "rarityWeights": { "Comum": 32, "Incomum": 36, "Raro": 24, "Místico": 8, "Lendário": 0 },
-      "speciesPoolsByRarity": {
-        "Comum":   ["MON_007", "MON_014", "MON_021", "MON_029"],
-        "Incomum": ["MON_014B", "MON_021B", "MON_029B"],
-        "Raro":    ["MON_014C", "MON_021C", "MON_029C"],
-        "Místico": ["MON_014D"],
-        "Lendário":[]
+      "levelRange": [
+        20,
+        28
+      ],
+      "rarityWeights": {
+        "Comum": 32,
+        "Incomum": 36,
+        "Raro": 24,
+        "Místico": 8,
+        "Lendário": 0
       },
-      "encounterTypeWeights": { "Selvagem": 55, "Item": 6, "Evento": 16, "Treinador": 16, "SpotRaro": 7 },
-      "allowedEvolutionStages": ["S1", "S2", "S3", "S4"],
-      "unlockRules": ["LOC_006_boss_derrotado"],
-      "specialRules": ["pressao_ofensiva_maxima"],
+      "speciesPoolsByRarity": {
+        "Comum": [
+          "MON_007",
+          "MON_014",
+          "MON_021",
+          "MON_029"
+        ],
+        "Incomum": [
+          "MON_014B",
+          "MON_021B",
+          "MON_029B"
+        ],
+        "Raro": [
+          "MON_014C",
+          "MON_021C",
+          "MON_029C"
+        ],
+        "Místico": [
+          "MON_014D"
+        ],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 55,
+        "Item": 6,
+        "Evento": 16,
+        "Treinador": 16,
+        "SpotRaro": 7
+      },
+      "allowedEvolutionStages": [
+        "S1",
+        "S2",
+        "S3",
+        "S4"
+      ],
+      "unlockRules": [
+        "LOC_006_boss_derrotado"
+      ],
+      "specialRules": [
+        "pressao_ofensiva_maxima"
+      ],
       "rareSpotBonus": 12,
       "bossRule": "boss_ato",
-      "notes": "Farm avançado. Capturas fortes. Não afinar sem auditoria quantitativa do combate."
+      "notes": "Farm avançado. Capturas fortes. Não afinar sem auditoria quantitativa do combate.",
+      "spots": [
+        {
+          "id": "LOC_006B_A",
+          "name": "Rio de Magma",
+          "icon": "🌊",
+          "profile": "Mais capturas",
+          "description": "Rio de lava lento. Monstros de calor se banham aqui.",
+          "rarityModifiers": [
+            {
+              "rarity": "Comum",
+              "delta": 5
+            }
+          ]
+        },
+        {
+          "id": "LOC_006B_B",
+          "name": "Pico Vulcânico",
+          "icon": "🗻",
+          "profile": "Mais combate",
+          "description": "Topo do vulcão. Guardiões de elite patrulham.",
+          "rarityModifiers": [
+            {
+              "rarity": "Incomum",
+              "delta": 8
+            },
+            {
+              "rarity": "Comum",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "id": "LOC_006B_C",
+          "name": "Cratera Central",
+          "icon": "💥",
+          "profile": "Mais raridade",
+          "description": "Centro da cratera ativa. Místicos do fogo surgem do magma.",
+          "rarityModifiers": [
+            {
+              "rarity": "Raro",
+              "delta": 7
+            },
+            {
+              "rarity": "Místico",
+              "delta": 5
+            },
+            {
+              "rarity": "Comum",
+              "delta": -10
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "LOC_007",
@@ -377,22 +1820,119 @@
       "description": "Floresta densa encoberta por escuridão permanente. Criaturas furtivas espreitam nas sombras.",
       "biome": "noturno",
       "tier": "T4",
-      "levelRange": [12, 20],
-      "rarityWeights": { "Comum": 48, "Incomum": 31, "Raro": 17, "Místico": 4, "Lendário": 0 },
-      "speciesPoolsByRarity": {
-        "Comum":   ["MON_022", "MON_008", "MON_013", "MON_030", "MON_025"],
-        "Incomum": ["MON_022B", "MON_013B", "MON_030B", "MON_025B"],
-        "Raro":    ["MON_022C", "MON_013C", "MON_030C", "MON_025C"],
-        "Místico": ["MON_013D"],
-        "Lendário":[]
+      "levelRange": [
+        12,
+        20
+      ],
+      "rarityWeights": {
+        "Comum": 48,
+        "Incomum": 31,
+        "Raro": 17,
+        "Místico": 4,
+        "Lendário": 0
       },
-      "encounterTypeWeights": { "Selvagem": 58, "Item": 8, "Evento": 16, "Treinador": 14, "SpotRaro": 4 },
-      "allowedEvolutionStages": ["S1", "S2", "S3", "S4"],
+      "speciesPoolsByRarity": {
+        "Comum": [
+          "MON_022",
+          "MON_008",
+          "MON_013",
+          "MON_030",
+          "MON_025"
+        ],
+        "Incomum": [
+          "MON_022B",
+          "MON_013B",
+          "MON_030B",
+          "MON_025B"
+        ],
+        "Raro": [
+          "MON_022C",
+          "MON_013C",
+          "MON_030C",
+          "MON_025C"
+        ],
+        "Místico": [
+          "MON_013D"
+        ],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 58,
+        "Item": 8,
+        "Evento": 16,
+        "Treinador": 14,
+        "SpotRaro": 4
+      },
+      "allowedEvolutionStages": [
+        "S1",
+        "S2",
+        "S3",
+        "S4"
+      ],
       "unlockRules": [],
-      "specialRules": ["criaturas_furtivas"],
+      "specialRules": [
+        "criaturas_furtivas"
+      ],
       "rareSpotBonus": 10,
       "bossRule": null,
-      "notes": "Ladino/Caçador. Rota paralela mais tática que bruta."
+      "notes": "Ladino/Caçador. Rota paralela mais tática que bruta.",
+      "spots": [
+        {
+          "id": "LOC_007_A",
+          "name": "Sombra Rasa",
+          "icon": "🌑",
+          "profile": "Mais capturas",
+          "description": "A escuridão superficial cobre criaturas furtivas comuns.",
+          "rarityModifiers": [
+            {
+              "rarity": "Comum",
+              "delta": 6
+            },
+            {
+              "rarity": "Místico",
+              "delta": -2
+            }
+          ]
+        },
+        {
+          "id": "LOC_007_B",
+          "name": "Trilha do Predador",
+          "icon": "🦊",
+          "profile": "Mais combate",
+          "description": "Predadores noturnos caçam ativamente nesta trilha.",
+          "rarityModifiers": [
+            {
+              "rarity": "Incomum",
+              "delta": 7
+            },
+            {
+              "rarity": "Comum",
+              "delta": -7
+            }
+          ]
+        },
+        {
+          "id": "LOC_007_C",
+          "name": "Claro Lunar",
+          "icon": "🌕",
+          "profile": "Mais raridade",
+          "description": "A lua ilumina uma clareira. Criaturas raras emergem à noite.",
+          "rarityModifiers": [
+            {
+              "rarity": "Raro",
+              "delta": 8
+            },
+            {
+              "rarity": "Místico",
+              "delta": 3
+            },
+            {
+              "rarity": "Comum",
+              "delta": -8
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "LOC_007B",
@@ -400,22 +1940,114 @@
       "description": "Floresta onde a luz nunca penetra. Encontros especiais ocultos aguardam os mais corajosos.",
       "biome": "noturno",
       "tier": "T5",
-      "levelRange": [18, 26],
-      "rarityWeights": { "Comum": 34, "Incomum": 35, "Raro": 23, "Místico": 8, "Lendário": 0 },
-      "speciesPoolsByRarity": {
-        "Comum":   ["MON_022", "MON_013", "MON_030"],
-        "Incomum": ["MON_022B", "MON_013B", "MON_030B"],
-        "Raro":    ["MON_022C", "MON_013C", "MON_030C"],
-        "Místico": ["MON_013D"],
-        "Lendário":[]
+      "levelRange": [
+        18,
+        26
+      ],
+      "rarityWeights": {
+        "Comum": 34,
+        "Incomum": 35,
+        "Raro": 23,
+        "Místico": 8,
+        "Lendário": 0
       },
-      "encounterTypeWeights": { "Selvagem": 50, "Item": 7, "Evento": 20, "Treinador": 14, "SpotRaro": 9 },
-      "allowedEvolutionStages": ["S1", "S2", "S3", "S4"],
-      "unlockRules": ["LOC_007_boss_derrotado"],
-      "specialRules": ["encontros_especiais_ocultos", "alta_identidade_tematica"],
+      "speciesPoolsByRarity": {
+        "Comum": [
+          "MON_022",
+          "MON_013",
+          "MON_030"
+        ],
+        "Incomum": [
+          "MON_022B",
+          "MON_013B",
+          "MON_030B"
+        ],
+        "Raro": [
+          "MON_022C",
+          "MON_013C",
+          "MON_030C"
+        ],
+        "Místico": [
+          "MON_013D"
+        ],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 50,
+        "Item": 7,
+        "Evento": 20,
+        "Treinador": 14,
+        "SpotRaro": 9
+      },
+      "allowedEvolutionStages": [
+        "S1",
+        "S2",
+        "S3",
+        "S4"
+      ],
+      "unlockRules": [
+        "LOC_007_boss_derrotado"
+      ],
+      "specialRules": [
+        "encontros_especiais_ocultos",
+        "alta_identidade_tematica"
+      ],
       "rareSpotBonus": 14,
       "bossRule": "boss_noturno",
-      "notes": "Alta identidade temática. Excelente para encontros especiais ocultos."
+      "notes": "Alta identidade temática. Excelente para encontros especiais ocultos.",
+      "spots": [
+        {
+          "id": "LOC_007B_A",
+          "name": "Névoa Profunda",
+          "icon": "🌫️",
+          "profile": "Mais capturas",
+          "description": "Névoa densa esconde monstros noturnos variados.",
+          "rarityModifiers": [
+            {
+              "rarity": "Comum",
+              "delta": 5
+            }
+          ]
+        },
+        {
+          "id": "LOC_007B_B",
+          "name": "Árvore Sombria",
+          "icon": "🌑",
+          "profile": "Mais combate",
+          "description": "A árvore gigante drena energia. Combates pesados.",
+          "rarityModifiers": [
+            {
+              "rarity": "Incomum",
+              "delta": 8
+            },
+            {
+              "rarity": "Comum",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "id": "LOC_007B_C",
+          "name": "Eclipse Eterno",
+          "icon": "🌑",
+          "profile": "Mais raridade",
+          "description": "O ponto de eclipse máximo. Místicos das sombras aparecem.",
+          "rarityModifiers": [
+            {
+              "rarity": "Raro",
+              "delta": 7
+            },
+            {
+              "rarity": "Místico",
+              "delta": 6
+            },
+            {
+              "rarity": "Comum",
+              "delta": -10
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "LOC_008",
@@ -423,22 +2055,124 @@
       "description": "Zona de batalhas intensas onde monstros poderosos treinam e competem. Proibida para inexperientes.",
       "biome": "arena",
       "tier": "T5",
-      "levelRange": [20, 30],
-      "rarityWeights": { "Comum": 30, "Incomum": 38, "Raro": 24, "Místico": 8, "Lendário": 0 },
-      "speciesPoolsByRarity": {
-        "Comum":   ["MON_010", "MON_012", "MON_021", "MON_025", "MON_026", "MON_027"],
-        "Incomum": ["MON_010B", "MON_012B", "MON_021B", "MON_025B", "MON_026B", "MON_027B"],
-        "Raro":    ["MON_010C", "MON_012C", "MON_021C", "MON_025C", "MON_026C", "MON_027C"],
-        "Místico": ["MON_010D", "MON_012D"],
-        "Lendário":[]
+      "levelRange": [
+        20,
+        30
+      ],
+      "rarityWeights": {
+        "Comum": 30,
+        "Incomum": 38,
+        "Raro": 24,
+        "Místico": 8,
+        "Lendário": 0
       },
-      "encounterTypeWeights": { "Selvagem": 52, "Item": 7, "Evento": 18, "Treinador": 16, "SpotRaro": 7 },
-      "allowedEvolutionStages": ["S1", "S2", "S3", "S4"],
-      "unlockRules": ["nivel_medio_20"],
-      "specialRules": ["menos_captura_casual", "mais_desafio"],
+      "speciesPoolsByRarity": {
+        "Comum": [
+          "MON_010",
+          "MON_012",
+          "MON_021",
+          "MON_025",
+          "MON_026",
+          "MON_027"
+        ],
+        "Incomum": [
+          "MON_010B",
+          "MON_012B",
+          "MON_021B",
+          "MON_025B",
+          "MON_026B",
+          "MON_027B"
+        ],
+        "Raro": [
+          "MON_010C",
+          "MON_012C",
+          "MON_021C",
+          "MON_025C",
+          "MON_026C",
+          "MON_027C"
+        ],
+        "Místico": [
+          "MON_010D",
+          "MON_012D"
+        ],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 52,
+        "Item": 7,
+        "Evento": 18,
+        "Treinador": 16,
+        "SpotRaro": 7
+      },
+      "allowedEvolutionStages": [
+        "S1",
+        "S2",
+        "S3",
+        "S4"
+      ],
+      "unlockRules": [
+        "nivel_medio_20"
+      ],
+      "specialRules": [
+        "menos_captura_casual",
+        "mais_desafio"
+      ],
       "rareSpotBonus": 10,
       "bossRule": null,
-      "notes": "Consolida que o jogador saiu do early/mid game."
+      "notes": "Consolida que o jogador saiu do early/mid game.",
+      "spots": [
+        {
+          "id": "LOC_008_A",
+          "name": "Arena Externa",
+          "icon": "��️",
+          "profile": "Mais capturas",
+          "description": "Área de treino. Monstros de todas as classes se preparam aqui.",
+          "rarityModifiers": [
+            {
+              "rarity": "Comum",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "id": "LOC_008_B",
+          "name": "Zona de Batalha",
+          "icon": "⚔️",
+          "profile": "Mais combate",
+          "description": "Duelos constantes. Os monstros mais fortes competem.",
+          "rarityModifiers": [
+            {
+              "rarity": "Incomum",
+              "delta": 8
+            },
+            {
+              "rarity": "Comum",
+              "delta": -8
+            }
+          ]
+        },
+        {
+          "id": "LOC_008_C",
+          "name": "Tribuna dos Raros",
+          "icon": "🏆",
+          "profile": "Mais raridade",
+          "description": "Bancadas dos campeões. Raros e Místicos observam as batalhas.",
+          "rarityModifiers": [
+            {
+              "rarity": "Raro",
+              "delta": 7
+            },
+            {
+              "rarity": "Místico",
+              "delta": 3
+            },
+            {
+              "rarity": "Comum",
+              "delta": -8
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "LOC_008B",
@@ -446,22 +2180,124 @@
       "description": "O topo da cadeia. Apenas monstros de elite ousam aparecer aqui.",
       "biome": "arena",
       "tier": "T6",
-      "levelRange": [28, 35],
-      "rarityWeights": { "Comum": 24, "Incomum": 34, "Raro": 28, "Místico": 12, "Lendário": 2 },
-      "speciesPoolsByRarity": {
-        "Comum":   ["MON_010", "MON_012", "MON_013", "MON_021", "MON_025", "MON_027"],
-        "Incomum": ["MON_010B", "MON_012B", "MON_013B", "MON_021B", "MON_025B", "MON_027B"],
-        "Raro":    ["MON_010C", "MON_012C", "MON_013C", "MON_021C", "MON_025C", "MON_027C"],
-        "Místico": ["MON_010D", "MON_012D", "MON_013D"],
-        "Lendário":[]
+      "levelRange": [
+        28,
+        35
+      ],
+      "rarityWeights": {
+        "Comum": 24,
+        "Incomum": 34,
+        "Raro": 28,
+        "Místico": 12,
+        "Lendário": 2
       },
-      "encounterTypeWeights": { "Selvagem": 44, "Item": 5, "Evento": 22, "Treinador": 20, "SpotRaro": 9 },
-      "allowedEvolutionStages": ["S1", "S2", "S3", "S4"],
-      "unlockRules": ["LOC_008_boss_derrotado"],
-      "specialRules": ["lendario_apenas_por_evento_cinematografico_ou_boss_capturavel"],
+      "speciesPoolsByRarity": {
+        "Comum": [
+          "MON_010",
+          "MON_012",
+          "MON_013",
+          "MON_021",
+          "MON_025",
+          "MON_027"
+        ],
+        "Incomum": [
+          "MON_010B",
+          "MON_012B",
+          "MON_013B",
+          "MON_021B",
+          "MON_025B",
+          "MON_027B"
+        ],
+        "Raro": [
+          "MON_010C",
+          "MON_012C",
+          "MON_013C",
+          "MON_021C",
+          "MON_025C",
+          "MON_027C"
+        ],
+        "Místico": [
+          "MON_010D",
+          "MON_012D",
+          "MON_013D"
+        ],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 44,
+        "Item": 5,
+        "Evento": 22,
+        "Treinador": 20,
+        "SpotRaro": 9
+      },
+      "allowedEvolutionStages": [
+        "S1",
+        "S2",
+        "S3",
+        "S4"
+      ],
+      "unlockRules": [
+        "LOC_008_boss_derrotado"
+      ],
+      "specialRules": [
+        "lendario_apenas_por_evento_cinematografico_ou_boss_capturavel"
+      ],
       "rareSpotBonus": 15,
       "bossRule": "boss_campanha",
-      "notes": "2% Lendário não é wild padrão: usar como evento narrativo, boss capturável ou quest única."
+      "notes": "2% Lendário não é wild padrão: usar como evento narrativo, boss capturável ou quest única.",
+      "spots": [
+        {
+          "id": "LOC_008B_A",
+          "name": "Salão dos Campeões",
+          "icon": "🌟",
+          "profile": "Mais capturas",
+          "description": "Os campeões recebem desafiantes. Alta diversidade de monstros.",
+          "rarityModifiers": [
+            {
+              "rarity": "Comum",
+              "delta": 4
+            }
+          ]
+        },
+        {
+          "id": "LOC_008B_B",
+          "name": "Pódio Final",
+          "icon": "👑",
+          "profile": "Mais combate",
+          "description": "Apenas os mais fortes chegam aqui. Combate de elite.",
+          "rarityModifiers": [
+            {
+              "rarity": "Incomum",
+              "delta": 9
+            },
+            {
+              "rarity": "Comum",
+              "delta": -9
+            }
+          ]
+        },
+        {
+          "id": "LOC_008B_C",
+          "name": "Trono Lendário",
+          "icon": "⚡",
+          "profile": "Mais raridade",
+          "description": "O ápice do mundo. Místicos e Lendários aguardam os dignos.",
+          "rarityModifiers": [
+            {
+              "rarity": "Raro",
+              "delta": 7
+            },
+            {
+              "rarity": "Místico",
+              "delta": 5
+            },
+            {
+              "rarity": "Comum",
+              "delta": -10
+            }
+          ]
+        }
+      ]
     }
   ]
 }
