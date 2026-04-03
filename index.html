@@ -585,6 +585,10 @@
         import * as SlotUnlocks from './js/canon/slotUnlocks.js';
         window.SlotUnlocks = SlotUnlocks;
 
+        // Kit Swap — Fase 6: primeira camada de substituição de habilidades por espécie
+        import * as KitSwap from './js/canon/kitSwap.js';
+        window.KitSwap = KitSwap;
+
         // Inicia o carregamento canônico imediatamente após o parse do módulo,
         // antes de qualquer chamada a init(). Isso garante que o fetch já estará
         // em andamento quando init() fizer await applyCanonToConfig().
@@ -3031,7 +3035,27 @@
                 } catch (slotErr) {
                     console.warn('[Factory] _resolveUnlockedSlots falhou; usando slot 1.', slotErr);
                 }
-                
+
+                // 5d. Resolver kit swap canônico de espécie (Fase 6)
+                // Usa KitSwap se disponível e há espécie mapeada; fallback seguro preserva kit legado.
+                // Os metadados (appliedKitSwaps / blockedKitSwaps) são armazenados na instância
+                // para observabilidade — não substituem getMonsterSkills() diretamente.
+                let _kitSwapApplied = [];
+                let _kitSwapBlocked = [];
+                try {
+                    if (typeof window !== 'undefined' && window.KitSwap && canonSpeciesId) {
+                        const baseSkills = getMonsterSkills({ class: template.class, stage: 0 });
+                        const kitResult = window.KitSwap.applyKitSwaps(
+                            { canonSpeciesId, unlockedSkillSlots },
+                            baseSkills
+                        );
+                        _kitSwapApplied = kitResult.appliedKitSwaps;
+                        _kitSwapBlocked = kitResult.blockedKitSwaps;
+                    }
+                } catch (kitErr) {
+                    console.warn('[Factory] kitSwap falhou; usando kit legado.', kitErr);
+                }
+
                 // 6. Criar instância com campos canônicos
                 const instance = {
                     // IDs (schema canônico)
@@ -3087,6 +3111,10 @@
                     // Fonte: design/canon/level_progression.json via SlotUnlocks
                     unlockedSkillSlots: unlockedSkillSlots,  // número de slots disponíveis (1-4)
                     _slotUnlockSource: _slotUnlockSource,    // rastreabilidade: 'canon_level_progression' | 'fallback_hardcoded'
+
+                    // Kit swap (Fase 6) — placeholders; preenchidos logo abaixo após a criação do objeto
+                    appliedKitSwaps: _kitSwapApplied,   // swaps aplicados nesta instância
+                    blockedKitSwaps: _kitSwapBlocked,   // swaps bloqueados por slot ainda não desbloqueado
                 };
                 
                 // 7. Aplicar overrides (ex: nickname personalizado, ownerId, etc.)
