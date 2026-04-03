@@ -59,23 +59,47 @@ import { getSpeciesStatOffsets } from './canonLoader.js';
 //     Evoluções que mudam arquétipo devem ter entrada própria ou nenhuma.
 // ---------------------------------------------------------------------------
 export const RUNTIME_TO_CANON_SPECIES = {
-    // Guerreiro — arquétipo tank_puro (shieldhorn)
-    // Ferrozimon: DEF 9 vs ATK 7 — perfil tank claro, defensivo
+    // ── Guerreiro — arquétipo tank_puro (shieldhorn) ────────────────────────
+    // Ferrozimon: DEF 9 vs ATK 7 — perfil tank mais claro do catálogo
     'MON_010': 'shieldhorn',
+    // Pedrino: ATK 7, DEF 6 — guerreiro equilibrado; offsets (def+1, atk-1)
+    //   o inclinam para o arquétipo defensivo sem distorcer o personagem.
+    'MON_002': 'shieldhorn',
+    // Cascalhimon: ATK 6, DEF 8, SPD 3 — segundo perfil mais tanky do catálogo
+    //   (DEF alta, velocidade mínima). Ajuste ideal para shieldhorn.
+    'MON_026': 'shieldhorn',
 
-    // Bárbaro — arquétipo burst_agressivo (emberfang)
+    // ── Bárbaro — arquétipo burst_agressivo (emberfang) ─────────────────────
     // Trovão: ATK 8, DEF 4 — alto dano, fragilidade intencional
     'MON_007': 'emberfang',
-    // Tamborilhomon: mesmo arquétipo burst, mesmo classe
+    // Tamborilhomon: mesmo arquétipo burst, mesma classe
     'MON_021': 'emberfang',
+    // Tigrumo: ATK 9, DEF 4 — ATK ainda maior que Trovão; perfil burst inequívoco
+    'MON_029': 'emberfang',
 
-    // Mago — arquétipo controle_leve (moonquill)
-    // Faíscari: Mago Comum, perfil ENE-alto e controle
+    // ── Mago — arquétipo controle_leve (moonquill) ──────────────────────────
+    // Faíscari: Mago Comum, ENE 10 — perfil ENE-alto e controle
     'MON_003': 'moonquill',
+    // Lagartomon: ENE 8, ATK 6 — menos agressivo que Faíscari; bom fit para
+    //   controle_leve (offset ene+1 reforça foco em energia/controle).
+    'MON_014': 'moonquill',
+    // Coralimon: ATK 5, DEF 6, ENE 8 — mago defensivo/controle; DEF acima da
+    //   média para Mago sugere estilo de suporte + controle, coerente com moonquill.
+    'MON_024': 'moonquill',
 
-    // Curandeiro — arquétipo cura_estavel (floracura)
-    // Ninfolha: Curandeiro Comum, perfil de suporte sustentado
+    // ── Curandeiro — arquétipo cura_estavel (floracura) ─────────────────────
+    // Ninfolha: ENE 12, ATK 4 — suporte sustentado; mapeamento original Fase 3
     'MON_004': 'floracura',
+    // Gotimon: ENE 9, ATK 4 — healer estável; offset (hp+1, ene+1, agi-1)
+    //   reforça o papel de suporte sem distorcer o personagem.
+    'MON_020': 'floracura',
+    // Nutrilo: ENE 11, ATK 3 — perfil de suporte mais puro do catálogo;
+    //   ATK mínimo e ENE alto são o arquétipo floracura em sua forma mais clara.
+    'MON_028': 'floracura',
+
+    // ── Sem mapeamento — justificativas ─────────────────────────────────────
+    // MON_100 (Rato-de-Lama, Guerreiro): ATK 5, DEF 3, HP 20 — stats fracos
+    //   sem perfil defensivo claro; não se encaixa em tank_puro. Sem mapeamento.
 };
 
 // ---------------------------------------------------------------------------

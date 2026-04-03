@@ -8,6 +8,7 @@
 import * as WildCore from './wildCore.js';
 import * as WildUI from './wildUI.js';
 import { initializeBattleParticipation, markAsParticipated, processBattleItemBreakage } from './itemBreakage.js';
+import { resolvePassiveModifier } from '../canon/speciesPassives.js';
 
 /**
  * Rola d20 usando função injetada ou fallback para Math.random.
@@ -93,7 +94,18 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
             }
             
             const atkMods = WildCore.getBuffModifiers(playerMonster);
-            const effectiveAtk = Math.max(1, playerMonster.atk + atkMods.atk);
+            let effectiveAtk = Math.max(1, playerMonster.atk + atkMods.atk);
+
+            // Passiva canônica — atacante (emberfang: não dispara em ataque básico)
+            const atkPassive = resolvePassiveModifier(playerMonster, {
+                event: 'on_attack',
+                hpPct: playerMonster.hpMax > 0 ? playerMonster.hp / playerMonster.hpMax : 0,
+                isOffensiveSkill: false, // Fase 4.2: ataque básico → emberfang não dispara
+            });
+            if (atkPassive?.atkBonus) {
+                effectiveAtk = Math.max(1, effectiveAtk + atkPassive.atkBonus);
+                encounter.log.push(`✨ Passiva ${playerMonster.name}: +${atkPassive.atkBonus} ATK`);
+            }
             
             const defMods = WildCore.getBuffModifiers(encounter.wildMonster);
             const effectiveDef = Math.max(1, encounter.wildMonster.def + defMods.def);
@@ -104,16 +116,30 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
                 dependencies.classAdvantages
             );
             
-            const damage = WildCore.calcDamage({
+            let damage = WildCore.calcDamage({
                 atk: effectiveAtk,
                 def: effectiveDef,
                 power: power,
                 damageMult: classAdv.damageMult
             });
+
+            // Passiva canônica — defensor (shieldhorn: -1 dano; jogador só ataca 1x por turno)
+            const defPassive = resolvePassiveModifier(encounter.wildMonster, {
+                event: 'on_hit_received',
+                hpPct: encounter.wildMonster.hpMax > 0 ? encounter.wildMonster.hp / encounter.wildMonster.hpMax : 0,
+                isFirstHitThisTurn: true, // Fase 4.2: jogador ataca apenas uma vez por turno
+            });
+            if (defPassive?.damageReduction) {
+                const reducedDamage = Math.max(1, damage - defPassive.damageReduction);
+                if (reducedDamage < damage) {
+                    encounter.log.push(`🛡️ Passiva ${encounter.wildMonster.name}: -${damage - reducedDamage} dano`);
+                }
+                damage = reducedDamage;
+            }
             
             // Aplicar dano
             encounter.wildMonster.hp = WildCore.applyDamageToHP(encounter.wildMonster.hp, damage);
-            encounter.log.push(`💥 ${playerMonster.name} hits! Deals ${damage} damage!`);
+            encounter.log.push(`💥 ${playerMonster.name} acerta! Causa ${damage} de dano!`);
             
             // PR11B: Marcar que o monstro selvagem participou (recebeu dano)
             markAsParticipated(encounter.wildMonster);
@@ -244,6 +270,10 @@ function processCritical(d20Roll, player, encounter) {
  * @returns {object} { defeated: boolean }
  */
 function processEnemyCounterattack(encounter, wildMonster, playerMonster, dependencies) {
+    // Fase 4.2: reset do estado de turno do shieldhorn — novo ciclo de ataque inimigo
+    const passiveState = encounter.passiveState || (encounter.passiveState = {});
+    passiveState.shieldhornBlockedThisTurn = false;
+
     const wildSkill = wildMonster.skill;
     
     // IA: 50% chance de usar habilidade se tiver ENE
@@ -277,10 +307,46 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
         const enemyRollType = isCrit ? 'crit' : alwaysMiss ? 'fail' : 'normal';
         dependencies.recordD20Roll(encounter, wildMonster.name, enemyRoll, enemyRollType);
     }
-    
+
+    // Passiva canônica — moonquill (wild): +1 SPD ao aplicar debuff — Fase 4.3
+    // A skill foi "usada" (ENE consumido) independentemente de acertar ou errar.
+    // Simetria: mesmo critério de debuff usado no lado do player (executeWildSkill).
+    const isWildDebuff =
+        wildSkill.type === 'BUFF' &&
+        (wildSkill.target === 'enemy' || wildSkill.target === 'Inimigo') &&
+        (wildSkill.power || 0) < 0;
+    const wildSkillPassive = resolvePassiveModifier(wildMonster, {
+        event: 'on_skill_used',
+        skillType: wildSkill.type, // Fase 4.3: tipo da skill explícito
+        isDebuff: isWildDebuff,
+    });
+    if (wildSkillPassive?.spdBuff) {
+        wildMonster.buffs = wildMonster.buffs || [];
+        wildMonster.buffs.push({
+            type: 'spd',
+            power: wildSkillPassive.spdBuff.power,
+            duration: wildSkillPassive.spdBuff.duration,
+            source: 'moonquill_passive',
+        });
+        encounter.log.push(
+            `✨ Passiva ${wildMonster.name}: +${wildSkillPassive.spdBuff.power} SPD por ${wildSkillPassive.spdBuff.duration} turno(s)`
+        );
+    }
+
     if (enemyHit) {
         const atkMods = WildCore.getBuffModifiers(wildMonster);
-        const effectiveAtk = Math.max(1, wildMonster.atk + atkMods.atk);
+        let effectiveAtk = Math.max(1, wildMonster.atk + atkMods.atk);
+
+        // Passiva canônica — atacante selvagem (emberfang: +1 ATK em skill ofensiva com HP > 70%)
+        const atkPassive = resolvePassiveModifier(wildMonster, {
+            event: 'on_attack',
+            hpPct: wildMonster.hpMax > 0 ? wildMonster.hp / wildMonster.hpMax : 0,
+            isOffensiveSkill: wildSkill.type === 'DAMAGE', // Fase 4.2: emberfang só em skill ofensiva
+        });
+        if (atkPassive?.atkBonus) {
+            effectiveAtk = Math.max(1, effectiveAtk + atkPassive.atkBonus);
+            encounter.log.push(`✨ Passiva ${wildMonster.name}: +${atkPassive.atkBonus} ATK`);
+        }
         
         const defMods = WildCore.getBuffModifiers(playerMonster);
         const effectiveDef = Math.max(1, playerMonster.def + defMods.def);
@@ -291,12 +357,28 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
             dependencies.classAdvantages
         );
         
-        const damage = WildCore.calcDamage({
+        let damage = WildCore.calcDamage({
             atk: effectiveAtk,
             def: effectiveDef,
             power: wildSkill.power,
             damageMult: classAdv.damageMult
         });
+
+        // Passiva canônica — defensor (shieldhorn: -1 dano no primeiro hit do turno)
+        const passiveState = encounter.passiveState || (encounter.passiveState = {});
+        const defPassive = resolvePassiveModifier(playerMonster, {
+            event: 'on_hit_received',
+            hpPct: playerMonster.hpMax > 0 ? playerMonster.hp / playerMonster.hpMax : 0,
+            isFirstHitThisTurn: !passiveState.shieldhornBlockedThisTurn, // Fase 4.2
+        });
+        if (defPassive?.damageReduction) {
+            const reducedDamage = Math.max(1, damage - defPassive.damageReduction);
+            if (reducedDamage < damage) {
+                encounter.log.push(`🛡️ Passiva ${playerMonster.name}: -${damage - reducedDamage} dano`);
+            }
+            damage = reducedDamage;
+            passiveState.shieldhornBlockedThisTurn = true; // Fase 4.2: marca turno como consumido
+        }
         
         playerMonster.hp = WildCore.applyDamageToHP(playerMonster.hp, damage);
         encounter.log.push(`💥 ${wildSkill.name} acerta! Causa ${damage} de dano!`);
@@ -338,14 +420,56 @@ function processEnemyBasicAttack(encounter, wildMonster, playerMonster, dependen
     }
     
     if (enemyHit) {
-        const damage = WildCore.calculateDamage(
-            wildMonster,
-            playerMonster,
-            dependencies.getBasicPower,
+        // Calcular ATK efetivo explicitamente para permitir injeção de passivas
+        const atkMods = WildCore.getBuffModifiers(wildMonster);
+        let effectiveAtk = Math.max(1, wildMonster.atk + atkMods.atk);
+
+        // Passiva canônica — atacante selvagem (emberfang: não dispara em ataque básico)
+        const atkPassive = resolvePassiveModifier(wildMonster, {
+            event: 'on_attack',
+            hpPct: wildMonster.hpMax > 0 ? wildMonster.hp / wildMonster.hpMax : 0,
+            isOffensiveSkill: false, // Fase 4.2: ataque básico → emberfang não dispara
+        });
+        if (atkPassive?.atkBonus) {
+            effectiveAtk = Math.max(1, effectiveAtk + atkPassive.atkBonus);
+            encounter.log.push(`✨ Passiva ${wildMonster.name}: +${atkPassive.atkBonus} ATK`);
+        }
+
+        const defMods = WildCore.getBuffModifiers(playerMonster);
+        const effectiveDef = Math.max(1, playerMonster.def + defMods.def);
+
+        const classAdv = WildCore.getClassAdvantageModifiers(
+            wildMonster.class,
+            playerMonster.class,
             dependencies.classAdvantages
         );
+        const basicPower = dependencies.getBasicPower(wildMonster.class);
+
+        let damage = WildCore.calcDamage({
+            atk: effectiveAtk,
+            def: effectiveDef,
+            power: basicPower,
+            damageMult: classAdv.damageMult
+        });
+
+        // Passiva canônica — defensor (shieldhorn: -1 dano no primeiro hit do turno)
+        const passiveState = encounter.passiveState || (encounter.passiveState = {});
+        const defPassive = resolvePassiveModifier(playerMonster, {
+            event: 'on_hit_received',
+            hpPct: playerMonster.hpMax > 0 ? playerMonster.hp / playerMonster.hpMax : 0,
+            isFirstHitThisTurn: !passiveState.shieldhornBlockedThisTurn, // Fase 4.2
+        });
+        if (defPassive?.damageReduction) {
+            const reducedDamage = Math.max(1, damage - defPassive.damageReduction);
+            if (reducedDamage < damage) {
+                encounter.log.push(`🛡️ Passiva ${playerMonster.name}: -${damage - reducedDamage} dano`);
+            }
+            damage = reducedDamage;
+            passiveState.shieldhornBlockedThisTurn = true; // Fase 4.2: marca turno como consumido
+        }
+
         playerMonster.hp = WildCore.applyDamageToHP(playerMonster.hp, damage);
-        encounter.log.push(`💥 ${wildMonster.name} hits! Deals ${damage} damage!`);
+        encounter.log.push(`💥 ${wildMonster.name} acerta! Causa ${damage} de dano!`);
         
         // PR11B: Marcar que o jogador participou (recebeu dano)
         markAsParticipated(playerMonster);
@@ -492,9 +616,58 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
         // Atualizar buffs do jogador
         updateBuffs(playerMonster);
 
+        // Passiva canônica — emberfang (+1 ATK em skill ofensiva com HP > 70%) — Fase 4.2
+        // Aplica como buff temporário antes de useSkill para que getBuffModifiers o inclua.
+        // Removido imediatamente após a skill para não persistir ao turno do inimigo.
+        const isOffensiveSkill = skill.type === 'DAMAGE';
+        const emberfangMod = resolvePassiveModifier(playerMonster, {
+            event: 'on_attack',
+            hpPct: playerMonster.hpMax > 0 ? playerMonster.hp / playerMonster.hpMax : 0,
+            isOffensiveSkill,
+        });
+        if (emberfangMod?.atkBonus) {
+            playerMonster.buffs = playerMonster.buffs || [];
+            playerMonster.buffs.push({
+                type: 'atk',
+                power: emberfangMod.atkBonus,
+                duration: 1,
+                source: 'emberfang_passive',
+            });
+            encounter.log.push(`✨ Passiva ${playerMonster.name}: +${emberfangMod.atkBonus} ATK (skill ofensiva)`);
+        }
+
         // Executar habilidade
         const success = dependencies.useSkill(playerMonster, skill, wildMonster, encounter);
+
+        // Remover buff temporário de emberfang após uso da skill (não persiste ao turno inimigo)
+        playerMonster.buffs = (playerMonster.buffs || []).filter(b => b.source !== 'emberfang_passive');
+
         if (!success) return { success: false, result: 'invalid' };
+
+        // Passiva canônica — moonquill (+1 SPD ao aplicar debuff)
+        // Debuff = habilidade BUFF direcionada ao inimigo com poder negativo
+        const isDebuff =
+            skill.type === 'BUFF' &&
+            (skill.target === 'enemy' || skill.target === 'Inimigo') &&
+            (skill.power || 0) < 0;
+        const skillPassive = resolvePassiveModifier(playerMonster, {
+            event: 'on_skill_used',
+            hpPct: playerMonster.hpMax > 0 ? playerMonster.hp / playerMonster.hpMax : 0,
+            skillType: skill.type,  // Fase 4.3: tipo da skill explícito no contexto
+            isDebuff,
+        });
+        if (skillPassive?.spdBuff) {
+            playerMonster.buffs = playerMonster.buffs || [];
+            playerMonster.buffs.push({
+                type: 'spd',
+                power: skillPassive.spdBuff.power,
+                duration: skillPassive.spdBuff.duration,
+                source: 'moonquill_passive',
+            });
+            encounter.log.push(
+                `✨ Passiva ${playerMonster.name}: +${skillPassive.spdBuff.power} SPD por ${skillPassive.spdBuff.duration} turno(s)`
+            );
+        }
 
         // Marcar participação (item breakage)
         if (dependencies.markAsParticipated) {
@@ -671,6 +844,25 @@ export function executeWildItemUse({ encounter, player, playerMonster, itemId, d
         const hpBefore   = playerMonster.hp;
         playerMonster.hp = Math.min(playerMonster.hpMax, playerMonster.hp + healAmount);
         const actualHeal = playerMonster.hp - hpBefore;
+
+        // Passiva canônica — floracura (bônus na primeira cura do combate)
+        // passiveState é inicializado lazily no encounter para não poluir o objeto de encontro
+        // nos casos em que nenhuma passiva com estado dispara.
+        const passiveState = encounter.passiveState || (encounter.passiveState = {});
+        const healPassive = resolvePassiveModifier(playerMonster, {
+            event: 'on_heal_item',
+            hpPct: playerMonster.hpMax > 0 ? hpBefore / playerMonster.hpMax : 0,
+            isFirstHeal: !passiveState.floracuraHealUsed,
+        });
+        if (healPassive?.healBonus) {
+            const bonus = Math.min(healPassive.healBonus, playerMonster.hpMax - playerMonster.hp);
+            if (bonus > 0) {
+                playerMonster.hp += bonus;
+                encounter.log.push(`✨ Passiva ${playerMonster.name}: +${bonus} HP (primeira cura)`);
+            }
+            // Marca independentemente de bonus > 0 (HP pode já estar cheio)
+            passiveState.floracuraHealUsed = true;
+        }
 
         encounter.log.push(
             `✨ ${playerMonster.name} recuperou ${actualHeal} HP! (${playerMonster.hp}/${playerMonster.hpMax})`
