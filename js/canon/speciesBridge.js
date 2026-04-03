@@ -208,6 +208,20 @@ export const RUNTIME_TO_CANON_SPECIES = {
     // Umbraquimonom: ATK 14, DEF 7, SPD 16, ENE 10 — forma madura; ainda skill-oriented.
     'MON_022C': 'shadowsting',
 
+    // ── Bardo — arquétipo cadencia_ritmica (bellwave) — Fase 11 ─────────────
+    // Zunzumon: ATK 4, DEF 4, SPD 11, ENE 8 — perfil de Bardo mais coerente do catálogo.
+    //   SPD/ATK = 2.75 e ENE/ATK = 2.0 — claramente não é striker nem tank.
+    //   Linha 3 estágios (Comum → Incomum → Raro): arquétipo preservado em todos.
+    //   Offset (def-1, ene+1, agi+1): reforça velocidade e energia sem esconder fragilidade.
+    //   DEF_off = max(1, 4-1) = 3 — sem risco de floor em nenhum estágio.
+    'MON_027': 'bellwave',
+    // Melodimon: ATK 6, DEF 4, SPD 14, ENE 10 — SPD/ATK 2.33, ENE/ATK 1.67;
+    //   arquétipo cadencia_ritmica preservado; SPD e ENE dominam sobre ATK.
+    'MON_027B': 'bellwave',
+    // Rainhassommon: ATK 8, DEF 6, SPD 15, ENE 12 — SPD/ATK 1.875, ENE/ATK 1.5;
+    //   forma madura; SPD e ENE mantêm dominância relativa sobre ATK e DEF.
+    'MON_027C': 'bellwave',
+
     // ── Sem mapeamento — justificativas ─────────────────────────────────────
     // MON_100 (Rato-de-Lama, Guerreiro): ATK 5, DEF 3, HP 20 — stats fracos
     //   sem perfil defensivo claro; não se encaixa em tank_puro. Sem mapeamento.
@@ -225,7 +239,15 @@ export const RUNTIME_TO_CANON_SPECIES = {
     //   ENE/ATK = 0.75 (mais baixo que Corvimon 0.86) — perfil mais similar a
     //   swiftclaw do que ao arquétipo oportunista_furtivo. Excluído da Fase 10.
     //
-    // Bardo (MON_001, MON_011/B/C/D, MON_027/B/C): sem espécie canônica de Bardo.
+    // MON_001 (Cantapau, Bardo Comum): sem linha evolutiva (estágio único);
+    //   mesma razão que Garruncho e Sombrio — sem linha completa para validar.
+    //   Não mapeado em Fase 11.
+    //
+    // MON_011/B/C/D (Dinomon → Giganotometalmon, Bardo): drift de arquétipo em MON_011D.
+    //   Estágios 1-3 têm SPD/ATK ≥ 1.09 (perfil de bardo veloz), mas MON_011D tem
+    //   ATK 16, DEF 12 e SPD 11 — SPD cai abaixo de ATK, perfil vira bruiser pesado.
+    //   Drift relevante de identidade no estágio final → linha excluída da Fase 11.
+    //
     // Animalista (MON_006, MON_012/B/C/D, MON_023/B/C): sem espécie canônica de Animalista.
 };
 
@@ -240,6 +262,7 @@ const CLASSES_WITH_CANON_SPECIES = new Set([
     'Curandeiro',  // floracura (healer)
     'Caçador',     // swiftclaw (hunter) — Fase 9
     'Ladino',      // shadowsting (rogue) — Fase 10
+    'Bardo',       // bellwave (bard) — Fase 11
 ]);
 
 // ---------------------------------------------------------------------------

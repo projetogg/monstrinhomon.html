@@ -99,6 +99,7 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
             // Passiva canônica — atacante (emberfang: não dispara em ataque básico;
             // swiftclaw: +1 ATK no primeiro ataque do combate;
             // shadowsting: +1 ATK em ataque básico se debuff foi aplicado antes) — Fase 4.2 / Fase 9 / Fase 10
+            // bellwave: +1 ATK em ataque básico se qualquer skill foi usada antes — Fase 11
             const passiveStateAtk = encounter.passiveState || (encounter.passiveState = {});
             const atkPassive = resolvePassiveModifier(playerMonster, {
                 event: 'on_attack',
@@ -106,12 +107,14 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
                 isOffensiveSkill: false, // Fase 4.2: ataque básico → emberfang não dispara
                 isFirstAttackOfCombat: !passiveStateAtk.swiftclawFirstStrikeDone, // Fase 9
                 hasShadowstingCharge: !!passiveStateAtk.shadowstingDebuffCharged, // Fase 10
+                hasBellwaveRhythmCharge: !!passiveStateAtk.bellwaveRhythmCharged, // Fase 11
             });
             if (atkPassive?.atkBonus) {
                 effectiveAtk = Math.max(1, effectiveAtk + atkPassive.atkBonus);
                 encounter.log.push(`✨ Passiva ${playerMonster.name}: +${atkPassive.atkBonus} ATK`);
                 passiveStateAtk.swiftclawFirstStrikeDone = true; // Fase 9: consome bônus de primeiro ataque
                 passiveStateAtk.shadowstingDebuffCharged = false; // Fase 10: consome carga de debuff
+                passiveStateAtk.bellwaveRhythmCharged = false; // Fase 11: consome carga de ritmo
             }
             
             const defMods = WildCore.getBuffModifiers(encounter.wildMonster);
@@ -626,6 +629,7 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
         // Passiva canônica — emberfang (+1 ATK em skill ofensiva com HP > 70%) — Fase 4.2
         // swiftclaw (+1 ATK no primeiro ataque do combate) — Fase 9
         // Nota: shadowsting NÃO dispara em skill (isOffensiveSkill: true nunca ativa shadowsting)
+        // Nota: bellwave NÃO dispara em skill (isOffensiveSkill: true nunca ativa bellwave) — Fase 11
         // Aplica como buff temporário antes de useSkill para que getBuffModifiers o inclua.
         // Removido imediatamente após a skill para não persistir ao turno do inimigo.
         const isOffensiveSkill = skill.type === 'DAMAGE';
@@ -636,6 +640,7 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
             isOffensiveSkill,
             isFirstAttackOfCombat: !passiveStateSkill.swiftclawFirstStrikeDone, // Fase 9
             hasShadowstingCharge: false, // Fase 10: skill ofensiva nunca ativa shadowsting
+            hasBellwaveRhythmCharge: false, // Fase 11: skill nunca ativa bellwave (só ataque básico)
         });
         if (emberfangMod?.atkBonus) {
             playerMonster.buffs = playerMonster.buffs || [];
@@ -689,6 +694,15 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
             const passiveStateShadow = encounter.passiveState || (encounter.passiveState = {});
             passiveStateShadow.shadowstingDebuffCharged = true;
             encounter.log.push(`🎯 Passiva ${playerMonster.name}: carga de execução ativada`);
+        }
+
+        // bellwave: carregar bônus rítmico quando qualquer skill é usada — Fase 11
+        // A carga ativa a passiva on_attack no próximo ataque básico do player.
+        // Diferente de shadowsting: qualquer skill carrega o ritmo, não apenas debuffs.
+        if (playerMonster.canonSpeciesId === 'bellwave') {
+            const passiveStateBell = encounter.passiveState || (encounter.passiveState = {});
+            passiveStateBell.bellwaveRhythmCharged = true;
+            encounter.log.push(`🎵 Passiva ${playerMonster.name}: ritmo carregado`);
         }
 
         // Marcar participação (item breakage)

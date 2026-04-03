@@ -53,6 +53,7 @@
  *   - floracura  (Curandeiro): slot 4 — requer nível 30
  *   - swiftclaw  (Caçador):    slot 1 — sempre desbloqueado (Fase 9)
  *   - shadowsting (Ladino):   slot 4 — requer nível 30 (Fase 10)
+ *   - bellwave   (Bardo):     slot 4 — requer nível 30 (Fase 11)
  *
  * ── REGRAS DO SWAP ────────────────────────────────────────────────────────────
  *
@@ -130,6 +131,14 @@
 //     Cura Eficiente I:     cost 3, pwr 10 → 3.33 HP/ENE (+11% eficiência)
 //     Menos cura absoluta que slot 1 (10 vs 15) — sustain deliberado. ✅
 //     Slot 4 = ADD (sem slot legado para Curandeiro). Dentro do teto (Cura III: 4.0 HP/ENE). ✅
+//
+//   bellwave Nota Discordante I (cost 4, pwr −2 SPD, 2 turnos) — Fase 11:
+//     moonquill Véu Arcano I (ref): cost 4, -3 ATK, 2t → 1.50 ATK-t/ENE
+//     shadowsting Golpe Furtivo I (ref): cost 5, pwr 22 (dano) → 4.40 pwr/ENE
+//     Nota Discordante I: cost 4, -2 SPD, 2t → 1.00 SPD-t/ENE (conservador vs moonquill)
+//     SPD debuff é situacionalmente forte (impede inimigo de agir primeiro) — por isso
+//     a eficiência 1.0 SPD-t/ENE fica abaixo de moonquill (1.5 ATK-t/ENE). ✅
+//     Slot 4 = ADD (sem slot legado de Bardo neste slot). Diferente de moonquill (ATK debuff). ✅
 // ---------------------------------------------------------------------------
 const KIT_SWAP_TABLE = {
     /**
@@ -290,6 +299,49 @@ const KIT_SWAP_TABLE = {
             cost: 5,
             power: 22,
             desc: 'Golpe furtivo de execução. Devastador após debuff preparado.',
+        },
+    },
+
+    /**
+     * bellwave (Bardo, arquétipo cadencia_ritmica) — Fase 11
+     *
+     * Conceito: "Nota discordante — debuff de SPD no inimigo, identidade rítmica"
+     * Slot alvo: 4 (bard_dissonance, nível 30 — desbloqueio tardio)
+     * Efeito: Nota Discordante I adiciona debuff de SPD ao inimigo.
+     *   Reduz a velocidade do oponente por 2 turnos — o inimigo age depois.
+     *   Sinérgico com o arquétipo de alta velocidade do bellwave:
+     *   bellwave age primeiro → usa Nota Discordante → inimigo fica ainda mais lento
+     *   → próximo turno, bellwave usa ataque básico com bônus rítmico da passiva.
+     *
+     * DIFERENCIAÇÃO DE MOONQUILL:
+     *   moonquill: ATK debuff (−3 ATK do inimigo) — reduz dano do oponente.
+     *   bellwave: SPD debuff (−2 SPD do inimigo) — reduz velocidade do oponente.
+     *   moonquill: recompensado com +1 SPD PRÓPRIO (passiva on_skill_used+isDebuff).
+     *   bellwave: usa debuff para CARREGAR RITMO (passiva on_attack after any skill).
+     *   Loop moonquill: debuffar → ganhar velocidade → controlar melhor.
+     *   Loop bellwave: usar skill → carregar ritmo → atacar com bônus → repetir.
+     *   O foco do bellwave é a alternância cadenciada; o foco do moonquill é o controle.
+     *
+     * AUDITORIA (Fase 11):
+     *   moonquill Véu Arcano I (ref SPD-adjacent debuff): cost 4, -3 ATK, 2t → 1.50 ATK-t/ENE
+     *   Nota Discordante I: cost 4, -2 SPD, 2t → 1.00 SPD-t/ENE (−33% vs moonquill)
+     *   SPD debuff é mais forte situacionalmente (nega prioridade de turno), por isso
+     *   a eficiência 1.0 SPD-t/ENE é intencional — mais conservadora. ✅
+     *   Slot 4 = ADD (sem slot 4 legado para Bardo). Tipo BUFF+enemy+power<0 → é debuff. ✅
+     */
+    bellwave: {
+        targetSlot: 4,
+        canonSkillId: 'bard_dissonance',
+        replacement: {
+            _kitSwapId: 'bellwave_discordant_note',
+            name: 'Nota Discordante I',
+            type: 'BUFF',
+            cost: 4,
+            power: -2,
+            buffType: 'SPD',
+            target: 'enemy',
+            duration: 2,
+            desc: 'Nota dissonante que desorienta o ritmo do inimigo. Reduz velocidade por 2 turnos.',
         },
     },
 };
@@ -600,6 +652,37 @@ const KIT_SWAP_PROMOTION_TABLE = {
             cost: 6,
             power: 28,
             desc: 'Golpe furtivo aprimorado. Execução maximizada após setup de debuff.',
+        },
+    },
+
+    /**
+     * bellwave (Bardo, cadencia_ritmica) — slot 4 — promoção no nível 50 — Fase 11
+     * Nota Discordante I → Nota Discordante II
+     * Slot 4 desbloqueado em L30; promoção em L50 recompensa progressão alta.
+     *
+     * AUDITORIA:
+     *   Nota Discordante I (versão I):  cost 4, -2 SPD, 2t → 1.00 SPD-t/ENE
+     *   Nota Discordante II (promoted): cost 5, -3 SPD, 2t → 1.20 SPD-t/ENE (+20%)
+     *   moonquill Véu Arcano II (ref L50): cost 5, -4 ATK, 2t → 1.60 ATK-t/ENE
+     *   Nota Discordante II ainda abaixo do Véu Arcano II (1.20 vs 1.60) —
+     *   SPD debuff mais conservador que ATK debuff por ser situacionalmente forte. ✅
+     *   Progressão modesta: +20% eficiência em SPD-t/ENE ao nível 50. ✅
+     */
+    bellwave_discordant_note: {
+        canonSpeciesId: 'bellwave',
+        targetSlot: 4,
+        minLevel: 50,
+        promotedSwapId: 'bellwave_discordant_note_ii',
+        promoted: {
+            _kitSwapId: 'bellwave_discordant_note_ii',
+            name: 'Nota Discordante II',
+            type: 'BUFF',
+            cost: 5,
+            power: -3,
+            buffType: 'SPD',
+            target: 'enemy',
+            duration: 2,
+            desc: 'Nota discordante intensificada. Desorientação rítmica ainda mais profunda.',
         },
     },
 };

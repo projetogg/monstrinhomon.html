@@ -387,9 +387,9 @@ describe('hasKitSwap', () => {
 // ---------------------------------------------------------------------------
 describe('getActiveKitSwapIds', () => {
 
-    it('deve retornar exatamente 6 espécies (Fase 10: +shadowsting)', () => {
+    it('deve retornar exatamente 7 espécies (Fase 11: +bellwave)', () => {
         const ids = getActiveKitSwapIds();
-        expect(ids).toHaveLength(6);
+        expect(ids).toHaveLength(7);
     });
 
     it('deve incluir as 4 espécies MVP', () => {
