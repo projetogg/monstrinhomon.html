@@ -773,6 +773,543 @@ O pipeline canônico de grupo é: `groupCore.js` → `groupActions.js` → `grou
 
 ---
 
+---
+
+## 10. Kit de Habilidades por Classe (4 Slots)
+
+> Source of truth: `docs/HABILIDADES_POR_CLASSE_V2.md` v2.1
+
+### 10.1 Estrutura dos 4 Slots
+
+| Slot | Tipo | ENE | Descrição |
+|------|------|-----|-----------|
+| 1 | Ataque Básico (evoluível) | **0** | Ação permanente, sempre disponível |
+| 2 | Habilidade Inicial | Sim | Primeiro poder especial |
+| 3 | Habilidade Tática | Sim | Poder secundário (dano, controle, suporte) |
+| 4 | Assinatura de Classe | Sim | Ação exclusiva que define o papel da classe |
+
+**Escala de PWR:**
+
+| Faixa | Significado |
+|-------|-------------|
+| 2–3 | Básico leve |
+| 4 | Básico forte ou habilidade leve |
+| 5–6 | Habilidade média |
+| 7–8 | Habilidade forte |
+| 9+ | Assinatura — exige condição, custo ou limitação |
+
+### 10.2 Habilidades por Classe
+
+#### Guerreiro — Tank / proteção
+
+| Slot | Habilidade | Lv | ENE | PWR | Alcance | Tipo | Evolução |
+|------|-----------|--:|---:|---:|---------|------|----------|
+| 1 | Golpe Firme | 1 | 0 | 3 | Curto | Ofensiva básica | → Investida de Guarda |
+| 2 | Corte Pesado | 5 | 2 | 5 | Curto | Ofensiva | → Golpe Demolidor |
+| 3 | Postura Defensiva | 15 | 3 | 0 | Próprio | Defesa | → Muralha de Ferro |
+| 4 | Proteger Aliado | 30 | 4 | 0 | Curto/aliado | **Assinatura** | → Guarda Heroica |
+
+#### Bárbaro — Burst / pressão
+
+| Slot | Habilidade | Lv | ENE | PWR | Alcance | Tipo | Evolução |
+|------|-----------|--:|---:|---:|---------|------|----------|
+| 1 | Pancada Selvagem | 1 | 0 | 4 | Curto | Ofensiva básica | → Fúria Cortante |
+| 2 | Golpe Brutal | 5 | 2 | 6 | Curto | Ofensiva | → Destruidor de Ossos |
+| 3 | Fúria | 15 | 3 | 0 | Próprio | Buff (+ATK, -DEF) | → Frenesi de Batalha |
+| 4 | Berserk | 30 | 4 | 7 | Curto | **Assinatura** | → Ira Colossal |
+
+#### Mago — Ofensivo técnico / controle
+
+| Slot | Habilidade | Lv | ENE | PWR | Alcance | Tipo | Evolução |
+|------|-----------|--:|---:|---:|---------|------|----------|
+| 1 | Rajada Arcana | 1 | 0 | 3 | Médio | Ofensiva básica | → Seta Mística |
+| 2 | Explosão Etérea | 5 | 2 | 5 | Médio | Ofensiva | → Onda Arcana |
+| 3 | Prisão de Energia | 15 | 3 | 1 | Médio | Controle (-AGI) | → Selo Arcano |
+| 4 | Tempestade Arcana | 30 | 4 | 6 | Médio/Área | **Assinatura** | → Cataclismo Etéreo |
+
+#### Curandeiro — Sustentação / suporte
+
+| Slot | Habilidade | Lv | ENE | PWR | Alcance | Tipo | Evolução |
+|------|-----------|--:|---:|---:|---------|------|----------|
+| 1 | Toque Vital | 1 | 0 | 2 | Médio | Ofensiva básica | → Luz Restauradora |
+| 2 | Cura Simples | 5 | 2 | 4 | Médio/aliado | Cura | → Cura Restauradora |
+| 3 | Benção Suave | 15 | 3 | 0 | Médio/aliado | Buff (escudo/regen) | → Aura Protetora |
+| 4 | Cura em Área | 30 | 4 | 5 | Grupo | **Assinatura** | → Grande Onda Vital |
+
+#### Bardo — Buff / debuff / ritmo
+
+| Slot | Habilidade | Lv | ENE | PWR | Alcance | Tipo | Evolução |
+|------|-----------|--:|---:|---:|---------|------|----------|
+| 1 | Nota Cortante | 1 | 0 | 2 | Longo | Ofensiva básica | → Melodia Penetrante |
+| 2 | Canção de Coragem | 5 | 2 | 0 | Grupo/aliado | Buff (+ATK/confronto) | → Hino Inspirador |
+| 3 | Eco Desafinador | 15 | 3 | 1 | Longo | Debuff (-ATK/-AGI) | → Balada da Ruína |
+| 4 | Concerto de Guerra | 30 | 4 | 0 | Grupo/Área | **Assinatura** | → Sinfonia Suprema |
+
+#### Ladino — Velocidade / execução
+
+| Slot | Habilidade | Lv | ENE | PWR | Alcance | Tipo | Evolução |
+|------|-----------|--:|---:|---:|---------|------|----------|
+| 1 | Corte Rápido | 1 | 0 | 3 | Curto/Médio | Ofensiva básica | → Lâmina Veloz |
+| 2 | Golpe Sorrateiro | 5 | 2 | 5 | Curto | Ofensiva condicional | → Assalto Sombrio |
+| 3 | Passo Sombrio | 15 | 3 | 0 | Próprio | Mobilidade | → Dança das Sombras |
+| 4 | Execução | 30 | 4 | 7 | Curto | **Assinatura** | → Golpe Fatal |
+
+#### Caçador — Pressão à distância / marcação
+
+| Slot | Habilidade | Lv | ENE | PWR | Alcance | Tipo | Evolução |
+|------|-----------|--:|---:|---:|---------|------|----------|
+| 1 | Disparo Preciso | 1 | 0 | 3 | Longo | Ofensiva básica | → Flecha Certeira |
+| 2 | Tiro Reforçado | 5 | 2 | 5 | Longo | Ofensiva | → Flecha Perfurante |
+| 3 | Marcar Alvo | 15 | 3 | 0 | Longo | Tática (penalidade DEF) | → Caçada Implacável |
+| 4 | Tiro do Predador | 30 | 4 | 6 | Longo | **Assinatura** | → Sentença do Caçador |
+
+#### Animalista — Versatilidade / adaptação
+
+| Slot | Habilidade | Lv | ENE | PWR | Alcance | Tipo | Evolução |
+|------|-----------|--:|---:|---:|---------|------|----------|
+| 1 | Mordida Selvagem | 1 | 0 | 3 | Curto | Ofensiva básica | → Presa Bestial |
+| 2 | Investida Animal | 5 | 2 | 5 | Curto | Ofensiva | → Carga Furiosa |
+| 3 | Instinto Aguçado | 15 | 3 | 0 | Próprio | Buff adaptável | → Sentidos Primitivos |
+| 4 | Forma Bestial | 30 | 4 | 5 | Curto/Médio | **Assinatura** | → Transformação Primordial |
+
+### 10.3 Regras Fixas de Design de Habilidades
+
+| Regra | Descrição |
+|-------|-----------|
+| **A** | Slot 1 (básico) deve ser sempre útil, sem ENE |
+| **B** | Assinatura (slot 4) não pode ser só dano — precisa de efeito situacional ou limitação |
+| **C** | Toda habilidade forte tem limitação obrigatória (condição, custo, duração) |
+| **D** | Suporte coletivo (buff/cura de área) é limitado a Curandeiro e Bardo |
+| **E** | Condicional > universal — habilidade boa em sempre = problema de balanceamento |
+
+---
+
+## 11. Atributos Base por Classe (Nível 1 Canônico)
+
+> Source of truth: `docs/ATRIBUTOS_BASE_POR_CLASSE_V2.md` v2.1
+
+### 11.1 Tabela-Base
+
+| Classe | HP | ATK | DEF | ENE | AGI | Alcance | PWR Básico | Papel |
+|--------|----|-----|-----|-----|-----|---------|------------|-------|
+| **Guerreiro** | 24 | 5 | 8 | 4 | 3 | Curto | 4 | Tank / proteção |
+| **Bárbaro** | 22 | 8 | 4 | 3 | 4 | Curto | 5 | Burst / pressão |
+| **Mago** | 18 | 7 | 3 | 7 | 4 | Médio | 4 | Ofensivo técnico |
+| **Curandeiro** | 19 | 4 | 3 | 8 | 3 | Médio | 3 | Cura / suporte |
+| **Bardo** | 18 | 4 | 3 | 7 | 5 | Longo | 3 | Buff / debuff |
+| **Ladino** | 17 | 7 | 2 | 5 | 8 | Curto/Médio | 4 | Velocidade / execução |
+| **Caçador** | 19 | 6 | 3 | 5 | 6 | Longo | 4 | Pressão à distância |
+| **Animalista** | 21 | 6 | 5 | 5 | 5 | Curto/Médio | 4 | Versátil |
+
+### 11.2 Regra: Nenhuma classe lidera em mais de 2 eixos fortes
+
+| Classe | Líderes | Não pode liderar |
+|--------|---------|-----------------|
+| Guerreiro | DEF, HP | ATK, AGI |
+| Bárbaro | ATK, PWR | DEF, ENE |
+| Mago | ATK, ENE | HP, DEF |
+| Curandeiro | ENE, cura | ATK, DEF |
+| Bardo | ENE, AGI | HP, dano direto |
+| Ladino | AGI, ATK | HP, DEF |
+| Caçador | AGI, alcance | DEF, HP |
+| Animalista | Equilíbrio | Nenhum pico extremo |
+
+### 11.3 DEF na Fórmula (Lv1 — referência rápida)
+
+| Classe | DEF | DEF_confronto | Mitigação |
+|--------|-----|--------------|-----------|
+| Guerreiro | 8 | 4 | 4 |
+| Bárbaro | 4 | 2 | 2 |
+| Mago | 3 | 2 | 1 |
+| Curandeiro | 3 | 2 | 1 |
+| Bardo | 3 | 2 | 1 |
+| Ladino | 2 | 1 | 1 |
+| Caçador | 3 | 2 | 1 |
+| Animalista | 5 | 3 | 2 |
+
+### 11.4 Simulação de Combate Lv1
+
+**DanoBase básico = PWR_básico + ATK_atacante − Mitigação_defensor**
+
+| Atacante → Defensor | DanoBase (sem dados) |
+|--------------------|--------------------|
+| Bárbaro → Guerreiro | 5 + 8 − 4 = **9** |
+| Guerreiro → Bárbaro | 4 + 5 − 2 = **7** |
+| Mago → Guerreiro | 4 + 7 − 4 = **7** |
+| Guerreiro → Mago | 4 + 5 − 1 = **8** |
+| Ladino → Mago | 4 + 7 − 1 = **10** |
+| Bárbaro → Ladino | 5 + 8 − 1 = **12** |
+
+> Com 24 HP, Guerreiro aguenta ~3 acertos do Bárbaro. Com 17 HP, Ladino aguenta ~2 acertos.
+
+---
+
+## 12. Sistema de Itens
+
+### 12.1 Itens Equipáveis (Held Items)
+
+Itens que o Monstrinho segura — conferem bônus passivos de stats.
+
+| ID | Nome | Tier | ATK+ | DEF+ | Chance de quebra |
+|----|------|------|-----:|-----:|-----------------|
+| `IT_ATK_COMUM` | Amuleto de Força | Comum | +2 | 0 | 15% |
+| `IT_DEF_COMUM` | Escudo Leve | Comum | 0 | +2 | 15% |
+| `IT_ATK_INCOMUM` | Colar de Poder | Incomum | +4 | 0 | 10% |
+| `IT_DEF_INCOMUM` | Armadura Reforçada | Incomum | 0 | +4 | 10% |
+| `IT_ATK_RARO` | Garra do Dragão | Raro | +6+ | 0 | variável |
+| `IT_DEF_RARO` | Escudo Arcano | Raro | 0 | +6+ | variável |
+
+**Preço de venda** = `floor(buy × 0.50)` (metade do preço de compra).
+
+### 12.2 Itens Consumíveis (Batalha e Menu)
+
+| Tipo | Exemplos | Efeito | Usável em batalha? |
+|------|---------|--------|-------------------|
+| Captura | Orbe Básico, Orbe Reforçado | Tenta capturar | ✅ Sim |
+| Cura | Petisco de Cura, Poção Grande | Restaura HP (25% / 50%) | ✅ Sim |
+| Energia | Cristal de Energia | Restaura 50% ENE | ✅ Sim |
+| Reviver | Pena Reviva | Revive com 40% HP | ❌ Fora de batalha |
+| Tático | Escudo, Re-roll | Reduz dano / permite rolar d20 novamente | ✅ Sim |
+
+**Regra:** itens de reviver e alguns táticos só funcionam fora de batalha.
+
+### 12.3 Ovos (Eggs)
+
+| ID | Nome | Raridade | Modo |
+|----|------|---------|------|
+| `EGG_C` | Ovo Comum | Comum | `by_rarity` |
+| `EGG_I` | Ovo Incomum | Incomum | `by_rarity` |
+| `EGG_R` | Ovo Raro | Raro | `by_rarity` |
+
+- Ovos são usados via menu (não em batalha).
+- Eclodem via `hatchEggFromInventory()` → `createMonsterInstanceFromTemplate()` (ponte canônica).
+
+### 12.4 Sistema de Desgaste de Itens (ItemBreakage)
+
+Held items têm chance de quebrar após a batalha:
+- Quebra calculada por `Combat.ItemBreakage.markAsParticipated()` após uso em combate.
+- Chance de quebra varia por tier (15% comum → menor em raros).
+- Item quebrado é removido automaticamente do Monstrinho.
+
+---
+
+## 13. Sistema de Amizade (Friendship)
+
+### 13.1 Escala
+
+| Valor | Nível | Ícone | Bônus XP |
+|-------|-------|-------|---------|
+| 0–24 | 1 (Estranhos) | 💔 | Nenhum |
+| 25–49 | 2 (Conhecidos) | 🤍 | Nenhum |
+| 50–74 | 3 (Amigos) | 💙 | Nenhum |
+| 75–99 | 4 (Grandes Amigos) | 💛 | +5% XP |
+| 100 | 5 (Melhores Amigos) | ❤️ | +10% XP |
+
+**Padrão inicial:** 50 (Amigos — neutro).
+
+### 13.2 Eventos que Alteram Amizade
+
+| Evento | Mudança |
+|--------|---------|
+| Ganhar batalha | +2 |
+| Perder batalha | −5 |
+| Usar item de cura no Monstrinho | +5 |
+| Subir de nível | +3 |
+| Monstrinho desmaiar | −3 |
+
+### 13.3 Impacto no Jogo
+
+```javascript
+getFriendshipBonuses(friendship):
+  Nível 4 (75+): xpMultiplier = 1.05  // +5% XP em batalha
+  Nível 5 (100): xpMultiplier = 1.10  // +10% XP em batalha
+```
+
+Bônus aplicado em `giveXP()` via `Math.round(baseXpGain × xpMultiplier)`.
+
+---
+
+## 14. Sistema de Posicionamento em Grupo
+
+> Source of truth: `docs/POSICIONAMENTO_V2.md`
+> Aplicável apenas em batalhas de grupo (trainer, boss). Não se aplica a encontros wild 1v1.
+
+### 14.1 Grade de Posicionamento
+
+```
+LADO DO INIMIGO          LADO DO JOGADOR
+┌────────────┐           ┌────────────┐
+│  Inimigo   │           │   TRÁS     │ ← Suporte / Bônus def. +2
+│  (Frente)  │           │            │
+├────────────┤           ├────────────┤
+│  Inimigo   │  ←→ →    │   MEIO     │ ← Versátil / Bônus def. +1
+│  (Meio)    │           │            │
+├────────────┤           ├────────────┤
+│  Inimigo   │           │  FRENTE    │ ← Linha 1 / Sem bônus def.
+│  (Trás)    │           │            │
+└────────────┘           └────────────┘
+  Máx. 2/linha             Máx. 2/linha
+```
+
+### 14.2 Alcance por Classe
+
+| Classe | Alcance Base | Linhas atingidas |
+|--------|-------------|-----------------|
+| Guerreiro | Curto | Apenas Frente inimiga |
+| Bárbaro | Curto | Apenas Frente inimiga |
+| Mago | Longo | Frente, Meio e Trás |
+| Curandeiro | Médio | Frente e Meio (cura: qualquer linha) |
+| Bardo | Longo | Qualquer linha (buff: qualquer aliado) |
+| Ladino | Médio | Frente e Meio |
+| Caçador | Longo | Qualquer linha |
+| Animalista | Curto | Apenas Frente |
+
+**Modificador de posição do atacante:**
+- Posição Meio: +1 linha de alcance (Curto → Médio)
+- Posição Trás: −1 linha de alcance (Médio → Curto)
+
+### 14.3 Bônus Defensivo por Linha
+
+| Linha | Bônus no RC de defesa |
+|-------|----------------------|
+| Frente | +0 |
+| Meio | +1 |
+| Trás | +2 |
+
+> Bônus só se aplica se a linha à frente tiver pelo menos 1 aliado vivo.
+
+### 14.4 Prioridade de Alvo (IA Inimiga)
+
+1. Linha mais à frente acessível pelo alcance do inimigo
+2. Dentro da linha: alvo com **menor HP atual**
+3. 20% de chance de atacar aleatoriamente na linha
+4. Se TAUNT ativo: **deve** atacar o provocador
+
+### 14.5 Fuga e Troca de Posição
+
+- Troca de posição custa ação do turno
+- Fuga de batalha em grupo: libera 1 Monstrinho; não encerra o combate
+- Fuga proibida em batalha Boss
+
+---
+
+## 15. Tabela de Encontros e Exploração
+
+> Source of truth: `docs/TABELA_ENCONTROS_V2.md`
+
+### 15.1 Loop de Exploração
+
+```
+Grupo chega à área →
+Cada jogador escolhe 1 ponto de busca (4–6 disponíveis) →
+Resultado revelado (d6 ou automático) →
+Combate / captura / evento →
+Recompensas distribuídas
+```
+
+### 15.2 Pesos por Tipo de Área
+
+| Tipo | Nada | Item | Selvagem | Evento | Raro |
+|------|------|------|----------|--------|------|
+| Campo | 15% | 20% | 40% | 15% | 10% |
+| Floresta | 10% | 15% | 45% | 15% | 15% |
+| Caverna | 5% | 10% | 40% | 20% | 25% |
+| Ruína | 5% | 15% | 30% | 25% | 25% |
+| Montanha | 10% | 10% | 35% | 20% | 25% |
+| Água | 15% | 20% | 40% | 15% | 10% |
+| Cidade | 10% | 40% | 5% | 35% | 10% |
+
+### 15.3 Atributos Especiais de Boss
+
+| Modificador | Valor |
+|-------------|-------|
+| HP | ×2.5 do padrão do nível |
+| ATK | ×1.5 |
+| DEF | ×1.5 |
+| Imunidade a STUN/ROOT | ✅ Sim |
+| Fuga do jogador | ❌ Proibida |
+| Fases | 2 (HP ≤ 50% = Fase 2, +20% ATK) |
+
+### 15.4 Recompensas por Tipo de Encontro
+
+| Encontro | Drop Garantido | Extra |
+|----------|----------------|-------|
+| Selvagem (derrota) | Nenhum | 30% de 1 item Comum |
+| Selvagem (captura) | Nenhum | 15% de 1 item Comum |
+| Treinador (vitória) | 1 item Comum | 20% Incomum |
+| Treinador Elite (vitória) | 1 item Incomum | 25% Raro |
+| Boss (vitória) | 1 item Raro | 20% Místico, 5% Lendário |
+
+### 15.5 Fuga de Encontro Selvagem
+
+```javascript
+// Fuga do monstrinho selvagem (abandona o combate)
+chance_fuga = fuga_base_raridade + bonus_item_fuga
+
+FLEE_BASE = {
+    Comum: 10%, Incomum: 12%, Raro: 15%, Místico: 18%, Lendário: 25%
+}
+
+// Fuga do jogador
+d20 + AGI >= DC_fuga
+  DC Normal:      12
+  DC Intimidating: 16
+  DC Elite:        18
+```
+
+---
+
+## 16. Exemplo Prático — Turno Completo de Combate
+
+**Situação:** Guerreiro (Lv10) ataca Bárbaro (Lv10) com ataque básico. Mesmo nível, sem buffs.
+
+**Atributos:**
+- Guerreiro (atacante): ATK 8, DEF 12, LVL 10, PWR básico 4
+- Bárbaro (defensor): ATK 13, DEF 6, LVL 10, HP 49
+
+**Passo 1 — Validar ação:** alcance OK (ambos Frente), ENE OK (básico grátis).
+
+**Passo 2 — Confronto:**
+```
+DEF_confronto Bárbaro = ceil(6/2) = 3
+ModNível = 0 (mesmo nível)
+ModClasse = 0 (neutro neste exemplo)
+
+Guerreiro rola d20A = 12 (físico)
+Bárbaro rola d20D = 8
+
+RC = (12 + 8 + 4 + 0 + 0 + 0) − (8 + 3 + 0 + 0)
+   = 24 − 11 = +13  → Acerto Forte (mult ×1.25)
+```
+
+**Passo 3 — Dano:**
+```
+Mitigação Bárbaro = floor(6/2) = 3
+DanoBase = 4 (PWR) + 8 (ATK) + 0 − 3 = 9
+DanoFinal = max(1, floor(9 × 1.25)) = 11
+```
+
+**Passo 4 — Aplicar:** Bárbaro perde 11 HP. HP: 49 → 38.
+
+**Passo 5 — Verificar:** Bárbaro ainda vivo. Turno passa para o Bárbaro.
+
+---
+
+## 17. Constantes Completas do Sistema
+
+### 17.1 Captura Base (%)
+
+```javascript
+CAPTURE_BASE = {
+    Comum: 60, Incomum: 45, Raro: 30, Místico: 18, Lendário: 10
+}
+```
+
+### 17.2 Fuga Base (%)
+
+```javascript
+FLEE_BASE = {
+    Comum: 10, Incomum: 12, Raro: 15, Místico: 18, Lendário: 25
+}
+```
+
+### 17.3 Multiplicadores de Raridade
+
+```javascript
+RARITY_PWR = { Comum: 1.00, Incomum: 1.08, Raro: 1.18, Místico: 1.32, Lendário: 1.50 }
+RARITY_XP  = { Comum: 1.00, Incomum: 1.05, Raro: 1.10, Místico: 1.15, Lendário: 1.25 }
+```
+
+### 17.4 XP por Nível (Tabela)
+
+| Nível | XP necessário |
+|-------|--------------|
+| 1 | 47 |
+| 5 | 85 |
+| 10 | 160 |
+| 15 | 265 |
+| 20 | 400 |
+| 25 | 565 |
+| 30 | 754 |
+| 40 | 1.216 |
+| 50 | 1.790 |
+| 75 | 3.793 |
+| 100 | 6.640 |
+
+### 17.5 Faixas RC (Combate v2)
+
+| RC | Categoria | Mult. Dano |
+|----|-----------|-----------|
+| ≤ −8 | Falha Total | ×0 |
+| −7 a −3 | Contato Neutralizado | ×0 (ou 1 fixo*) |
+| −2 a +3 | Acerto Reduzido | ×0.60 (mín. 1) |
+| +4 a +10 | Acerto Normal | ×1.00 |
+| ≥ +11 | Acerto Forte | ×1.25 |
+
+### 17.6 Dados Naturais
+
+| Evento | Efeito |
+|--------|--------|
+| Ataque 20 natural | +4 RC; +20% dano final |
+| Ataque 1 natural | −6 RC |
+| Defesa 20 natural | +5 defensivo (−5 do RC) |
+| Defesa 1 natural | −4 defensivo (+4 ao RC) |
+
+### 17.7 Modificador de Nível (ModNível — tabela discreta)
+
+| Δnível (atac − def) | ModNível |
+|---------------------|---------|
+| ≥ +16 | +5 |
+| +11 a +15 | +4 |
+| +6 a +10 | +3 |
+| +1 a +5 | +1 |
+| 0 | 0 |
+| −1 a −5 | −1 |
+| −6 a −10 | −3 |
+| −11 a −15 | −4 |
+| ≤ −16 | −5 |
+
+### 17.8 Constantes de Combate
+
+| Constante | Valor |
+|-----------|-------|
+| `battleXpBase` | 15 |
+| `levelExpo` | 1.5 (multiplicador de nível legado) |
+| `enemyHealThreshold` | 30% HP |
+| `enemyHealChance` | 60% |
+| `bossHealChance` | 85% |
+| DC fuga normal | 12 |
+| DC fuga intimidating | 16 |
+| DC fuga elite | 18 |
+| HP level-up scaling | `hpMax × 1.04 + 2` |
+| ENE level-up scaling | `10 + (level − 1) × 2` |
+| Amizade padrão | 50 |
+| Amizade ganho (+batalha) | +2 |
+| Amizade ganho (+cure item) | +5 |
+| Amizade ganho (+levelup) | +3 |
+| Amizade perda (−batalha) | −5 |
+| Amizade perda (−faint) | −3 |
+| Vantagem classe (RC) | +2 |
+| Desvantagem classe (RC) | −2 |
+| Vantagem classe (dano) | ×1.10 |
+| Desvantagem classe (dano) | ×0.90 |
+
+### 17.9 Chaves de localStorage
+
+| Chave | Conteúdo |
+|-------|---------|
+| `monstrinhomon_state` | Estado principal do jogo |
+| `monstrinhomon_corrupted_backup` | Backup automático de estado corrompido |
+| `mm_save_slot_1` | Save slot 1 |
+| `mm_save_slot_2` | Save slot 2 |
+| `mm_save_slot_3` | Save slot 3 |
+| `mm_last_slot` | Último slot usado |
+| `mm_audio_sfx` | Preferência de SFX |
+| `mm_audio_music` | Preferência de música |
+| `mm_audio_muted` | Estado de mute |
+
+---
+
 ## Referências Cruzadas
 
 | Documento | Conteúdo |
