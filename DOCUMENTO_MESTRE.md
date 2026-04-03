@@ -1879,6 +1879,481 @@ describe('NomeDoMódulo', () => {
 
 ---
 
+## 26. Catálogo Completo de Monstrinhos (64 entradas)
+
+> Source of truth: `data/monsters.json`
+
+### 26.1 Monstrinhos Iniciais / Comuns (Starters e Comuns de campo)
+
+| ID | Nome | Classe | Raridade | HP Base |
+|----|------|--------|---------|--------:|
+| MON_001 | Cantapau | Bardo | Comum | 28 |
+| MON_002 | Pedrino | Guerreiro | Comum | 32 |
+| MON_003 | Faíscari | Mago | Comum | 26 |
+| MON_004 | Ninfolha | Curandeiro | Comum | 30 |
+| MON_005 | Garruncho | Caçador | Comum | 29 |
+| MON_006 | Lobinho | Animalista | Comum | 31 |
+| MON_007 | Trovão | Bárbaro | Comum | 33 |
+| MON_008 | Sombrio | Ladino | Comum | 27 |
+| MON_100 | Rato-de-Lama | Guerreiro | Comum | 20 |
+
+### 26.2 Linhas Evolutivas Completas
+
+| Linha | Estágio 1 (Comum) | HP | → Estágio 2 (Incomum) | HP | → Estágio 3 (Raro) | HP | → Estágio 4 (Místico) | HP |
+|-------|-----------------|---:|---------------------|---:|-------------------|---:|---------------------|---:|
+| **Guerreiro** | MON_002 Pedrino | 32 | MON_002B Pedronar | 42 | MON_002C Pedragon | 56 | — | — |
+| **Guerreiro** | MON_010 Ferrozimon | 29 | MON_010B Cavalheiromon | 39 | MON_010C Kinguespinhomon | 50 | MON_010D Arconouricomon | 63 |
+| **Guerreiro** | MON_026 Cascalhimon | 30 | MON_026B Muralhimon | 41 | MON_026C Bastiaomon | 54 | — | — |
+| **Bárbaro** | MON_007 Trovão | — | — | — | — | — | — | — |
+| **Bárbaro** | MON_021 Tamborilhomon | 32 | MON_021B Rufamon | 43 | MON_021C Trovatambormon | 56 | — | — |
+| **Bárbaro** | MON_029 Tigrumo | 34 | MON_029B Rugigron | 46 | MON_029C Bestigrar | 60 | — | — |
+| **Mago** | MON_003 Faíscari | 26 | — | — | — | — | — | — |
+| **Mago** | MON_014 Lagartomon | 24 | MON_014B Salamandromon | 30 | MON_014C Dracoflamemon | 39 | MON_014D Wizardragomon | 48 |
+| **Mago** | MON_024 Coralimon | 24 | MON_024B Recifalmon | 32 | MON_024C Abissalquimon | 41 | — | — |
+| **Curandeiro** | MON_004 Ninfolha | 30 | — | — | — | — | — | — |
+| **Curandeiro** | MON_020 Gotimon | 26 | MON_020B Lirialmon | 33 | MON_020C Serafloramon | 43 | — | — |
+| **Curandeiro** | MON_028 Nutrilo | 28 | MON_028B Silvelio | 37 | MON_028C Auravelo | 48 | — | — |
+| **Bardo** | MON_001 Cantapau | 28 | — | — | — | — | — | — |
+| **Bardo** | MON_011 Dinomon | 27 | MON_011B Guitarapitormon | 35 | MON_011C TRockmon | 46 | MON_011D Giganotometalmon | 60 |
+| **Bardo** | MON_027 Zunzumon | 22 | MON_027B Melodimon | 28 | MON_027C Rainhassommon | 36 | — | — |
+| **Ladino** | MON_008 Sombrio | 27 | — | — | — | — | — | — |
+| **Ladino** | MON_022 Corvimon | 23 | MON_022B Noxcorvomon | 30 | MON_022C Umbraquimonom | 37 | — | — |
+| **Ladino** | MON_030 Furtilhon | 24 | MON_030B Velurino | 31 | MON_030C Sombrifur | 40 | — | — |
+| **Caçador** | MON_005 Garruncho | 29 | — | — | — | — | — | — |
+| **Caçador** | MON_013 Miaumon | 25 | MON_013B Gatunamon | 32 | MON_013C Felinomon | 42 | MON_013D Panterezamon | 54 |
+| **Caçador** | MON_025 Pulimbon | 24 | MON_025B Flecharelmon | 30 | MON_025C Relampejomon | 38 | — | — |
+| **Animalista** | MON_006 Lobinho | 31 | — | — | — | — | — | — |
+| **Animalista** | MON_012 Luvursomon | 31 | MON_012B Manoplamon | 41 | MON_012C BestBearmon | 54 | MON_012D Ursauramon | 68 |
+| **Animalista** | MON_023 Cervimon | 28 | MON_023B Galhantemon | 36 | MON_023C Bosquidalmon | 46 | — | — |
+
+**Regra de evolução:** raridade sobe a cada estágio (Comum → Incomum → Raro → Místico).
+
+---
+
+## 27. Catálogo de Itens Completo
+
+> Source of truth: `data/items.json`
+
+### 27.1 Itens Equipáveis (Held Items)
+
+| ID | Nome | Tier | ATK | DEF | Quebra (chance) | Compra |
+|----|------|------|----:|----:|:--------------:|------:|
+| IT_ATK_COMUM | Amuleto de Força | Comum | +2 | 0 | 15% | 50 |
+| IT_DEF_COMUM | Escudo Leve | Comum | 0 | +2 | 15% | 50 |
+| IT_ATK_INCOMUM | Colar de Poder | Incomum | +4 | 0 | 10% | 120 |
+| IT_DEF_INCOMUM | Armadura Reforçada | Incomum | 0 | +4 | 10% | 120 |
+| IT_BALANCED_INCOMUM | Cristal Equilibrado | Incomum | +2 | +2 | 10% | — |
+| IT_ATK_RARO | Garra do Dragão | Raro | +6 | 0 | 5% | — |
+| IT_DEF_RARO | Couraça de Titã | Raro | 0 | +6 | 5% | — |
+| IT_BALANCED_RARO | Emblema do Guerreiro | Raro | +3 | +3 | 5% | — |
+| IT_ATK_MISTICO | Orbe de Destruição | Místico | +8 | 0 | **indestrutível** | — |
+| IT_DEF_MISTICO | Égide Mística | Místico | 0 | +8 | **indestrutível** | — |
+| IT_ATK_LENDARIO | Lâmina Eterna | Lendário | +12 | 0 | **indestrutível** | — |
+| IT_DEF_LENDARIO | Escudo do Infinito | Lendário | 0 | +12 | **indestrutível** | — |
+| IT_BALANCED_LENDARIO | Coração do Campeão | Lendário | +6 | +6 | **indestrutível** | — |
+
+**Regras de quebra:**
+- Item quebra apenas se o monstro **participou** da batalha (`participatedThisBattle = true`)
+- Quebra ocorre no **final** da batalha (vitória/derrota/fuga)
+- Itens Místicos e Lendários: `break.enabled = false` → nunca quebram
+- Item que quebra é **removido permanentemente** (não volta ao inventário)
+
+### 27.2 Itens de Cura
+
+| ID | Nome | Cura (%) | Cura mínima (HP) | Compra | Venda |
+|----|------|--------:|----------------:|------:|------:|
+| IT_HEAL_01 | Petisco de Cura | 30% | 30 HP | 20 | 5 |
+| IT_HEAL_02 | Ração Revigorante | 55% | 60 HP | 50 | 15 |
+| IT_HEAL_03 | Elixir Máximo | 100% | 999 HP | 200 | 60 |
+
+**Fórmula:** `HP curado = max(heal_min, hpMax × heal_pct)`
+
+### 27.3 Itens de Captura (ClasterOrbs)
+
+| ID | Nome | Bônus de Captura | Compra | Venda | Obs |
+|----|------|----------------:|------:|------:|-----|
+| CLASTERORB_COMUM | ClasterOrb Comum | +0 pp | 30 | 10 | Base sem bônus |
+| CLASTERORB_INCOMUM | ClasterOrb Incomum | +10 pp | 80 | 25 | |
+| CLASTERORB_RARA | ClasterOrb Rara | +20 pp | 150 | 50 | |
+| IT_CAP_02 | Orbe Reforçado | +10 pp | 80 | 25 | **Deprecated** → usar CLASTERORB_INCOMUM |
+
+**Como funciona o `capture_bonus_pp`:** percentual adicional somado ao threshold base da raridade. Ex: Comum base 60% + +10 pp = threshold 70%.
+
+### 27.4 Ovos
+
+| ID | Nome | Raridade garantida | Compra | Venda |
+|----|------|--------------------|------:|------:|
+| EGG_C | Ovo Comum | Comum | 120 | 59 |
+| EGG_U | Ovo Incomum | Incomum | 300 | 149 |
+| EGG_R | Ovo Raro | Raro | 750 | 374 |
+| EGG_M | Ovo Místico | Místico | 1500 | 749 |
+| EGG_L | Ovo Lendário | Lendário | 3000 | 1499 |
+
+**Mecânica:** `hatch_egg` com `mode: "by_rarity"` → `hatchEggFromInventory()` em `index.html` usa `createMonsterInstanceFromTemplate()` (pipeline canônico com speciesBridge).
+
+---
+
+## 28. Mapa de Locais e Encounter Pools
+
+> Source of truth: `data/locations.json`
+
+| ID | Nome | Bioma | Nível Rec. | Pool de Encontros | Pool Raro |
+|----|------|-------|:----------:|-------------------|-----------|
+| LOC_001 | Campina Inicial | campos | 1–4 | MON_100, MON_002, MON_001, MON_004 | — |
+| LOC_002 | Floresta Verde | floresta | 3–10 | MON_006, MON_023, MON_004, MON_020, MON_005, MON_001 | MON_023B, MON_020B |
+| LOC_003 | Minas e Cavernas | minas | 6–15 | MON_010, MON_026, MON_002, MON_100 | MON_010B, MON_026B, MON_002B |
+| LOC_004 | Ruínas Antigas | ruinas | 10–20 | MON_022, MON_008, MON_003, MON_011 | — |
+| LOC_005 | Costa e Lagos | agua | 8–18 | MON_024, MON_020, MON_025, MON_004 | — |
+| LOC_006 | Zona Vulcânica | vulcao | 15–28 | MON_014, MON_007, MON_021, MON_014B, MON_021B | — |
+| LOC_007 | Floresta Noturna | floresta_noturna | 12–25 | MON_022, MON_008, MON_013, MON_022B, MON_013B | — |
+| LOC_008 | Arena dos Conflitos | arena | 20–35 | MON_012B, MON_021B, MON_010B, MON_026B, MON_025B, MON_027B | — |
+
+**Notas:**
+- LOC_001 e LOC_002 mapeiam para QST_001–004 (caminho principal)
+- LOC_005 (Costa) e LOC_007 (Floresta Noturna) são rotas opcionais
+- LOC_008 (Arena) usa Incomuns no pool principal — local de alta dificuldade
+
+---
+
+## 29. Matriz de Balanceamento — Habilidades por Classe
+
+> Source of truth: `docs/MATRIZ_MESTRA_BALANCEAMENTO.md`
+
+### 29.1 Habilidades por Slot (todas as classes)
+
+| Classe | Slot 1 (básico, ENE=0) | Slot 2 (ENE=2) | Slot 3 (ENE=3) | Slot 4 — Assinatura (ENE=4) |
+|--------|----------------------|----------------|----------------|---------------------------|
+| Guerreiro | Golpe Firme (PWR 3) | Corte Pesado (PWR 5) | Postura Defensiva (Defesa) | Proteger Aliado |
+| Bárbaro | Pancada Selvagem (PWR 4) | Golpe Brutal (PWR 6) | Fúria (auto-buff) | **Berserk** (PWR 7, risco alto) |
+| Mago | Rajada Arcana (PWR 3) | Explosão Etérea (PWR 5) | Prisão de Energia (controle, máx 2t) | **Tempestade Arcana** (PWR 6, área) |
+| Curandeiro | Toque Vital (PWR 2) | Cura Simples (cura aliado) | Benção Suave (buff aliado) | **Cura em Área** (PWR 5, coletiva) |
+| Bardo | Nota Cortante (PWR 2) | Canção de Coragem (buff aliados) | Eco Desafinador (debuff, máx 2t) | **Concerto de Guerra** (buff+debuff coletivo) |
+| Ladino | Corte Rápido (PWR 3) | Golpe Sorrateiro (dano condicional) | Passo Sombrio (mobilidade) | **Execução** (PWR 7, requer HP baixo do alvo) |
+| Caçador | Disparo Preciso (PWR 3) | Tiro Reforçado (PWR 5) | Marcar Alvo (setup) | **Tiro do Predador** (PWR 6, requer marcação) |
+| Animalista | Ataque Instintivo (PWR 3) | Postura Selvagem (adaptação) | Chamado da Natureza (utilidade) | **Forma Bestial** (PWR 5, transformação) |
+
+### 29.2 Regras Canônicas de Design de Habilidades
+
+| # | Regra | Resumo |
+|---|-------|--------|
+| 1 | DEF dividida | Confronto usa `teto(DEF/2)`; Dano usa `piso(DEF/2)` como mitigação |
+| 2 | Assinatura ≠ só dano | Assinatura define papel tático único (não apenas "mais dano") |
+| 3 | Toda força tem contrapartida | Custo / posição / setup / condição de alvo / duração / risco |
+| 4 | Suporte coletivo curto | Buff/debuff em área: máximo 2–3 turnos + custo real de ENE |
+| 5 | Dano máximo condicional | Dano alto exige setup ou condição — nunca automático |
+| 6 | Básico sempre relevante | Slot 1 (ENE=0) deve ser útil — nenhuma classe morta sem energia |
+| 7 | Versatilidade ≠ superioridade | Animalista adapta, não domina todos os eixos |
+
+### 29.3 Faixas de RC (Resultado do Confronto) — Sistema d20 Bilateral
+
+> Fórmula completa: `RC = d20_atk + ATK + ceil(ATK/2) + mod_classe - d20_def - ceil(DEF/2)`
+
+| RC | Nome da Faixa | Mult. Dano |
+|---:|--------------|:----------:|
+| ≤ −8 | Falha total | 0 |
+| −7 a −3 | Contato neutralizado | 0 ou 1 HP |
+| −2 a +3 | Acerto reduzido | ×0.60 |
+| +4 a +10 | Acerto normal | ×1.00 |
+| +11 ou mais | Acerto forte | ×1.25 |
+
+**Casos especiais:**
+
+| Situação | Modificador |
+|----------|------------|
+| 20 natural (ataque) | +4 confronto, +20% dano |
+| 1 natural (ataque) | −6 confronto |
+| 20 natural (defesa) | +5 confronto defensivo |
+| 1 natural (defesa) | −4 confronto defensivo |
+| Atacante 10+ níveis abaixo + acerto fraco | Dano ilusório = 1 HP |
+
+---
+
+## 30. Sistema de XP e Progressão
+
+> Source of truth: `js/progression/xpCore.js`, `js/progression/xpActions.js`
+
+### 30.1 Fórmula de XP de Batalha (xpCore.js)
+
+```
+xpBase = battleXpBase (padrão: 15)
+xp = floor((xpBase + level × 2) × rarityMult)
+Se boss: xp = floor(xp × 1.5)
+```
+
+**Multiplicadores de raridade (RARITY_XP):**
+
+| Raridade | Multiplicador |
+|----------|:-------------:|
+| Comum | 1.00 |
+| Incomum | 1.05 |
+| Raro | 1.10 |
+| Místico | 1.15 |
+| Lendário | 1.25 |
+
+**Exemplos:**
+- Inimigo Lv1 Comum: `(15 + 1×2) × 1.0 = 17 XP`
+- Inimigo Lv5 Raro: `(15 + 5×2) × 1.10 = 27.5 → 27 XP`
+- Boss Lv10 Místico: `(15 + 10×2) × 1.15 × 1.5 = 60.375 → 60 XP`
+
+### 30.2 Pipeline de giveXP (xpActions.js)
+
+```
+giveXP(deps, mon, amount, log)
+  1. ensureMonsterProgressFields(mon)
+  2. getFriendshipBonuses(mon.friendship) → xpMultiplier
+  3. xpGain = round(amount × xpMultiplier)
+  4. mon.xp += xpGain
+  5. LOOP enquanto mon.xp >= mon.xpNeeded:
+       mon.xp -= mon.xpNeeded
+       levelUpMonster(deps, mon, log)
+```
+
+**Bônus de amizade em XP:**
+
+| Amizade | Multiplicador |
+|--------:|:-------------:|
+| 0–24 | ×0.95 |
+| 25–49 | ×1.00 |
+| 50–74 | ×1.05 |
+| 75–99 | ×1.10 |
+| 100 | ×1.15 |
+
+### 30.3 Pipeline de Level Up (xpActions.js)
+
+```
+levelUpMonster(deps, mon, log)
+  1. hpPctBeforeLevelUp = hp / hpMax (para preservar em evolução)
+  2. mon.level++
+  3. mon.hpMax = floor(hpMax × 1.04 + 2)
+  4. mon.hp = mon.hpMax  (cura completa ao subir)
+  5. mon.eneMax = 10 + 2 × (level - 1)
+  6. mon.ene = mon.eneMax
+  7. recalculateStatsFromTemplate(mon)
+  8. mon.xpNeeded = round(40 + 6×level + 0.6×level²)
+  9. updateFriendship(mon, 'levelUp') → +3 amizade
+ 10. maybeEvolveAfterLevelUp(mon, log, hpPctBeforeLevelUp)
+ 11. maybeUpgradeSkillsModelB(mon, log)
+```
+
+### 30.4 XP Necessário por Nível (tabela resumida)
+
+| Lv | XP Necessário | Lv | XP Necessário | Lv | XP Necessário |
+|---:|--------------:|---:|--------------:|---:|--------------:|
+| 1 | 47 | 11 | 193 | 21 | 513 |
+| 2 | 55 | 12 | 219 | 25 | 697 |
+| 3 | 65 | 13 | 247 | 30 | 1,012 |
+| 5 | 91 | 15 | 310 | 40 | 1,882 |
+| 8 | 148 | 18 | 407 | 50 | 3,052 |
+| 10 | 170 | 20 | 460 | 100 | 10,640 |
+
+*Fórmula: `round(40 + 6×L + 0.6×L²)`*
+
+### 30.5 Distribuição de XP em Grupo
+
+```
+Se enc.type inclui "group" ou "boss":
+  Para cada pid em enc.participants:
+    player = players.find(pid)
+    mon = player.team[activeIndex]  // BUG FIX: activeIndex, não sempre team[0]
+    Se mon vivo: giveXP(deps, mon, xp)
+Senão (1v1):
+  player = enc.selectedPlayerId ou players[0]
+  mon = player.team[activeIndex]
+  giveXP(deps, mon, xp)
+```
+
+---
+
+## 31. Canon Fase 6 — Kit Swap (kitSwap.js)
+
+> Source of truth: `js/canon/kitSwap.js` | Memória: Fase 6
+
+### 31.1 Conceito
+
+Kit Swap permite que espécies canônicas **substituam uma habilidade** de seu kit padrão de classe por uma habilidade assinatura mais adequada ao arquétipo da espécie.
+
+### 31.2 Configuração por Espécie
+
+| Espécie | Slot modificado | Habilidade substituída | Conceito da nova habilidade |
+|---------|:--------------:|------------------------|----------------------------|
+| shieldhorn | Slot 1 | warrior_basic_strike | Básico mais pesado e menos veloz |
+| emberfang | Slot 4 | barbarian_berserk | Explosão de 1 turno ainda mais agressiva |
+| moonquill | Slot 4 | mage_arcane_storm | Assinatura com menos dano e mais controle |
+| floracura | Slot 4 | healer_group_heal | Cura em área mais fraca, porém mais eficiente |
+
+### 31.3 API de kitSwap.js
+
+```javascript
+applyKitSwaps(instance, skills)
+  // Aplica kit_swap canônico à instância
+  // Respeita unlockedSkillSlots: slot 4 só aplica se level >= 30
+  // instance.appliedKitSwaps = ['shieldhorn_slot1'] // swaps aplicados
+  // instance.blockedKitSwaps = ['emberfang_slot4']  // swaps bloqueados por nível
+```
+
+- `window.KitSwap` exposto globalmente
+- Chamado na etapa 5d de `createMonsterInstanceFromTemplate()` em `index.html`
+- **2.268 testes passando** em 68 arquivos após integração
+
+---
+
+## 32. Arquitetura de Módulos JavaScript
+
+> Mapa completo de `/js/` e suas responsabilidades
+
+### 32.1 Camada Canon (`js/canon/`)
+
+| Arquivo | Responsabilidade |
+|---------|-----------------|
+| `canonLoader.js` | Carrega 6 JSONs em paralelo; expõe APIs de consulta (getSpeciesData, getEvolutionLine, getLevelMilestones, getClassGrowthRule, etc.) |
+| `speciesBridge.js` | Mapeia templateIds runtime → espécies canônicas; aplica offsets de stats; detecção de drift; `createMonsterInstanceFromTemplate()` |
+| `speciesPassives.js` | `resolvePassiveModifier(instance, context)` — 4 passivas: shieldhorn, emberfang, moonquill, floracura |
+| `slotUnlocks.js` | `getUnlockedSlotsForLevel(level)` → 1/2/3/4 slots |
+| `kitSwap.js` | `applyKitSwaps(instance, skills)` — substitui habilidades por assinaturas de espécie |
+| `index.js` | Re-exports do subsistema canon |
+
+### 32.2 Camada Combate (`js/combat/`)
+
+| Arquivo | Status | Responsabilidade |
+|---------|:------:|-----------------|
+| `wildCore.js` | ✅ Canônico | Funções puras: `checkHit`, `calcDamage`, `getBuffModifiers`, `resolveD20Hit` |
+| `wildActions.js` | ✅ Canônico | Pipelines de batalha wild: `executeWildAttack`, `executeWildSkill`, `executeWildCapture`, etc. |
+| `groupCore.js` | ✅ Canônico | Funções puras de grupo: `getCurrentActor`, `hasAlivePlayers`, `createGroupEncounter`, `calculateTurnOrder` |
+| `groupActions.js` | ✅ Canônico | `advanceGroupTurn`, `executeGroupFlee`; injeção de deps |
+| `groupUI.js` | ✅ Canônico | `enterAttackMode`, `enterSkillMode`, `handleEnemyClick`, `cancelTargetMode` |
+| `groupRewards.js` | ✅ Canônico | `processGroupVictoryRewards` (idempotente com flags) |
+| `groupIntegration.js` | ✅ Canônico | `buildGroupCombatDeps`, `buildGroupRewardsDeps`, `buildGroupUIRenderDeps` |
+| `itemBreakage.js` | ✅ Canônico | Quebra de itens: `handleHeldItemBreak`, `processBattleItemBreakage`, `getHeldItemBonuses` |
+| `groupBattleState.js` | ⚠️ Protótipo | Shape do GroupBattleState (referência arquitetural) |
+| `groupBattleLoop.js` | ❌ Deprecated | Protótipo de loop imutável — NÃO conectado à UI real |
+| `index.js` | — | Re-exports centralizados (`Combat.Wild`, `Combat.Group`, `Combat.ItemBreakage`) |
+
+### 32.3 Camada Progressão (`js/progression/`)
+
+| Arquivo | Responsabilidade |
+|---------|-----------------|
+| `xpCore.js` | `calculateBattleXP(enemy, type, config)` — função pura |
+| `xpActions.js` | `giveXP`, `levelUpMonster`, `handleVictoryRewards`, `recalculateStatsFromTemplate` — com DI |
+
+### 32.4 Camada de Dados (`js/data/`)
+
+| Arquivo | Responsabilidade |
+|---------|-----------------|
+| `dataLoader.js` | Carrega `monsters.json`, `locations.json`; indexa por ID |
+| `skillsLoader.js` | Carrega `skills.json`; indexa por classe e ID |
+| `itemsLoader.js` | Carrega `items.json`; `getItemById(id)` |
+| `questSystem.js` | `QUESTS_DATA` estático (16 quests); `getQuest`, `isQuestAvailable`, `getNextQuest` |
+
+### 32.5 Outros Módulos Raiz (`js/`)
+
+| Arquivo | Responsabilidade |
+|---------|-----------------|
+| `storage.js` | `StorageManager` — localStorage transacional com fallbacks |
+| `saveLayer.js` | `SaveLayer` — abstração de save/load com arquitetura auto-save + slots |
+| `gameFlow.js` | Loop jogável: ativação/progressão/conclusão de quests pós-encontro |
+| `shopSystem.js` | `executeBuy`, `executeSell`, `getSellPrice`, `getSellableInventory` |
+
+### 32.6 Módulos de UI (`js/ui/`)
+
+| Arquivo | Responsabilidade |
+|---------|-----------------|
+| `battleEndModal.js` | Modal de fim de batalha |
+| `eggHatchModal.js` | Modal de chocamento de ovo |
+| `friendlyBattleLog.js` | Log de batalha amigável (texto para criança) |
+| `partyDexUI.js` | UI do Monstródex |
+| `targetSelection.js` | Seleção de alvo em combate em grupo |
+
+### 32.7 Pipeline de Boot (index.html)
+
+```
+1. carregarDados() — dataLoader + skillsLoader + itemsLoader
+2. applyCanonToConfig() — carrega class_matchups.json via canonLoader
+3. Inicializar GameState com config canônica
+4. Criar jogadores com createMonsterInstanceFromTemplate():
+   a. createBaseInstance(templateId)
+   b. speciesBridge.resolveAndApply(instance)   → offsets de stats
+   c. slotUnlocks.getUnlockedSlotsForLevel()    → unlockedSkillSlots
+   d. kitSwap.applyKitSwaps(instance, skills)   → kit_swap de espécie
+5. _resolveUnlockedSlots(instance)              → fallback de slots
+6. Renderizar UI inicial
+```
+
+---
+
+## 33. Glossário Técnico Expandido
+
+| Termo | Definição |
+|-------|-----------|
+| `enc` | Objeto de encontro (battle state do encontro atual) |
+| `deps` | Objeto de dependências injetadas (DI pattern) |
+| `MI` | Monster Instance — instância única de um Monstrinho |
+| `templateId` | ID do template de Monstrinho no catálogo (ex: `MON_010`) |
+| `uid` | ID único de instância de Monstrinho (ex: `mi_001`) |
+| `canonSpeciesId` | Espécie canônica resolvida (ex: `shieldhorn`) |
+| `canonAppliedOffsets` | Offsets de stats aplicados pela speciesBridge |
+| `unlockedSkillSlots` | Número de slots de habilidade desbloqueados (1–4) |
+| `_slotUnlockSource` | Fonte do unlock: `'canon'` ou `'fallback'` |
+| `appliedKitSwaps` | Array de swaps aplicados (ex: `['shieldhorn_slot1']`) |
+| `blockedKitSwaps` | Array de swaps bloqueados por nível insuficiente |
+| `passiveState` | Estado de passivas no encounter (`shieldhornBlockedThisTurn`, `floracuraHealUsed`) |
+| `participatedThisBattle` | Flag temporária de ItemBreakage (não persiste em save) |
+| `heldItemId` | ID do item equipado no Monstrinho |
+| `activeIndex` | Índice do Monstrinho ativo no `player.team[]` |
+| `questState` | Objeto em `player` com `activeQuestIds`, `completedQuestIds`, `progress` |
+| `rewardsGranted` | Flag idempotente de recompensas de vitória |
+| `moneyGranted` | Flag idempotente de concessão de ouro em batalha de grupo |
+| `dropsGranted` | Flag idempotente de concessão de drops em batalha de grupo |
+| `questsProcessed` | Flag idempotente de processamento de quests em batalha de grupo |
+
+---
+
+## 34. Dependências Externas e Padrões de DI
+
+### 34.1 Objeto `deps` Padrão (Combate Wild)
+
+```javascript
+deps = {
+    state: GameState,                    // Estado global
+    constants: {
+        battleXpBase: 15,
+        rarityXP: { Comum: 1.0, ... },
+        DEFAULT_FRIENDSHIP: 50,
+        // ... outras constantes
+    },
+    helpers: {
+        ensureMonsterProgressFields,
+        getFriendshipBonuses,
+        updateFriendship,
+        calcXpNeeded,
+        calculateBattleXP,
+        recalculateStatsFromTemplate,
+        maybeEvolveAfterLevelUp,
+        maybeUpgradeSkillsModelB,
+        updateStats,
+        formatFriendshipBonusPercent,
+        getSkillsArray,
+    },
+    audio: { play, sfx },
+    ui: { showToast, render },
+    save: SaveLayer,
+    rollD20: () => Math.floor(Math.random() * 20) + 1,
+}
+```
+
+### 34.2 Objeto `deps` de Grupo (groupIntegration.js)
+
+| Factory | Deps incluídas |
+|---------|---------------|
+| `buildGroupCombatDeps(enc, ...args)` | state, players, rollD20, helpers.getSkillsArray, showToast |
+| `buildGroupRewardsDeps(enc, ...args)` | state, players, xpActions, questSystem |
+| `buildGroupUIRenderDeps(enc, ...args)` | renderFn, showToast, audio |
+
+### 34.3 Regra de Dependency Injection
+
+> Todas as funções puras recebem deps como parâmetro. **Nenhuma função pura acessa `window.GameState` diretamente.** `index.html` monta os `deps` e passa para os módulos.
+
+---
+
 ## Referências Cruzadas
 
 | Documento | Conteúdo |
