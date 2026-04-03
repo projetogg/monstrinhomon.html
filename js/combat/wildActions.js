@@ -96,15 +96,19 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
             const atkMods = WildCore.getBuffModifiers(playerMonster);
             let effectiveAtk = Math.max(1, playerMonster.atk + atkMods.atk);
 
-            // Passiva canônica — atacante (emberfang: não dispara em ataque básico)
+            // Passiva canônica — atacante (emberfang: não dispara em ataque básico;
+            // swiftclaw: +1 ATK no primeiro ataque do combate) — Fase 4.2 / Fase 9
+            const passiveStateAtk = encounter.passiveState || (encounter.passiveState = {});
             const atkPassive = resolvePassiveModifier(playerMonster, {
                 event: 'on_attack',
                 hpPct: playerMonster.hpMax > 0 ? playerMonster.hp / playerMonster.hpMax : 0,
                 isOffensiveSkill: false, // Fase 4.2: ataque básico → emberfang não dispara
+                isFirstAttackOfCombat: !passiveStateAtk.swiftclawFirstStrikeDone, // Fase 9
             });
             if (atkPassive?.atkBonus) {
                 effectiveAtk = Math.max(1, effectiveAtk + atkPassive.atkBonus);
                 encounter.log.push(`✨ Passiva ${playerMonster.name}: +${atkPassive.atkBonus} ATK`);
+                passiveStateAtk.swiftclawFirstStrikeDone = true; // Fase 9: consome bônus de primeiro ataque
             }
             
             const defMods = WildCore.getBuffModifiers(encounter.wildMonster);
@@ -617,13 +621,16 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
         updateBuffs(playerMonster);
 
         // Passiva canônica — emberfang (+1 ATK em skill ofensiva com HP > 70%) — Fase 4.2
+        // swiftclaw (+1 ATK no primeiro ataque do combate) — Fase 9
         // Aplica como buff temporário antes de useSkill para que getBuffModifiers o inclua.
         // Removido imediatamente após a skill para não persistir ao turno do inimigo.
         const isOffensiveSkill = skill.type === 'DAMAGE';
+        const passiveStateSkill = encounter.passiveState || (encounter.passiveState = {});
         const emberfangMod = resolvePassiveModifier(playerMonster, {
             event: 'on_attack',
             hpPct: playerMonster.hpMax > 0 ? playerMonster.hp / playerMonster.hpMax : 0,
             isOffensiveSkill,
+            isFirstAttackOfCombat: !passiveStateSkill.swiftclawFirstStrikeDone, // Fase 9
         });
         if (emberfangMod?.atkBonus) {
             playerMonster.buffs = playerMonster.buffs || [];
@@ -634,6 +641,7 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
                 source: 'emberfang_passive',
             });
             encounter.log.push(`✨ Passiva ${playerMonster.name}: +${emberfangMod.atkBonus} ATK (skill ofensiva)`);
+            passiveStateSkill.swiftclawFirstStrikeDone = true; // Fase 9: consome bônus de primeiro ataque
         }
 
         // Executar habilidade
