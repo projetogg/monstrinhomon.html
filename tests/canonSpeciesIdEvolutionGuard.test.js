@@ -1,17 +1,23 @@
 /**
- * CANON SPECIES ID — EVOLUTION GUARD TESTS (Fase 7.3)
+ * CANON SPECIES ID — EVOLUTION GUARD TESTS (Fase 7.3 / atualizado Fase 8)
  *
  * Objetivo: proteger a decisão arquitetural de que canonSpeciesId é resolvido
  * uma única vez na criação da instância e deve ser preservado ao longo de
  * evoluções, mesmo quando o templateId muda.
  *
- * Risco documentado na Fase 7.2:
- *   - Templates evoluídos (ex: MON_010B) NÃO têm entrada em RUNTIME_TO_CANON_SPECIES.
- *   - Se alguém rederivar canonSpeciesId a partir de templateId após a evolução,
- *     o valor voltará null, quebrando passivas, kit swap e promoção silenciosamente.
+ * Risco documentado na Fase 7.2 (contexto histórico):
+ *   - Antes da Fase 8, templates evoluídos (ex: MON_010B) NÃO tinham entrada
+ *     em RUNTIME_TO_CANON_SPECIES. Rederivar canonSpeciesId a partir do
+ *     templateId evoluído retornaria null, quebrando passivas/kit swap.
+ *
+ * Estado após Fase 8:
+ *   - Templates evoluídos das 4 classes MVP SÃO mapeados explicitamente no bridge.
+ *   - A proteção central continua válida: canonSpeciesId é definido na CRIAÇÃO
+ *     da instância e PRESERVADO na instância durante evoluções (applyEvolution
+ *     tem guard que não redefine canonSpeciesId).
  *
  * Cobertura:
- *   - resolveCanonSpeciesId (speciesBridge) — confirma que templates evoluídos retornam null
+ *   - resolveCanonSpeciesId (speciesBridge) — confirma estado pós-Fase 8
  *   - resolvePassiveModifier (speciesPassives) — confirma que lê canonSpeciesId da instância
  *   - applyKitSwaps / getEffectiveSkills (kitSwap) — confirma que leem canonSpeciesId da instância
  *   - Simulação completa de evolução: templateId muda, canonSpeciesId permanece
@@ -63,24 +69,25 @@ function simulateEvolution(instance, nextTemplateId) {
 }
 
 // ---------------------------------------------------------------------------
-// Parte 1 — Bridge: templates evoluídos não têm mapeamento
+// Parte 1 — Bridge: estado dos templates evoluídos após Fase 8
 // ---------------------------------------------------------------------------
 
-describe('speciesBridge — templates evoluídos retornam null no bridge', () => {
+describe('speciesBridge — templates evoluídos no bridge (pós-Fase 8)', () => {
 
     it('MON_010 (base) está mapeado para shieldhorn', () => {
         expect(resolveCanonSpeciesId('MON_010')).toBe('shieldhorn');
     });
 
-    it('MON_010B (evoluído) NÃO está no bridge — retorna null', () => {
-        // Este teste documenta o comportamento esperado:
-        // rederivar canonSpeciesId após evolução retornaria null.
-        // É por isso que canonSpeciesId deve ser preservado na instância.
-        expect(resolveCanonSpeciesId('MON_010B')).toBeNull();
+    it('MON_010B (evoluído) está mapeado para shieldhorn — adicionado explicitamente na Fase 8', () => {
+        // Fase 8 adicionou explicitamente os estágios evoluídos das classes MVP ao bridge.
+        // A proteção central permanece: canonSpeciesId deve ser lido da INSTÂNCIA,
+        // não rederivado a cada acesso. Evoluções adicionadas ao bridge são explícitas
+        // e auditáveis, não derivações automáticas.
+        expect(resolveCanonSpeciesId('MON_010B')).toBe('shieldhorn');
     });
 
-    it('MON_010C (forma final) também não está no bridge — retorna null', () => {
-        expect(resolveCanonSpeciesId('MON_010C')).toBeNull();
+    it('MON_010C (estágio avançado) está mapeado para shieldhorn — Fase 8', () => {
+        expect(resolveCanonSpeciesId('MON_010C')).toBe('shieldhorn');
     });
 
     it('outros templates mapeados base continuam funcionando', () => {
@@ -89,8 +96,8 @@ describe('speciesBridge — templates evoluídos retornam null no bridge', () =>
         expect(resolveCanonSpeciesId('MON_004')).toBe('floracura');
     });
 
-    it('templates evoluídos das outras espécies também retornam null', () => {
-        // Confirmação de que o padrão é consistente para todas as espécies
+    it('templates evoluídos fora do catálogo ainda retornam null', () => {
+        // MON_007B, MON_003B, MON_004B não existem no catálogo e não foram adicionados.
         expect(resolveCanonSpeciesId('MON_007B')).toBeNull();
         expect(resolveCanonSpeciesId('MON_003B')).toBeNull();
         expect(resolveCanonSpeciesId('MON_004B')).toBeNull();
@@ -148,19 +155,19 @@ describe('canonSpeciesId — preservado após simulação de evolução', () => 
         expect(evolved.canonSpeciesId).toBe('floracura');
     });
 
-    it('rederivação incorreta após evolução resultaria em null (demonstra o risco)', () => {
-        // Este teste DOCUMENTA o bug hipotético que a proteção previne.
-        // Se alguém chamasse resolveCanonSpeciesId(evolved.templateId),
-        // o resultado seria null — destruindo a identidade da espécie.
+    it('canonSpeciesId da instância prevalece — leitura via instância é o padrão correto', () => {
+        // A proteção central: canonSpeciesId é lido da INSTÂNCIA, não rederivado.
+        // Após Fase 8, MON_010B também está no bridge (retorna 'shieldhorn'),
+        // mas o padrão de uso correto continua sendo ler da instância.
+        // A instância carrega o canonSpeciesId definido na criação, que não muda.
         const base = makeInstance({ templateId: 'MON_010', canonSpeciesId: 'shieldhorn' });
         const evolved = simulateEvolution(base, 'MON_010B');
 
-        // Rederivar a partir do templateId evoluído = bug
-        const rederived = resolveCanonSpeciesId(evolved.templateId);
-        expect(rederived).toBeNull(); // ← isso quebraria o sistema
-
-        // Ler da instância = correto
+        // Ler da instância = correto e eficiente
         expect(evolved.canonSpeciesId).toBe('shieldhorn'); // ← isso é o que deve acontecer
+
+        // A instância não foi alterada pelo simulateEvolution (apenas templateId muda)
+        expect(evolved.templateId).toBe('MON_010B');
     });
 });
 
@@ -305,10 +312,11 @@ describe('resolveAndApply — uso único na criação, correto comportamento par
         expect(result.canonSpeciesId).toBe('shieldhorn');
     });
 
-    it('retorna null para template evoluído (não mapeado por design)', () => {
+    it('retorna canonSpeciesId válido para template evoluído mapeado na Fase 8', () => {
+        // Após Fase 8, MON_010B está explicitamente no bridge → retorna shieldhorn.
         const result = resolveAndApply('MON_010B', baseStats);
-        expect(result.canonSpeciesId).toBeNull();
-        expect(result.canonAppliedOffsets).toBeNull();
+        expect(result.canonSpeciesId).toBe('shieldhorn');
+        // (canonAppliedOffsets depende do canonLoader estar carregado)
     });
 
     it('retorna null para template não mapeado (sem espécie canônica)', () => {
@@ -317,7 +325,7 @@ describe('resolveAndApply — uso único na criação, correto comportamento par
     });
 
     it('stats são preservados sem modificação para templates não mapeados', () => {
-        const result = resolveAndApply('MON_010B', baseStats);
+        const result = resolveAndApply('MON_100', baseStats);
         expect(result.stats.hpMax).toBe(baseStats.hpMax);
         expect(result.stats.atk).toBe(baseStats.atk);
         expect(result.stats.def).toBe(baseStats.def);
