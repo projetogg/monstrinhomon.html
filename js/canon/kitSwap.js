@@ -626,3 +626,79 @@ export function getPromotableSwapIds() {
  * Não modificar diretamente — use as funções exportadas.
  */
 export { KIT_SWAP_PROMOTION_TABLE };
+
+// ---------------------------------------------------------------------------
+// API pública — Fase 7.1: Kit efetivo para runtime
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve o kit efetivo final de um monstrinho, aplicando:
+ *   1. Kit swap de espécie (Fase 6 — KIT_SWAP_TABLE), se o slot estiver desbloqueado.
+ *   2. Promoção de kit swap (Fase 7 — KIT_SWAP_PROMOTION_TABLE), se existir e o
+ *      monstrinho já tiver a promoção registrada em `instance.promotedKitSwaps`.
+ *
+ * Esta função é a ponte entre os metadados canônicos e o runtime de combate.
+ * É chamada por `getMonsterSkills()` em `index.html` para garantir que swaps e
+ * promoções afetam as skills efetivamente usadas em combate, UI e progressão.
+ *
+ * Fallbacks seguros:
+ *  - Sem `canonSpeciesId` → retorna baseSkills inalteradas (kit legado).
+ *  - Espécie sem swap → retorna baseSkills inalteradas.
+ *  - Slot bloqueado (unlockedSkillSlots < targetSlot) → retorna baseSkills inalteradas.
+ *  - Promoção inexistente → usa skill do swap base (versão I).
+ *  - Qualquer erro interno → retorna baseSkills inalteradas com warn.
+ *
+ * @param {{
+ *   canonSpeciesId?: string|null,
+ *   unlockedSkillSlots?: number,
+ *   appliedKitSwaps?: Array,
+ *   promotedKitSwaps?: Array<{slot:number, promotedSkill:object}>,
+ * }} instance - Instância do monstrinho com metadados canônicos.
+ * @param {Array<object>} baseSkills - Skills base (retorno de getMonsterSkills legado).
+ * @returns {Array<object>} Kit efetivo com swap/promoção aplicados.
+ */
+export function getEffectiveSkills(instance, baseSkills) {
+    try {
+        const skills = Array.isArray(baseSkills) ? baseSkills.slice() : [];
+
+        // Fallback: sem espécie canônica → kit legado
+        if (!instance?.canonSpeciesId) return skills;
+
+        const swapDef = KIT_SWAP_TABLE[instance.canonSpeciesId];
+
+        // Sem swap definido para esta espécie → kit legado
+        if (!swapDef) return skills;
+
+        const { targetSlot, replacement } = swapDef;
+        const unlockedSlots = typeof instance.unlockedSkillSlots === 'number'
+            ? instance.unlockedSkillSlots
+            : 1;
+
+        // Slot bloqueado → kit legado
+        if (targetSlot > unlockedSlots) return skills;
+
+        // Determinar qual skill usar: promoção (versão II+) ou swap base (versão I)
+        let effectiveSkill = { ...replacement };
+
+        if (Array.isArray(instance.promotedKitSwaps) && instance.promotedKitSwaps.length > 0) {
+            const promo = instance.promotedKitSwaps.find(p => p.slot === targetSlot && p.promotedSkill);
+            if (promo) {
+                effectiveSkill = { ...promo.promotedSkill };
+            }
+        }
+
+        // Aplicar skill efetiva no índice correto (0-based)
+        const idx = targetSlot - 1;
+        if (idx < skills.length) {
+            skills[idx] = effectiveSkill;
+        } else {
+            while (skills.length < idx) skills.push(null);
+            skills.push(effectiveSkill);
+        }
+
+        return skills;
+    } catch (err) {
+        console.warn('[KitSwap] getEffectiveSkills falhou; usando kit legado.', err);
+        return Array.isArray(baseSkills) ? baseSkills.slice() : [];
+    }
+}

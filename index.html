@@ -3568,6 +3568,15 @@
                         skillList.push(skill);
                     }
                 }
+
+                // Fase 7.1 — aplicar kit efetivo canônico (swap + promoção)
+                // Consulta KitSwap.getEffectiveSkills se instância tem espécie canônica.
+                // Fallback seguro: se indisponível, retorna skillList legado inalterado.
+                if (typeof window !== 'undefined' &&
+                    window.KitSwap?.getEffectiveSkills &&
+                    monster.canonSpeciesId) {
+                    return window.KitSwap.getEffectiveSkills(monster, skillList);
+                }
                 
                 return skillList;
             } catch (error) {
