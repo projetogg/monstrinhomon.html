@@ -108,6 +108,12 @@ export function levelUpMonster(deps, mon, logArr) {
             }
         }
     }
+
+    // Fase 7: Verificar e aplicar promoção de kit_swap ao subir de nível
+    // Executado após slot unlock para que targetSlot seja verificado com valor atualizado
+    if (typeof deps.helpers.promoteKitSwapsForInstance === 'function') {
+        deps.helpers.promoteKitSwapsForInstance(mon, log);
+    }
 }
 
 /**
