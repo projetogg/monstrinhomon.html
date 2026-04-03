@@ -200,11 +200,12 @@ describe('QUESTS.csv - Progressão e Cobertura de Biomas', () => {
         questsByLoc[q.local_id].push(q);
     }
 
-    it('todos os 8 biomas devem ter pelo menos 1 quest', () => {
-        // Verifica cobertura de biomas únicos (não todas as sub-áreas).
+    it('todos os biomas de exploração devem ter pelo menos 1 quest', () => {
+        // Verifica cobertura de biomas únicos de locais de exploração (exclui cidade/serviço).
         // As sub-áreas progressivas compartilham bioma com a área principal.
+        const explorationLocs = locData.locations.filter(l => !l.specialRules?.includes('city_only'));
         const biomeToLocIds = {};
-        for (const loc of locData.locations) {
+        for (const loc of explorationLocs) {
             if (!biomeToLocIds[loc.biome]) biomeToLocIds[loc.biome] = [];
             biomeToLocIds[loc.biome].push(loc.id);
         }

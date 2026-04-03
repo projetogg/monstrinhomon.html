@@ -33,8 +33,8 @@
                 <button class="tab-button nav-btn" data-tab="players" onclick="switchTab('players')" aria-label="Grupo">
                     <span class="nav-icon">👥</span><span class="nav-label">Grupo</span>
                 </button>
-                <button class="tab-button nav-btn" data-tab="encounter" onclick="switchTab('encounter')" aria-label="Batalha">
-                    <span class="nav-icon">⚔️</span><span class="nav-label">Batalha</span>
+                <button class="tab-button nav-btn" data-tab="encounter" onclick="switchTab('encounter')" aria-label="Mundo">
+                    <span class="nav-icon">🗺️</span><span class="nav-label">Mundo</span>
                 </button>
                 <button class="tab-button nav-btn" data-tab="box" onclick="switchTab('box')" aria-label="Caixa">
                     <span class="nav-icon">📦</span><span class="nav-label">Caixa</span>
@@ -141,8 +141,8 @@
                             <span class="qa-label">Grupo</span>
                         </button>
                         <button class="quick-action-btn quick-action--batalha" onclick="switchTab('encounter')">
-                            <span class="qa-icon">⚔️</span>
-                            <span class="qa-label">Batalha</span>
+                            <span class="qa-icon">🗺️</span>
+                            <span class="qa-label">Mundo</span>
                         </button>
                         <button class="quick-action-btn quick-action--dex" onclick="switchTab('partyDex')">
                             <span class="qa-icon">📘</span>
@@ -201,7 +201,7 @@
         </div>
 
         <div id="tabEncounter" class="tab-content">
-            <h2>⚔️ Batalha</h2>
+            <h2>🗺️ Mundo</h2>
 
             <!-- FASE UX: Dica de objetivo da quest ativa -->
             <div id="encounterQuestHint" class="card quest-hint-card encounter-setup is-hidden">
@@ -6085,13 +6085,49 @@
         /**
          * Fecha o painel de resultado de batalha wild (após o jogador ver o XP ganho).
          * Chamado pelo botão "Continuar" do painel de resultado.
+         * Retorna automaticamente ao mapa (spots do local ou overworld).
          */
         function closeBattleResult() {
             // Guard: previne double-click / double-exec (encounter já foi limpo)
             if (!GameState.currentEncounter) return;
+
+            const enc        = GameState.currentEncounter;
+            const locationId = _wm.selectedLocationId;
+
+            // Registrar conclusão quando vitória em local com mapa
+            if (enc.result === 'victory' && locationId) {
+                if (!GameState.data) GameState.data = {};
+                if (!Array.isArray(GameState.data.completedLocations)) {
+                    GameState.data.completedLocations = [];
+                }
+                if (!GameState.data.completedLocations.includes(locationId)) {
+                    GameState.data.completedLocations.push(locationId);
+                }
+            }
+
             GameState.currentEncounter = null;
             saveToLocalStorage();
-            renderEncounter();
+
+            // Esconder painel de encontro
+            const panel = document.getElementById('encounterPanel');
+            if (panel) hideEl(panel);
+
+            // Retornar ao fluxo do mapa
+            if (locationId) {
+                // Voltar para os spots do local onde estávamos
+                const spotsPanel  = document.getElementById('locationSpotsPanel');
+                const setupPanel  = document.getElementById('wildSetupPanel');
+                const legacyPanel = document.getElementById('encounterSetupCard');
+                _wm.selectedSpotId = null;
+                if (spotsPanel)  showEl(spotsPanel);
+                if (setupPanel)  hideEl(setupPanel);
+                if (legacyPanel) hideEl(legacyPanel);
+                // Re-renderizar spots para refletir badges atualizados
+                renderLocationSpots(locationId);
+            } else {
+                // Sem contexto de mapa: voltar ao overworld
+                showWorldMap();
+            }
         }
         window.closeBattleResult = closeBattleResult;
 
@@ -8329,6 +8365,9 @@
             const visitedLocations = new Set(
                 GameState.data?.visitedLocations ?? []
             );
+            const completedLocations = new Set(
+                GameState.data?.completedLocations ?? []
+            );
 
             const enriched = window.WorldMap.getEnrichedNodes(
                 _wm.worldMapNodes ?? [],
@@ -8341,21 +8380,32 @@
             }
 
             grid.innerHTML = enriched.map(node => {
-                const unlocked  = window.WorldMap.isNodeUnlocked(node, visitedLocations);
-                const levelStr  = node.levelRange ? `Lv ${node.levelRange[0]}–${node.levelRange[1]}` : '';
-                const lockClass = unlocked ? '' : 'wm-node--locked';
-                const onclick   = unlocked ? `onclick="selectWorldNode('${node.nodeId}')"` : '';
-                const bgColor   = node.biomeColor ?? '#666';
+                const unlocked   = window.WorldMap.isNodeUnlocked(node, visitedLocations, completedLocations);
+                const levelStr   = node.levelRange ? `Lv ${node.levelRange[0]}–${node.levelRange[1]}` : '';
+                const lockClass  = unlocked ? '' : 'wm-node--locked';
+                const onclick    = unlocked ? `onclick="selectWorldNode('${node.nodeId}')"` : '';
+                const bgColor    = node.biomeColor ?? '#666';
+                const isCity     = node.type === 'city';
+                const isBoss     = node.type === 'boss';
+                const isCompleted = completedLocations.has(node.nodeId);
+                const isVisited   = visitedLocations.has(node.nodeId);
+
+                // Badges visuais
+                const badgeCompleted = isCompleted ? '<span class="wm-node__badge wm-node__badge--done">✅</span>' : '';
+                const badgeCity      = isCity      ? '<span class="wm-node__badge wm-node__badge--city">🏙️</span>' : '';
+                const badgeBoss      = isBoss      ? '<span class="wm-node__badge wm-node__badge--boss">👑</span>' : '';
+                const badgeLock      = !unlocked   ? '<span class="wm-node__lock">🔒</span>' : '';
+                const typeClass      = isCity ? 'wm-node--city' : isBoss ? 'wm-node--boss' : '';
 
                 return `
-                  <div class="wm-node ${lockClass}" ${onclick}
+                  <div class="wm-node ${lockClass} ${typeClass}" ${onclick}
                        style="background:${bgColor}"
                        title="${node.description ?? ''}">
                     ${node.tier ? `<span class="wm-node__tier">${node.tier}</span>` : ''}
                     <span class="wm-node__emoji">${node.biomeEmoji}</span>
                     <span class="wm-node__name">${node.name}</span>
-                    <span class="wm-node__level">${levelStr}</span>
-                    ${!unlocked ? '<span class="wm-node__lock">🔒</span>' : ''}
+                    ${levelStr ? `<span class="wm-node__level">${levelStr}</span>` : ''}
+                    <div class="wm-node__badges">${badgeCompleted}${badgeCity}${badgeBoss}${badgeLock}</div>
                   </div>`;
             }).join('');
         }
@@ -8382,7 +8432,7 @@
             renderLocationSpots(locationId);
         }
 
-        /** Renderiza os 3 spots de uma localização (Camada 2). */
+        /** Renderiza os spots de uma localização (Camada 2). */
         function renderLocationSpots(locationId) {
             const list = document.getElementById('spotsList');
             if (!list || !window.WorldMap) return;
@@ -8394,17 +8444,24 @@
                 return;
             }
 
-            list.innerHTML = spots.map(spot => `
-              <div class="wm-spot" onclick="selectSpot('${spot.id}')">
-                <span class="wm-spot__icon">${spot.icon}</span>
-                <div class="wm-spot__info">
-                  <p class="wm-spot__name">${spot.name}</p>
-                  <p class="wm-spot__profile">${spot.profile}</p>
-                  <p class="wm-spot__desc">${spot.description}</p>
-                </div>
-                <span class="wm-spot__arrow">›</span>
-              </div>
-            `).join('');
+            list.innerHTML = spots.map(spot => {
+                const isService = spot.type === 'service';
+                const onclick   = isService
+                    ? `onclick="selectCityService('${spot.serviceAction}')"`
+                    : `onclick="selectSpot('${spot.id}')"`;
+                const extraClass = isService ? 'wm-spot--service' : '';
+                return `
+                  <div class="wm-spot ${extraClass}" ${onclick}>
+                    <span class="wm-spot__icon">${spot.icon}</span>
+                    <div class="wm-spot__info">
+                      <p class="wm-spot__name">${spot.name}</p>
+                      <p class="wm-spot__profile">${spot.profile}</p>
+                      <p class="wm-spot__desc">${spot.description}</p>
+                    </div>
+                    <span class="wm-spot__arrow">›</span>
+                  </div>
+                `;
+            }).join('');
         }
 
         /** Camada 3 — ao clicar em um spot, mostra seleção de jogador + Iniciar. */
@@ -8427,6 +8484,51 @@
 
             // Atualizar dropdown de jogadores
             _wmUpdatePlayerDropdown();
+        }
+
+        /**
+         * Serviço de cidade — ação ao clicar em spot de serviço (shop/heal/quests).
+         * @param {string} action - 'shop' | 'heal' | 'quests'
+         */
+        function selectCityService(action) {
+            if (action === 'shop') {
+                // Abre a aba de loja
+                switchTab('shop');
+            } else if (action === 'heal') {
+                // Cura todos os Monstrinhos dos jogadores ativos
+                _cityHealAllMonsters();
+            } else if (action === 'quests') {
+                // Vai para a aba de sessão onde ficam as quests
+                switchTab('home');
+            }
+        }
+        window.selectCityService = selectCityService;
+
+        /** Cura todos os Monstrinhos de todos os jogadores (serviço de cidade). */
+        function _cityHealAllMonsters() {
+            let healed = 0;
+            (GameState.players ?? []).forEach(player => {
+                (player.team ?? []).forEach(mi => {
+                    if (mi && mi.hpMax && mi.hp < mi.hpMax) {
+                        mi.hp = mi.hpMax;
+                        healed++;
+                    }
+                });
+            });
+            saveToLocalStorage();
+            render();
+            const msg = healed > 0
+                ? `✅ ${healed} Monstrinho(s) curado(s) com sucesso!`
+                : 'Todos os Monstrinhos já estão com HP cheio.';
+            // Exibir feedback inline no painel de spots
+            const list = document.getElementById('spotsList');
+            if (list) {
+                const feedback = document.createElement('div');
+                feedback.className = 'wm-heal-feedback';
+                feedback.textContent = msg;
+                list.prepend(feedback);
+                setTimeout(() => feedback.remove(), 3000);
+            }
         }
 
         /** Atualiza o dropdown de jogadores no painel de setup selvagem. */

@@ -1,13 +1,130 @@
 {
-  "version": "1.0",
-  "notes": "Mapa de nós do mundo Monstrinhomon. Cada nó representa uma área visitável. Conexões definem quais nós são acessíveis a partir de um dado nó.",
+  "version": "1.1",
+  "notes": "Mapa de nós do mundo Monstrinhomon. Cada nó representa uma área visitável. Conexões definem quais nós são acessíveis a partir de um dado nó. Tipos: exploration, city, boss.",
   "nodes": [
+    {
+      "nodeId": "CITY_001",
+      "type": "city",
+      "unlockDefault": true,
+      "connections": ["LOC_001"]
+    },
     {
       "nodeId": "LOC_001",
       "type": "exploration",
       "unlockDefault": true,
-      "connections": ["LOC_001B", "LOC_002"]
+      "connections": ["LOC_001B", "LOC_002", "CITY_001"]
     },
+    {
+      "nodeId": "LOC_001B",
+      "type": "exploration",
+      "unlockDefault": false,
+      "connections": ["LOC_001", "LOC_002", "LOC_003"]
+    },
+    {
+      "nodeId": "LOC_002",
+      "type": "exploration",
+      "unlockDefault": false,
+      "connections": ["LOC_001B", "LOC_002B", "LOC_005"]
+    },
+    {
+      "nodeId": "LOC_002B",
+      "type": "exploration",
+      "unlockDefault": false,
+      "connections": ["LOC_002", "LOC_002C", "LOC_004"]
+    },
+    {
+      "nodeId": "LOC_002C",
+      "type": "exploration",
+      "unlockDefault": false,
+      "connections": ["LOC_002B", "LOC_007"]
+    },
+    {
+      "nodeId": "LOC_003",
+      "type": "exploration",
+      "unlockDefault": false,
+      "connections": ["LOC_001B", "LOC_003B"]
+    },
+    {
+      "nodeId": "LOC_003B",
+      "type": "exploration",
+      "unlockDefault": false,
+      "connections": ["LOC_003", "LOC_003C"]
+    },
+    {
+      "nodeId": "LOC_003C",
+      "type": "exploration",
+      "unlockDefault": false,
+      "connections": ["LOC_003B", "LOC_006"]
+    },
+    {
+      "nodeId": "LOC_004",
+      "type": "exploration",
+      "unlockDefault": false,
+      "connections": ["LOC_002B", "LOC_004B"]
+    },
+    {
+      "nodeId": "LOC_004B",
+      "type": "exploration",
+      "unlockDefault": false,
+      "connections": ["LOC_004", "LOC_008"]
+    },
+    {
+      "nodeId": "LOC_005",
+      "type": "exploration",
+      "unlockDefault": false,
+      "connections": ["LOC_002", "LOC_005B"]
+    },
+    {
+      "nodeId": "LOC_005B",
+      "type": "exploration",
+      "unlockDefault": false,
+      "connections": ["LOC_005", "LOC_005C"]
+    },
+    {
+      "nodeId": "LOC_005C",
+      "type": "exploration",
+      "unlockDefault": false,
+      "connections": ["LOC_005B"]
+    },
+    {
+      "nodeId": "LOC_006",
+      "type": "exploration",
+      "unlockDefault": false,
+      "connections": ["LOC_003C", "LOC_006B"]
+    },
+    {
+      "nodeId": "LOC_006B",
+      "type": "exploration",
+      "unlockDefault": false,
+      "connections": ["LOC_006", "LOC_008"]
+    },
+    {
+      "nodeId": "LOC_007",
+      "type": "exploration",
+      "unlockDefault": false,
+      "connections": ["LOC_002C", "LOC_007B"]
+    },
+    {
+      "nodeId": "LOC_007B",
+      "type": "exploration",
+      "unlockDefault": false,
+      "connections": ["LOC_007", "LOC_008"]
+    },
+    {
+      "nodeId": "LOC_008",
+      "type": "exploration",
+      "unlockDefault": false,
+      "connections": ["LOC_004B", "LOC_006B", "LOC_007B", "LOC_008B"]
+    },
+    {
+      "nodeId": "LOC_008B",
+      "type": "exploration",
+      "unlockDefault": false,
+      "connections": ["LOC_008"]
+    }
+  ]
+}
+
     {
       "nodeId": "LOC_001B",
       "type": "exploration",

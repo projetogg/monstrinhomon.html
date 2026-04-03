@@ -73,6 +73,8 @@ const EARLY_LOCATION_IDS = ['LOC_001'];
 describe('data/locations.json - Estrutura e Esquema', () => {
 
     const data = loadLocationsJson();
+    // Locais de exploração excluem locais de serviço (cidade, hub, etc.)
+    const explorationLocs = data.locations.filter(l => !l.specialRules?.includes('city_only'));
 
     it('deve ter estrutura JSON válida com version e array "locations"', () => {
         expect(data).toBeDefined();
@@ -86,7 +88,7 @@ describe('data/locations.json - Estrutura e Esquema', () => {
 
     it('todos os locais devem ter campos obrigatórios', () => {
         const required = ['id', 'name', 'description', 'biome', 'levelRange', 'speciesPoolsByRarity'];
-        for (const loc of data.locations) {
+        for (const loc of explorationLocs) {
             for (const field of required) {
                 expect(loc[field], `${loc.id} falta campo "${field}"`).toBeDefined();
             }
@@ -99,8 +101,8 @@ describe('data/locations.json - Estrutura e Esquema', () => {
         expect(uniqueIds.size).toBe(ids.length);
     });
 
-    it('todos os locais devem ter IDs no padrão LOC_XXX', () => {
-        for (const loc of data.locations) {
+    it('locais de exploração devem ter IDs no padrão LOC_XXX', () => {
+        for (const loc of explorationLocs) {
             expect(
                 loc.id.startsWith('LOC_'),
                 `ID "${loc.id}" não segue padrão LOC_`
@@ -108,8 +110,8 @@ describe('data/locations.json - Estrutura e Esquema', () => {
         }
     });
 
-    it('levelRange deve ser array com [min, max]', () => {
-        for (const loc of data.locations) {
+    it('levelRange deve ser array com [min, max] (locais de exploração)', () => {
+        for (const loc of explorationLocs) {
             expect(Array.isArray(loc.levelRange), `${loc.id} levelRange deve ser array`).toBe(true);
             expect(loc.levelRange.length, `${loc.id} levelRange deve ter 2 elementos`).toBe(2);
             expect(loc.levelRange[0], `${loc.id} nível mínimo deve ser positivo`).toBeGreaterThan(0);
@@ -120,8 +122,8 @@ describe('data/locations.json - Estrutura e Esquema', () => {
         }
     });
 
-    it('speciesPoolsByRarity.Comum não deve estar vazio', () => {
-        for (const loc of data.locations) {
+    it('speciesPoolsByRarity.Comum não deve estar vazio (locais de exploração)', () => {
+        for (const loc of explorationLocs) {
             expect(
                 (loc.speciesPoolsByRarity?.Comum || []).length,
                 `${loc.id} pool Comum está vazio`
@@ -129,9 +131,9 @@ describe('data/locations.json - Estrutura e Esquema', () => {
         }
     });
 
-    it('speciesPoolsByRarity deve ter arrays para todas as raridades', () => {
+    it('speciesPoolsByRarity deve ter arrays para todas as raridades (locais de exploração)', () => {
         const raridades = ['Comum', 'Incomum', 'Raro', 'Místico', 'Lendário'];
-        for (const loc of data.locations) {
+        for (const loc of explorationLocs) {
             for (const r of raridades) {
                 expect(
                     Array.isArray(loc.speciesPoolsByRarity[r]),
@@ -141,8 +143,8 @@ describe('data/locations.json - Estrutura e Esquema', () => {
         }
     });
 
-    it('rarityWeights devem existir e somar ~100', () => {
-        for (const loc of data.locations) {
+    it('rarityWeights devem existir e somar ~100 (locais de exploração)', () => {
+        for (const loc of explorationLocs) {
             expect(loc.rarityWeights, `${loc.id} falta rarityWeights`).toBeDefined();
             const total = Object.values(loc.rarityWeights).reduce((s, v) => s + v, 0);
             expect(total, `${loc.id} rarityWeights deve somar 100`).toBeCloseTo(100, 0);
@@ -197,6 +199,8 @@ describe('data/locations.json - Coerência de Progressão', () => {
     const locData = loadLocationsJson();
     const monData = loadMonstersJson();
     const monsterMap = new Map(monData.monsters.map(m => [m.id, m]));
+    // Apenas locais de exploração (excluindo cidades/serviços)
+    const explorationLocs = locData.locations.filter(l => !l.specialRules?.includes('city_only'));
 
     /** Retorna todos os IDs de monstros de todos os pools de uma localização */
     function allPoolIds(loc) {
@@ -228,7 +232,7 @@ describe('data/locations.json - Coerência de Progressão', () => {
     });
 
     it('locais iniciais (nível máx ≤ 10) não devem ter monstros Raros+ no pool Comum', () => {
-        const earlyLocs = locData.locations.filter(l => l.levelRange[1] <= 10);
+        const earlyLocs = explorationLocs.filter(l => l.levelRange[1] <= 10);
         for (const loc of earlyLocs) {
             for (const mId of (loc.speciesPoolsByRarity?.Comum ?? [])) {
                 const monster = monsterMap.get(mId);
@@ -242,7 +246,7 @@ describe('data/locations.json - Coerência de Progressão', () => {
     });
 
     it('locais iniciais (nível máx ≤ 10) não devem ter monstros de estágio 2+ no pool Comum', () => {
-        const earlyLocs = locData.locations.filter(l => l.levelRange[1] <= 10);
+        const earlyLocs = explorationLocs.filter(l => l.levelRange[1] <= 10);
         for (const loc of earlyLocs) {
             for (const mId of (loc.speciesPoolsByRarity?.Comum ?? [])) {
                 expect(
@@ -254,7 +258,7 @@ describe('data/locations.json - Coerência de Progressão', () => {
     });
 
     it('locais avançados (nível mín ≥ 15) devem ter pelo menos 1 monstro Incomum ou melhor em todos os pools', () => {
-        const advancedLocs = locData.locations.filter(l => l.levelRange[0] >= 15);
+        const advancedLocs = explorationLocs.filter(l => l.levelRange[0] >= 15);
         for (const loc of advancedLocs) {
             const allIds = allPoolIds(loc);
             const hasIncomumPlus = allIds.some(mId => {
@@ -269,7 +273,7 @@ describe('data/locations.json - Coerência de Progressão', () => {
     });
 
     it('locais avançados (nível mín ≥ 20) devem ter pelo menos 1 monstro Raro ou melhor em todos os pools', () => {
-        const veryAdvancedLocs = locData.locations.filter(l => l.levelRange[0] >= 20);
+        const veryAdvancedLocs = explorationLocs.filter(l => l.levelRange[0] >= 20);
         for (const loc of veryAdvancedLocs) {
             const allIds = allPoolIds(loc);
             const hasRaroPlus = allIds.some(mId => {
@@ -284,7 +288,7 @@ describe('data/locations.json - Coerência de Progressão', () => {
     });
 
     it('monstros de estágio D (forma final) não devem aparecer em locais iniciais (nível máx ≤ 15)', () => {
-        const nonLateGameLocs = locData.locations.filter(l => l.levelRange[1] <= 15);
+        const nonLateGameLocs = explorationLocs.filter(l => l.levelRange[1] <= 15);
         for (const loc of nonLateGameLocs) {
             for (const mId of allPoolIds(loc)) {
                 expect(
@@ -297,7 +301,7 @@ describe('data/locations.json - Coerência de Progressão', () => {
 
     it('tier deve ser string válida (T0-T6)', () => {
         const validTiers = new Set(['T0', 'T1', 'T2', 'T3', 'T4', 'T5', 'T6']);
-        for (const loc of locData.locations) {
+        for (const loc of explorationLocs) {
             if (loc.tier) {
                 expect(
                     validTiers.has(loc.tier),

@@ -2912,6 +2912,37 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     opacity: 0.7;
 }
 
+/* Badges do nó (concluído, cidade, boss) */
+.wm-node__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    justify-content: center;
+    margin-top: 2px;
+    min-height: 16px;
+}
+
+.wm-node__badge {
+    font-size: 13px;
+    line-height: 1;
+}
+
+/* Variante: nó de cidade */
+.wm-node--city {
+    border: 2px solid rgba(255,255,255,0.5);
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.2);
+}
+
+.wm-node--city:not(.wm-node--locked):hover {
+    border-color: rgba(255,255,255,0.85);
+}
+
+/* Variante: nó de boss */
+.wm-node--boss {
+    border: 2px solid #d44;
+    box-shadow: 0 0 6px rgba(200,50,50,0.4);
+}
+
 /* Grid de spots dentro de um local */
 .wm-spots-grid {
     display: flex;
@@ -2941,6 +2972,17 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 
 .wm-spot:active {
     transform: translateX(0);
+}
+
+/* Spot de serviço de cidade — visual diferenciado */
+.wm-spot--service {
+    border-color: #7a8fc4;
+    background: #f0f3fb;
+}
+
+.wm-spot--service:hover {
+    background: #e4eaf7;
+    border-color: #5a7ab8;
 }
 
 .wm-spot__icon {
@@ -2977,6 +3019,18 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     font-size: 18px;
     opacity: 0.45;
     flex-shrink: 0;
+}
+
+/* Feedback de cura inline */
+.wm-heal-feedback {
+    background: #e8f5e9;
+    border: 1px solid #4CAF50;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: #2e7d32;
+    margin-bottom: 8px;
+    animation: fadeIn 0.2s ease;
 }
 
 /* Responsivo: telas menores */

@@ -2298,6 +2298,55 @@
           ]
         }
       ]
+    },
+    {
+      "id": "CITY_001",
+      "name": "Aldeia Inicial",
+      "description": "Uma pequena aldeia com serviços essenciais para aventureiros. Aqui você encontra a loja, o centro de cura e o quadro de missões.",
+      "biome": "cidade",
+      "tier": "S",
+      "levelRange": null,
+      "rarityWeights": {},
+      "speciesPoolsByRarity": {},
+      "encounterTypeWeights": {},
+      "allowedEvolutionStages": [],
+      "unlockRules": [],
+      "specialRules": ["city_only"],
+      "rareSpotBonus": 0,
+      "bossRule": null,
+      "notes": "Cidade inicial. Acesso a loja, cura e missões.",
+      "spots": [
+        {
+          "id": "CITY_001_SHOP",
+          "name": "Loja",
+          "icon": "🛒",
+          "profile": "Comprar itens",
+          "description": "Adquira itens de captura, cura e táticos.",
+          "type": "service",
+          "serviceAction": "shop",
+          "rarityModifiers": []
+        },
+        {
+          "id": "CITY_001_HEAL",
+          "name": "Centro de Cura",
+          "icon": "🏥",
+          "profile": "Curar Monstrinhos",
+          "description": "Restaure o HP de todos os seus Monstrinhos gratuitamente.",
+          "type": "service",
+          "serviceAction": "heal",
+          "rarityModifiers": []
+        },
+        {
+          "id": "CITY_001_QUESTS",
+          "name": "Quadro de Missões",
+          "icon": "📋",
+          "profile": "Ver missões",
+          "description": "Aceite e entregue missões ativas da sessão.",
+          "type": "service",
+          "serviceAction": "quests",
+          "rarityModifiers": []
+        }
+      ]
     }
   ]
 }

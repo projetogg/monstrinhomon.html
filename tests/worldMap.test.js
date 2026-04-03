@@ -129,12 +129,21 @@ describe('isNodeUnlocked — Verificação de desbloqueio de nó', () => {
         expect(isNodeUnlocked(enrichedNodes[1], new Set(['LOC_001B']))).toBe(true);
     });
 
-    it('deve retornar true se um nó vizinho foi visitado', () => {
-        // LOC_001B está conectado a LOC_001. Se LOC_001 foi visitado, LOC_001B é desbloqueado
-        expect(isNodeUnlocked(enrichedNodes[1], new Set(['LOC_001']))).toBe(true);
+    it('deve retornar true se um nó vizinho foi CONCLUÍDO', () => {
+        // LOC_001B está conectado a LOC_001. Se LOC_001 foi completado, LOC_001B é desbloqueado
+        const visited = new Set();
+        const completed = new Set(['LOC_001']);
+        expect(isNodeUnlocked(enrichedNodes[1], visited, completed)).toBe(true);
     });
 
-    it('deve retornar false se nó bloqueado e nenhum vizinho visitado', () => {
+    it('deve retornar false se vizinho foi apenas VISITADO (não concluído)', () => {
+        // Visitar LOC_001 não desbloqueia LOC_001B — precisa ser concluído
+        const visited = new Set(['LOC_001']);
+        const completed = new Set();
+        expect(isNodeUnlocked(enrichedNodes[1], visited, completed)).toBe(false);
+    });
+
+    it('deve retornar false se nó bloqueado e nenhum vizinho visitado ou concluído', () => {
         expect(isNodeUnlocked(enrichedNodes[2], new Set())).toBe(false);
     });
 
@@ -142,17 +151,27 @@ describe('isNodeUnlocked — Verificação de desbloqueio de nó', () => {
         expect(isNodeUnlocked(null)).toBe(false);
     });
 
-    it('deve retornar false com visitedLocations vazio para nó sem unlockDefault', () => {
+    it('deve retornar false com sets vazios para nó sem unlockDefault', () => {
         expect(isNodeUnlocked(enrichedNodes[1])).toBe(false);
     });
 
-    it('LOC_002 desbloqueado quando LOC_001B visitado', () => {
-        expect(isNodeUnlocked(enrichedNodes[2], new Set(['LOC_001B']))).toBe(true);
+    it('LOC_002 desbloqueado quando LOC_001B completado', () => {
+        const visited = new Set();
+        const completed = new Set(['LOC_001B']);
+        expect(isNodeUnlocked(enrichedNodes[2], visited, completed)).toBe(true);
     });
 
-    it('LOC_002 ainda bloqueado quando apenas LOC_001 visitado', () => {
+    it('LOC_002 ainda bloqueado quando LOC_001B apenas visitado (não concluído)', () => {
+        const visited = new Set(['LOC_001B']);
+        const completed = new Set();
+        expect(isNodeUnlocked(enrichedNodes[2], visited, completed)).toBe(false);
+    });
+
+    it('LOC_002 ainda bloqueado quando apenas LOC_001 completado (não é vizinho direto)', () => {
         // LOC_002 só conecta a LOC_001B; LOC_001 não é vizinho direto
-        expect(isNodeUnlocked(enrichedNodes[2], new Set(['LOC_001']))).toBe(false);
+        const visited = new Set();
+        const completed = new Set(['LOC_001']);
+        expect(isNodeUnlocked(enrichedNodes[2], visited, completed)).toBe(false);
     });
 });
 
@@ -296,5 +315,89 @@ describe('Integração worldMap ↔ encounterEngine', () => {
         const node001 = enriched.find(n => n.nodeId === 'LOC_001');
         expect(isNodeUnlocked(node001)).toBe(true);
         expect(node001.spots.length).toBeGreaterThan(0);
+    });
+});
+
+// ── FASE 3: completedLocations — desbloqueio por conclusão ────────────────────
+
+describe('isNodeUnlocked — Desbloqueio por conclusão (FASE 3)', () => {
+
+    const nodes = [
+        { nodeId: 'HUB',    unlockDefault: true,  connections: ['A'] },
+        { nodeId: 'A',      unlockDefault: false, connections: ['HUB', 'B'] },
+        { nodeId: 'B',      unlockDefault: false, connections: ['A', 'C'] },
+        { nodeId: 'C',      unlockDefault: false, connections: ['B'] }
+    ];
+
+    it('HUB é sempre desbloqueado (unlockDefault)', () => {
+        expect(isNodeUnlocked(nodes[0])).toBe(true);
+    });
+
+    it('A desbloqueia quando HUB é completado', () => {
+        expect(isNodeUnlocked(nodes[1], new Set(), new Set(['HUB']))).toBe(true);
+    });
+
+    it('A NÃO desbloqueia quando HUB foi apenas visitado', () => {
+        expect(isNodeUnlocked(nodes[1], new Set(['HUB']), new Set())).toBe(false);
+    });
+
+    it('B desbloqueia quando A é completado', () => {
+        expect(isNodeUnlocked(nodes[2], new Set(), new Set(['A']))).toBe(true);
+    });
+
+    it('B NÃO desbloqueia quando HUB é completado (não é vizinho direto)', () => {
+        expect(isNodeUnlocked(nodes[2], new Set(), new Set(['HUB']))).toBe(false);
+    });
+
+    it('C NÃO desbloqueia quando apenas A é completado (não vizinho)', () => {
+        expect(isNodeUnlocked(nodes[3], new Set(), new Set(['A']))).toBe(false);
+    });
+
+    it('C desbloqueia quando B é completado', () => {
+        expect(isNodeUnlocked(nodes[3], new Set(), new Set(['B']))).toBe(true);
+    });
+
+    it('nó visitado (em visitedLocations) sempre pode ser re-acessado', () => {
+        // B foi visitado antes (está em visitedLocations) → pode revisitar mesmo sem completar vizinho
+        expect(isNodeUnlocked(nodes[2], new Set(['B']), new Set())).toBe(true);
+    });
+});
+
+// ── FASE 4: Cidade — BIOME_EMOJI e BIOME_COLOR ───────────────────────────────
+
+describe('BIOME_EMOJI / BIOME_COLOR — Suporte a bioma cidade (FASE 4)', () => {
+
+    it('BIOME_EMOJI deve ter entrada para "cidade"', () => {
+        expect(BIOME_EMOJI['cidade']).toBeDefined();
+        expect(typeof BIOME_EMOJI['cidade']).toBe('string');
+    });
+
+    it('getEnrichedNodes deve incluir type do nó na saída', () => {
+        const nodes = [
+            { nodeId: 'LOC_001', type: 'exploration', unlockDefault: true, connections: [] },
+        ];
+        const locs = [
+            { id: 'LOC_001', name: 'Local', description: '', biome: 'campos', tier: 'T1',
+              levelRange: [1,3], spots: [] }
+        ];
+        const enriched = getEnrichedNodes(nodes, locs);
+        expect(enriched[0].type).toBe('exploration');
+    });
+
+    it('getEnrichedNodes para nó de cidade inclui type city', () => {
+        const nodes = [
+            { nodeId: 'CITY_001', type: 'city', unlockDefault: true, connections: [] },
+        ];
+        const locs = [
+            { id: 'CITY_001', name: 'Aldeia', description: '', biome: 'cidade', tier: 'S',
+              levelRange: null, spots: [
+                  { id: 'CITY_001_SHOP', name: 'Loja', icon: '🛒', profile: 'Comprar',
+                    description: '', type: 'service', serviceAction: 'shop', rarityModifiers: [] }
+              ] }
+        ];
+        const enriched = getEnrichedNodes(nodes, locs);
+        expect(enriched[0].type).toBe('city');
+        expect(enriched[0].spots[0].type).toBe('service');
+        expect(enriched[0].spots[0].serviceAction).toBe('shop');
     });
 });

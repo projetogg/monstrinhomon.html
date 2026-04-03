@@ -21,7 +21,8 @@ export const BIOME_EMOJI = {
     costa:     '🌊',
     vulcanico: '🌋',
     noturno:   '🌑',
-    arena:     '⚔️'
+    arena:     '⚔️',
+    cidade:    '🏙️'
 };
 
 // Cores de fundo por bioma (para uso em CSS)
@@ -33,7 +34,8 @@ export const BIOME_COLOR = {
     costa:     '#4a90c4',
     vulcanico: '#c44a3a',
     noturno:   '#2a2a4a',
-    arena:     '#9a6a2a'
+    arena:     '#9a6a2a',
+    cidade:    '#7a8fc4'
 };
 
 // ── API principal ────────────────────────────────────────────────────────────
@@ -69,23 +71,26 @@ export function getEnrichedNodes(worldMapNodes, locationsData) {
 
 /**
  * Verifica se um nó está desbloqueado com base no progresso do jogo.
- * Regra simplificada para o estado atual do projeto:
+ *
+ * Regras de desbloqueio:
  * - Se `unlockDefault: true`, sempre desbloqueado
- * - Se o nodeId foi visitado (está em `visitedLocations`), desbloqueado
- * - Se um nó vizinho já foi visitado, desbloqueado
+ * - Se o nodeId está em `visitedLocations`, desbloqueado (pode revisitar)
+ * - Se um nó vizinho está em `completedLocations`, desbloqueado
+ *   (vizinho precisa ser CONCLUÍDO — não apenas visitado — para abrir caminho)
  *
  * @param {Object} node - Nó enriquecido
- * @param {Set<string>} visitedLocations - Set de IDs de localizações visitadas
+ * @param {Set<string>} visitedLocations - Set de IDs visitados (para revisita)
+ * @param {Set<string>} completedLocations - Set de IDs concluídos (para desbloquear vizinhos)
  * @returns {boolean}
  */
-export function isNodeUnlocked(node, visitedLocations = new Set()) {
+export function isNodeUnlocked(node, visitedLocations = new Set(), completedLocations = new Set()) {
     if (!node) return false;
     if (node.unlockDefault) return true;
     if (visitedLocations.has(node.nodeId)) return true;
 
-    // Desbloqueado se algum nó conectado já foi visitado
+    // Desbloqueado se algum nó conectado foi CONCLUÍDO (não apenas visitado)
     const connections = node.connections ?? [];
-    return connections.some(connId => visitedLocations.has(connId));
+    return connections.some(connId => completedLocations.has(connId));
 }
 
 /**
