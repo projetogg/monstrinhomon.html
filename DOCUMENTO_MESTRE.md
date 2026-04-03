@@ -3214,6 +3214,384 @@ Durante a auditoria (PR pós-Fase 6), uma inconsistência foi identificada:
 
 ---
 
+---
+
+## 50. data/skills.json — Catálogo Canônico de Habilidades
+
+> Source of truth: `data/skills.json` (version 2, atualizado 2026-03-27)
+
+### 50.1 Estrutura de Cada Skill
+
+```json
+{
+  "id": "GOLPE_DE_ESPADA_I",
+  "name": "Golpe de Espada I",
+  "class": "Guerreiro",
+  "tier": 1,
+  "category": "Ataque",
+  "power": 18,
+  "accuracy": 0.85,
+  "energy_cost": 4,
+  "target": "Inimigo",
+  "status": "",
+  "desc": "Ataque com espada."
+}
+```
+
+**Campos:**
+- `id` — ID imutável (ex: `GOLPE_DE_ESPADA_I`)
+- `tier` — 0 (base/legado), 1, 2, 3 (escalado)
+- `category` — `Ataque`, `Suporte`, `Cura`, `Controle`
+- `target` — `Inimigo`, `Aliado`, `Self`, `Área`
+- `accuracy` — probabilidade de acerto (0.0–1.0; nem sempre presente)
+- `status` — status aplicado ao alvo (ex: `Protegido`, vazio se nenhum)
+
+### 50.2 Skills por Classe (data/skills.json)
+
+> **62 skills no total** cobrindo as 8 classes.
+
+#### Guerreiro (13 skills)
+
+| ID | Tier | Nome | Cat | PWR | ENE | Alvo |
+|----|:----:|------|:---:|----:|----:|------|
+| GOLPE_DE_ESPADA_I (v1) | 1 | Golpe de Espada I | Ataque | 18 | 4 | Inimigo |
+| GOLPE_DE_ESPADA_II (v1) | 2 | Golpe de Espada II | Ataque | 24 | 6 | Inimigo |
+| GOLPE_DE_ESPADA_III (v1) | 3 | Golpe de Espada III | Ataque | 30 | 8 | Inimigo |
+| GOLPE_DE_ESPADA_I (v2) | 1 | Golpe de Espada I | Ataque | 8 | 4 | Inimigo |
+| GOLPE_DE_ESPADA_II (v2) | 2 | Golpe de Espada II | Ataque | 12 | 5 | Inimigo |
+| GOLPE_DE_ESPADA_III (v2) | 3 | Golpe de Espada III | Ataque | 18 | 6 | Inimigo |
+| ESCUDO_I | 1 | Escudo I | Suporte | 0 | 4 | Self |
+| ESCUDO_II | 2 | Escudo II | Suporte | 0 | 6 | Self |
+| ESCUDO_III | 3 | Escudo III | Suporte | 0 | 8 | Self |
+| PROVOCAR_I | 1 | Provocar I | Controle | 0 | 4 | Inimigo |
+| PROVOCAR_II | 2 | Provocar II | Controle | 0 | 6 | Inimigo |
+| GOLPE_DE_ESCUDO | 0 | Golpe de Escudo | Controle | 6 | 2 | Inimigo |
+| CORTE_PESADO | 0 | Corte Pesado | Ataque | 9 | 3 | Inimigo |
+
+#### Curandeiro (8 skills)
+
+| ID | Tier | Nome | Cat | PWR | ENE | Alvo |
+|----|:----:|------|:---:|----:|----:|------|
+| CURA_I | 1 | Cura I | Cura | 15 | 5 | Aliado |
+| CURA_II | 2 | Cura II | Cura | 25 | 7 | Aliado |
+| CURA_III | 3 | Cura III | Cura | 40 | 10 | Aliado |
+| BENCAO_I | 1 | Bênção I | Suporte | 2 | 4 | Aliado |
+| BENCAO_II | 2 | Bênção II | Suporte | 3 | 6 | Aliado |
+| BENCAO_III | 3 | Bênção III | Suporte | 4 | 8 | Aliado |
+| SOPRO_CALMANTE | 0 | Sopro Calmante | Cura | 0 | 4 | Aliado |
+| BARREIRA_SUAVE | 0 | Barreira Suave | Suporte | 0 | 3 | Aliado |
+
+#### Mago (11 skills)
+
+| ID | Tier | Nome | Cat | PWR | ENE | Alvo |
+|----|:----:|------|:---:|----:|----:|------|
+| MAGIA_ELEMENTAL_I | 1 | Magia Elemental I | Ataque | 20 | 4 | Inimigo |
+| MAGIA_ELEMENTAL_II | 2 | Magia Elemental II | Ataque | 26 | 6 | Inimigo |
+| MAGIA_ELEMENTAL_III | 3 | Magia Elemental III | Ataque | 32 | 8 | Inimigo |
+| EXPLOSAO_ELEMENTAL_I | 1 | Explosão Elemental I | Ataque | 24 | 6 | Inimigo |
+| EXPLOSAO_ELEMENTAL_II | 2 | Explosão Elemental II | Ataque | 32 | 8 | Inimigo |
+| EXPLOSAO_ELEMENTAL_III | 3 | Explosão Elemental III | Ataque | 38 | 12 | Inimigo |
+| BOLA_DE_FOGO_I | 1 | Bola de Fogo I | Ataque | 10 | 5 | Inimigo |
+| BOLA_DE_FOGO_II | 2 | Bola de Fogo II | Ataque | 15 | 6 | Inimigo |
+| BOLA_DE_FOGO_III | 3 | Bola de Fogo III | Ataque | 22 | 8 | Inimigo |
+| RAIO_MISTICO | 0 | Raio Místico | Ataque | 10 | 4 | Inimigo |
+| NEVOA_LENTA | 0 | Névoa Lenta | Controle | 4 | 3 | Área |
+
+#### Bárbaro (6 skills)
+
+| ID | Tier | Nome | Cat | PWR | ENE |
+|----|:----:|------|:---:|----:|----:|
+| FURIA_I | 1 | Fúria I | Suporte | 3 | 4 |
+| FURIA_II | 2 | Fúria II | Suporte | 4 | 6 |
+| FURIA_III | 3 | Fúria III | Suporte | 6 | 8 |
+| GOLPE_BRUTAL_I | 1 | Golpe Brutal I | Ataque | 24 | 6 |
+| GOLPE_BRUTAL_II | 2 | Golpe Brutal II | Ataque | 32 | 8 |
+| GOLPE_BRUTAL_III | 3 | Golpe Brutal III | Ataque | 38 | 12 |
+
+#### Ladino (5 skills)
+
+| ID | Tier | Nome | Cat | PWR | ENE | Alvo |
+|----|:----:|------|:---:|----:|----:|------|
+| ATAQUE_PRECISO_I | 1 | Ataque Preciso I | Ataque | 19 | 4 | Inimigo |
+| ATAQUE_PRECISO_II | 2 | Ataque Preciso II | Ataque | 24 | 6 | Inimigo |
+| ATAQUE_PRECISO_III | 3 | Ataque Preciso III | Ataque | 30 | 8 | Inimigo |
+| ENFRAQUECER_I | 1 | Enfraquecer I | Suporte | 2 | 4 | Inimigo |
+| ENFRAQUECER_II | 2 | Enfraquecer II | Suporte | 3 | 6 | Inimigo |
+
+#### Bardo (7 skills)
+
+| ID | Tier | Nome | Cat | PWR | ENE | Alvo |
+|----|:----:|------|:---:|----:|----:|------|
+| CANCAO_DE_CORAGEM_I | 1 | Canção de Coragem I | Suporte | 2 | 4 | Aliado |
+| CANCAO_DE_CORAGEM_II | 2 | Canção de Coragem II | Suporte | 3 | 6 | Aliado |
+| CANCAO_DE_CORAGEM_III | 3 | Canção de Coragem III | Suporte | 4 | 8 | Aliado |
+| CANCAO_DE_CORAGEM_0 | 0 | Canção de Coragem | Suporte | 0 | 3 | Área |
+| CANCAO_CALMANTE_I | 1 | Canção Calmante I | Cura | 12 | 5 | Aliado |
+| CANCAO_CALMANTE_II | 2 | Canção Calmante II | Suporte | 2 | 6 | Aliado |
+| CANCAO_CALMANTE_III | 3 | Canção Calmante III | Suporte | 3 | 8 | Aliado |
+
+#### Caçador (6 skills)
+
+| ID | Tier | Nome | Cat | PWR | ENE | Alvo |
+|----|:----:|------|:---:|----:|----:|------|
+| FLECHA_PODEROSA_I | 1 | Flecha Poderosa I | Ataque | 19 | 4 | Inimigo |
+| FLECHA_PODEROSA_II | 2 | Flecha Poderosa II | Ataque | 24 | 6 | Inimigo |
+| FLECHA_PODEROSA_III | 3 | Flecha Poderosa III | Ataque | 30 | 8 | Inimigo |
+| FLECHA_RAPIDA | 0 | Flecha Rápida | Ataque | 8 | 2 | Inimigo |
+| ARMADILHA_I | 1 | Armadilha I | Suporte | 2 | 4 | Inimigo |
+| ARMADILHA_II | 2 | Armadilha II | Suporte | 3 | 6 | Inimigo |
+
+#### Animalista (6 skills)
+
+| ID | Tier | Nome | Cat | PWR | ENE | Alvo |
+|----|:----:|------|:---:|----:|----:|------|
+| INVESTIDA_BESTIAL_I | 1 | Investida Bestial I | Ataque | 19 | 4 | Inimigo |
+| INVESTIDA_BESTIAL_II | 2 | Investida Bestial II | Ataque | 24 | 6 | Inimigo |
+| INVESTIDA_BESTIAL_III | 3 | Investida Bestial III | Ataque | 30 | 8 | Inimigo |
+| INSTINTO_SELVAGEM_I | 1 | Instinto Selvagem I | Suporte | 2 | 4 | Self |
+| INSTINTO_SELVAGEM_II | 2 | Instinto Selvagem II | Suporte | 2 | 6 | Self |
+| INSTINTO_SELVAGEM_III | 3 | Instinto Selvagem III | Suporte | 3 | 8 | Self |
+
+### 50.3 Skills Tier 0 (base/legadas)
+
+Skills de Tier 0 são habilidades de combate básico disponíveis mesmo sem upgrades. Cada classe com Tier 0 tem:
+
+| Classe | Skill Tier 0 | PWR | ENE | Tipo |
+|--------|-------------|----:|----:|------|
+| Guerreiro | Golpe de Escudo | 6 | 2 | Controle |
+| Guerreiro | Corte Pesado | 9 | 3 | Ataque |
+| Curandeiro | Sopro Calmante | 0 | 4 | Cura |
+| Curandeiro | Barreira Suave | 0 | 3 | Suporte |
+| Bardo | Canção de Coragem | 0 | 3 | Suporte (Área) |
+| Caçador | Flecha Rápida | 8 | 2 | Ataque |
+| Mago | Raio Místico | 10 | 4 | Ataque |
+| Mago | Névoa Lenta | 4 | 3 | Controle (Área) |
+
+### 50.4 Relação com SKILL_DEFS
+
+`data/skills.json` é o **catálogo canônico** (fonte de verdade de dados, versão 2).  
+`SKILL_DEFS` em `index.html` é o **catálogo runtime** (usado diretamente pelo motor de combate).
+
+| Aspecto | data/skills.json | SKILL_DEFS (index.html) |
+|---------|:----------------:|:-----------------------:|
+| Formato | JSON external | Objeto JS inline |
+| Usado em combate | Não diretamente | Sim |
+| Carregado por | skillsLoader.js | Inline no `<script>` |
+| Contém accuracy | Sim | Não |
+| Contém buffType/target | Não | Sim |
+
+---
+
+## 51. PartyDexUI — Interface do Monstrodex
+
+> Source of truth: `js/ui/partyDexUI.js` (PR16B)
+
+### 51.1 Conceito
+
+Módulo de UI **read-only** que exibe o Monstrodex do grupo. Não altera estado — apenas lê e renderiza.
+
+### 51.2 Três Estados Visuais de Cada Monstro
+
+| Estado | Critério | Visual |
+|--------|----------|--------|
+| `unknown` | Não visto e não capturado | ❓ + `???` |
+| `seen` | Visto mas não capturado | Silhueta + `???` |
+| `captured` | Capturado | Card completo (nome, classe, raridade) |
+
+### 51.3 API do partyDexUI.js
+
+```javascript
+getDexProgress(state)
+// Retorna objeto com:
+// { capturedCount, nextMilestone, remaining, nextReward, partyMoney, lastAwarded, progressPct }
+
+// Regra do nextMilestone:
+// capturedCount 0..9 → nextMilestone=10
+// capturedCount 10..19 → nextMilestone=20
+// etc.
+
+// progressPct = (capturedCount % 10) / 10 * 100
+// (percentual dentro do bracket atual de 10)
+
+getDexEntryStatus(state, templateId)
+// Retorna 'captured' | 'seen' | 'unknown'
+// Prioridade: captured > seen > unknown
+
+sortDexTemplates(templates, state)
+// Ordena: capturados primeiro, depois vistos, depois desconhecidos
+// Desempate: templateId ascendente (ordem estável)
+// Não muta o array original
+
+renderPartyDex(container, deps)
+// Renderiza o Dex completo no elemento container
+// deps: { state, getMonsterTemplates: () => template[] }
+// Inclui: header (stats), barra de progresso, grid de cards
+// Defensivo: não lança exceção se state/deps inválidos
+```
+
+### 51.4 HTML do Header Gerado
+
+```
+📘 Monstrodex do Grupo
+ Capturados: N | Próximo Marco: N | Faltam: N
+ [Barra de progresso]  N% para próximo marco (+Nmoedas)
+```
+
+### 51.5 Renderização de Cards por Estado
+
+```javascript
+// 'unknown'
+renderMonsterCard(template, 'unknown')
+→ <div class="dex-card dex-unknown"> ❓ ??? </div>
+
+// 'seen'
+renderMonsterCard(template, 'seen')
+→ <div class="dex-card dex-seen"> [silhueta] ??? </div>
+
+// 'captured'
+renderMonsterCard(template, 'captured')
+→ <div class="dex-card dex-captured"> [emoji] [nome] [classe] [raridade] </div>
+```
+
+---
+
+## 52. EggHatchModal — Modal de Eclosão de Ovo
+
+> Source of truth: `js/ui/eggHatchModal.js` (PR14B)
+
+### 52.1 Conceito
+
+Modal **bloqueante** com Promise+await que exibe a eclosão de ovo com feedback visual antes de qualquer alteração de estado. Garante que o ovo **nunca é consumido antes da confirmação do usuário**.
+
+### 52.2 Garantias de Consistência
+
+| Situação | Comportamento |
+|----------|--------------|
+| Usuário vê modal e confirma | Promise resolve → ovo consumido + save |
+| Usuário fecha aba durante modal | Promise nunca resolve → ovo NÃO consumido |
+| Erro ao exibir modal | Promise rejeitada → ovo NÃO consumido |
+| Modal travado (bug) | Safety timeout de 5min → rejeita Promise |
+
+### 52.3 Dois Estados do Modal
+
+**Estado 1 — Incubação (300–500ms)**:
+```
+🥚 Ovo chocando…
+Algo se mexe dentro do ovo
+⏳
+```
+
+**Estado 2 — Nascimento**:
+```
+[emoji do monstro]
+[Nome do Monstro]  [raridade com cor]
+Classe: [classe]
+HP: [hp]
+[Botão "Confirmar! 🎉"]
+```
+
+### 52.4 API
+
+```javascript
+showEggHatchModal(monster)
+// Parâmetro: instância do monstro nascido
+// Retorna: Promise<void>
+// Uso: await showEggHatchModal(result.monster)
+// Bloqueante até botão "Confirmar" ser clicado
+
+initEggHatchModal()
+// Pré-cria o elemento DOM do modal (opcional — modal auto-cria se não chamado)
+```
+
+### 52.5 Cores por Raridade no Modal
+
+| Raridade | Cor |
+|----------|-----|
+| Comum | #4CAF50 (verde) |
+| Incomum | #2196F3 (azul) |
+| Raro | #9C27B0 (roxo) |
+| Místico | #FF9800 (laranja) |
+| Lendário | #F44336 (vermelho) |
+
+---
+
+## 53. EggUI — Integração de Ovos com a UI
+
+> Source of truth: `js/data/eggUI.js` (PR14A + PR14B)
+
+### 53.1 Responsabilidade
+
+Ponte entre `eggHatcher.js` (lógica) e `eggHatchModal.js` (visual). Registra handlers de UI para botões de chocar ovo.
+
+### 53.2 Fluxo handleHatchEgg
+
+```javascript
+handleHatchEgg(playerId, eggItemId, gameState, saveCallback, updateCallback, toastCallback)
+  1. Chama hatchEgg(gameState, playerId, eggItemId)
+  2. Se success:
+     a. await showEggHatchModal(result.monster)  ← bloqueante
+     b. saveCallback()                           ← salva após modal fechar
+     c. updateCallback()                         ← atualiza UI
+     d. toastCallback(`${monster.name} adicionado! 🎉`)
+  3. Se erro: toastCallback(result.message) ou alert()
+  → Retorna: boolean (true=sucesso, false=falha)
+```
+
+### 53.3 Botão de Chocar no Inventário
+
+```javascript
+renderEggActionButton(playerId, eggItemId, quantity)
+// Retorna HTML do botão "🐣 Chocar Ovo"
+// Chama window.hatchEggUI(playerId, eggItemId) ao clicar
+// Retorna '' se quantity <= 0
+```
+
+### 53.4 Inicialização
+
+```javascript
+initEggUI({ gameState, saveGame, updateViews, showToast })
+// Registra window.hatchEggUI como função global acessível pelo HTML
+// Necessário chamar uma vez antes de usar renderEggActionButton
+```
+
+### 53.5 Sequência Completa (ciclo de vida de um ovo)
+
+```
+1. renderEggActionButton()     → HTML do botão no inventário
+2. [usuário clica]
+3. window.hatchEggUI()         → chama handleHatchEgg()
+4. hatchEgg()                  → sorteia monstro, remove ovo
+5. showEggHatchModal()         → ⏳ Incubando... → 🎉 Nascimento!
+6. [usuário confirma]
+7. saveCallback()              → persistência
+8. updateCallback()            → re-render inventário/time
+9. toastCallback()             → notificação
+```
+
+---
+
+## 54. Histórico de Testes Atualizado
+
+| Fase | Módulo/PR | Testes Passando | Arquivos |
+|------|-----------|----------------:|--------:|
+| Fase 1 | Combat MVP | ~1.700 | 55 |
+| Fase 2 | canonLoader | 1.995 | 60 |
+| Fase 3 | speciesBridge | 2.054 | 62 |
+| Fase 4.0 | speciesPassives (shieldhorn/emberfang) | 2.091 | 63 |
+| Fase 4.1 | speciesPassives (moonquill/floracura) | 2.129 | 64 |
+| Fase 4.2 | speciesPassives (guardas isFirstHit/isOffensive) | 2.165 | 65 |
+| Fase 4.3 | speciesPassives (skillType explícito) | 2.189 | 66 |
+| Fase 5 | slotUnlocks | 2.228 | 67 |
+| Fase 6 | kitSwap | 2.268 | 68 |
+| Fase 6.1 | kitSwapAudit | 2.307 | 69 |
+| Estado atual | — | — | 63 test files¹ |
+
+> ¹ `speciesPassives.js`, `kitSwap.js` e `tests/kitSwapPromotion.test.js` mencionados em memórias de sessão anteriores **não existem no repositório atual**. As memórias referem-se a implementações planejadas ou em branches separados ainda não mergeados.
+
+> **Comando para executar:** `npx vitest run`
+
+---
+
 *Documento gerado a partir do código real do repositório em 2026-04-03.*
-*Atualizado com seções 35–49 em 2026-04-03.*
-*Próxima revisão: após implementação de evolução automática ou expansão de espécies canônicas.*
+*Atualizado com seções 50–54 em 2026-04-03.*
+*Estado atual: cobertura completa de todos os módulos existentes no repositório.*
