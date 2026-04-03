@@ -361,7 +361,7 @@ describe('Fase 8 — cobertura do bridge com catálogo completo', () => {
 
     it('unmapped do catálogo completo não deve conter nenhum template MVP de base ou evolução', () => {
         const unmapped = getUnmappedTemplateIds(FULL_CATALOG);
-        // Todos estes devem estar mapeados após Fase 9
+        // Todos estes devem estar mapeados após Fase 10
         const expectedMapped = [
             'MON_002', 'MON_002B', 'MON_002C',
             'MON_010', 'MON_010B', 'MON_010C', 'MON_010D',
