@@ -539,7 +539,7 @@ export function promoteKitSwaps(instance) {
         : 1;
 
     // Mapa de promoções já realizadas (para evitar promover duas vezes)
-    const alreadyPromoted = new Set(
+    const alreadyPromotedSwapIds = new Set(
         Array.isArray(instance.promotedKitSwaps)
             ? instance.promotedKitSwaps.map(p => p.fromSwapId)
             : []
@@ -550,7 +550,7 @@ export function promoteKitSwaps(instance) {
         if (!swapId) continue;
 
         // Verificar se já foi promovido anteriormente
-        if (alreadyPromoted.has(swapId)) continue;
+        if (alreadyPromotedSwapIds.has(swapId)) continue;
 
         const promotionDef = KIT_SWAP_PROMOTION_TABLE[swapId];
 

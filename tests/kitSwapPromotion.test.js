@@ -31,7 +31,7 @@ import {
 /**
  * Cria uma instância mínima com appliedKitSwaps simulando o resultado da Fase 6.
  */
-function makeInstanceWithSwap({ canonSpeciesId, swapId, slot, unlockedSkillSlots, level, promotedKitSwaps }) {
+function makeInstanceWithSwap({ canonSpeciesId, swapId, slot, unlockedSkillSlots, level, existingPromotedKitSwaps }) {
     return {
         canonSpeciesId,
         unlockedSkillSlots: unlockedSkillSlots ?? 4,
@@ -39,7 +39,7 @@ function makeInstanceWithSwap({ canonSpeciesId, swapId, slot, unlockedSkillSlots
         appliedKitSwaps: swapId
             ? [{ slot: slot ?? 1, canonSkillId: 'any', replacementId: swapId, action: 'replaced', originalSkill: null }]
             : [],
-        promotedKitSwaps: promotedKitSwaps ?? undefined,
+        promotedKitSwaps: existingPromotedKitSwaps ?? undefined,
     };
 }
 

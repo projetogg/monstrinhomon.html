@@ -5023,6 +5023,12 @@
                     },
 
                     // Kit swap promotion (Fase 7) — delega para window.KitSwap.promoteKitSwaps
+                    /**
+                     * Verifica e aplica promoções de kit_swap após level up.
+                     * Seguro: erros são suprimidos para não interromper o level up.
+                     * @param {object} mon - Instância do monstrinho (modificada in-place).
+                     * @param {Array} logArr - Array de log do encounter (opcional).
+                     */
                     promoteKitSwapsForInstance: function(mon, logArr) {
                         try {
                             if (!mon || !mon.canonSpeciesId) return;
@@ -5047,6 +5053,7 @@
                             mon.blockedKitSwapPromotions = result.blockedKitSwapPromotions;
                         } catch (e) {
                             // Fallback silencioso — não quebra o level up
+                            console.warn('[Fase 7] promoteKitSwapsForInstance falhou:', e && e.message);
                         }
                     },
                     
