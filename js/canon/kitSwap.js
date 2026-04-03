@@ -692,6 +692,9 @@ export function getEffectiveSkills(instance, baseSkills) {
         if (idx < skills.length) {
             skills[idx] = effectiveSkill;
         } else {
+            // Preenche lacunas com null quando targetSlot está além do array atual.
+            // Isso ocorre para swaps de slot 4 (ADD) em instâncias com <4 skills legadas.
+            // Os slots intermediários nulos são ignorados na renderização e no combate.
             while (skills.length < idx) skills.push(null);
             skills.push(effectiveSkill);
         }

@@ -254,7 +254,7 @@ describe('getEffectiveSkills — emberfang (slot 4, swap + promoção)', () => {
         const instance = makeInstance({ canonSpeciesId: 'emberfang', unlockedSkillSlots: 3, level: 60 });
         const result = getEffectiveSkills(instance, BASE_SKILLS_BARBARO);
         expect(result).toHaveLength(BASE_SKILLS_BARBARO.length);
-        expect(result.every(s => !s || s.name !== 'Explosão Bruta I')).toBe(true);
+        expect(result.every(s => s.name !== 'Explosão Bruta I')).toBe(true);
     });
 
     it('Explosão Bruta II deve ter eficiência < teto tier-3 (3.17 pwr/ENE)', () => {
