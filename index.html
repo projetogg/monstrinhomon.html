@@ -581,6 +581,10 @@
         import * as SpeciesBridge from './js/canon/speciesBridge.js';
         window.SpeciesBridge = SpeciesBridge;
 
+        // Slot Unlocks — Fase 5: desbloqueio de slots de habilidade por nível (camada canônica)
+        import * as SlotUnlocks from './js/canon/slotUnlocks.js';
+        window.SlotUnlocks = SlotUnlocks;
+
         // Inicia o carregamento canônico imediatamente após o parse do módulo,
         // antes de qualquer chamada a init(). Isso garante que o fetch já estará
         // em andamento quando init() fizer await applyCanonToConfig().
@@ -2930,6 +2934,32 @@
          * - ene/eneMax: ENE atual/máximo
          * - level, xp, buffs, class, rarity
          */
+
+        /**
+         * Calcula o número de slots de habilidade desbloqueados para um nível dado.
+         * Usa window.SlotUnlocks (camada canônica) se disponível; fallback inline em caso contrário.
+         * Centraliza a lógica para evitar duplicação em createMonsterInstanceFromTemplate e createProgressionDeps.
+         *
+         * @param {number} lvl - Nível do monstrinho
+         * @returns {{ slots: number, source: string }}
+         */
+        function _resolveUnlockedSlots(lvl) {
+            try {
+                if (typeof window !== 'undefined' && window.SlotUnlocks && window.SlotUnlocks.getUnlockedSlotsForLevel) {
+                    return {
+                        slots: window.SlotUnlocks.getUnlockedSlotsForLevel(lvl),
+                        source: 'canon_level_progression',
+                    };
+                }
+            } catch (_err) {
+                // SlotUnlocks não disponível — usar fallback
+            }
+            // Fallback inline: espelha design/canon/level_progression.json (Fase 5)
+            const l = Math.max(1, Number(lvl) || 0);
+            const slots = l >= 30 ? 4 : l >= 15 ? 3 : l >= 5 ? 2 : 1;
+            return { slots, source: 'fallback_hardcoded' };
+        }
+
         function createMonsterInstanceFromTemplate(templateId, level = 1, rarity = null, overrides = {}) {
             try {
                 // 1. Buscar template no catálogo
@@ -2988,6 +3018,19 @@
                 } catch (bridgeErr) {
                     console.warn('[Factory] speciesBridge falhou; usando stats legados.', bridgeErr);
                 }
+
+                // 5c. Calcular slots de habilidade desbloqueados baseado no nível (Fase 5)
+                // Usa SlotUnlocks (camada canônica) se disponível; fallback inline caso contrário.
+                // Não quebra se window.SlotUnlocks não estiver carregado.
+                let unlockedSkillSlots = 1;
+                let _slotUnlockSource = 'fallback_hardcoded';
+                try {
+                    const slotResult = _resolveUnlockedSlots(level);
+                    unlockedSkillSlots = slotResult.slots;
+                    _slotUnlockSource  = slotResult.source;
+                } catch (slotErr) {
+                    console.warn('[Factory] _resolveUnlockedSlots falhou; usando slot 1.', slotErr);
+                }
                 
                 // 6. Criar instância com campos canônicos
                 const instance = {
@@ -3039,6 +3082,11 @@
                     // Canon species metadata (Fase 3) — null quando não há mapeamento
                     canonSpeciesId: canonSpeciesId,
                     canonAppliedOffsets: canonAppliedOffsets,
+
+                    // Slots de habilidade desbloqueados (Fase 5) — camada canônica
+                    // Fonte: design/canon/level_progression.json via SlotUnlocks
+                    unlockedSkillSlots: unlockedSkillSlots,  // número de slots disponíveis (1-4)
+                    _slotUnlockSource: _slotUnlockSource,    // rastreabilidade: 'canon_level_progression' | 'fallback_hardcoded'
                 };
                 
                 // 7. Aplicar overrides (ex: nickname personalizado, ownerId, etc.)
@@ -4940,6 +4988,11 @@
                     // Evolution and skills
                     maybeEvolveAfterLevelUp: maybeEvolveAfterLevelUp,
                     maybeUpgradeSkillsModelB: maybeUpgradeSkillsModelB,
+
+                    // Slot unlocks (Fase 5) — delega para _resolveUnlockedSlots com fallback seguro
+                    getUnlockedSlotsForLevel: function(lvl) {
+                        return _resolveUnlockedSlots(lvl).slots;
+                    },
                     
                     // Stats tracking
                     updateStats: updateStats,
