@@ -1,5 +1,5 @@
 /**
- * SPECIES BRIDGE — Fase 3 de integração canônica
+ * SPECIES BRIDGE — Fase 3 / Fase 8 de integração canônica
  *
  * Ponte explícita entre IDs/templates do runtime e species_ids canônicos.
  * Aplica offsets de stats de espécie durante a criação de instâncias.
@@ -97,9 +97,91 @@ export const RUNTIME_TO_CANON_SPECIES = {
     //   ATK mínimo e ENE alto são o arquétipo floracura em sua forma mais clara.
     'MON_028': 'floracura',
 
+    // ── Guerreiro — evoluções da linha Pedrino (shieldhorn) ─────────────────
+    // Pedronar: ATK 10, DEF 8 — continua equilibrado/defensivo; offsets
+    //   (def+1, atk-1) reforçam o arquétipo shieldhorn sem distorcer.
+    'MON_002B': 'shieldhorn',
+    // Pedragon: ATK 14, DEF 11 — DEF cresce proporcionalmente ao ATK;
+    //   mantém o perfil defensivo da linha evolutiva.
+    'MON_002C': 'shieldhorn',
+
+    // ── Guerreiro — evoluções da linha Ferrozimon (shieldhorn) ──────────────
+    // Cavalheiromon: ATK 10, DEF 12 — DEF claramente dominante; arquétipo
+    //   tank_puro inequívoco nesta evolução.
+    'MON_010B': 'shieldhorn',
+    // Kinguespinhomon: ATK 14, DEF 16 — DEF dominante; perfil tank mais
+    //   pronunciado que o estágio base.
+    'MON_010C': 'shieldhorn',
+    // Arconouricomon: ATK 17, DEF 17 — alto em ambos, mas DEF não fica atrás
+    //   de ATK; mantém identidade tank da linha.
+    'MON_010D': 'shieldhorn',
+
+    // ── Guerreiro — evoluções da linha Cascalhimon (shieldhorn) ─────────────
+    // Muralhimon: ATK 9, DEF 12 — perfil fortemente defensivo; evolução
+    //   natural do tank Cascalhimon.
+    'MON_026B': 'shieldhorn',
+    // Bastiaomon: ATK 11, DEF 16 — DEF muito acima de ATK; arquétipo
+    //   tank_puro em sua forma mais clara nesta linha.
+    'MON_026C': 'shieldhorn',
+
+    // ── Bárbaro — evoluções da linha Tamborilhomon (emberfang) ──────────────
+    // Rufamon: ATK 11, DEF 8 — ATK alto; mantém arquétipo burst da linha.
+    'MON_021B': 'emberfang',
+    // Trovatambormon: ATK 14, DEF 10 — ATK cresce consistentemente; perfil
+    //   burst_agressivo preservado.
+    'MON_021C': 'emberfang',
+
+    // ── Bárbaro — evoluções da linha Tigrumo (emberfang) ────────────────────
+    // Rugigron: ATK 13, DEF 6 — alto ATK, fragilidade intencional;
+    //   arquétipo burst inequívoco.
+    'MON_029B': 'emberfang',
+    // Bestigrar: ATK 17, DEF 9 — ATK muito alto; fragil relativo; perfil
+    //   emberfang em sua forma mais pronunciada.
+    'MON_029C': 'emberfang',
+
+    // ── Mago — evoluções da linha Lagartomon (moonquill) ────────────────────
+    // Salamandromon: ATK 8, DEF 6, ENE 11 — ENE dominante sobre ATK/DEF;
+    //   controle_leve preservado.
+    'MON_014B': 'moonquill',
+    // Dracoflamemon: ATK 12, DEF 8, ENE 14 — ENE cresce mais que ATK;
+    //   arquétipo de controle se acentua na evolução.
+    'MON_014C': 'moonquill',
+    // Wizardragomon: ATK 15, DEF 10, ENE 18 — ENE muito dominante;
+    //   forma mais pura do arquétipo controle_leve na linha.
+    'MON_014D': 'moonquill',
+
+    // ── Mago — evoluções da linha Coralimon (moonquill) ─────────────────────
+    // Recifalmon: ATK 8, DEF 7, ENE 12 — ENE dominante, perfil defensivo/
+    //   controle mantido; encaixa moonquill.
+    'MON_024B': 'moonquill',
+    // Abissalquimon: ATK 10, DEF 9, ENE 15 — ENE claramente dominante;
+    //   controle_leve inequívoco.
+    'MON_024C': 'moonquill',
+
+    // ── Curandeiro — evoluções da linha Gotimon (floracura) ─────────────────
+    // Lirialmon: ATK 6, DEF 6, ENE 12 — ENE alto, perfil healer estável;
+    //   offset (hp+1, ene+1, agi-1) continua coerente.
+    'MON_020B': 'floracura',
+    // Serafloramon: ATK 7, DEF 9, ENE 16 — ENE dominante, DEF acima da
+    //   média; suporte defensivo — floracura claro.
+    'MON_020C': 'floracura',
+
+    // ── Curandeiro — evoluções da linha Nutrilo (floracura) ─────────────────
+    // Silvelio: ATK 5, DEF 7, ENE 14 — suporte quase puro; ATK mínimo
+    //   e ENE alto são o arquétipo floracura continuado.
+    'MON_028B': 'floracura',
+    // Auravelo: ATK 7, DEF 10, ENE 17 — ENE muito dominante, DEF alta;
+    //   healer defensivo de alta sustentação — floracura inequívoco.
+    'MON_028C': 'floracura',
+
     // ── Sem mapeamento — justificativas ─────────────────────────────────────
     // MON_100 (Rato-de-Lama, Guerreiro): ATK 5, DEF 3, HP 20 — stats fracos
     //   sem perfil defensivo claro; não se encaixa em tank_puro. Sem mapeamento.
+    //
+    // Bardo (MON_001, MON_011/B/C/D, MON_027/B/C): sem espécie canônica de Bardo.
+    // Caçador (MON_005, MON_013/B/C/D, MON_025/B/C): sem espécie canônica de Caçador.
+    // Ladino (MON_008, MON_022/B/C, MON_030/B/C): sem espécie canônica de Ladino.
+    // Animalista (MON_006, MON_012/B/C/D, MON_023/B/C): sem espécie canônica de Animalista.
 };
 
 // ---------------------------------------------------------------------------
