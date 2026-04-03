@@ -5242,6 +5242,32 @@
             else if (mon.templateId != null) mon.templateId = String(nextTemplate.id);
             else mon.monsterId = String(nextTemplate.id);
 
+            // ── DECISÃO ARQUITETURAL (Fase 7.3) ─────────────────────────────
+            // canonSpeciesId NÃO é recalculado aqui e NÃO deve ser.
+            //
+            // A identidade canônica de espécie (canonSpeciesId) foi resolvida
+            // uma única vez em createMonsterInstanceFromTemplate() via
+            // speciesBridge.resolveAndApply(templateId, ...). Ela fica gravada
+            // diretamente na instância e sobrevive a todas as evoluções.
+            //
+            // Por quê?
+            //   - Templates evoluídos (ex: MON_010B, MON_010C) não têm entrada
+            //     em RUNTIME_TO_CANON_SPECIES — apenas os estágios base são
+            //     mapeados explicitamente por decisão de design (Fase 3.2).
+            //   - Rederivar canonSpeciesId usando nextTemplate.id aqui
+            //     retornaria null para templates evoluídos, quebrando
+            //     silenciosamente passivas, kit swap e promoção.
+            //
+            // O que NÃO fazer:
+            //   ❌ mon.canonSpeciesId = window.SpeciesBridge?.resolveCanonSpeciesId(nextTemplate.id)
+            //   ❌ mon.canonSpeciesId = null
+            //   ❌ delete mon.canonSpeciesId
+            //
+            // Para mudar isso no futuro: adicione o template evoluído em
+            // RUNTIME_TO_CANON_SPECIES com justificativa, e ajuste apenas a
+            // tabela de mapeamento — nunca recalcule inline no fluxo de evolução.
+            // ────────────────────────────────────────────────────────────────
+
             // Atualiza campos visuais e de gameplay se existirem no template
             if (nextTemplate.name || nextTemplate.nome) mon.name = (nextTemplate.name || nextTemplate.nome);
             if (nextTemplate.emoji) mon.emoji = nextTemplate.emoji;

@@ -179,6 +179,33 @@ export function applyStatOffsets(stats, offsets) {
  * Fallback seguro: se não houver mapeamento, species inativa ou dados canônicos
  * não carregados, retorna os stats originais sem modificação.
  *
+ * ── DECISÃO ARQUITETURAL (Fase 7.3) ─────────────────────────────────────────
+ *
+ * Esta função é chamada UMA ÚNICA VEZ, durante a criação da instância em
+ * createMonsterInstanceFromTemplate(). O resultado (canonSpeciesId) é
+ * armazenado diretamente na instância e NÃO deve ser recalculado depois.
+ *
+ * REGRA: canonSpeciesId é a identidade canônica da espécie resolvida no
+ * momento da criação. Ele é PRESERVADO ao longo de evoluções.
+ *
+ * Por que não rederivar após a evolução?
+ *   - Quando um monstrinho evolui, seu templateId muda (ex: MON_010 → MON_010B).
+ *   - MON_010B NÃO tem entrada na tabela RUNTIME_TO_CANON_SPECIES —
+ *     apenas os templates base (estágio 0) são mapeados.
+ *   - Rederivar a partir do templateId pós-evolução retornaria null,
+ *     apagando silenciosamente a identidade de espécie e quebrando:
+ *       • passivas (resolvePassiveModifier lê canonSpeciesId)
+ *       • kit swap (applyKitSwaps/getEffectiveSkills leem canonSpeciesId)
+ *       • promoção de kit swap (promoteKitSwaps lê canonSpeciesId)
+ *
+ * COMO EXPANDIR NO FUTURO:
+ *   - Se uma evolução precisar de espécie canônica diferente, adicione uma
+ *     entrada explícita para o templateId evoluído em RUNTIME_TO_CANON_SPECIES,
+ *     com justificativa documentada. Não toque em canonSpeciesId da instância
+ *     diretamente no fluxo de evolução.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
  * @param {string} templateId - ID do template runtime (ex: 'MON_010')
  * @param {{ hpMax: number, atk: number, def: number, spd: number, eneMax: number }} stats
  *   Stats base calculados pelo runtime.
