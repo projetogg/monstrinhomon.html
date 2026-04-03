@@ -80,12 +80,12 @@ describe('data/locations.json - Estrutura e Esquema', () => {
         expect(Array.isArray(data.locations)).toBe(true);
     });
 
-    it('deve ter 8 locais definidos', () => {
-        expect(data.locations.length).toBe(8);
+    it('deve ter pelo menos 8 locais definidos (inclui sub-áreas progressivas)', () => {
+        expect(data.locations.length).toBeGreaterThanOrEqual(8);
     });
 
     it('todos os locais devem ter campos obrigatórios', () => {
-        const required = ['id', 'name', 'description', 'biome', 'recommendedLevel', 'encounterPool'];
+        const required = ['id', 'name', 'description', 'biome', 'levelRange', 'speciesPoolsByRarity'];
         for (const loc of data.locations) {
             for (const field of required) {
                 expect(loc[field], `${loc.id} falta campo "${field}"`).toBeDefined();
@@ -108,33 +108,44 @@ describe('data/locations.json - Estrutura e Esquema', () => {
         }
     });
 
-    it('recommendedLevel deve ser array com [min, max]', () => {
+    it('levelRange deve ser array com [min, max]', () => {
         for (const loc of data.locations) {
-            expect(Array.isArray(loc.recommendedLevel), `${loc.id} recommendedLevel deve ser array`).toBe(true);
-            expect(loc.recommendedLevel.length, `${loc.id} recommendedLevel deve ter 2 elementos`).toBe(2);
-            expect(loc.recommendedLevel[0], `${loc.id} nível mínimo deve ser positivo`).toBeGreaterThan(0);
+            expect(Array.isArray(loc.levelRange), `${loc.id} levelRange deve ser array`).toBe(true);
+            expect(loc.levelRange.length, `${loc.id} levelRange deve ter 2 elementos`).toBe(2);
+            expect(loc.levelRange[0], `${loc.id} nível mínimo deve ser positivo`).toBeGreaterThan(0);
             expect(
-                loc.recommendedLevel[1],
+                loc.levelRange[1],
                 `${loc.id} nível máximo deve ser >= mínimo`
-            ).toBeGreaterThanOrEqual(loc.recommendedLevel[0]);
+            ).toBeGreaterThanOrEqual(loc.levelRange[0]);
         }
     });
 
-    it('encounterPool não deve estar vazio', () => {
+    it('speciesPoolsByRarity.Comum não deve estar vazio', () => {
         for (const loc of data.locations) {
             expect(
-                loc.encounterPool.length,
-                `${loc.id} encounterPool está vazio`
+                (loc.speciesPoolsByRarity?.Comum || []).length,
+                `${loc.id} pool Comum está vazio`
             ).toBeGreaterThan(0);
         }
     });
 
-    it('rarePool deve ser array (pode ser vazio)', () => {
+    it('speciesPoolsByRarity deve ter arrays para todas as raridades', () => {
+        const raridades = ['Comum', 'Incomum', 'Raro', 'Místico', 'Lendário'];
         for (const loc of data.locations) {
-            expect(
-                Array.isArray(loc.rarePool),
-                `${loc.id} rarePool deve ser array`
-            ).toBe(true);
+            for (const r of raridades) {
+                expect(
+                    Array.isArray(loc.speciesPoolsByRarity[r]),
+                    `${loc.id} speciesPoolsByRarity.${r} deve ser array`
+                ).toBe(true);
+            }
+        }
+    });
+
+    it('rarityWeights devem existir e somar ~100', () => {
+        for (const loc of data.locations) {
+            expect(loc.rarityWeights, `${loc.id} falta rarityWeights`).toBeDefined();
+            const total = Object.values(loc.rarityWeights).reduce((s, v) => s + v, 0);
+            expect(total, `${loc.id} rarityWeights deve somar 100`).toBeCloseTo(100, 0);
         }
     });
 
@@ -152,36 +163,31 @@ describe('data/locations.json - Referências de Monstros', () => {
     const monData = loadMonstersJson();
     const monsterIds = new Set(monData.monsters.map(m => m.id));
 
-    it('todos os IDs em encounterPool devem existir no catálogo', () => {
+    /** Retorna todos os IDs de monstros de todos os pools de uma localização */
+    function allPoolIds(loc) {
+        const pools = loc.speciesPoolsByRarity ?? {};
+        return Object.values(pools).flat();
+    }
+
+    it('todos os IDs em speciesPoolsByRarity devem existir no catálogo', () => {
         for (const loc of locData.locations) {
-            for (const mId of loc.encounterPool) {
+            for (const mId of allPoolIds(loc)) {
                 expect(
                     monsterIds.has(mId),
-                    `${loc.id}.encounterPool: "${mId}" não existe no catálogo`
+                    `${loc.id}.speciesPoolsByRarity: "${mId}" não existe no catálogo`
                 ).toBe(true);
             }
         }
     });
 
-    it('todos os IDs em rarePool devem existir no catálogo', () => {
+    it('não deve haver IDs duplicados dentro dos pools de uma mesma localização', () => {
         for (const loc of locData.locations) {
-            for (const mId of loc.rarePool) {
-                expect(
-                    monsterIds.has(mId),
-                    `${loc.id}.rarePool: "${mId}" não existe no catálogo`
-                ).toBe(true);
-            }
-        }
-    });
-
-    it('não deve haver IDs duplicados dentro do mesmo pool', () => {
-        for (const loc of locData.locations) {
-            const combined = [...loc.encounterPool, ...loc.rarePool];
-            const unique = new Set(combined);
+            const ids = allPoolIds(loc);
+            const unique = new Set(ids);
             expect(
                 unique.size,
                 `${loc.id} tem IDs duplicados nos pools`
-            ).toBe(combined.length);
+            ).toBe(ids.length);
         }
     });
 });
@@ -192,94 +198,111 @@ describe('data/locations.json - Coerência de Progressão', () => {
     const monData = loadMonstersJson();
     const monsterMap = new Map(monData.monsters.map(m => [m.id, m]));
 
-    it('LOC_001 (tutorial) só deve ter monstros de estágio 0 (formas base)', () => {
+    /** Retorna todos os IDs de monstros de todos os pools de uma localização */
+    function allPoolIds(loc) {
+        const pools = loc.speciesPoolsByRarity ?? {};
+        return Object.values(pools).flat();
+    }
+
+    it('LOC_001 (tutorial) só deve ter monstros de estágio 0 (formas base) no pool Comum', () => {
         const tutorial = locData.locations.find(l => l.id === 'LOC_001');
-        const allPool = [...tutorial.encounterPool, ...tutorial.rarePool];
-        for (const mId of allPool) {
+        const comumPool = tutorial?.speciesPoolsByRarity?.Comum ?? [];
+        for (const mId of comumPool) {
             expect(
                 getStageFromId(mId),
-                `LOC_001 tem "${mId}" (estágio ${getStageFromId(mId)}) — esperado apenas estágio 0`
+                `LOC_001.Comum tem "${mId}" (estágio ${getStageFromId(mId)}) — esperado apenas estágio 0`
             ).toBe(0);
         }
     });
 
-    it('LOC_001 (tutorial) só deve ter monstros Comuns', () => {
+    it('LOC_001 (tutorial) pool Comum só deve ter monstros de raridade Comum', () => {
         const tutorial = locData.locations.find(l => l.id === 'LOC_001');
-        const allPool = [...tutorial.encounterPool, ...tutorial.rarePool];
-        for (const mId of allPool) {
+        const comumPool = tutorial?.speciesPoolsByRarity?.Comum ?? [];
+        for (const mId of comumPool) {
             const monster = monsterMap.get(mId);
             expect(
                 monster.rarity,
-                `LOC_001 tem "${mId}" com raridade "${monster.rarity}" — esperado apenas Comum`
+                `LOC_001.Comum tem "${mId}" com raridade "${monster.rarity}" — esperado apenas Comum`
             ).toBe('Comum');
         }
     });
 
-    it('locais iniciais (nível máx ≤ 10) não devem ter monstros Raros+ no encounterPool', () => {
-        const earlyLocs = locData.locations.filter(l => l.recommendedLevel[1] <= 10);
+    it('locais iniciais (nível máx ≤ 10) não devem ter monstros Raros+ no pool Comum', () => {
+        const earlyLocs = locData.locations.filter(l => l.levelRange[1] <= 10);
         for (const loc of earlyLocs) {
-            for (const mId of loc.encounterPool) {
+            for (const mId of (loc.speciesPoolsByRarity?.Comum ?? [])) {
                 const monster = monsterMap.get(mId);
                 const rarityIdx = RARITY_ORDER.indexOf(monster.rarity);
                 expect(
                     rarityIdx,
-                    `${loc.id}.encounterPool: "${mId}" é ${monster.rarity} — locais iniciais não devem ter Raro+`
+                    `${loc.id}.Comum: "${mId}" é ${monster.rarity} — locais iniciais não devem ter Raro+ no pool Comum`
                 ).toBeLessThan(RARITY_ORDER.indexOf('Raro'));
             }
         }
     });
 
-    it('locais iniciais (nível máx ≤ 10) não devem ter monstros de estágio 2+ no encounterPool', () => {
-        const earlyLocs = locData.locations.filter(l => l.recommendedLevel[1] <= 10);
+    it('locais iniciais (nível máx ≤ 10) não devem ter monstros de estágio 2+ no pool Comum', () => {
+        const earlyLocs = locData.locations.filter(l => l.levelRange[1] <= 10);
         for (const loc of earlyLocs) {
-            for (const mId of loc.encounterPool) {
+            for (const mId of (loc.speciesPoolsByRarity?.Comum ?? [])) {
                 expect(
                     getStageFromId(mId),
-                    `${loc.id}.encounterPool: "${mId}" é estágio ${getStageFromId(mId)} — locais iniciais devem ter apenas estágio 0-1`
+                    `${loc.id}.Comum: "${mId}" é estágio ${getStageFromId(mId)} — locais iniciais devem ter apenas estágio 0-1 no pool Comum`
                 ).toBeLessThan(2);
             }
         }
     });
 
-    it('locais avançados (nível mín ≥ 15) devem ter pelo menos 1 monstro Incomum ou melhor', () => {
-        const advancedLocs = locData.locations.filter(l => l.recommendedLevel[0] >= 15);
+    it('locais avançados (nível mín ≥ 15) devem ter pelo menos 1 monstro Incomum ou melhor em todos os pools', () => {
+        const advancedLocs = locData.locations.filter(l => l.levelRange[0] >= 15);
         for (const loc of advancedLocs) {
-            const allPool = [...loc.encounterPool, ...loc.rarePool];
-            const hasIncomumPlus = allPool.some(mId => {
+            const allIds = allPoolIds(loc);
+            const hasIncomumPlus = allIds.some(mId => {
                 const monster = monsterMap.get(mId);
                 return RARITY_ORDER.indexOf(monster.rarity) >= RARITY_ORDER.indexOf('Incomum');
             });
             expect(
                 hasIncomumPlus,
-                `${loc.id} (lv ${loc.recommendedLevel[0]}+) deveria ter pelo menos 1 Incomum+`
+                `${loc.id} (lv ${loc.levelRange[0]}+) deveria ter pelo menos 1 Incomum+`
             ).toBe(true);
         }
     });
 
-    it('locais avançados (nível mín ≥ 20) devem ter pelo menos 1 monstro Raro ou melhor', () => {
-        const veryAdvancedLocs = locData.locations.filter(l => l.recommendedLevel[0] >= 20);
+    it('locais avançados (nível mín ≥ 20) devem ter pelo menos 1 monstro Raro ou melhor em todos os pools', () => {
+        const veryAdvancedLocs = locData.locations.filter(l => l.levelRange[0] >= 20);
         for (const loc of veryAdvancedLocs) {
-            const allPool = [...loc.encounterPool, ...loc.rarePool];
-            const hasRaroPlus = allPool.some(mId => {
+            const allIds = allPoolIds(loc);
+            const hasRaroPlus = allIds.some(mId => {
                 const monster = monsterMap.get(mId);
                 return RARITY_ORDER.indexOf(monster.rarity) >= RARITY_ORDER.indexOf('Raro');
             });
             expect(
                 hasRaroPlus,
-                `${loc.id} (lv ${loc.recommendedLevel[0]}+) deveria ter pelo menos 1 Raro+`
+                `${loc.id} (lv ${loc.levelRange[0]}+) deveria ter pelo menos 1 Raro+`
             ).toBe(true);
         }
     });
 
     it('monstros de estágio D (forma final) não devem aparecer em locais iniciais (nível máx ≤ 15)', () => {
-        const nonLateGameLocs = locData.locations.filter(l => l.recommendedLevel[1] <= 15);
+        const nonLateGameLocs = locData.locations.filter(l => l.levelRange[1] <= 15);
         for (const loc of nonLateGameLocs) {
-            const allPool = [...loc.encounterPool, ...loc.rarePool];
-            for (const mId of allPool) {
+            for (const mId of allPoolIds(loc)) {
                 expect(
                     getStageFromId(mId),
                     `${loc.id} tem "${mId}" (estágio D — forma final) — não permitido em locais de nível máx ≤ 15`
                 ).toBeLessThan(3);
+            }
+        }
+    });
+
+    it('tier deve ser string válida (T0-T6)', () => {
+        const validTiers = new Set(['T0', 'T1', 'T2', 'T3', 'T4', 'T5', 'T6']);
+        for (const loc of locData.locations) {
+            if (loc.tier) {
+                expect(
+                    validTiers.has(loc.tier),
+                    `${loc.id} tem tier inválido "${loc.tier}"`
+                ).toBe(true);
             }
         }
     });
@@ -426,14 +449,15 @@ describe('ENCOUNTERS.csv - Integridade', () => {
         }
     });
 
-    it('cada local deve ter pelo menos 2 encontros', () => {
+    it('cada local_id presente no ENCOUNTERS.csv deve ter pelo menos 2 encontros', () => {
+        // Verifica apenas os locais que aparecem no CSV (o CSV legado cobre os 8 originais)
         const byLocal = {};
         for (const enc of encounters) {
             byLocal[enc.local_id] = (byLocal[enc.local_id] || 0) + 1;
         }
-        for (const locId of validLocIds) {
+        for (const [locId, count] of Object.entries(byLocal)) {
             expect(
-                byLocal[locId] || 0,
+                count,
                 `${locId} deve ter pelo menos 2 encontros`
             ).toBeGreaterThanOrEqual(2);
         }
@@ -464,9 +488,10 @@ describe('ENCOUNTERS.csv ↔ data/locations.json - Consistência Cruzada', () =>
     const encounters = parseCSV('ENCOUNTERS.csv');
     const locData = loadLocationsJson();
 
-    it('pools de LOC_001 em locations.json devem cobrir monstros do ENCOUNTERS.csv para LOC_001', () => {
+    it('todos os monstros do ENCOUNTERS.csv de LOC_001 devem estar nos pools de LOC_001', () => {
         const tutorial = locData.locations.find(l => l.id === 'LOC_001');
-        const tutorialPool = new Set([...tutorial.encounterPool, ...tutorial.rarePool]);
+        const tutorialPools = tutorial?.speciesPoolsByRarity ?? {};
+        const tutorialPool = new Set(Object.values(tutorialPools).flat());
         const tutorialEncs = encounters.filter(e => e.local_id === 'LOC_001');
 
         for (const enc of tutorialEncs) {
@@ -475,7 +500,7 @@ describe('ENCOUNTERS.csv ↔ data/locations.json - Consistência Cruzada', () =>
                 if (!mId) continue;
                 expect(
                     tutorialPool.has(mId),
-                    `LOC_001: "${mId}" no ENCOUNTERS.csv mas não em locations.json encounterPool ou rarePool`
+                    `LOC_001: "${mId}" no ENCOUNTERS.csv mas não em speciesPoolsByRarity`
                 ).toBe(true);
             }
         }

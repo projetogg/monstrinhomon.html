@@ -201,11 +201,19 @@ describe('QUESTS.csv - Progressão e Cobertura de Biomas', () => {
     }
 
     it('todos os 8 biomas devem ter pelo menos 1 quest', () => {
-        for (const locId of allLocIds) {
+        // Verifica cobertura de biomas únicos (não todas as sub-áreas).
+        // As sub-áreas progressivas compartilham bioma com a área principal.
+        const biomeToLocIds = {};
+        for (const loc of locData.locations) {
+            if (!biomeToLocIds[loc.biome]) biomeToLocIds[loc.biome] = [];
+            biomeToLocIds[loc.biome].push(loc.id);
+        }
+        for (const [biome, locIds] of Object.entries(biomeToLocIds)) {
+            const hasQuest = locIds.some(locId => (questsByLoc[locId] || []).length > 0);
             expect(
-                (questsByLoc[locId] || []).length,
-                `${locId} não tem nenhuma quest`
-            ).toBeGreaterThanOrEqual(1);
+                hasQuest,
+                `Bioma "${biome}" não tem nenhuma quest (locais: ${locIds.join(', ')})`
+            ).toBe(true);
         }
     });
 
