@@ -1,5 +1,6 @@
 /**
  * KIT SWAP — Fase 6 de integração canônica
+ * Normalizado em Fase 6.1 após auditoria de impacto.
  *
  * Primeira camada funcional de kit_swap canônico.
  * Permite que a espécie influencie a composição do kit de habilidades
@@ -20,6 +21,28 @@
  *  - Evolução automática de skills.
  *  - Swaps em cadeia ou múltiplos por espécie.
  *  - Expansão em massa do catálogo de skills.
+ *
+ * ── FILOSOFIA DOS SWAPS (Fase 6.1) ───────────────────────────────────────────
+ *
+ *  Esta camada de swap é dividida em dois papéis distintos por slot:
+ *
+ *  SLOT 1 — Identidade base de espécie (available desde o nível 1):
+ *   O swap de slot 1 expressa o arquétipo desde o primeiro combate.
+ *   É uma variação do ataque básico da classe que reflete a personalidade
+ *   da espécie: mesma família, custo maior, impacto diferente.
+ *   Exemplo: shieldhorn troca velocidade por força bruta no golpe básico.
+ *
+ *  SLOT 4 — Assinatura avançada de espécie (desbloqueado em nível 30):
+ *   O swap de slot 4 adiciona uma skill exclusiva que não existe no SKILL_DEFS
+ *   legado para esse slot. É a marca de identidade do monstrinho ao maturar.
+ *   Cada assinatura enfatiza o ponto forte do arquétipo (burst, controle, sustain).
+ *   Nunca supera o teto de dano/suporte do tier 3 legado da mesma classe.
+ *
+ *  PRINCÍPIO DE CALIBRAÇÃO (auditado na Fase 6.1):
+ *   Cada swap foi comparado a skills equivalentes no SKILL_DEFS.
+ *   A eficiência por ENE de skills de controle/suporte não pode ser mais
+ *   do que ~50% superior às skills análogas de outras classes no mesmo nível.
+ *   Skills de dano ficam dentro da faixa tier-1 a tier-2 da classe respectiva.
  *
  * ── ESCOPO (Fase 6) ───────────────────────────────────────────────────────────
  *
@@ -73,10 +96,36 @@
 //   replacement:  objeto de skill runtime (mesma estrutura do SKILL_DEFS)
 //
 // ESPÉCIES IMPLEMENTADAS (Fase 6):
-//   shieldhorn — Guerreiro / tank_puro  → slot 1 (sempre disponível)
+//   shieldhorn — Guerreiro / tank_puro      → slot 1 (sempre disponível)
 //   emberfang  — Bárbaro  / burst_agressivo → slot 4 (nível 30)
 //   moonquill  — Mago     / controle_leve   → slot 4 (nível 30)
 //   floracura  — Curandeiro / cura_estavel  → slot 4 (nível 30)
+//
+// AUDITORIA FASE 6.1 — valores verificados contra SKILL_DEFS e fórmulas do runtime:
+//
+//   shieldhorn Golpe Pesado I  (cost 6, pwr 22):
+//     Golpe de Espada I (referência): cost 4, pwr 18 → 4.50 pwr/ENE
+//     Golpe Pesado I (swap):          cost 6, pwr 22 → 3.67 pwr/ENE (−18.4%)
+//     Menos eficiente em ENE, mais força por hit — coerente com tank_puro. ✅
+//
+//   emberfang Explosão Bruta I (cost 8, pwr 32):
+//     Golpe Brutal I (tier 1): cost 6, pwr 24 → 4.00 pwr/ENE
+//     Golpe Brutal II (tier 2): cost 8, pwr 32 → 4.00 pwr/ENE (igual ao tier 2)
+//     Golpe Brutal III (teto):  cost 12, pwr 38 → 3.17 pwr/ENE (abaixo do teto) ✅
+//     Slot 4 = ADD (sem slot legado para Bárbaro). Dentro da faixa tier 1-2. ✅
+//
+//   moonquill Véu Arcano I (cost 4, pwr −3 ATK, 2 turnos) [AJUSTADO Fase 6.1]:
+//     Enfraquecer I (Ladino, ref): cost 4, −2 ATK, 1t → 0.5 ATK-t/ENE
+//     Enfraquecer II (Ladino, ref): cost 6, −3 ATK, 2t → 1.0 ATK-t/ENE
+//     Véu Arcano I pré-ajuste (cost 3): −3 ATK, 2t → 2.0 ATK-t/ENE (2× acima do ref) ❌
+//     Véu Arcano I pós-ajuste (cost 4): −3 ATK, 2t → 1.5 ATK-t/ENE (+50% sobre Ladino) ✅
+//     Custo elevado de 3 → 4 para manter <2× a eficiência do Ladino. ✅
+//
+//   floracura Cura Eficiente I (cost 3, pwr 10):
+//     Cura I (slot 1, ref): cost 5, pwr 15 → 3.00 HP/ENE
+//     Cura Eficiente I:     cost 3, pwr 10 → 3.33 HP/ENE (+11% eficiência)
+//     Menos cura absoluta que slot 1 (10 vs 15) — sustain deliberado. ✅
+//     Slot 4 = ADD (sem slot legado para Curandeiro). Dentro do teto (Cura III: 4.0 HP/ENE). ✅
 // ---------------------------------------------------------------------------
 const KIT_SWAP_TABLE = {
     /**
@@ -128,7 +177,13 @@ const KIT_SWAP_TABLE = {
      * Conceito: "Assinatura com menos dano e mais controle"
      * Slot alvo: 4 (mage_arcane_storm, nível 30 — unlock tardio)
      * Efeito: Véu Arcano I troca dano em área por debuff de controle —
-     *   reduce ATK do inimigo por 2 turnos, coerente com controle_leve.
+     *   reduz ATK do inimigo por 2 turnos, coerente com controle_leve.
+     *
+     * AJUSTE Fase 6.1 — custo corrigido de 3 → 4:
+     *   Pré-ajuste (cost 3): 2.0 ATK-t/ENE — 2× mais eficiente que Enfraquecer II
+     *   (Ladino: −3 ATK, 2t, cost 6 → 1.0 ATK-t/ENE). Isso é excessivo.
+     *   Pós-ajuste (cost 4): 1.5 ATK-t/ENE — +50% vs Ladino, justificado pelo
+     *   perfil de controle do Mago e pelo melhor regen de ENE (18% vs 14%).
      */
     moonquill: {
         targetSlot: 4,
@@ -137,7 +192,7 @@ const KIT_SWAP_TABLE = {
             _kitSwapId: 'moonquill_arcane_veil',
             name: 'Véu Arcano I',
             type: 'BUFF',
-            cost: 3,
+            cost: 4,
             power: -3,
             buffType: 'ATK',
             target: 'enemy',

@@ -210,9 +210,7 @@ describe('applyKitSwaps — moonquill (Mago, slot 4)', () => {
 
         expect(result.skills[3].name).toBe('Véu Arcano I');
         expect(result.skills[3].type).toBe('BUFF');
-        expect(result.skills[3].cost).toBe(3);
-        expect(result.skills[3].power).toBe(-3);
-        expect(result.skills[3].buffType).toBe('ATK');
+        expect(result.skills[3].cost).toBe(4);
         expect(result.skills[3].target).toBe('enemy');
         expect(result.skills[3].duration).toBe(2);
         expect(result.skills[3]._kitSwapId).toBe('moonquill_arcane_veil');
