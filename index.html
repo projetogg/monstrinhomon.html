@@ -231,6 +231,8 @@
                     <h3 id="locationSpotsTitle" style="margin:0;flex:1;text-align:center">Local</h3>
                 </div>
                 <p id="locationSpotsDesc" class="text-small text-muted" style="margin:4px 0 12px"></p>
+                <!-- PR-07: Quest hint inline para quests ativas neste local -->
+                <div id="locationQuestHint" class="location-quest-hint is-hidden" aria-live="polite"></div>
                 <div id="spotsList" class="wm-spots-grid">
                     <!-- Renderizado dinamicamente por renderLocationSpots() -->
                 </div>
@@ -6094,15 +6096,25 @@
             const enc        = GameState.currentEncounter;
             const locationId = _wm.selectedLocationId;
 
-            // Registrar conclusão quando vitória em local com mapa
+            // Registrar conclusão e flags ao vencer em local com mapa
             if (enc.result === 'victory' && locationId) {
                 if (!GameState.data) GameState.data = {};
+
+                // completedLocations: registra primeira vitória
                 if (!Array.isArray(GameState.data.completedLocations)) {
                     GameState.data.completedLocations = [];
                 }
                 if (!GameState.data.completedLocations.includes(locationId)) {
                     GameState.data.completedLocations.push(locationId);
                 }
+
+                // nodeFlags: incrementa wildWins por localização (PR-06)
+                if (!GameState.data.nodeFlags) GameState.data.nodeFlags = {};
+                if (!GameState.data.nodeFlags[locationId]) {
+                    GameState.data.nodeFlags[locationId] = { wildWins: 0 };
+                }
+                GameState.data.nodeFlags[locationId].wildWins =
+                    (GameState.data.nodeFlags[locationId].wildWins ?? 0) + 1;
             }
 
             GameState.currentEncounter = null;
@@ -8368,6 +8380,27 @@
             const completedLocations = new Set(
                 GameState.data?.completedLocations ?? []
             );
+            const nodeFlags = GameState.data?.nodeFlags ?? {};
+
+            // Coletar quests concluídas de todos os jogadores (para complete_quest unlock rule)
+            const completedQuestIds = new Set();
+            // Coletar localIds de quests ativas (para badge ❗) — PR-07
+            const activeQuestLocationIds = new Set();
+            if (window.GameFlow) {
+                (GameState.players ?? []).forEach(player => {
+                    if (!player) return;
+                    const qs = player.questState;
+                    if (!qs) return;
+                    (qs.completedQuestIds ?? []).forEach(id => completedQuestIds.add(id));
+                    // Quests ativas: pegar localId de cada uma
+                    (qs.activeQuestIds ?? []).forEach(qid => {
+                        const summary = window.GameFlow.getActiveQuestsSummary(player);
+                        summary.forEach(({ quest }) => {
+                            if (quest?.localId) activeQuestLocationIds.add(quest.localId);
+                        });
+                    });
+                });
+            }
 
             const enriched = window.WorldMap.getEnrichedNodes(
                 _wm.worldMapNodes ?? [],
@@ -8380,32 +8413,49 @@
             }
 
             grid.innerHTML = enriched.map(node => {
-                const unlocked   = window.WorldMap.isNodeUnlocked(node, visitedLocations, completedLocations);
-                const levelStr   = node.levelRange ? `Lv ${node.levelRange[0]}–${node.levelRange[1]}` : '';
-                const lockClass  = unlocked ? '' : 'wm-node--locked';
-                const onclick    = unlocked ? `onclick="selectWorldNode('${node.nodeId}')"` : '';
-                const bgColor    = node.biomeColor ?? '#666';
-                const isCity     = node.type === 'city';
-                const isBoss     = node.type === 'boss';
+                const unlocked    = window.WorldMap.isNodeUnlocked(
+                    node, visitedLocations, completedLocations, nodeFlags, completedQuestIds
+                );
+                const levelStr    = node.levelRange ? `Lv ${node.levelRange[0]}–${node.levelRange[1]}` : '';
+                const lockClass   = unlocked ? '' : 'wm-node--locked';
+                const onclick     = unlocked ? `onclick="selectWorldNode('${node.nodeId}')"` : '';
+                const bgColor     = node.biomeColor ?? '#666';
+                const isCity      = node.type === 'city';
+                const isBoss      = node.type === 'boss';
                 const isCompleted = completedLocations.has(node.nodeId);
-                const isVisited   = visitedLocations.has(node.nodeId);
+                const hasQuest    = activeQuestLocationIds.has(node.nodeId);
 
-                // Badges visuais
+                // Motivo do bloqueio (PR-06)
+                const lockReason = !unlocked && window.WorldMap.getNodeLockReason
+                    ? window.WorldMap.getNodeLockReason(
+                        node, completedLocations, nodeFlags, completedQuestIds,
+                        visitedLocations, _wm.locationsData ?? []
+                      )
+                    : '';
+
+                // Badges visuais (PR-05 + PR-07)
                 const badgeCompleted = isCompleted ? '<span class="wm-node__badge wm-node__badge--done">✅</span>' : '';
                 const badgeCity      = isCity      ? '<span class="wm-node__badge wm-node__badge--city">🏙️</span>' : '';
                 const badgeBoss      = isBoss      ? '<span class="wm-node__badge wm-node__badge--boss">👑</span>' : '';
+                const badgeQuest     = hasQuest    ? '<span class="wm-node__badge wm-node__badge--quest">❗</span>' : '';
                 const badgeLock      = !unlocked   ? '<span class="wm-node__lock">🔒</span>' : '';
                 const typeClass      = isCity ? 'wm-node--city' : isBoss ? 'wm-node--boss' : '';
+
+                // Sublabel de motivo do bloqueio (PR-06)
+                const lockLabel = (!unlocked && lockReason)
+                    ? `<span class="wm-node__lock-reason">${lockReason}</span>`
+                    : '';
 
                 return `
                   <div class="wm-node ${lockClass} ${typeClass}" ${onclick}
                        style="background:${bgColor}"
-                       title="${node.description ?? ''}">
+                       title="${unlocked ? (node.description ?? '') : lockReason}">
                     ${node.tier ? `<span class="wm-node__tier">${node.tier}</span>` : ''}
                     <span class="wm-node__emoji">${node.biomeEmoji}</span>
                     <span class="wm-node__name">${node.name}</span>
                     ${levelStr ? `<span class="wm-node__level">${levelStr}</span>` : ''}
-                    <div class="wm-node__badges">${badgeCompleted}${badgeCity}${badgeBoss}${badgeLock}</div>
+                    <div class="wm-node__badges">${badgeCompleted}${badgeCity}${badgeBoss}${badgeQuest}${badgeLock}</div>
+                    ${lockLabel}
                   </div>`;
             }).join('');
         }
@@ -8429,7 +8479,54 @@
             if (title) title.textContent = `${window.WorldMap.BIOME_EMOJI[loc?.biome ?? ''] ?? '🗺️'} ${loc?.name ?? locationId}`;
             if (desc)  desc.textContent  = loc?.description ?? '';
 
+            // PR-07: Quest hint no painel de spots se houver quest ativa neste local
+            _renderLocationQuestHint(locationId);
+
             renderLocationSpots(locationId);
+        }
+
+        /**
+         * PR-07: Exibe/esconde o hint de quest ativa no painel de spots de um local.
+         * Verifica todos os jogadores por quests com localId === locationId.
+         */
+        function _renderLocationQuestHint(locationId) {
+            const hintEl = document.getElementById('locationQuestHint');
+            if (!hintEl || !window.GameFlow) {
+                if (hintEl) hideEl(hintEl);
+                return;
+            }
+
+            // Encontrar primeira quest ativa com localId correspondente
+            let activeQuestInfo = null;
+            for (const player of (GameState.players ?? [])) {
+                if (!player) continue;
+                const summary = window.GameFlow.getActiveQuestsSummary(player);
+                const match   = summary.find(({ quest }) => quest?.localId === locationId);
+                if (match) {
+                    activeQuestInfo = { player, ...match };
+                    break;
+                }
+            }
+
+            if (!activeQuestInfo) {
+                hideEl(hintEl);
+                return;
+            }
+
+            const { quest, progress, needed, player } = activeQuestInfo;
+            const pct = needed > 0 ? Math.min(100, Math.round((progress / needed) * 100)) : 0;
+            hintEl.innerHTML = `
+                <span class="location-quest-hint__icon">❗</span>
+                <div class="location-quest-hint__body">
+                    <p class="location-quest-hint__name">${quest.nome}</p>
+                    <p class="location-quest-hint__player">${player.name}</p>
+                    <div class="quest-progress-bar">
+                        <div class="quest-progress-fill" style="width:${pct}%"></div>
+                    </div>
+                    <p class="text-small" style="margin:2px 0 0">${progress}/${needed}</p>
+                </div>
+            `;
+            showEl(hintEl);
         }
 
         /** Renderiza os spots de uma localização (Camada 2). */

@@ -14,7 +14,8 @@ import {
     getSpotsForLocation,
     findSpot,
     locationIdFromSpotId,
-    buildSpotModifiers
+    buildSpotModifiers,
+    getNodeLockReason
 } from '../js/encounter/worldMap.js';
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -399,5 +400,118 @@ describe('BIOME_EMOJI / BIOME_COLOR — Suporte a bioma cidade (FASE 4)', () => 
         expect(enriched[0].type).toBe('city');
         expect(enriched[0].spots[0].type).toBe('service');
         expect(enriched[0].spots[0].serviceAction).toBe('shop');
+    });
+});
+
+// ── PR-06: unlockRule — Progressão explícita por nó ──────────────────────────
+
+describe('isNodeUnlocked — unlockRule explícita (PR-06)', () => {
+
+    const mockLocs = [
+        { id: 'HUB',  name: 'Hub',    description: '', biome: 'campos',   tier: 'T0', levelRange: [1,3], spots: [] },
+        { id: 'A',    name: 'Área A', description: '', biome: 'floresta', tier: 'T1', levelRange: [2,5], spots: [] },
+        { id: 'B',    name: 'Área B', description: '', biome: 'minas',    tier: 'T2', levelRange: [5,9], spots: [] },
+        { id: 'CITY', name: 'Cidade', description: '', biome: 'cidade',   tier: 'S',  levelRange: null,  spots: [] },
+    ];
+
+    it('complete_node: desbloqueia quando nodeId está em completedLocations', () => {
+        const node = { nodeId: 'A', unlockDefault: false, connections: ['HUB'],
+                       unlockRule: { type: 'complete_node', nodeId: 'HUB' } };
+        expect(isNodeUnlocked(node, new Set(), new Set(['HUB']))).toBe(true);
+        expect(isNodeUnlocked(node, new Set(), new Set())).toBe(false);
+    });
+
+    it('complete_node: visitedLocations ainda permite revisitar o próprio nó', () => {
+        const node = { nodeId: 'A', unlockDefault: false, connections: ['HUB'],
+                       unlockRule: { type: 'complete_node', nodeId: 'HUB' } };
+        expect(isNodeUnlocked(node, new Set(['A']), new Set())).toBe(true);
+    });
+
+    it('win_n_battles_in_node: desbloqueia quando wildWins >= n', () => {
+        const node = { nodeId: 'B', unlockDefault: false, connections: ['A'],
+                       unlockRule: { type: 'win_n_battles_in_node', nodeId: 'A', n: 3 } };
+        const flags3 = { A: { wildWins: 3 } };
+        const flags2 = { A: { wildWins: 2 } };
+        const flags0 = {};
+        expect(isNodeUnlocked(node, new Set(), new Set(), flags3)).toBe(true);
+        expect(isNodeUnlocked(node, new Set(), new Set(), flags2)).toBe(false);
+        expect(isNodeUnlocked(node, new Set(), new Set(), flags0)).toBe(false);
+    });
+
+    it('win_n_battles_in_node: n=1 é o padrão quando n não especificado', () => {
+        const node = { nodeId: 'B', unlockDefault: false, connections: ['A'],
+                       unlockRule: { type: 'win_n_battles_in_node', nodeId: 'A' } };
+        const flagsWith1 = { A: { wildWins: 1 } };
+        const flagsWith0 = { A: { wildWins: 0 } };
+        expect(isNodeUnlocked(node, new Set(), new Set(), flagsWith1)).toBe(true);
+        expect(isNodeUnlocked(node, new Set(), new Set(), flagsWith0)).toBe(false);
+    });
+
+    it('visit_city: desbloqueia quando cityId está em visitedLocations', () => {
+        const node = { nodeId: 'B', unlockDefault: false, connections: [],
+                       unlockRule: { type: 'visit_city', cityId: 'CITY' } };
+        expect(isNodeUnlocked(node, new Set(['CITY']), new Set())).toBe(true);
+        expect(isNodeUnlocked(node, new Set(['A']),    new Set())).toBe(false);
+    });
+
+    it('complete_quest: desbloqueia quando questId está em completedQuestIds', () => {
+        const node = { nodeId: 'B', unlockDefault: false, connections: [],
+                       unlockRule: { type: 'complete_quest', questId: 'QST_001' } };
+        expect(isNodeUnlocked(node, new Set(), new Set(), {}, new Set(['QST_001']))).toBe(true);
+        expect(isNodeUnlocked(node, new Set(), new Set(), {}, new Set(['QST_002']))).toBe(false);
+        expect(isNodeUnlocked(node, new Set(), new Set(), {}, new Set())).toBe(false);
+    });
+
+    it('unlockRule desconhecida retorna false', () => {
+        const node = { nodeId: 'B', unlockDefault: false, connections: [],
+                       unlockRule: { type: 'tipo_invalido' } };
+        expect(isNodeUnlocked(node)).toBe(false);
+    });
+});
+
+// ── PR-06: getNodeLockReason ──────────────────────────────────────────────────
+
+describe('getNodeLockReason (PR-06)', () => {
+
+    const mockLocs = [
+        { id: 'HUB', name: 'Hub Inicial', description: '', biome: 'campos', tier: 'T0', levelRange: [1,3], spots: [] },
+        { id: 'A',   name: 'Área A',      description: '', biome: 'floresta', tier: 'T1', levelRange: [2,5], spots: [] },
+    ];
+
+    it('complete_node: texto menciona o local que precisa ser concluído', () => {
+        const node = { nodeId: 'A', unlockDefault: false, connections: ['HUB'],
+                       unlockRule: { type: 'complete_node', nodeId: 'HUB' } };
+        const reason = getNodeLockReason(node, new Set(), {}, new Set(), new Set(), mockLocs);
+        expect(reason).toContain('Hub Inicial');
+    });
+
+    it('win_n_battles_in_node: texto menciona quantidade e progresso', () => {
+        const node = { nodeId: 'A', unlockDefault: false, connections: ['HUB'],
+                       unlockRule: { type: 'win_n_battles_in_node', nodeId: 'HUB', n: 3 } };
+        const flags = { HUB: { wildWins: 1 } };
+        const reason = getNodeLockReason(node, new Set(), flags, new Set(), new Set(), mockLocs);
+        expect(reason).toContain('3');
+        expect(reason).toContain('1');
+    });
+
+    it('visit_city: texto menciona a cidade', () => {
+        const locs = [...mockLocs, { id: 'CITY', name: 'Aldeia', description: '', biome: 'cidade', tier: 'S', levelRange: null, spots: [] }];
+        const node = { nodeId: 'A', unlockDefault: false, connections: [],
+                       unlockRule: { type: 'visit_city', cityId: 'CITY' } };
+        const reason = getNodeLockReason(node, new Set(), {}, new Set(), new Set(), locs);
+        expect(reason).toContain('Aldeia');
+    });
+
+    it('complete_quest: texto menciona o questId', () => {
+        const node = { nodeId: 'A', unlockDefault: false, connections: [],
+                       unlockRule: { type: 'complete_quest', questId: 'QST_001' } };
+        const reason = getNodeLockReason(node, new Set(), {}, new Set(), new Set(), mockLocs);
+        expect(reason).toContain('QST_001');
+    });
+
+    it('sem unlockRule: fallback ao vizinho não concluído', () => {
+        const node = { nodeId: 'A', unlockDefault: false, connections: ['HUB'] };
+        const reason = getNodeLockReason(node, new Set(), {}, new Set(), new Set(), mockLocs);
+        expect(reason).toContain('Hub Inicial');
     });
 });

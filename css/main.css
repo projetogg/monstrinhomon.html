@@ -2943,6 +2943,18 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     box-shadow: 0 0 6px rgba(200,50,50,0.4);
 }
 
+/* Sublabel de motivo do bloqueio (PR-06) */
+.wm-node__lock-reason {
+    display: block;
+    font-size: 9px;
+    line-height: 1.2;
+    color: rgba(255,255,255,0.75);
+    text-align: center;
+    margin-top: 3px;
+    word-break: break-word;
+    max-width: 100%;
+}
+
 /* Grid de spots dentro de um local */
 .wm-spots-grid {
     display: flex;
@@ -3031,6 +3043,42 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     color: #2e7d32;
     margin-bottom: 8px;
     animation: fadeIn 0.2s ease;
+}
+
+/* PR-07: Quest hint no painel de spots */
+.location-quest-hint {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: #fff8e1;
+    border: 1.5px solid #f9a825;
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    font-size: 12px;
+}
+
+.location-quest-hint__icon {
+    font-size: 16px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.location-quest-hint__body {
+    flex: 1;
+    min-width: 0;
+}
+
+.location-quest-hint__name {
+    font-weight: 700;
+    margin: 0 0 1px;
+    font-size: 12px;
+}
+
+.location-quest-hint__player {
+    font-size: 10px;
+    opacity: 0.7;
+    margin: 0 0 4px;
 }
 
 /* Responsivo: telas menores */

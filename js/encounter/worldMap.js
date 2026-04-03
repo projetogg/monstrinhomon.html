@@ -9,6 +9,21 @@
  *
  * O mapa de nós define o grafo de navegação do mundo.
  * Cada nó aponta para uma localização em locations.json.
+ *
+ * ── Tipos de unlockRule ──────────────────────────────────────────────────
+ *
+ * { type: 'complete_node',          nodeId: 'LOC_001' }
+ *   → Requer que o nó nodeId esteja em completedLocations
+ *
+ * { type: 'win_n_battles_in_node',  nodeId: 'LOC_001', n: 3 }
+ *   → Requer n vitórias em wild no nó nodeId (tracked em nodeFlags.wildWins)
+ *
+ * { type: 'visit_city',             cityId: 'CITY_001' }
+ *   → Requer que a cidade cityId esteja em visitedLocations
+ *
+ * { type: 'complete_quest',         questId: 'QST_001', playerId?: string }
+ *   → Requer que a quest esteja em completedQuestIds de algum jogador
+ *     (verificado externamente; isNodeUnlocked recebe completedQuestIds como Set)
  */
 
 // ── Emojis por bioma ────────────────────────────────────────────────────────
@@ -72,25 +87,121 @@ export function getEnrichedNodes(worldMapNodes, locationsData) {
 /**
  * Verifica se um nó está desbloqueado com base no progresso do jogo.
  *
- * Regras de desbloqueio:
- * - Se `unlockDefault: true`, sempre desbloqueado
- * - Se o nodeId está em `visitedLocations`, desbloqueado (pode revisitar)
- * - Se um nó vizinho está em `completedLocations`, desbloqueado
- *   (vizinho precisa ser CONCLUÍDO — não apenas visitado — para abrir caminho)
+ * Prioridade de avaliação:
+ * 1. unlockDefault: true → sempre desbloqueado
+ * 2. nodeId em visitedLocations → pode revisitar
+ * 3. unlockRule explícita → avaliada com contexto de progresso
+ * 4. Fallback legado: algum vizinho em completedLocations (sem regra explícita)
  *
- * @param {Object} node - Nó enriquecido
- * @param {Set<string>} visitedLocations - Set de IDs visitados (para revisita)
- * @param {Set<string>} completedLocations - Set de IDs concluídos (para desbloquear vizinhos)
+ * @param {Object}      node               - Nó enriquecido
+ * @param {Set<string>} visitedLocations   - IDs visitados (para revisita)
+ * @param {Set<string>} completedLocations - IDs concluídos (progressão)
+ * @param {Object}      [nodeFlags={}]     - Flags por nó { [nodeId]: { wildWins } }
+ * @param {Set<string>} [completedQuestIds=new Set()] - Quest IDs concluídas (todos os jogadores)
  * @returns {boolean}
  */
-export function isNodeUnlocked(node, visitedLocations = new Set(), completedLocations = new Set()) {
+export function isNodeUnlocked(
+    node,
+    visitedLocations   = new Set(),
+    completedLocations = new Set(),
+    nodeFlags          = {},
+    completedQuestIds  = new Set()
+) {
     if (!node) return false;
     if (node.unlockDefault) return true;
     if (visitedLocations.has(node.nodeId)) return true;
 
-    // Desbloqueado se algum nó conectado foi CONCLUÍDO (não apenas visitado)
+    // Avaliar unlockRule explícita
+    const rule = node.unlockRule;
+    if (rule) {
+        return _evaluateUnlockRule(rule, completedLocations, nodeFlags, completedQuestIds, visitedLocations);
+    }
+
+    // Fallback legado: vizinho concluído desbloqueia
     const connections = node.connections ?? [];
     return connections.some(connId => completedLocations.has(connId));
+}
+
+/**
+ * Avalia uma unlockRule e retorna true se a condição for satisfeita.
+ * @private
+ */
+function _evaluateUnlockRule(rule, completedLocations, nodeFlags, completedQuestIds, visitedLocations) {
+    if (!rule || !rule.type) return false;
+
+    switch (rule.type) {
+        case 'complete_node':
+            return completedLocations.has(rule.nodeId);
+
+        case 'win_n_battles_in_node': {
+            const wins = nodeFlags[rule.nodeId]?.wildWins ?? 0;
+            return wins >= (rule.n ?? 1);
+        }
+
+        case 'visit_city':
+            return visitedLocations.has(rule.cityId);
+
+        case 'complete_quest':
+            return completedQuestIds.has(rule.questId);
+
+        default:
+            return false;
+    }
+}
+
+/**
+ * Retorna uma string descrevendo o motivo pelo qual o nó está bloqueado.
+ * Útil para exibir na UI ("Complete X para desbloquear").
+ *
+ * @param {Object}      node
+ * @param {Set<string>} completedLocations
+ * @param {Object}      nodeFlags
+ * @param {Set<string>} completedQuestIds
+ * @param {Set<string>} visitedLocations
+ * @param {Array<Object>} [locationsData=[]]
+ * @returns {string}
+ */
+export function getNodeLockReason(
+    node,
+    completedLocations = new Set(),
+    nodeFlags          = {},
+    completedQuestIds  = new Set(),
+    visitedLocations   = new Set(),
+    locationsData      = []
+) {
+    if (!node) return '';
+
+    const rule = node.unlockRule;
+    if (!rule) {
+        // Fallback legado: encontrar vizinho que precisa ser concluído
+        const connections = node.connections ?? [];
+        const needed = connections.find(c => !completedLocations.has(c));
+        if (needed) {
+            const loc = locationsData.find(l => l.id === needed);
+            return `Complete "${loc?.name ?? needed}" para desbloquear`;
+        }
+        return 'Bloqueado';
+    }
+
+    switch (rule.type) {
+        case 'complete_node': {
+            const loc = locationsData.find(l => l.id === rule.nodeId);
+            return `Complete "${loc?.name ?? rule.nodeId}" para desbloquear`;
+        }
+        case 'win_n_battles_in_node': {
+            const wins = nodeFlags[rule.nodeId]?.wildWins ?? 0;
+            const loc  = locationsData.find(l => l.id === rule.nodeId);
+            return `Vença ${rule.n ?? 1} batalha(s) em "${loc?.name ?? rule.nodeId}" (${wins}/${rule.n ?? 1})`;
+        }
+        case 'visit_city': {
+            const loc = locationsData.find(l => l.id === rule.cityId);
+            return `Visite "${loc?.name ?? rule.cityId}" primeiro`;
+        }
+        case 'complete_quest':
+            return `Conclua a missão ${rule.questId} para desbloquear`;
+        default:
+            return 'Bloqueado';
+    }
 }
 
 /**
