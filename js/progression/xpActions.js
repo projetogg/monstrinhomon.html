@@ -94,6 +94,20 @@ export function levelUpMonster(deps, mon, logArr) {
     
     // Verificar e aplicar upgrade de skills (Feature 3.6)
     deps.helpers.maybeUpgradeSkillsModelB(mon, log);
+
+    // Fase 5: Atualizar slots de habilidade desbloqueados ao subir de nível
+    // Só loga quando um novo slot é ganho (evita ruído nos logs)
+    if (deps.helpers.getUnlockedSlotsForLevel) {
+        const newSlots = deps.helpers.getUnlockedSlotsForLevel(mon.level);
+        const prevSlots = mon.unlockedSkillSlots || 1;
+        if (newSlots > prevSlots) {
+            mon.unlockedSkillSlots = newSlots;
+            mon._slotUnlockSource = 'canon_level_progression';
+            if (Array.isArray(log)) {
+                log.push(`🔓 ${name} desbloqueou o slot de habilidade ${newSlots}!`);
+            }
+        }
+    }
 }
 
 /**
