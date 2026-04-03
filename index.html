@@ -8351,7 +8351,7 @@
                   <div class="wm-node ${lockClass}" ${onclick}
                        style="background:${bgColor}"
                        title="${node.description ?? ''}">
-                    <span class="wm-node__tier">${node.tier ?? ''}</span>
+                    ${node.tier ? `<span class="wm-node__tier">${node.tier}</span>` : ''}
                     <span class="wm-node__emoji">${node.biomeEmoji}</span>
                     <span class="wm-node__name">${node.name}</span>
                     <span class="wm-node__level">${levelStr}</span>

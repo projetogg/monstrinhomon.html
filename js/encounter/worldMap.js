@@ -120,6 +120,11 @@ export function findSpot(spotId, locationsData) {
 /**
  * Extrai o locationId de um spotId (convenção: 'LOC_001_A' → 'LOC_001').
  *
+ * Convenção de nomenclatura de spots:
+ *   `LOC_<id>_<letra>` onde `<letra>` é uma única letra maiúscula (A–Z).
+ * Se a convenção mudar para suportar mais de 26 spots por local,
+ * atualize este regex e o padrão de ID em locations.json.
+ *
  * @param {string} spotId - ID do spot
  * @returns {string|null}
  */

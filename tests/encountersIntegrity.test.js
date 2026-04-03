@@ -450,7 +450,8 @@ describe('ENCOUNTERS.csv - Integridade', () => {
     });
 
     it('cada local_id presente no ENCOUNTERS.csv deve ter pelo menos 2 encontros', () => {
-        // Verifica apenas os locais que aparecem no CSV (o CSV legado cobre os 8 originais)
+        // Verifica apenas os locais que aparecem no CSV (o CSV legado cobre as 8 áreas base originais;
+        // o novo sistema expandiu para 20 áreas progressivas com sub-áreas)
         const byLocal = {};
         for (const enc of encounters) {
             byLocal[enc.local_id] = (byLocal[enc.local_id] || 0) + 1;
