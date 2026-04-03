@@ -2370,5 +2370,850 @@ deps = {
 
 ---
 
+## 35. Sistema de Amizade (Friendship)
+
+> Source of truth: `index.html` — seção `SISTEMA DE AMIZADE`
+
+### 35.1 Conceito
+
+Cada instância de Monstrinho tem um valor `friendship` (0–100). Amizade afeta:
+- Multiplicador de XP ganho
+- Mensagens de marco ativadas em log de batalha
+
+### 35.2 Configuração (friendshipConfig)
+
+```javascript
+friendshipConfig: {
+    battleWin:   +2,   // Ganhar batalha
+    battleLoss:  -5,   // Perder batalha (ensinar cautela)
+    useHealItem: +5,   // Usar item de cura (recompensar cuidado)
+    levelUp:     +3,   // Subir de nível
+    faint:       -3    // Desmaiar
+}
+```
+
+### 35.3 Valor Padrão e Limites
+
+| Constante | Valor |
+|-----------|------:|
+| `DEFAULT_FRIENDSHIP` | 50 (neutro) |
+| Mínimo | 0 |
+| Máximo | 100 |
+
+### 35.4 Níveis e Ícones
+
+| Faixa | Nível | Ícone |
+|-------|:-----:|:-----:|
+| 0–24 | 1 | 🖤 |
+| 25–49 | 2 | 🤍 |
+| 50–74 | 3 | 💛 |
+| 75–99 | 4 | 💚 |
+| 100 | 5 | ❤️ |
+
+### 35.5 API de Amizade
+
+```javascript
+updateFriendship(monster, event, autoSave = true)
+  // Aplica friendshipConfig[event], clamp 0–100
+  // Eventos: 'battleWin', 'battleLoss', 'useHealItem', 'levelUp', 'faint'
+
+updateMultipleFriendshipEvents(monster, events)
+  // Batch: aplica múltiplos eventos, salva uma vez só
+
+getFriendshipLevel(friendship) → 1–5
+getFriendshipIcon(friendship) → '🖤'|'🤍'|'💛'|'💚'|'❤️'
+getFriendshipBonuses(friendship) → { xpMultiplier, ... }
+```
+
+### 35.6 Multiplicadores de XP por Amizade
+
+| Faixa (friendship) | xpMultiplier |
+|:------------------:|:------------:|
+| 0–24 | ×0.95 |
+| 25–49 | ×1.00 |
+| 50–74 | ×1.05 |
+| 75–99 | ×1.10 |
+| 100 | ×1.15 |
+
+### 35.7 Marcos de Amizade (Log de batalha)
+
+| Amizade atingida | Mensagem no log |
+|:----------------:|-----------------|
+| 50 | `💛 [Nome] está se aproximando de você!` |
+| 75 | `💚 [Nome] está muito feliz!` |
+| 100 | `💖 [Nome] atingiu amizade máxima!` |
+
+---
+
+## 36. SKILL_DEFS — Habilidades por Classe (completo)
+
+> Source of truth: `index.html` linha ~1170 — `const SKILL_DEFS`
+
+Habilidades têm 3 tiers. `tier` corresponde ao nível de upgrade do slot.  
+**Tipo:** `DAMAGE`, `BUFF`, `HEAL`, `TAUNT`  
+**cost:** custo em ENE
+
+### 36.1 Guerreiro
+
+| Habilidade | Tier | Nome | Tipo | ENE | PWR | Efeito |
+|-----------|:----:|------|:----:|----:|----:|--------|
+| Golpe de Espada | 1 | Golpe de Espada I | DAMAGE | 4 | 18 | — |
+| | 2 | Golpe de Espada II | DAMAGE | 6 | 24 | — |
+| | 3 | Golpe de Espada III | DAMAGE | 8 | 30 | — |
+| Escudo | 1 | Escudo I | BUFF | 4 | +2 DEF | self, 2t |
+| | 2 | Escudo II | BUFF | 6 | +3 DEF | self, 2t |
+| | 3 | Escudo III | BUFF | 8 | +4 DEF | self, 3t |
+| Provocar | S0 | — | — | — | — | sem Tier 1 |
+| | 2 | Provocar I | TAUNT | 4 | — | — |
+| | 3 | Provocar II | TAUNT | 6 | — | — |
+
+### 36.2 Curandeiro
+
+| Habilidade | Tier | Nome | Tipo | ENE | PWR | Efeito |
+|-----------|:----:|------|:----:|----:|----:|--------|
+| Cura | 1 | Cura I | HEAL | 5 | 15 | ally |
+| | 2 | Cura II | HEAL | 7 | 25 | ally |
+| | 3 | Cura III | HEAL | 10 | 40 | ally |
+| Bênção | 1 | Bênção I | BUFF | 4 | +2 ATK | ally, 2t |
+| | 2 | Bênção II | BUFF | 6 | +3 ATK | ally, 2t |
+| | 3 | Bênção III | BUFF | 8 | +4 DEF | ally, 3t |
+
+### 36.3 Mago
+
+| Habilidade | Tier | Nome | Tipo | ENE | PWR |
+|-----------|:----:|------|:----:|----:|----:|
+| Magia Elemental | 1 | Magia Elemental I | DAMAGE | 4 | 20 |
+| | 2 | Magia Elemental II | DAMAGE | 6 | 26 |
+| | 3 | Magia Elemental III | DAMAGE | 8 | 32 |
+| Explosão Elemental | 1 | Explosão Elemental I | DAMAGE | 6 | 24 |
+| | 2 | Explosão Elemental II | DAMAGE | 8 | 32 |
+| | 3 | Explosão Elemental III | DAMAGE | 12 | 38 |
+
+### 36.4 Bárbaro
+
+| Habilidade | Tier | Nome | Tipo | ENE | PWR | Efeito |
+|-----------|:----:|------|:----:|----:|----:|--------|
+| Fúria | 1 | Fúria I | BUFF | 4 | +3 ATK | self 2t, −1 DEF |
+| | 2 | Fúria II | BUFF | 6 | +4 ATK | self 2t, −2 DEF |
+| | 3 | Fúria III | BUFF | 8 | +6 ATK | self 3t, −2 DEF |
+| Golpe Brutal | 1 | Golpe Brutal I | DAMAGE | 6 | 24 | — |
+| | 2 | Golpe Brutal II | DAMAGE | 8 | 32 | — |
+| | 3 | Golpe Brutal III | DAMAGE | 12 | 38 | — |
+
+### 36.5 Ladino
+
+| Habilidade | Tier | Nome | Tipo | ENE | PWR | Efeito |
+|-----------|:----:|------|:----:|----:|----:|--------|
+| Ataque Preciso | 1 | Ataque Preciso I | DAMAGE | 4 | 19 | — |
+| | 2 | Ataque Preciso II | DAMAGE | 6 | 24 | — |
+| | 3 | Ataque Preciso III | DAMAGE | 8 | 30 | — |
+| Enfraquecer | S0 | — | — | — | — | sem Tier 1 |
+| | 2 | Enfraquecer I | BUFF | 4 | −2 ATK | enemy, 1t |
+| | 3 | Enfraquecer II | BUFF | 6 | −3 ATK | enemy, 2t |
+
+### 36.6 Bardo
+
+| Habilidade | Tier | Nome | Tipo | ENE | PWR | Efeito |
+|-----------|:----:|------|:----:|----:|----:|--------|
+| Canção de Coragem | 1 | Canção de Coragem I | BUFF | 4 | +2 ATK | ally, 2t |
+| | 2 | Canção de Coragem II | BUFF | 6 | +3 ATK | ally, 2t |
+| | 3 | Canção de Coragem III | BUFF | 8 | +4 ATK | ally, 3t |
+| Canção Calmante | 1 | Canção Calmante I | HEAL | 5 | 12 | ally |
+| | 2 | Canção Calmante II | BUFF | 6 | +2 DEF | ally, 2t |
+| | 3 | Canção Calmante III | BUFF | 8 | +3 DEF | ally, 3t |
+
+### 36.7 Caçador
+
+| Habilidade | Tier | Nome | Tipo | ENE | PWR | Efeito |
+|-----------|:----:|------|:----:|----:|----:|--------|
+| Flecha Poderosa | 1 | Flecha Poderosa I | DAMAGE | 4 | 19 | — |
+| | 2 | Flecha Poderosa II | DAMAGE | 6 | 24 | — |
+| | 3 | Flecha Poderosa III | DAMAGE | 8 | 30 | — |
+| Armadilha | S0 | — | — | — | — | sem Tier 1 |
+| | 2 | Armadilha I | BUFF | 4 | −2 SPD | enemy, 1t |
+| | 3 | Armadilha II | BUFF | 6 | −3 SPD | enemy, 2t |
+
+### 36.8 Animalista
+
+| Habilidade | Tier | Nome | Tipo | ENE | PWR | Efeito |
+|-----------|:----:|------|:----:|----:|----:|--------|
+| Investida Bestial | 1 | Investida Bestial I | DAMAGE | 4 | 19 | — |
+| | 2 | Investida Bestial II | DAMAGE | 6 | 24 | — |
+| | 3 | Investida Bestial III | DAMAGE | 8 | 30 | — |
+| Instinto Selvagem | 1 | Instinto Selvagem I | BUFF | 4 | +2 DEF | self, 2t |
+| | 2 | Instinto Selvagem II | BUFF | 6 | +2 SPD | self, 2t |
+| | 3 | Instinto Selvagem III | BUFF | 8 | +3 DEF | self, 3t |
+
+### 36.9 Notas sobre SKILL_DEFS
+
+- `null` no Tier 1 significa que a habilidade não existe no slot inicial (S0 = sem upgrade)
+- Habilidades com `target: 'enemy'` e `power` negativo são debuffs (reduzem stat do alvo)
+- Bardo e Curandeiro têm habilidades de suporte em slots que outras classes usam para dano
+- Este `SKILL_DEFS` é o sistema usado em combate 1v1 (wild) e grupo
+- O sistema `data/skills.json` é um catálogo canônico separado (ainda não cobre todas as 8 classes)
+
+---
+
+## 37. Sistema de Drops
+
+> Source of truth: `js/data/dropSystem.js`
+
+### 37.1 Tabelas de Drop
+
+| ID | Nome | Pool de Itens |
+|----|------|---------------|
+| DROP_001 | Selvagem Básico | ClasterOrb Comum 35%, Petisco 25% |
+| DROP_002 | Treinador Básico | ClasterOrb Comum 50%, Petisco ×2 40% |
+| DROP_003 | Boss de Bioma | ClasterOrb Incomum 80%, Ração ×2 60%, Elixir 25%, Ovo Incomum 10% |
+| DROP_004 | Selvagem Intermediário | ClasterOrb Comum 30%, Petisco ×2 20%, Ração 10%, Ovo Comum 5% |
+| DROP_005 | Selvagem Avançado | ClasterOrb Incomum 25%, Ração ×2 20%, Elixir 8%, Ovo Comum 8% |
+| DROP_006 | Selvagem Elite | ClasterOrb Incomum 30%, Ração ×2 25%, Elixir 12%, Ovo Incomum 5% |
+| DROP_007 | Treinador Intermediário | ClasterOrb Comum ×2 45%, Petisco ×2 35%, Ração 20%, Ovo Comum 10% |
+| DROP_008 | Treinador Avançado | ClasterOrb Incomum 40%, Ração ×2 35%, Elixir 15%, Ovo Incomum 8% |
+
+### 37.2 Mapeamento por Local e Tipo
+
+| Local | Selvagem (Wild) | Treinador |
+|-------|:---------------:|:---------:|
+| LOC_001 Campina | DROP_001 | DROP_002 |
+| LOC_002 Floresta | DROP_001 | DROP_002 |
+| LOC_003 Minas | DROP_004 | DROP_007 |
+| LOC_004 Ruínas | DROP_004 | DROP_007 |
+| LOC_005 Costa | DROP_004 | DROP_007 |
+| LOC_006 Vulcânica | DROP_005 | DROP_008 |
+| LOC_007 Floresta Noturna | DROP_005 | DROP_008 |
+| LOC_008 Arena | DROP_006 | DROP_008 |
+| **Boss** (qualquer local) | **DROP_003** | — |
+
+### 37.3 API do dropSystem.js
+
+```javascript
+generateDrops(dropTableId, rngFn)
+  // Rola cada entrada; retorna array de { itemId, qty }
+
+addDropsToInventory(player, drops)
+  // Adiciona drops ao player.inventory (objeto { itemId: qty })
+
+formatDropsLog(drops, itemNameMap)
+  // Retorna string legível para log de batalha
+
+getDropTableForEncounter(encounterType, locationId)
+  // 'wild' | 'trainer' | 'group_trainer' | 'boss' + LOC_XXX
+  // Retorna DROP_XXX ou null
+```
+
+### 37.4 Mapeamento de IDs Legados
+
+| ID Legado | ID Atual |
+|-----------|----------|
+| IT_CAP_01 | CLASTERORB_COMUM |
+| IT_CAP_02 | CLASTERORB_INCOMUM |
+
+---
+
+## 38. Sistema de Tutorial
+
+> Source of truth: `index.html` linha ~10380 — `const TUTORIAL_STEPS`
+
+### 38.1 Passos do Tutorial
+
+| # | ID | Título | Objetivo | Ação requerida |
+|---|----|---------|---------:|:--------------|
+| 1 | `tut_attack` | Tutorial 1/3 — Ataque básico | 2 ataques | Rolar d20 físico + clicar ⚔️ ATACAR |
+| 2 | `tut_skill` | Tutorial 2/3 — Habilidades | 1 skill | Clicar uma habilidade no painel (sem d20) |
+| 3 | `tut_capture` | Tutorial 3/3 — Captura | 1 captura | Baixar HP (trilha física) + reduzir Agressividade (trilha comportamental) + ClasterOrb |
+
+### 38.2 Locks por Passo
+
+| Ação | tut_attack | tut_skill | tut_capture |
+|------|:----------:|:---------:|:-----------:|
+| attack | ✅ | ❌ bloqueado | ✅ |
+| skill | ❌ | ✅ | ✅ |
+| item | ❌ | ❌ | ✅ |
+| capture | ❌ | ❌ | ✅ |
+| flee | ❌ | ❌ | ❌ |
+| pass | ❌ | ❌ | ❌ |
+
+**Legenda:** ✅ = permitido, ❌ = bloqueado
+
+> `true` no objeto `lock` = PERMITIDO. `false` = BLOQUEADO.
+
+### 38.3 API do Tutorial
+
+```javascript
+ensureTutorialState()
+  // Garante GameState.tutorial = { active, stepIndex, done }
+
+getTutorialStep()
+  // Retorna TUTORIAL_STEPS[stepIndex] ou null se não ativo
+
+mmStartTutorial()
+  // Inicia ou continua tutorial; chama step.start()
+
+exitTutorial()
+  // Desativa tutorial (tut.active = false)
+
+tutorialAllows(actionKey)
+  // Retorna true se a ação é permitida no passo atual
+  // Sempre retorna true se tutorial não ativo
+
+tutorialOnAction(type)
+  // Incrementa contadores; verifica conclusão; avança step
+  // Chamado em: attackWild (type="attack"), useSkillWild (type="skill"), 
+  //             useCaptureAction quando behaviorallyResolved (type="capture")
+
+renderTutorialBanner(enc)
+  // Retorna HTML do banner de tutorial com progresso
+```
+
+### 38.4 Estado do Tutorial (em localStorage)
+
+```javascript
+GameState.tutorial = {
+    active: boolean,     // Tutorial em andamento
+    stepIndex: number,   // Step atual (0, 1, 2)
+    done: {              // Contadores do step atual
+        attack: number,
+        skill: number,
+        capture: number
+    }
+}
+```
+
+### 38.5 Regra do d20 no Tutorial
+
+- **Step 1 (attack):** d20 físico é **obrigatório** — `attackWild()` valida o campo de dado
+- **Step 2 (skill):** sem d20 — `useSkillWild()` não exige dado
+- **Step 3 (capture):** sem d20 para captura — `useCaptureAction()` não exige dado
+
+---
+
+## 39. Sistema de Quests (completo)
+
+> Source of truth: `js/data/questSystem.js`
+
+### 39.1 Tipos de Objetivo
+
+| Constante | Valor | Descrição |
+|-----------|-------|-----------|
+| `DERROTAR_WILD` | `'derrotar_wild'` | Derrotar N monstrinhos selvagens |
+| `CAPTURAR` | `'capturar'` | Capturar N monstrinhos (por ID opcional) |
+| `DERROTAR_TREINADOR` | `'derrotar_treinador'` | Derrotar encontro de treinador |
+| `DERROTAR_BOSS` | `'derrotar_boss'` | Derrotar boss específico |
+
+### 39.2 Todas as 16 Quests
+
+| ID | Nome | Local | Pré-req | Tipo | Alvo | Qtd | XP | Gold | Item | Próxima |
+|----|------|-------|---------|------|------|----:|---:|-----:|------|---------|
+| QST_001 | O Ovo Perdido | LOC_001 | — | treinador | — | 1 | 80 | 60 | ClasterOrb Comum | QST_002 |
+| QST_002 | Primeira Captura | LOC_001 | QST_001 | capturar | — | 1 | 80 | 50 | Petisco | QST_003 |
+| QST_003 | Rastros na Floresta | LOC_002 | QST_002 | wild | — | 3 | 120 | 70 | Petisco | QST_004 |
+| QST_004 | O Cervo da Floresta | LOC_002 | QST_003 | capturar | MON_023 | 1 | 150 | 80 | ClasterOrb Incomum | QST_005 |
+| QST_005 | Mineradores Endurecidos | LOC_003 | QST_004 | treinador | — | 1 | 200 | 100 | Ração | QST_006 |
+| QST_006 | Pedra e Metal | LOC_003 | QST_005 | capturar | MON_010 | 1 | 180 | 90 | ClasterOrb Incomum | QST_007 |
+| QST_007 | Guardiões das Ruínas | LOC_004 | QST_006 | treinador | — | 1 | 280 | 140 | Ração | QST_008 |
+| QST_008 | O Espectro Ancestral | LOC_004 | QST_007 | boss | MON_011C | 1 | 400 | 200 | Ovo Incomum | **QST_011** |
+| QST_009 ⭐ | Tesouro das Águas | LOC_005 | QST_005 | capturar | MON_024 | 1 | 220 | 110 | Ração | QST_010 |
+| QST_010 ⭐ | O Abismo Cristalino | LOC_005 | QST_009 | boss | MON_024C | 1 | 350 | 175 | Ovo Incomum | — |
+| QST_011 | Calor do Inferno | LOC_006 | QST_008 | wild | — | 3 | 350 | 175 | Ração | QST_012 |
+| QST_012 | O Rei das Chamas | LOC_006 | QST_011 | boss | MON_014D | 1 | 600 | 300 | Ovo Raro | **QST_015** |
+| QST_013 ⭐ | Sombras da Noite | LOC_007 | QST_007 | capturar | MON_022B | 1 | 300 | 150 | Elixir | QST_014 |
+| QST_014 ⭐ | Caçada nas Trevas | LOC_007 | QST_013 | treinador | — | 1 | 380 | 190 | Ovo Incomum | — |
+| QST_015 | Desafio da Arena | LOC_008 | QST_012 | treinador | — | 1 | 500 | 250 | Ovo Raro | QST_016 |
+| QST_016 | O Grande Campeão | LOC_008 | QST_015 | boss | MON_012C | 1 | 800 | 400 | **Ovo Místico** | — |
+
+> ⭐ = rota opcional (não bloqueia progressão principal)
+
+### 39.3 Caminho Principal vs Rotas Opcionais
+
+```
+QST_001 → QST_002 → QST_003 → QST_004 → QST_005 → QST_006 → QST_007 → QST_008
+                                              ↓ (opcional)                    ↓
+                                         QST_009 → QST_010           QST_013 → QST_014 (opcional)
+                                                                              ↓
+                                                                         QST_011 → QST_012 → QST_015 → QST_016
+```
+
+### 39.4 APIs do questSystem.js
+
+```javascript
+getQuest(questId)                // Retorna quest por ID
+isQuestAvailable(questId, player) // Verifica pré-requisitos
+getNextQuest(questId)            // Retorna próxima quest da cadeia
+QUEST_OBJECTIVE_TYPES            // Enum de tipos de objetivo
+```
+
+### 39.5 Estrutura de questState no Player
+
+```javascript
+player.questState = {
+    activeQuestIds: string[],     // Quests em progresso
+    completedQuestIds: string[],  // Quests finalizadas
+    progress: {
+        [questId]: {
+            count: number,         // Progresso atual
+            target: number         // Objetivo total
+        }
+    }
+}
+```
+
+---
+
+## 40. PartyDex — Monstródex do Grupo
+
+> Source of truth: `js/data/partyDex.js` (PR16A)
+
+### 40.1 Conceito
+
+Dex compartilhado por toda a party (grupo). Registra quais Monstrinhos foram **vistos** e **capturados** pela equipe, recompensando marcos coletivos.
+
+### 40.2 Estrutura no GameState
+
+```javascript
+GameState.partyDex = {
+    entries: {
+        [templateId]: {
+            seen: boolean,       // Visto em algum encontro
+            captured: boolean    // Entrou no team ou box de qualquer jogador
+        }
+    },
+    meta: {
+        lastMilestoneAwarded: number  // Último marco de captura recompensado (0, 10, 20, ...)
+    }
+}
+GameState.partyMoney = number  // Cofre coletivo do grupo
+```
+
+### 40.3 Quando Marcar Seen/Captured
+
+| Evento | Ação |
+|--------|------|
+| Início de qualquer encontro (wild/group/boss) | `markDexSeen(state, templateId)` |
+| Captura bem-sucedida (vai para team ou box) | `markDexCaptured(state, templateId)` |
+| Ovo chocado (novo monstro no time) | `markDexCaptured(state, templateId)` |
+
+### 40.4 Sistema de Marcos
+
+Recompensas escaláveis a cada 10 capturas únicas:
+
+| Capturas Únicas | Recompensa | Fórmula |
+|:---------------:|:----------:|---------|
+| 10 | +100 moedas | (10/10) × 100 |
+| 20 | +200 moedas | (20/10) × 100 |
+| 30 | +300 moedas | (30/10) × 100 |
+| N×10 | +(N×100) moedas | (milestone/10) × 100 |
+
+- Recompensas vão para `GameState.partyMoney`
+- Cada marco é recompensado **uma única vez** (idempotente via `lastMilestoneAwarded`)
+
+### 40.5 API do partyDex.js
+
+```javascript
+ensurePartyDex(state)                          // Garante estrutura inicial
+ensurePartyMoney(state)                        // Garante partyMoney = 0
+markDexSeen(state, monsterTemplateId)          // Marca como visto (idempotente)
+markDexCaptured(state, monsterTemplateId)      // Marca capturado (também marca seen)
+getCapturedCount(state)                        // Contagem de capturas únicas
+checkDexMilestonesAndAward(state, deps)        // Verifica e distribui recompensas
+  // Retorna { awarded: boolean, milestone?: number, reward?: number }
+```
+
+---
+
+## 41. Box System — Caixa Compartilhada
+
+> Source of truth: `index.html` — seção Box/SharedBox (PR15A)
+
+### 41.1 Conceito
+
+Além do party (time ativo), cada jogador pode ter Monstrinhos em uma **caixa compartilhada** (`sharedBox`). A caixa é de toda a sessão.
+
+### 41.2 Estrutura
+
+```javascript
+GameState.sharedBox = [
+    {
+        slotId: string,          // ID único do slot na caixa
+        ownerPlayerId: string,   // Jogador dono do slot
+        monster: object          // Instância do Monstrinho
+    }
+    // ...
+]
+```
+
+### 41.3 Limites
+
+| Limite | Valor | Constante |
+|--------|------:|-----------|
+| Tamanho máximo do time (party) | 6 | `GameState.config.maxTeamSize` (padrão: 6) |
+| Capacidade total da sharedBox | 100 slots | `BOX_MAX_TOTAL = 100` |
+
+### 41.4 Fluxo de Captura
+
+```
+Captura bem-sucedida
+  → actualDest = (player.team.length < maxTeamSize) ? 'party' : 'box'
+  → Se 'party': player.team.push(monster)
+  → Se 'box':   GameState.sharedBox.push({ slotId, ownerPlayerId, monster })
+  → markDexCaptured(state, templateId)
+```
+
+### 41.5 Troca Team ↔ Box
+
+```javascript
+// Mover monstro do time para a box
+sharedBox.push({ slotId, ownerPlayerId, monster: mon })
+player.team.splice(teamIndex, 1)
+
+// Mover monstro da box para o time (se team não cheio)
+if (player.team.length >= TEAM_MAX) → erro
+player.team.push(slot.monster)
+sharedBox.splice(slotIndex, 1)
+```
+
+---
+
+## 42. Egg Hatcher — Sistema de Chocamento de Ovos
+
+> Source of truth: `js/data/eggHatcher.js` (PR14A)
+
+### 42.1 Regras
+
+1. Cada ovo gera apenas Monstrinhos da **mesma raridade** do ovo
+2. Pool gerado dinamicamente do catálogo (`getMonstersMapSync()`)
+3. Auto-save apenas após sucesso
+4. Validações de segurança: time cheio, pool vazio, qty > 0
+
+### 42.2 Fluxo de hatchEgg
+
+```
+hatchEgg(state, playerId, eggItemId)
+  1. Validar state e player
+  2. Buscar def do ovo (getItemById)
+  3. Extrair raridade do ovo (effects[0].rarity)
+  4. getMonstersByRarity(rarity) → lista de templates
+  5. chooseRandom(templates) → template escolhido
+  6. Verificar espaço no time (< maxTeamSize)
+  7. createMonsterInstanceFromTemplate(template) → instância canônica
+  8. player.team.push(instance)
+  9. Reduzir qty do ovo no inventário
+ 10. markDexCaptured(state, templateId)
+ 11. Salvar
+ → Retorna { success, message, monster }
+```
+
+### 42.3 Pipeline de Criação (Canon Bridge)
+
+`hatchEggFromInventory()` em `index.html` usa **`createMonsterInstanceFromTemplate()`** (canon bridge), que aplica:
+1. speciesBridge → offsets de stats
+2. slotUnlocks → unlockedSkillSlots
+3. kitSwap → habilidades de espécie
+
+> `createMonsterInstance()` antigo está **deprecated** com JSDoc.
+
+### 42.4 Preços dos Ovos (referência)
+
+| ID | Raridade | Compra | Venda |
+|----|----------|-------:|------:|
+| EGG_C | Comum | 120 | 59 |
+| EGG_U | Incomum | 300 | 149 |
+| EGG_R | Raro | 750 | 374 |
+| EGG_M | Místico | 1500 | 749 |
+| EGG_L | Lendário | 3000 | 1499 |
+
+---
+
+## 43. Sistema de Loja (Shop)
+
+> Source of truth: `js/shopSystem.js`
+
+### 43.1 Regras de Preço de Venda
+
+```javascript
+getSellPrice(itemDef)
+  // Sem price.buy → null (não vendável)
+  // Com price.sell explícito → usa esse valor
+  // Fallback → floor(buy * 0.5)
+  // Garante: sell >= 1 e sell < buy
+```
+
+### 43.2 Catálogo de Compra
+
+```javascript
+getShopCatalog(allItems)
+  // Filtra: item.price.buy > 0 && !item.deprecated
+  // Retorna itens disponíveis para comprar
+```
+
+### 43.3 Pipeline de Compra
+
+```javascript
+canBuy(player, itemDef, qty = 1)
+  // Verifica player.money >= price.buy * qty
+
+executeBuy(player, itemDef, qty = 1)
+  // player.money -= price.buy * qty
+  // player.inventory[itemId] = (qtd atual) + qty
+  // Retorna player atualizado
+```
+
+### 43.4 Pipeline de Venda
+
+```javascript
+canSell(player, itemDef, qty = 1)
+  // Verifica qty disponível no inventário (excluindo itens equipados)
+
+executeSell(player, itemDef, qty = 1)
+  // player.money += sellPrice * qty
+  // player.inventory[itemId] -= qty
+
+getSellableInventory(player, allItems)
+  // Exclui itens com heldItemId ativo no team
+  // Retorna [{ itemDef, qty, sellPrice }]
+```
+
+### 43.5 Itens Disponíveis para Compra (com preços)
+
+| Item | Compra |
+|------|-------:|
+| ClasterOrb Comum | 30 |
+| ClasterOrb Incomum | 80 |
+| ClasterOrb Rara | 150 |
+| Petisco de Cura | 20 |
+| Ração Revigorante | 50 |
+| Elixir Máximo | 200 |
+| Amuleto de Força (Comum) | 50 |
+| Escudo Leve (Comum) | 50 |
+| Colar de Poder (Incomum) | 120 |
+| Armadura Reforçada (Incomum) | 120 |
+| Ovo Comum | 120 |
+| Ovo Incomum | 300 |
+| Ovo Raro | 750 |
+| Ovo Místico | 1500 |
+| Ovo Lendário | 3000 |
+
+---
+
+## 44. Restrição de Classe em Batalha
+
+> Source of truth: `tests/classRestriction.test.js` + `index.html:openSwitchMonsterModal()`
+
+### 44.1 Regra
+
+Ao trocar de Monstrinho durante uma batalha, o jogador só pode colocar em campo Monstrinhos que satisfaçam **todas** as três condições:
+
+1. **Vivo:** `mon.hp > 0`
+2. **Não é o ativo atual:** `idx !== currentActiveIndex`
+3. **Mesma classe que o jogador:** `mon.class === player.class`
+
+### 44.2 Implementação
+
+```javascript
+// Em openSwitchMonsterModal() — index.html
+const availableMonsters = player.team.filter((mon, idx) =>
+    mon.hp > 0 &&
+    idx !== player.activeIndex &&
+    mon.class === player.class
+);
+```
+
+### 44.3 Casos de Borda
+
+| Situação | Resultado |
+|----------|-----------|
+| Jogador com Monstrinhos de classes diferentes no time | Apenas da mesma classe aparecem |
+| Todos os Monstrinhos da mesma classe estão desmaiados | Lista vazia → não pode trocar |
+| Modo Mestre/Debug ativo | Cross-class pode ser liberado pelo terapeuta |
+| Captura | Sem restrição — qualquer classe pode ser capturada |
+
+### 44.4 Exceção — Modo Terapeuta
+
+O campo `player.allowedClasses` pode ser definido manualmente pelo terapeuta/mestre para liberar cross-class em batalha específica. Sem esse campo, a regra padrão é `mon.class === player.class`.
+
+---
+
+## 45. Stats Base por Classe (MONSTER_CATALOG inline)
+
+> Source of truth: `index.html` — `const MONSTER_CATALOG`
+
+Os Monstrinhos têm 5 stats base explícitos no catálogo:
+
+| Monstrinho | Classe | HP | ATK | DEF | SPD | ENE |
+|-----------|--------|---:|----:|----:|----:|----:|
+| Cantapau (MON_001) | Bardo | 28 | 6 | 4 | 6 | 8 |
+| Pedrino (MON_002) | Guerreiro | 32 | 7 | 6 | 5 | 6 |
+| Faíscari (MON_003) | Mago | 26 | 8 | 3 | 7 | 10 |
+| Ninfolha (MON_004) | Curandeiro | 30 | 4 | 4 | 5 | 12 |
+| Garruncho (MON_005) | Caçador | 29 | 7 | 3 | 8 | 8 |
+| Lobinho (MON_006) | Animalista | 31 | 6 | 5 | 5 | 7 |
+| Trovão (MON_007) | Bárbaro | 33 | 8 | 4 | 4 | 6 |
+| Sombrio (MON_008) | Ladino | 27 | 7 | 4 | 8 | 6 |
+| Ferrozimon (MON_010) | Guerreiro | 29 | 7 | 9 | 4 | 4 |
+| Pedrino-Evol. 2 (MON_002B) | Guerreiro | 42 | 10 | 8 | 6 | 6 |
+| Cavalheiromon (MON_010B) | Guerreiro | 39 | 10 | 12 | 5 | 5 |
+| Kinguespinhomon (MON_010C) | Guerreiro | 50 | 14 | 16 | 6 | 6 |
+| Arconouricomon (MON_010D) | Guerreiro | 63 | 17 | 17 | 8 | 9 |
+
+> **Nota:** SPD e ENE são campos presentes no catálogo inline (`baseSpd`, `baseEne`) e são usados para calcular iniciativa e custo de habilidades. O sistema canônico `data/monsters.json` registra apenas HP base; ATK/DEF/SPD/ENE são calculados pelo motor de combat via `recalculateStatsFromTemplate()`.
+
+### 45.1 Evolução Automática (evolvesTo / evolvesAt)
+
+| Campo | Descrição |
+|-------|-----------|
+| `evolvesTo` | ID do template do próximo estágio (ex: `'MON_002B'`) |
+| `evolvesAt` | Nível de evolução (ex: `12` = evolui ao atingir Lv12) |
+
+Função: `maybeEvolveAfterLevelUp(mon, log, hpPctBeforeLevelUp)` — verifica e aplica evolução após level up, preservando HP% pré-evolução.
+
+---
+
+## 46. Tabela de Emojis por Classe e Raridade
+
+> Source of truth: `index.html` — `const MM_TABLES`
+
+### 46.1 Emojis de Classe
+
+| Classe | Emoji |
+|--------|:-----:|
+| Guerreiro | ⚔️ |
+| Mago | 🔮 |
+| Curandeiro | 💚 |
+| Bárbaro | ⚡ |
+| Ladino | 🌑 |
+| Bardo | 🎵 |
+| Caçador | 🏹 |
+| Animalista | 🐺 |
+
+### 46.2 Emojis de Raridade
+
+| Raridade | Emoji | Cor |
+|----------|:-----:|-----|
+| Comum | ⚪ | cinza |
+| Incomum | 🟢 | verde |
+| Raro | 🔵 | azul |
+| Místico | 🟣 | roxo |
+| Lendário | 🟡 | dourado |
+
+---
+
+## 47. Estado Global — GameState Completo
+
+> Source of truth: `index.html` — inicialização de `GameState`
+
+```javascript
+GameState = {
+    // Sessão
+    sessionId: string,               // ID da sessão atual
+    sessionName: string,             // Nome da sessão
+
+    // Players
+    players: Player[],               // Array de jogadores
+    
+    // Combate
+    currentEncounter: object|null,   // Encontro ativo
+
+    // Dex e economia
+    partyDex: { entries, meta },     // Monstródex do grupo
+    partyMoney: number,              // Cofre coletivo
+    
+    // Box compartilhada
+    sharedBox: SlotBox[],            // Array de slots
+
+    // Tutorial
+    tutorial: {
+        active: boolean,
+        stepIndex: number,
+        done: object
+    },
+
+    // Config
+    config: {
+        battleXpBase: 15,
+        levelExpo: 1.5,
+        enemyHealThreshold: 0.30,
+        enemyHealChance: 0.60,
+        bossHealChance: 0.85,
+        maxTeamSize: 6,
+        captureBase: { Comum:60, Incomum:45, Raro:30, Místico:18, Lendário:10 },
+        fleeBase: { Comum:10, Incomum:12, Raro:15, Místico:18, Lendário:25 },
+        rarityXP: { Comum:1.0, Incomum:1.05, Raro:1.10, Místico:1.15, Lendário:1.25 },
+        rarityPWR: { Comum:1.0, Incomum:1.08, Raro:1.18, Místico:1.32, Lendário:1.50 },
+        friendshipConfig: { battleWin:2, battleLoss:-5, useHealItem:5, levelUp:3, faint:-3 }
+    }
+}
+```
+
+### 47.1 Estrutura do Player
+
+```javascript
+player = {
+    id: string,               // 'player_XXXX'
+    name: string,
+    class: string,            // Classe do jogador
+    money: number,            // Moedas do jogador
+    inventory: {              // Inventário
+        [itemId]: number      // Quantidade
+    },
+    team: MonsterInstance[],  // Time ativo (máx 6)
+    activeIndex: number,      // Índice do Monstrinho ativo
+    questState: {
+        activeQuestIds: string[],
+        completedQuestIds: string[],
+        progress: { [questId]: { count, target } }
+    },
+    stats: {                  // Estatísticas do jogador
+        battlesWon: number,
+        totalXpGained: number
+    }
+}
+```
+
+---
+
+## 48. Canon Fase 6.1 — Auditoria de Kit Swap
+
+> Source of truth: `tests/kitSwapAudit.test.js` | Memória atualizada
+
+### 48.1 Correção Aplicada
+
+Durante a auditoria (PR pós-Fase 6), uma inconsistência foi identificada:
+
+| Espécie | Slot | Problema | Correção |
+|---------|:----:|----------|----------|
+| moonquill | 4 | Véu Arcano I tinha `cost = 3` (ENE) inconsistente com Enfraquecer II (`cost = 4`, 1.0 ATK-t/ENE ratio vs 2.0) | `cost corrigido 3 → 4` |
+
+**Filosofia oficializada:**
+- **Slot 1** = identidade da espécie (habilidade de base única)
+- **Slot 4** = assinatura da espécie (habilidade mais poderosa/característica)
+
+### 48.2 Status Pós-Fase 6.1
+
+- **2.307 testes passando** em 69 arquivos
+- Auditoria: `tests/kitSwapAudit.test.js` (39 testes)
+- Próximo: evolução automática ou expansão de espécies
+
+---
+
+## 49. Histórico de Testes por Fase
+
+| Fase | Módulo/PR | Testes Passando | Arquivos |
+|------|-----------|----------------:|--------:|
+| Fase 1 | Combat MVP | ~1.700 | 55 |
+| Fase 2 | canonLoader | 1.995 | 60 |
+| Fase 3 | speciesBridge | 2.054 | 62 |
+| Fase 4.0 | speciesPassives (shieldhorn/emberfang) | 2.091 | 63 |
+| Fase 4.1 | speciesPassives (moonquill/floracura) | 2.129 | 64 |
+| Fase 4.2 | speciesPassives (guardas isFirstHit/isOffensive) | 2.165 | 65 |
+| Fase 4.3 | speciesPassives (skillType explícito) | 2.189 | 66 |
+| Fase 5 | slotUnlocks | 2.228 | 67 |
+| Fase 6 | kitSwap | 2.268 | 68 |
+| Fase 6.1 | kitSwapAudit | 2.307 | 69 |
+
+> **Comando para executar:** `npx vitest run`
+
+---
+
 *Documento gerado a partir do código real do repositório em 2026-04-03.*
-*Próxima revisão obrigatória após Canon Fase 5 (kit_swap).*
+*Atualizado com seções 35–49 em 2026-04-03.*
+*Próxima revisão: após implementação de evolução automática ou expansão de espécies canônicas.*
