@@ -201,26 +201,26 @@ describe('Fase 8 — templates sem mapeamento (decisão de design)', () => {
         });
     });
 
-    describe('Caçador — sem espécie canônica', () => {
-        it('MON_005 (Garruncho) permanece sem mapeamento', () => {
+    describe('Caçador — espécie canônica swiftclaw (Fase 9)', () => {
+        it('MON_005 (Garruncho) permanece sem mapeamento — sem linha evolutiva', () => {
             expect(resolveCanonSpeciesId('MON_005')).toBeNull();
         });
-        it('MON_013 (Miaumon) permanece sem mapeamento', () => {
-            expect(resolveCanonSpeciesId('MON_013')).toBeNull();
+        it('MON_013 (Miaumon) mapeia para swiftclaw — ATK 8, DEF 4, SPD 9', () => {
+            expect(resolveCanonSpeciesId('MON_013')).toBe('swiftclaw');
         });
-        it('MON_025 (Pulimbon) permanece sem mapeamento', () => {
-            expect(resolveCanonSpeciesId('MON_025')).toBeNull();
+        it('MON_025 (Pulimbon) mapeia para swiftclaw — ATK 6, DEF 4, SPD 10', () => {
+            expect(resolveCanonSpeciesId('MON_025')).toBe('swiftclaw');
         });
     });
 
-    describe('Ladino — sem espécie canônica', () => {
-        it('MON_008 (Sombrio) permanece sem mapeamento', () => {
+    describe('Ladino — espécie canônica shadowsting desde Fase 10', () => {
+        it('MON_022 (Corvimon) agora mapeado para shadowsting (Fase 10)', () => {
+            expect(resolveCanonSpeciesId('MON_022')).toBe('shadowsting');
+        });
+        it('MON_008 (Sombrio) permanece sem mapeamento — sem linha evolutiva', () => {
             expect(resolveCanonSpeciesId('MON_008')).toBeNull();
         });
-        it('MON_022 (Corvimon) permanece sem mapeamento', () => {
-            expect(resolveCanonSpeciesId('MON_022')).toBeNull();
-        });
-        it('MON_030 (Furtilhon) permanece sem mapeamento', () => {
+        it('MON_030 (Furtilhon) permanece sem mapeamento — DEF floor marginal / perfil ambíguo', () => {
             expect(resolveCanonSpeciesId('MON_030')).toBeNull();
         });
     });
@@ -320,14 +320,14 @@ describe('Fase 8 — cobertura do bridge com catálogo completo', () => {
         expect(FULL_CATALOG).toHaveLength(64);
     });
 
-    it('deve reportar 32 templates mapeados após Fase 8', () => {
+    it('deve reportar 42 templates mapeados após Fase 10 (32 Fase 8 + 7 Caçador + 3 Ladino)', () => {
         const report = getBridgeCoverageReport(FULL_CATALOG);
-        expect(report.mapped).toBe(32);
+        expect(report.mapped).toBe(42);
     });
 
-    it('deve reportar 32 templates não mapeados (classes sem species + MON_100)', () => {
+    it('deve reportar 22 templates não mapeados (Bardo, Ladino parcial, Animalista, MON_005, MON_100)', () => {
         const report = getBridgeCoverageReport(FULL_CATALOG);
-        expect(report.unmapped).toBe(32);
+        expect(report.unmapped).toBe(22);
     });
 
     it('deve reportar total correto de 64', () => {
@@ -335,7 +335,7 @@ describe('Fase 8 — cobertura do bridge com catálogo completo', () => {
         expect(report.total).toBe(64);
     });
 
-    it('todos os 32 mapeamentos da tabela devem resolver para valor válido no catálogo completo', () => {
+    it('todos os 42 mapeamentos da tabela devem resolver para valor válido no catálogo completo', () => {
         const mappedIds = new Set(Object.keys(RUNTIME_TO_CANON_SPECIES));
         const catalogIds = new Set(FULL_CATALOG.map(t => t.id));
         for (const id of mappedIds) {
@@ -343,18 +343,25 @@ describe('Fase 8 — cobertura do bridge com catálogo completo', () => {
         }
     });
 
-    it('getEligibleUnmappedTemplateIds deve retornar apenas MON_100 no catálogo completo', () => {
-        // Todos os base stages das classes MVP já estão mapeados após Fase 8.
-        // MON_100 é Guerreiro base, não mapeado (sem perfil tank), único elegível restante.
+    it('getEligibleUnmappedTemplateIds deve retornar MON_005, MON_100, MON_008, MON_030 no catálogo completo', () => {
+        // Após Fase 10: Caçador tem swiftclaw, Ladino tem shadowsting.
+        // Elegíveis = base templates não mapeados com classe que tem canonical species:
+        //   MON_005 (Caçador, sem linha evolutiva — não mapeado intencionalmente)
+        //   MON_100 (Guerreiro, sem perfil tank claro — não mapeado intencionalmente)
+        //   MON_008 (Ladino, sem linha evolutiva — não mapeado intencionalmente)
+        //   MON_030 (Ladino, perfil ambíguo / DEF floor — não mapeado intencionalmente)
         const eligible = getEligibleUnmappedTemplateIds(FULL_CATALOG);
         const eligibleIds = eligible.map(e => e.id);
-        expect(eligibleIds).toHaveLength(1);
+        expect(eligibleIds).toHaveLength(4);
+        expect(eligibleIds).toContain('MON_005');
         expect(eligibleIds).toContain('MON_100');
+        expect(eligibleIds).toContain('MON_008');
+        expect(eligibleIds).toContain('MON_030');
     });
 
     it('unmapped do catálogo completo não deve conter nenhum template MVP de base ou evolução', () => {
         const unmapped = getUnmappedTemplateIds(FULL_CATALOG);
-        // Todos estes devem estar mapeados após Fase 8
+        // Todos estes devem estar mapeados após Fase 10
         const expectedMapped = [
             'MON_002', 'MON_002B', 'MON_002C',
             'MON_010', 'MON_010B', 'MON_010C', 'MON_010D',
@@ -368,23 +375,25 @@ describe('Fase 8 — cobertura do bridge com catálogo completo', () => {
             'MON_004',
             'MON_020', 'MON_020B', 'MON_020C',
             'MON_028', 'MON_028B', 'MON_028C',
+            // Caçador — Fase 9
+            'MON_013', 'MON_013B', 'MON_013C', 'MON_013D',
+            'MON_025', 'MON_025B', 'MON_025C',
         ];
         for (const id of expectedMapped) {
             expect(unmapped, `${id} deveria estar mapeado`).not.toContain(id);
         }
     });
 
-    it('unmapped do catálogo completo deve conter apenas classes sem species e MON_100', () => {
+    it('unmapped do catálogo completo deve conter apenas classes sem species e exclusões explícitas', () => {
         const unmapped = getUnmappedTemplateIds(FULL_CATALOG);
         const expectedUnmapped = [
             // Bardo
             'MON_001', 'MON_011', 'MON_011B', 'MON_011C', 'MON_011D',
             'MON_027', 'MON_027B', 'MON_027C',
-            // Caçador
-            'MON_005', 'MON_013', 'MON_013B', 'MON_013C', 'MON_013D',
-            'MON_025', 'MON_025B', 'MON_025C',
-            // Ladino
-            'MON_008', 'MON_022', 'MON_022B', 'MON_022C',
+            // Caçador — apenas MON_005 (sem linha evolutiva); linhas Miaumon e Pulimbon mapeadas
+            'MON_005',
+            // Ladino — linha Corvimon mapeada na Fase 10; Sombrio e Furtilhon excluídos
+            'MON_008',
             'MON_030', 'MON_030B', 'MON_030C',
             // Animalista
             'MON_006', 'MON_012', 'MON_012B', 'MON_012C', 'MON_012D',
@@ -392,7 +401,7 @@ describe('Fase 8 — cobertura do bridge com catálogo completo', () => {
             // Guerreiro sem perfil
             'MON_100',
         ];
-        expect(unmapped).toHaveLength(32);
+        expect(unmapped).toHaveLength(22);
         for (const id of expectedUnmapped) {
             expect(unmapped, `${id} deveria estar unmapped`).toContain(id);
         }
@@ -488,8 +497,8 @@ describe('Fase 8 — regressão: applyStatOffsets sem alteração nos offsets ca
 
 describe('Fase 8 — integridade da tabela RUNTIME_TO_CANON_SPECIES', () => {
 
-    it('deve conter exatamente 32 mapeamentos', () => {
-        expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(32);
+    it('deve conter exatamente 42 mapeamentos (32 Fase 8 + 7 Caçador Fase 9 + 3 Ladino Fase 10)', () => {
+        expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(42);
     });
 
     it('todos os valores devem ser strings não-vazias', () => {
@@ -500,7 +509,7 @@ describe('Fase 8 — integridade da tabela RUNTIME_TO_CANON_SPECIES', () => {
     });
 
     it('todos os valores devem ser species_ids válidos', () => {
-        const validSpecies = new Set(['shieldhorn', 'emberfang', 'moonquill', 'floracura']);
+        const validSpecies = new Set(['shieldhorn', 'emberfang', 'moonquill', 'floracura', 'swiftclaw', 'shadowsting']);
         for (const [k, v] of Object.entries(RUNTIME_TO_CANON_SPECIES)) {
             expect(validSpecies.has(v), `species inválida "${v}" para ${k}`).toBe(true);
         }

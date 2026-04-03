@@ -1,9 +1,9 @@
 /**
- * SPECIES BRIDGE TESTS (Fase 3 / Fase 3.2 / Fase 8)
+ * SPECIES BRIDGE TESTS (Fase 3 / Fase 3.2 / Fase 8 / Fase 9)
  *
  * Testes para js/canon/speciesBridge.js
  * Cobertura:
- *   - Tabela RUNTIME_TO_CANON_SPECIES (32 mapeamentos após Fase 8)
+ *   - Tabela RUNTIME_TO_CANON_SPECIES (39 mapeamentos após Fase 9)
  *   - resolveCanonSpeciesId()
  *   - applyStatOffsets()
  *   - resolveAndApply() (com mock de getSpeciesStatOffsets via vi.mock)
@@ -72,10 +72,10 @@ const BASE_STATS = { hpMax: 30, atk: 7, def: 5, spd: 5, eneMax: 10 };
 
 describe('speciesBridge — tabela RUNTIME_TO_CANON_SPECIES', () => {
 
-    it('deve conter os 32 mapeamentos definidos na Fase 8 (12 bases + 20 evoluções)', () => {
-        // Valor 32 fixo e intencional: documenta o estado do bridge após Fase 8.
+    it('deve conter os 42 mapeamentos definidos na Fase 10 (12 bases + 20 evoluções MVP + 7 Caçador + 3 Ladino)', () => {
+        // Valor 42 fixo e intencional: documenta o estado do bridge após Fase 10.
         // Atualizar junto com cada novo mapeamento adicionado à tabela.
-        expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(32);
+        expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(42);
     });
 
     it('MON_010 mapeia para shieldhorn (Guerreiro tank — DEF 9)', () => {
@@ -389,7 +389,13 @@ describe('speciesBridge — resolveAndApply()', () => {
 
 // Catálogo mínimo de teste — cobre base stages + evoluções + classes variadas
 // Atualizado na Fase 8: MON_002B e MON_014B agora mapeados; substituídos por
-// MON_011B (Bardo evolução) e MON_022B (Ladino evolução) — sem species canônica.
+// MON_011B (Bardo evolução) e MON_030B (Ladino evolução) — sem mapeamento.
+// Atualizado na Fase 9: Caçador agora tem species (swiftclaw). MON_005 (Garruncho)
+// passa a ser elegível pelo getEligibleUnmappedTemplateIds mas não foi mapeado
+// intencionalmente (sem linha evolutiva validável).
+// Atualizado na Fase 10: Ladino agora tem species (shadowsting). MON_022/B/C mapeados.
+// SAMPLE_CATALOG usa MON_030B (linha Furtilhon — não mapeada) para representar Ladino
+// não mapeado (substituiu MON_022B que foi mapeado na Fase 10).
 const SAMPLE_CATALOG = [
     { id: 'MON_001', class: 'Bardo' },          // não mapeado — classe sem species
     { id: 'MON_002', class: 'Guerreiro' },       // mapeado → shieldhorn (Fase 3.2)
@@ -399,8 +405,8 @@ const SAMPLE_CATALOG = [
     { id: 'MON_007', class: 'Bárbaro' },         // mapeado → emberfang
     { id: 'MON_010', class: 'Guerreiro' },       // mapeado → shieldhorn
     { id: 'MON_014', class: 'Mago' },            // mapeado → moonquill (Fase 3.2)
-    { id: 'MON_022B', class: 'Ladino' },         // não mapeado — classe sem species
-    { id: 'MON_005', class: 'Caçador' },         // não mapeado — classe sem species canônica
+    { id: 'MON_030B', class: 'Ladino' },         // não mapeado — linha excluída (DEF floor / perfil ambíguo)
+    { id: 'MON_005', class: 'Caçador' },         // não mapeado — sem linha evolutiva (Fase 9)
     { id: 'MON_100', class: 'Guerreiro' },       // não mapeado — sem perfil tank claro
 ];
 
@@ -410,7 +416,7 @@ describe('speciesBridge — getUnmappedTemplateIds()', () => {
         const unmapped = getUnmappedTemplateIds(SAMPLE_CATALOG);
         expect(unmapped).toContain('MON_001');
         expect(unmapped).toContain('MON_011B');
-        expect(unmapped).toContain('MON_022B');
+        expect(unmapped).toContain('MON_030B');
         expect(unmapped).toContain('MON_005');
         expect(unmapped).toContain('MON_100');
     });
@@ -462,7 +468,7 @@ describe('speciesBridge — getEligibleUnmappedTemplateIds()', () => {
         const eligible = getEligibleUnmappedTemplateIds(SAMPLE_CATALOG);
         const eligibleIds = eligible.map(e => e.id);
         expect(eligibleIds).not.toContain('MON_011B');  // Bardo — sem species
-        expect(eligibleIds).not.toContain('MON_022B');  // Ladino — sem species
+        expect(eligibleIds).not.toContain('MON_030B');  // Ladino evolução (sufixo B) — não elegível
     });
 
     it('NÃO deve incluir classes sem species canônica', () => {
@@ -470,8 +476,9 @@ describe('speciesBridge — getEligibleUnmappedTemplateIds()', () => {
         const eligibleIds = eligible.map(e => e.id);
         expect(eligibleIds).not.toContain('MON_001'); // Bardo — sem species
         expect(eligibleIds).not.toContain('MON_011B'); // Bardo — sem species
-        expect(eligibleIds).not.toContain('MON_005'); // Caçador — sem species
-        expect(eligibleIds).not.toContain('MON_022B'); // Ladino — sem species
+        // MON_005 (Caçador) agora é ELEGÍVEL (Caçador tem swiftclaw desde Fase 9)
+        // mas não foi mapeado por decisão de design (sem linha evolutiva validável).
+        expect(eligibleIds).not.toContain('MON_030B'); // Ladino evolução (sufixo B) — não elegível por regex
     });
 
     it('NÃO deve incluir templates já mapeados', () => {
@@ -500,7 +507,7 @@ describe('speciesBridge — getBridgeCoverageReport()', () => {
         const report = getBridgeCoverageReport(SAMPLE_CATALOG);
         // SAMPLE_CATALOG: 11 entradas
         // Mapeados: MON_002, MON_003, MON_004, MON_007, MON_010, MON_014 = 6
-        // Não mapeados: MON_001, MON_011B, MON_022B, MON_005, MON_100 = 5
+        // Não mapeados: MON_001, MON_011B, MON_030B, MON_005, MON_100 = 5
         expect(report.total).toBe(11);
         expect(report.mapped).toBe(6);
         expect(report.unmapped).toBe(5);
