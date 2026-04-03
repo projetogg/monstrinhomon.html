@@ -1310,6 +1310,575 @@ RARITY_XP  = { Comum: 1.00, Incomum: 1.05, Raro: 1.10, Místico: 1.15, Lendário
 
 ---
 
+## 18. Canon Layer — Detalhe Completo
+
+### 18.1 Decisões Canônicas Registradas
+
+> Source of truth: `design/canon/CANON_DECISIONS.md`
+
+#### Decisão 1 — Matchups: canônico como source of truth (Fase 1)
+
+O motor legado (`GAME_RULES.md`) definiu ciclo de 7 classes. O arquivo `class_matchups.json` define ciclo de **8 classes** (inclui Animalista) com divergências documentadas:
+
+| Classe | Legado hardcoded | **Canônico (adotado)** |
+|--------|-----------------|----------------------|
+| Guerreiro | fraco contra Curandeiro | fraco contra **Mago** |
+| Mago | forte contra Bárbaro | forte contra **Guerreiro** |
+| Ladino | forte contra Mago | forte contra **Caçador** |
+| Animalista | neutro (sem matchup) | forte contra **Bardo**, fraco contra **Bárbaro** |
+
+**Regra de fallback:** se `class_matchups.json` falhar no carregamento, a tabela hardcoded legada é mantida. O estado de combate não persiste entre sessões → saves existentes não são afetados.
+
+#### Decisão 2 — Subconjunto MVP Fase 1: 4 classes
+
+Classes no MVP Fase 1: **Guerreiro, Bárbaro, Mago, Curandeiro**.  
+Bardo, Ladino, Caçador e Animalista serão incorporados em fases posteriores.
+
+#### Decisão 3 — Mapeamento PT-BR ↔ ID Canônico
+
+| PT-BR | ID canônico |
+|-------|------------|
+| Guerreiro | warrior |
+| Bárbaro | barbarian |
+| Mago | mage |
+| Curandeiro | healer |
+| Bardo | bard |
+| Ladino | rogue |
+| Caçador | hunter |
+| Animalista | animalist |
+
+**Regra:** nunca usar IDs canônicos diretamente no motor — sempre converter via `classIdFromPtbr()` / `classPtbrFromId()` (ambos em `canonLoader.js`).
+
+### 18.2 Matchups Canônicos Completos (class_matchups.json)
+
+| Classe | Forte contra | Fraco contra |
+|--------|-------------|-------------|
+| Guerreiro | Ladino | Mago |
+| Bárbaro | Curandeiro | Guerreiro |
+| Mago | Guerreiro | Caçador |
+| Curandeiro | Bárbaro | Bardo |
+| Bardo | Curandeiro | Animalista |
+| Ladino | Caçador | Guerreiro |
+| Caçador | Mago | Ladino |
+| Animalista | Bardo | Bárbaro |
+
+**Ciclo de 8 completo:**
+```
+Guerreiro → Ladino → Caçador → Mago → Guerreiro
+Bárbaro → Curandeiro → Bárbaro (loop curto)
+Bardo → Curandeiro ← Bárbaro
+Animalista → Bardo ← Ladino → Caçador
+```
+
+### 18.3 Espécies Canônicas (design/canon/species.json)
+
+| ID canônico | Nome PT-BR | Classe | Raridade | Arquétipo |
+|------------|-----------|--------|---------|----------|
+| `shieldhorn` | Escudicorno | Guerreiro | Comum | tank_puro |
+| `emberfang` | Presabrasa | Bárbaro | Incomum | burst_agressivo |
+| `moonquill` | Plumalua | Mago | Comum | controle_leve |
+| `floracura` | Floracura | Curandeiro | Comum | cura_estavel |
+
+**Offsets de stats aplicados na criação de instância:**
+
+| Espécie | HP | ATK | DEF | ENE | AGI |
+|---------|:--:|:---:|:---:|:---:|:---:|
+| shieldhorn | +1 | −1 | +1 | 0 | 0 |
+| emberfang | 0 | +1 | −1 | 0 | +1 |
+| moonquill | 0 | 0 | 0 | +1 | 0 |
+| floracura | +1 | 0 | 0 | +1 | −1 |
+
+### 18.4 Passivas de Espécie (speciesPassives.js — Fase 4.x)
+
+| Espécie | Passiva | Gatilho | Guarda |
+|---------|---------|---------|--------|
+| shieldhorn | `damageReduction: 1` | `on_hit_received` | `isFirstHitThisTurn` — apenas 1.º ataque do turno |
+| emberfang | `atkBonus: 1` | `on_attack` | `isOffensiveSkill: true` (skill.type=DAMAGE) + `hpPct > 0.70` |
+| moonquill | `spdBuff: 1t` | `on_skill_used` | `isDebuff: true` — apenas se a skill aplicou debuff |
+| floracura | `healBonus: 3` | `on_heal_item` | `isFirstHeal` — apenas primeira cura por combate |
+
+**API:** `resolvePassiveModifier(instance, context)` em `speciesPassives.js`.
+- `context` contém: `event`, `isFirstHitThisTurn`, `isOffensiveSkill`, `isDebuff`, `isFirstHeal`
+- `passiveState` no objeto encounter rastreia: `shieldhornBlockedThisTurn`, `floracuraHealUsed`
+
+### 18.5 Mapeamento Runtime → Canônico (speciesBridge.js)
+
+| Template Runtime | Espécie Canônica | Classe |
+|-----------------|-----------------|--------|
+| MON_002, MON_026 | shieldhorn | Guerreiro |
+| MON_010 | shieldhorn | Guerreiro |
+| MON_007, MON_021, MON_029 | emberfang | Bárbaro |
+| MON_003, MON_014, MON_024 | moonquill | Mago |
+| MON_004, MON_020, MON_028 | floracura | Curandeiro |
+| MON_100 | *(sem mapeamento — sem perfil tank)* | — |
+
+**Total: 12 mapeamentos ativos.** Templates sem mapeamento funcionam normalmente (sem offsets).
+
+### 18.6 Linhas Evolutivas Canônicas
+
+| Linha | Estágio 1 | Lv | Estágio 2 | Lv | Estágio 3 |
+|-------|----------|:--:|----------|:--:|----------|
+| shieldhorn_line | Escudicorno | 12 | Basticorno | 25 | Aegishorn |
+| emberfang_line | Presabrasa | 12 | Furiagume | 25 | Infernomord |
+
+**Regra de progressão:** cada evolução reforça o arquétipo — nunca muda o papel central.
+
+### 18.7 Progressão de Slots por Nível (slotUnlocks.js — Fase 5)
+
+| Nível | Evento |
+|------:|--------|
+| 1 | Slot 1 ativo (ataque básico) |
+| 5 | Slot 2 desbloqueado |
+| 10 | Upgrade do slot 1 ou 2 |
+| 15 | Slot 3 desbloqueado |
+| 22 | Upgrade do slot 2 ou 3 |
+| 30 | Slot 4 desbloqueado (Assinatura) |
+
+**API:** `getUnlockedSlotsForLevel(level)` → retorna 1, 2, 3 ou 4.
+- `_resolveUnlockedSlots()` em `index.html` centraliza o fallback.
+- `levelUpMonster()` em `xpActions.js` atualiza `unlockedSkillSlots` na instância.
+
+### 18.8 Regras de Crescimento de Stats por Classe
+
+> `design/canon/level_progression.json → class_growth_rules`
+
+| Classe (ID) | Prioridade de crescimento |
+|------------|--------------------------|
+| warrior | HP/DEF → ATK moderado → AGI baixa |
+| barbarian | ATK → HP bom → DEF moderada/baixa |
+| mage | ENE/ATK → baixa sustentação |
+| healer | ENE → HP moderado → ATK baixo |
+| bard | ENE/AGI → baixa pressão direta |
+| rogue | AGI/ATK → DEF baixa |
+| hunter | AGI/ATK → setup à distância |
+| animalist | Crescimento equilibrado com adaptação |
+
+### 18.9 Restrições de Design por Classe (design_constraints)
+
+| Classe | Restrições obrigatórias |
+|--------|------------------------|
+| Guerreiro | Não pode superar ofensivos em burst · Proteção exige custo · AGI baixa é fraqueza estrutural |
+| Bárbaro | Burst exige risco ou contrapartida · Não pode sustentar como Guerreiro |
+| Mago | Controle de duração curta · Fragilidade obrigatória |
+| Curandeiro | Cura coletiva exige alto custo de ENE · Pressão ofensiva baixa |
+| Bardo | Buff coletivo de duração curta · Dano direto baixo |
+| Ladino | Dano máximo sempre condicionado · Fragilidade real |
+| Caçador | Maior dano depende de marcação/setup · Vulnerável quando pressionado |
+| Animalista | Versatilidade sem supremacia universal · Transformação não vira "modo deus" |
+
+---
+
+## 19. Sistema de Quests
+
+> Source of truth: `js/data/questSystem.js`, `js/gameFlow.js`
+
+### 19.1 Estrutura de Dados de Quest
+
+```javascript
+{
+    id:               'QST_001',      // ID único imutável
+    nome:             'O Ovo Perdido', // Nome exibido ao jogador
+    descricao:        'string',        // Descrição do objetivo
+    localId:          'LOC_001',       // Local (ver tabela de locais)
+    preReq:           null,            // Quest pré-requisito (ou null)
+    tipoObjetivo:     'derrotar_treinador', // Ver tipos abaixo
+    objetivoMonsterId: null,           // Monstro alvo (para captura/boss)
+    objetivoQtd:      1,               // Quantidade necessária
+    rewardXp:         80,              // XP de recompensa
+    rewardGold:       60,              // Ouro de recompensa
+    rewardItemId:     'CLASTERORB_COMUM', // Item (ou null)
+    nextQuestId:      'QST_002'        // Próxima quest na cadeia
+}
+```
+
+**Tipos de Objetivo:**
+
+| Tipo | Quando completa |
+|------|----------------|
+| `derrotar_wild` | N monstros selvagens derrotados em batalha |
+| `capturar` | N monstros capturados |
+| `derrotar_treinador` | 1 treinador derrotado |
+| `derrotar_boss` | 1 boss derrotado |
+
+### 19.2 Cadeia Completa de 16 Quests
+
+| ID | Nome | Local | Tipo | Qtd | XP | Ouro | Próxima |
+|----|------|-------|------|----:|---:|-----:|---------|
+| QST_001 | O Ovo Perdido | LOC_001 | derrotar_treinador | 1 | 80 | 60 | QST_002 |
+| QST_002 | Primeira Captura | LOC_001 | capturar | 1 | 80 | 50 | QST_003 |
+| QST_003 | Rastros na Floresta | LOC_002 | derrotar_wild | 3 | 120 | 70 | QST_004 |
+| QST_004 | O Cervo da Floresta | LOC_002 | capturar | 1 | 150 | 80 | QST_005 |
+| QST_005 | Mineradores Endurecidos | LOC_003 | derrotar_treinador | 1 | 200 | 100 | QST_006 |
+| QST_006 | Pedra e Metal | LOC_003 | capturar | 1 | 180 | 90 | QST_007 |
+| QST_007 | Guardiões das Ruínas | LOC_004 | derrotar_treinador | 1 | 280 | 140 | QST_008 |
+| QST_008 | O Espectro Ancestral | LOC_004 | derrotar_boss | 1 | 400 | 200 | QST_011 |
+| QST_009 | Tesouro das Águas | LOC_005 | capturar | 1 | 220 | 110 | QST_010 |
+| QST_010 | O Abismo Cristalino | LOC_005 | derrotar_boss | 1 | 350 | 175 | QST_015* |
+| QST_011 | Calor do Inferno | LOC_006 | derrotar_wild | 3 | 350 | 175 | QST_012 |
+| QST_012 | O Rei das Chamas | LOC_006 | derrotar_boss | 1 | 600 | 300 | QST_015 |
+| QST_013 | Sombras da Noite | LOC_007 | capturar | 1 | 300 | 150 | QST_014 |
+| QST_014 | Caçada nas Trevas | LOC_007 | derrotar_treinador | 1 | 380 | 190 | QST_015* |
+| QST_015 | Desafio da Arena | LOC_008 | derrotar_treinador | 1 | 500 | 250 | QST_016 |
+| QST_016 | O Grande Campeão | LOC_008 | derrotar_boss | 1 | 800 | 400 | null |
+
+> *Rotas opcionais (LOC_005, LOC_007): podem ser ignoradas — a cadeia principal continua em LOC_006 e LOC_008.
+
+### 19.3 Mapa de Locais
+
+| ID | Nome | Tipo | Quests |
+|----|------|------|--------|
+| LOC_001 | Campina Inicial | Tutorial | QST_001–002 |
+| LOC_002 | Floresta dos Susurros | Floresta | QST_003–004 |
+| LOC_003 | Minas do Eco | Caverna/Minas | QST_005–006 |
+| LOC_004 | Ruínas Ancestrais | Ruína | QST_007–008 |
+| LOC_005 | Costa Cristalina | Água | QST_009–010 (opcional) |
+| LOC_006 | Zona Vulcânica | Montanha/Vulcão | QST_011–012 |
+| LOC_007 | Floresta Noturna | Floresta | QST_013–014 (opcional) |
+| LOC_008 | Grande Arena | Arena | QST_015–016 |
+
+### 19.4 APIs de Quest (gameFlow.js)
+
+| Função | O que faz |
+|--------|-----------|
+| `ensureQuestState(player)` | Inicializa `player.questState` (idempotente) |
+| `activateQuest(player, questId)` | Ativa quest se disponível e não concluída |
+| `autoActivateFirstQuest(player)` | Ativa QST_001 se jogador sem quests |
+| `processQuestProgress(player, enc, capturedId, log)` | Processa progresso após encontro |
+| `completeQuest(player, questId, deps, log)` | Conclui quest e distribui recompensas |
+| `handlePostEncounterFlow(player, enc, capturedId, deps)` | Orquestra todo o fluxo pós-encontro |
+| `getActiveQuestsSummary(player)` | Retorna resumo de quests ativas |
+| `hasCompletedQuest(player, questId)` | Verifica se quest foi concluída |
+
+### 19.5 Estado de Quest no Jogador
+
+```javascript
+player.questState = {
+    activeQuestIds:    ['QST_003'],     // quests em andamento
+    completedQuestIds: ['QST_001', 'QST_002'], // quests concluídas
+    progress: {
+        'QST_003': { count: 1 }         // progresso atual (precisa de 3)
+    }
+}
+```
+
+---
+
+## 20. Sistema de Combate em Grupo
+
+> Source of truth: `js/combat/groupActions.js`, `js/combat/groupRewards.js`, `js/combat/groupUI.js`, `js/combat/groupIntegration.js`
+
+### 20.1 Shape do GroupBattleState
+
+```javascript
+{
+    id: "GB_20260202_001",          // ID único
+    kind: "trainer" | "boss",       // Tipo de batalha
+    status: "active" | "ended",     // Status atual
+
+    roster: {
+        eligiblePlayerIds: ["p1","p2"],  // Podem participar
+        participants: [{ playerId, joinedAtRound, isActive }],
+        notJoined: ["p3"],
+        escaped: [{ playerId, escapedAtRound }],
+        reinforcementsQueue: [{ playerId, requestedAtRound }]
+    },
+
+    teams: {
+        players: [{                    // Monstros ativos por jogador
+            playerId: "p1",
+            activeMonster: { uid, catalogId, name, hp, hpMax, spd, cls, status }
+        }],
+        enemies: [{                    // Inimigos ativos
+            enemyId: "E1",
+            type: "trainer" | "boss" | "minion",
+            name, hp, hpMax, spd, cls, ai, status
+        }]
+    },
+
+    turn: {
+        phase: "players" | "enemies", // Fase atual
+        order: ["P1","P2","E1"],       // Ordem de turnos
+        index: 0,                      // Ponteiro atual
+        currentActorId: "P1",
+        round: 1,
+        visibleBanner: "Vez dos Jogadores"
+    },
+
+    rules: {
+        allowCapture: false,           // Treinador/boss: sem captura
+        allowItems: true,
+        allowFlee: true,
+        fleeIsIndividual: true,        // Fuga é individual, não encerra combate
+        allowLateJoin: true,
+        oneActiveMonsterPerPlayer: true
+    }
+}
+```
+
+### 20.2 Módulos de Combate em Grupo
+
+| Módulo | Localização | Responsabilidade |
+|--------|-------------|-----------------|
+| `groupActions.js` | `js/combat/` | `advanceGroupTurn`, `executeGroupFlee`, ações por turno |
+| `groupRewards.js` | `js/combat/` | `processGroupVictoryRewards` (idempotente, com flags de concessão) |
+| `groupUI.js` | `js/combat/` | `enterAttackMode`, `enterSkillMode`, `handleEnemyClick`, `cancelTargetMode` |
+| `groupIntegration.js` | `js/combat/` | `buildGroupCombatDeps`, `buildGroupRewardsDeps`, `buildGroupUIRenderDeps` |
+
+### 20.3 Processamento de Recompensas em Grupo
+
+`processGroupVictoryRewards(enc, deps)` é a função canônica e idempotente:
+- `enc.moneyGranted = true` → ouro não é concedido novamente
+- `enc.dropsGranted = true` → drops não são concedidos novamente
+- `enc.questsProcessed = true` → progresso de quest não é processado novamente
+
+### 20.4 Regras de Fuga em Grupo
+
+- `fleeIsIndividual: true` → apenas o jogador que fugiu sai da batalha
+- Batalha continua com jogadores restantes
+- Boss: fuga proibida (`allowFlee: false`)
+- Treinador: fuga permitida
+
+---
+
+## 21. Camada de Save / Persistência
+
+> Source of truth: `js/storage.js` (StorageManager), `js/saveLayer.js` (SaveLayer)
+
+### 21.1 Arquitetura de Dois Níveis
+
+```
+monstrinhomon_state  ←── fonte de verdade (auto-save contínuo)
+        ↑
+    SaveLayer.saveActiveGame()
+        ↑
+  mm_save_slot_N  ←── snapshots manuais (cópias pontuais)
+```
+
+**Regra de ouro:** `monstrinhomon_state` é a única fonte de verdade da sessão ativa. Slots são snapshots — não são sessões vivas em paralelo.
+
+### 21.2 Fluxos Corretos
+
+| Operação | Comportamento |
+|----------|--------------|
+| **Continue** | Lê `monstrinhomon_state` (auto-save). Nunca lê slot diretamente |
+| **Load Slot** | Restaura snapshot do slot → grava em `monstrinhomon_state` → atualiza associação de slot |
+| **Save Manual** | Grava `monstrinhomon_state` + cria snapshot no slot ativo |
+| **Troca de slot** | Apenas atualiza metadado operacional. Não altera auto-save |
+
+### 21.3 API do SaveLayer
+
+| Função | O que faz |
+|--------|-----------|
+| `SaveLayer.getActiveSlot()` | Slot manual associado (metadado) ou null |
+| `SaveLayer.setActiveSlot(slot)` | Define slot manual associado |
+| `SaveLayer.saveActiveGame(gameState, buildEnv)` | Auto-save + snapshot no slot associado |
+| `SaveLayer.loadActiveGame()` | Carrega do auto-save (fonte de verdade) |
+| `SaveLayer.syncMainStateAndSlot(gameState, bEnv)` | Força snapshot do slot a espelhar auto-save |
+
+### 21.4 API do StorageManager
+
+| Função | O que faz |
+|--------|-----------|
+| `saveState(data)` | Grava `monstrinhomon_state` (transacional: temp → verify → commit) |
+| `loadState()` | Carrega `monstrinhomon_state` com auto-migração |
+| `saveSlot(slot, data)` | Grava snapshot com auto-backup |
+| `loadSlot(slot)` | Carrega snapshot do slot |
+| `getLastSlot()` | Retorna último slot usado |
+| `setLastSlot(slot)` | Define último slot usado |
+
+### 21.5 Características do StorageManager
+
+- **Save transacional:** escrita em chave temp → verificação → commit → limpeza
+- **Auto-migração:** com auto-save quando migrações são necessárias
+- **Auto-backup:** antes de salvar slots (`monstrinhomon_corrupted_backup`)
+- **Parsing seguro:** JSON.parse com fallback e log de erros
+- **Sem exceções ao caller:** retorna null/false em vez de throw
+
+---
+
+## 22. GameFlow — Loop Jogável Completo
+
+> Source of truth: `js/gameFlow.js`
+
+### 22.1 Loop Principal
+
+```
+Grupo chega à área (localId) →
+  Exploração: cada jogador escolhe ponto de busca →
+    Resultado revelado (encontro/item/evento) →
+      Se encontro wild:
+        executeWild* pipeline → vitória/fuga/derrota
+        handleVictory → XP + amizade + drops
+        handlePostEncounterFlow → quest progress → completeQuest se chegou
+      Se treinador/boss:
+        GroupBattleState criado →
+        advanceGroupTurn loop →
+        processGroupVictoryRewards →
+        handlePostEncounterFlow
+```
+
+### 22.2 Estado de Quest no Encontro (enc)
+
+```javascript
+enc = {
+    type: 'wild' | 'group_trainer' | 'boss',
+    localId: 'LOC_001',           // para drops e quests
+    result: 'victory' | 'flee' | 'defeat',
+    capturedMonsterId: 'MON_003', // ou null
+    wildMonster: { ... },         // instância do wild (ou null)
+    enemies: [ { ... } ]          // inimigos em grupo (ou [])
+}
+```
+
+### 22.3 Processamento Pós-Encontro
+
+```
+handlePostEncounterFlow(player, enc, capturedId, deps)
+  ├── processQuestProgress(player, enc, capturedId, log)
+  │     └── para cada quest ativa:
+  │           verificar se enc.type + enc.localId correspondem ao objetivo
+  │           se sim: qs.progress[questId].count++
+  │           se count >= objetivoQtd: completeQuest(...)
+  └── completeQuest(player, questId, deps, log)
+        ├── distribuir rewardXp + rewardGold + rewardItemId
+        ├── mover questId para completedQuestIds
+        └── ativar nextQuestId se disponível
+```
+
+---
+
+## 23. APIs Canônicas de Combate Wild
+
+> Source of truth: `js/combat/wildCore.js`, `js/combat/wildActions.js`
+
+### 23.1 wildCore.js — Funções Puras
+
+Todas as funções são 100% determinísticas, sem side effects, testáveis sem DOM.
+
+| Função | Assinatura | O que faz |
+|--------|-----------|-----------|
+| `checkHit` | `(d20Roll, attacker, defender, classAdvantages)` | Verifica se ataque acerta (d20+ATK+classMod ≥ DEF) |
+| `calcDamage` | `({atk, def, power, damageMult})` | `max(1, floor((atk+power-def)×mult))` |
+| `getBuffModifiers` | `(monster)` | Soma buffs ativos → `{atk, def, spd}` |
+| `resolveD20Hit` | `(d20Roll, attacker, defender, deps)` | Wrapper com buffs e vantagem de classe |
+
+### 23.2 wildActions.js — Pipelines de Combate Wild
+
+| Função exportada | Contexto de uso | O que faz |
+|-----------------|----------------|-----------|
+| `initializeWildBattleParticipation(playerMon, wildMon)` | Início de batalha | Marca participação para ItemBreakage |
+| `executeWildAttack({encounter, player, playerMonster, d20Roll, deps})` | Turno do jogador | Ataque básico + crítico + contra-ataque inimigo |
+| `executeWildSkill({encounter, player, playerMonster, skillIndex, deps})` | Turno do jogador | Habilidade + custo ENE + contra-ataque inimigo |
+| `executeWildCaptureAction({encounter, player, playerMonster, deps})` | Turno do jogador | Tenta captura determinística |
+| `executeWildItemUse({encounter, player, playerMonster, itemId, deps})` | Turno do jogador | Usa item de inventário em batalha |
+| `executeWildCapture({encounter, player, playerMonster, orbInfo, deps})` | Ação de captura | Pipeline completo: threshold → captura/falha → contra-ataque |
+| `executeWildEnemyFullTurn({encounter, wildMonster, playerMonster, deps})` | Turno inimigo | ENE regen + seleção de skill/básico + d20 + dano |
+
+### 23.3 Fluxo Interno de executeWildAttack
+
+```
+1. Verificar tutorial (tutorialAllows)
+2. Processar crítico (d20 === 20: +20% dano)
+3. resolveD20Hit → hit ou miss?
+4. Se hit: calcDamage + aplicar passiva shieldhorn/emberfang
+5. Se wild derrotado: handleVictory → XP + amizade + drops
+6. Se não derrotado: processEnemyCounterattack
+   ├── applyEneRegen
+   ├── updateBuffs
+   ├── IA: skill se ENE suficiente + critério
+   └── d20 inimigo + dano ao jogador
+```
+
+### 23.4 Contra-ataque Inimigo (processEnemyCounterattack)
+
+```
+applyEneRegen(wildMonster)      → +20% ENE por turno
+updateBuffs(wildMonster)        → decrementar duração de buffs
+IA skill check:
+  se ENE suficiente + rand() < 0.4 (ou boss: 0.65):
+    processEnemySkillAttack()  → aplicar passiva moonquill antes de hit
+  senão:
+    processEnemyBasicAttack()
+```
+
+> Nota: captura fracassada usa `processEnemyCounterattack` **sem** ENE regen — design intencional.
+
+---
+
+## 24. Sistema de Economia e Loja
+
+> Source of truth: `js/shopSystem.js`
+
+### 24.1 APIs da Loja
+
+| Função | O que faz |
+|--------|-----------|
+| `getSellPrice(itemDef)` | `sell` explícito se existir; senão `floor(buy × 0.50)` |
+| `canBuy(player, itemDef, qty)` | Verifica `player.gold >= buy × qty` |
+| `executeBuy(player, itemDef, qty)` | Subtrai ouro, adiciona ao inventário |
+| `canSell(player, itemDef, qty)` | Verifica quantidade no inventário + item vendável |
+| `executeSell(player, itemDef, qty)` | Adiciona ouro, remove do inventário |
+| `getSellableInventory(player, allItems)` | Lista itens do inventário que podem ser vendidos |
+
+### 24.2 Regras de Preço
+
+```javascript
+getSellPrice(itemDef):
+  se itemDef.price.sell existe → usa sell
+  senão → floor(itemDef.price.buy × 0.50)  // 50% do preço de compra
+```
+
+**Itens não vendáveis:** `sell === null` ou ausente sem `price.buy`.
+
+---
+
+## 25. Suíte de Testes
+
+> Comando: `npx vitest run` | `npx vitest run --coverage`
+> Total atual: **2.228 testes passando em 67 arquivos** (após Canon Fase 5)
+
+### 25.1 Cobertura por Subsistema
+
+| Subsistema | Arquivo(s) de teste | Testes approx. |
+|-----------|-------------------|---------------|
+| Canon Loader (Fases 1–2) | `tests/canonLoader.test.js` | ~40 |
+| Species Bridge (Fase 3.x) | `tests/speciesBridge.test.js` | ~50 |
+| Species Passives (Fase 4.x) | `tests/speciesPassives*.test.js` | ~120 |
+| Slot Unlocks (Fase 5) | `tests/slotUnlocks.test.js` | ~30 |
+| XP e Level-up | `tests/xpCore.test.js`, `tests/xpActions.test.js` | ~90 |
+| Combate Wild | `tests/wildCombatAudit.test.js`, `tests/wildPlayerActions.test.js` | ~100 |
+| Captura Wild | `tests/wildCaptureFlow.test.js` | ~50 |
+| Primeiro Combate | `tests/firstCombatAudit.test.js` | ~50 |
+| Combate em Grupo | `tests/groupIntegration.test.js`, `tests/groupBattleEnd.test.js`, `tests/groupFinalUnification.test.js` | ~120 |
+| Data Loaders | `tests/dataLoader.test.js`, `tests/skillsLoader.test.js`, `tests/itemsLoader.test.js` | ~80 |
+| Shop System | `tests/shopSystem.test.js` | ~40 |
+| Save / Storage | `tests/storage.test.js`, `tests/saveLayer.test.js` | ~60 |
+| Game Flow / Quests | `tests/gameFlow.test.js`, `tests/questSystem.test.js` | ~80 |
+| Canon (wildCore) | `tests/wildCore.test.js` | ~60 |
+
+### 25.2 Padrões de Teste Obrigatórios
+
+```javascript
+import { describe, it, expect } from 'vitest';
+import { funcaoTestada } from '../js/path/to/module.js';
+
+describe('NomeDoMódulo', () => {
+    // Arrange / Act / Assert
+    it('deve calcular XP corretamente para inimigo nível 1 comum', () => {
+        // (15 + 1×2) × 1.0 = 17
+        expect(calcBattleXP({level: 1, rarity: 'Comum'}, null, cfg)).toBe(17);
+    });
+});
+```
+
+**Regras:**
+1. Testes independentes entre si (sem dependência de ordem)
+2. Funções puras com Dependency Injection → nenhum teste acessa `window` ou `document`
+3. Comentar cálculos esperados (ex: `// (15 + 1*2) * 1.0 = 17`)
+4. Não remover testes existentes — criar novos se comportamento mudar
+
+---
+
 ## Referências Cruzadas
 
 | Documento | Conteúdo |
