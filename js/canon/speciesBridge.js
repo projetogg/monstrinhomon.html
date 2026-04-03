@@ -198,6 +198,16 @@ export const RUNTIME_TO_CANON_SPECIES = {
     //   forma mais veloz da linha — striker_veloz inequívoco.
     'MON_025C': 'swiftclaw',
 
+    // ── Ladino — arquétipo oportunista_furtivo (shadowsting) — Fase 10 ──────
+    // Corvimon: ATK 7, DEF 4, SPD 10, ENE 6 — perfil ladino mais limpo do catálogo.
+    //   ENE/ATK = 0.86 (mais alto que swiftclaw 0.50) — sustenta loop debuff→execução.
+    //   Linha 3 estágios (Comum → Incomum → Raro): arquétipo consistente do início ao fim.
+    'MON_022': 'shadowsting',
+    // Noxcorvomon: ATK 10, DEF 5, SPD 12, ENE 8 — ENE/ATK 0.80; identidade preservada.
+    'MON_022B': 'shadowsting',
+    // Umbraquimonom: ATK 14, DEF 7, SPD 16, ENE 10 — forma madura; ainda skill-oriented.
+    'MON_022C': 'shadowsting',
+
     // ── Sem mapeamento — justificativas ─────────────────────────────────────
     // MON_100 (Rato-de-Lama, Guerreiro): ATK 5, DEF 3, HP 20 — stats fracos
     //   sem perfil defensivo claro; não se encaixa em tank_puro. Sem mapeamento.
@@ -206,8 +216,16 @@ export const RUNTIME_TO_CANON_SPECIES = {
     //   sem dados de bootstrap para validar o arquétipo ao longo da linha completa.
     //   Não mapeado por falta de linha canônica validável (princípio: Fase 9).
     //
+    // MON_008 (Sombrio, Ladino Comum): sem linha evolutiva (estágio único);
+    //   mesma razão que Garruncho — sem linha completa para validar o arquétipo.
+    //   Não mapeado em Fase 10 por falta de linha canônica validável.
+    //
+    // MON_030/B/C (Furtilhon, Velurino, Sombrifur): DEF_base=3 em MON_030 gera
+    //   DEF_off=2 com shadowsting (def-1) — floor marginal e perigoso.
+    //   ENE/ATK = 0.75 (mais baixo que Corvimon 0.86) — perfil mais similar a
+    //   swiftclaw do que ao arquétipo oportunista_furtivo. Excluído da Fase 10.
+    //
     // Bardo (MON_001, MON_011/B/C/D, MON_027/B/C): sem espécie canônica de Bardo.
-    // Ladino (MON_008, MON_022/B/C, MON_030/B/C): sem espécie canônica de Ladino.
     // Animalista (MON_006, MON_012/B/C/D, MON_023/B/C): sem espécie canônica de Animalista.
 };
 
@@ -221,6 +239,7 @@ const CLASSES_WITH_CANON_SPECIES = new Set([
     'Mago',        // moonquill (mage)
     'Curandeiro',  // floracura (healer)
     'Caçador',     // swiftclaw (hunter) — Fase 9
+    'Ladino',      // shadowsting (rogue) — Fase 10
 ]);
 
 // ---------------------------------------------------------------------------

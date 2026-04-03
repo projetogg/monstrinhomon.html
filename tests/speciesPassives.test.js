@@ -178,11 +178,12 @@ describe('speciesPassives — getActivePassiveIds()', () => {
         expect(ids).toContain('emberfang');
     });
 
-    it('deve conter exatamente 5 passivas na Fase 9', () => {
+    it('deve conter exatamente 6 passivas na Fase 10', () => {
         // Atualizado em Fase 4.1: moonquill e floracura implementadas.
         // Atualizado em Fase 9: swiftclaw (Caçador) implementada.
+        // Atualizado em Fase 10: shadowsting (Ladino) implementada.
         // Atualizar junto com cada nova passiva adicionada.
-        expect(getActivePassiveIds()).toHaveLength(5);
+        expect(getActivePassiveIds()).toHaveLength(6);
     });
 
     it('deve incluir moonquill e floracura implementadas na Fase 4.1', () => {

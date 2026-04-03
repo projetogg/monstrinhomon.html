@@ -524,8 +524,8 @@ describe('getPromotableSwapIds', () => {
         expect(ids).toContain('floracura_efficient_heal');
     });
 
-    it('deve retornar exatamente 5 entradas (Fase 9: +swiftclaw_precise_shot)', () => {
-        expect(getPromotableSwapIds()).toHaveLength(5);
+    it('deve retornar exatamente 6 entradas (Fase 10: +shadowsting_ambush_strike)', () => {
+        expect(getPromotableSwapIds()).toHaveLength(6);
     });
 });
 
