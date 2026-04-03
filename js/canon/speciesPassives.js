@@ -167,6 +167,8 @@ const PASSIVE_HANDLERS = {
      *   raramente mantêm estado de "primeiro ataque do combate" de forma distinta).
      */
     swiftclaw: (_instance, context) => {
+        // _instance não é necessário: o bônus não depende de stats da instância,
+        // apenas do estado de combate (isFirstAttackOfCombat) passado no contexto.
         if (context.event !== 'on_attack') return null;
         if (!context.isFirstAttackOfCombat) return null;
         return { atkBonus: 1 };
