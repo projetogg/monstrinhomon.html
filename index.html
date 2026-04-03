@@ -5021,6 +5021,34 @@
                     getUnlockedSlotsForLevel: function(lvl) {
                         return _resolveUnlockedSlots(lvl).slots;
                     },
+
+                    // Kit swap promotion (Fase 7) — delega para window.KitSwap.promoteKitSwaps
+                    promoteKitSwapsForInstance: function(mon, logArr) {
+                        try {
+                            if (!mon || !mon.canonSpeciesId) return;
+                            if (typeof window === 'undefined' || !window.KitSwap || !window.KitSwap.promoteKitSwaps) return;
+                            const result = window.KitSwap.promoteKitSwaps(mon);
+                            if (!result || !result.updated) {
+                                // Mesmo sem promoção, atualizar blockedKitSwapPromotions para observabilidade
+                                if (result && Array.isArray(result.blockedKitSwapPromotions) && result.blockedKitSwapPromotions.length > 0) {
+                                    mon.blockedKitSwapPromotions = result.blockedKitSwapPromotions;
+                                }
+                                return;
+                            }
+                            // Registrar promoções na instância
+                            if (!Array.isArray(mon.promotedKitSwaps)) mon.promotedKitSwaps = [];
+                            for (const promo of result.promotedKitSwaps) {
+                                mon.promotedKitSwaps.push(promo);
+                                const monName = mon.nickname || mon.name || mon.nome || 'Monstrinho';
+                                const log = Array.isArray(logArr) ? logArr : [];
+                                log.push(`⬆️ ${monName}: ${promo.promotedSkill.name} desbloqueada! (${promo.fromSwapId} → ${promo.toSwapId})`);
+                            }
+                            // Atualizar blockedKitSwapPromotions para rastreabilidade
+                            mon.blockedKitSwapPromotions = result.blockedKitSwapPromotions;
+                        } catch (e) {
+                            // Fallback silencioso — não quebra o level up
+                        }
+                    },
                     
                     // Stats tracking
                     updateStats: updateStats,

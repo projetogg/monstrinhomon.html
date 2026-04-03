@@ -351,3 +351,278 @@ export function getActiveKitSwapIds() {
  * Rastreabilidade: fonte de design dos kit_swaps desta fase.
  */
 export const KIT_SWAP_SOURCE = 'design/canon/species.json';
+
+// ---------------------------------------------------------------------------
+// Tabela de promoções — Fase 7
+//
+// Mapeia `_kitSwapId` da Fase 6 → condição de promoção + skill promovida.
+//
+// Regras de promoção:
+//   canonSpeciesId  : deve coincidir com instance.canonSpeciesId (segurança)
+//   minLevel        : nível mínimo para a promoção ser desbloqueada
+//   targetSlot      : slot alvo (herdado do swap original; verificado contra unlockedSkillSlots)
+//   promoted        : nova skill que substitui a versão I ao ser promovida
+//
+// CALIBRAÇÃO (Fase 7) — eficiência verificada contra referências da Fase 6.1:
+//
+//   shieldhorn_heavy_strike_ii  (cost 8, pwr 30, L20):
+//     Versão I:        cost 6, pwr 22 → 3.67 pwr/ENE
+//     Versão II:       cost 8, pwr 30 → 3.75 pwr/ENE (+2.2% eficiência)
+//     Ref tier-2 WAR: cost 8, pwr 32 → 4.00 pwr/ENE  (abaixo) ✅
+//     Aumento modesto — tank_puro ganha força, não velocidade.
+//
+//   emberfang_brutal_burst_ii   (cost 10, pwr 38, L50):
+//     Versão I:        cost 8, pwr 32 → 4.00 pwr/ENE (= tier 2)
+//     Versão II:       cost 10, pwr 38 → 3.80 pwr/ENE (entre tier 2 e tier 3)
+//     Ref tier-3 BAR: cost 12, pwr 38 → 3.17 pwr/ENE  (mesmo poder bruto, ENE menor) ✅
+//     Mesmo teto de dano do tier 3, mais barato — coerente com nível 50.
+//
+//   moonquill_arcane_veil_ii    (cost 5, -4 ATK, 2t, L50):
+//     Versão I:        cost 4, -3 ATK, 2t → 1.50 ATK-t/ENE
+//     Versão II:       cost 5, -4 ATK, 2t → 1.60 ATK-t/ENE (+6.7%)
+//     Ref Ladino Enfraquecer II: cost 6, -3 ATK, 2t → 1.00 ATK-t/ENE
+//     1.60 está 60% acima do Ladino — justificado pela progressão de nível 50. ✅
+//     Mantém duração estável para controle previsível.
+//
+//   floracura_efficient_heal_ii (cost 4, pwr 14, L50):
+//     Versão I:        cost 3, pwr 10 → 3.33 HP/ENE
+//     Versão II:       cost 4, pwr 14 → 3.50 HP/ENE (+5.1%)
+//     Ref teto Cura III:  4.00 HP/ENE  (ainda abaixo do teto) ✅
+//     Sustain progressivo sem quebrar o teto de cura estabelecido.
+// ---------------------------------------------------------------------------
+const KIT_SWAP_PROMOTION_TABLE = {
+    /**
+     * shieldhorn (Guerreiro, tank_puro) — slot 1 — promoção no nível 20
+     * Golpe Pesado I → Golpe Pesado II
+     * Nível 20 é pré-slot-4 (L30): dá progressão intermediária ao tank.
+     */
+    shieldhorn_heavy_strike: {
+        canonSpeciesId: 'shieldhorn',
+        targetSlot: 1,
+        minLevel: 20,
+        promotedSwapId: 'shieldhorn_heavy_strike_ii',
+        promoted: {
+            _kitSwapId: 'shieldhorn_heavy_strike_ii',
+            name: 'Golpe Pesado II',
+            type: 'DAMAGE',
+            cost: 8,
+            power: 30,
+            desc: 'Golpe devastador aprimorado. Força bruta elevada ao máximo do arquétipo.',
+        },
+    },
+
+    /**
+     * emberfang (Bárbaro, burst_agressivo) — slot 4 — promoção no nível 50
+     * Explosão Bruta I → Explosão Bruta II
+     * Slot 4 já desbloqueado em L30; promoção em L50 recompensa progressão alta.
+     */
+    emberfang_brutal_burst: {
+        canonSpeciesId: 'emberfang',
+        targetSlot: 4,
+        minLevel: 50,
+        promotedSwapId: 'emberfang_brutal_burst_ii',
+        promoted: {
+            _kitSwapId: 'emberfang_brutal_burst_ii',
+            name: 'Explosão Bruta II',
+            type: 'DAMAGE',
+            cost: 10,
+            power: 38,
+            desc: 'Explosão agressiva aprimorada. Impacto do tier 3 com custo de ENE menor.',
+        },
+    },
+
+    /**
+     * moonquill (Mago, controle_leve) — slot 4 — promoção no nível 50
+     * Véu Arcano I → Véu Arcano II
+     * Debuff levemente mais potente; duração mantida para previsibilidade.
+     */
+    moonquill_arcane_veil: {
+        canonSpeciesId: 'moonquill',
+        targetSlot: 4,
+        minLevel: 50,
+        promotedSwapId: 'moonquill_arcane_veil_ii',
+        promoted: {
+            _kitSwapId: 'moonquill_arcane_veil_ii',
+            name: 'Véu Arcano II',
+            type: 'BUFF',
+            cost: 5,
+            power: -4,
+            buffType: 'ATK',
+            target: 'enemy',
+            duration: 2,
+            desc: 'Névoa arcana intensificada. Controle superior com eficiência progressiva.',
+        },
+    },
+
+    /**
+     * floracura (Curandeiro, cura_estavel) — slot 4 — promoção no nível 50
+     * Cura Eficiente I → Cura Eficiente II
+     * Sustain progressivo abaixo do teto de Cura III.
+     */
+    floracura_efficient_heal: {
+        canonSpeciesId: 'floracura',
+        targetSlot: 4,
+        minLevel: 50,
+        promotedSwapId: 'floracura_efficient_heal_ii',
+        promoted: {
+            _kitSwapId: 'floracura_efficient_heal_ii',
+            name: 'Cura Eficiente II',
+            type: 'HEAL',
+            cost: 4,
+            power: 14,
+            target: 'ally',
+            desc: 'Cura eficiente aprimorada. Sustain superior ainda abaixo do teto de Cura III.',
+        },
+    },
+};
+
+// ---------------------------------------------------------------------------
+// API pública — Fase 7: Promoção de kit_swaps
+// ---------------------------------------------------------------------------
+
+/**
+ * Verifica e aplica promoções de kit_swap com base no estado atual da instância.
+ *
+ * A promoção ocorre quando:
+ *   1. instance.canonSpeciesId está presente;
+ *   2. instance.appliedKitSwaps contém um swap com promoção definida;
+ *   3. instance.level >= promoção.minLevel;
+ *   4. instance.unlockedSkillSlots >= promoção.targetSlot;
+ *   5. canonSpeciesId coincide com o da promoção (verificação de segurança).
+ *
+ * Fallback total: sem canonSpeciesId, sem swaps aplicados, ou sem condição → retorna
+ * arrays vazios e updated=false, sem modificar a instância.
+ *
+ * @param {{
+ *   canonSpeciesId?: string|null,
+ *   appliedKitSwaps?: Array<{slot:number, canonSkillId:string, replacementId:string, action:string, originalSkill:string|null}>,
+ *   unlockedSkillSlots?: number,
+ *   level?: number,
+ *   promotedKitSwaps?: Array,
+ * }} instance - Instância do monstrinho com metadados canônicos.
+ * @returns {{
+ *   promotedKitSwaps: Array<{
+ *     fromSwapId: string,
+ *     toSwapId: string,
+ *     slot: number,
+ *     canonSkillId: string,
+ *     promotedSkill: object,
+ *     level: number,
+ *   }>,
+ *   blockedKitSwapPromotions: Array<{
+ *     swapId: string,
+ *     reason: string,
+ *     [key: string]: any,
+ *   }>,
+ *   updated: boolean,
+ * }}
+ */
+export function promoteKitSwaps(instance) {
+    const promotedKitSwaps = [];
+    const blockedKitSwapPromotions = [];
+
+    // Fallback: sem espécie canônica → não há swaps canônicos para promover
+    if (!instance?.canonSpeciesId) {
+        return { promotedKitSwaps, blockedKitSwapPromotions, updated: false };
+    }
+
+    const appliedSwaps = Array.isArray(instance.appliedKitSwaps) ? instance.appliedKitSwaps : [];
+
+    // Sem swaps aplicados → nada a promover
+    if (appliedSwaps.length === 0) {
+        return { promotedKitSwaps, blockedKitSwapPromotions, updated: false };
+    }
+
+    const currentLevel = typeof instance.level === 'number' ? instance.level : 1;
+    const unlockedSlots = typeof instance.unlockedSkillSlots === 'number'
+        ? instance.unlockedSkillSlots
+        : 1;
+
+    // Mapa de promoções já realizadas (para evitar promover duas vezes)
+    const alreadyPromoted = new Set(
+        Array.isArray(instance.promotedKitSwaps)
+            ? instance.promotedKitSwaps.map(p => p.fromSwapId)
+            : []
+    );
+
+    for (const applied of appliedSwaps) {
+        const swapId = applied?.replacementId;
+        if (!swapId) continue;
+
+        // Verificar se já foi promovido anteriormente
+        if (alreadyPromoted.has(swapId)) continue;
+
+        const promotionDef = KIT_SWAP_PROMOTION_TABLE[swapId];
+
+        // Sem promoção definida para este swap → não bloqueia, apenas ignora
+        if (!promotionDef) continue;
+
+        // Verificar consistência de espécie (segurança adicional)
+        if (promotionDef.canonSpeciesId !== instance.canonSpeciesId) {
+            blockedKitSwapPromotions.push({
+                swapId,
+                reason: 'species_mismatch',
+                requiredSpecies: promotionDef.canonSpeciesId,
+                currentSpecies: instance.canonSpeciesId,
+                promotedSwapId: promotionDef.promotedSwapId,
+            });
+            continue;
+        }
+
+        // Verificar slot desbloqueado
+        if (promotionDef.targetSlot > unlockedSlots) {
+            blockedKitSwapPromotions.push({
+                swapId,
+                reason: 'slot_not_unlocked',
+                targetSlot: promotionDef.targetSlot,
+                currentSlots: unlockedSlots,
+                promotedSwapId: promotionDef.promotedSwapId,
+            });
+            continue;
+        }
+
+        // Verificar nível mínimo
+        if (currentLevel < promotionDef.minLevel) {
+            blockedKitSwapPromotions.push({
+                swapId,
+                reason: 'level_not_reached',
+                currentLevel,
+                minLevel: promotionDef.minLevel,
+                promotedSwapId: promotionDef.promotedSwapId,
+            });
+            continue;
+        }
+
+        // Condições atendidas: promover
+        promotedKitSwaps.push({
+            fromSwapId: swapId,
+            toSwapId: promotionDef.promotedSwapId,
+            slot: applied.slot,
+            canonSkillId: applied.canonSkillId,
+            promotedSkill: { ...promotionDef.promoted },
+            level: currentLevel,
+        });
+    }
+
+    return {
+        promotedKitSwaps,
+        blockedKitSwapPromotions,
+        updated: promotedKitSwaps.length > 0,
+    };
+}
+
+/**
+ * Retorna os _kitSwapIds que possuem promoção definida nesta fase.
+ * Útil para auditoria e testes de cobertura.
+ *
+ * @returns {string[]}
+ */
+export function getPromotableSwapIds() {
+    return Object.keys(KIT_SWAP_PROMOTION_TABLE);
+}
+
+/**
+ * Rastreabilidade: tabela de promoções (exposta para auditoria).
+ * Não modificar diretamente — use as funções exportadas.
+ */
+export { KIT_SWAP_PROMOTION_TABLE };
