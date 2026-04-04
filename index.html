@@ -686,6 +686,10 @@
         import * as SpeciesDisplay from './js/canon/speciesDisplay.js';
         window.SpeciesDisplay = SpeciesDisplay;
 
+        // Fase 19: Elegibilidade por classe para combate
+        import * as ClassEligibility from './js/combat/classEligibility.js';
+        window.ClassEligibility = ClassEligibility;
+
         // Inicia o carregamento canônico imediatamente após o parse do módulo,
         // antes de qualquer chamada a init(). Isso garante que o fetch já estará
         // em andamento quando init() fizer await applyCanonToConfig().
@@ -9968,6 +9972,25 @@
             }
         }
 
+        /**
+         * Fase 19 — Badge de elegibilidade por classe para a visão de equipe.
+         *
+         * Mostra "✔ Elegível" ou "✖ Fora da classe" de forma compacta,
+         * permitindo ao jogador identificar rapidamente quais monstrinhos
+         * podem ser usados em batalha com este treinador.
+         *
+         * Retorna string vazia se ClassEligibility não estiver disponível
+         * (graceful degradation).
+         *
+         * @param {object} monster - Instância de monstrinho
+         * @param {object} player  - Jogador dono do time
+         * @returns {string} HTML do badge
+         */
+        function renderEligibilityBadgeForTeam(monster, player) {
+            if (!window.ClassEligibility?.renderEligibilityBadge) return '';
+            return window.ClassEligibility.renderEligibilityBadge(monster, player);
+        }
+
         function renderMonsterCard(monster) {
             try {
                 if (!monster) return '';
@@ -10075,13 +10098,19 @@
                         ? `<div class="mt-5"><button class="kit-apply-cta" onclick="applyKitSwapRetroactive('${monster.instanceId}')">🌟 Aplicar habilidade especial</button></div>`
                         : '';
 
+                    // Fase 19: Badge de elegibilidade por classe para combate
+                    const eligibilityHtml = renderEligibilityBadgeForTeam(monster, player);
+                    const ineligibleClass = (window.ClassEligibility?.isEligibleForBattle?.(monster, player) === false)
+                        ? ' team-member-card--ineligible' : '';
+
                     html += `
-                        <div class="team-member-card ${isActive ? 'team-member-card-active' : 'team-member-card-inactive'}">
+                        <div class="team-member-card ${isActive ? 'team-member-card-active' : 'team-member-card-inactive'}${ineligibleClass}">
                             <span class="team-member-index">${index + 1}.</span>
                             <div class="team-member-info">
                                 <strong>${monster.name || 'Unknown'}</strong>
                                 <span class="badge badge-${monster.rarity || 'common'}">${monster.rarity || 'Comum'}</span>
                                 Lv${monster.level || 1}
+                                ${eligibilityHtml}
                                 ${renderTeamReadinessIndicator(monster)}
                                 ${!isAlive ? '<span class="color-error text-bold"> (Desmaiado)</span>' : ''}
                                 <div class="progress-bar h-15 mt-5">
