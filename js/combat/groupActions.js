@@ -704,7 +704,9 @@ export function executePlayerSkillGroup(skillId, enemyIndex, deps) {
 
     const attackerName = player.name || player.nome || actor.name || "Jogador";
     const monName = mon.nickname || mon.name || mon.nome || "Monstrinho";
-    const skillName = skill.name || (typeof skillId === 'string' ? skillId : 'Habilidade');
+    // skill.name sempre existe; fallback: se skillId é string usa como nome, objeto usa 'Habilidade'
+    const skillIdIsString = typeof skillId === 'string';
+    const skillName = skill.name || (skillIdIsString ? skillId : 'Habilidade');
     const skillTarget = skill.target || '';
     const skillCategory = skill.category || '';
     const skillType = skill.type || ''; // formato SKILL_DEFS: 'DAMAGE'/'HEAL'/'BUFF'
