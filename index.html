@@ -4607,7 +4607,9 @@
                     handleVictoryRewards: handleVictoryRewards,
                     getSkillById: getSkillById,
                     getSkillsArray: getSkillsArray,
+                    getMonsterSkills: getMonsterSkills,
                     canUseSkillNow: canUseSkillNow,
+                    formatSkillButtonLabel: formatSkillButtonLabel,
                     getItemDef: getItemDef,
                     showToast: showToast
                 }
@@ -6332,13 +6334,14 @@
                         : '';
                 })() : '';
 
-                // Habilidades
+                // Habilidades — usa getMonsterSkills (SKILL_DEFS por classe/stage) como fonte primária.
+                // getSkillsArray lê mon.skills (IDs canônicos) que só existe em monstros do novo sistema;
+                // getMonsterSkills sempre retorna os objetos corretos baseados em classe e estágio.
                 const skillsHtml = playerMonster ? (() => {
-                    const skillIds = getSkillsArray(playerMonster);
-                    if (!skillIds || skillIds.length === 0) return '<small style="opacity:0.5">Sem habilidades</small>';
+                    const skills = getMonsterSkills(playerMonster);
+                    if (!skills || skills.length === 0) return '<small style="opacity:0.5">Sem habilidades</small>';
                     return `<div style="display:flex;gap:5px;flex-wrap:wrap">
-                        ${skillIds.map((skillId, idx) => {
-                            const skill = getSkillById(skillId);
+                        ${skills.map((skill, idx) => {
                             if (!skill) return '';
                             const label = formatSkillButtonLabel(skill, playerMonster);
                             const canUse = canUseSkillNow(skill, playerMonster) && playerMonster.hp > 0;

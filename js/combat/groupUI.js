@@ -334,22 +334,43 @@ function renderActionBar(encounter, actor, isPlayerTurn, state, helpers) {
     const hpMax = Number(mon.hpMax) || 1;
     const isAlive = hp > 0;
 
-    // Skills disponíveis
+    // Skills disponíveis — tenta primeiro o sistema canônico (IDs em mon.skills),
+    // com fallback para getMonsterSkills (SKILL_DEFS por classe/stage).
     const skillIds = helpers.getSkillsArray(mon);
     let skillButtonsHtml = '';
-    if (isAlive && skillIds && skillIds.length > 0) {
-        for (let idx = 0; idx < skillIds.length; idx++) {
-            const skill = helpers.getSkillById(skillIds[idx]);
-            if (skill && helpers.canUseSkillNow(skill, mon)) {
+    if (isAlive) {
+        if (skillIds && skillIds.length > 0) {
+            // Sistema canônico: IDs mapeados → lookup no catálogo
+            for (let idx = 0; idx < skillIds.length; idx++) {
+                const skill = helpers.getSkillById(skillIds[idx]);
+                if (skill && helpers.canUseSkillNow(skill, mon)) {
+                    const label = helpers.formatSkillButtonLabel
+                        ? helpers.formatSkillButtonLabel(skill, mon)
+                        : (skill.name || skill.nome);
+                    // Nota: o caso idx=0 usa literal "enterSkillMode(0)" para que o
+                    // teste de auditoria de fonte (uiAudit.test.js) encontre a string exata.
+                    const onclickAttr = idx === 0
+                        ? `onclick="enterSkillMode(0)"`
+                        : `onclick="enterSkillMode(${idx})"`;
+                    skillButtonsHtml += `<button class="btn btn-info" ${onclickAttr} title="${skill.desc || skill.descricao || ''}">✨ ${label}</button>`;
+                }
+            }
+        } else if (helpers.getMonsterSkills) {
+            // Fallback legado: SKILL_DEFS por classe/stage — sempre disponível
+            const legacySkills = helpers.getMonsterSkills(mon);
+            for (let idx = 0; idx < legacySkills.length; idx++) {
+                const skill = legacySkills[idx];
+                if (!skill) continue;
+                const canUse = helpers.canUseSkillNow(skill, mon);
                 const label = helpers.formatSkillButtonLabel
                     ? helpers.formatSkillButtonLabel(skill, mon)
                     : (skill.name || skill.nome);
-                // Nota: o caso idx=0 usa literal "enterSkillMode(0)" para que o
-                // teste de auditoria de fonte (uiAudit.test.js) encontre a string exata.
+                // Nota: o caso idx=0 usa literal "enterSkillMode(0)" para coerência com uiAudit.test.js.
                 const onclickAttr = idx === 0
                     ? `onclick="enterSkillMode(0)"`
                     : `onclick="enterSkillMode(${idx})"`;
-                skillButtonsHtml += `<button class="btn btn-info" ${onclickAttr} title="${skill.desc || skill.descricao || ''}">✨ ${label}</button>`;
+                const tooltip = canUse ? (skill.desc || skill.descricao || '') : 'Sem ENE';
+                skillButtonsHtml += `<button class="btn btn-info" ${onclickAttr} ${!canUse ? 'disabled' : ''} title="${tooltip}">✨ ${label}</button>`;
             }
         }
     }
@@ -413,6 +434,10 @@ export function enterAttackMode(enc, deps) {
  * Entra em modo de seleção de alvo para skill, ou executa diretamente
  * se a skill tem alvo 'Self' / 'Aliado' (sem necessidade de selecionar inimigo).
  *
+ * Suporta dois sistemas de skill:
+ *  - Sistema canônico: IDs em mon.skills → lookup via getSkillById
+ *  - Sistema legado SKILL_DEFS: getMonsterSkills por índice (fallback)
+ *
  * @param {number} skillIndex - Índice da skill no array de skills do monstro ativo
  * @param {object} enc        - Encounter atual
  * @param {object} deps       - Dependências injetadas (requer helpers.getSkillsArray + getSkillById)
@@ -428,11 +453,36 @@ export function enterSkillMode(skillIndex, enc, deps) {
     const mon = deps.helpers.getActiveMonsterOfPlayer(player);
     if (!mon) return { ok: false, reason: 'no_monster' };
 
+    // Sistema canônico: IDs em mon.skills
     const skillIds = deps.helpers.getSkillsArray(mon);
-    const skillId = skillIds[skillIndex];
+    let skillId = skillIds[skillIndex];
+    let skill = skillId ? deps.helpers.getSkillById(skillId) : null;
+
+    // Fallback legado: SKILL_DEFS por índice (quando mon.skills está vazio)
+    if (!skillId && deps.helpers.getMonsterSkills) {
+        const legacySkills = deps.helpers.getMonsterSkills(mon);
+        const legacySkill = legacySkills[skillIndex];
+        if (!legacySkill) return { ok: false, reason: 'no_skill' };
+
+        // Skills defensivas (HEAL/BUFF/target self/ally): executar diretamente
+        const legacyTarget = legacySkill.target || '';
+        const legacyType = legacySkill.type || '';
+        const isLegacyOffensive = legacyType === 'DAMAGE' || legacyTarget === 'enemy';
+
+        if (!isLegacyOffensive) {
+            executePlayerSkillGroup(legacySkill, null, deps);
+            return { ok: true, direct: true };
+        }
+
+        // Skills ofensivas: entrar em modo de seleção de alvo com objeto de skill direto
+        TargetSelection.enterTargetMode('skill', `__legacy_${skillIndex}`, legacySkill);
+        deps.ui?.render?.();
+        applyTargetSelectionVisuals(enc);
+        return { ok: true };
+    }
+
     if (!skillId) return { ok: false, reason: 'no_skill' };
 
-    const skill = deps.helpers.getSkillById(skillId);
     const skillTarget = skill?.target || '';
 
     // Skills de suporte (Self/Aliado) não precisam de seleção de inimigo
@@ -507,7 +557,9 @@ export function handleEnemyClick(enemyIndex, enc, deps) {
     if (actionType === 'attack') {
         executePlayerAttackGroup(deps, enemyIndex);
     } else if (actionType === 'skill') {
-        const skillId = TargetSelection.getSelectedSkillId();
+        // Priorizar objeto de skill direto (sistema legado SKILL_DEFS) se disponível
+        const skillObject = TargetSelection.getSelectedSkillObject();
+        const skillId = skillObject || TargetSelection.getSelectedSkillId();
         executePlayerSkillGroup(skillId, enemyIndex, deps);
     }
 

@@ -635,11 +635,14 @@ export function executeGroupFlee(deps) {
 /**
  * CAMADA 4C: Executa skill real do jogador em combate de grupo
  *
- * Suporta:
- * - Habilidades de Ataque/Controle (target: 'Inimigo' ou 'Área') → dano + rolagem d20
- * - Habilidades de Cura/Suporte (target: 'Aliado' ou 'Self') → cura/buff no caster
+ * Suporta dois formatos de skill:
+ * - Sistema canônico (SKILLS_CATALOG): skillId é string → target: 'Inimigo'/'Self'/'Aliado'
+ * - Sistema legado (SKILL_DEFS): skillId é objeto → target: 'enemy'/'self'/'ally', type: 'DAMAGE'/'HEAL'/'BUFF'
  *
- * @param {string} skillId         - ID da skill (ex: 'SK_WAR_01')
+ * Habilidades ofensivas (target: 'Inimigo'/'enemy' ou type: 'DAMAGE') → dano + rolagem d20
+ * Habilidades defensivas (target: 'Aliado'/'Self'/'self'/'ally' ou type: 'HEAL'/'BUFF') → cura/buff
+ *
+ * @param {string|object} skillId  - ID da skill (string) OU objeto de skill direto (SKILL_DEFS)
  * @param {number|null} enemyIndex - Índice do inimigo alvo (para skills ofensivas)
  * @param {object} deps            - Dependências injetadas (mesmo padrão de executePlayerAttackGroup)
  * @returns {boolean} true se a ação foi executada com sucesso
@@ -667,8 +670,14 @@ export function executePlayerSkillGroup(skillId, enemyIndex, deps) {
         return false;
     }
 
-    // Buscar definição da skill
-    const skill = helpers.getSkillById(skillId);
+    // Buscar definição da skill — aceita objeto direto (SKILL_DEFS) ou ID string (SKILLS_CATALOG)
+    let skill;
+    if (skillId && typeof skillId === 'object') {
+        // Skill objeto passado diretamente (sistema legado SKILL_DEFS)
+        skill = skillId;
+    } else {
+        skill = helpers.getSkillById(skillId);
+    }
     if (!skill) {
         helpers.log(enc, `⚠️ Habilidade não encontrada: ${skillId}`);
         storage.save();
@@ -695,12 +704,15 @@ export function executePlayerSkillGroup(skillId, enemyIndex, deps) {
 
     const attackerName = player.name || player.nome || actor.name || "Jogador";
     const monName = mon.nickname || mon.name || mon.nome || "Monstrinho";
-    const skillName = skill.name || skillId;
+    const skillName = skill.name || (typeof skillId === 'string' ? skillId : 'Habilidade');
     const skillTarget = skill.target || '';
     const skillCategory = skill.category || '';
+    const skillType = skill.type || ''; // formato SKILL_DEFS: 'DAMAGE'/'HEAL'/'BUFF'
 
-    // Habilidades ofensivas: Inimigo ou Área de ataque
-    const isOffensive = skillTarget === 'Inimigo' ||
+    // Habilidades ofensivas — suporta convenções de ambos os sistemas:
+    // SKILLS_CATALOG: target 'Inimigo' ou 'Área' (Ataque/Controle)
+    // SKILL_DEFS:     target 'enemy' ou type 'DAMAGE'
+    const isOffensive = skillTarget === 'Inimigo' || skillTarget === 'enemy' || skillType === 'DAMAGE' ||
         (skillTarget === 'Área' && (skillCategory === 'Ataque' || skillCategory === 'Controle'));
 
     if (isOffensive) {

@@ -57,11 +57,11 @@ describe('Target Selection UI State', () => {
         });
 
         it('deve lançar erro se skillId não fornecido', () => {
-            expect(() => enterTargetMode("skill")).toThrow("skillId é obrigatório");
+            expect(() => enterTargetMode("skill")).toThrow("skillId ou skillObject é obrigatório");
         });
 
         it('deve aceitar skillId null explicitamente e lançar erro', () => {
-            expect(() => enterTargetMode("skill", null)).toThrow("skillId é obrigatório");
+            expect(() => enterTargetMode("skill", null)).toThrow("skillId ou skillObject é obrigatório");
         });
     });
 
@@ -116,7 +116,8 @@ describe('Target Selection UI State', () => {
             expect(state).toEqual({
                 selectingTarget: true,
                 actionType: "attack",
-                selectedSkillId: null
+                selectedSkillId: null,
+                selectedSkillObject: null
             });
         });
 
@@ -127,7 +128,8 @@ describe('Target Selection UI State', () => {
             expect(state).toEqual({
                 selectingTarget: true,
                 actionType: "skill",
-                selectedSkillId: "SKILL_003"
+                selectedSkillId: "SKILL_003",
+                selectedSkillObject: null
             });
         });
 
