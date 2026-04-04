@@ -78,9 +78,11 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
         }
         
         // Fase 11.2: bônus de agilidade por SPD (±1 no check de acerto)
+        const playerEffSpd = WildCore.getEffectiveSpd(playerMonster);
+        const wildEffSpd = WildCore.getEffectiveSpd(encounter.wildMonster);
         const playerSpdBonus = WildCore.getSpdAdvantage(playerMonster, encounter.wildMonster);
         if (playerSpdBonus !== 0) {
-            encounter.log.push(`⚡ Agilidade: ${playerMonster.name} ${playerSpdBonus > 0 ? '+1' : '-1'} (SPD ${WildCore.getEffectiveSpd(playerMonster)} vs ${WildCore.getEffectiveSpd(encounter.wildMonster)})`);
+            encounter.log.push(`⚡ Agilidade: ${playerMonster.name} ${playerSpdBonus > 0 ? '+1' : '-1'} (SPD ${playerEffSpd} vs ${wildEffSpd})`);
         }
 
         // d20=1 sempre erra, d20=20 sempre acerta

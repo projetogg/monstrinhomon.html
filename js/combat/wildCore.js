@@ -60,6 +60,14 @@ export function checkHit(d20Roll, attacker, defender, classAdvantages, spdBonus 
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * Diferença mínima de SPD para ativar bônus/penalidade de agilidade.
+ * Threshold conservador: evita que diferenças triviais de SPD alterem o hit check.
+ * - bellwave (SPD 12) + Nota Discordante I (-2 enemy SPD): diff 4 ≥ 3 → +1 bônus
+ * - moonquill com spdBuff (+1 SPD) vs enemy SPD 5: diff 3 ≥ 3 → +1 bônus
+ */
+const SPD_ADVANTAGE_THRESHOLD = 3;
+
+/**
  * Calcula o SPD efetivo de um monstrinho, aplicando buffs/debuffs ativos.
  *
  * @param {object} monster - Monstrinho (com .spd e .buffs opcional)
@@ -81,10 +89,11 @@ export function getEffectiveSpd(monster) {
  *
  * @param {object} attacker - Monstrinho atacante
  * @param {object} defender - Monstrinho defensor
- * @returns {number} +1 se atacante mais rápido (diff ≥ 3), -1 se mais lento (diff ≤ -3), 0 neutro
+ * @returns {number} +1 se atacante mais rápido (diff ≥ SPD_ADVANTAGE_THRESHOLD),
+ *                   -1 se mais lento (diff ≤ -SPD_ADVANTAGE_THRESHOLD), 0 neutro
  *
  * Design conservador (Fase 11.2):
- * - Threshold de 3: evita que qualquer diferença trivial de SPD mude o hit
+ * - SPD_ADVANTAGE_THRESHOLD=3: evita que qualquer diferença trivial de SPD mude o hit
  * - Nota Discordante I (-2 SPD inimigo) cruzará o threshold quando bellwave
  *   já tem vantagem de velocidade moderada → Nota passa a importar de verdade
  * - moonquill spdBuff (+1 SPD) cruzará o threshold quando o Mago estava a 2
@@ -93,8 +102,8 @@ export function getEffectiveSpd(monster) {
  */
 export function getSpdAdvantage(attacker, defender) {
     const diff = getEffectiveSpd(attacker) - getEffectiveSpd(defender);
-    if (diff >= 3) return 1;
-    if (diff <= -3) return -1;
+    if (diff >= SPD_ADVANTAGE_THRESHOLD) return 1;
+    if (diff <= -SPD_ADVANTAGE_THRESHOLD) return -1;
     return 0;
 }
 
