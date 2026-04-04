@@ -236,19 +236,22 @@ describe('Group Combat – advanceGroupTurn usa activeIndex (BUG FIX #1)', () =>
         expect(currentActor.id).toBe('p1');
     });
 
-    it('deve pular jogador quando activeIndex aponta para monstro morto (regressão team[0])', () => {
-        // activeIndex = 0, mas team[0].hp = 0 → jogador deve ser pulado
+    it('deve abrir modal de troca quando activeIndex aponta para monstro morto com substituto válido', () => {
+        // COMPORTAMENTO CORRETO (após correção KO/swap):
+        // activeIndex=0, team[0].hp=0 (morto), team[1] vivo e mesma classe do jogador
+        // → NÃO pular: abrir modal de troca para evitar soft-lock
         const { player, enc } = makeGroupEnc({ playerActiveIndex: 0 });
-        // team[0] está morto (hp=0) e activeIndex=0 → o ator não deve ser jogador
+        // Ambos os monstros são class:'Mago' (padrão de makeMon) e o jogador também é 'Mago'
+        // → team[1] é substituto elegível
 
-        const logs = [];
+        let switchModalCalledFor = null;
         const deps = {
             state: { players: [player], config: {} },
             core: GroupCore,
             audio: { playSfx: () => {} },
             helpers: {
                 handleVictoryRewards: () => {},
-                log: (e, msg) => { e.log.push(msg); logs.push(msg); },
+                log: (e, msg) => { e.log.push(msg); },
                 getPlayerById: (id) => player,
                 getActiveMonsterOfPlayer: (p) => p.team[p.activeIndex],
                 getEnemyByIndex: (e, i) => e.enemies[i],
@@ -259,7 +262,7 @@ describe('Group Combat – advanceGroupTurn usa activeIndex (BUG FIX #1)', () =>
                 getBasicAttackPower: () => 5,
                 applyDamage: (target, dmg) => { target.hp = Math.max(0, target.hp - dmg); },
                 firstAliveIndex: (team) => team.findIndex(m => m.hp > 0),
-                openSwitchMonsterModal: () => {},
+                openSwitchMonsterModal: (p) => { switchModalCalledFor = p.id; },
                 buildEligibleTargets: () => [],
                 canUseSkillNow: () => false,
                 getSkillById: () => null,
@@ -277,13 +280,16 @@ describe('Group Combat – advanceGroupTurn usa activeIndex (BUG FIX #1)', () =>
 
         advanceGroupTurn(enc, deps);
 
-        // Quando team[0] está morto e activeIndex=0, o jogador é pulado
-        // e o inimigo (team[0] → enemy[0]) fica como ator atual
+        // Com a correção KO/swap: modal abre para o jogador (turnIndex permanece no player)
+        // enc.currentActor foi definido antes de retornar
         const currentActor = GroupCore.getCurrentActor(enc);
-        // O loop deve ter avançado para o inimigo (skip player com activeIndex=0 morto)
         expect(currentActor).not.toBeNull();
-        // Neste cenário o inimigo deve ser o ator (player foi pulado corretamente)
-        expect(currentActor.side).toBe('enemy');
+        // Turno pausado no jogador aguardando troca — o actor é o player
+        expect(currentActor.side).toBe('player');
+        // Modal de troca foi chamado para este jogador
+        expect(switchModalCalledFor).toBe(player.id);
+        // Batalha não terminou (ainda há substituto)
+        expect(enc.finished).toBe(false);
     });
 
     it('não deve criar recursão infinita com player ativo vivo após troca de monstro', () => {

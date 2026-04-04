@@ -334,6 +334,17 @@ function renderActionBar(encounter, actor, isPlayerTurn, state, helpers) {
     const hpMax = Number(mon.hpMax) || 1;
     const isAlive = hp > 0;
 
+    // Monstrinho desmaiado durante o turno: bloquear ações e sinalizar substituição pendente
+    if (!isAlive) {
+        return `
+        <div class="battle-actions-row group-actions-bar">
+            <span class="group-actions-label">💀 ${player.name || player.nome}:</span>
+            <div class="battle-main-actions">
+                <span style="opacity:0.8;font-size:14px;color:#ff7675">💀 Monstrinho desmaiado — aguardando escolha de substituto…</span>
+            </div>
+        </div>`;
+    }
+
     // Skills disponíveis — usa resolveMonsterSkills (único ponto de entrada canônico).
     // retorna skills normalizadas (formato operacional único); mostra habilitadas e desabilitadas.
     let skillButtonsHtml = '';
@@ -378,7 +389,7 @@ function renderActionBar(encounter, actor, isPlayerTurn, state, helpers) {
     <div class="battle-actions-row group-actions-bar">
         <span class="group-actions-label">⚔️ ${player.name || player.nome}:</span>
         <div class="battle-main-actions">
-            ${isAlive ? `<button class="btn btn-danger" onclick="enterAttackMode()">⚔️ Atacar</button>` : ''}
+            <button class="btn btn-danger" onclick="enterAttackMode()">⚔️ Atacar</button>
             ${skillButtonsHtml}
             ${itemButtonHtml}
             ${fleeButtonHtml}

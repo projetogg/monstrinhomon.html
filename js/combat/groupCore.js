@@ -322,6 +322,34 @@ export function clamp(n, min, max) {
     return Math.max(min, Math.min(max, n));
 }
 
+/**
+ * Retorna lista de substitutos elegíveis para um jogador cujo ativo desmaiou.
+ *
+ * PURE: Sem side effects. Respeita a regra de classe (GAME_RULES.md):
+ *   em batalha, só pode usar monstrinhos da mesma classe do jogador.
+ * Exceção: config.masterMode desativa a restrição de classe.
+ *
+ * @param {object} player  - Jogador com { team, activeIndex, class }
+ * @param {object} [config] - Configuração { masterMode?: boolean }
+ * @returns {Array<{monster: object, index: number}>}
+ */
+export function getEligibleSubstitutes(player, config = {}) {
+    if (!player || !Array.isArray(player.team)) return [];
+
+    const activeIdx = typeof player.activeIndex === 'number' ? player.activeIndex : 0;
+    const playerClass = player.class;
+    const masterMode = config?.masterMode || false;
+
+    const result = [];
+    player.team.forEach((mon, idx) => {
+        if (idx === activeIdx) return;        // exclui ativo atual
+        if (!isAlive(mon)) return;            // exclui desmaiados
+        if (!masterMode && mon.class !== playerClass) return; // restrição de classe
+        result.push({ monster: mon, index: idx });
+    });
+    return result;
+}
+
 // Contador monotónico para garantir IDs únicos mesmo em chamadas no mesmo ms
 let _encIdCounter = 0;
 
