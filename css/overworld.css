@@ -5,7 +5,7 @@
 
 /* ── Painel principal ────────────────────────────────────────────────────── */
 #overworldPanel {
-    padding: 10px 12px 12px;
+    padding: 14px 16px 16px;
     background: #12141a;
     border: 1px solid rgba(255,255,255,0.08);
 }
@@ -21,17 +21,17 @@
 
 .ow-header h3 {
     margin: 0;
-    font-size: 15px;
+    font-size: 17px;
     color: #e0e0e0;
     letter-spacing: 0.5px;
 }
 
 .ow-header-stats {
     display: flex;
-    gap: 14px;
+    gap: 16px;
     align-items: center;
     margin-left: auto;
-    font-size: 11px;
+    font-size: 12px;
     color: rgba(255,255,255,0.6);
 }
 
@@ -43,14 +43,14 @@
 }
 
 .ow-header-stat__label {
-    font-size: 9px;
+    font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.8px;
     opacity: 0.55;
 }
 
 .ow-header-stat__value {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 600;
     color: #e0e0e0;
 }
@@ -58,8 +58,8 @@
 /* ── Layout mapa + sidebar ───────────────────────────────────────────────── */
 .ow-layout {
     display: flex;
-    gap: 12px;
-    min-height: 380px;
+    gap: 14px;
+    min-height: 480px;
     align-items: flex-start;
 }
 
@@ -80,17 +80,17 @@
     width: 100%;
     height: auto;
     display: block;
-    max-height: 420px;
+    max-height: 560px;
 }
 
 /* ── Sidebar de informações do nó ────────────────────────────────────────── */
 .ow-sidebar-wrap {
-    width: 280px;
+    width: 340px;
     flex-shrink: 0;
     background: #0f1117;
     border-radius: 8px;
     border: 1px solid rgba(255,255,255,0.08);
-    min-height: 340px;
+    min-height: 420px;
     display: flex;
     flex-direction: column;
 }
@@ -99,7 +99,7 @@
     margin: auto;
     text-align: center;
     color: rgba(255,255,255,0.3);
-    font-size: 12px;
+    font-size: 13px;
     padding: 40px 20px;
 }
 
@@ -124,10 +124,10 @@
 }
 
 .ow-sidebar__name {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 700;
     color: #e8e8e8;
-    margin: 0 0 3px;
+    margin: 0 0 4px;
     line-height: 1.2;
     word-break: break-word;
 }
@@ -171,9 +171,9 @@
 }
 
 .ow-sidebar__desc {
-    font-size: 11px;
+    font-size: 12px;
     color: rgba(255,255,255,0.55);
-    margin: 0 0 10px;
+    margin: 0 0 12px;
     line-height: 1.5;
 }
 
@@ -208,12 +208,12 @@
 
 /* Seção "O que fazer aqui" */
 .ow-sidebar__section-title {
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
     color: rgba(255,255,255,0.35);
-    margin: 0 0 6px;
+    margin: 0 0 8px;
 }
 
 /* ── Spots no sidebar do overworld ───────────────────────────────────────── */
@@ -255,7 +255,7 @@
 .ow-spot__info { flex: 1; min-width: 0; }
 
 .ow-spot__name {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     color: #ddd;
     margin: 0 0 2px;
@@ -265,7 +265,7 @@
 }
 
 .ow-spot__desc {
-    font-size: 10px;
+    font-size: 11px;
     color: rgba(255,255,255,0.45);
     margin: 0;
     white-space: nowrap;
@@ -318,6 +318,46 @@
 }
 
 .ow-sidebar__boss-btn--defeated:hover { background: rgba(64,204,96,0.22); }
+
+/* ── Botão de viagem e indicador de posição ──────────────────────────────── */
+.ow-sidebar__footer {
+    padding: 10px 14px 14px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    margin-top: auto;
+}
+
+.ow-sidebar__travel-btn {
+    width: 100%;
+    padding: 11px 14px;
+    background: rgba(32,221,204,0.12);
+    border: 1px solid rgba(32,221,204,0.35);
+    border-radius: 8px;
+    color: #20ddcc;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.ow-sidebar__travel-btn:hover {
+    background: rgba(32,221,204,0.22);
+}
+
+.ow-sidebar__here {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #20ddcc;
+    margin: 0;
+    padding: 8px 0;
+}
+
+/* Nó selecionado (inspecionado pelo jogador, diferente do atual) */
+.ow-node--selected .ow-node__circle {
+    stroke: rgba(255,255,255,0.75) !important;
+    stroke-width: 2.5px !important;
+    filter: brightness(1.4);
+}
 
 /* Nó bloqueado */
 .ow-sidebar__locked {
@@ -372,7 +412,7 @@
 .ow-legend-dot--boss     { background: #7a5c10; border: 2px solid #ffdd44; }
 
 /* ── Responsividade ──────────────────────────────────────────────────────── */
-@media (max-width: 680px) {
+@media (max-width: 760px) {
     .ow-layout {
         flex-direction: column;
     }
@@ -383,7 +423,7 @@
     }
 
     .ow-svg {
-        max-height: 280px;
+        max-height: 300px;
     }
 
     .ow-header-stats {

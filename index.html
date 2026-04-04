@@ -8882,6 +8882,13 @@
             _wm.selectedLocationId = null;
             _wm.selectedSpotId     = null;
 
+            // Inicializar posição da party se ainda não definida
+            if (!GameState.data) GameState.data = {};
+            if (!GameState.data.currentNodeId) {
+                GameState.data.currentNodeId = 'CITY_001';
+                saveToLocalStorage();
+            }
+
             renderOverworldPanel();
         }
 
@@ -8898,9 +8905,8 @@
             (GameState.players ?? []).forEach(player => {
                 (player?.questState?.completedQuestIds ?? []).forEach(id => completedQuestIds.add(id));
             });
-            // Nó atual: último visitado (ou null)
-            const visited = GameState.data?.visitedLocations ?? [];
-            const currentNodeId = visited.length > 0 ? visited[visited.length - 1] : null;
+            // Nó atual: campo explícito no GameState.data (não inferido de visitedLocations)
+            const currentNodeId = GameState.data?.currentNodeId ?? null;
             const partySize = (GameState.players ?? []).filter(Boolean).length;
             return { visitedLocations, completedLocations, nodeFlags, completedQuestIds, currentNodeId, partySize };
         }
@@ -8957,6 +8963,7 @@
             document.querySelectorAll('.ow-node--selected').forEach(el => el.classList.remove('ow-node--selected'));
             const nodeEl = document.querySelector(`.ow-node[data-node="${nodeId}"]`);
             if (nodeEl) nodeEl.classList.add('ow-node--selected');
+            _wm.selectedNodeId = nodeId;
             _owRenderSidebar(nodeId);
         }
 
@@ -9116,6 +9123,12 @@
                     ${questHtml}
                     <p class="ow-sidebar__section-title">O que fazer aqui</p>
                     ${spotsHtml}
+                </div>
+                <div class="ow-sidebar__footer">
+                    ${isCurrent
+                        ? '<p class="ow-sidebar__here">📍 Você está aqui</p>'
+                        : `<button class="ow-sidebar__travel-btn" onclick="owTravelToNode('${nodeId}')">🚶 Viajar para cá</button>`
+                    }
                 </div>`;
         }
 
@@ -9129,6 +9142,20 @@
             selectSpot(spotId);
         }
         window.owGoToSpot = owGoToSpot;
+
+        /**
+         * Move a party para o nó especificado (atualiza currentNodeId explicitamente).
+         * @param {string} nodeId
+         */
+        function owTravelToNode(nodeId) {
+            if (!GameState.data) GameState.data = {};
+            GameState.data.currentNodeId = nodeId;
+            saveToLocalStorage();
+            renderOverworldPanel();
+            // Restaurar seleção visual e atualizar sidebar
+            owSelectNode(nodeId);
+        }
+        window.owTravelToNode = owTravelToNode;
 
         // ── Grade legada (usada como fallback) ─────────────────────────────────
 
