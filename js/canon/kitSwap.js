@@ -54,6 +54,7 @@
  *   - swiftclaw  (Caçador):    slot 1 — sempre desbloqueado (Fase 9)
  *   - shadowsting (Ladino):   slot 4 — requer nível 30 (Fase 10)
  *   - bellwave   (Bardo):     slot 4 — requer nível 30 (Fase 11)
+ *   - wildpace   (Animalista): slot 4 — requer nível 30 (Fase 12)
  *
  * ── REGRAS DO SWAP ────────────────────────────────────────────────────────────
  *
@@ -342,6 +343,51 @@ const KIT_SWAP_TABLE = {
             target: 'enemy',
             duration: 2,
             desc: 'Nota dissonante que desorienta o ritmo do inimigo. Reduz velocidade por 2 turnos.',
+        },
+    },
+
+    /**
+     * wildpace (Animalista, arquétipo equilíbrio_adaptativo) — Fase 12
+     *
+     * Kit swap canônico: slot 4, "Instinto Protetor I"
+     * Tipo: BUFF (self, DEF+2, 1 turno) — defesa instintiva temporária.
+     *
+     * Identidade do swap:
+     *   Único kit swap de self-DEF entre todas as espécies canônicas.
+     *   Nenhum outro swap dá buff de DEF próprio (emberfang/swiftclaw/shadowsting = DAMAGE;
+     *   moonquill/bellwave = BUFF enemy; floracura = HEAL).
+     *
+     * Sinergia com o arquétipo equilíbrio_adaptativo:
+     *   - Permite sobreviver para acionar a passiva (HP < 40%) mais vezes.
+     *   - ENE-1 (offset wildpace) cria pressão de escolha: gastar ENE para proteção vs. atacar.
+     *   - AGI+1 garante iniciativa — wildpace pode usar Instinto Protetor antes do inimigo atacar.
+     *
+     * Diferenciação de Escudo I (skill legada do Guerreiro, slot 1):
+     *   Escudo I: cost 4, +2 DEF, 2 turnos → 1.00 DEF-t/ENE (proteção sustentada)
+     *   Instinto Protetor I: cost 3, +2 DEF, 1 turno → 0.67 DEF-t/ENE (reação rápida, menor custo)
+     *   Slot 1 do Guerreiro vs slot 4 do Animalista. Filosofia oposta: Guerreiro bloqueia
+     *   de forma estrutural; Animalista protege instintivamente e de forma reativa.
+     *
+     * AUDITORIA:
+     *   Escudo I (ref Guerreiro slot 1): cost 4, +2 DEF, 2t → 1.00 DEF-t/ENE
+     *   Instinto Protetor I:             cost 3, +2 DEF, 1t → 0.67 DEF-t/ENE (−33%, menor custo)
+     *   Escudo II (ref tier 2):          cost 6, +3 DEF, 2t → 1.00 DEF-t/ENE
+     *   Instinto Protetor I fica abaixo do tier 1 de referência em eficiência total.
+     *   Slot 4 = ADD (sem slot 4 legado para Animalista). Tipo BUFF+self+power>0 → self-buff. ✅
+     */
+    wildpace: {
+        targetSlot: 4,
+        canonSkillId: 'animalista_rugged_stance',
+        replacement: {
+            _kitSwapId: 'wildpace_rugged_stance',
+            name: 'Instinto Protetor I',
+            type: 'BUFF',
+            cost: 3,
+            power: 2,
+            buffType: 'DEF',
+            target: 'self',
+            duration: 1,
+            desc: 'Postura defensiva instintiva. Protege o corpo por 1 turno como um animal acuado.',
         },
     },
 };
@@ -683,6 +729,37 @@ const KIT_SWAP_PROMOTION_TABLE = {
             target: 'enemy',
             duration: 2,
             desc: 'Nota discordante intensificada. Desorientação rítmica ainda mais profunda.',
+        },
+    },
+
+    /**
+     * wildpace (Animalista, equilíbrio_adaptativo) — slot 4 — promoção no nível 50 — Fase 12
+     * Instinto Protetor I → Instinto Protetor II
+     * Slot 4 desbloqueado em L30; promoção em L50 recompensa progressão alta.
+     *
+     * AUDITORIA:
+     *   Instinto Protetor I (versão I):  cost 3, +2 DEF, 1t → 0.67 DEF-t/ENE
+     *   Instinto Protetor II (promoted): cost 4, +3 DEF, 1t → 0.75 DEF-t/ENE (+12%)
+     *   Escudo I (ref tier 1):           cost 4, +2 DEF, 2t → 1.00 DEF-t/ENE
+     *   Instinto Protetor II ainda abaixo do Escudo I (0.75 vs 1.00) —
+     *   proteção reativa e curta continua sendo o arquétipo vs. escudo estrutural. ✅
+     *   Progressão modesta: +12% eficiência em DEF-t/ENE ao nível 50. ✅
+     */
+    wildpace_rugged_stance: {
+        canonSpeciesId: 'wildpace',
+        targetSlot: 4,
+        minLevel: 50,
+        promotedSwapId: 'wildpace_rugged_stance_ii',
+        promoted: {
+            _kitSwapId: 'wildpace_rugged_stance_ii',
+            name: 'Instinto Protetor II',
+            type: 'BUFF',
+            cost: 4,
+            power: 3,
+            buffType: 'DEF',
+            target: 'self',
+            duration: 1,
+            desc: 'Postura defensiva instintiva aprimorada. Proteção mais robusta quando acuado.',
         },
     },
 };

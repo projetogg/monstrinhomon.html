@@ -225,15 +225,15 @@ describe('Fase 8 — templates sem mapeamento (decisão de design)', () => {
         });
     });
 
-    describe('Animalista — sem espécie canônica', () => {
-        it('MON_006 (Lobinho) permanece sem mapeamento', () => {
+    describe('Animalista — sem espécie canônica (exceto wildpace — Fase 12)', () => {
+        it('MON_006 (Lobinho) permanece sem mapeamento — estágio único, sem linha evolutiva', () => {
             expect(resolveCanonSpeciesId('MON_006')).toBeNull();
         });
-        it('MON_012 (Luvursomon) permanece sem mapeamento', () => {
+        it('MON_012 (Luvursomon) permanece sem mapeamento — drift burst/ATK, risco de colisão', () => {
             expect(resolveCanonSpeciesId('MON_012')).toBeNull();
         });
-        it('MON_023 (Cervimon) permanece sem mapeamento', () => {
-            expect(resolveCanonSpeciesId('MON_023')).toBeNull();
+        it('MON_023 (Cervimon) agora mapeado para wildpace (Fase 12)', () => {
+            expect(resolveCanonSpeciesId('MON_023')).toBe('wildpace');
         });
     });
 
@@ -320,16 +320,16 @@ describe('Fase 8 — cobertura do bridge com catálogo completo', () => {
         expect(FULL_CATALOG).toHaveLength(64);
     });
 
-    it('deve reportar 45 templates mapeados após Fase 11 (32 Fase 8 + 7 Caçador + 3 Ladino + 3 Bardo)', () => {
+    it('deve reportar 48 templates mapeados após Fase 12 (32 Fase 8 + 7 Caçador + 3 Ladino + 3 Bardo + 3 Animalista)', () => {
         const report = getBridgeCoverageReport(FULL_CATALOG);
-        expect(report.mapped).toBe(45);
+        expect(report.mapped).toBe(48);
     });
 
-    it('deve reportar 19 templates não mapeados (Bardo parcial, Ladino parcial, Animalista, MON_005, MON_100)', () => {
-        // Após Fase 11: MON_027/B/C mapeados como bellwave. Bardo ainda tem:
-        // MON_001 (sem linha), MON_011/B/C/D (drift no final) — 5 não mapeados de Bardo.
+    it('deve reportar 16 templates não mapeados (Bardo parcial, Ladino parcial, Animalista parcial, MON_005, MON_100)', () => {
+        // Após Fase 12: MON_023/B/C mapeados como wildpace. Animalista ainda tem:
+        // MON_006 (sem linha), MON_012/B/C/D (drift burst) — 5 não mapeados de Animalista.
         const report = getBridgeCoverageReport(FULL_CATALOG);
-        expect(report.unmapped).toBe(19);
+        expect(report.unmapped).toBe(16);
     });
 
     it('deve reportar total correto de 64', () => {
@@ -337,7 +337,7 @@ describe('Fase 8 — cobertura do bridge com catálogo completo', () => {
         expect(report.total).toBe(64);
     });
 
-    it('todos os 45 mapeamentos da tabela devem resolver para valor válido no catálogo completo', () => {
+    it('todos os 48 mapeamentos da tabela devem resolver para valor válido no catálogo completo', () => {
         const mappedIds = new Set(Object.keys(RUNTIME_TO_CANON_SPECIES));
         const catalogIds = new Set(FULL_CATALOG.map(t => t.id));
         for (const id of mappedIds) {
@@ -345,24 +345,29 @@ describe('Fase 8 — cobertura do bridge com catálogo completo', () => {
         }
     });
 
-    it('getEligibleUnmappedTemplateIds deve retornar MON_001, MON_005, MON_011, MON_100, MON_008, MON_030 no catálogo completo', () => {
-        // Após Fase 11: Bardo tem bellwave, mas MON_001 (sem linha) e MON_011 (drift) ficam sem mapeamento.
+    it('getEligibleUnmappedTemplateIds deve retornar MON_001, MON_005, MON_006, MON_008, MON_011, MON_012, MON_030, MON_100 no catálogo completo', () => {
+        // Após Fase 12: Animalista tem wildpace, então MON_006 e MON_012 tornam-se elegíveis.
+        // MON_023 foi mapeado (wildpace) e saiu dos elegíveis.
         // Elegíveis = base templates não mapeados com classe que tem canonical species:
         //   MON_001 (Bardo, sem linha evolutiva — não mapeado intencionalmente)
-        //   MON_011 (Bardo, linha com drift em MON_011D — não mapeado intencionalmente)
         //   MON_005 (Caçador, sem linha evolutiva — não mapeado intencionalmente)
-        //   MON_100 (Guerreiro, sem perfil tank claro — não mapeado intencionalmente)
+        //   MON_006 (Animalista, sem linha evolutiva — não mapeado intencionalmente)
         //   MON_008 (Ladino, sem linha evolutiva — não mapeado intencionalmente)
+        //   MON_011 (Bardo, linha com drift em MON_011D — não mapeado intencionalmente)
+        //   MON_012 (Animalista, drift burst/ATK — não mapeado intencionalmente)
         //   MON_030 (Ladino, perfil ambíguo / DEF floor — não mapeado intencionalmente)
+        //   MON_100 (Guerreiro, sem perfil tank claro — não mapeado intencionalmente)
         const eligible = getEligibleUnmappedTemplateIds(FULL_CATALOG);
         const eligibleIds = eligible.map(e => e.id);
-        expect(eligibleIds).toHaveLength(6);
+        expect(eligibleIds).toHaveLength(8);
         expect(eligibleIds).toContain('MON_001');
-        expect(eligibleIds).toContain('MON_011');
         expect(eligibleIds).toContain('MON_005');
-        expect(eligibleIds).toContain('MON_100');
+        expect(eligibleIds).toContain('MON_006');
         expect(eligibleIds).toContain('MON_008');
+        expect(eligibleIds).toContain('MON_011');
+        expect(eligibleIds).toContain('MON_012');
         expect(eligibleIds).toContain('MON_030');
+        expect(eligibleIds).toContain('MON_100');
     });
 
     it('unmapped do catálogo completo não deve conter nenhum template MVP de base ou evolução', () => {
@@ -401,13 +406,12 @@ describe('Fase 8 — cobertura do bridge com catálogo completo', () => {
             // Ladino — linha Corvimon mapeada na Fase 10; Sombrio e Furtilhon excluídos
             'MON_008',
             'MON_030', 'MON_030B', 'MON_030C',
-            // Animalista
+            // Animalista — linha Cervimon mapeada na Fase 12 (wildpace); restantes excluídos
             'MON_006', 'MON_012', 'MON_012B', 'MON_012C', 'MON_012D',
-            'MON_023', 'MON_023B', 'MON_023C',
             // Guerreiro sem perfil
             'MON_100',
         ];
-        expect(unmapped).toHaveLength(19);
+        expect(unmapped).toHaveLength(16);
         for (const id of expectedUnmapped) {
             expect(unmapped, `${id} deveria estar unmapped`).toContain(id);
         }
@@ -503,8 +507,8 @@ describe('Fase 8 — regressão: applyStatOffsets sem alteração nos offsets ca
 
 describe('Fase 8 — integridade da tabela RUNTIME_TO_CANON_SPECIES', () => {
 
-    it('deve conter exatamente 45 mapeamentos (32 Fase 8 + 7 Caçador Fase 9 + 3 Ladino Fase 10 + 3 Bardo Fase 11)', () => {
-        expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(45);
+    it('deve conter exatamente 48 mapeamentos (32 Fase 8 + 7 Caçador Fase 9 + 3 Ladino Fase 10 + 3 Bardo Fase 11 + 3 Animalista Fase 12)', () => {
+        expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(48);
     });
 
     it('todos os valores devem ser strings não-vazias', () => {
@@ -515,7 +519,7 @@ describe('Fase 8 — integridade da tabela RUNTIME_TO_CANON_SPECIES', () => {
     });
 
     it('todos os valores devem ser species_ids válidos', () => {
-        const validSpecies = new Set(['shieldhorn', 'emberfang', 'moonquill', 'floracura', 'swiftclaw', 'shadowsting', 'bellwave']);
+        const validSpecies = new Set(['shieldhorn', 'emberfang', 'moonquill', 'floracura', 'swiftclaw', 'shadowsting', 'bellwave', 'wildpace']);
         for (const [k, v] of Object.entries(RUNTIME_TO_CANON_SPECIES)) {
             expect(validSpecies.has(v), `species inválida "${v}" para ${k}`).toBe(true);
         }
