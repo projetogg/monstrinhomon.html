@@ -66,7 +66,6 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
 
     // ── JOGADORES (coluna esquerda) ──────────────────────────────────────────
     let playersHtml = '';
-    const masterMode = Boolean(state.config?.masterMode || state.config?.therapistMode);
     for (const pid of (encounter.participants || [])) {
         const p = state.players.find(x => x.id === pid);
         if (!p) continue;
@@ -101,20 +100,17 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
             }
         }
 
-        // Banco de reservas — mostra os outros monstrinhos do time com status
-        const teamEntries = categorizeBattleTeam(p, { masterMode });
-        const benchEntries = teamEntries.filter(e => e.category !== 'active');
-        let benchHtml = '';
-        if (benchEntries.length > 0) {
-            const benchItems = benchEntries.map(e => {
-                const cls = e.category === 'eligible'
-                    ? 'swap-bench-item swap-bench-item--eligible'
-                    : e.category === 'blocked_ko'
-                        ? 'swap-bench-item swap-bench-item--ko'
-                        : 'swap-bench-item swap-bench-item--blocked';
-                return `<span class="${cls}" title="${e.reason}">${e.monster.emoji || ''} ${e.monster.name || e.monster.nome}</span>`;
-            }).join('');
-            benchHtml = `<div class="group-unit-bench">${benchItems}</div>`;
+        // Indicador de time — quantos elegíveis/bloqueados na reserva (Fase 20)
+        const masterMode = state.config?.masterMode || false;
+        const cats = categorizeBattleTeam(p, { masterMode });
+        const eligibleCount = cats.eligible.length;
+        const blockedClassCount = cats.blocked_class.length;
+        let teamHintHtml = '';
+        if (eligibleCount > 0 || blockedClassCount > 0) {
+            const parts = [];
+            if (eligibleCount > 0) parts.push(`${eligibleCount} pronto${eligibleCount > 1 ? 's' : ''}`);
+            if (blockedClassCount > 0) parts.push(`${blockedClassCount} fora da classe`);
+            teamHintHtml = `<div class="group-unit-eligibility">🔄 Reserva: ${parts.join(' · ')}</div>`;
         }
 
         playersHtml += `
@@ -132,8 +128,8 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
                 <div class="battle-bar-label"><span>⚡ ENE</span><span>${ene}/${eneMax}</span></div>
                 <div class="battle-bar"><div class="battle-bar-fill ene" style="width:${enePct}%"></div></div>
             </div>
+            ${teamHintHtml}
             ${itemHtml}
-            ${benchHtml}
         </div>`;
     }
 
@@ -414,11 +410,11 @@ function renderActionBar(encounter, actor, isPlayerTurn, state, helpers) {
         ? `<button class="btn btn-warning" onclick="groupFlee()">🏃 Fugir</button>`
         : '';
 
-    // Botão de troca manual — visível somente se houver substituto elegível
-    const masterMode = Boolean(state.config?.masterMode || state.config?.therapistMode);
-    const swapAllowed = canManualSwap(player, { masterMode });
-    const swapButtonHtml = swapAllowed
-        ? `<button class="btn btn-swap" onclick="openManualSwapModal('${player.id}', '${encounter.id}')">🔄 Trocar</button>`
+    // Troca manual: disponível quando o ativo está vivo e há substituto elegível (Fase 20)
+    const masterMode = state.config?.masterMode || false;
+    const swapCheck = canManualSwap(player, { masterMode });
+    const swapButtonHtml = isAlive && swapCheck.allowed
+        ? `<button class="btn btn-secondary" onclick="groupManualSwap()" title="Trocar monstrinho ativo (usa o turno)">🔄 Trocar</button>`
         : '';
 
     return `

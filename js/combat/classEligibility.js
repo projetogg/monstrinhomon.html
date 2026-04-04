@@ -1,66 +1,108 @@
 /**
- * CLASS ELIGIBILITY — Funções puras de elegibilidade por classe em batalha
+ * CLASS ELIGIBILITY (Fase 19)
  *
- * Módulo canônico que expõe a regra de elegibilidade de classe para uso em
- * qualquer ponto do sistema (equipe, combate, modal de troca, UI).
+ * Funções puras para determinar e exibir a elegibilidade de um monstrinho
+ * para batalha com base na classe do jogador.
  *
- * Regra oficial (GAME_RULES.md):
- *   BATALHA: o jogador só pode USAR em combate Monstrinhos da MESMA classe do jogador.
- *   Exceção: masterMode desativa a restrição.
+ * REGRA (GAME_RULES.md):
+ *   Em batalha, o jogador só pode usar monstrinhos da MESMA CLASSE do jogador.
+ *   Exceção: config.masterMode desativa a restrição.
  *
- * Vocabulário consolidado (em linha com Fase 19):
- *   "Elegível"       — monstrinho pode ser usado em batalha pelo jogador
- *   "Fora da classe" — monstrinho é de classe diferente
+ * Estas funções são usadas pela UI de equipe e pela seleção de batalha para
+ * tornar a regra visível e pedagógica para o jogador.
  */
 
 /**
- * Verifica se um monstrinho é elegível para batalha pelo jogador.
+ * Determina se um monstrinho é elegível para batalha com este jogador.
  *
- * @param {object} mon    - Instância do Monstrinho (precisa de .class)
- * @param {object} player - Jogador (precisa de .class)
- * @param {object} [config] - { masterMode?: boolean }
+ * PURE: sem side effects.
+ *
+ * @param {object} monster  - Instância de monstrinho com { class }
+ * @param {object} player   - Jogador com { class }
+ * @param {object} [config] - Opções { masterMode?: boolean }
  * @returns {boolean}
  */
-export function isEligibleForBattle(mon, player, config = {}) {
-    if (!mon || !player) return false;
+export function isEligibleForBattle(monster, player, config = {}) {
+    if (!monster || !player) return false;
     if (config?.masterMode) return true;
-    const monClass = mon.class || '';
+    const monClass = monster.class || '';
     const playerClass = player.class || '';
     if (!monClass || !playerClass) return false;
     return monClass === playerClass;
 }
 
 /**
- * Retorna label de elegibilidade para exibição na UI.
- * Vocabulário alinhado com Fase 19 (renderEligibilityBadgeForTeam).
+ * Retorna o rótulo textual de elegibilidade para exibição na UI.
  *
- * @param {object} mon
- * @param {object} player
- * @param {object} [config]
- * @returns {string} — 'Elegível' | 'Fora da classe' | 'Sem classe'
+ * @param {object} monster  - Instância de monstrinho com { class }
+ * @param {object} player   - Jogador com { class }
+ * @param {object} [config] - Opções { masterMode?: boolean }
+ * @returns {{ eligible: boolean, text: string, title: string }}
  */
-export function getEligibilityLabel(mon, player, config = {}) {
-    if (!mon || !player) return 'Sem classe';
-    if (config?.masterMode) return 'Elegível';
-    const monClass = mon.class || '';
+export function getEligibilityLabel(monster, player, config = {}) {
+    if (!monster || !player) {
+        return {
+            eligible: false,
+            text: '✖ Sem classe',
+            title: 'Dados incompletos — não é possível determinar elegibilidade'
+        };
+    }
+
+    const masterMode = config?.masterMode || false;
+    const monClass = monster.class || '';
     const playerClass = player.class || '';
-    if (!monClass || !playerClass) return 'Sem classe';
-    return monClass === playerClass ? 'Elegível' : 'Fora da classe';
+
+    if (masterMode) {
+        return {
+            eligible: true,
+            text: '✔ Modo Mestre',
+            title: 'Modo Mestre: restrição de classe desativada'
+        };
+    }
+
+    if (!playerClass) {
+        return {
+            eligible: false,
+            text: '✖ Jogador sem classe',
+            title: 'O jogador não tem classe definida'
+        };
+    }
+
+    if (!monClass) {
+        return {
+            eligible: false,
+            text: '✖ Sem classe',
+            title: 'Este monstrinho não tem classe definida'
+        };
+    }
+
+    if (monClass === playerClass) {
+        return {
+            eligible: true,
+            text: '✔ Elegível',
+            title: `Classe ${monClass} — pode batalhar com este treinador`
+        };
+    }
+
+    return {
+        eligible: false,
+        text: '✖ Fora da classe',
+        title: `Classe ${monClass} — este treinador é da classe ${playerClass}`
+    };
 }
 
 /**
- * Retorna HTML de um badge de elegibilidade para uso inline na UI.
- * Compatível com os badges da Fase 19 (.eligibility-badge--eligible / --ineligible).
+ * Renderiza o badge HTML de elegibilidade para uso em templates de equipe.
  *
- * @param {object} mon
- * @param {object} player
- * @param {object} [config]
+ * @param {object} monster  - Instância de monstrinho
+ * @param {object} player   - Jogador
+ * @param {object} [config] - Opções { masterMode?: boolean }
  * @returns {string} HTML do badge
  */
-export function renderEligibilityBadge(mon, player, config = {}) {
-    const label = getEligibilityLabel(mon, player, config);
-    const cls = label === 'Elegível'
+export function renderEligibilityBadge(monster, player, config = {}) {
+    const label = getEligibilityLabel(monster, player, config);
+    const cssClass = label.eligible
         ? 'eligibility-badge eligibility-badge--eligible'
         : 'eligibility-badge eligibility-badge--ineligible';
-    return `<span class="${cls}">${label}</span>`;
+    return `<span class="${cssClass}" title="${label.title}">${label.text}</span>`;
 }

@@ -1,8 +1,14 @@
 /**
- * BATTLE SWAP TESTS (PR-20)
+ * BATTLE SWAP TESTS (Fase 20 — PR20)
  *
- * Testes para js/combat/battleSwap.js
- * Cobertura: categorizeBattleTeam, hasEligibleSwap, getSwapStatus, canManualSwap
+ * Testes para as funções puras de categorização e validação de troca de
+ * monstrinhos em batalha.
+ *
+ * Cobertura:
+ *   - categorizeBattleTeam: equipes mistas, masterMode, dados ausentes
+ *   - hasEligibleSwap: com e sem substitutos válidos
+ *   - getSwapStatus: todos os estados possíveis (active/eligible/blocked_class/blocked_ko)
+ *   - canManualSwap: ativo vivo/morto, com/sem substituto, edge cases
  */
 
 import { describe, it, expect } from 'vitest';
@@ -10,292 +16,412 @@ import {
     categorizeBattleTeam,
     hasEligibleSwap,
     getSwapStatus,
-    canManualSwap,
+    canManualSwap
 } from '../js/combat/battleSwap.js';
 
-// ── Fixtures ─────────────────────────────────────────────────────────────────
+// ─── Fixtures ────────────────────────────────────────────────────────────────
 
-function makeMon(overrides = {}) {
+function makeMonster(overrides = {}) {
     return {
-        name: 'Luma',
-        class: 'Mago',
-        hp: 30,
-        hpMax: 30,
-        level: 1,
-        emoji: '✨',
-        ...overrides,
+        id: overrides.id !== undefined ? overrides.id : 'm1',
+        name: overrides.name !== undefined ? overrides.name : 'TestMon',
+        class: overrides.class !== undefined ? overrides.class : 'Guerreiro',
+        hp: overrides.hp !== undefined ? overrides.hp : 30,
+        hpMax: overrides.hpMax !== undefined ? overrides.hpMax : 50,
+        level: overrides.level !== undefined ? overrides.level : 1,
+        ...overrides
     };
 }
 
-function makePlayer(teamOverrides = [], activeIndex = 0, playerClass = 'Mago') {
+function makePlayer(overrides = {}) {
     return {
-        id: 'player_01',
-        name: 'Alice',
-        class: playerClass,
-        activeIndex,
-        team: teamOverrides,
+        id: overrides.id !== undefined ? overrides.id : 'p1',
+        name: overrides.name !== undefined ? overrides.name : 'Treinador',
+        class: overrides.class !== undefined ? overrides.class : 'Guerreiro',
+        activeIndex: overrides.activeIndex !== undefined ? overrides.activeIndex : 0,
+        team: overrides.team !== undefined ? overrides.team : []
     };
 }
 
-// ── categorizeBattleTeam ──────────────────────────────────────────────────────
+// Equipe mista para a maioria dos testes:
+//   [0] Guerreiro vivo (ativo)
+//   [1] Guerreiro vivo (elegível)
+//   [2] Mago vivo (fora da classe)
+//   [3] Guerreiro derrotado (KO)
+function makeMixedTeam() {
+    return [
+        makeMonster({ id: 'm0', name: 'AtivaMon', class: 'Guerreiro', hp: 30 }),   // [0] ativo
+        makeMonster({ id: 'm1', name: 'ReservaMon', class: 'Guerreiro', hp: 25 }), // [1] elegível
+        makeMonster({ id: 'm2', name: 'MagoMon', class: 'Mago', hp: 20 }),         // [2] fora da classe
+        makeMonster({ id: 'm3', name: 'KOMon', class: 'Guerreiro', hp: 0 })        // [3] KO
+    ];
+}
+
+// ─── categorizeBattleTeam ─────────────────────────────────────────────────────
 
 describe('categorizeBattleTeam', () => {
 
-    describe('entrada inválida', () => {
-        it('retorna [] para player null', () => {
-            expect(categorizeBattleTeam(null)).toEqual([]);
+    describe('Equipe mista — classe Guerreiro, activeIndex=0', () => {
+        const player = makePlayer({ class: 'Guerreiro', activeIndex: 0, team: makeMixedTeam() });
+        const cats = categorizeBattleTeam(player);
+
+        it('ativo: apenas o índice 0', () => {
+            expect(cats.active).toHaveLength(1);
+            expect(cats.active[0].index).toBe(0);
         });
 
-        it('retorna [] para player sem team', () => {
-            expect(categorizeBattleTeam({ class: 'Mago' })).toEqual([]);
+        it('elegível: apenas o índice 1 (Guerreiro vivo, não-ativo)', () => {
+            expect(cats.eligible).toHaveLength(1);
+            expect(cats.eligible[0].index).toBe(1);
         });
 
-        it('retorna [] para team vazio', () => {
-            const p = makePlayer([]);
-            expect(categorizeBattleTeam(p)).toEqual([]);
+        it('blocked_class: apenas o índice 2 (Mago vivo)', () => {
+            expect(cats.blocked_class).toHaveLength(1);
+            expect(cats.blocked_class[0].index).toBe(2);
         });
 
-        it('ignora slots null/undefined no team', () => {
-            const p = makePlayer([null, makeMon(), undefined]);
-            const result = categorizeBattleTeam(p);
-            // null e undefined filtrados
-            expect(result.length).toBe(1);
-        });
-    });
-
-    describe('categoria "active"', () => {
-        it('marca activeIndex como active', () => {
-            const active = makeMon({ name: 'Ativo' });
-            const bench = makeMon({ name: 'Banco' });
-            const p = makePlayer([active, bench], 0);
-            const result = categorizeBattleTeam(p);
-            expect(result[0].category).toBe('active');
-            expect(result[0].monster.name).toBe('Ativo');
+        it('blocked_ko: apenas o índice 3 (Guerreiro morto)', () => {
+            expect(cats.blocked_ko).toHaveLength(1);
+            expect(cats.blocked_ko[0].index).toBe(3);
         });
 
-        it('active não é afetado pelo hp (mesmo com hp=0)', () => {
-            const dead = makeMon({ hp: 0 });
-            const p = makePlayer([dead], 0);
-            const result = categorizeBattleTeam(p);
-            expect(result[0].category).toBe('active');
-        });
-
-        it('usa activeIndex=0 por default', () => {
-            const p = { class: 'Mago', team: [makeMon(), makeMon()] };
-            const result = categorizeBattleTeam(p);
-            expect(result[0].category).toBe('active');
+        it('soma total = tamanho da equipe', () => {
+            const total = cats.active.length + cats.eligible.length + cats.blocked_class.length + cats.blocked_ko.length;
+            expect(total).toBe(4);
         });
     });
 
-    describe('categoria "eligible"', () => {
-        it('bench vivo + mesma classe → eligible', () => {
-            const active = makeMon();
-            const bench = makeMon({ name: 'Bench' });
-            const p = makePlayer([active, bench], 0, 'Mago');
-            const result = categorizeBattleTeam(p);
-            expect(result[1].category).toBe('eligible');
+    describe('masterMode desativa restrição de classe', () => {
+        const player = makePlayer({ class: 'Guerreiro', activeIndex: 0, team: makeMixedTeam() });
+        const cats = categorizeBattleTeam(player, { masterMode: true });
+
+        it('Mago vivo passa a ser elegível com masterMode', () => {
+            // índice 1 (Guerreiro) e índice 2 (Mago) devem ser elegíveis
+            expect(cats.eligible).toHaveLength(2);
         });
 
-        it('masterMode ignora classe → eligible mesmo com classe diferente', () => {
-            const active = makeMon();
-            const bench = makeMon({ class: 'Guerreiro' });
-            const p = makePlayer([active, bench], 0, 'Mago');
-            const result = categorizeBattleTeam(p, { masterMode: true });
-            expect(result[1].category).toBe('eligible');
-        });
-
-        it('eligible tem reason "Elegível"', () => {
-            const p = makePlayer([makeMon(), makeMon()], 0, 'Mago');
-            const result = categorizeBattleTeam(p);
-            expect(result[1].reason).toBe('Elegível');
+        it('blocked_class fica vazio com masterMode', () => {
+            expect(cats.blocked_class).toHaveLength(0);
         });
     });
 
-    describe('categoria "blocked_ko"', () => {
-        it('bench com hp=0 → blocked_ko', () => {
-            const p = makePlayer([makeMon(), makeMon({ hp: 0 })], 0);
-            const result = categorizeBattleTeam(p);
-            expect(result[1].category).toBe('blocked_ko');
-        });
+    describe('Equipe com todos KO (exceto ativo)', () => {
+        const team = [
+            makeMonster({ class: 'Guerreiro', hp: 30 }),
+            makeMonster({ class: 'Guerreiro', hp: 0 }),
+            makeMonster({ class: 'Guerreiro', hp: 0 })
+        ];
+        const player = makePlayer({ class: 'Guerreiro', activeIndex: 0, team });
+        const cats = categorizeBattleTeam(player);
 
-        it('bench com hp negativo → blocked_ko', () => {
-            const p = makePlayer([makeMon(), makeMon({ hp: -5 })], 0);
-            const result = categorizeBattleTeam(p);
-            expect(result[1].category).toBe('blocked_ko');
-        });
+        it('sem elegíveis', () => { expect(cats.eligible).toHaveLength(0); });
+        it('dois KO', () => { expect(cats.blocked_ko).toHaveLength(2); });
+    });
 
-        it('blocked_ko tem reason "Desmaiado"', () => {
-            const p = makePlayer([makeMon(), makeMon({ hp: 0 })], 0);
-            const result = categorizeBattleTeam(p);
-            expect(result[1].reason).toBe('Desmaiado');
-        });
+    describe('Equipe só com ativo', () => {
+        const player = makePlayer({ class: 'Guerreiro', activeIndex: 0, team: [makeMonster({ class: 'Guerreiro', hp: 30 })] });
+        const cats = categorizeBattleTeam(player);
 
-        it('blocked_ko prevalece sobre classe diferente', () => {
-            // KO + classe diferente → blocked_ko (não blocked_class)
-            const p = makePlayer([makeMon(), makeMon({ hp: 0, class: 'Guerreiro' })], 0, 'Mago');
-            const result = categorizeBattleTeam(p);
-            expect(result[1].category).toBe('blocked_ko');
+        it('só ativo, sem elegíveis nem bloqueados', () => {
+            expect(cats.active).toHaveLength(1);
+            expect(cats.eligible).toHaveLength(0);
+            expect(cats.blocked_class).toHaveLength(0);
+            expect(cats.blocked_ko).toHaveLength(0);
         });
     });
 
-    describe('categoria "blocked_class"', () => {
-        it('bench vivo com classe diferente → blocked_class', () => {
-            const p = makePlayer([makeMon(), makeMon({ class: 'Guerreiro' })], 0, 'Mago');
-            const result = categorizeBattleTeam(p);
-            expect(result[1].category).toBe('blocked_class');
+    describe('Jogador null ou team inválido', () => {
+        it('player null → todas as categorias vazias', () => {
+            const cats = categorizeBattleTeam(null);
+            expect(cats.active).toHaveLength(0);
+            expect(cats.eligible).toHaveLength(0);
+            expect(cats.blocked_class).toHaveLength(0);
+            expect(cats.blocked_ko).toHaveLength(0);
         });
 
-        it('blocked_class inclui nomes de classe no reason', () => {
-            const p = makePlayer([makeMon(), makeMon({ class: 'Bardo' })], 0, 'Mago');
-            const result = categorizeBattleTeam(p);
-            expect(result[1].reason).toContain('Bardo');
-            expect(result[1].reason).toContain('Mago');
-        });
-
-        it('masterMode remove blocked_class', () => {
-            const p = makePlayer([makeMon(), makeMon({ class: 'Guerreiro' })], 0, 'Mago');
-            const resultNormal = categorizeBattleTeam(p, { masterMode: false });
-            const resultMaster = categorizeBattleTeam(p, { masterMode: true });
-            expect(resultNormal[1].category).toBe('blocked_class');
-            expect(resultMaster[1].category).toBe('eligible');
+        it('team não-array → todas as categorias vazias', () => {
+            const cats = categorizeBattleTeam({ team: null });
+            expect(cats.eligible).toHaveLength(0);
         });
     });
 
-    describe('preserva índice original', () => {
-        it('result[n].index corresponde à posição real no team', () => {
-            const p = makePlayer([makeMon(), makeMon(), makeMon({ class: 'Guerreiro' })], 0, 'Mago');
-            const result = categorizeBattleTeam(p);
-            expect(result[0].index).toBe(0);
-            expect(result[1].index).toBe(1);
-            expect(result[2].index).toBe(2);
+    describe('activeIndex inválido (ausente → 0)', () => {
+        const team = [
+            makeMonster({ class: 'Guerreiro', hp: 30 }),
+            makeMonster({ class: 'Guerreiro', hp: 25 })
+        ];
+        const player = { id: 'p1', class: 'Guerreiro', team }; // sem activeIndex
+
+        it('usa índice 0 como ativo por padrão', () => {
+            const cats = categorizeBattleTeam(player);
+            expect(cats.active[0].index).toBe(0);
+            expect(cats.eligible[0].index).toBe(1);
         });
     });
 
-    describe('time misto (3 monstrinhos)', () => {
-        it('categoriza corretamente time com active/eligible/blocked_ko/blocked_class', () => {
-            const active    = makeMon({ name: 'A', class: 'Mago', hp: 30 });
-            const eligible  = makeMon({ name: 'B', class: 'Mago', hp: 20 });
-            const ko        = makeMon({ name: 'C', class: 'Mago', hp: 0 });
-            const wrongClass = makeMon({ name: 'D', class: 'Bardo', hp: 25 });
+    describe('Monstrinho sem classe', () => {
+        const team = [
+            makeMonster({ class: 'Guerreiro', hp: 30 }),
+            makeMonster({ class: '', hp: 25 }) // sem classe
+        ];
+        const player = makePlayer({ class: 'Guerreiro', activeIndex: 0, team });
 
-            const p = makePlayer([active, eligible, ko, wrongClass], 0, 'Mago');
-            const result = categorizeBattleTeam(p);
-
-            expect(result[0].category).toBe('active');
-            expect(result[1].category).toBe('eligible');
-            expect(result[2].category).toBe('blocked_ko');
-            expect(result[3].category).toBe('blocked_class');
+        it('monstrinho sem classe vai para blocked_class', () => {
+            const cats = categorizeBattleTeam(player);
+            expect(cats.blocked_class).toHaveLength(1);
         });
     });
 });
 
-// ── getSwapStatus ─────────────────────────────────────────────────────────────
-
-describe('getSwapStatus', () => {
-    it('active → "▶ Em batalha"', () => {
-        expect(getSwapStatus('active')).toBe('▶ Em batalha');
-    });
-
-    it('eligible → "✅ Elegível"', () => {
-        expect(getSwapStatus('eligible')).toBe('✅ Elegível');
-    });
-
-    it('blocked_ko → "💀 Desmaiado"', () => {
-        expect(getSwapStatus('blocked_ko')).toBe('💀 Desmaiado');
-    });
-
-    it('blocked_class → "⛔ Fora da classe"', () => {
-        expect(getSwapStatus('blocked_class')).toBe('⛔ Fora da classe');
-    });
-
-    it('categoria desconhecida com reason → retorna reason', () => {
-        expect(getSwapStatus('unknown', 'motivo qualquer')).toBe('motivo qualquer');
-    });
-
-    it('categoria desconhecida sem reason → retorna "—"', () => {
-        expect(getSwapStatus('unknown')).toBe('—');
-    });
-});
-
-// ── hasEligibleSwap ───────────────────────────────────────────────────────────
+// ─── hasEligibleSwap ──────────────────────────────────────────────────────────
 
 describe('hasEligibleSwap', () => {
-    it('retorna false para player null', () => {
+
+    it('true quando há substituto da mesma classe vivo', () => {
+        const team = [
+            makeMonster({ class: 'Guerreiro', hp: 30 }),
+            makeMonster({ class: 'Guerreiro', hp: 25 })
+        ];
+        const player = makePlayer({ class: 'Guerreiro', activeIndex: 0, team });
+        expect(hasEligibleSwap(player)).toBe(true);
+    });
+
+    it('false quando todos substitutos são de outra classe', () => {
+        const team = [
+            makeMonster({ class: 'Guerreiro', hp: 30 }),
+            makeMonster({ class: 'Mago', hp: 25 })
+        ];
+        const player = makePlayer({ class: 'Guerreiro', activeIndex: 0, team });
+        expect(hasEligibleSwap(player)).toBe(false);
+    });
+
+    it('false quando todos substitutos estão KO', () => {
+        const team = [
+            makeMonster({ class: 'Guerreiro', hp: 30 }),
+            makeMonster({ class: 'Guerreiro', hp: 0 })
+        ];
+        const player = makePlayer({ class: 'Guerreiro', activeIndex: 0, team });
+        expect(hasEligibleSwap(player)).toBe(false);
+    });
+
+    it('true com masterMode mesmo com classes diferentes', () => {
+        const team = [
+            makeMonster({ class: 'Guerreiro', hp: 30 }),
+            makeMonster({ class: 'Mago', hp: 25 })
+        ];
+        const player = makePlayer({ class: 'Guerreiro', activeIndex: 0, team });
+        expect(hasEligibleSwap(player, { masterMode: true })).toBe(true);
+    });
+
+    it('false com player null', () => {
         expect(hasEligibleSwap(null)).toBe(false);
-    });
-
-    it('retorna false quando só tem o ativo (bench vazio)', () => {
-        const p = makePlayer([makeMon()], 0);
-        expect(hasEligibleSwap(p)).toBe(false);
-    });
-
-    it('retorna false quando bench só tem KO', () => {
-        const p = makePlayer([makeMon(), makeMon({ hp: 0 })], 0);
-        expect(hasEligibleSwap(p)).toBe(false);
-    });
-
-    it('retorna false quando bench só tem classe diferente', () => {
-        const p = makePlayer([makeMon(), makeMon({ class: 'Guerreiro' })], 0, 'Mago');
-        expect(hasEligibleSwap(p)).toBe(false);
-    });
-
-    it('retorna true quando há ao menos um elegível', () => {
-        const p = makePlayer([makeMon(), makeMon()], 0, 'Mago');
-        expect(hasEligibleSwap(p)).toBe(true);
-    });
-
-    it('retorna true com masterMode mesmo com classe diferente', () => {
-        const p = makePlayer([makeMon(), makeMon({ class: 'Guerreiro' })], 0, 'Mago');
-        expect(hasEligibleSwap(p, { masterMode: true })).toBe(true);
-    });
-
-    it('retorna true quando há elegível entre bloqueados', () => {
-        const p = makePlayer([
-            makeMon(),
-            makeMon({ hp: 0 }),
-            makeMon({ class: 'Bardo' }),
-            makeMon({ name: 'Ok' }),
-        ], 0, 'Mago');
-        expect(hasEligibleSwap(p)).toBe(true);
     });
 });
 
-// ── canManualSwap ─────────────────────────────────────────────────────────────
+// ─── getSwapStatus ────────────────────────────────────────────────────────────
+
+describe('getSwapStatus', () => {
+    const player = makePlayer({ class: 'Guerreiro', activeIndex: 0 });
+
+    it('ativo → category active, label "▶ Ativo"', () => {
+        const mon = makeMonster({ class: 'Guerreiro', hp: 30 });
+        const status = getSwapStatus(mon, 0, player);
+        expect(status.category).toBe('active');
+        expect(status.label).toContain('Ativo');
+    });
+
+    it('elegível → category eligible, label "✔ Pode entrar"', () => {
+        const mon = makeMonster({ class: 'Guerreiro', hp: 25 });
+        const status = getSwapStatus(mon, 1, player);
+        expect(status.category).toBe('eligible');
+        expect(status.label).toContain('Pode entrar');
+    });
+
+    it('classe diferente → category blocked_class, label "✖ Fora da classe"', () => {
+        const mon = makeMonster({ class: 'Mago', hp: 20 });
+        const status = getSwapStatus(mon, 2, player);
+        expect(status.category).toBe('blocked_class');
+        expect(status.label).toContain('Fora da classe');
+    });
+
+    it('classe diferente → title menciona ambas as classes', () => {
+        const mon = makeMonster({ class: 'Bardo', hp: 20 });
+        const status = getSwapStatus(mon, 2, player);
+        expect(status.title).toContain('Bardo');
+        expect(status.title).toContain('Guerreiro');
+    });
+
+    it('hp=0 → category blocked_ko, label "💀 Derrotado"', () => {
+        const mon = makeMonster({ class: 'Guerreiro', hp: 0 });
+        const status = getSwapStatus(mon, 1, player);
+        expect(status.category).toBe('blocked_ko');
+        expect(status.label).toContain('Derrotado');
+    });
+
+    it('masterMode + classe diferente → eligible', () => {
+        const mon = makeMonster({ class: 'Mago', hp: 20 });
+        const status = getSwapStatus(mon, 1, player, { masterMode: true });
+        expect(status.category).toBe('eligible');
+    });
+
+    it('monstrinho null → blocked_ko', () => {
+        const status = getSwapStatus(null, 0, player);
+        expect(status.category).toBe('blocked_ko');
+    });
+
+    it('player null → blocked_ko', () => {
+        const mon = makeMonster({ class: 'Guerreiro', hp: 30 });
+        const status = getSwapStatus(mon, 0, null);
+        expect(status.category).toBe('blocked_ko');
+    });
+
+    it('monstrinho sem classe → blocked_class', () => {
+        const mon = makeMonster({ class: '', hp: 20 });
+        const status = getSwapStatus(mon, 1, player);
+        expect(status.category).toBe('blocked_class');
+    });
+
+    it('jogador sem classe → blocked_class (para monstrinho vivo não-ativo)', () => {
+        const playerNoClass = makePlayer({ class: '', activeIndex: 0 });
+        const mon = makeMonster({ class: 'Guerreiro', hp: 25 });
+        const status = getSwapStatus(mon, 1, playerNoClass);
+        expect(status.category).toBe('blocked_class');
+    });
+});
+
+// ─── canManualSwap ────────────────────────────────────────────────────────────
 
 describe('canManualSwap', () => {
-    it('retorna false para player null', () => {
-        expect(canManualSwap(null)).toBe(false);
+
+    it('allowed=true quando ativo vivo e há substituto elegível', () => {
+        const team = [
+            makeMonster({ class: 'Guerreiro', hp: 30 }),
+            makeMonster({ class: 'Guerreiro', hp: 20 })
+        ];
+        const player = makePlayer({ class: 'Guerreiro', activeIndex: 0, team });
+        const result = canManualSwap(player);
+        expect(result.allowed).toBe(true);
     });
 
-    it('retorna false para player sem team', () => {
-        expect(canManualSwap({ class: 'Mago' })).toBe(false);
+    it('allowed=false quando ativo já está KO', () => {
+        const team = [
+            makeMonster({ class: 'Guerreiro', hp: 0 }), // ativo KO
+            makeMonster({ class: 'Guerreiro', hp: 25 })
+        ];
+        const player = makePlayer({ class: 'Guerreiro', activeIndex: 0, team });
+        const result = canManualSwap(player);
+        expect(result.allowed).toBe(false);
+        expect(result.reason).toBeTruthy();
     });
 
-    it('retorna false quando ativo está KO (troca forçada, não manual)', () => {
-        const active = makeMon({ hp: 0 });
-        const bench = makeMon();
-        const p = makePlayer([active, bench], 0, 'Mago');
-        expect(canManualSwap(p)).toBe(false);
+    it('allowed=false quando sem substituto elegível (todos fora da classe)', () => {
+        const team = [
+            makeMonster({ class: 'Guerreiro', hp: 30 }),
+            makeMonster({ class: 'Mago', hp: 25 })
+        ];
+        const player = makePlayer({ class: 'Guerreiro', activeIndex: 0, team });
+        const result = canManualSwap(player);
+        expect(result.allowed).toBe(false);
     });
 
-    it('retorna false quando ativo está vivo mas não há elegível', () => {
-        const p = makePlayer([makeMon(), makeMon({ hp: 0 })], 0, 'Mago');
-        expect(canManualSwap(p)).toBe(false);
+    it('allowed=false quando sem substituto (equipe com 1 membro)', () => {
+        const team = [makeMonster({ class: 'Guerreiro', hp: 30 })];
+        const player = makePlayer({ class: 'Guerreiro', activeIndex: 0, team });
+        const result = canManualSwap(player);
+        expect(result.allowed).toBe(false);
     });
 
-    it('retorna true quando ativo está vivo e há elegível', () => {
-        const p = makePlayer([makeMon(), makeMon()], 0, 'Mago');
-        expect(canManualSwap(p)).toBe(true);
+    it('allowed=true com masterMode mesmo com classes diferentes', () => {
+        const team = [
+            makeMonster({ class: 'Guerreiro', hp: 30 }),
+            makeMonster({ class: 'Mago', hp: 25 })
+        ];
+        const player = makePlayer({ class: 'Guerreiro', activeIndex: 0, team });
+        const result = canManualSwap(player, { masterMode: true });
+        expect(result.allowed).toBe(true);
     });
 
-    it('masterMode permite troca mesmo com classes diferentes', () => {
-        const p = makePlayer([makeMon(), makeMon({ class: 'Guerreiro' })], 0, 'Mago');
-        expect(canManualSwap(p, { masterMode: false })).toBe(false);
-        expect(canManualSwap(p, { masterMode: true })).toBe(true);
+    it('allowed=false com player null', () => {
+        const result = canManualSwap(null);
+        expect(result.allowed).toBe(false);
+        expect(result.reason).toBeTruthy();
     });
 
-    it('retorna false quando activeIndex inválido e hp do índice 0 é 0', () => {
-        const p = makePlayer([makeMon({ hp: 0 }), makeMon()], 0, 'Mago');
-        expect(canManualSwap(p)).toBe(false);
+    it('retorna reason descritivo quando bloqueado', () => {
+        const team = [makeMonster({ class: 'Guerreiro', hp: 30 })];
+        const player = makePlayer({ class: 'Guerreiro', activeIndex: 0, team });
+        const result = canManualSwap(player);
+        expect(typeof result.reason).toBe('string');
+        expect(result.reason.length).toBeGreaterThan(0);
+    });
+});
+
+// ─── Cenários de integração ───────────────────────────────────────────────────
+
+describe('Cenários de integração — troca forçada por KO', () => {
+
+    it('equipe com 3 elegíveis → todos aparecem como eligible', () => {
+        const team = [
+            makeMonster({ class: 'Mago', hp: 0 }),  // ativo KO
+            makeMonster({ class: 'Mago', hp: 30 }),
+            makeMonster({ class: 'Mago', hp: 25 }),
+            makeMonster({ class: 'Mago', hp: 20 })
+        ];
+        const player = makePlayer({ class: 'Mago', activeIndex: 0, team });
+        const cats = categorizeBattleTeam(player);
+        expect(cats.eligible).toHaveLength(3);
+        expect(cats.blocked_ko).toHaveLength(0);
+    });
+
+    it('equipe com 0 elegíveis → hasEligibleSwap retorna false', () => {
+        const team = [
+            makeMonster({ class: 'Bardo', hp: 10 }), // ativo
+            makeMonster({ class: 'Mago', hp: 15 }),  // fora da classe
+            makeMonster({ class: 'Bardo', hp: 0 })   // KO
+        ];
+        const player = makePlayer({ class: 'Bardo', activeIndex: 0, team });
+        expect(hasEligibleSwap(player)).toBe(false);
+    });
+
+    it('todas as categorias presentes na equipe mista', () => {
+        const team = makeMixedTeam();
+        const player = makePlayer({ class: 'Guerreiro', activeIndex: 0, team });
+        const cats = categorizeBattleTeam(player);
+        expect(cats.active).toHaveLength(1);
+        expect(cats.eligible).toHaveLength(1);
+        expect(cats.blocked_class).toHaveLength(1);
+        expect(cats.blocked_ko).toHaveLength(1);
+    });
+});
+
+describe('Cenários de integração — troca manual', () => {
+
+    it('canManualSwap true mesmo com membros KO e fora da classe, contanto que haja elegível', () => {
+        const team = [
+            makeMonster({ class: 'Curandeiro', hp: 30 }),  // ativo (vivo)
+            makeMonster({ class: 'Mago', hp: 20 }),         // fora da classe
+            makeMonster({ class: 'Curandeiro', hp: 0 }),   // KO
+            makeMonster({ class: 'Curandeiro', hp: 15 })   // elegível
+        ];
+        const player = makePlayer({ class: 'Curandeiro', activeIndex: 0, team });
+        expect(canManualSwap(player).allowed).toBe(true);
+    });
+});
+
+describe('Fallback — dados ausentes não quebram', () => {
+
+    it('team com entries null/undefined são ignorados', () => {
+        const player = { id: 'p1', class: 'Guerreiro', activeIndex: 0, team: [null, undefined, makeMonster({ class: 'Guerreiro', hp: 10 })] };
+        expect(() => categorizeBattleTeam(player)).not.toThrow();
+    });
+
+    it('getSwapStatus não lança com dados inválidos', () => {
+        expect(() => getSwapStatus(undefined, 0, {})).not.toThrow();
+        expect(() => getSwapStatus({}, NaN, null)).not.toThrow();
+    });
+
+    it('canManualSwap não lança com team vazio', () => {
+        const player = makePlayer({ team: [] });
+        expect(() => canManualSwap(player)).not.toThrow();
     });
 });
