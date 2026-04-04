@@ -223,6 +223,34 @@
             </div>
 
             <!-- ═══════════════════════════════════════════════════════════
+                 BOSS — Camada 2b: Painel de Boss Node
+                 ═══════════════════════════════════════════════════════════ -->
+            <div id="bossNodePanel" class="card is-hidden">
+                <div class="wm-header">
+                    <button class="btn btn-sm" onclick="backToWorldMap()" aria-label="Voltar ao mapa">← Mapa</button>
+                    <h3 id="bossNodeTitle" style="margin:0;flex:1;text-align:center">👑 Chefe</h3>
+                </div>
+                <div class="wm-boss-panel">
+                    <div class="wm-boss-panel__icon" id="bossNodeIcon">👑</div>
+                    <p class="wm-boss-panel__desc" id="bossNodeDesc"></p>
+                    <div id="bossNodeDefeatedBanner" class="wm-boss-panel__defeated is-hidden">
+                        ✅ Área conquistada! O caminho adiante foi aberto.
+                    </div>
+                    <!-- Quest hint para boss node (PR-07/09) -->
+                    <div id="bossNodeQuestHint" class="location-quest-hint is-hidden" aria-live="polite"></div>
+                    <div class="wm-boss-panel__actions" id="bossNodeActions">
+                        <div class="encounter-setup-inline" style="flex-wrap:wrap;gap:8px">
+                            <label style="font-size:13px;font-weight:600">👤 Participantes:</label>
+                            <div id="bossParticipantsList" class="wm-boss-panel__participants"></div>
+                        </div>
+                        <button class="btn btn-danger btn-large" id="bossStartBtn" onclick="startBossEncounter()">
+                            ⚔️ Desafiar o Guardião
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════════
                  SPOTS — Camada 2: Local selecionado
                  ═══════════════════════════════════════════════════════════ -->
             <div id="locationSpotsPanel" class="card is-hidden">
@@ -6105,25 +6133,53 @@
             const enc        = GameState.currentEncounter;
             const locationId = _wm.selectedLocationId;
 
-            // Registrar conclusão e flags ao vencer em local com mapa
+            // Verificar se o local atual é um boss node (PR-09)
+            const bossNode = locationId
+                ? (_wm.worldMapNodes ?? []).find(n => n.nodeId === locationId && n.type === 'boss')
+                : null;
+
+            if (!GameState.data) GameState.data = {};
+
             if (enc.result === 'victory' && locationId) {
-                if (!GameState.data) GameState.data = {};
+                // PR-09: Boss node — persistir bossDefeated, NÃO adicionar a completedLocations
+                if (bossNode) {
+                    if (!GameState.data.nodeFlags) GameState.data.nodeFlags = {};
+                    if (!GameState.data.nodeFlags[locationId]) {
+                        GameState.data.nodeFlags[locationId] = {};
+                    }
+                    const flags = GameState.data.nodeFlags[locationId];
+                    if (!flags.bossDefeated) {
+                        flags.bossDefeated      = true;
+                        flags.firstDefeatedAt   = new Date().toISOString();
+                    }
+                    flags.bossAttempts = (flags.bossAttempts ?? 0) + 1;
+                } else {
+                    // Nó de exploração normal
 
-                // completedLocations: registra primeira vitória
-                if (!Array.isArray(GameState.data.completedLocations)) {
-                    GameState.data.completedLocations = [];
-                }
-                if (!GameState.data.completedLocations.includes(locationId)) {
-                    GameState.data.completedLocations.push(locationId);
-                }
+                    // completedLocations: registra primeira vitória
+                    if (!Array.isArray(GameState.data.completedLocations)) {
+                        GameState.data.completedLocations = [];
+                    }
+                    if (!GameState.data.completedLocations.includes(locationId)) {
+                        GameState.data.completedLocations.push(locationId);
+                    }
 
-                // nodeFlags: incrementa wildWins por localização (PR-06)
+                    // nodeFlags: incrementa wildWins por localização (PR-06)
+                    if (!GameState.data.nodeFlags) GameState.data.nodeFlags = {};
+                    if (!GameState.data.nodeFlags[locationId]) {
+                        GameState.data.nodeFlags[locationId] = { wildWins: 0 };
+                    }
+                    GameState.data.nodeFlags[locationId].wildWins =
+                        (GameState.data.nodeFlags[locationId].wildWins ?? 0) + 1;
+                }
+            } else if (enc.result !== 'victory' && locationId && bossNode) {
+                // Derrota/fuga em boss: registrar tentativa mas NÃO marcar como derrotado
                 if (!GameState.data.nodeFlags) GameState.data.nodeFlags = {};
                 if (!GameState.data.nodeFlags[locationId]) {
-                    GameState.data.nodeFlags[locationId] = { wildWins: 0 };
+                    GameState.data.nodeFlags[locationId] = {};
                 }
-                GameState.data.nodeFlags[locationId].wildWins =
-                    (GameState.data.nodeFlags[locationId].wildWins ?? 0) + 1;
+                GameState.data.nodeFlags[locationId].bossAttempts =
+                    (GameState.data.nodeFlags[locationId].bossAttempts ?? 0) + 1;
             }
 
             GameState.currentEncounter = null;
@@ -6134,7 +6190,10 @@
             if (panel) hideEl(panel);
 
             // Retornar ao fluxo do mapa
-            if (locationId) {
+            if (locationId && bossNode) {
+                // Pós-boss: voltar ao mapa e re-renderizar para mostrar estado atualizado
+                showWorldMap();
+            } else if (locationId) {
                 // Voltar para os spots do local onde estávamos
                 const spotsPanel  = document.getElementById('locationSpotsPanel');
                 const setupPanel  = document.getElementById('wildSetupPanel');
@@ -8386,11 +8445,13 @@
 
             const mapPanel   = document.getElementById('worldMapPanel');
             const spotsPanel = document.getElementById('locationSpotsPanel');
+            const bossPanel  = document.getElementById('bossNodePanel');
             const setupPanel = document.getElementById('wildSetupPanel');
             const legacyPanel= document.getElementById('encounterSetupCard');
 
             if (mapPanel)    showEl(mapPanel);
             if (spotsPanel)  hideEl(spotsPanel);
+            if (bossPanel)   hideEl(bossPanel);
             if (setupPanel)  hideEl(setupPanel);
             if (legacyPanel) hideEl(legacyPanel);
 
@@ -8454,6 +8515,7 @@
                 const isCity      = node.type === 'city';
                 const isBoss      = node.type === 'boss';
                 const isCompleted = completedLocations.has(node.nodeId);
+                const isBossDefeated = isBoss && (nodeFlags[node.nodeId]?.bossDefeated === true);
                 const hasQuest    = activeQuestLocationIds.has(node.nodeId);
 
                 // Motivo do bloqueio (PR-06)
@@ -8464,17 +8526,27 @@
                       )
                     : '';
 
-                // Badges visuais (PR-05 + PR-07)
-                const badgeCompleted = isCompleted ? '<span class="wm-node__badge wm-node__badge--done">✅</span>' : '';
-                const badgeCity      = isCity      ? '<span class="wm-node__badge wm-node__badge--city">🏙️</span>' : '';
-                const badgeBoss      = isBoss      ? '<span class="wm-node__badge wm-node__badge--boss">👑</span>' : '';
-                const badgeQuest     = hasQuest    ? '<span class="wm-node__badge wm-node__badge--quest">❗</span>' : '';
-                const badgeLock      = !unlocked   ? '<span class="wm-node__lock">🔒</span>' : '';
-                const typeClass      = isCity ? 'wm-node--city' : isBoss ? 'wm-node--boss' : '';
+                // Badges visuais (PR-05 + PR-07 + PR-09)
+                const badgeCompleted    = isCompleted    ? '<span class="wm-node__badge wm-node__badge--done">✅</span>' : '';
+                const badgeCity         = isCity         ? '<span class="wm-node__badge wm-node__badge--city">🏙️</span>' : '';
+                const badgeBoss         = isBoss && !isBossDefeated ? '<span class="wm-node__badge wm-node__badge--boss">👑</span>' : '';
+                const badgeBossDefeated = isBossDefeated ? '<span class="wm-node__badge wm-node__badge--boss-defeated">⚔️</span>' : '';
+                const badgeQuest        = hasQuest       ? '<span class="wm-node__badge wm-node__badge--quest">❗</span>' : '';
+                const badgeLock         = !unlocked      ? '<span class="wm-node__lock">🔒</span>' : '';
+                const typeClass = isCity
+                    ? 'wm-node--city'
+                    : isBoss
+                        ? (isBossDefeated ? 'wm-node--boss wm-node--boss-defeated' : 'wm-node--boss')
+                        : '';
 
                 // Sublabel de motivo do bloqueio (PR-06)
                 const lockLabel = (!unlocked && lockReason)
                     ? `<span class="wm-node__lock-reason">${lockReason}</span>`
+                    : '';
+
+                // Sublabel de boss derrotado (PR-09)
+                const defeatedLabel = isBossDefeated
+                    ? `<span class="wm-node__boss-status">Conquistado</span>`
                     : '';
 
                 return `
@@ -8485,8 +8557,8 @@
                     <span class="wm-node__emoji">${node.biomeEmoji}</span>
                     <span class="wm-node__name">${node.name}</span>
                     ${levelStr ? `<span class="wm-node__level">${levelStr}</span>` : ''}
-                    <div class="wm-node__badges">${badgeCompleted}${badgeCity}${badgeBoss}${badgeQuest}${badgeLock}</div>
-                    ${lockLabel}
+                    <div class="wm-node__badges">${badgeCompleted}${badgeCity}${badgeBoss}${badgeBossDefeated}${badgeQuest}${badgeLock}</div>
+                    ${lockLabel}${defeatedLabel}
                   </div>`;
             }).join('');
         }
@@ -8497,6 +8569,13 @@
 
             _wm.selectedLocationId = locationId;
             _wm.selectedSpotId     = null;
+
+            // PR-09: Se for boss node, abrir painel específico de boss
+            const bossNode = (_wm.worldMapNodes ?? []).find(n => n.nodeId === locationId && n.type === 'boss');
+            if (bossNode) {
+                openBossPanel(locationId, bossNode);
+                return;
+            }
 
             const mapPanel   = document.getElementById('worldMapPanel');
             const spotsPanel = document.getElementById('locationSpotsPanel');
@@ -8600,6 +8679,148 @@
             }).join('');
         }
 
+        // ── PR-09: Boss Node Functions ──────────────────────────────────────────
+
+        /**
+         * Abre o painel de boss node (Camada 2b).
+         * @param {string} nodeId - ID do boss node (ex: 'BOSS_FOREST_01')
+         * @param {Object} bossNode - Nó do boss (de worldMap.json)
+         */
+        function openBossPanel(nodeId, bossNode) {
+            const mapPanel  = document.getElementById('worldMapPanel');
+            const bossPanel = document.getElementById('bossNodePanel');
+            if (mapPanel)  hideEl(mapPanel);
+            if (bossPanel) showEl(bossPanel);
+
+            const loc = (_wm.locationsData ?? []).find(l => l.id === nodeId);
+            const nodeFlags = GameState.data?.nodeFlags ?? {};
+            const defeated  = nodeFlags[nodeId]?.bossDefeated === true;
+            const bossMeta  = bossNode?.bossMeta ?? {};
+
+            // Preencher título e descrição
+            const titleEl = document.getElementById('bossNodeTitle');
+            const descEl  = document.getElementById('bossNodeDesc');
+            const iconEl  = document.getElementById('bossNodeIcon');
+            if (titleEl) titleEl.textContent = `👑 ${loc?.name ?? nodeId}`;
+            if (descEl)  descEl.textContent  = loc?.description ?? '';
+            if (iconEl)  iconEl.textContent  = defeated ? '⚔️' : '👑';
+
+            // Banner de boss derrotado
+            const defeatedBanner = document.getElementById('bossNodeDefeatedBanner');
+            const actionsEl      = document.getElementById('bossNodeActions');
+            if (defeated) {
+                if (defeatedBanner) showEl(defeatedBanner);
+                // Mantém botão mas mostra que pode rejugar
+                const startBtn = document.getElementById('bossStartBtn');
+                if (startBtn) startBtn.textContent = '🔄 Desafiar Novamente o Guardião';
+            } else {
+                if (defeatedBanner) hideEl(defeatedBanner);
+                const startBtn = document.getElementById('bossStartBtn');
+                if (startBtn) startBtn.textContent = '⚔️ Desafiar o Guardião';
+            }
+
+            // Quest hint para o boss node
+            _renderBossQuestHint(nodeId);
+
+            // Lista de participantes (todos os jogadores)
+            _renderBossParticipants();
+        }
+
+        /**
+         * Renderiza o hint de quest ativa ligada a este boss node.
+         * Verifica se algum jogador tem quest com localId === nodeId.
+         * @param {string} nodeId
+         */
+        function _renderBossQuestHint(nodeId) {
+            const hintEl = document.getElementById('bossNodeQuestHint');
+            if (!hintEl || !window.GameFlow) {
+                if (hintEl) hideEl(hintEl);
+                return;
+            }
+
+            let activeQuestInfo = null;
+            for (const player of (GameState.players ?? [])) {
+                if (!player) continue;
+                const summary = window.GameFlow.getActiveQuestsSummary(player);
+                const match   = summary.find(({ quest }) => quest?.localId === nodeId);
+                if (match) {
+                    activeQuestInfo = { player, ...match };
+                    break;
+                }
+            }
+
+            if (!activeQuestInfo) {
+                hideEl(hintEl);
+                return;
+            }
+
+            const { quest, progress, needed, player } = activeQuestInfo;
+            const pct = needed > 0 ? Math.min(100, Math.round((progress / needed) * 100)) : 0;
+            hintEl.innerHTML = `
+                <span class="location-quest-hint__icon">❗</span>
+                <div class="location-quest-hint__body">
+                    <p class="location-quest-hint__name">${quest.nome}</p>
+                    <p class="location-quest-hint__player">${player.name}</p>
+                    <div class="quest-progress-bar">
+                        <div class="quest-progress-fill" style="width:${pct}%"></div>
+                    </div>
+                    <p class="text-small" style="margin:2px 0 0">Objetivo: derrotar o chefe desta região</p>
+                </div>
+            `;
+            showEl(hintEl);
+        }
+
+        /**
+         * Renderiza a lista de participantes no painel de boss.
+         * Por padrão, seleciona todos os jogadores ativos.
+         */
+        function _renderBossParticipants() {
+            const container = document.getElementById('bossParticipantsList');
+            if (!container) return;
+            const players = GameState.players ?? [];
+            if (players.length === 0) {
+                container.innerHTML = '<p class="text-small text-muted">Nenhum jogador ativo.</p>';
+                return;
+            }
+            container.innerHTML = players.map(p => {
+                if (!p) return '';
+                return `
+                  <label class="wm-boss-panel__participant">
+                    <input type="checkbox" value="${p.id}" checked>
+                    ${p.name} (${p.class})
+                  </label>`;
+            }).join('');
+        }
+
+        /**
+         * Inicia o encontro de boss com os jogadores selecionados no painel.
+         * Usa startGroupEncounter com type 'boss' e o nível definido em bossMeta.
+         */
+        function startBossEncounter() {
+            const nodeId    = _wm.selectedLocationId;
+            const bossNode  = (_wm.worldMapNodes ?? []).find(n => n.nodeId === nodeId && n.type === 'boss');
+            const bossMeta  = bossNode?.bossMeta ?? {};
+            const bossLevel = bossMeta.bossLevel ?? 10;
+
+            // Coletar jogadores selecionados
+            const checkboxes = document.querySelectorAll('#bossParticipantsList input[type="checkbox"]:checked');
+            const selectedIds = Array.from(checkboxes).map(cb => cb.value).filter(Boolean);
+
+            if (selectedIds.length === 0) {
+                alert('Selecione ao menos 1 jogador para desafiar o boss!');
+                return;
+            }
+
+            // Esconder painel de boss
+            const bossPanel = document.getElementById('bossNodePanel');
+            if (bossPanel) hideEl(bossPanel);
+
+            // Iniciar encontro de grupo com tipo 'boss'
+            startGroupEncounter(selectedIds, 'boss', bossLevel);
+        }
+        window.startBossEncounter = startBossEncounter;
+        window.openBossPanel      = openBossPanel;
+
         /** Camada 3 — ao clicar em um spot, mostra seleção de jogador + Iniciar. */
         function selectSpot(spotId) {
             if (!window.WorldMap) return;
@@ -8692,8 +8913,10 @@
             _wm.selectedSpotId     = null;
             const mapPanel   = document.getElementById('worldMapPanel');
             const spotsPanel = document.getElementById('locationSpotsPanel');
+            const bossPanel  = document.getElementById('bossNodePanel');
             if (mapPanel)    showEl(mapPanel);
             if (spotsPanel)  hideEl(spotsPanel);
+            if (bossPanel)   hideEl(bossPanel);
         }
 
         /** Volta do painel de setup para os spots (botão ← Local). */

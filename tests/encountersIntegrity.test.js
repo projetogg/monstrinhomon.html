@@ -73,8 +73,11 @@ const EARLY_LOCATION_IDS = ['LOC_001'];
 describe('data/locations.json - Estrutura e Esquema', () => {
 
     const data = loadLocationsJson();
-    // Locais de exploração excluem locais de serviço (cidade, hub, etc.)
-    const explorationLocs = data.locations.filter(l => !l.specialRules?.includes('city_only'));
+    // Locais de exploração excluem locais de serviço (cidade, hub, etc.) e boss nodes
+    const explorationLocs = data.locations.filter(l =>
+        !l.specialRules?.includes('city_only') &&
+        !l.specialRules?.includes('boss_only')
+    );
 
     it('deve ter estrutura JSON válida com version e array "locations"', () => {
         expect(data).toBeDefined();
@@ -199,8 +202,11 @@ describe('data/locations.json - Coerência de Progressão', () => {
     const locData = loadLocationsJson();
     const monData = loadMonstersJson();
     const monsterMap = new Map(monData.monsters.map(m => [m.id, m]));
-    // Apenas locais de exploração (excluindo cidades/serviços)
-    const explorationLocs = locData.locations.filter(l => !l.specialRules?.includes('city_only'));
+    // Apenas locais de exploração (excluindo cidades/serviços e boss nodes)
+    const explorationLocs = locData.locations.filter(l =>
+        !l.specialRules?.includes('city_only') &&
+        !l.specialRules?.includes('boss_only')
+    );
 
     /** Retorna todos os IDs de monstros de todos os pools de uma localização */
     function allPoolIds(loc) {

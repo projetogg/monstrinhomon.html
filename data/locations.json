@@ -2412,6 +2412,153 @@
           "profileKey": "service"
         }
       ]
+    },
+    {
+      "id": "BOSS_FOREST_01",
+      "name": "Guardião da Floresta",
+      "bossName": "Guardião da Floresta",
+      "description": "O antigo guardião desta região bloqueia o caminho adiante. Derrote-o para abrir novas terras.",
+      "biome": "floresta",
+      "tier": "BOSS",
+      "levelRange": [
+        15,
+        15
+      ],
+      "rarityWeights": {
+        "Comum": 0,
+        "Incomum": 0,
+        "Raro": 100,
+        "Místico": 0,
+        "Lendário": 0
+      },
+      "speciesPoolsByRarity": {
+        "Comum": [],
+        "Incomum": [],
+        "Raro": [
+          "MON_023C",
+          "MON_027C"
+        ],
+        "Místico": [],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 0,
+        "Item": 0,
+        "Evento": 0,
+        "Treinador": 0,
+        "SpotRaro": 0
+      },
+      "allowedEvolutionStages": [
+        "S2",
+        "S3"
+      ],
+      "unlockRules": [],
+      "specialRules": [
+        "boss_only"
+      ],
+      "rareSpotBonus": 0,
+      "bossRule": "defeat_to_progress",
+      "notes": "Boss node — chefe da região forest_arc_1. Derrota desbloqueia LOC_009.",
+      "spots": []
+    },
+    {
+      "id": "LOC_009",
+      "name": "Floresta Profunda",
+      "description": "Território inexplorado além do Guardião. Monstrinhos raros e poderosos habitam aqui.",
+      "biome": "floresta",
+      "tier": "T5",
+      "levelRange": [
+        15,
+        20
+      ],
+      "rarityWeights": {
+        "Comum": 40,
+        "Incomum": 35,
+        "Raro": 20,
+        "Místico": 5,
+        "Lendário": 0
+      },
+      "speciesPoolsByRarity": {
+        "Comum": [
+          "MON_004",
+          "MON_006",
+          "MON_007"
+        ],
+        "Incomum": [
+          "MON_011B",
+          "MON_023B",
+          "MON_027B"
+        ],
+        "Raro": [
+          "MON_023C",
+          "MON_027C"
+        ],
+        "Místico": [],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 60,
+        "Item": 10,
+        "Evento": 10,
+        "Treinador": 15,
+        "SpotRaro": 5
+      },
+      "allowedEvolutionStages": [
+        "S2",
+        "S3"
+      ],
+      "unlockRules": [],
+      "specialRules": [],
+      "rareSpotBonus": 20,
+      "bossRule": null,
+      "notes": "Área desbloqueada após derrotar o Guardião da Floresta.",
+      "spots": [
+        {
+          "id": "LOC_009_A",
+          "name": "Raízes Antigas",
+          "icon": "🌳",
+          "profile": "Captura difícil",
+          "description": "Criaturas raras se escondem entre raízes milenares.",
+          "rarityModifiers": [
+            {
+              "rarity": "Raro",
+              "delta": 10
+            },
+            {
+              "rarity": "Comum",
+              "delta": -10
+            }
+          ],
+          "profileKey": "rare"
+        },
+        {
+          "id": "LOC_009_B",
+          "name": "Clareira Sombria",
+          "icon": "🌑",
+          "profile": "Combate intenso",
+          "description": "Monstrinhos agressivos patrulham esta clareira.",
+          "rarityModifiers": [
+            {
+              "rarity": "Incomum",
+              "delta": 8
+            },
+            {
+              "rarity": "Comum",
+              "delta": -8
+            }
+          ],
+          "profileKey": "combat"
+        },
+        {
+          "id": "LOC_009_C",
+          "name": "Fonte Encantada",
+          "icon": "💧",
+          "profile": "Recursos preciosos",
+          "description": "Itens valiosos flutuam nas águas cristalinas.",
+          "rarityModifiers": [],
+          "profileKey": "resource"
+        }
+      ]
     }
   ]
 }

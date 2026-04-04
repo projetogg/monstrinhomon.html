@@ -24,6 +24,10 @@
  * { type: 'complete_quest',         questId: 'QST_001', playerId?: string }
  *   → Requer que a quest esteja em completedQuestIds de algum jogador
  *     (verificado externamente; isNodeUnlocked recebe completedQuestIds como Set)
+ *
+ * { type: 'defeat_boss',            nodeId: 'BOSS_FOREST_01' }
+ *   → Requer que o boss node nodeId tenha sido derrotado
+ *     (verificado via nodeFlags[nodeId].bossDefeated === true)
  */
 
 // ── Emojis por bioma ────────────────────────────────────────────────────────
@@ -144,6 +148,9 @@ function _evaluateUnlockRule(rule, completedLocations, nodeFlags, completedQuest
         case 'complete_quest':
             return completedQuestIds.has(rule.questId);
 
+        case 'defeat_boss':
+            return nodeFlags[rule.nodeId]?.bossDefeated === true;
+
         default:
             return false;
     }
@@ -199,6 +206,12 @@ export function getNodeLockReason(
         }
         case 'complete_quest':
             return `Conclua a missão ${rule.questId} para desbloquear`;
+        case 'defeat_boss': {
+            // Tentar pegar o nome do boss via locationsData, senão usar o nodeId
+            const bossLoc = locationsData.find(l => l.id === rule.nodeId);
+            const bossName = bossLoc?.bossName ?? bossLoc?.name ?? rule.nodeId;
+            return `Derrote "${bossName}" para avançar`;
+        }
         default:
             return 'Bloqueado';
     }
@@ -263,6 +276,19 @@ export function buildSpotModifiers(spot) {
     return spot.rarityModifiers.filter(
         m => m && typeof m.rarity === 'string' && typeof m.delta === 'number'
     );
+}
+
+/**
+ * Verifica se um boss node foi derrotado.
+ * Helper exportado para uso na UI.
+ *
+ * @param {string} bossNodeId
+ * @param {Object} nodeFlags
+ * @returns {boolean}
+ */
+export function isBossDefeated(bossNodeId, nodeFlags = {}) {
+    if (!nodeFlags) return false;
+    return nodeFlags[bossNodeId]?.bossDefeated === true;
 }
 
 // ── Perfis formais de spot ───────────────────────────────────────────────────
