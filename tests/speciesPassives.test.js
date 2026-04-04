@@ -183,8 +183,9 @@ describe('speciesPassives — getActivePassiveIds()', () => {
         // Atualizado em Fase 9: swiftclaw (Caçador) implementada.
         // Atualizado em Fase 10: shadowsting (Ladino) implementada.
         // Atualizado em Fase 11: bellwave (Bardo) implementada.
+        // Atualizado em Fase 12: wildpace (Animalista) implementada.
         // Atualizar junto com cada nova passiva adicionada.
-        expect(getActivePassiveIds()).toHaveLength(7);
+        expect(getActivePassiveIds()).toHaveLength(8);
     });
 
     it('deve incluir moonquill e floracura implementadas na Fase 4.1', () => {

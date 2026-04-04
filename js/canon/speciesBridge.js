@@ -248,7 +248,27 @@ export const RUNTIME_TO_CANON_SPECIES = {
     //   ATK 16, DEF 12 e SPD 11 — SPD cai abaixo de ATK, perfil vira bruiser pesado.
     //   Drift relevante de identidade no estágio final → linha excluída da Fase 11.
     //
-    // Animalista (MON_006, MON_012/B/C/D, MON_023/B/C): sem espécie canônica de Animalista.
+    // ── Animalista — arquétipo equilíbrio_adaptativo (wildpace) — Fase 12 ────
+    // Linha escolhida: Cervimon → Galhantemon → Bosquidalmon (MON_023/B/C).
+    // Critério: ATK=DEF=ENE em todos os estágios; SPD sempre o maior stat da linha.
+    //   MON_023: ATK 6, DEF 6, SPD 7, ENE 6 — balanceado, SPD ligeiramente acima
+    //   MON_023B: ATK 8, DEF 8, SPD 10, ENE 8 — equilíbrio preservado, SPD cresce mais
+    //   MON_023C: ATK 10, DEF 10, SPD 11, ENE 10 — ATK=DEF=ENE; SPD ainda acima
+    // Identidade única: sem drift em nenhum estágio — arquétipo coerente do início ao fim.
+    //
+    // Linhas excluídas desta fase:
+    //   MON_006 (Lobinho): estágio único, sem linha evolutiva — linha não validável.
+    //   MON_012/B/C/D (Luvursomon → Ursauramon): ATK domina DEF progressivamente
+    //     (1.0→1.25→1.17→1.29) com SPD baixo e constante — drift de burst crescente.
+    //     Risco de sobreposição com emberfang (Bárbaro) e shieldhorn (Guerreiro).
+    //     Excluída para evitar colisão de arquétipo.
+    //
+    // Cervimon: ATK 6, DEF 6, SPD 7 — ATK:DEF 1.0; SPD/ATK 1.17; equilíbrio base
+    'MON_023': 'wildpace',
+    // Galhantemon: ATK 8, DEF 8, SPD 10 — ATK:DEF 1.0; SPD/ATK 1.25; equilíbrio preservado
+    'MON_023B': 'wildpace',
+    // Bosquidalmon: ATK 10, DEF 10, SPD 11 — ATK:DEF 1.0; SPD ligeiramente acima; identidade estável
+    'MON_023C': 'wildpace',
 };
 
 // ---------------------------------------------------------------------------
@@ -263,6 +283,7 @@ const CLASSES_WITH_CANON_SPECIES = new Set([
     'Caçador',     // swiftclaw (hunter) — Fase 9
     'Ladino',      // shadowsting (rogue) — Fase 10
     'Bardo',       // bellwave (bard) — Fase 11
+    'Animalista',  // wildpace (animalista) — Fase 12
 ]);
 
 // ---------------------------------------------------------------------------
