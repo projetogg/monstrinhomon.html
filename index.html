@@ -3727,6 +3727,11 @@
          *
          * @param {object} rawSkill - Skill em qualquer formato
          * @returns {object|null} Skill no formato operacional único
+         *
+         * NOTA: Esta função é uma cópia da normalizeSkill em js/combat/skillResolver.js.
+         * A duplicação é intencional: index.html usa blocos <script> que não podem importar
+         * módulos ES (skillResolver.js) diretamente. A lógica deve ser mantida em sincronia
+         * com skillResolver.js. Se mudar aqui, mudar lá também.
          */
         function normalizeSkill(rawSkill) {
             if (!rawSkill || typeof rawSkill !== 'object') return null;

@@ -9,6 +9,7 @@
 
 import * as GroupCore from './groupCore.js';
 import { initializeBattleParticipation, markAsParticipated, processBattleItemBreakage } from './itemBreakage.js';
+import { isOffensiveSkill } from './skillResolver.js';
 
 /**
  * PR11B: Inicializa participação de batalha para group/boss
@@ -707,11 +708,8 @@ export function executePlayerSkillGroup(skillOrId, enemyIndex, deps) {
     //   target 'enemy'/'area' = ofensivo
     //   type 'DAMAGE' = também ofensivo (segurança para skills não normalizadas)
     //   target 'Inimigo'/'Área' = compat. legada SKILLS_CATALOG
-    const skillTarget = skill.target || '';
-    const skillType   = (skill.type || '').toUpperCase();
-    const isOffensive = skillTarget === 'enemy' || skillTarget === 'area' ||
-        skillType === 'DAMAGE' ||
-        skillTarget === 'Inimigo' || skillTarget === 'Área';
+    // Detectar ofensividade via skillResolver (fonte única, sem duplicação)
+    const isOffensive = isOffensiveSkill(skill);
 
     if (isOffensive) {
         // Localizar alvo inimigo usando helper compartilhado

@@ -467,8 +467,8 @@ export function enterSkillMode(skillIndex, enc, deps) {
  * @param {object} enc - Encounter atual (para iterar enc.enemies)
  */
 export function applyTargetSelectionVisuals(enc) {
-    if (!enc || !enc.enemies) return;
     if (typeof document === 'undefined') return; // ambiente sem DOM (testes Node)
+    if (!enc || !enc.enemies) return;
 
     enc.enemies.forEach((enemy, idx) => {
         const card = document.getElementById(`grpE_${idx}`);

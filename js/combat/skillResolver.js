@@ -26,6 +26,14 @@
  *   • SKILL_DEFS (canônica) — { type, cost, target: 'enemy'/'self'/'ally', power }
  *   • KitSwap objects — mesmo formato de SKILL_DEFS + _kitSwapId
  *   • SKILLS_CATALOG (futura/migração) — { energy_cost, category, target: 'Inimigo'/... }
+ *
+ * NOTA SOBRE resolveMonsterSkills:
+ *   A função resolveMonsterSkills(mon), que é o único ponto de entrada canônico para
+ *   o pipeline de combate, está definida em index.html (não pode ser um módulo ES pois
+ *   depende de getMonsterSkills/KitSwap que são variáveis do escopo do script global).
+ *   Este módulo fornece as funções puras (normalizeSkill, etc.) que resolveMonsterSkills
+ *   utiliza internamente. A lógica inline em index.html é mantida em sincronia com este
+ *   módulo — see index.html:normalizeSkill comment.
  */
 
 /**
@@ -136,14 +144,25 @@ export function canUseSkill(skill, mon) {
 }
 
 /**
- * Verifica se uma skill normalizada é ofensiva (exige seleção de inimigo como alvo).
+ * Verifica se uma skill é ofensiva (exige seleção de inimigo como alvo).
  *
- * Uma skill é ofensiva se o alvo normalizado é 'enemy' (ou 'area', tratado como ofensivo).
+ * Aceita tanto o formato operacional normalizado ('enemy'/'area') quanto o formato
+ * SKILLS_CATALOG ('Inimigo'/'Área') para robustez na rota de compatibilidade.
+ * Se o alvo não for explicitamente defensivo ('self'/'ally'/'Self'/'Aliado') e
+ * o tipo for 'DAMAGE', a skill é considerada ofensiva.
+ * O caminho principal (resolveMonsterSkills) sempre entrega skills normalizadas.
  *
- * @param {object} skill - Skill no formato operacional único
+ * @param {object} skill - Skill (normalizada ou não)
  * @returns {boolean}
  */
 export function isOffensiveSkill(skill) {
     if (!skill) return false;
-    return skill.target === 'enemy' || skill.target === 'area';
+    const t = skill.target || '';
+    const type = (skill.type || '').toUpperCase();
+    // Alvos explicitamente defensivos
+    if (t === 'self' || t === 'ally' || t === 'Self' || t === 'Aliado') return false;
+    // Alvos explicitamente ofensivos (normalizado ou SKILLS_CATALOG)
+    if (t === 'enemy' || t === 'area' || t === 'Inimigo' || t === 'Área') return true;
+    // Fallback por tipo (skill sem alvo explícito)
+    return type === 'DAMAGE';
 }

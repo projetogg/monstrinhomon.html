@@ -48,7 +48,7 @@ function makeKitSwapSkill(overrides = {}) {
     };
 }
 
-/** Skill no formato SKILLS_CATALOG (futuro/migração) */
+/** Skill no formato SKILLS_CATALOG (não operacional em runtime — catálogo externo/migração futura) */
 function makeSkillCatalog(overrides = {}) {
     return {
         id: 'SK_WAR_01',
@@ -409,6 +409,27 @@ describe('isOffensiveSkill', () => {
     it('deve refletir normalização: Self→self não é ofensivo', () => {
         const skill = normalizeSkill(makeSkillCatalog({ category: 'Suporte', target: 'Self' }));
         expect(isOffensiveSkill(skill)).toBe(false);
+    });
+
+    // Compat path: SKILLS_CATALOG não normalizado (rota getSkillById)
+    it('deve reconhecer Inimigo como ofensivo sem normalização prévia', () => {
+        expect(isOffensiveSkill({ name: 'Golpe', target: 'Inimigo', type: 'DAMAGE', cost: 3 })).toBe(true);
+    });
+
+    it('deve reconhecer Área como ofensivo sem normalização prévia', () => {
+        expect(isOffensiveSkill({ name: 'Nevoa', target: 'Área', type: 'DAMAGE', cost: 2 })).toBe(true);
+    });
+
+    it('fallback por tipo: DAMAGE sem alvo explícito = ofensivo', () => {
+        expect(isOffensiveSkill({ name: 'Ataque', type: 'DAMAGE', cost: 3, power: 5 })).toBe(true);
+    });
+
+    it('deve retornar false para Self não normalizado (SKILLS_CATALOG)', () => {
+        expect(isOffensiveSkill({ name: 'Cura', target: 'Self', type: 'HEAL', cost: 3 })).toBe(false);
+    });
+
+    it('deve retornar false para Aliado não normalizado (SKILLS_CATALOG)', () => {
+        expect(isOffensiveSkill({ name: 'Cura Aliado', target: 'Aliado', type: 'HEAL', cost: 3 })).toBe(false);
     });
 });
 
