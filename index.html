@@ -682,6 +682,10 @@
         import * as KitSwap from './js/canon/kitSwap.js';
         window.KitSwap = KitSwap;
 
+        // Species Display — Fase 15: dados de exibição da identidade canônica fora do combate
+        import * as SpeciesDisplay from './js/canon/speciesDisplay.js';
+        window.SpeciesDisplay = SpeciesDisplay;
+
         // Inicia o carregamento canônico imediatamente após o parse do módulo,
         // antes de qualquer chamada a init(). Isso garante que o fetch já estará
         // em andamento quando init() fizer await applyCanonToConfig().
@@ -9857,6 +9861,38 @@
             }
         }
 
+        /**
+         * Renderiza o bloco de identidade canônica de espécie para o card do monstrinho.
+         * Fase 15: visibilidade persistente fora do combate.
+         *
+         * Retorna string HTML vazia se o monstrinho não tiver espécie canônica mapeada.
+         *
+         * @param {object} monster - Instância de monstrinho.
+         * @returns {string} HTML do bloco de identidade.
+         */
+        function renderSpeciesIdentityBlock(monster) {
+            if (!window.SpeciesDisplay) return '';
+            const info = window.SpeciesDisplay.getSpeciesDisplayInfo(monster);
+            if (!info.hasSpecies) return '';
+
+            const promotionBadge = info.isPromoted ? '⭐' : '🌟';
+            const promotionSuffix = info.isPromoted ? ' (Promoção)' : '';
+            const kitCssClass = info.isPromoted
+                ? 'species-identity__kit species-identity__kit--promoted'
+                : 'species-identity__kit';
+            const kitHtml = info.hasKitSwap
+                ? `<div class="${kitCssClass}">${promotionBadge} ${info.kitSwapName}${promotionSuffix}</div>`
+                : '';
+
+            return `
+                <div class="species-identity">
+                    <div class="species-identity__header">🧬 ${info.speciesLabel} · ${info.archetype}</div>
+                    <div class="species-identity__passive">✨ ${info.passiveName} — ${info.passiveDesc}</div>
+                    ${kitHtml}
+                </div>
+            `;
+        }
+
         function renderMonsterCard(monster) {
             try {
                 if (!monster) return '';
@@ -9909,6 +9945,7 @@
                                 <div class="friendship-fill" style="width: ${friendship}%"></div>
                             </div>
                         </div>
+                        ${renderSpeciesIdentityBlock(monster)}
                     </div>
                 `;
             } catch (error) {

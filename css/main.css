@@ -1326,6 +1326,41 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     margin-left: 4px;
 }
 
+/* ── Identidade canônica de espécie — Fase 15 ──────────────────────────────── */
+
+.species-identity {
+    margin-top: 8px;
+    padding: 6px 8px;
+    background: rgba(0, 0, 0, 0.18);
+    border-radius: 6px;
+    text-align: left;
+    font-size: 0.76em;
+    line-height: 1.4;
+}
+
+.species-identity__header {
+    font-weight: 600;
+    color: #dce8f5;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.species-identity__passive {
+    color: #b0bec5;
+    margin-bottom: 2px;
+}
+
+.species-identity__kit {
+    color: #f5c842;
+    font-weight: 500;
+}
+
+.species-identity__kit--promoted {
+    color: #82cfff;
+}
+
 /* ============================================================================
    REFACTOR PR1: Static styles extracted from inline
    ============================================================================ */
