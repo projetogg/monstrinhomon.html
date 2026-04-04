@@ -1,5 +1,5 @@
 /**
- * REGIONAL PROGRESS TESTS (PR-10)
+ * REGIONAL PROGRESS TESTS (PR-10 / PR-11 / PR-12)
  *
  * Testes para o sistema de progressão regional pós-boss.
  * Cobertura:
@@ -11,6 +11,11 @@
  *   - defeatMarksRegionComplete como sistema real
  *   - boss sem defeatMarksRegionComplete não marca região
  *   - integração com isBossDefeated
+ *   - PR-12: regionType, getRegionType, REGION_TYPES
+ *   - PR-12: estados refinados (boss_available, active)
+ *   - PR-12: isMainPath, isOptional, priorityScore
+ *   - PR-12: isCurrent refinado por prioridade
+ *   - PR-12: deriveMainObjective (nextMainObjective + optionalOpportunities)
  */
 
 import { describe, it, expect } from 'vitest';
@@ -22,7 +27,10 @@ import {
     isBossDefeated,
     deriveRegionLabel,
     getRegionStatus,
-    getRegionNextObjective
+    getRegionNextObjective,
+    getRegionType,
+    REGION_TYPES,
+    deriveMainObjective
 } from '../js/encounter/worldMap.js';
 
 // ── Fixtures ───────────────────────────────────────────────────────────────────
@@ -506,15 +514,33 @@ describe('getRegionStatus — status visual da região (PR-11)', () => {
         expect(status).toBe('completed');
     });
 
-    it('deve retornar "in_progress" se boss desbloqueado mas não derrotado', () => {
+    it('deve retornar "boss_available" se boss desbloqueado mas não derrotado', () => {
         const completedLocations = new Set(['LOC_008']);
         const status = getRegionStatus(
             BOSS_NODE_WITH_RULE, false, false, new Set(), completedLocations, {}, new Set()
         );
-        expect(status).toBe('in_progress');
+        expect(status).toBe('boss_available');
     });
 
-    it('deve retornar "available" se algum vizinho foi visitado mas boss não desbloqueado', () => {
+    it('deve retornar "active" se predecessor concluído mas boss ainda bloqueado', () => {
+        // Usamos um nó boss com conexão LOC_005 (predecessor) onde LOC_005 está concluído
+        // mas a unlock rule exige LOC_999 (nunca concluída), portanto boss ainda está bloqueado.
+        // Predecessor concluído → progresso concreto na região → 'active'
+        const bossNodeAlt = {
+            nodeId: 'BOSS_ALT',
+            type: 'boss',
+            unlockRule: { type: 'complete_node', nodeId: 'LOC_999' }, // nunca concluída
+            connections: ['LOC_005', 'LOC_006'],
+            bossMeta: BOSS_META_WITH_REGION
+        };
+        const completedLocations = new Set(['LOC_005']); // predecessor concluído mas unlock precisa LOC_999
+        const status = getRegionStatus(
+            bossNodeAlt, false, false, new Set(), completedLocations, {}, new Set()
+        );
+        expect(status).toBe('active');
+    });
+
+    it('deve retornar "available" se algum vizinho foi visitado (não concluído) e boss não desbloqueado', () => {
         // LOC_008 foi visitado mas não concluído, então boss ainda bloqueado
         const visitedLocations  = new Set(['LOC_008']);
         const completedLocations = new Set(); // LOC_008 não concluído → boss locked
@@ -546,15 +572,20 @@ describe('getRegionNextObjective — próximo objetivo macro (PR-11)', () => {
         expect(getRegionNextObjective('completed', 'Guardião', 'Floresta Antiga')).toBeNull();
     });
 
-    it('deve recomendar derrotar o boss para in_progress', () => {
-        const obj = getRegionNextObjective('in_progress', 'Guardião da Floresta', 'Floresta Antiga');
+    it('deve recomendar derrotar o boss para boss_available', () => {
+        const obj = getRegionNextObjective('boss_available', 'Guardião da Floresta', 'Floresta Antiga');
         expect(obj).toBe('Derrote Guardião da Floresta');
+    });
+
+    it('deve recomendar continuar explorando para active', () => {
+        const obj = getRegionNextObjective('active', 'Guardião da Floresta', 'Floresta Antiga');
+        expect(obj).toContain('Floresta Antiga');
+        expect(obj).toContain('Guardião da Floresta');
     });
 
     it('deve recomendar explorar a região para available', () => {
         const obj = getRegionNextObjective('available', 'Guardião da Floresta', 'Floresta Antiga');
         expect(obj).toContain('Floresta Antiga');
-        expect(obj).toContain('Guardião da Floresta');
     });
 
     it('deve recomendar desbloquear regiões anteriores para locked', () => {
@@ -615,13 +646,13 @@ describe('getRegionalProgressSummary — campos enriquecidos (PR-11)', () => {
         expect(forest.nextObjective).toBeNull();
     });
 
-    it('deve retornar status "in_progress" quando boss node está desbloqueado', () => {
+    it('deve retornar status "boss_available" quando boss node está desbloqueado', () => {
         const completedLocations = new Set(['LOC_008']);
         const result = getRegionalProgressSummary(
             NODES_PR11, {}, {}, new Set(), completedLocations, new Set()
         );
         const forest = result.find(r => r.regionId === 'forest_arc_1');
-        expect(forest.status).toBe('in_progress');
+        expect(forest.status).toBe('boss_available');
         expect(forest.nextObjective).toContain('Derrote');
     });
 
@@ -662,7 +693,7 @@ describe('getRegionalProgressSummary — campos enriquecidos (PR-11)', () => {
         result.forEach(r => {
             expect(r.regionId).toBeDefined();
             expect(r.regionLabel).toBeDefined();
-            expect(r.status).toMatch(/^(completed|in_progress|available|locked)$/);
+            expect(r.status).toMatch(/^(completed|boss_available|active|available|locked)$/);
             expect(r.bossLabel).toBeDefined();
         });
     });
@@ -673,6 +704,412 @@ describe('getRegionalProgressSummary — campos enriquecidos (PR-11)', () => {
             // regionLabel não deve ser igual ao regionId (id técnico)
             expect(r.regionLabel).not.toBe(r.regionId);
         });
+    });
+
+});
+
+// ── PR-12: getRegionType e REGION_TYPES ────────────────────────────────────
+
+describe('getRegionType — tipo da região (PR-12)', () => {
+
+    it('deve retornar "main" como fallback quando bossMeta é null', () => {
+        expect(getRegionType(null)).toBe('main');
+        expect(getRegionType(undefined)).toBe('main');
+    });
+
+    it('deve retornar "main" quando regionType não está definido (compatibilidade retroativa)', () => {
+        expect(getRegionType({})).toBe('main');
+        expect(getRegionType({ bossLevel: 10 })).toBe('main');
+    });
+
+    it('deve retornar "optional" quando regionType é "optional"', () => {
+        expect(getRegionType({ regionType: 'optional' })).toBe('optional');
+    });
+
+    it('deve retornar "side" quando regionType é "side"', () => {
+        expect(getRegionType({ regionType: 'side' })).toBe('side');
+    });
+
+    it('deve retornar "postgame" quando regionType é "postgame"', () => {
+        expect(getRegionType({ regionType: 'postgame' })).toBe('postgame');
+    });
+
+    it('deve tratar valor inválido como fallback "main"', () => {
+        expect(getRegionType({ regionType: 'unknown_type' })).toBe('main');
+        expect(getRegionType({ regionType: '' })).toBe('main');
+        expect(getRegionType({ regionType: 123 })).toBe('main');
+    });
+
+    it('REGION_TYPES deve exportar as constantes esperadas', () => {
+        expect(REGION_TYPES.MAIN).toBe('main');
+        expect(REGION_TYPES.OPTIONAL).toBe('optional');
+        expect(REGION_TYPES.SIDE).toBe('side');
+        expect(REGION_TYPES.POSTGAME).toBe('postgame');
+    });
+
+});
+
+// ── PR-12: campos novos no getRegionalProgressSummary ─────────────────────
+
+describe('getRegionalProgressSummary — campos PR-12 (regionType, isMainPath, isOptional, priorityScore)', () => {
+
+    const NODES_MIXED = [
+        {
+            nodeId: 'BOSS_MAIN_01',
+            type: 'boss',
+            unlockDefault: false,
+            unlockRule: { type: 'complete_node', nodeId: 'LOC_008' },
+            connections: ['LOC_008', 'LOC_009'],
+            bossMeta: {
+                regionId: 'forest_arc_1',
+                regionLabel: 'Floresta Antiga',
+                regionType: 'main',
+                defeatMarksRegionComplete: true,
+                bossLabel: 'Guardião da Floresta'
+            }
+        },
+        {
+            nodeId: 'BOSS_OPT_01',
+            type: 'boss',
+            unlockDefault: false,
+            unlockRule: { type: 'complete_node', nodeId: 'LOC_005' },
+            connections: ['LOC_005', 'LOC_010'],
+            bossMeta: {
+                regionId: 'coast_arc_1',
+                regionLabel: 'Costa Cristalina',
+                regionType: 'optional',
+                defeatMarksRegionComplete: true,
+                bossLabel: 'Titan Costeiro'
+            }
+        }
+    ];
+
+    it('deve incluir regionType no resultado', () => {
+        const result = getRegionalProgressSummary(NODES_MIXED, {}, {});
+        const main = result.find(r => r.regionId === 'forest_arc_1');
+        const opt  = result.find(r => r.regionId === 'coast_arc_1');
+        expect(main.regionType).toBe('main');
+        expect(opt.regionType).toBe('optional');
+    });
+
+    it('deve definir isMainPath=true para regiões main e false para optional', () => {
+        const result = getRegionalProgressSummary(NODES_MIXED, {}, {});
+        const main = result.find(r => r.regionId === 'forest_arc_1');
+        const opt  = result.find(r => r.regionId === 'coast_arc_1');
+        expect(main.isMainPath).toBe(true);
+        expect(opt.isMainPath).toBe(false);
+    });
+
+    it('deve definir isOptional=true para regiões optional e false para main', () => {
+        const result = getRegionalProgressSummary(NODES_MIXED, {}, {});
+        const main = result.find(r => r.regionId === 'forest_arc_1');
+        const opt  = result.find(r => r.regionId === 'coast_arc_1');
+        expect(main.isOptional).toBe(false);
+        expect(opt.isOptional).toBe(true);
+    });
+
+    it('deve atribuir priorityScore maior à região main do que à optional quando ambas locked', () => {
+        const result = getRegionalProgressSummary(NODES_MIXED, {}, {});
+        const main = result.find(r => r.regionId === 'forest_arc_1');
+        const opt  = result.find(r => r.regionId === 'coast_arc_1');
+        expect(main.priorityScore).toBeGreaterThan(opt.priorityScore);
+    });
+
+    it('deve ordenar resultado com região main antes de optional', () => {
+        const result = getRegionalProgressSummary(NODES_MIXED, {}, {});
+        // Região main deve vir antes de optional no array ordenado
+        const mainIdx = result.findIndex(r => r.regionId === 'forest_arc_1');
+        const optIdx  = result.findIndex(r => r.regionId === 'coast_arc_1');
+        expect(mainIdx).toBeLessThan(optIdx);
+    });
+
+    it('deve marcar isCurrent=true na região main (não na optional) quando ambas não concluídas', () => {
+        const result = getRegionalProgressSummary(NODES_MIXED, {}, {});
+        const main = result.find(r => r.regionId === 'forest_arc_1');
+        const opt  = result.find(r => r.regionId === 'coast_arc_1');
+        expect(main.isCurrent).toBe(true);
+        expect(opt.isCurrent).toBe(false);
+    });
+
+    it('deve incluir hasActiveQuest=true quando activeQuestLocalIds inclui um nó da região', () => {
+        // LOC_008 é conexão do BOSS_MAIN_01
+        const activeQuestLocalIds = new Set(['LOC_008']);
+        const result = getRegionalProgressSummary(
+            NODES_MIXED, {}, {}, new Set(), new Set(), new Set(), activeQuestLocalIds
+        );
+        const main = result.find(r => r.regionId === 'forest_arc_1');
+        const opt  = result.find(r => r.regionId === 'coast_arc_1');
+        expect(main.hasActiveQuest).toBe(true);
+        expect(opt.hasActiveQuest).toBe(false);
+    });
+
+    it('deve dar bônus de priorityScore à região com quest ativa', () => {
+        const activeQuestLocalIds = new Set(['LOC_005']); // conexão do BOSS_OPT_01
+        const result = getRegionalProgressSummary(
+            NODES_MIXED, {}, {}, new Set(), new Set(), new Set(), activeQuestLocalIds
+        );
+        // Mesmo com quest ativa no optional, a main ainda deve ter score maior
+        // (questBonus 300 < typeBase diff 500)
+        const main = result.find(r => r.regionId === 'forest_arc_1');
+        const opt  = result.find(r => r.regionId === 'coast_arc_1');
+        expect(main.priorityScore).toBeGreaterThan(opt.priorityScore);
+    });
+
+    it('deve aceitar o 7º parâmetro activeQuestLocalIds sem quebrar retrocompatibilidade', () => {
+        // chamada com 3 parâmetros (retrocompatível)
+        expect(() => getRegionalProgressSummary(NODES_MIXED, {}, {})).not.toThrow();
+        // chamada completa (7 parâmetros)
+        expect(() => getRegionalProgressSummary(
+            NODES_MIXED, {}, {}, new Set(), new Set(), new Set(), new Set()
+        )).not.toThrow();
+    });
+
+    it('deve dar priorityScore alto quando status é boss_available', () => {
+        const completedLocations = new Set(['LOC_008']); // desbloqueia BOSS_MAIN_01
+        const result = getRegionalProgressSummary(
+            NODES_MIXED, {}, {}, new Set(), completedLocations
+        );
+        const main = result.find(r => r.regionId === 'forest_arc_1');
+        expect(main.status).toBe('boss_available');
+        expect(main.priorityScore).toBeGreaterThan(1000); // typeBase(1000) + statusBonus(400)
+    });
+
+    it('regiões concluídas devem ter priorityScore negativo (vão para o fim)', () => {
+        const progress = { 'forest_arc_1': { completed: true } };
+        const result = getRegionalProgressSummary(NODES_MIXED, {}, progress);
+        const main = result.find(r => r.regionId === 'forest_arc_1');
+        expect(main.priorityScore).toBeLessThan(0);
+    });
+
+    it('deve retornar fallback regionType "main" para bossMeta sem regionType', () => {
+        const nodesWithoutType = [{
+            nodeId: 'BOSS_NO_TYPE',
+            type: 'boss',
+            connections: [],
+            bossMeta: {
+                regionId: 'legacy_region',
+                defeatMarksRegionComplete: true,
+                bossLabel: 'Boss Legado'
+            }
+        }];
+        const result = getRegionalProgressSummary(nodesWithoutType, {}, {});
+        expect(result[0].regionType).toBe('main');
+        expect(result[0].isMainPath).toBe(true);
+    });
+
+});
+
+// ── PR-12: deriveMainObjective ─────────────────────────────────────────────
+
+describe('deriveMainObjective — separação de objetivo principal e oportunidades opcionais (PR-12)', () => {
+
+    const SUMMARY_MISTO = [
+        {
+            regionId: 'forest_arc_1',
+            regionLabel: 'Floresta Antiga',
+            regionType: 'main',
+            isMainPath: true,
+            isOptional: false,
+            status: 'boss_available',
+            nextObjective: 'Derrote Guardião da Floresta',
+            priorityScore: 1400,
+            isCurrent: true
+        },
+        {
+            regionId: 'coast_arc_1',
+            regionLabel: 'Costa Cristalina',
+            regionType: 'optional',
+            isMainPath: false,
+            isOptional: true,
+            status: 'available',
+            nextObjective: 'Explore Costa Cristalina',
+            priorityScore: 700,
+            isCurrent: false
+        },
+        {
+            regionId: 'jungle_arc_1',
+            regionLabel: 'Floresta Noturna',
+            regionType: 'optional',
+            isMainPath: false,
+            isOptional: true,
+            status: 'locked',
+            nextObjective: 'Desbloqueie regiões anteriores para avançar',
+            priorityScore: 550,
+            isCurrent: false
+        }
+    ];
+
+    it('deve retornar o nextObjective da primeira região main não concluída', () => {
+        const { nextMainObjective } = deriveMainObjective(SUMMARY_MISTO);
+        expect(nextMainObjective).toBe('Derrote Guardião da Floresta');
+    });
+
+    it('deve retornar apenas opcionais disponíveis (não locked, não completed)', () => {
+        const { optionalOpportunities } = deriveMainObjective(SUMMARY_MISTO);
+        // Costa Cristalina está 'available' → aparece
+        // Floresta Noturna está 'locked' → não aparece
+        expect(optionalOpportunities).toHaveLength(1);
+        expect(optionalOpportunities[0]).toContain('Costa Cristalina');
+    });
+
+    it('deve retornar nextMainObjective=null quando todas as regiões main estão concluídas', () => {
+        const summaryAllDone = SUMMARY_MISTO.map(r => ({
+            ...r,
+            status: 'completed',
+            nextObjective: null,
+            isMainPath: r.regionType === 'main'
+        }));
+        const { nextMainObjective } = deriveMainObjective(summaryAllDone);
+        expect(nextMainObjective).toBeNull();
+    });
+
+    it('deve retornar optionalOpportunities vazio quando nenhum optional está acessível', () => {
+        const summaryNoOptional = [
+            {
+                regionId: 'forest_arc_1',
+                regionType: 'main',
+                isMainPath: true,
+                isOptional: false,
+                status: 'active',
+                nextObjective: 'Continue explorando Floresta Antiga',
+                priorityScore: 1300
+            }
+        ];
+        const { optionalOpportunities } = deriveMainObjective(summaryNoOptional);
+        expect(optionalOpportunities).toEqual([]);
+    });
+
+    it('deve tratar array vazio sem quebrar', () => {
+        const result = deriveMainObjective([]);
+        expect(result.nextMainObjective).toBeNull();
+        expect(result.optionalOpportunities).toEqual([]);
+    });
+
+    it('deve tratar null/undefined sem quebrar', () => {
+        expect(() => deriveMainObjective(null)).not.toThrow();
+        expect(() => deriveMainObjective(undefined)).not.toThrow();
+        expect(deriveMainObjective(null).nextMainObjective).toBeNull();
+    });
+
+    it('deve ignorar regiões opcionais concluídas nas oportunidades', () => {
+        const summaryWithDone = [
+            ...SUMMARY_MISTO,
+            {
+                regionId: 'volcano_arc_1',
+                regionType: 'optional',
+                isMainPath: false,
+                isOptional: true,
+                status: 'completed',
+                nextObjective: null,
+                priorityScore: -1500
+            }
+        ];
+        const { optionalOpportunities } = deriveMainObjective(summaryWithDone);
+        // Volcano (completed) não aparece, apenas Costa Cristalina (available)
+        expect(optionalOpportunities).toHaveLength(1);
+    });
+
+});
+
+// ── PR-12: isCurrent refinado (main prioriza sobre optional) ──────────────
+
+describe('getRegionalProgressSummary — isCurrent refinado por prioridade de campanha (PR-12)', () => {
+
+    it('região main com boss_available deve ser isCurrent mesmo com optional ativa antes', () => {
+        // Mesmo que a optional tenha status active, a main com boss_available
+        // tem priorityScore maior e deve ser isCurrent
+        const nodes = [
+            {
+                nodeId: 'BOSS_OPT',
+                type: 'boss',
+                connections: ['LOC_005'],
+                unlockRule: { type: 'complete_node', nodeId: 'LOC_005' },
+                bossMeta: {
+                    regionId: 'coast_arc_1',
+                    regionLabel: 'Costa Cristalina',
+                    regionType: 'optional',
+                    defeatMarksRegionComplete: true,
+                    bossLabel: 'Titan Costeiro'
+                }
+            },
+            {
+                nodeId: 'BOSS_MAIN',
+                type: 'boss',
+                connections: ['LOC_008'],
+                unlockRule: { type: 'complete_node', nodeId: 'LOC_008' },
+                bossMeta: {
+                    regionId: 'forest_arc_1',
+                    regionLabel: 'Floresta Antiga',
+                    regionType: 'main',
+                    defeatMarksRegionComplete: true,
+                    bossLabel: 'Guardião da Floresta'
+                }
+            }
+        ];
+        // LOC_005 concluído (optional boss_available) e LOC_008 concluído (main boss_available)
+        const completedLocations = new Set(['LOC_005', 'LOC_008']);
+        const result = getRegionalProgressSummary(nodes, {}, {}, new Set(), completedLocations);
+        const mainRegion = result.find(r => r.regionId === 'forest_arc_1');
+        const optRegion  = result.find(r => r.regionId === 'coast_arc_1');
+        expect(mainRegion.isCurrent).toBe(true);
+        expect(optRegion.isCurrent).toBe(false);
+    });
+
+    it('fallback: optional é isCurrent quando toda main está concluída', () => {
+        const nodes = [
+            {
+                nodeId: 'BOSS_MAIN',
+                type: 'boss',
+                connections: ['LOC_008'],
+                unlockRule: { type: 'complete_node', nodeId: 'LOC_008' },
+                bossMeta: {
+                    regionId: 'forest_arc_1',
+                    regionType: 'main',
+                    defeatMarksRegionComplete: true,
+                    bossLabel: 'Guardião'
+                }
+            },
+            {
+                nodeId: 'BOSS_OPT',
+                type: 'boss',
+                connections: ['LOC_005'],
+                unlockRule: { type: 'complete_node', nodeId: 'LOC_005' },
+                bossMeta: {
+                    regionId: 'coast_arc_1',
+                    regionType: 'optional',
+                    defeatMarksRegionComplete: true,
+                    bossLabel: 'Titan Costeiro'
+                }
+            }
+        ];
+        const progress = { 'forest_arc_1': { completed: true } };
+        const completedLocations = new Set(['LOC_005']);
+        const result = getRegionalProgressSummary(nodes, {}, progress, new Set(), completedLocations);
+        const optRegion = result.find(r => r.regionId === 'coast_arc_1');
+        // Única região não concluída → deve ser isCurrent
+        expect(optRegion.isCurrent).toBe(true);
+    });
+
+    it('região main com quest ativa deve ter priorityScore maior do que sem quest', () => {
+        const nodes = [
+            {
+                nodeId: 'BOSS_MAIN',
+                type: 'boss',
+                connections: ['LOC_008'],
+                unlockRule: { type: 'complete_node', nodeId: 'LOC_008' },
+                bossMeta: {
+                    regionId: 'forest_arc_1',
+                    regionType: 'main',
+                    defeatMarksRegionComplete: true,
+                    bossLabel: 'Guardião'
+                }
+            }
+        ];
+        const resultSemQuest = getRegionalProgressSummary(nodes, {}, {});
+        const resultComQuest = getRegionalProgressSummary(
+            nodes, {}, {}, new Set(), new Set(), new Set(), new Set(['LOC_008'])
+        );
+        expect(resultComQuest[0].priorityScore).toBeGreaterThan(resultSemQuest[0].priorityScore);
     });
 
 });

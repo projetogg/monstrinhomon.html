@@ -8774,7 +8774,7 @@
 
         /**
          * Renderiza o painel de progresso de campanha regional.
-         * PR-11: usa getRegionalProgressSummary() como fonte principal.
+         * PR-12: separa rota principal de conteúdo opcional, exibe prioridade macro.
          */
         function renderCampaignPanel() {
             const panel = document.getElementById('campaignProgressPanel');
@@ -8785,12 +8785,19 @@
             const visitedLocations  = new Set(GameState.data?.visitedLocations ?? []);
             const completedLocations= new Set(GameState.data?.completedLocations ?? []);
 
-            // Coletar quests concluídas
-            const completedQuestIds = new Set();
+            // Coletar quests concluídas e localIds ativos para priorização
+            const completedQuestIds     = new Set();
+            const activeQuestLocalIds   = new Set();
             if (window.GameFlow) {
                 (GameState.players ?? []).forEach(player => {
                     if (!player?.questState) return;
                     (player.questState.completedQuestIds ?? []).forEach(id => completedQuestIds.add(id));
+                    // Detectar localIds de quests ativas (para boost de prioridade)
+                    if (window.GameFlow.getActiveQuestsSummary) {
+                        window.GameFlow.getActiveQuestsSummary(player).forEach(({ quest }) => {
+                            if (quest?.localId) activeQuestLocalIds.add(quest.localId);
+                        });
+                    }
                 });
             }
 
@@ -8800,7 +8807,8 @@
                 regionalProgress,
                 visitedLocations,
                 completedLocations,
-                completedQuestIds
+                completedQuestIds,
+                activeQuestLocalIds
             );
 
             if (summary.length === 0) {
@@ -8808,38 +8816,62 @@
                 return;
             }
 
-            // Próximo objetivo macro (primeira região não concluída)
-            const current = summary.find(r => r.isCurrent);
-            const nextGoalHtml = current?.nextObjective
-                ? `<div class="wm-campaign-panel__next-goal">
-                     🎯 <strong>Próximo objetivo:</strong> ${current.nextObjective}
-                   </div>`
-                : summary.every(r => r.completed)
-                    ? `<div class="wm-campaign-panel__next-goal wm-campaign-panel__next-goal--done">
-                         🏆 <strong>Campanha concluída!</strong> Todas as regiões foram conquistadas.
-                       </div>`
-                    : '';
+            // Derivar objetivo principal separado de oportunidades opcionais
+            const { nextMainObjective, optionalOpportunities } =
+                window.WorldMap.deriveMainObjective(summary);
 
-            const regionsHtml = summary.map(region => {
-                const statusClass  = `wm-campaign-region--${region.status}`;
-                const statusLabel  = {
-                    completed:   '✅ Concluída',
-                    in_progress: '⚔️ Em progresso',
-                    available:   '🗺️ Disponível',
-                    locked:      '🔒 Bloqueada'
+            // Bloco de objetivo principal
+            const allCompleted = summary.every(r => r.completed);
+            let nextGoalHtml = '';
+            if (allCompleted) {
+                nextGoalHtml = `<div class="wm-campaign-panel__next-goal wm-campaign-panel__next-goal--done">
+                    🏆 <strong>Campanha concluída!</strong> Todas as regiões foram conquistadas.
+                </div>`;
+            } else if (nextMainObjective) {
+                nextGoalHtml = `<div class="wm-campaign-panel__next-goal">
+                    🎯 <strong>Rota principal:</strong> ${nextMainObjective}
+                </div>`;
+            }
+
+            // Bloco de oportunidades opcionais
+            let optionalGoalHtml = '';
+            if (optionalOpportunities.length > 0) {
+                const opList = optionalOpportunities
+                    .map(o => `<li>${o}</li>`)
+                    .join('');
+                optionalGoalHtml = `<div class="wm-campaign-panel__optional-goal">
+                    🌿 <strong>Exploração opcional disponível:</strong>
+                    <ul>${opList}</ul>
+                </div>`;
+            }
+
+            // Função auxiliar para renderizar card de região
+            function _renderRegionCard(region) {
+                const statusClass = `wm-campaign-region--${region.status}`;
+                const statusLabel = {
+                    completed:      '✅ Concluída',
+                    boss_available: '👑 Boss disponível',
+                    active:         '⚔️ Em progresso',
+                    available:      '🗺️ Disponível',
+                    locked:         '🔒 Bloqueada',
+                    in_progress:    '⚔️ Em progresso' // retrocompat
                 }[region.status] ?? region.status;
 
                 const currentBadge = region.isCurrent
                     ? '<span class="wm-campaign-region__current-badge">▶ Atual</span>'
                     : '';
 
+                const typeBadge = region.isMainPath
+                    ? '<span class="wm-campaign-region__type-badge wm-campaign-region__type-badge--main">⭐ Principal</span>'
+                    : '<span class="wm-campaign-region__type-badge wm-campaign-region__type-badge--optional">🌿 Opcional</span>';
+
                 const bossStatusLabel = region.bossDefeated
                     ? `<span class="wm-campaign-boss--defeated">⚔️ Derrotado</span>`
-                    : region.status === 'in_progress'
+                    : (region.status === 'boss_available' || region.status === 'in_progress')
                         ? `<span class="wm-campaign-boss--available">👑 Disponível</span>`
                         : `<span class="wm-campaign-boss--locked">🔒 Bloqueado</span>`;
 
-                // Verificar se há quest principal ligada à região
+                // Verificar se há quest ativa ligada à região
                 let questHtml = '';
                 if (window.GameFlow) {
                     for (const player of (GameState.players ?? [])) {
@@ -8862,6 +8894,7 @@
                   <div class="wm-campaign-region ${statusClass}${region.isCurrent ? ' wm-campaign-region--current' : ''}">
                     <div class="wm-campaign-region__header">
                         <span class="wm-campaign-region__name">${region.regionLabel}</span>
+                        ${typeBadge}
                         ${currentBadge}
                         <span class="wm-campaign-region__status">${statusLabel}</span>
                     </div>
@@ -8872,7 +8905,44 @@
                     ${questHtml}
                     ${region.nextObjective ? `<p class="wm-campaign-region__objective">${region.nextObjective}</p>` : ''}
                   </div>`;
-            }).join('');
+            }
+
+            // Separar regiões por tipo e agrupar em seções
+            const mainRegions     = summary.filter(r => r.isMainPath);
+            const optionalRegions = summary.filter(r => r.isOptional);
+            const otherRegions    = summary.filter(r => !r.isMainPath && !r.isOptional);
+
+            let sectionsHtml = '';
+
+            if (mainRegions.length > 0) {
+                sectionsHtml += `
+                    <div class="wm-campaign-section wm-campaign-section--main">
+                        <div class="wm-campaign-section__title">⭐ Rota Principal</div>
+                        <div class="wm-campaign-section__regions">
+                            ${mainRegions.map(_renderRegionCard).join('')}
+                        </div>
+                    </div>`;
+            }
+
+            if (optionalRegions.length > 0) {
+                sectionsHtml += `
+                    <div class="wm-campaign-section wm-campaign-section--optional">
+                        <div class="wm-campaign-section__title">🌿 Exploração Opcional</div>
+                        <div class="wm-campaign-section__regions">
+                            ${optionalRegions.map(_renderRegionCard).join('')}
+                        </div>
+                    </div>`;
+            }
+
+            // Regiões sem tipo definido (retrocompat) ficam agrupadas sem seção
+            if (otherRegions.length > 0) {
+                sectionsHtml += `
+                    <div class="wm-campaign-section">
+                        <div class="wm-campaign-section__regions">
+                            ${otherRegions.map(_renderRegionCard).join('')}
+                        </div>
+                    </div>`;
+            }
 
             panel.innerHTML = `
                 <div class="wm-campaign-panel__header">
@@ -8880,7 +8950,8 @@
                     <span class="wm-campaign-panel__count">${summary.filter(r => r.completed).length}/${summary.length} regiões</span>
                 </div>
                 ${nextGoalHtml}
-                <div class="wm-campaign-panel__regions">${regionsHtml}</div>
+                ${optionalGoalHtml}
+                ${sectionsHtml}
             `;
         }
         window.renderCampaignPanel = renderCampaignPanel;
