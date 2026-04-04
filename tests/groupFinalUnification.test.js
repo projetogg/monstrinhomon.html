@@ -39,6 +39,7 @@ import {
     isInTargetMode,
     getActionType,
     getSelectedSkillId,
+    getSelectedSkillObject,
     enterTargetMode
 } from '../js/ui/targetSelection.js';
 
@@ -156,6 +157,26 @@ function buildDeps({ players, enc, extraHelpers = {} } = {}) {
                         ? { id, name: 'Cura', target: 'Self', power: 15, accuracy: 1, energy_cost: 2, category: 'Suporte' }
                         : null,
                 getSkillsArray: (mon) => mon.skills ?? [],
+                // resolveMonsterSkills: ponto canônico — normaliza skills de getSkillsArray+getSkillById
+                resolveMonsterSkills: (mon) => {
+                    const _skillById = (id) => id === 'SK_WAR_01'
+                        ? { id, name: 'Golpe', target: 'Inimigo', power: 8, accuracy: 0.9, energy_cost: 2, category: 'Ataque' }
+                        : id === 'SK_SELF_01'
+                            ? { id, name: 'Cura', target: 'Self', power: 15, accuracy: 1, energy_cost: 2, category: 'Suporte' }
+                            : null;
+                    const TARGET_MAP = { 'Inimigo': 'enemy', 'Área': 'enemy', 'Aliado': 'ally', 'Self': 'self' };
+                    const CATEGORY_MAP = { 'Ataque': 'DAMAGE', 'Controle': 'DAMAGE', 'Cura': 'HEAL', 'Suporte': 'BUFF' };
+                    return (mon.skills ?? []).map(id => {
+                        const s = _skillById(id);
+                        if (!s) return null;
+                        return {
+                            ...s,
+                            cost: Number(s.cost ?? s.energy_cost ?? 0),
+                            type: s.type || CATEGORY_MAP[s.category] || 'DAMAGE',
+                            target: TARGET_MAP[s.target] || s.target || 'enemy',
+                        };
+                    }).filter(Boolean);
+                },
                 canUseSkillNow: () => true,
                 getItemDef: () => null,
                 firstAliveIndex: () => 0,
@@ -334,10 +355,11 @@ describe('enterSkillMode', () => {
         const { deps } = buildDeps({
             players: [p1], enc,
             extraHelpers: {
-                getSkillsArray: (m) => m.skills ?? [],
-                getSkillById: (id) => id === 'SK_SELF_01'
-                    ? { id, name: 'Cura', target: 'Self', power: 15, accuracy: 1, energy_cost: 0, category: 'Suporte' }
-                    : null,
+                // Com o sistema unificado, resolveMonsterSkills é o ponto de entrada canônico
+                resolveMonsterSkills: (m) => (m.skills ?? []).map(id => {
+                    if (id === 'SK_SELF_01') return { id, name: 'Cura', type: 'HEAL', cost: 0, target: 'self', power: 15, desc: '' };
+                    return null;
+                }).filter(Boolean),
                 canUseSkillNow: () => true,
                 applyDamage: vi.fn(),
                 rollD20: () => 15,
@@ -366,7 +388,9 @@ describe('enterSkillMode', () => {
         expect(result.ok).toBe(true);
         expect(isInTargetMode()).toBe(true);
         expect(getActionType()).toBe('skill');
-        expect(getSelectedSkillId()).toBe('SK_WAR_01');
+        // Com o sistema unificado, o ID é um identificador de posição e o objeto é armazenado
+        expect(getSelectedSkillObject()).not.toBeNull();
+        expect(getSelectedSkillObject().name).toBe('Golpe');
         expect(mocks.render).toHaveBeenCalledTimes(1);
     });
 });

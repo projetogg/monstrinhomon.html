@@ -7,6 +7,7 @@
  * - selectingTarget: boolean - Se está em modo de seleção
  * - actionType: "attack" | "skill" | null - Tipo de ação sendo selecionada
  * - selectedSkillId: string | null - ID da skill selecionada (se actionType === "skill")
+ * - selectedSkillObject: object | null - Objeto de skill direto (sistema legado SKILL_DEFS)
  * 
  * REGRAS:
  * - Estado é resetado após cada ação
@@ -18,7 +19,8 @@
 let _state = {
     selectingTarget: false,
     actionType: null,
-    selectedSkillId: null
+    selectedSkillId: null,
+    selectedSkillObject: null
 };
 
 /**
@@ -26,21 +28,23 @@ let _state = {
  * 
  * @param {string} actionType - "attack" ou "skill"
  * @param {string|null} skillId - ID da skill (obrigatório se actionType === "skill")
+ * @param {object|null} skillObject - Objeto de skill direto (sistema legado SKILL_DEFS, opcional)
  * @throws {Error} Se actionType inválido ou skillId não fornecido para skill
  */
-export function enterTargetMode(actionType, skillId = null) {
+export function enterTargetMode(actionType, skillId = null, skillObject = null) {
     if (actionType !== "attack" && actionType !== "skill") {
         throw new Error(`actionType deve ser "attack" ou "skill", recebido: ${actionType}`);
     }
     
-    if (actionType === "skill" && !skillId) {
-        throw new Error("skillId é obrigatório quando actionType === 'skill'");
+    if (actionType === "skill" && !skillId && !skillObject) {
+        throw new Error("skillId ou skillObject é obrigatório quando actionType === 'skill'");
     }
     
     _state = {
         selectingTarget: true,
         actionType,
-        selectedSkillId: skillId
+        selectedSkillId: skillId,
+        selectedSkillObject: skillObject
     };
 }
 
@@ -51,7 +55,8 @@ export function exitTargetMode() {
     _state = {
         selectingTarget: false,
         actionType: null,
-        selectedSkillId: null
+        selectedSkillId: null,
+        selectedSkillObject: null
     };
 }
 
@@ -83,6 +88,16 @@ export function getSelectedSkillId() {
 }
 
 /**
+ * Obtém o objeto de skill direto (sistema legado SKILL_DEFS), se disponível.
+ * Retorna null se foi usado ID canônico.
+ * 
+ * @returns {object|null}
+ */
+export function getSelectedSkillObject() {
+    return _state.selectedSkillObject;
+}
+
+/**
  * Obtém estado completo (para debug/testes)
  * 
  * @returns {Object} Clone do estado interno
@@ -99,6 +114,7 @@ export function _resetForTesting() {
     _state = {
         selectingTarget: false,
         actionType: null,
-        selectedSkillId: null
+        selectedSkillId: null,
+        selectedSkillObject: null
     };
 }

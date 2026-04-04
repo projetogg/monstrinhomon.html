@@ -9,6 +9,7 @@
 
 import * as GroupCore from './groupCore.js';
 import { initializeBattleParticipation, markAsParticipated, processBattleItemBreakage } from './itemBreakage.js';
+import { isOffensiveSkill } from './skillResolver.js';
 
 /**
  * PR11B: Inicializa participação de batalha para group/boss
@@ -633,18 +634,19 @@ export function executeGroupFlee(deps) {
 }
 
 /**
- * CAMADA 4C: Executa skill real do jogador em combate de grupo
+ * CAMADA 4C: Executa skill do jogador em combate de grupo.
  *
- * Suporta:
- * - Habilidades de Ataque/Controle (target: 'Inimigo' ou 'Área') → dano + rolagem d20
- * - Habilidades de Cura/Suporte (target: 'Aliado' ou 'Self') → cura/buff no caster
+ * Recebe skill no formato operacional único (via resolveMonsterSkills):
+ *   { name, type: 'DAMAGE'|'HEAL'|'BUFF', cost, target: 'enemy'|'self'|'ally', power, desc }
  *
- * @param {string} skillId         - ID da skill (ex: 'SK_WAR_01')
- * @param {number|null} enemyIndex - Índice do inimigo alvo (para skills ofensivas)
- * @param {object} deps            - Dependências injetadas (mesmo padrão de executePlayerAttackGroup)
+ * Também aceita ID string como fallback de compatibilidade (legacy).
+ *
+ * @param {object|string} skillOrId  - Skill no formato operacional único OU ID string (compat.)
+ * @param {number|null}   enemyIndex - Índice do inimigo alvo (para skills ofensivas)
+ * @param {object}        deps       - Dependências injetadas
  * @returns {boolean} true se a ação foi executada com sucesso
  */
-export function executePlayerSkillGroup(skillId, enemyIndex, deps) {
+export function executePlayerSkillGroup(skillOrId, enemyIndex, deps) {
     const { state, core, ui, audio, storage, helpers } = deps;
 
     const enc = state.currentEncounter;
@@ -667,18 +669,23 @@ export function executePlayerSkillGroup(skillId, enemyIndex, deps) {
         return false;
     }
 
-    // Buscar definição da skill
-    const skill = helpers.getSkillById(skillId);
+    // Resolver skill: aceita objeto normalizado (caminho principal) ou ID string (compat. legada)
+    let skill;
+    if (skillOrId && typeof skillOrId === 'object') {
+        skill = skillOrId; // formato operacional normalizado
+    } else {
+        skill = helpers.getSkillById ? helpers.getSkillById(skillOrId) : null;
+    }
     if (!skill) {
-        helpers.log(enc, `⚠️ Habilidade não encontrada: ${skillId}`);
+        helpers.log(enc, `⚠️ Habilidade não encontrada: ${skillOrId}`);
         storage.save();
         ui.render();
         return false;
     }
 
-    // Verificar ENE suficiente
+    // Verificar ENE suficiente — 'cost' é o campo canônico do formato operacional
     if (!helpers.canUseSkillNow(skill, mon)) {
-        const cost = Number(skill.energy_cost ?? skill.eneCost ?? skill.cost ?? 0) || 0;
+        const cost = Number(skill.cost ?? skill.energy_cost ?? 0) || 0;
         helpers.log(enc, `⚠️ ENE insuficiente para ${skill.name} (custo: ${cost}, atual: ${mon.ene ?? 0}).`);
         storage.save();
         ui.render();
@@ -689,19 +696,20 @@ export function executePlayerSkillGroup(skillId, enemyIndex, deps) {
     helpers.applyEneRegen(mon, enc);
     helpers.updateBuffs(mon);
 
-    // Consumir ENE
-    const eneCost = Number(skill.energy_cost ?? skill.eneCost ?? skill.cost ?? 0) || 0;
+    // Consumir ENE — 'cost' é canônico; energy_cost é compat. legada
+    const eneCost = Number(skill.cost ?? skill.energy_cost ?? 0) || 0;
     mon.ene = Math.max(0, (Number(mon.ene) || 0) - eneCost);
 
     const attackerName = player.name || player.nome || actor.name || "Jogador";
     const monName = mon.nickname || mon.name || mon.nome || "Monstrinho";
-    const skillName = skill.name || skillId;
-    const skillTarget = skill.target || '';
-    const skillCategory = skill.category || '';
+    const skillName = skill.name || 'Habilidade';
 
-    // Habilidades ofensivas: Inimigo ou Área de ataque
-    const isOffensive = skillTarget === 'Inimigo' ||
-        (skillTarget === 'Área' && (skillCategory === 'Ataque' || skillCategory === 'Controle'));
+    // Detectar ofensividade pelo formato operacional normalizado:
+    //   target 'enemy'/'area' = ofensivo
+    //   type 'DAMAGE' = também ofensivo (segurança para skills não normalizadas)
+    //   target 'Inimigo'/'Área' = compat. legada SKILLS_CATALOG
+    // Detectar ofensividade via skillResolver (fonte única, sem duplicação)
+    const isOffensive = isOffensiveSkill(skill);
 
     if (isOffensive) {
         // Localizar alvo inimigo usando helper compartilhado
