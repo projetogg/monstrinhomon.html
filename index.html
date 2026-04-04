@@ -4771,7 +4771,10 @@
             
             if (aliveMonsters.length === 0) {
                 alert(`⚠️ Sem monstrinhos vivos da sua classe (${player.class}) para substituir!\n\nREGRA: Em batalha, você só pode usar monstrinhos da classe ${player.class}.\nTroque com outros jogadores para completar seu time!`);
-                // Continue battle (player is eliminated)
+                // Eliminar jogador dos participantes antes de avançar (previne soft-lock)
+                if (enc && Array.isArray(enc.participants)) {
+                    enc.participants = enc.participants.filter(pid => pid !== player.id);
+                }
                 advanceTurn(enc);
                 saveToLocalStorage();
                 renderEncounter();
