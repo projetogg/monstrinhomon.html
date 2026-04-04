@@ -3062,6 +3062,192 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     text-align: center;
 }
 
+/* ── PR-11: Campaign Progress Panel ──────────────────────────────────────── */
+
+.wm-campaign-toggle {
+    font-size: 11px;
+    padding: 4px 10px;
+    background: #e8eaf6;
+    color: #3949ab;
+    border: 1px solid #9fa8da;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.wm-campaign-toggle:hover {
+    background: #c5cae9;
+}
+.wm-campaign-toggle[aria-expanded="true"] {
+    background: #3949ab;
+    color: #fff;
+    border-color: #3949ab;
+}
+
+.wm-campaign-panel {
+    border: 1.5px solid #9fa8da;
+    border-radius: 10px;
+    background: #f3f4fb;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+}
+
+.wm-campaign-panel__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.wm-campaign-panel__title {
+    font-weight: 700;
+    font-size: 13px;
+    color: #283593;
+}
+
+.wm-campaign-panel__count {
+    font-size: 11px;
+    color: #5c6bc0;
+    background: #c5cae9;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.wm-campaign-panel__next-goal {
+    background: #fff8e1;
+    border: 1.5px solid #ffca28;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #5d4037;
+    margin-bottom: 10px;
+}
+
+.wm-campaign-panel__next-goal--done {
+    background: #e8f5e9;
+    border-color: #66bb6a;
+    color: #2e7d32;
+}
+
+.wm-campaign-panel__regions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.wm-campaign-region {
+    background: #fff;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px 12px;
+}
+
+.wm-campaign-region--current {
+    border-color: #5c6bc0;
+    box-shadow: 0 0 0 2px rgba(92,107,192,0.18);
+}
+
+.wm-campaign-region--completed {
+    background: #f1f8f1;
+    border-color: #a5d6a7;
+}
+
+.wm-campaign-region--in_progress {
+    background: #fff8e1;
+    border-color: #ffe082;
+}
+
+.wm-campaign-region--available {
+    background: #e8f4fd;
+    border-color: #81d4fa;
+}
+
+.wm-campaign-region--locked {
+    background: #fafafa;
+    border-color: #e0e0e0;
+    opacity: 0.8;
+}
+
+.wm-campaign-region__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+    flex-wrap: wrap;
+}
+
+.wm-campaign-region__name {
+    font-weight: 700;
+    font-size: 13px;
+    flex: 1;
+    min-width: 0;
+}
+
+.wm-campaign-region__current-badge {
+    font-size: 10px;
+    font-weight: 700;
+    background: #5c6bc0;
+    color: #fff;
+    padding: 2px 7px;
+    border-radius: 10px;
+}
+
+.wm-campaign-region__status {
+    font-size: 11px;
+    color: #555;
+}
+
+.wm-campaign-region--completed .wm-campaign-region__status { color: #2e7d32; font-weight: 600; }
+.wm-campaign-region--in_progress .wm-campaign-region__status { color: #e65100; font-weight: 600; }
+.wm-campaign-region--available .wm-campaign-region__status { color: #01579b; font-weight: 600; }
+.wm-campaign-region--locked .wm-campaign-region__status { color: #9e9e9e; }
+
+.wm-campaign-region__boss {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #555;
+    margin-bottom: 3px;
+}
+
+.wm-campaign-region__boss-label {
+    flex: 1;
+}
+
+.wm-campaign-boss--defeated {
+    font-size: 11px;
+    color: #2e7d32;
+    font-weight: 600;
+}
+
+.wm-campaign-boss--available {
+    font-size: 11px;
+    color: #e65100;
+    font-weight: 600;
+}
+
+.wm-campaign-boss--locked {
+    font-size: 11px;
+    color: #9e9e9e;
+}
+
+.wm-campaign-region__quest {
+    font-size: 11px;
+    color: #bf360c;
+    background: #fbe9e7;
+    border-radius: 6px;
+    padding: 4px 8px;
+    margin: 4px 0 0;
+}
+
+.wm-campaign-region__objective {
+    font-size: 11px;
+    color: #666;
+    margin: 4px 0 0;
+    font-style: italic;
+}
+
 
 .wm-node__lock-reason {
     display: block;

@@ -291,7 +291,7 @@ export function isBossDefeated(bossNodeId, nodeFlags = {}) {
     return nodeFlags[bossNodeId]?.bossDefeated === true;
 }
 
-// ── Progressão Regional (PR-10) ──────────────────────────────────────────────
+// ── Progressão Regional (PR-10 / PR-11) ─────────────────────────────────────
 
 /**
  * Verifica se uma região/arco foi concluída.
@@ -303,6 +303,93 @@ export function isBossDefeated(bossNodeId, nodeFlags = {}) {
 export function isRegionComplete(regionId, regionalProgress = {}) {
     if (!regionId || !regionalProgress) return false;
     return regionalProgress[regionId]?.completed === true;
+}
+
+// Fallback para nome de região desconhecida
+const REGION_LABEL_FALLBACK = 'Região Desconhecida';
+
+/**
+ * Deriva um nome amigável a partir de um regionId técnico.
+ * Usado como fallback quando bossMeta.regionLabel não está definido.
+ *
+ * Ex: 'forest_arc_1' → 'Forest Arc 1'
+ *
+ * @param {string} regionId
+ * @returns {string}
+ */
+export function deriveRegionLabel(regionId) {
+    if (!regionId) return REGION_LABEL_FALLBACK;
+    return regionId
+        .split('_')
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+}
+
+/**
+ * Calcula o estado visual de uma região a partir do contexto de progresso.
+ *
+ * Estados possíveis:
+ *   'completed'   → região foi concluída (boss derrotado + defeatMarksRegionComplete)
+ *   'in_progress' → boss node acessível mas não derrotado ainda
+ *   'available'   → algum nó vizinho do boss foi visitado/concluído mas boss ainda bloqueado
+ *   'locked'      → região não acessível
+ *
+ * @param {Object}      bossNode          - Nó boss do worldMap
+ * @param {boolean}     completed         - Se a região já foi concluída
+ * @param {boolean}     bossDefeated      - Se o boss foi derrotado
+ * @param {Set<string>} visitedLocations  - Locais visitados
+ * @param {Set<string>} completedLocations - Locais concluídos
+ * @param {Object}      nodeFlags         - Flags por nó
+ * @param {Set<string>} completedQuestIds - Quest IDs concluídas
+ * @returns {'completed'|'in_progress'|'available'|'locked'}
+ */
+export function getRegionStatus(
+    bossNode,
+    completed,
+    bossDefeated,
+    visitedLocations   = new Set(),
+    completedLocations = new Set(),
+    nodeFlags          = {},
+    completedQuestIds  = new Set()
+) {
+    if (completed) return 'completed';
+
+    // Verificar se o nó do boss está desbloqueado
+    const bossUnlocked = isNodeUnlocked(
+        bossNode,
+        visitedLocations,
+        completedLocations,
+        nodeFlags,
+        completedQuestIds
+    );
+
+    if (bossUnlocked) return 'in_progress';
+
+    // Verificar se algum vizinho do boss foi visitado/concluído
+    const connections = bossNode.connections ?? [];
+    const hasProgress = connections.some(
+        connId => visitedLocations.has(connId) || completedLocations.has(connId)
+    );
+
+    return hasProgress ? 'available' : 'locked';
+}
+
+/**
+ * Deriva o próximo objetivo macro para uma região com base em seu estado.
+ *
+ * @param {'completed'|'in_progress'|'available'|'locked'} status
+ * @param {string} bossLabel - Nome amigável do boss
+ * @param {string} regionLabel - Nome amigável da região
+ * @returns {string|null} Texto do próximo objetivo, ou null se concluída
+ */
+export function getRegionNextObjective(status, bossLabel, regionLabel) {
+    switch (status) {
+        case 'completed':   return null;
+        case 'in_progress': return `Derrote ${bossLabel}`;
+        case 'available':   return `Explore ${regionLabel} até chegar ao ${bossLabel}`;
+        case 'locked':      return `Desbloqueie regiões anteriores para avançar`;
+        default:            return null;
+    }
 }
 
 /**
@@ -341,17 +428,41 @@ export function markRegionComplete(bossMeta, bossNodeId, regionalProgress = {}, 
 
 /**
  * Retorna um resumo do progresso regional a partir dos nós do mapa e nodeFlags.
- * Útil para render de painel de progresso de campanha.
+ * Útil para render de painel de progresso de campanha (PR-11).
  *
- * @param {Array<Object>} worldMapNodes     - Nós do worldMap.json
- * @param {Object}        [nodeFlags={}]    - Estado de flags por nó
+ * Cada entrada retornada inclui:
+ *   regionId         - ID técnico interno da região
+ *   regionLabel      - Nome amigável exibido na UI
+ *   bossNodeId       - ID do nó boss que fecha a região
+ *   bossLabel        - Nome amigável do boss
+ *   completed        - Se a região foi concluída
+ *   bossDefeated     - Se o boss foi derrotado
+ *   status           - 'completed' | 'in_progress' | 'available' | 'locked'
+ *   isCurrent        - true para a região mais relevante no momento
+ *   nextObjective    - Texto do próximo objetivo, ou null se concluída
+ *
+ * @param {Array<Object>} worldMapNodes      - Nós do worldMap.json
+ * @param {Object}        [nodeFlags={}]     - Estado de flags por nó
  * @param {Object}        [regionalProgress={}] - Progresso regional persistido
- * @returns {Array<{regionId: string, bossNodeId: string, bossLabel: string, completed: boolean}>}
+ * @param {Set<string>}   [visitedLocations=new Set()]   - Locais visitados (para status)
+ * @param {Set<string>}   [completedLocations=new Set()] - Locais concluídos (para status)
+ * @param {Set<string>}   [completedQuestIds=new Set()]  - Quest IDs concluídas (para unlock)
+ * @returns {Array<Object>}
  */
-export function getRegionalProgressSummary(worldMapNodes, nodeFlags = {}, regionalProgress = {}) {
+export function getRegionalProgressSummary(
+    worldMapNodes,
+    nodeFlags          = {},
+    regionalProgress   = {},
+    visitedLocations   = new Set(),
+    completedLocations = new Set(),
+    completedQuestIds  = new Set()
+) {
     if (!Array.isArray(worldMapNodes)) return [];
     const safeFlags    = nodeFlags    ?? {};
     const safeProgress = regionalProgress ?? {};
+    const safeVisited  = visitedLocations  instanceof Set ? visitedLocations  : new Set();
+    const safeCompleted= completedLocations instanceof Set ? completedLocations : new Set();
+    const safeQuests   = completedQuestIds  instanceof Set ? completedQuestIds  : new Set();
 
     const result = [];
     for (const node of worldMapNodes) {
@@ -359,15 +470,42 @@ export function getRegionalProgressSummary(worldMapNodes, nodeFlags = {}, region
         const meta = node.bossMeta;
         if (!meta?.regionId) continue;
 
+        const completed    = isRegionComplete(meta.regionId, safeProgress);
+        const bossDefeated = safeFlags[node.nodeId]?.bossDefeated === true;
+        const regionLabel  = meta.regionLabel ?? deriveRegionLabel(meta.regionId);
+        const bossLabel    = meta.bossLabel ?? node.nodeId;
+
+        const status = getRegionStatus(
+            node,
+            completed,
+            bossDefeated,
+            safeVisited,
+            safeCompleted,
+            safeFlags,
+            safeQuests
+        );
+
+        const nextObjective = getRegionNextObjective(status, bossLabel, regionLabel);
+
         result.push({
-            regionId:   meta.regionId,
-            bossNodeId: node.nodeId,
-            bossLabel:  meta.bossLabel ?? node.nodeId,
-            completed:  isRegionComplete(meta.regionId, safeProgress),
-            bossDefeated: safeFlags[node.nodeId]?.bossDefeated === true
+            regionId:      meta.regionId,
+            regionLabel,
+            bossNodeId:    node.nodeId,
+            bossLabel,
+            completed,
+            bossDefeated,
+            status,
+            nextObjective
         });
     }
-    return result;
+
+    // Marcar a região mais relevante (primeira não concluída)
+    const currentIdx = result.findIndex(r => r.status !== 'completed');
+    if (currentIdx !== -1) {
+        result[currentIdx] = { ...result[currentIdx], isCurrent: true };
+    }
+    // Garantir que todas as outras tenham isCurrent: false
+    return result.map((r, i) => ({ ...r, isCurrent: i === currentIdx }));
 }
 
 /**
