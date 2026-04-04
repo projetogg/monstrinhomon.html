@@ -103,7 +103,10 @@ function makeEncounter(wild, overrides = {}) {
     };
 }
 
-/** Skill debuff: alimenta a carga de shadowsting */
+/** Skill debuff: alimenta a carga de shadowsting.
+ * Em GAME_RULES, "debuff" = skill type:'BUFF' + target:'enemy' + power<0.
+ * O tipo BUFF é o tipo de skill que modifica stats; "debuff" é a convenção
+ * semântica para BUFF com poder negativo direcionado ao inimigo. */
 const DEBUFF_SKILL = {
     id: 'sk_enfraquecer', name: 'Enfraquecer I',
     type: 'BUFF', target: 'enemy', power: -2,

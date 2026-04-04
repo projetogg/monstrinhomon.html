@@ -10,6 +10,10 @@ import * as WildUI from './wildUI.js';
 import { initializeBattleParticipation, markAsParticipated, processBattleItemBreakage } from './itemBreakage.js';
 import { resolvePassiveModifier } from '../canon/speciesPassives.js';
 
+// Fase 13.1: IDs dos kit swaps de execução do shadowsting.
+// Centralizados aqui para facilitar manutenção quando novas versões forem adicionadas.
+const SHADOWSTING_KIT_SWAP_IDS = ['shadowsting_ambush_strike', 'shadowsting_ambush_strike_ii'];
+
 /**
  * Rola d20 usando função injetada ou fallback para Math.random.
  * Centraliza o fallback para evitar duplicação entre funções de IA.
@@ -674,8 +678,7 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
         // getBuffModifiers inclua o bônus no cálculo de dano da skill.
         // Distinção vs bellwave: shadowsting exige debuff prévio; bellwave aceita qualquer skill.
         const isShadowstingKitSwap = playerMonster.canonSpeciesId === 'shadowsting' &&
-            (skill._kitSwapId === 'shadowsting_ambush_strike' ||
-             skill._kitSwapId === 'shadowsting_ambush_strike_ii');
+            SHADOWSTING_KIT_SWAP_IDS.includes(skill._kitSwapId);
         const shadowstingExecutionActive = isShadowstingKitSwap && !!passiveStateSkill.shadowstingDebuffCharged;
         if (shadowstingExecutionActive) {
             playerMonster.buffs = playerMonster.buffs || [];
