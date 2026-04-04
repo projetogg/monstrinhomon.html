@@ -109,6 +109,13 @@ export function levelUpMonster(deps, mon, logArr) {
         }
     }
 
+    // Fase 18: Aplicar kit_swap pendente ao subir de nível
+    // Executado APÓS o slot unlock para garantir que unlockedSkillSlots está atualizado,
+    // e ANTES da promoção para que swaps recém-aplicados possam ser promovidos no mesmo level-up.
+    if (typeof deps.helpers.applyPendingKitSwapsForInstance === 'function') {
+        deps.helpers.applyPendingKitSwapsForInstance(mon, log);
+    }
+
     // Fase 7: Verificar e aplicar promoção de kit_swap ao subir de nível
     // Executado após slot unlock para que targetSlot seja verificado com valor atualizado
     if (typeof deps.helpers.promoteKitSwapsForInstance === 'function') {
