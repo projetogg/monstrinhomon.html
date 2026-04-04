@@ -57,7 +57,8 @@
           "icon": "🌿",
           "profile": "Captura segura",
           "description": "Área plana e segura. Perfeita para aprender.",
-          "rarityModifiers": []
+          "rarityModifiers": [],
+          "profileKey": "capture"
         },
         {
           "id": "LOC_000_B",
@@ -65,7 +66,8 @@
           "icon": "☀️",
           "profile": "Mais itens",
           "description": "Muitos itens brilhantes no chão.",
-          "rarityModifiers": []
+          "rarityModifiers": [],
+          "profileKey": "resource"
         },
         {
           "id": "LOC_000_C",
@@ -73,7 +75,8 @@
           "icon": "💧",
           "profile": "Mais eventos",
           "description": "Um riachinho calmo com surpresas narrativas.",
-          "rarityModifiers": []
+          "rarityModifiers": [],
+          "profileKey": "event"
         }
       ]
     },
@@ -147,7 +150,8 @@
               "rarity": "Incomum",
               "delta": -8
             }
-          ]
+          ],
+          "profileKey": "capture"
         },
         {
           "id": "LOC_001_B",
@@ -164,7 +168,8 @@
               "rarity": "Comum",
               "delta": -4
             }
-          ]
+          ],
+          "profileKey": "combat"
         },
         {
           "id": "LOC_001_C",
@@ -181,7 +186,8 @@
               "rarity": "Comum",
               "delta": -6
             }
-          ]
+          ],
+          "profileKey": "rare"
         }
       ]
     },
@@ -259,7 +265,8 @@
               "rarity": "Raro",
               "delta": -4
             }
-          ]
+          ],
+          "profileKey": "capture"
         },
         {
           "id": "LOC_001B_B",
@@ -276,7 +283,8 @@
               "rarity": "Comum",
               "delta": -4
             }
-          ]
+          ],
+          "profileKey": "combat"
         },
         {
           "id": "LOC_001B_C",
@@ -293,7 +301,8 @@
               "rarity": "Comum",
               "delta": -8
             }
-          ]
+          ],
+          "profileKey": "rare"
         }
       ]
     },
@@ -371,7 +380,8 @@
               "rarity": "Raro",
               "delta": -4
             }
-          ]
+          ],
+          "profileKey": "capture"
         },
         {
           "id": "LOC_002_B",
@@ -388,7 +398,8 @@
               "rarity": "Comum",
               "delta": -5
             }
-          ]
+          ],
+          "profileKey": "combat"
         },
         {
           "id": "LOC_002_C",
@@ -405,7 +416,8 @@
               "rarity": "Comum",
               "delta": -6
             }
-          ]
+          ],
+          "profileKey": "rare"
         }
       ]
     },
@@ -488,7 +500,8 @@
               "rarity": "Místico",
               "delta": -2
             }
-          ]
+          ],
+          "profileKey": "capture"
         },
         {
           "id": "LOC_002B_B",
@@ -505,7 +518,8 @@
               "rarity": "Comum",
               "delta": -6
             }
-          ]
+          ],
+          "profileKey": "combat"
         },
         {
           "id": "LOC_002B_C",
@@ -522,7 +536,8 @@
               "rarity": "Comum",
               "delta": -8
             }
-          ]
+          ],
+          "profileKey": "rare"
         }
       ]
     },
@@ -606,7 +621,8 @@
               "rarity": "Comum",
               "delta": 5
             }
-          ]
+          ],
+          "profileKey": "capture"
         },
         {
           "id": "LOC_002C_B",
@@ -623,7 +639,8 @@
               "rarity": "Comum",
               "delta": -8
             }
-          ]
+          ],
+          "profileKey": "combat"
         },
         {
           "id": "LOC_002C_C",
@@ -644,7 +661,8 @@
               "rarity": "Comum",
               "delta": -10
             }
-          ]
+          ],
+          "profileKey": "rare"
         }
       ]
     },
@@ -724,7 +742,8 @@
               "rarity": "Raro",
               "delta": -4
             }
-          ]
+          ],
+          "profileKey": "capture"
         },
         {
           "id": "LOC_003_B",
@@ -741,7 +760,8 @@
               "rarity": "Comum",
               "delta": -5
             }
-          ]
+          ],
+          "profileKey": "combat"
         },
         {
           "id": "LOC_003_C",
@@ -758,7 +778,8 @@
               "rarity": "Comum",
               "delta": -8
             }
-          ]
+          ],
+          "profileKey": "rare"
         }
       ]
     },
@@ -839,7 +860,8 @@
               "rarity": "Comum",
               "delta": 5
             }
-          ]
+          ],
+          "profileKey": "capture"
         },
         {
           "id": "LOC_003B_B",
@@ -856,7 +878,8 @@
               "rarity": "Comum",
               "delta": -7
             }
-          ]
+          ],
+          "profileKey": "combat"
         },
         {
           "id": "LOC_003B_C",
@@ -877,7 +900,8 @@
               "rarity": "Comum",
               "delta": -8
             }
-          ]
+          ],
+          "profileKey": "rare"
         }
       ]
     },
@@ -957,7 +981,8 @@
               "rarity": "Comum",
               "delta": 5
             }
-          ]
+          ],
+          "profileKey": "capture"
         },
         {
           "id": "LOC_003C_B",
@@ -974,7 +999,8 @@
               "rarity": "Comum",
               "delta": -8
             }
-          ]
+          ],
+          "profileKey": "combat"
         },
         {
           "id": "LOC_003C_C",
@@ -995,7 +1021,8 @@
               "rarity": "Comum",
               "delta": -10
             }
-          ]
+          ],
+          "profileKey": "rare"
         }
       ]
     },
@@ -1081,7 +1108,8 @@
               "rarity": "Místico",
               "delta": -2
             }
-          ]
+          ],
+          "profileKey": "capture"
         },
         {
           "id": "LOC_004_B",
@@ -1098,7 +1126,8 @@
               "rarity": "Comum",
               "delta": -6
             }
-          ]
+          ],
+          "profileKey": "combat"
         },
         {
           "id": "LOC_004_C",
@@ -1119,7 +1148,8 @@
               "rarity": "Comum",
               "delta": -8
             }
-          ]
+          ],
+          "profileKey": "rare"
         }
       ]
     },
@@ -1201,7 +1231,8 @@
               "rarity": "Comum",
               "delta": 4
             }
-          ]
+          ],
+          "profileKey": "event"
         },
         {
           "id": "LOC_004B_B",
@@ -1218,7 +1249,8 @@
               "rarity": "Comum",
               "delta": -8
             }
-          ]
+          ],
+          "profileKey": "combat"
         },
         {
           "id": "LOC_004B_C",
@@ -1239,7 +1271,8 @@
               "rarity": "Comum",
               "delta": -8
             }
-          ]
+          ],
+          "profileKey": "rare"
         }
       ]
     },
@@ -1316,7 +1349,8 @@
               "rarity": "Raro",
               "delta": -4
             }
-          ]
+          ],
+          "profileKey": "capture"
         },
         {
           "id": "LOC_005_B",
@@ -1333,7 +1367,8 @@
               "rarity": "Comum",
               "delta": -6
             }
-          ]
+          ],
+          "profileKey": "combat"
         },
         {
           "id": "LOC_005_C",
@@ -1350,7 +1385,8 @@
               "rarity": "Comum",
               "delta": -8
             }
-          ]
+          ],
+          "profileKey": "rare"
         }
       ]
     },
@@ -1426,7 +1462,8 @@
               "rarity": "Comum",
               "delta": 6
             }
-          ]
+          ],
+          "profileKey": "capture"
         },
         {
           "id": "LOC_005B_B",
@@ -1443,7 +1480,8 @@
               "rarity": "Comum",
               "delta": -8
             }
-          ]
+          ],
+          "profileKey": "combat"
         },
         {
           "id": "LOC_005B_C",
@@ -1464,7 +1502,8 @@
               "rarity": "Comum",
               "delta": -8
             }
-          ]
+          ],
+          "profileKey": "rare"
         }
       ]
     },
@@ -1539,7 +1578,8 @@
               "rarity": "Comum",
               "delta": 5
             }
-          ]
+          ],
+          "profileKey": "capture"
         },
         {
           "id": "LOC_005C_B",
@@ -1556,7 +1596,8 @@
               "rarity": "Comum",
               "delta": -8
             }
-          ]
+          ],
+          "profileKey": "combat"
         },
         {
           "id": "LOC_005C_C",
@@ -1577,7 +1618,8 @@
               "rarity": "Comum",
               "delta": -10
             }
-          ]
+          ],
+          "profileKey": "rare"
         }
       ]
     },
@@ -1657,7 +1699,8 @@
               "rarity": "Místico",
               "delta": -2
             }
-          ]
+          ],
+          "profileKey": "capture"
         },
         {
           "id": "LOC_006_B",
@@ -1674,7 +1717,8 @@
               "rarity": "Comum",
               "delta": -7
             }
-          ]
+          ],
+          "profileKey": "combat"
         },
         {
           "id": "LOC_006_C",
@@ -1695,7 +1739,8 @@
               "rarity": "Comum",
               "delta": -8
             }
-          ]
+          ],
+          "profileKey": "rare"
         }
       ]
     },
@@ -1772,7 +1817,8 @@
               "rarity": "Comum",
               "delta": 5
             }
-          ]
+          ],
+          "profileKey": "capture"
         },
         {
           "id": "LOC_006B_B",
@@ -1789,7 +1835,8 @@
               "rarity": "Comum",
               "delta": -8
             }
-          ]
+          ],
+          "profileKey": "combat"
         },
         {
           "id": "LOC_006B_C",
@@ -1810,7 +1857,8 @@
               "rarity": "Comum",
               "delta": -10
             }
-          ]
+          ],
+          "profileKey": "rare"
         }
       ]
     },
@@ -1892,7 +1940,8 @@
               "rarity": "Místico",
               "delta": -2
             }
-          ]
+          ],
+          "profileKey": "capture"
         },
         {
           "id": "LOC_007_B",
@@ -1909,7 +1958,8 @@
               "rarity": "Comum",
               "delta": -7
             }
-          ]
+          ],
+          "profileKey": "combat"
         },
         {
           "id": "LOC_007_C",
@@ -1930,7 +1980,8 @@
               "rarity": "Comum",
               "delta": -8
             }
-          ]
+          ],
+          "profileKey": "rare"
         }
       ]
     },
@@ -2007,7 +2058,8 @@
               "rarity": "Comum",
               "delta": 5
             }
-          ]
+          ],
+          "profileKey": "capture"
         },
         {
           "id": "LOC_007B_B",
@@ -2024,7 +2076,8 @@
               "rarity": "Comum",
               "delta": -8
             }
-          ]
+          ],
+          "profileKey": "combat"
         },
         {
           "id": "LOC_007B_C",
@@ -2045,7 +2098,8 @@
               "rarity": "Comum",
               "delta": -10
             }
-          ]
+          ],
+          "profileKey": "rare"
         }
       ]
     },
@@ -2132,7 +2186,8 @@
               "rarity": "Comum",
               "delta": 4
             }
-          ]
+          ],
+          "profileKey": "capture"
         },
         {
           "id": "LOC_008_B",
@@ -2149,7 +2204,8 @@
               "rarity": "Comum",
               "delta": -8
             }
-          ]
+          ],
+          "profileKey": "combat"
         },
         {
           "id": "LOC_008_C",
@@ -2170,7 +2226,8 @@
               "rarity": "Comum",
               "delta": -8
             }
-          ]
+          ],
+          "profileKey": "rare"
         }
       ]
     },
@@ -2257,7 +2314,8 @@
               "rarity": "Comum",
               "delta": 4
             }
-          ]
+          ],
+          "profileKey": "capture"
         },
         {
           "id": "LOC_008B_B",
@@ -2274,7 +2332,8 @@
               "rarity": "Comum",
               "delta": -9
             }
-          ]
+          ],
+          "profileKey": "combat"
         },
         {
           "id": "LOC_008B_C",
@@ -2295,7 +2354,8 @@
               "rarity": "Comum",
               "delta": -10
             }
-          ]
+          ],
+          "profileKey": "rare"
         }
       ]
     },
@@ -2311,7 +2371,9 @@
       "encounterTypeWeights": {},
       "allowedEvolutionStages": [],
       "unlockRules": [],
-      "specialRules": ["city_only"],
+      "specialRules": [
+        "city_only"
+      ],
       "rareSpotBonus": 0,
       "bossRule": null,
       "notes": "Cidade inicial. Acesso a loja, cura e missões.",
@@ -2324,7 +2386,8 @@
           "description": "Adquira itens de captura, cura e táticos.",
           "type": "service",
           "serviceAction": "shop",
-          "rarityModifiers": []
+          "rarityModifiers": [],
+          "profileKey": "service"
         },
         {
           "id": "CITY_001_HEAL",
@@ -2334,7 +2397,8 @@
           "description": "Restaure o HP de todos os seus Monstrinhos gratuitamente.",
           "type": "service",
           "serviceAction": "heal",
-          "rarityModifiers": []
+          "rarityModifiers": [],
+          "profileKey": "service"
         },
         {
           "id": "CITY_001_QUESTS",
@@ -2344,7 +2408,155 @@
           "description": "Aceite e entregue missões ativas da sessão.",
           "type": "service",
           "serviceAction": "quests",
-          "rarityModifiers": []
+          "rarityModifiers": [],
+          "profileKey": "service"
+        }
+      ]
+    },
+    {
+      "id": "BOSS_FOREST_01",
+      "name": "Guardião da Floresta",
+      "bossName": "Guardião da Floresta",
+      "description": "O antigo guardião desta região bloqueia o caminho adiante. Derrote-o para abrir novas terras.",
+      "biome": "floresta",
+      "tier": "BOSS",
+      "levelRange": [
+        15,
+        15
+      ],
+      "rarityWeights": {
+        "Comum": 0,
+        "Incomum": 0,
+        "Raro": 100,
+        "Místico": 0,
+        "Lendário": 0
+      },
+      "speciesPoolsByRarity": {
+        "Comum": [],
+        "Incomum": [],
+        "Raro": [
+          "MON_023C",
+          "MON_027C"
+        ],
+        "Místico": [],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 0,
+        "Item": 0,
+        "Evento": 0,
+        "Treinador": 0,
+        "SpotRaro": 0
+      },
+      "allowedEvolutionStages": [
+        "S2",
+        "S3"
+      ],
+      "unlockRules": [],
+      "specialRules": [
+        "boss_only"
+      ],
+      "rareSpotBonus": 0,
+      "bossRule": "defeat_to_progress",
+      "notes": "Boss node — chefe da região forest_arc_1. Derrota desbloqueia LOC_009.",
+      "spots": []
+    },
+    {
+      "id": "LOC_009",
+      "name": "Floresta Profunda",
+      "description": "Território inexplorado além do Guardião. Monstrinhos raros e poderosos habitam aqui.",
+      "biome": "floresta",
+      "tier": "T5",
+      "levelRange": [
+        15,
+        20
+      ],
+      "rarityWeights": {
+        "Comum": 40,
+        "Incomum": 35,
+        "Raro": 20,
+        "Místico": 5,
+        "Lendário": 0
+      },
+      "speciesPoolsByRarity": {
+        "Comum": [
+          "MON_004",
+          "MON_006",
+          "MON_007"
+        ],
+        "Incomum": [
+          "MON_011B",
+          "MON_023B",
+          "MON_027B"
+        ],
+        "Raro": [
+          "MON_023C",
+          "MON_027C"
+        ],
+        "Místico": [],
+        "Lendário": []
+      },
+      "encounterTypeWeights": {
+        "Selvagem": 60,
+        "Item": 10,
+        "Evento": 10,
+        "Treinador": 15,
+        "SpotRaro": 5
+      },
+      "allowedEvolutionStages": [
+        "S2",
+        "S3"
+      ],
+      "unlockRules": [],
+      "specialRules": [],
+      "rareSpotBonus": 20,
+      "bossRule": null,
+      "notes": "Área desbloqueada após derrotar o Guardião da Floresta.",
+      "spots": [
+        {
+          "id": "LOC_009_A",
+          "name": "Raízes Antigas",
+          "icon": "🌳",
+          "profile": "Captura difícil",
+          "description": "Criaturas raras se escondem entre raízes milenares.",
+          "rarityModifiers": [
+            {
+              "rarity": "Raro",
+              "delta": 10
+            },
+            {
+              "rarity": "Comum",
+              "delta": -10
+            }
+          ],
+          "profileKey": "rare"
+        },
+        {
+          "id": "LOC_009_B",
+          "name": "Clareira Sombria",
+          "icon": "🌑",
+          "profile": "Combate intenso",
+          "description": "Monstrinhos agressivos patrulham esta clareira.",
+          "rarityModifiers": [
+            {
+              "rarity": "Incomum",
+              "delta": 8
+            },
+            {
+              "rarity": "Comum",
+              "delta": -8
+            }
+          ],
+          "profileKey": "combat"
+        },
+        {
+          "id": "LOC_009_C",
+          "name": "Fonte Encantada",
+          "icon": "💧",
+          "profile": "Recursos preciosos",
+          "description": "Itens valiosos flutuam nas águas cristalinas.",
+          "rarityModifiers": [],
+          "profileKey": "resource"
         }
       ]
     }

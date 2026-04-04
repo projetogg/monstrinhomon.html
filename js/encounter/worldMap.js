@@ -24,6 +24,10 @@
  * { type: 'complete_quest',         questId: 'QST_001', playerId?: string }
  *   → Requer que a quest esteja em completedQuestIds de algum jogador
  *     (verificado externamente; isNodeUnlocked recebe completedQuestIds como Set)
+ *
+ * { type: 'defeat_boss',            nodeId: 'BOSS_FOREST_01' }
+ *   → Requer que o boss node nodeId tenha sido derrotado
+ *     (verificado via nodeFlags[nodeId].bossDefeated === true)
  */
 
 // ── Emojis por bioma ────────────────────────────────────────────────────────
@@ -144,6 +148,9 @@ function _evaluateUnlockRule(rule, completedLocations, nodeFlags, completedQuest
         case 'complete_quest':
             return completedQuestIds.has(rule.questId);
 
+        case 'defeat_boss':
+            return nodeFlags[rule.nodeId]?.bossDefeated === true;
+
         default:
             return false;
     }
@@ -199,6 +206,12 @@ export function getNodeLockReason(
         }
         case 'complete_quest':
             return `Conclua a missão ${rule.questId} para desbloquear`;
+        case 'defeat_boss': {
+            // Tentar pegar o nome do boss via locationsData, senão usar o nodeId
+            const bossLoc = locationsData.find(l => l.id === rule.nodeId);
+            const bossName = bossLoc?.bossName ?? bossLoc?.name ?? rule.nodeId;
+            return `Derrote "${bossName}" para avançar`;
+        }
         default:
             return 'Bloqueado';
     }
@@ -263,4 +276,116 @@ export function buildSpotModifiers(spot) {
     return spot.rarityModifiers.filter(
         m => m && typeof m.rarity === 'string' && typeof m.delta === 'number'
     );
+}
+
+/**
+ * Verifica se um boss node foi derrotado.
+ * Helper exportado para uso na UI.
+ *
+ * @param {string} bossNodeId
+ * @param {Object} nodeFlags
+ * @returns {boolean}
+ */
+export function isBossDefeated(bossNodeId, nodeFlags = {}) {
+    if (!nodeFlags) return false;
+    return nodeFlags[bossNodeId]?.bossDefeated === true;
+}
+
+// ── Perfis formais de spot ───────────────────────────────────────────────────
+
+/**
+ * Perfis canônicos de spot.
+ * Cada perfil define deltas de modificadores de encontro além dos rarityModifiers.
+ *
+ * trainerChanceDelta : ajuste no peso de Treinador em encounterTypeWeights
+ * itemBonusDelta     : ajuste no peso de Item em encounterTypeWeights
+ * eventBonusDelta    : ajuste no peso de Evento em encounterTypeWeights
+ * levelDelta         : deslocamento inteiro aplicado ao nível sorteado (pode ser negativo)
+ *
+ * Diferenças semânticas chave:
+ *   combat   vs trainer  → combat = perigo bruto (nível maior, sem treinador específico);
+ *                          trainer = encontro tático estruturado (treinadores altos, nível estável)
+ *   resource vs event    → resource = farm previsível e seguro (muito item, nível menor);
+ *                          event = imprevisibilidade narrativa (boost de Evento, variação)
+ *   rare                 → custo real: perde acesso a item e treinador em troca de raridade
+ */
+export const SPOT_PROFILE_DEFAULTS = {
+    capture:  { label: 'Captura',   icon: '🎯', trainerChanceDelta: -5,  itemBonusDelta: +3,  eventBonusDelta:  0,  levelDelta:  0 },
+    combat:   { label: 'Combate',   icon: '⚔️', trainerChanceDelta: -3,  itemBonusDelta: -5,  eventBonusDelta:  0,  levelDelta: +2 },
+    rare:     { label: 'Raridade',  icon: '✨', trainerChanceDelta: -5,  itemBonusDelta: -5,  eventBonusDelta:  0,  levelDelta:  0 },
+    resource: { label: 'Recurso',   icon: '💎', trainerChanceDelta: -5,  itemBonusDelta: +10, eventBonusDelta:  0,  levelDelta: -1 },
+    event:    { label: 'Evento',    icon: '🎭', trainerChanceDelta: +3,  itemBonusDelta: +2,  eventBonusDelta: +8,  levelDelta:  0 },
+    trainer:  { label: 'Treinador', icon: '🧑‍🏫', trainerChanceDelta: +18, itemBonusDelta: -5,  eventBonusDelta:  0,  levelDelta:  0 },
+    service:  { label: 'Serviço',   icon: '🏪', trainerChanceDelta:  0,  itemBonusDelta:  0,  eventBonusDelta:  0,  levelDelta:  0 }
+};
+
+/**
+ * Fallback para spots sem profileKey definido — garante compatibilidade retroativa
+ * com spots legados que ainda não foram migrados para o sistema de profileKey.
+ * Retorna modificadores neutros (sem impacto no encontro).
+ * @private
+ */
+const SPOT_PROFILE_FALLBACK = { label: 'Exploração', icon: '🗺️', trainerChanceDelta: 0, itemBonusDelta: 0, eventBonusDelta: 0, levelDelta: 0 };
+
+/**
+ * Retorna o contexto completo de modificadores de um spot para uso pelo encounterEngine.
+ *
+ * Combina:
+ * 1. rarityModifiers do spot (para applyModifiers)
+ * 2. Defaults do profileKey (trainerChanceDelta, itemBonusDelta, levelDelta)
+ * 3. encounterModifiers do spot (override individual, se existir)
+ *
+ * O campo `encounterModifiers` no JSON pode sobrescrever qualquer campo do perfil padrão:
+ * {
+ *   "trainerChanceDelta": 12,
+ *   "itemBonusDelta": -5,
+ *   "levelDelta": 2
+ * }
+ *
+ * @param {Object|null} spot - Dados do spot (de locations.json)
+ * @returns {{
+ *   profileKey: string,
+ *   label: string,
+ *   icon: string,
+ *   rarityMods: Array<{rarity: string, delta: number}>,
+ *   trainerChanceDelta: number,
+ *   itemBonusDelta: number,
+ *   eventBonusDelta: number,
+ *   levelDelta: number
+ * }}
+ */
+export function getSpotEncounterContext(spot) {
+    if (!spot) {
+        return {
+            profileKey: 'fallback',
+            label: SPOT_PROFILE_FALLBACK.label,
+            icon:  SPOT_PROFILE_FALLBACK.icon,
+            rarityMods: [],
+            trainerChanceDelta: 0,
+            itemBonusDelta: 0,
+            eventBonusDelta: 0,
+            levelDelta: 0
+        };
+    }
+
+    const profileKey = spot.profileKey ?? 'fallback';
+    const profileDefaults = SPOT_PROFILE_DEFAULTS[profileKey] ?? SPOT_PROFILE_FALLBACK;
+
+    // Overrides individuais do spot (campo encounterModifiers no JSON)
+    const overrides = (spot.encounterModifiers && typeof spot.encounterModifiers === 'object')
+        ? spot.encounterModifiers
+        : {};
+
+    const rarityMods = buildSpotModifiers(spot);
+
+    return {
+        profileKey,
+        label: profileDefaults.label,
+        icon:  profileDefaults.icon,
+        rarityMods,
+        trainerChanceDelta: overrides.trainerChanceDelta ?? profileDefaults.trainerChanceDelta ?? 0,
+        itemBonusDelta:     overrides.itemBonusDelta     ?? profileDefaults.itemBonusDelta     ?? 0,
+        eventBonusDelta:    overrides.eventBonusDelta    ?? profileDefaults.eventBonusDelta    ?? 0,
+        levelDelta:         overrides.levelDelta         ?? profileDefaults.levelDelta         ?? 0
+    };
 }
