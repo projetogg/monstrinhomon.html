@@ -174,13 +174,58 @@ export const RUNTIME_TO_CANON_SPECIES = {
     //   healer defensivo de alta sustentação — floracura inequívoco.
     'MON_028C': 'floracura',
 
+    // ── Caçador — arquétipo striker_veloz (swiftclaw) — Fase 9 ───────────────
+    // Miaumon: ATK 8, DEF 4, SPD 9 — ATK:DEF 2.0, alta velocidade relativa;
+    //   arquétipo striker_veloz inequívoco. Starter canônico da classe.
+    'MON_013': 'swiftclaw',
+    // Pulimbon: ATK 6, DEF 4, SPD 10 — ratio 1.5, SPD levemente maior que Miaumon;
+    //   linha alternativa com foco ainda maior em velocidade pura.
+    'MON_025': 'swiftclaw',
+
+    // ── Caçador — evoluções da linha Miaumon (swiftclaw) ─────────────────────
+    // Gatunamon: ATK 10, DEF 6, SPD 12 — ratio 1.67; arquétipo preservado.
+    'MON_013B': 'swiftclaw',
+    // Felinomon: ATK 14, DEF 7, SPD 15 — ratio 2.0; striker_veloz se acentua.
+    'MON_013C': 'swiftclaw',
+    // Panterezamon: ATK 18, DEF 9, SPD 18 — ratio 2.0; forma mais pura do arquétipo.
+    'MON_013D': 'swiftclaw',
+
+    // ── Caçador — evoluções da linha Pulimbon (swiftclaw) ────────────────────
+    // Flecharelmon: ATK 10, DEF 5, SPD 14 — ratio 2.0; SPD cresce mais que ATK;
+    //   velocidade se torna mais pronunciada que no estágio base.
+    'MON_025B': 'swiftclaw',
+    // Relampejomon: ATK 12, DEF 6, SPD 17 — ratio 2.0; SPD claramente dominante;
+    //   forma mais veloz da linha — striker_veloz inequívoco.
+    'MON_025C': 'swiftclaw',
+
+    // ── Ladino — arquétipo oportunista_furtivo (shadowsting) — Fase 10 ──────
+    // Corvimon: ATK 7, DEF 4, SPD 10, ENE 6 — perfil ladino mais limpo do catálogo.
+    //   ENE/ATK = 0.86 (mais alto que swiftclaw 0.50) — sustenta loop debuff→execução.
+    //   Linha 3 estágios (Comum → Incomum → Raro): arquétipo consistente do início ao fim.
+    'MON_022': 'shadowsting',
+    // Noxcorvomon: ATK 10, DEF 5, SPD 12, ENE 8 — ENE/ATK 0.80; identidade preservada.
+    'MON_022B': 'shadowsting',
+    // Umbraquimonom: ATK 14, DEF 7, SPD 16, ENE 10 — forma madura; ainda skill-oriented.
+    'MON_022C': 'shadowsting',
+
     // ── Sem mapeamento — justificativas ─────────────────────────────────────
     // MON_100 (Rato-de-Lama, Guerreiro): ATK 5, DEF 3, HP 20 — stats fracos
     //   sem perfil defensivo claro; não se encaixa em tank_puro. Sem mapeamento.
     //
+    // MON_005 (Garruncho, Caçador Comum): sem linha evolutiva (estágio único);
+    //   sem dados de bootstrap para validar o arquétipo ao longo da linha completa.
+    //   Não mapeado por falta de linha canônica validável (princípio: Fase 9).
+    //
+    // MON_008 (Sombrio, Ladino Comum): sem linha evolutiva (estágio único);
+    //   mesma razão que Garruncho — sem linha completa para validar o arquétipo.
+    //   Não mapeado em Fase 10 por falta de linha canônica validável.
+    //
+    // MON_030/B/C (Furtilhon, Velurino, Sombrifur): DEF_base=3 em MON_030 gera
+    //   DEF_off=2 com shadowsting (def-1) — floor marginal e perigoso.
+    //   ENE/ATK = 0.75 (mais baixo que Corvimon 0.86) — perfil mais similar a
+    //   swiftclaw do que ao arquétipo oportunista_furtivo. Excluído da Fase 10.
+    //
     // Bardo (MON_001, MON_011/B/C/D, MON_027/B/C): sem espécie canônica de Bardo.
-    // Caçador (MON_005, MON_013/B/C/D, MON_025/B/C): sem espécie canônica de Caçador.
-    // Ladino (MON_008, MON_022/B/C, MON_030/B/C): sem espécie canônica de Ladino.
     // Animalista (MON_006, MON_012/B/C/D, MON_023/B/C): sem espécie canônica de Animalista.
 };
 
@@ -193,6 +238,8 @@ const CLASSES_WITH_CANON_SPECIES = new Set([
     'Bárbaro',     // emberfang (barbarian)
     'Mago',        // moonquill (mage)
     'Curandeiro',  // floracura (healer)
+    'Caçador',     // swiftclaw (hunter) — Fase 9
+    'Ladino',      // shadowsting (rogue) — Fase 10
 ]);
 
 // ---------------------------------------------------------------------------

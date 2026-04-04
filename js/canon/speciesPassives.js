@@ -13,6 +13,9 @@
  *  - Fase 4.3: contexto de on_skill_used enriquecido com skillType explícito.
  *    moonquill integrado ao lado wild (processEnemySkillAttack).
  *    floracura permanece assimétrica: wild não tem path de item de cura.
+ *  - Fase 10: shadowsting (Ladino) — on_attack (basic only), hasShadowstingCharge.
+ *    Bônus de execução após debuff aplicado; player-side apenas nesta fase.
+ *    State: encounter.passiveState.shadowstingDebuffCharged (set em executeWildSkill).
  *
  * O que este módulo NÃO faz (reservado para fases futuras):
  *  - Passivas em cadeia ou com múltiplos triggers por turno
@@ -32,6 +35,8 @@
  *
  *  'on_attack'       — instância está atacando
  *                      context.isOffensiveSkill: true = skill DAMAGE | false = ataque básico
+ *                      context.isFirstAttackOfCombat: true = primeiro ataque do combate (Fase 9)
+ *                      context.hasShadowstingCharge: true = debuff foi aplicado antes (Fase 10)
  *  'on_hit_received' — instância está recebendo um hit confirmado
  *                      context.isFirstHitThisTurn: true = primeiro hit da rodada (padrão)
  *  'on_heal_item'    — instância usou um item de cura (Fase 4.1)
@@ -67,6 +72,10 @@
  *  emberfang       | ✅     | ✅    | Atacante usa skill — ambos os lados suportam
  *  moonquill       | ✅     | ✅    | Wild usa skill debuff via processEnemySkillAttack
  *  floracura       | ✅     | ❌    | Wild não tem path de item de cura no pipeline atual
+ *  swiftclaw       | ✅     | ❌    | Wild-side adiado (Fase 9); monstros selvagens
+ *                  |        |       | raramente têm estado de "primeiro ataque" distinto
+ *  shadowsting     | ✅     | ❌    | Wild-side adiado (Fase 10); estado de debuff carregado
+ *                  |        |       | requer tracking de turno não disponível no wild pipeline
  *
  * ─────────────────────────────────────────────────────────────────────────────
  */
@@ -146,9 +155,31 @@ const PASSIVE_HANDLERS = {
     },
 
     /**
-     * moonquill (Mago, arquétipo controle_leve)
+     * swiftclaw (Caçador, arquétipo striker_veloz)
      *
-     * Passiva canônica: "Se aplicar debuff, ganha +1 AGI até o próximo turno."
+     * Passiva canônica: "No primeiro ataque do combate, recebe +1 bônus de ataque."
+     *
+     * Implementação Fase 9:
+     *   No evento 'on_attack', retorna { atkBonus: 1 } apenas se o contexto
+     *   indicar que é o primeiro ataque do combate (isFirstAttackOfCombat === true).
+     *   O caller (wildActions.js) rastreia encounter.passiveState.swiftclawFirstStrikeDone
+     *   e passa isFirstAttackOfCombat no contexto. Após o modifier ser aplicado,
+     *   o caller marca swiftclawFirstStrikeDone = true para impedir novas ativações.
+     *
+     * Simetria: player-side apenas (Fase 9). Wild-side pode ser adicionado em fase futura
+     *   caso seja necessário (sem impacto no design atual, pois monstros selvagens
+     *   raramente mantêm estado de "primeiro ataque do combate" de forma distinta).
+     */
+    swiftclaw: (_instance, context) => {
+        // _instance não é necessário: o bônus não depende de stats da instância,
+        // apenas do estado de combate (isFirstAttackOfCombat) passado no contexto.
+        if (context.event !== 'on_attack') return null;
+        if (!context.isFirstAttackOfCombat) return null;
+        return { atkBonus: 1 };
+    },
+
+    /**
+     * moonquill (Mago, arquétipo controle_leve)
      *
      * Implementação Fase 4.1:
      *   No evento 'on_skill_used', retorna { spdBuff: { power: 1, duration: 1 } }
@@ -163,11 +194,39 @@ const PASSIVE_HANDLERS = {
         if (!context.isDebuff) return null;
         return { spdBuff: { power: 1, duration: 1 } };
     },
+    /**
+     * shadowsting (Ladino, arquétipo oportunista_furtivo) — Fase 10
+     *
+     * Passiva canônica: "Após aplicar debuff ao inimigo, o próximo ataque
+     * básico recebe +1 bônus de ataque."
+     *
+     * Diferenciação de swiftclaw:
+     *   swiftclaw: bônus one-time no PRIMEIRO ataque do combate (abertura direta).
+     *   shadowsting: bônus CONDICIONAL no ataque básico seguinte ao debuff aplicado.
+     *     Requer setup (usar skill debuff) — cria loop tático: debuff → execução.
+     *     Recarregável: pode ativar múltiplas vezes por combate (uma vez por debuff).
+     *     NÃO dispara em skill ofensiva — apenas em ataque básico (execução).
+     *
+     * Implementação Fase 10:
+     *   No evento 'on_attack' com isOffensiveSkill === false (ataque básico),
+     *   retorna { atkBonus: 1 } apenas se context.hasShadowstingCharge === true.
+     *   O caller (wildActions.js) rastreia encounter.passiveState.shadowstingDebuffCharged:
+     *     - SET em executeWildSkill quando isDebuff === true e a skill é do player shadowsting.
+     *     - CONSUMIDO (reset para false) após o atkBonus ser aplicado no ataque básico.
+     *   Nota: isOffensiveSkill: false é o sinal de ataque básico — garante que o bônus
+     *   é de "execução" e não amplifica ainda mais uma skill ofensiva do shadowsting.
+     *
+     * Simetria: player-side apenas (Fase 10). Wild-side não implementado: o pipeline
+     *   wild não rastreia "qual skill foi usada no turno anterior" de forma distinta.
+     */
+    shadowsting: (_instance, context) => {
+        if (context.event !== 'on_attack') return null;
+        // Apenas ataque básico (não skill) — identidade de "execução após setup"
+        if (context.isOffensiveSkill) return null;
+        if (!context.hasShadowstingCharge) return null;
+        return { atkBonus: 1 };
+    },
 };
-
-// ---------------------------------------------------------------------------
-// API pública
-// ---------------------------------------------------------------------------
 
 /**
  * Resolve o modificador de passiva para uma instância numa situação específica.
@@ -181,11 +240,13 @@ const PASSIVE_HANDLERS = {
  * @param {{
  *   event: string,
  *   hpPct?: number,
- *   isOffensiveSkill?: boolean,   // Fase 4.2: true = DAMAGE skill, false = basic attack
- *   isFirstHitThisTurn?: boolean, // Fase 4.2: undefined/true = primeiro hit do turno
- *   isFirstHeal?: boolean,        // Fase 4.1: true = primeira cura do combate
- *   skillType?: string,           // Fase 4.3: tipo da skill ('DAMAGE'|'BUFF'|'HEAL'|...)
- *   isDebuff?: boolean,           // Fase 4.1: true = skill debuff (BUFF+enemy+power<0)
+ *   isOffensiveSkill?: boolean,      // Fase 4.2: true = DAMAGE skill, false = basic attack
+ *   isFirstHitThisTurn?: boolean,    // Fase 4.2: undefined/true = primeiro hit do turno
+ *   isFirstHeal?: boolean,           // Fase 4.1: true = primeira cura do combate
+ *   skillType?: string,              // Fase 4.3: tipo da skill ('DAMAGE'|'BUFF'|'HEAL'|...)
+ *   isDebuff?: boolean,              // Fase 4.1: true = skill debuff (BUFF+enemy+power<0)
+ *   isFirstAttackOfCombat?: boolean, // Fase 9: true = primeiro ataque do combate (swiftclaw)
+ *   hasShadowstingCharge?: boolean,  // Fase 10: true = debuff aplicado, bônus disponível (shadowsting)
  * }} context
  * @returns {{ atkBonus?: number, damageReduction?: number, healBonus?: number, spdBuff?: { power: number, duration: number } }|null}
  */

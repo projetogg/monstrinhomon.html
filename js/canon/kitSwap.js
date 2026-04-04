@@ -51,6 +51,8 @@
  *   - emberfang  (Bárbaro):    slot 4 — requer nível 30
  *   - moonquill  (Mago):       slot 4 — requer nível 30
  *   - floracura  (Curandeiro): slot 4 — requer nível 30
+ *   - swiftclaw  (Caçador):    slot 1 — sempre desbloqueado (Fase 9)
+ *   - shadowsting (Ladino):   slot 4 — requer nível 30 (Fase 10)
  *
  * ── REGRAS DO SWAP ────────────────────────────────────────────────────────────
  *
@@ -95,11 +97,13 @@
 //   canonSkillId: ID canônico da skill que seria substituída (auditabilidade)
 //   replacement:  objeto de skill runtime (mesma estrutura do SKILL_DEFS)
 //
-// ESPÉCIES IMPLEMENTADAS (Fase 6):
+// ESPÉCIES IMPLEMENTADAS (Fase 6 → Fase 10):
 //   shieldhorn — Guerreiro / tank_puro      → slot 1 (sempre disponível)
 //   emberfang  — Bárbaro  / burst_agressivo → slot 4 (nível 30)
 //   moonquill  — Mago     / controle_leve   → slot 4 (nível 30)
 //   floracura  — Curandeiro / cura_estavel  → slot 4 (nível 30)
+//   swiftclaw  — Caçador  / striker_veloz   → slot 1 (sempre disponível) — Fase 9
+//   shadowsting — Ladino  / oportunista_furtivo → slot 4 (nível 30) — Fase 10
 //
 // AUDITORIA FASE 6.1 — valores verificados contra SKILL_DEFS e fórmulas do runtime:
 //
@@ -220,6 +224,72 @@ const KIT_SWAP_TABLE = {
             power: 10,
             target: 'ally',
             desc: 'Cura de área fraca mas eficiente em ENE. Bom para suporte prolongado.',
+        },
+    },
+
+    /**
+     * swiftclaw (Caçador, arquétipo striker_veloz) — Fase 9
+     *
+     * Conceito: "Flecha rápida com menor custo e maior pressão de abertura"
+     * Slot alvo: 1 (hunter_basic_shot, nível 1 — sempre desbloqueado)
+     * Efeito: Flecha Certeira I substitui o ataque básico do Caçador.
+     *   Menor custo de ENE (3 vs 4) e menor poder absoluto (15 vs 19),
+     *   mas mais eficiente por ENE (5.0 vs 4.75 pwr/ENE) —
+     *   reflete o arquétipo striker_veloz que prioriza ataques frequentes
+     *   e pressão sustentada sobre burst de um único hit.
+     *
+     * AUDITORIA (Fase 9):
+     *   Flecha Poderosa I (ref slot 1 Caçador): cost 4, power 19 → 4.75 pwr/ENE
+     *   Flecha Certeira I (swap):               cost 3, power 15 → 5.00 pwr/ENE (+5.3%)
+     *   Poder absoluto menor (15 vs 19, −21%); eficiência levemente acima — coerente. ✅
+     *   Slot 1 = REPLACE (substitui a skill existente no slot 1).
+     */
+    swiftclaw: {
+        targetSlot: 1,
+        canonSkillId: 'hunter_basic_shot',
+        replacement: {
+            _kitSwapId: 'swiftclaw_precise_shot',
+            name: 'Flecha Certeira I',
+            type: 'DAMAGE',
+            cost: 3,
+            power: 15,
+            desc: 'Flecha rápida e precisa. Menor custo, pressão de abertura sustentada.',
+        },
+    },
+
+    /**
+     * shadowsting (Ladino, arquétipo oportunista_furtivo) — Fase 10
+     *
+     * Conceito: "Golpe de execução após setup de debuff"
+     * Slot alvo: 4 (rogue_ambush, nível 30 — desbloqueio tardio)
+     * Efeito: Golpe Furtivo I é a assinatura de execução — disponível quando o
+     *   shadowsting maturou e pode explorar o loop debuff→execução de forma plena.
+     *
+     * DIFERENCIAÇÃO DE SWIFTCLAW:
+     *   swiftclaw usa slot 1 (sempre disponível) — identidade de abertura rápida.
+     *   shadowsting usa slot 4 (requer L30) — identidade de oportunismo tardio.
+     *   swiftclaw: DAMAGE puro de alta eficiência (5.00 pwr/ENE, cadência alta).
+     *   shadowsting: DAMAGE de execução (4.40 pwr/ENE) — sinérgico com passiva que
+     *     ativa ANTES (debuff → ataque básico com carga), não com o swap em si.
+     *     O swap é o encerramento da jogada, não o gatilho.
+     *
+     * AUDITORIA:
+     *   Ataque Preciso I (Ladino, ref tier 1): cost 4, pwr 19 → 4.75 pwr/ENE
+     *   Ataque Preciso II (Ladino, ref tier 2): cost 6, pwr 24 → 4.00 pwr/ENE
+     *   Golpe Furtivo I (swap):                 cost 5, pwr 22 → 4.40 pwr/ENE
+     *   Dentro da faixa tier 1-2 (4.00–4.75). Poder absoluto (22) abaixo do teto
+     *   Ataque Preciso III (30). Custo intermediário (5) sinaliza o caráter tático. ✅
+     */
+    shadowsting: {
+        targetSlot: 4,
+        canonSkillId: 'rogue_ambush',
+        replacement: {
+            _kitSwapId: 'shadowsting_ambush_strike',
+            name: 'Golpe Furtivo I',
+            type: 'DAMAGE',
+            cost: 5,
+            power: 22,
+            desc: 'Golpe furtivo de execução. Devastador após debuff preparado.',
         },
     },
 };
@@ -472,6 +542,64 @@ const KIT_SWAP_PROMOTION_TABLE = {
             power: 14,
             target: 'ally',
             desc: 'Cura eficiente aprimorada. Sustain superior ainda abaixo do teto de Cura III.',
+        },
+    },
+
+    /**
+     * swiftclaw (Caçador, striker_veloz) — slot 1 — promoção no nível 20 — Fase 9
+     * Flecha Certeira I → Flecha Certeira II
+     * Nível 20 é pré-slot-4 (L30): dá progressão intermediária ao striker veloz.
+     * Eficiência mantida (5.0 pwr/ENE); poder absoluto aumenta sem superar tier 3.
+     *
+     * AUDITORIA:
+     *   Flecha Poderosa II (ref tier 2): cost 6, power 24 → 4.00 pwr/ENE
+     *   Flecha Certeira II (promoted):   cost 4, power 20 → 5.00 pwr/ENE (+25% eficiência)
+     *   Poder absoluto menor (20 vs 24, −17%); eficiência superior — coerente com speedster. ✅
+     *   Flecha Poderosa III (teto tier 3): cost 8, power 30 → 3.75 pwr/ENE (abaixo do swap). ✅
+     */
+    swiftclaw_precise_shot: {
+        canonSpeciesId: 'swiftclaw',
+        targetSlot: 1,
+        minLevel: 20,
+        promotedSwapId: 'swiftclaw_precise_shot_ii',
+        promoted: {
+            _kitSwapId: 'swiftclaw_precise_shot_ii',
+            name: 'Flecha Certeira II',
+            type: 'DAMAGE',
+            cost: 4,
+            power: 20,
+            desc: 'Flecha certeira aprimorada. Velocidade e precisão elevadas ao máximo do arquétipo.',
+        },
+    },
+
+    /**
+     * shadowsting (Ladino, oportunista_furtivo) — slot 4 — promoção no nível 50 — Fase 10
+     * Golpe Furtivo I → Golpe Furtivo II
+     * Slot 4 desbloqueado em L30; promoção em L50 recompensa progressão alta.
+     *
+     * AUDITORIA:
+     *   Golpe Furtivo I (versão I):  cost 5, pwr 22 → 4.40 pwr/ENE
+     *   Golpe Furtivo II (promoted): cost 6, pwr 28 → 4.67 pwr/ENE (+6.1%)
+     *   Ataque Preciso I (teto tier 1): cost 4, pwr 19 → 4.75 pwr/ENE
+     *   Ataque Preciso III (teto abs): cost 8, pwr 30 → 3.75 pwr/ENE
+     *   Promovido fica dentro da faixa tier 1-2 (4.00–4.75). Poder absoluto (28)
+     *   abaixo do teto Ataque Preciso III (30). Diferenciação de swiftclaw: ✅
+     *     swiftclaw_ii: cost 4, pwr 20 → 5.00 pwr/ENE (cadência alta, burst menor)
+     *     shadowsting_ii: cost 6, pwr 28 → 4.67 pwr/ENE (burst maior, custo maior)
+     *   Os dois promovidos têm filosofia oposta mesmo sendo ambos DAMAGE. ✅
+     */
+    shadowsting_ambush_strike: {
+        canonSpeciesId: 'shadowsting',
+        targetSlot: 4,
+        minLevel: 50,
+        promotedSwapId: 'shadowsting_ambush_strike_ii',
+        promoted: {
+            _kitSwapId: 'shadowsting_ambush_strike_ii',
+            name: 'Golpe Furtivo II',
+            type: 'DAMAGE',
+            cost: 6,
+            power: 28,
+            desc: 'Golpe furtivo aprimorado. Execução maximizada após setup de debuff.',
         },
     },
 };
