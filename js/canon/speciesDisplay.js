@@ -347,6 +347,42 @@ export function getTeamReadinessIndicator(mon) {
 }
 
 /**
+ * Fase 18 — Verifica se o monstrinho está pronto para receber o kit_swap
+ * mas ainda não o recebeu.
+ *
+ * Retorna true quando:
+ *  - o monstrinho tem espécie canônica com kit_swap;
+ *  - o nível de desbloqueio do kit_swap é > 1 (espécies com unlockLevel=1 recebem
+ *    o swap automaticamente na criação, então nunca entram neste estado);
+ *  - o nível atual atingiu ou superou o kitSwapUnlockLevel;
+ *  - e o kit_swap ainda não foi aplicado nem promovido.
+ *
+ * Função pura — não modifica a instância, não acessa o DOM.
+ *
+ * @param {object|null|undefined} mon - Instância do monstrinho.
+ * @returns {boolean}
+ */
+export function isReadyForKitSwap(mon) {
+    const speciesId = mon?.canonSpeciesId ?? null;
+    const data = speciesId ? (SPECIES_DISPLAY[speciesId] ?? null) : null;
+
+    if (!data) return false;
+
+    // Espécies com unlockLevel=1 são sempre aplicadas na criação
+    const unlockLevel = data.kitSwapUnlockLevel ?? 1;
+    if (unlockLevel <= 1) return false;
+
+    const level = Math.max(1, Number(mon?.level) || 1);
+    if (level < unlockLevel) return false;
+
+    // Verificar se o kit_swap ainda não foi aplicado nem promovido
+    const hasAppliedKitSwap = Array.isArray(mon.appliedKitSwaps) && mon.appliedKitSwaps.length > 0;
+    const isPromoted = Array.isArray(mon.promotedKitSwaps) && mon.promotedKitSwaps.length > 0;
+
+    return !hasAppliedKitSwap && !isPromoted;
+}
+
+/**
  * Retorna o objeto SPECIES_DISPLAY completo.
  * Útil para testes e validações de integridade de dados.
  *

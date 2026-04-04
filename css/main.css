@@ -1394,6 +1394,27 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     border: 1px solid rgba(255, 193, 7, 0.25);
 }
 
+/* ── Fase 18 — CTA de aplicação de habilidade especial (kit_swap pendente) ── */
+
+.kit-apply-cta {
+    display: inline-block;
+    background: rgba(255, 213, 79, 0.15);
+    color: #ffd54f;
+    border: 1px solid rgba(255, 213, 79, 0.40);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 0.72em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    white-space: nowrap;
+}
+
+.kit-apply-cta:hover {
+    background: rgba(255, 213, 79, 0.28);
+    border-color: rgba(255, 213, 79, 0.65);
+}
+
 /* ============================================================================
    REFACTOR PR1: Static styles extracted from inline
    ============================================================================ */
