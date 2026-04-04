@@ -8934,13 +8934,14 @@
                     progress.nodeFlags,
                     progress.completedQuestIds
                 );
-                const state = window.OverworldMap.getNodeVisualState(node, {
+                const nodeWithUnlocked = { ...node, _unlocked: unlocked };
+                const state = window.OverworldMap.getNodeVisualState(nodeWithUnlocked, {
                     visitedLocations:   progress.visitedLocations,
                     completedLocations: progress.completedLocations,
                     nodeFlags:          progress.nodeFlags,
                     currentNodeId:      progress.currentNodeId
                 });
-                return { ...node, _unlocked: unlocked, _state: state };
+                return { ...nodeWithUnlocked, _state: state };
             });
 
             container.innerHTML = window.OverworldMap.buildMapSVG(enriched);
