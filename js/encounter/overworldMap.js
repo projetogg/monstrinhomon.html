@@ -12,34 +12,36 @@
  *   buildMapSVG(enrichedNodes) → string HTML do SVG completo
  */
 
-// ── Posições dos nós no SVG (viewBox "0 0 880 510") ───────────────────────────
+// ── Posições dos nós no SVG (viewBox "0 0 880 530") ───────────────────────────
+// Distribuição ajustada para NODE_R=32: fileira superior elevada, inferior baixada,
+// pares problemáticos separados para evitar sobreposição com raio maior.
 export const NODE_POSITIONS = {
     'CITY_001':           { x: 85,  y: 270 },
-    'LOC_001':            { x: 195, y: 400 },
-    'LOC_001B':           { x: 300, y: 320 },
+    'LOC_001':            { x: 195, y: 408 },
+    'LOC_001B':           { x: 300, y: 322 },
     'LOC_002':            { x: 400, y: 240 },
-    'LOC_002B':           { x: 495, y: 185 },
-    'LOC_002C':           { x: 590, y: 148 },
-    'LOC_003':            { x: 340, y: 420 },
-    'LOC_003B':           { x: 420, y: 465 },
-    'LOC_003C':           { x: 515, y: 445 },
+    'LOC_002B':           { x: 495, y: 182 },
+    'LOC_002C':           { x: 590, y: 140 },
+    'LOC_003':            { x: 340, y: 422 },
+    'LOC_003B':           { x: 420, y: 468 },
+    'LOC_003C':           { x: 512, y: 428 },   // subiu de 445 → evita colisão com BOSS_RUINS
     'LOC_004':            { x: 565, y: 245 },
-    'LOC_004B':           { x: 648, y: 298 },
-    'LOC_005':            { x: 455, y: 148 },
-    'LOC_005B':           { x: 540, y: 92 },
-    'LOC_005C':           { x: 620, y: 65 },
-    'BOSS_CAVES_OPT_01':  { x: 705, y: 65 },
-    'LOC_010':            { x: 790, y: 65 },
-    'LOC_006':            { x: 608, y: 452 },
-    'LOC_006B':           { x: 695, y: 420 },
-    'LOC_007':            { x: 668, y: 185 },
+    'LOC_004B':           { x: 648, y: 300 },
+    'LOC_005':            { x: 455, y: 140 },
+    'LOC_005B':           { x: 540, y: 78 },    // subiu de 92
+    'LOC_005C':           { x: 622, y: 52 },    // subiu de 65
+    'BOSS_CAVES_OPT_01':  { x: 706, y: 52 },   // subiu de 65
+    'LOC_010':            { x: 792, y: 52 },    // subiu de 65
+    'LOC_006':            { x: 608, y: 456 },
+    'LOC_006B':           { x: 696, y: 422 },
+    'LOC_007':            { x: 668, y: 182 },
     'LOC_007B':           { x: 748, y: 237 },
-    'LOC_008':            { x: 768, y: 358 },
+    'LOC_008':            { x: 768, y: 360 },
     'LOC_008B':           { x: 848, y: 310 },
-    'BOSS_FOREST_01':     { x: 840, y: 420 },
-    'LOC_009':            { x: 840, y: 480 },
-    'BOSS_RUINS_SIDE_01': { x: 492, y: 495 },
-    'LOC_011':            { x: 572, y: 495 },
+    'BOSS_FOREST_01':     { x: 840, y: 414 },   // subiu de 420 → cria espaço para LOC_009
+    'LOC_009':            { x: 828, y: 494 },   // desceu e deslocou → evita colisão com BOSS_FOREST_01
+    'BOSS_RUINS_SIDE_01': { x: 492, y: 498 },
+    'LOC_011':            { x: 574, y: 498 },
 };
 
 // ── Cor de preenchimento base por bioma ───────────────────────────────────────
@@ -68,17 +70,17 @@ export const BIOME_EMOJI = {
     cidade:    '🏙️',
 };
 
-// Raio base do nó
-const NODE_R = 28;
+// Raio base do nó — aumentado para os nós dominarem melhor o palco visual
+const NODE_R = 32;
 
 // Hierarquia visual dos labels: opacidade e tamanho por estado
 const LABEL_STYLES = {
-    current:         { opacity: '1',    fontSize: '10' },
-    boss:            { opacity: '0.92', fontSize: '9'  },
-    'boss-defeated': { opacity: '0.75', fontSize: '9'  },
-    available:       { opacity: '0.55', fontSize: '8'  },
-    visited:         { opacity: '0.30', fontSize: '7'  },
-    locked:          { opacity: '0.15', fontSize: '7'  },
+    current:         { opacity: '1',    fontSize: '11' },
+    boss:            { opacity: '0.92', fontSize: '10' },
+    'boss-defeated': { opacity: '0.75', fontSize: '10' },
+    available:       { opacity: '0.55', fontSize: '9'  },
+    visited:         { opacity: '0.30', fontSize: '8'  },
+    locked:          { opacity: '0.15', fontSize: '8'  },
 };
 
 // ── Dimensões do SVG ──────────────────────────────────────────────────────────
@@ -216,9 +218,9 @@ export function buildMapSVG(enrichedNodes) {
             <circle cx="${pos.x}" cy="${pos.y}" r="${NODE_R}"
                     fill="${fill}" stroke="${strokeColor}" stroke-width="${strokeWidth}"
                     class="ow-node__circle"/>
-            <text x="${pos.x}" y="${pos.y - 4}" text-anchor="middle"
-                  font-size="15" class="ow-node__emoji">${emoji}</text>
-            <text x="${pos.x}" y="${pos.y + 13}" text-anchor="middle"
+            <text x="${pos.x}" y="${pos.y - 5}" text-anchor="middle"
+                  font-size="16" class="ow-node__emoji">${emoji}</text>
+            <text x="${pos.x}" y="${pos.y + 15}" text-anchor="middle"
                   font-size="${labelSize}" class="ow-node__label"
                   fill="${locked ? '#444' : '#ddd'}" opacity="${labelOpacity}">${shortLbl}</text>
             ${defeatedBadge}
