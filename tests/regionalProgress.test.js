@@ -523,9 +523,9 @@ describe('getRegionStatus — status visual da região (PR-11)', () => {
     });
 
     it('deve retornar "active" se predecessor concluído mas boss ainda bloqueado', () => {
-        // LOC_009 (successor) concluído mas não dispara unlockRule (que precisa LOC_008)
         // Usamos um nó boss com conexão LOC_005 (predecessor) onde LOC_005 está concluído
-        // mas a unlock rule é outra localidade
+        // mas a unlock rule exige LOC_999 (nunca concluída), portanto boss ainda está bloqueado.
+        // Predecessor concluído → progresso concreto na região → 'active'
         const bossNodeAlt = {
             nodeId: 'BOSS_ALT',
             type: 'boss',

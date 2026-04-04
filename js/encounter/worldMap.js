@@ -368,7 +368,10 @@ export function deriveRegionLabel(regionId) {
  *
  * @param {Object}      bossNode          - Nó boss do worldMap
  * @param {boolean}     completed         - Se a região já foi concluída
- * @param {boolean}     bossDefeated      - Se o boss foi derrotado (não usado diretamente — lógica via completed)
+ * @param {boolean}     bossDefeated      - Mantido por retrocompatibilidade da assinatura pública;
+ *                                        a lógica usa `completed` (derivado de regionalProgress)
+ *                                        em vez de `bossDefeated` diretamente, pois um boss pode
+ *                                        ser derrotado sem marcar a região como concluída.
  * @param {Set<string>} visitedLocations  - Locais visitados
  * @param {Set<string>} completedLocations - Locais concluídos
  * @param {Object}      nodeFlags         - Flags por nó
@@ -460,6 +463,12 @@ export function markRegionComplete(bossMeta, bossNodeId, regionalProgress = {}, 
     };
 }
 
+// Bases de prioridade por tipo de região (maior = mais prioritário no painel)
+const PRIORITY_BASE_MAIN     = 1000;
+const PRIORITY_BASE_OPTIONAL = 500;
+const PRIORITY_BASE_OTHER    = 100;
+const PRIORITY_QUEST_BONUS   = 300; // bônus quando há quest ativa na região
+
 /**
  * Calcula o score de prioridade de uma região para ordenação e seleção de "atual".
  *
@@ -474,7 +483,9 @@ export function markRegionComplete(bossMeta, bossNodeId, regionalProgress = {}, 
  * @returns {number}
  */
 function _computePriorityScore(regionType, status, hasActiveQuest) {
-    const typeBase = regionType === 'main' ? 1000 : (regionType === 'optional' ? 500 : 100);
+    const typeBase =
+        regionType === 'main'     ? PRIORITY_BASE_MAIN     :
+        regionType === 'optional' ? PRIORITY_BASE_OPTIONAL : PRIORITY_BASE_OTHER;
     const statusBonus = {
         boss_available: 400,
         active:         300,
@@ -482,7 +493,7 @@ function _computePriorityScore(regionType, status, hasActiveQuest) {
         locked:         50,
         completed:      -2000 // regiões concluídas ficam no final
     }[status] ?? 0;
-    const questBonus = hasActiveQuest ? 300 : 0;
+    const questBonus = hasActiveQuest ? PRIORITY_QUEST_BONUS : 0;
     return typeBase + statusBonus + questBonus;
 }
 
