@@ -18,20 +18,22 @@
     display: flex;
     align-items: center;
     gap: 20px;
-    padding: 14px 20px 13px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
-    border-bottom: 1px solid rgba(255,255,255,0.07);
+    padding: 16px 24px 15px;
+    background: linear-gradient(180deg, #1c2136 0%, #141820 100%);
+    border-bottom: 2px solid rgba(32,221,204,0.12);
     flex-wrap: nowrap;
 }
 
 .ow-header h3 {
     margin: 0;
-    font-size: 18px;
-    font-weight: 800;
-    color: #f4f4f4;
-    letter-spacing: 0.4px;
+    font-size: 20px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 0.6px;
     white-space: nowrap;
     flex-shrink: 0;
+    border-left: 3px solid #20ddcc;
+    padding-left: 12px;
 }
 
 /* Stats inline — sem caixa, mais leve */
@@ -50,8 +52,8 @@
 .ow-header-stat {
     display: flex;
     align-items: baseline;
-    gap: 5px;
-    padding: 0 14px;
+    gap: 6px;
+    padding: 0 18px;
     border-right: 1px solid rgba(255,255,255,0.08);
 }
 
@@ -62,22 +64,22 @@
 .ow-header-stat__label {
     font-size: 9px;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    opacity: 0.38;
+    letter-spacing: 1.2px;
+    opacity: 0.42;
     color: #fff;
     white-space: nowrap;
 }
 
 .ow-header-stat__value {
-    font-size: 13px;
-    font-weight: 700;
-    color: #e0e0e0;
+    font-size: 14px;
+    font-weight: 800;
+    color: #ffffff;
 }
 
 /* ── Layout mapa + sidebar ───────────────────────────────────────────────── */
 .ow-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 440px);
     gap: 0;
     align-items: stretch;
 }
@@ -88,9 +90,9 @@
     border-right: 1px solid rgba(255,255,255,0.06);
     overflow: hidden;
     min-width: 0;
-    aspect-ratio: 88 / 53; /* coincide com viewBox 880 × 530 */
-    max-height: 600px;
-    min-height: 300px;
+    aspect-ratio: 88 / 55;  /* mais alto que 88/53 (55 > 53 = mais altura por px de largura) */
+    max-height: 680px;
+    min-height: 360px;
 }
 
 .ow-svg {
@@ -122,8 +124,8 @@
     display: flex;
     align-items: flex-start;
     gap: 14px;
-    padding: 18px 18px 14px;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
 }
 
 .ow-sidebar__emoji {
@@ -139,10 +141,10 @@
 }
 
 .ow-sidebar__name {
-    font-size: 16px;
-    font-weight: 700;
+    font-size: 18px;
+    font-weight: 800;
     color: #f2f2f2;
-    margin: 0 0 7px;
+    margin: 0 0 8px;
     line-height: 1.25;
     word-break: break-word;
 }
@@ -181,7 +183,7 @@
 
 /* Corpo do sidebar — rolável */
 .ow-sidebar__body {
-    padding: 14px 18px;
+    padding: 16px 20px;
     flex: 1;
     overflow-y: auto;
     min-height: 0;
@@ -227,31 +229,31 @@
     margin: 0;
 }
 
-/* Seção "O que fazer aqui" — divisor discreto */
+/* Seção "O que fazer aqui" — divisor com mais presença */
 .ow-sidebar__section-title {
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: rgba(255,255,255,0.22);
-    margin: 0 0 10px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.35);
+    margin: 0 0 12px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
 }
 
-/* ── Spots — menu de jogo, não dashboard ─────────────────────────────────── */
+/* ── Spots — menu de ações do local, não dashboard ───────────────────────── */
 .ow-spot {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 4px;
+    gap: 14px;
+    padding: 13px 6px;
     background: transparent;
     border: none;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
     cursor: pointer;
     transition: background 0.15s, border-radius 0.15s, padding-left 0.15s;
     text-decoration: none;
-    border-radius: 6px;
+    border-radius: 8px;
     width: 100%;
     box-sizing: border-box;
 }
@@ -261,29 +263,38 @@
 }
 
 .ow-spot:hover {
-    background: rgba(255,255,255,0.05);
-    padding-left: 8px;
+    background: rgba(255,255,255,0.06);
+    padding-left: 10px;
     border-bottom-color: transparent;
 }
 
-.ow-spot:active { background: rgba(255,255,255,0.09); }
+.ow-spot:active { background: rgba(255,255,255,0.10); }
 
-.ow-spot--service:hover { background: rgba(80,130,255,0.08); }
+.ow-spot--service:hover { background: rgba(80,130,255,0.09); }
 
 .ow-spot__icon {
     font-size: 20px;
     flex-shrink: 0;
-    width: 30px;
-    text-align: center;
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.06);
+    border-radius: 10px;
     line-height: 1;
+}
+
+.ow-spot--service .ow-spot__icon {
+    background: rgba(80,130,255,0.10);
 }
 
 .ow-spot__info { flex: 1; min-width: 0; }
 
 .ow-spot__name {
-    font-size: 13px;
-    font-weight: 600;
-    color: #dcdcdc;
+    font-size: 14px;
+    font-weight: 700;
+    color: #e0e0e0;
     margin: 0 0 3px;
     white-space: nowrap;
     overflow: hidden;
@@ -291,8 +302,8 @@
 }
 
 .ow-spot__desc {
-    font-size: 11px;
-    color: rgba(255,255,255,0.36);
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.42);
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
@@ -300,16 +311,16 @@
 }
 
 .ow-spot__arrow {
-    font-size: 16px;
-    color: rgba(255,255,255,0.2);
+    font-size: 18px;
+    color: rgba(255,255,255,0.25);
     flex-shrink: 0;
     font-weight: 300;
     transition: color 0.15s, transform 0.15s;
 }
 
 .ow-spot:hover .ow-spot__arrow {
-    color: rgba(255,255,255,0.5);
-    transform: translateX(2px);
+    color: rgba(255,255,255,0.55);
+    transform: translateX(3px);
 }
 
 /* ── Boss sidebar ────────────────────────────────────────────────────────── */
@@ -362,8 +373,8 @@
 
 /* ── Botão de viagem e indicador de posição ──────────────────────────────── */
 .ow-sidebar__footer {
-    padding: 12px 18px 18px;
-    border-top: 1px solid rgba(255,255,255,0.05);
+    padding: 14px 20px 20px;
+    border-top: 1px solid rgba(255,255,255,0.06);
     flex-shrink: 0;
 }
 
@@ -466,22 +477,22 @@
 .ow-legend-dot--boss     { background: #6a4c10; border: 2px solid rgba(255,221,68,0.65); }
 
 /* ── Responsividade ──────────────────────────────────────────────────────── */
-@media (max-width: 760px) {
+@media (max-width: 860px) {
     .ow-layout {
         grid-template-columns: 1fr;
     }
 
     .ow-map-wrap {
         aspect-ratio: auto;
-        min-height: 240px;
-        max-height: 320px;
+        min-height: 260px;
+        max-height: 360px;
         border-right: none;
         border-bottom: 1px solid rgba(255,255,255,0.06);
     }
 
     .ow-sidebar-wrap {
-        min-height: 280px;
-        max-height: 420px;
+        min-height: 300px;
+        max-height: 440px;
     }
 
     .ow-header {
@@ -490,11 +501,15 @@
         padding: 12px 16px;
     }
 
+    .ow-header h3 {
+        font-size: 17px;
+    }
+
     .ow-header-stats {
         width: 100%;
     }
 
     .ow-header-stat {
-        padding: 0 10px;
+        padding: 0 12px;
     }
 }
