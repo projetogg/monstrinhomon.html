@@ -8837,9 +8837,13 @@
         const _wm = {
             selectedLocationId: null,
             selectedSpotId: null,
-            locationsData: null,    // cache do JSON carregado
-            worldMapNodes: null     // cache do worldMap.json
+            selectedNodeId: null,       // nó inspecionado no mapa (não é posição da party)
+            locationsData: null,        // cache do JSON carregado
+            worldMapNodes: null         // cache do worldMap.json
         };
+
+        /** Nó inicial da party em jogo novo. */
+        const OW_INITIAL_NODE = 'CITY_001';
 
         /** Carrega os dados de localização e do mapa (com cache). */
         async function _wmLoadData() {
@@ -8885,7 +8889,7 @@
             // Inicializar posição da party se ainda não definida
             if (!GameState.data) GameState.data = {};
             if (!GameState.data.currentNodeId) {
-                GameState.data.currentNodeId = 'CITY_001';
+                GameState.data.currentNodeId = OW_INITIAL_NODE;
                 saveToLocalStorage();
             }
 
