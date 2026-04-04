@@ -3029,7 +3029,40 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     cursor: pointer;
 }
 
-/* Sublabel de motivo do bloqueio (PR-06) */
+/* Contexto de região/arco do boss (PR-10) */
+.wm-boss-panel__region {
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    letter-spacing: 0.3px;
+}
+
+/* Flavor text do boss (PR-10) */
+.wm-boss-panel__flavor {
+    font-size: 12px;
+    color: #777;
+    font-style: italic;
+    max-width: 400px;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Banner de região concluída (PR-10) */
+.wm-boss-panel__region-complete {
+    background: #e8f5e9;
+    border: 1.5px solid #66bb6a;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #2e7d32;
+    width: 100%;
+    max-width: 380px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+
 .wm-node__lock-reason {
     display: block;
     font-size: 9px;

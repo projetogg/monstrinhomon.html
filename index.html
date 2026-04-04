@@ -232,10 +232,16 @@
                 </div>
                 <div class="wm-boss-panel">
                     <div class="wm-boss-panel__icon" id="bossNodeIcon">👑</div>
+                    <!-- Contexto de região/arco (PR-10) -->
+                    <div id="bossNodeRegionContext" class="wm-boss-panel__region is-hidden"></div>
                     <p class="wm-boss-panel__desc" id="bossNodeDesc"></p>
+                    <!-- Flavor text do boss (PR-10) -->
+                    <p class="wm-boss-panel__flavor is-hidden" id="bossNodeFlavor"></p>
                     <div id="bossNodeDefeatedBanner" class="wm-boss-panel__defeated is-hidden">
                         ✅ Área conquistada! O caminho adiante foi aberto.
                     </div>
+                    <!-- Banner de região concluída (PR-10) -->
+                    <div id="bossNodeRegionComplete" class="wm-boss-panel__region-complete is-hidden"></div>
                     <!-- Quest hint para boss node (PR-07/09) -->
                     <div id="bossNodeQuestHint" class="location-quest-hint is-hidden" aria-live="polite"></div>
                     <div class="wm-boss-panel__actions" id="bossNodeActions">
@@ -4140,7 +4146,7 @@
          * WRAPPER FUTURO: Combat.Group.Actions.initializeGroupEncounter()
          * Inicializa encounter de grupo/boss
          */
-        function startGroupEncounter(selectedPlayerIds, encounterType, enemyLevel) {
+        function startGroupEncounter(selectedPlayerIds, encounterType, enemyLevel, options = {}) {
             try {
                 // TODO PR5B: Mover para Combat.Group.Actions.initializeGroupEncounter()
                 // Initialize activeIndex for all participating players
@@ -4166,18 +4172,26 @@
                     }
                 }
                 
-                // Wave B2: enemy instances now use factory
-                const randomMonster = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
+                // PR-10: suporte a bossPool — usar monstro específico se fornecido
+                // options.monsterTemplateId: ID de template do catálogo a usar (bossPool)
+                // Fallback: monstro aleatório do catálogo
+                let selectedMonsterTemplate;
+                if (options.monsterTemplateId) {
+                    selectedMonsterTemplate = MONSTER_CATALOG.find(m => m.id === options.monsterTemplateId);
+                }
+                if (!selectedMonsterTemplate) {
+                    selectedMonsterTemplate = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
+                }
                 const enemy = createMonsterInstanceFromTemplate(
-                    randomMonster.id,  // Template ID from catalog
+                    selectedMonsterTemplate.id,  // Template ID from catalog
                     enemyLevel, 
                     null, // Use template's default rarity
                     { id: 'enemy_1' } // Override with group encounter enemy ID
                 );
                 
-                // PR16A: Mark as seen in PartyDex (randomMonster.id is the template ID)
+                // PR16A: Mark as seen in PartyDex (selectedMonsterTemplate.id is the template ID)
                 if (window.PartyDex) {
-                    window.PartyDex.markDexSeen(GameState, randomMonster.id);
+                    window.PartyDex.markDexSeen(GameState, selectedMonsterTemplate.id);
                 }
                 
                 // Criar encounter de grupo via fábrica canônica de groupCore
@@ -6148,11 +6162,34 @@
                         GameState.data.nodeFlags[locationId] = {};
                     }
                     const flags = GameState.data.nodeFlags[locationId];
+                    const wasAlreadyDefeated = flags.bossDefeated === true;
                     if (!flags.bossDefeated) {
                         flags.bossDefeated      = true;
                         flags.firstDefeatedAt   = new Date().toISOString();
                     }
                     flags.bossAttempts = (flags.bossAttempts ?? 0) + 1;
+
+                    // PR-10: Aplicar progressão regional se defeatMarksRegionComplete === true
+                    const bossMeta = bossNode.bossMeta ?? {};
+                    if (!wasAlreadyDefeated && bossMeta.defeatMarksRegionComplete && bossMeta.regionId) {
+                        if (!GameState.data.regionalProgress) GameState.data.regionalProgress = {};
+                        const updated = window.WorldMap.markRegionComplete(
+                            bossMeta,
+                            locationId,
+                            GameState.data.regionalProgress
+                        );
+                        GameState.data.regionalProgress = updated;
+                    }
+
+                    // PR-10: Aftermath — mostrar toast de conquista de região
+                    if (!wasAlreadyDefeated) {
+                        const bossLabel = bossMeta.bossLabel ?? bossNode.name ?? locationId;
+                        const regionLabel = bossMeta.regionId ? ` — Região concluída!` : '!';
+                        showToast(`🏆 ${bossLabel} derrotado${regionLabel}`, 'success');
+                        if (bossMeta.unlocksNodes?.length) {
+                            setTimeout(() => showToast('🗺️ Novo caminho liberado no mapa!', 'success'), 600);
+                        }
+                    }
                 } else {
                     // Nó de exploração normal
 
@@ -8544,9 +8581,14 @@
                     ? `<span class="wm-node__lock-reason">${lockReason}</span>`
                     : '';
 
-                // Sublabel de boss derrotado (PR-09)
+                // Sublabel de boss derrotado (PR-09) e região concluída (PR-10)
+                const regionalProgress = GameState.data?.regionalProgress ?? {};
+                const bossRegionId     = node.bossMeta?.regionId;
+                const bossRegionDone   = isBossDefeated && bossRegionId
+                    ? window.WorldMap?.isRegionComplete(bossRegionId, regionalProgress)
+                    : false;
                 const defeatedLabel = isBossDefeated
-                    ? `<span class="wm-node__boss-status">Conquistado</span>`
+                    ? `<span class="wm-node__boss-status">${bossRegionDone ? '🏆 Região concluída' : 'Conquistado'}</span>`
                     : '';
 
                 return `
@@ -8693,30 +8735,76 @@
             if (bossPanel) showEl(bossPanel);
 
             const loc = (_wm.locationsData ?? []).find(l => l.id === nodeId);
-            const nodeFlags = GameState.data?.nodeFlags ?? {};
-            const defeated  = nodeFlags[nodeId]?.bossDefeated === true;
-            const bossMeta  = bossNode?.bossMeta ?? {};
+            const nodeFlags         = GameState.data?.nodeFlags ?? {};
+            const regionalProgress  = GameState.data?.regionalProgress ?? {};
+            const defeated          = nodeFlags[nodeId]?.bossDefeated === true;
+            const bossMeta          = bossNode?.bossMeta ?? {};
+            const bossLabel         = bossMeta.bossLabel ?? loc?.name ?? nodeId;
+            const regionId          = bossMeta.regionId;
+            const regionComplete    = regionId
+                ? window.WorldMap?.isRegionComplete(regionId, regionalProgress) ?? false
+                : false;
 
             // Preencher título e descrição
             const titleEl = document.getElementById('bossNodeTitle');
             const descEl  = document.getElementById('bossNodeDesc');
             const iconEl  = document.getElementById('bossNodeIcon');
-            if (titleEl) titleEl.textContent = `👑 ${loc?.name ?? nodeId}`;
+            if (titleEl) titleEl.textContent = `👑 ${bossLabel}`;
             if (descEl)  descEl.textContent  = loc?.description ?? '';
             if (iconEl)  iconEl.textContent  = defeated ? '⚔️' : '👑';
+
+            // Contexto de região/arco (PR-10)
+            const regionCtxEl = document.getElementById('bossNodeRegionContext');
+            if (regionCtxEl && regionId) {
+                regionCtxEl.textContent = `🗺️ Chefe da região: ${regionId.replace(/_/g, ' ')}`;
+                showEl(regionCtxEl);
+            } else if (regionCtxEl) {
+                hideEl(regionCtxEl);
+            }
+
+            // Flavor text (PR-10)
+            const flavorEl = document.getElementById('bossNodeFlavor');
+            const flavor   = bossMeta.bossFlavor ?? loc?.flavor;
+            if (flavorEl && flavor) {
+                flavorEl.textContent = flavor;
+                showEl(flavorEl);
+            } else if (flavorEl) {
+                hideEl(flavorEl);
+            }
 
             // Banner de boss derrotado
             const defeatedBanner = document.getElementById('bossNodeDefeatedBanner');
             const actionsEl      = document.getElementById('bossNodeActions');
             if (defeated) {
-                if (defeatedBanner) showEl(defeatedBanner);
+                if (defeatedBanner) {
+                    defeatedBanner.textContent = `✅ ${bossLabel} foi derrotado! O caminho adiante foi aberto.`;
+                    showEl(defeatedBanner);
+                }
                 // Mantém botão mas mostra que pode rejugar
                 const startBtn = document.getElementById('bossStartBtn');
-                if (startBtn) startBtn.textContent = '🔄 Desafiar Novamente o Guardião';
+                if (startBtn) startBtn.textContent = `🔄 Desafiar Novamente ${bossLabel}`;
             } else {
                 if (defeatedBanner) hideEl(defeatedBanner);
                 const startBtn = document.getElementById('bossStartBtn');
-                if (startBtn) startBtn.textContent = '⚔️ Desafiar o Guardião';
+                if (startBtn) startBtn.textContent = `⚔️ Desafiar ${bossLabel}`;
+            }
+
+            // Banner de região concluída (PR-10)
+            const regionCompleteEl = document.getElementById('bossNodeRegionComplete');
+            if (regionCompleteEl) {
+                if (regionComplete && regionId) {
+                    regionCompleteEl.textContent = `🏆 Região concluída: ${regionId.replace(/_/g, ' ')}`;
+                    showEl(regionCompleteEl);
+                } else {
+                    // Mostrar o que será liberado ao vencer
+                    const unlocks = bossMeta.unlocksNodes ?? [];
+                    if (!defeated && unlocks.length) {
+                        regionCompleteEl.textContent = `🗺️ Ao derrotá-lo: ${unlocks.join(', ')} será liberado`;
+                        showEl(regionCompleteEl);
+                    } else {
+                        hideEl(regionCompleteEl);
+                    }
+                }
             }
 
             // Quest hint para o boss node
@@ -8795,6 +8883,8 @@
         /**
          * Inicia o encontro de boss com os jogadores selecionados no painel.
          * Usa startGroupEncounter com type 'boss' e o nível definido em bossMeta.
+         * PR-10: suporte a bossPool — se bossEncounterMode === 'fixed_pool' e bossPool existir,
+         * seleciona aleatoriamente um monstro da pool específica do boss.
          */
         function startBossEncounter() {
             const nodeId    = _wm.selectedLocationId;
@@ -8811,12 +8901,19 @@
                 return;
             }
 
+            // PR-10: Resolver monstro do boss (pool específica ou aleatório)
+            let monsterTemplateId = null;
+            if (bossMeta.bossEncounterMode === 'fixed_pool' && Array.isArray(bossMeta.bossPool) && bossMeta.bossPool.length > 0) {
+                const pool = bossMeta.bossPool;
+                monsterTemplateId = pool[Math.floor(Math.random() * pool.length)];
+            }
+
             // Esconder painel de boss
             const bossPanel = document.getElementById('bossNodePanel');
             if (bossPanel) hideEl(bossPanel);
 
             // Iniciar encontro de grupo com tipo 'boss'
-            startGroupEncounter(selectedIds, 'boss', bossLevel);
+            startGroupEncounter(selectedIds, 'boss', bossLevel, { monsterTemplateId });
         }
         window.startBossEncounter = startBossEncounter;
         window.openBossPanel      = openBossPanel;

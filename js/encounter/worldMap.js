@@ -291,6 +291,99 @@ export function isBossDefeated(bossNodeId, nodeFlags = {}) {
     return nodeFlags[bossNodeId]?.bossDefeated === true;
 }
 
+// ── Progressão Regional (PR-10) ──────────────────────────────────────────────
+
+/**
+ * Verifica se uma região/arco foi concluída.
+ *
+ * @param {string} regionId - ID da região (ex: 'forest_arc_1')
+ * @param {Object} [regionalProgress={}] - Progresso regional do GameState
+ * @returns {boolean}
+ */
+export function isRegionComplete(regionId, regionalProgress = {}) {
+    if (!regionId || !regionalProgress) return false;
+    return regionalProgress[regionId]?.completed === true;
+}
+
+/**
+ * Calcula o estado de progresso de uma região ao derrotar um boss.
+ * Retorna o objeto de progresso regional atualizado (imutável — não modifica o original).
+ *
+ * Chamado quando `bossMeta.defeatMarksRegionComplete === true`.
+ *
+ * @param {Object} bossMeta          - Metadados do boss node (de worldMap.json)
+ * @param {string} bossNodeId        - ID do boss node que foi derrotado
+ * @param {Object} [regionalProgress={}] - Estado atual de progresso regional
+ * @param {string} [timestamp]       - ISO timestamp; usa Date.now() se omitido
+ * @returns {Object} Novo objeto regionalProgress com a região marcada como concluída
+ */
+export function markRegionComplete(bossMeta, bossNodeId, regionalProgress = {}, timestamp) {
+    if (!bossMeta || !bossMeta.defeatMarksRegionComplete || !bossMeta.regionId) {
+        return regionalProgress ?? {};
+    }
+
+    const safeProgress = regionalProgress ?? {};
+    const regionId = bossMeta.regionId;
+    const ts       = timestamp ?? new Date().toISOString();
+
+    // Não sobrescrever se já concluída anteriormente (idempotente)
+    if (safeProgress[regionId]?.completed) return safeProgress;
+
+    return {
+        ...safeProgress,
+        [regionId]: {
+            completed:            true,
+            completedByBossNodeId: bossNodeId,
+            completedAt:           ts
+        }
+    };
+}
+
+/**
+ * Retorna um resumo do progresso regional a partir dos nós do mapa e nodeFlags.
+ * Útil para render de painel de progresso de campanha.
+ *
+ * @param {Array<Object>} worldMapNodes     - Nós do worldMap.json
+ * @param {Object}        [nodeFlags={}]    - Estado de flags por nó
+ * @param {Object}        [regionalProgress={}] - Progresso regional persistido
+ * @returns {Array<{regionId: string, bossNodeId: string, bossLabel: string, completed: boolean}>}
+ */
+export function getRegionalProgressSummary(worldMapNodes, nodeFlags = {}, regionalProgress = {}) {
+    if (!Array.isArray(worldMapNodes)) return [];
+    const safeFlags    = nodeFlags    ?? {};
+    const safeProgress = regionalProgress ?? {};
+
+    const result = [];
+    for (const node of worldMapNodes) {
+        if (node.type !== 'boss') continue;
+        const meta = node.bossMeta;
+        if (!meta?.regionId) continue;
+
+        result.push({
+            regionId:   meta.regionId,
+            bossNodeId: node.nodeId,
+            bossLabel:  meta.bossLabel ?? node.nodeId,
+            completed:  isRegionComplete(meta.regionId, safeProgress),
+            bossDefeated: safeFlags[node.nodeId]?.bossDefeated === true
+        });
+    }
+    return result;
+}
+
+/**
+ * Verifica se uma quest deve ser considerada concluída com base na conclusão regional.
+ * Suporte a objectiveType: 'complete_region' com targetRegionId.
+ *
+ * @param {Object} quest              - Quest com objectiveType e targetRegionId
+ * @param {Object} [regionalProgress={}]
+ * @returns {boolean}
+ */
+export function isQuestRegionObjectiveComplete(quest, regionalProgress = {}) {
+    if (!quest || quest.objectiveType !== 'complete_region') return false;
+    if (!quest.targetRegionId) return false;
+    return isRegionComplete(quest.targetRegionId, regionalProgress ?? {});
+}
+
 // ── Perfis formais de spot ───────────────────────────────────────────────────
 
 /**
