@@ -2427,9 +2427,9 @@
       "rarityWeights": {
         "Comum": 0,
         "Incomum": 0,
-        "Raro": 60,
-        "Místico": 30,
-        "Lendário": 10
+        "Raro": 100,
+        "Místico": 0,
+        "Lendário": 0
       },
       "speciesPoolsByRarity": {
         "Comum": [],
