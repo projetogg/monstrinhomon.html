@@ -516,6 +516,79 @@ export function getActiveKitSwapIds() {
 }
 
 /**
+ * Fase 18 — Aplica o kit_swap pendente quando o slot foi desbloqueado após a criação.
+ *
+ * Necessário para monstrinhos capturados/criados em nível baixo que só desbloqueiam
+ * o slot 4 ao atingir nível 30 durante o jogo. Nesses casos, o kit_swap fica registrado
+ * em `blockedKitSwaps` e nunca é aplicado automaticamente pelo fluxo original.
+ *
+ * Esta função é chamada:
+ *  - Durante o level-up (xpActions.js), após a atualização de unlockedSkillSlots
+ *    e ANTES da verificação de promoção, para que a promoção possa ocorrer no mesmo
+ *    level-up se o nível mínimo de promoção também for atingido.
+ *  - Manualmente pelo terapeuta (applyKitSwapRetroactive) para monstrinhos que já
+ *    estão no nível correto mas ainda não receberam o swap.
+ *
+ * Função pura: não modifica a instância. A mutação fica a cargo do chamador.
+ *
+ * Guardas:
+ *  - Sem canonSpeciesId → não aplica.
+ *  - appliedKitSwaps já não-vazio → não re-aplica.
+ *  - Sem swap definido na espécie → não aplica.
+ *  - Slot ainda insuficiente → não aplica.
+ *
+ * @param {{
+ *   canonSpeciesId?: string|null,
+ *   unlockedSkillSlots?: number,
+ *   appliedKitSwaps?: Array,
+ * }} instance - Instância do monstrinho (lida, não modificada).
+ * @returns {{
+ *   appliedKitSwaps: Array<{slot:number, canonSkillId:string, replacementId:string, action:string, originalSkill:null}>,
+ *   updated: boolean,
+ * }}
+ */
+export function applyPendingKitSwaps(instance) {
+    // Guarda: sem espécie canônica
+    if (!instance?.canonSpeciesId) {
+        return { appliedKitSwaps: [], updated: false };
+    }
+
+    // Guarda: kit_swap já aplicado — não reaplicar
+    if (Array.isArray(instance.appliedKitSwaps) && instance.appliedKitSwaps.length > 0) {
+        return { appliedKitSwaps: [], updated: false };
+    }
+
+    const swapDef = KIT_SWAP_TABLE[instance.canonSpeciesId];
+
+    // Guarda: sem swap definido para esta espécie
+    if (!swapDef) {
+        return { appliedKitSwaps: [], updated: false };
+    }
+
+    const { targetSlot, canonSkillId, replacement } = swapDef;
+    const unlockedSlots = typeof instance.unlockedSkillSlots === 'number'
+        ? instance.unlockedSkillSlots
+        : 1;
+
+    // Guarda: slot ainda não desbloqueado
+    if (targetSlot > unlockedSlots) {
+        return { appliedKitSwaps: [], updated: false };
+    }
+
+    // Condições atendidas: criar entrada de kit_swap aplicado
+    return {
+        appliedKitSwaps: [{
+            slot: targetSlot,
+            canonSkillId,
+            replacementId: replacement._kitSwapId,
+            action: 'applied_on_level_up',
+            originalSkill: null,
+        }],
+        updated: true,
+    };
+}
+
+/**
  * Rastreabilidade: fonte de design dos kit_swaps desta fase.
  */
 export const KIT_SWAP_SOURCE = 'design/canon/species.json';

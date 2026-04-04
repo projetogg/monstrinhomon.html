@@ -811,6 +811,7 @@
         window.movePlayerTeamMember = movePlayerTeamMember;
         window.equipItem = equipItem;
         window.unequipItem = unequipItem;
+        window.applyKitSwapRetroactive = applyKitSwapRetroactive; // Fase 18
         // Mapa de nós — funções de navegação
         window.selectWorldNode = selectWorldNode;
         window.selectSpot      = selectSpot;
@@ -5335,6 +5336,40 @@
                         } catch (e) {
                             // Fallback silencioso — não quebra o level up
                             console.warn('[Fase 7] promoteKitSwapsForInstance falhou:', e && e.message);
+                        }
+                    },
+
+                    // Kit swap pending application (Fase 18) — aplica kit_swap bloqueado ao desbloquear slot
+                    /**
+                     * Verifica e aplica kit_swap pendente após desbloqueio de slot no level up.
+                     * Chamado APÓS getUnlockedSlotsForLevel e ANTES de promoteKitSwapsForInstance.
+                     * Seguro: erros são suprimidos para não interromper o level up.
+                     * @param {object} mon - Instância do monstrinho (modificada in-place).
+                     * @param {Array} logArr - Array de log do encounter (opcional).
+                     */
+                    applyPendingKitSwapsForInstance: function(mon, logArr) {
+                        try {
+                            if (!mon || !mon.canonSpeciesId) return;
+                            if (typeof window === 'undefined' || !window.KitSwap || !window.KitSwap.applyPendingKitSwaps) return;
+                            const result = window.KitSwap.applyPendingKitSwaps(mon);
+                            if (!result || !result.updated) return;
+                            // Registrar aplicação na instância
+                            if (!Array.isArray(mon.appliedKitSwaps)) mon.appliedKitSwaps = [];
+                            for (const applied of result.appliedKitSwaps) {
+                                mon.appliedKitSwaps.push(applied);
+                                const monName = mon.nickname || mon.name || mon.nome || 'Monstrinho';
+                                const log = Array.isArray(logArr) ? logArr : [];
+                                // Obter nome amigável da habilidade a partir da tabela de display
+                                let skillName = applied.replacementId;
+                                if (window.SpeciesDisplay?.getSpeciesDisplayInfo) {
+                                    const info = window.SpeciesDisplay.getSpeciesDisplayInfo(mon);
+                                    if (info?.kitSwapName) skillName = info.kitSwapName;
+                                }
+                                log.push(`🌟 ${monName}: ${skillName} desbloqueada!`);
+                            }
+                        } catch (e) {
+                            // Fallback silencioso — não quebra o level up
+                            console.warn('[Fase 18] applyPendingKitSwapsForInstance falhou:', e && e.message);
                         }
                     },
                     
@@ -9901,6 +9936,38 @@
             `;
         }
 
+        /**
+         * Fase 17 — Indicador leve de prontidão canônica para a visão de equipe.
+         *
+         * Renderiza um badge compacto informando o estado de progressão canônica
+         * do monstrinho sem duplicar a ficha completa de identidade.
+         *
+         * Estados:
+         *  - 'complete'     → ✅ Completo (identidade totalmente ativa)
+         *  - 'near_promo'   → ⚡ Nv.X (perto da promoção do kit_swap)
+         *  - 'near_unlock'  → ⚡ Nv.X (perto do desbloqueio do kit_swap)
+         *  - null           → string vazia (silencioso — sem poluição visual)
+         *
+         * @param {object} monster - Instância de monstrinho.
+         * @returns {string} HTML do badge ou string vazia.
+         */
+        function renderTeamReadinessIndicator(monster) {
+            if (!window.SpeciesDisplay?.getTeamReadinessIndicator) return '';
+            const readiness = window.SpeciesDisplay.getTeamReadinessIndicator(monster);
+            if (!readiness) return '';
+
+            switch (readiness.state) {
+                case 'complete':
+                    return '<span class="readiness-badge readiness-badge--complete" title="Identidade canônica completa">✅ Completo</span>';
+                case 'near_promo':
+                    return `<span class="readiness-badge readiness-badge--near" title="Promoção no Nv. ${readiness.targetLevel}">⚡ Nv.${readiness.targetLevel}</span>`;
+                case 'near_unlock':
+                    return `<span class="readiness-badge readiness-badge--near" title="Habilidade especial no Nv. ${readiness.targetLevel}">⚡ Nv.${readiness.targetLevel}</span>`;
+                default:
+                    return '';
+            }
+        }
+
         function renderMonsterCard(monster) {
             try {
                 if (!monster) return '';
@@ -10002,6 +10069,12 @@
                         `;
                     }
                     
+                    // Fase 18: Indicador de "pronto para aplicar" kit_swap
+                    const isReadyForSwap = window.SpeciesDisplay?.isReadyForKitSwap?.(monster) || false;
+                    const kitApplyHtml = isReadyForSwap
+                        ? `<div class="mt-5"><button class="kit-apply-cta" onclick="applyKitSwapRetroactive('${monster.instanceId}')">🌟 Aplicar habilidade especial</button></div>`
+                        : '';
+
                     html += `
                         <div class="team-member-card ${isActive ? 'team-member-card-active' : 'team-member-card-inactive'}">
                             <span class="team-member-index">${index + 1}.</span>
@@ -10009,11 +10082,13 @@
                                 <strong>${monster.name || 'Unknown'}</strong>
                                 <span class="badge badge-${monster.rarity || 'common'}">${monster.rarity || 'Comum'}</span>
                                 Lv${monster.level || 1}
+                                ${renderTeamReadinessIndicator(monster)}
                                 ${!isAlive ? '<span class="color-error text-bold"> (Desmaiado)</span>' : ''}
                                 <div class="progress-bar h-15 mt-5">
                                     <div class="progress-fill hp" style="width: ${hpPercent}%"></div>
                                 </div>
                                 <small>${monster.hp || 0}/${monster.hpMax || 0} HP</small>
+                                ${kitApplyHtml}
                                 ${equippedItemHtml}
                             </div>
                             <div class="team-member-buttons">
@@ -10033,6 +10108,62 @@
             } catch (error) {
                 console.error('Failed to render team reorder list:', error);
                 return '<p class="color-error">Error rendering team list</p>';
+            }
+        }
+
+        /**
+         * Fase 18 — Aplicação retroativa de kit_swap para monstrinhos que já atingiram
+         * o nível de desbloqueio antes desta implementação.
+         *
+         * Chamado pelo botão "Aplicar habilidade especial" na tela de equipe.
+         * Busca o monstrinho pelo instanceId em todos os times e boxes,
+         * aplica o kit_swap pendente, salva e re-renderiza.
+         *
+         * @param {string} instanceId - ID único da instância (ex: "mi_123_abc").
+         */
+        function applyKitSwapRetroactive(instanceId) {
+            try {
+                // Buscar o monstrinho em todos os jogadores
+                let targetMon = null;
+                for (const player of (GameState.players || [])) {
+                    const inTeam = (player.team || []).find(m => m?.instanceId === instanceId);
+                    const inBox = (player.box || []).find(m => m?.instanceId === instanceId);
+                    if (inTeam) { targetMon = inTeam; break; }
+                    if (inBox) { targetMon = inBox; break; }
+                }
+
+                if (!targetMon) {
+                    console.warn('[Fase 18] Monstrinho não encontrado para aplicação retroativa:', instanceId);
+                    return;
+                }
+
+                if (!window.KitSwap?.applyPendingKitSwaps) {
+                    console.warn('[Fase 18] window.KitSwap.applyPendingKitSwaps não disponível');
+                    return;
+                }
+
+                const result = window.KitSwap.applyPendingKitSwaps(targetMon);
+                if (!result?.updated) return;
+
+                // Atualizar instância in-place
+                if (!Array.isArray(targetMon.appliedKitSwaps)) targetMon.appliedKitSwaps = [];
+                for (const applied of result.appliedKitSwaps) {
+                    targetMon.appliedKitSwaps.push(applied);
+                }
+
+                // Obter nome amigável da habilidade para o feedback
+                let skillName = 'habilidade especial';
+                if (window.SpeciesDisplay?.getSpeciesDisplayInfo) {
+                    const info = window.SpeciesDisplay.getSpeciesDisplayInfo(targetMon);
+                    if (info?.kitSwapName) skillName = info.kitSwapName;
+                }
+
+                const monName = targetMon.nickname || targetMon.name || targetMon.nome || 'Monstrinho';
+                showToast(`🌟 ${monName}: ${skillName} desbloqueada!`, 'success');
+                saveGame();
+                updatePlayersList();
+            } catch (e) {
+                console.warn('[Fase 18] applyKitSwapRetroactive falhou:', e && e.message);
             }
         }
 
