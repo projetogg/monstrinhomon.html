@@ -350,12 +350,10 @@ describe('getSpeciesDisplayTable — integridade de dados (Fase 15)', () => {
         }
     });
 
-    it('kitSwapBaseName sempre termina com "I" mas não com "II"', () => {
+    it('kitSwapBaseName sempre termina com " I" (espaço + I, sem II)', () => {
         for (const [speciesId, entry] of Object.entries(table)) {
-            expect(entry.kitSwapBaseName, `${speciesId}.kitSwapBaseName deve terminar com I e não com II`)
-                .toMatch(/I$/);
-            expect(entry.kitSwapBaseName, `${speciesId}.kitSwapBaseName não deve terminar com II`)
-                .not.toMatch(/II$/);
+            expect(entry.kitSwapBaseName, `${speciesId}.kitSwapBaseName deve terminar com ' I'`)
+                .toMatch(/ I$/);
         }
     });
 });

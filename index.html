@@ -9772,11 +9772,13 @@
             const info = window.SpeciesDisplay.getSpeciesDisplayInfo(monster);
             if (!info.hasSpecies) return '';
 
-            const kitBadge = info.isPromoted ? '⭐' : '🌟';
+            const promotionBadge = info.isPromoted ? '⭐' : '🌟';
+            const promotionSuffix = info.isPromoted ? ' (Promoção)' : '';
+            const kitCssClass = info.isPromoted
+                ? 'species-identity__kit species-identity__kit--promoted'
+                : 'species-identity__kit';
             const kitHtml = info.hasKitSwap
-                ? `<div class="species-identity__kit${info.isPromoted ? ' species-identity__kit--promoted' : ''}">
-                       ${kitBadge} ${info.kitSwapName}${info.isPromoted ? ' (Promoção)' : ''}
-                   </div>`
+                ? `<div class="${kitCssClass}">${promotionBadge} ${info.kitSwapName}${promotionSuffix}</div>`
                 : '';
 
             return `
