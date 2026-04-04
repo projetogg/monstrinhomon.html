@@ -9898,6 +9898,38 @@
             `;
         }
 
+        /**
+         * Fase 17 — Indicador leve de prontidão canônica para a visão de equipe.
+         *
+         * Renderiza um badge compacto informando o estado de progressão canônica
+         * do monstrinho sem duplicar a ficha completa de identidade.
+         *
+         * Estados:
+         *  - 'complete'     → ✅ Completo (identidade totalmente ativa)
+         *  - 'near_promo'   → ⚡ Nv.X (perto da promoção do kit_swap)
+         *  - 'near_unlock'  → ⚡ Nv.X (perto do desbloqueio do kit_swap)
+         *  - null           → string vazia (silencioso — sem poluição visual)
+         *
+         * @param {object} monster - Instância de monstrinho.
+         * @returns {string} HTML do badge ou string vazia.
+         */
+        function renderTeamReadinessIndicator(monster) {
+            if (!window.SpeciesDisplay?.getTeamReadinessIndicator) return '';
+            const readiness = window.SpeciesDisplay.getTeamReadinessIndicator(monster);
+            if (!readiness) return '';
+
+            switch (readiness.state) {
+                case 'complete':
+                    return '<span class="readiness-badge readiness-badge--complete" title="Identidade canônica completa">✅ Completo</span>';
+                case 'near_promo':
+                    return `<span class="readiness-badge readiness-badge--near" title="Promoção no Nv. ${readiness.targetLevel}">⚡ Nv.${readiness.targetLevel}</span>`;
+                case 'near_unlock':
+                    return `<span class="readiness-badge readiness-badge--near" title="Habilidade especial no Nv. ${readiness.targetLevel}">⚡ Nv.${readiness.targetLevel}</span>`;
+                default:
+                    return '';
+            }
+        }
+
         function renderMonsterCard(monster) {
             try {
                 if (!monster) return '';
@@ -10006,6 +10038,7 @@
                                 <strong>${monster.name || 'Unknown'}</strong>
                                 <span class="badge badge-${monster.rarity || 'common'}">${monster.rarity || 'Comum'}</span>
                                 Lv${monster.level || 1}
+                                ${renderTeamReadinessIndicator(monster)}
                                 ${!isAlive ? '<span class="color-error text-bold"> (Desmaiado)</span>' : ''}
                                 <div class="progress-bar h-15 mt-5">
                                     <div class="progress-fill hp" style="width: ${hpPercent}%"></div>

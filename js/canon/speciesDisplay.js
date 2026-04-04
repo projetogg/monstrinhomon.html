@@ -176,6 +176,19 @@ const SPECIES_DISPLAY = {
 };
 
 // ---------------------------------------------------------------------------
+// Constantes — Fase 17
+// ---------------------------------------------------------------------------
+
+/**
+ * Limiar de "em breve": quantos níveis antes do próximo marco o indicador
+ * de prontidão começa a aparecer na visão geral da equipe.
+ *
+ * Escolha: 5 níveis — janela curta o suficiente para ser acionável
+ * sem poluir a equipe com alertas prematuros.
+ */
+export const NEAR_MILESTONE_THRESHOLD = 5;
+
+// ---------------------------------------------------------------------------
 // Helpers internos — Fase 16
 // ---------------------------------------------------------------------------
 
@@ -283,6 +296,54 @@ export function getSpeciesDisplayInfo(mon) {
         isPromoted,
         nextMilestone,
     };
+}
+
+/**
+ * Retorna o indicador de prontidão canônica para a visão geral da equipe.
+ *
+ * Função pura — não modifica a instância, não acessa o DOM.
+ * Fallback seguro: retorna null quando não há indicador relevante.
+ *
+ * Estados possíveis:
+ *  - null            → sem espécie canônica, ou distante de qualquer marco (silencioso)
+ *  - 'complete'      → kit_swap já promovido; identidade canônica completa
+ *  - 'near_unlock'   → faltam até NEAR_MILESTONE_THRESHOLD níveis para desbloquear kit_swap
+ *  - 'near_promo'    → faltam até NEAR_MILESTONE_THRESHOLD níveis para promover kit_swap
+ *
+ * @param {object|null|undefined} mon
+ * @returns {{ state: 'complete' | 'near_unlock' | 'near_promo', targetLevel?: number } | null}
+ */
+export function getTeamReadinessIndicator(mon) {
+    const speciesId = mon?.canonSpeciesId ?? null;
+    const data = speciesId ? (SPECIES_DISPLAY[speciesId] ?? null) : null;
+
+    if (!data) return null;
+
+    const level = Math.max(1, Number(mon?.level) || 1);
+    const hasAppliedKitSwap = Array.isArray(mon.appliedKitSwaps) && mon.appliedKitSwaps.length > 0;
+    const isPromoted = Array.isArray(mon.promotedKitSwaps) && mon.promotedKitSwaps.length > 0;
+
+    // Identidade canônica completa (promoção atingida)
+    if (isPromoted) {
+        return { state: 'complete' };
+    }
+
+    // Kit_swap aplicado — verificar proximidade da promoção
+    if (hasAppliedKitSwap) {
+        const promoLevel = data.kitSwapPromoLevel ?? null;
+        if (promoLevel && level >= promoLevel - NEAR_MILESTONE_THRESHOLD && level < promoLevel) {
+            return { state: 'near_promo', targetLevel: promoLevel };
+        }
+        return null;
+    }
+
+    // Kit_swap ainda não aplicado — verificar proximidade do desbloqueio
+    const unlockLevel = data.kitSwapUnlockLevel ?? 1;
+    if (unlockLevel > 1 && level >= unlockLevel - NEAR_MILESTONE_THRESHOLD && level < unlockLevel) {
+        return { state: 'near_unlock', targetLevel: unlockLevel };
+    }
+
+    return null;
 }
 
 /**

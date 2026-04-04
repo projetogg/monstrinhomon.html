@@ -1367,6 +1367,33 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     margin-top: 2px;
 }
 
+/* ── Fase 17 — Badge de prontidão canônica (visão geral da equipe) ────────── */
+
+.readiness-badge {
+    display: inline-block;
+    font-size: 0.7em;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-weight: 600;
+    vertical-align: middle;
+    margin-left: 4px;
+    white-space: nowrap;
+}
+
+/* Identidade canônica completa (kit_swap promovido) */
+.readiness-badge--complete {
+    background: rgba(76, 175, 80, 0.18);
+    color: #81c784;
+    border: 1px solid rgba(76, 175, 80, 0.30);
+}
+
+/* Em breve: próximo do desbloqueio ou da promoção */
+.readiness-badge--near {
+    background: rgba(255, 193, 7, 0.13);
+    color: #ffd54f;
+    border: 1px solid rgba(255, 193, 7, 0.25);
+}
+
 /* ============================================================================
    REFACTOR PR1: Static styles extracted from inline
    ============================================================================ */
