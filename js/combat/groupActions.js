@@ -231,28 +231,38 @@ export function executePlayerAttackGroup(deps, targetEnemyIndex = null) {
  * @returns {boolean} true se turno foi processado
  */
 /**
- * BUG FIX: Verifica se algum participante tem o monstro ativo morto mas possui substituto vivo.
- * Retorna o primeiro jogador nessa situação, ou null se nenhum precisar trocar.
+ * Verifica participantes com ativo morto e trata corretamente cada caso:
+ * - Com substitutos elegíveis (classe-válidos): retorna o primeiro para abrir modal de troca.
+ * - Sem substitutos elegíveis: elimina da batalha (remove de enc.participants) e loga.
  *
- * Não exportada intencionalmente — é uma função auxiliar interna de executeEnemyTurnGroup.
- * Exportar exigiria expor o contrato de deps inteiro, adicionando complexidade desnecessária.
+ * Chamada internamente por executeEnemyTurnGroup quando não há alvo válido.
+ * Também pode ser usada por advanceGroupTurn para detectar necessidade de troca.
  *
- * @param {object} enc - Encounter ativo
+ * @param {object} enc  - Encounter ativo
  * @param {object} deps - Dependências injetadas
- * @returns {object|null} jogador que precisa trocar, ou null
+ * @returns {object|null} primeiro jogador que precisa trocar (tem substitutos), ou null
  */
 function findPlayerNeedingSwitch(enc, deps) {
-    const { helpers } = deps;
-    for (const pid of (enc.participants || [])) {
+    const { helpers, state } = deps;
+    let firstNeedingSwitch = null;
+    // Itera em cópia para permitir mutação de enc.participants durante o loop
+    for (const pid of [...(enc.participants || [])]) {
         const p = helpers.getPlayerById(pid);
         if (!p) continue;
         const activeMon = helpers.getActiveMonsterOfPlayer(p);
-        // Condição: monstro ativo morto (precisa trocar) E ainda há substituto vivo no time
-        if (!GroupCore.isAlive(activeMon) && helpers.firstAliveIndex(p.team) >= 0) {
-            return p;
+        if (!GroupCore.isAlive(activeMon)) {
+            // Verificar substitutos elegíveis respeitando restrição de classe
+            const subs = GroupCore.getEligibleSubstitutes(p, state.config);
+            if (subs.length > 0) {
+                if (!firstNeedingSwitch) firstNeedingSwitch = p;
+            } else {
+                // Sem substitutos válidos: eliminar da batalha
+                enc.participants = (enc.participants || []).filter(id => id !== pid);
+                helpers.log(enc, `💀 ${p.name || p.nome} não tem mais monstrinhos válidos e saiu da batalha!`);
+            }
         }
     }
-    return null;
+    return firstNeedingSwitch;
 }
 
 export function executeEnemyTurnGroup(enc, deps) {
@@ -389,22 +399,20 @@ export function executeEnemyTurnGroup(enc, deps) {
     if (!core.isAlive(targetMon)) {
         helpers.log(enc, `💀 ${targetName} (${targetMonName}) foi derrotado!`);
         
-        // Check if player has other alive monsters
-        const aliveIdx = helpers.firstAliveIndex(targetPlayer.team);
-        if (aliveIdx >= 0) {
-            // Player has other monsters - need to switch
-            // Save state and open modal
+        // Verificar substitutos elegíveis respeitando restrição de classe (GAME_RULES.md)
+        const eligibleSubs = GroupCore.getEligibleSubstitutes(targetPlayer, state.config);
+        if (eligibleSubs.length > 0) {
+            // Jogador tem substitutos válidos — abrir modal de troca
             storage.save();
             ui.render();
             
-            // Open modal for replacement (async)
-            setTimeout(() => {
-                helpers.openSwitchMonsterModal(targetPlayer, enc);
-            }, 100);
+            // Chamar modal de troca (render já executou; modal será exibido sobre a UI atualizada)
+            helpers.openSwitchMonsterModal(targetPlayer, enc);
             return true; // Don't advance turn yet - modal will handle it
         } else {
-            // Player has no more monsters - they're out
-            helpers.log(enc, `⚠️ ${targetName} não tem mais monstrinhos vivos!`);
+            // Jogador sem substitutos válidos: eliminar da batalha
+            enc.participants = (enc.participants || []).filter(pid => pid !== targetPlayer.id);
+            helpers.log(enc, `💀 ${targetName} não tem mais monstrinhos válidos e saiu da batalha!`);
         }
     }
 
@@ -539,13 +547,65 @@ export function advanceGroupTurn(enc, deps) {
             // Após troca de monstro, team[0] pode estar morto mas activeIndex aponta para um vivo
             const activeIdx = typeof p?.activeIndex === 'number' ? p.activeIndex : 0;
             const mon = p?.team?.[activeIdx];
-            if (mon && (Number(mon.hp) || 0) > 0) break;
+            if (mon && (Number(mon.hp) || 0) > 0) break; // ativo vivo → turno válido
+
+            // Ativo morto: verificar substitutos elegíveis (respeitando restrição de classe)
+            if (p) {
+                const subs = GroupCore.getEligibleSubstitutes(p, state.config);
+                if (subs.length > 0) {
+                    // Tem substitutos → pausar aqui e abrir modal de troca
+                    enc.currentActor = core.getCurrentActor(enc);
+                    if (helpers.openSwitchMonsterModal) {
+                        helpers.openSwitchMonsterModal(p, enc);
+                    }
+                    return; // aguarda a seleção do modal antes de continuar
+                } else {
+                    // Sem substitutos válidos → eliminar da batalha, continuar loop
+                    enc.participants = (enc.participants || []).filter(pid => pid !== actor.id);
+                    helpers.log(enc, `💀 ${p.name || p.nome} não tem mais monstrinhos válidos e saiu da batalha!`);
+                }
+            }
+            // continue: procura próximo ator válido
         } else {
             const e = enc.enemies?.[actor.id];
             if (e && (Number(e.hp) || 0) > 0) break;
         }
         
     } while (loops < maxLoops);
+
+    // Verificar derrota após possíveis eliminações no loop acima
+    // (pode ocorrer quando todos os jogadores foram eliminados por falta de substitutos)
+    if (!core.hasAlivePlayers(enc, state.players) && !enc.finished) {
+        enc.finished = true;
+        enc.result = "defeat";
+        enc.active = false;
+        enc.log = enc.log || [];
+        enc.log.push("💀 Derrota... Todos os participantes foram eliminados.");
+
+        if (!enc._loseSfxPlayed) {
+            audio.playSfx("lose");
+            enc._loseSfxPlayed = true;
+        }
+
+        // PR11B: Processar quebra de itens (usa state.players para capturar todos)
+        const allPlayerMonsters = [];
+        for (const player of (state.players || [])) {
+            if (Array.isArray(player.team)) {
+                allPlayerMonsters.push(...player.team);
+            }
+        }
+        processBattleItemBreakage(allPlayerMonsters, {
+            log: (msg) => helpers.log(enc, msg),
+            notify: (monster, itemDef) => {
+                const toastFn = helpers.showToast ?? (typeof window !== 'undefined' ? window.showToast : null);
+                if (typeof toastFn === 'function') {
+                    toastFn(`💥 ${itemDef.name} quebrou!`, 'warning');
+                }
+            }
+        });
+
+        return;
+    }
     
     // Atualizar currentActor
     enc.currentActor = core.getCurrentActor(enc);
