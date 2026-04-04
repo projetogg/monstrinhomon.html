@@ -414,6 +414,13 @@ function renderActionBar(encounter, actor, isPlayerTurn, state, helpers) {
         ? `<button class="btn btn-warning" onclick="groupFlee()">🏃 Fugir</button>`
         : '';
 
+    // Botão de troca manual — visível somente se houver substituto elegível
+    const masterMode = Boolean(state.config?.masterMode || state.config?.therapistMode);
+    const swapAllowed = canManualSwap(player, { masterMode });
+    const swapButtonHtml = swapAllowed
+        ? `<button class="btn btn-swap" onclick="openManualSwapModal('${player.id}', '${encounter.id}')">🔄 Trocar</button>`
+        : '';
+
     return `
     <div class="battle-actions-row group-actions-bar">
         <span class="group-actions-label">⚔️ ${player.name || player.nome}:</span>
@@ -421,6 +428,7 @@ function renderActionBar(encounter, actor, isPlayerTurn, state, helpers) {
             <button class="btn btn-danger" onclick="enterAttackMode()">⚔️ Atacar</button>
             ${skillButtonsHtml}
             ${itemButtonHtml}
+            ${swapButtonHtml}
             ${fleeButtonHtml}
             <button class="btn btn-secondary" onclick="groupPassTurn()">⏭️ Passar</button>
         </div>

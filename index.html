@@ -686,6 +686,12 @@
         import * as SpeciesDisplay from './js/canon/speciesDisplay.js';
         window.SpeciesDisplay = SpeciesDisplay;
 
+        import * as BattleSwap from './js/combat/battleSwap.js';
+        window.BattleSwap = BattleSwap;
+
+        import * as ClassEligibility from './js/combat/classEligibility.js';
+        window.ClassEligibility = ClassEligibility;
+
         // Inicia o carregamento canônico imediatamente após o parse do módulo,
         // antes de qualquer chamada a init(). Isso garante que o fetch já estará
         // em andamento quando init() fizer await applyCanonToConfig().
@@ -4437,6 +4443,138 @@
             } catch (error) {
                 showError('Failed to cancel target selection', error.stack);
             }
+        }
+
+        // ==================== FASE 20: Troca Manual em Batalha ====================
+        // Permite ao jogador trocar de monstrinho durante o turno.
+        // Baseado em battleSwap.js (funções puras) + classEligibility.js.
+
+        /**
+         * Abre modal de troca manual. Mostra cards categorizados:
+         *   — ativo (atual, não clicável)
+         *   — elegível (vivo + classe correta → clicável)
+         *   — bloqueado_ko / bloqueado_classe (não clicável + motivo)
+         *
+         * @param {string} playerId   - ID do jogador ativo no turno
+         * @param {string} encounterId - ID do encounter atual
+         */
+        function openManualSwapModal(playerId, encounterId) {
+            try {
+                const player = _getPlayerById(playerId);
+                const enc = GameState.currentEncounter;
+                if (!player || !enc || enc.id !== encounterId) return;
+
+                const masterMode = Boolean(GameState.config?.masterMode || GameState.config?.therapistMode);
+                const entries = window.BattleSwap.categorizeBattleTeam(player, { masterMode });
+
+                let cardsHtml = entries.map(e => {
+                    const mon = e.monster;
+                    const name = `${mon.emoji || ''} ${mon.name || mon.nome}`;
+                    const hp = Number(mon.hp) || 0;
+                    const hpMax = Number(mon.hpMax) || 1;
+                    const status = window.BattleSwap.getSwapStatus(e.category, e.reason);
+
+                    if (e.category === 'active') {
+                        return `<div class="swap-card swap-card--active">
+                            <strong>${name}</strong> <small>Nv ${mon.level}</small>
+                            <br><span style="opacity:0.7">${status}</span>
+                        </div>`;
+                    }
+                    if (e.category === 'eligible') {
+                        return `<div class="swap-card swap-card--eligible"
+                            onclick="groupManualSwap('${playerId}', ${e.index}, '${encounterId}')">
+                            <strong>${name}</strong> <small>Nv ${mon.level}</small>
+                            <br>HP: ${hp}/${hpMax} · Classe: ${mon.class}
+                            <br><span style="color:#00b894">${status}</span>
+                        </div>`;
+                    }
+                    if (e.category === 'blocked_ko') {
+                        return `<div class="swap-card swap-card--blocked-ko" title="${e.reason}">
+                            <strong>${name}</strong> <small>Nv ${mon.level}</small>
+                            <br><span style="color:#636e72">${status}</span>
+                        </div>`;
+                    }
+                    // blocked_class
+                    return `<div class="swap-card swap-card--blocked-class" title="${e.reason}">
+                        <strong>${name}</strong> <small>Nv ${mon.level}</small>
+                        <br>Classe: ${mon.class}
+                        <br><span style="color:#e17055">${status}</span>
+                    </div>`;
+                }).join('');
+
+                const modalHtml = `
+                <div class="modal-overlay-fixed" id="manualSwapModal">
+                    <div class="modal-content-card" style="min-width:300px">
+                        <h3>🔄 ${player.name || player.nome}: Trocar Monstrinho</h3>
+                        <p style="font-size:13px;opacity:0.8">Escolha um monstrinho elegível para entrar em batalha:</p>
+                        <div class="modal-items-container">${cardsHtml}</div>
+                        <div style="text-align:right;margin-top:10px">
+                            <button class="btn btn-secondary" onclick="closeWithNoSwap()">✖ Cancelar</button>
+                        </div>
+                    </div>
+                </div>`;
+
+                const div = document.createElement('div');
+                div.innerHTML = modalHtml;
+                document.body.appendChild(div);
+            } catch (error) {
+                showError('Erro ao abrir modal de troca', error.stack);
+            }
+        }
+
+        /**
+         * Executa troca manual: troca monstrinho ativo e fecha modal.
+         *
+         * @param {string} playerId    - ID do jogador
+         * @param {number} newIndex    - Índice do novo monstrinho ativo
+         * @param {string} encounterId - ID do encounter
+         */
+        function groupManualSwap(playerId, newIndex, encounterId) {
+            try {
+                const player = _getPlayerById(playerId);
+                const enc = GameState.currentEncounter;
+                if (!player || !enc || enc.id !== encounterId) return;
+
+                const masterMode = Boolean(GameState.config?.masterMode || GameState.config?.therapistMode);
+                const entries = window.BattleSwap.categorizeBattleTeam(player, { masterMode });
+                const target = entries.find(e => e.index === newIndex && e.category === 'eligible');
+                if (!target) {
+                    alert('⚠️ Monstrinho não elegível para troca!');
+                    return;
+                }
+
+                player.activeIndex = newIndex;
+                const newMon = player.team[newIndex];
+                _log(enc, `🔄 ${player.name || player.nome} trocou para ${newMon.name || newMon.nome}!`);
+
+                closeWithNoSwap(); // fecha modal
+                saveToLocalStorage();
+                renderEncounter();
+            } catch (error) {
+                showError('Erro ao trocar monstrinho', error.stack);
+            }
+        }
+
+        /**
+         * Fecha o modal de troca manual sem executar nenhuma troca.
+         */
+        function closeWithNoSwap() {
+            const modal = document.getElementById('manualSwapModal');
+            if (modal) modal.remove();
+        }
+
+        /**
+         * Renderiza badge de elegibilidade para o time de um jogador.
+         * Expõe ClassEligibility.renderEligibilityBadge para uso em renderTeamReorderList.
+         *
+         * @param {object} mon    - Instância do Monstrinho
+         * @param {object} player - Jogador
+         * @returns {string} HTML do badge
+         */
+        function renderEligibilityBadgeForTeam(mon, player) {
+            if (!window.ClassEligibility) return '';
+            const masterMode = Boolean(GameState.config?.masterMode || GameState.config?.therapistMode);
+            return window.ClassEligibility.renderEligibilityBadge(mon, player, { masterMode });
         }
 
         /**
@@ -12541,6 +12679,11 @@
         window.groupFlee = groupFlee;
         window.groupUseItem = groupUseItem;
         window.cancelTargetSelection = cancelTargetSelection;
+        // Fase 20: troca manual em batalha
+        window.openManualSwapModal = openManualSwapModal;
+        window.groupManualSwap = groupManualSwap;
+        window.closeWithNoSwap = closeWithNoSwap;
+        window.renderEligibilityBadgeForTeam = renderEligibilityBadgeForTeam;
 
         // Initialize on load
         // PR-BOOT-FIX: Usa readyState para evitar race condition caso o evento
