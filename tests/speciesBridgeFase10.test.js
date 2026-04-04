@@ -126,8 +126,8 @@ describe('Fase 10 — Ladino → shadowsting (bridge)', () => {
     });
 
     describe('Integridade da tabela pós-Fase 10', () => {
-        it('deve conter exatamente 42 mapeamentos (39 Fase 9 + 3 shadowsting)', () => {
-            expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(42);
+        it('deve conter exatamente 45 mapeamentos (39 Fase 9 + 3 shadowsting + 3 bellwave Fase 11)', () => {
+            expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(45);
         });
 
         it('todos os 3 mapeamentos shadowsting estão presentes', () => {

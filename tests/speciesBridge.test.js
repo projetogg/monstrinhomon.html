@@ -72,10 +72,10 @@ const BASE_STATS = { hpMax: 30, atk: 7, def: 5, spd: 5, eneMax: 10 };
 
 describe('speciesBridge — tabela RUNTIME_TO_CANON_SPECIES', () => {
 
-    it('deve conter os 42 mapeamentos definidos na Fase 10 (12 bases + 20 evoluções MVP + 7 Caçador + 3 Ladino)', () => {
-        // Valor 42 fixo e intencional: documenta o estado do bridge após Fase 10.
+    it('deve conter os 45 mapeamentos definidos na Fase 11 (12 bases + 20 evoluções MVP + 7 Caçador + 3 Ladino + 3 Bardo)', () => {
+        // Valor 45 fixo e intencional: documenta o estado do bridge após Fase 11.
         // Atualizar junto com cada novo mapeamento adicionado à tabela.
-        expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(42);
+        expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(45);
     });
 
     it('MON_010 mapeia para shieldhorn (Guerreiro tank — DEF 9)', () => {
@@ -393,13 +393,14 @@ describe('speciesBridge — resolveAndApply()', () => {
 // Atualizado na Fase 9: Caçador agora tem species (swiftclaw). MON_005 (Garruncho)
 // passa a ser elegível pelo getEligibleUnmappedTemplateIds mas não foi mapeado
 // intencionalmente (sem linha evolutiva validável).
-// Atualizado na Fase 10: Ladino agora tem species (shadowsting). MON_022/B/C mapeados.
+// Atualizado na Fase 11: Bardo agora tem species (bellwave). MON_027/B/C mapeados.
+// MON_001 permanece não mapeado (sem linha evolutiva validável).
 // SAMPLE_CATALOG usa MON_030B (linha Furtilhon — não mapeada) para representar Ladino
 // não mapeado (substituiu MON_022B que foi mapeado na Fase 10).
 const SAMPLE_CATALOG = [
-    { id: 'MON_001', class: 'Bardo' },          // não mapeado — classe sem species
+    { id: 'MON_001', class: 'Bardo' },          // não mapeado — sem linha evolutiva (Fase 11)
     { id: 'MON_002', class: 'Guerreiro' },       // mapeado → shieldhorn (Fase 3.2)
-    { id: 'MON_011B', class: 'Bardo' },          // não mapeado — classe sem species
+    { id: 'MON_011B', class: 'Bardo' },          // não mapeado — linha com drift em MON_011D (Fase 11)
     { id: 'MON_003', class: 'Mago' },            // mapeado → moonquill
     { id: 'MON_004', class: 'Curandeiro' },      // mapeado → floracura
     { id: 'MON_007', class: 'Bárbaro' },         // mapeado → emberfang
@@ -467,16 +468,19 @@ describe('speciesBridge — getEligibleUnmappedTemplateIds()', () => {
     it('NÃO deve incluir evoluções sem species canônica como elegíveis', () => {
         const eligible = getEligibleUnmappedTemplateIds(SAMPLE_CATALOG);
         const eligibleIds = eligible.map(e => e.id);
-        expect(eligibleIds).not.toContain('MON_011B');  // Bardo — sem species
+        expect(eligibleIds).not.toContain('MON_011B');  // Bardo evolução (sufixo B) — não elegível por regex
         expect(eligibleIds).not.toContain('MON_030B');  // Ladino evolução (sufixo B) — não elegível
     });
 
-    it('NÃO deve incluir classes sem species canônica', () => {
+    it('NÃO deve incluir classes sem species canônica (mas inclui classes com species que ficaram sem mapeamento)', () => {
         const eligible = getEligibleUnmappedTemplateIds(SAMPLE_CATALOG);
         const eligibleIds = eligible.map(e => e.id);
-        expect(eligibleIds).not.toContain('MON_001'); // Bardo — sem species
-        expect(eligibleIds).not.toContain('MON_011B'); // Bardo — sem species
-        // MON_005 (Caçador) agora é ELEGÍVEL (Caçador tem swiftclaw desde Fase 9)
+        // MON_001 (Bardo base) agora É elegível — Bardo tem species (bellwave, Fase 11),
+        // mas MON_001 não foi mapeado (sem linha evolutiva validável).
+        // Isso é esperado: getEligibleUnmappedTemplateIds sinaliza candidatos para avaliação.
+        expect(eligibleIds).toContain('MON_001'); // Bardo base — elegível mas excluído por decisão de design
+        expect(eligibleIds).not.toContain('MON_011B'); // Bardo evolução (sufixo B) — não elegível por regex
+        // MON_005 (Caçador) é ELEGÍVEL (Caçador tem swiftclaw desde Fase 9)
         // mas não foi mapeado por decisão de design (sem linha evolutiva validável).
         expect(eligibleIds).not.toContain('MON_030B'); // Ladino evolução (sufixo B) — não elegível por regex
     });
