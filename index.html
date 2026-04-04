@@ -6981,11 +6981,33 @@
                 if (!encounter) return;
                 
                 if (confirm('Fugir deste encontro?')) {
-                    encounter.log = encounter.log || [];
-                    encounter.log.push('🏃 Fugiu do encontro');
-                    encounter.active = false;
-                    encounter.result = 'fled';
-                    // BUG FIX: Manter encounter para exibir painel de resultado
+                    // Fase 11.2: fuga agora usa SPD para calcular chance real de sucesso
+                    const playerId = encounter.selectedPlayerId;
+                    const player = GameState.players?.find(p => p.id === playerId);
+                    const playerMonster = player ? _getActiveMonsterOfPlayer(player) : null;
+
+                    if (playerMonster && encounter.wildMonster) {
+                        const fleeBaseChance = MM_TABLES.getFleeBase(encounter.wildMonster.rarity) ?? 15;
+                        const dependencies = {
+                            classAdvantages: GameState.config?.classAdvantages || {},
+                            getBasicPower: (cls) => MM_TABLES.getBasicAttackPower(cls),
+                            eneRegenData: ENE_REGEN_BY_CLASS,
+                        };
+                        const result = Combat.Wild.Actions.executeWildFlee({
+                            encounter,
+                            playerMonster,
+                            fleeBaseChance,
+                            dependencies,
+                        });
+                        // Se result='ongoing' → fuga falhou mas o encontro continua
+                        // O log já foi atualizado por executeWildFlee; apenas re-renderizar
+                    } else {
+                        // Fallback seguro: sem monstrinho ativo, fugir diretamente
+                        encounter.log = encounter.log || [];
+                        encounter.log.push('🏃 Fugiu do encontro');
+                        encounter.active = false;
+                        encounter.result = 'fled';
+                    }
                     
                     saveToLocalStorage();
                     renderEncounter();

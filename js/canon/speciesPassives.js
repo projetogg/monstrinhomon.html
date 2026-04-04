@@ -16,6 +16,9 @@
  *  - Fase 10: shadowsting (Ladino) — on_attack (basic only), hasShadowstingCharge.
  *    Bônus de execução após debuff aplicado; player-side apenas nesta fase.
  *    State: encounter.passiveState.shadowstingDebuffCharged (set em executeWildSkill).
+ *  - Fase 11: bellwave (Bardo) — on_attack (basic only), hasBellwaveRhythmCharge.
+ *    Bônus rítmico após qualquer skill usada; player-side apenas nesta fase.
+ *    State: encounter.passiveState.bellwaveRhythmCharged (set em executeWildSkill).
  *
  * O que este módulo NÃO faz (reservado para fases futuras):
  *  - Passivas em cadeia ou com múltiplos triggers por turno
@@ -76,6 +79,8 @@
  *                  |        |       | raramente têm estado de "primeiro ataque" distinto
  *  shadowsting     | ✅     | ❌    | Wild-side adiado (Fase 10); estado de debuff carregado
  *                  |        |       | requer tracking de turno não disponível no wild pipeline
+ *  bellwave        | ✅     | ❌    | Wild-side adiado (Fase 11); estado de ritmo carregado
+ *                  |        |       | requer tracking de "skill usada no turno anterior" ausente no wild
  *
  * ─────────────────────────────────────────────────────────────────────────────
  */
@@ -226,6 +231,43 @@ const PASSIVE_HANDLERS = {
         if (!context.hasShadowstingCharge) return null;
         return { atkBonus: 1 };
     },
+
+    /**
+     * bellwave (Bardo, arquétipo cadencia_ritmica) — Fase 11
+     *
+     * Passiva canônica: "Após usar qualquer habilidade, o próximo ataque
+     * básico recebe +1 bônus de ataque (cadência rítmica)."
+     *
+     * Diferenciação de shadowsting e swiftclaw:
+     *   swiftclaw: bônus one-time no PRIMEIRO ataque do combate (abertura direta).
+     *   shadowsting: bônus CONDICIONAL após DEBUFF específico (setup de oportunidade).
+     *     Requer debuff — cria loop tático oportunista: debuff → execução.
+     *   bellwave: bônus RÍTMICO após QUALQUER habilidade (ritmo sustentado).
+     *     NÃO requer debuff específico — qualquer skill (buff, heal, dano, controle)
+     *     carrega o ritmo. Cria loop de cadência: skill → básico(bônus) → skill → ...
+     *     O Bardo mantém o ritmo usando qualquer ferramenta do kit, não apenas debuffs.
+     *     Isso diferencia mecanicamente: shadowsting é oportunista (espera o momento);
+     *     bellwave é rítmico (mantém a cadência independente do tipo de skill).
+     *
+     * Implementação Fase 11:
+     *   No evento 'on_attack' com isOffensiveSkill === false (ataque básico),
+     *   retorna { atkBonus: 1 } apenas se context.hasBellwaveRhythmCharge === true.
+     *   O caller (wildActions.js) rastreia encounter.passiveState.bellwaveRhythmCharged:
+     *     - SET em executeWildSkill para qualquer skill usada pelo player bellwave.
+     *     - CONSUMIDO (reset para false) após o atkBonus ser aplicado no ataque básico.
+     *   Nota: isOffensiveSkill: false é o sinal de ataque básico — garante que o bônus
+     *   é o "golpe de ritmo" após a skill usada, não amplifica a própria skill.
+     *
+     * Simetria: player-side apenas (Fase 11). Wild-side não implementado: o pipeline
+     *   wild não rastreia "qual skill foi usada no turno anterior" de forma distinta.
+     */
+    bellwave: (_instance, context) => {
+        if (context.event !== 'on_attack') return null;
+        // Apenas ataque básico (não skill) — identidade de "ritmo após skill"
+        if (context.isOffensiveSkill) return null;
+        if (!context.hasBellwaveRhythmCharge) return null;
+        return { atkBonus: 1 };
+    },
 };
 
 /**
@@ -246,7 +288,8 @@ const PASSIVE_HANDLERS = {
  *   skillType?: string,              // Fase 4.3: tipo da skill ('DAMAGE'|'BUFF'|'HEAL'|...)
  *   isDebuff?: boolean,              // Fase 4.1: true = skill debuff (BUFF+enemy+power<0)
  *   isFirstAttackOfCombat?: boolean, // Fase 9: true = primeiro ataque do combate (swiftclaw)
- *   hasShadowstingCharge?: boolean,  // Fase 10: true = debuff aplicado, bônus disponível (shadowsting)
+ *   hasShadowstingCharge?: boolean,    // Fase 10: true = debuff aplicado, bônus disponível (shadowsting)
+ *   hasBellwaveRhythmCharge?: boolean, // Fase 11: true = skill usada, ritmo carregado (bellwave)
  * }} context
  * @returns {{ atkBonus?: number, damageReduction?: number, healBonus?: number, spdBuff?: { power: number, duration: number } }|null}
  */
