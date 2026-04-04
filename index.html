@@ -7,6 +7,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <title>Monstrinhomon - Therapeutic Game</title>
     <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/overworld.css">
     <script src="js/storage.js"></script>
     <script src="js/saveLayer.js"></script>
 </head>
@@ -210,24 +211,62 @@
             </div>
 
             <!-- ═══════════════════════════════════════════════════════════
-                 MAPA DE NÓS — Camada 1: Mundo  (para encontros selvagens)
+                 OVERWORLD MAP — Mapa visual interativo (principal)
                  ═══════════════════════════════════════════════════════════ -->
-            <div id="worldMapPanel" class="card">
-                <div class="wm-header">
-                    <h3 style="margin:0">🗺️ Mapa do Mundo</h3>
-                    <div style="display:flex;gap:8px;align-items:center">
-                        <span class="wm-hint">Escolha um local para explorar</span>
-                        <button class="btn btn-sm wm-campaign-toggle" id="toggleCampaignBtn"
-                                onclick="toggleCampaignProgress()" aria-expanded="false"
-                                title="Ver progresso da campanha">📊 Campanha</button>
+            <div id="overworldPanel" class="card" style="display:none">
+                <!-- Header -->
+                <div class="ow-header">
+                    <h3>🗺️ Monstrinhomon</h3>
+                    <div class="ow-header-stats" id="owHeaderStats">
+                        <div class="ow-header-stat">
+                            <span class="ow-header-stat__label">Local Atual</span>
+                            <span class="ow-header-stat__value" id="owCurrentLocal">—</span>
+                        </div>
+                        <div class="ow-header-stat">
+                            <span class="ow-header-stat__label">Progresso</span>
+                            <span class="ow-header-stat__value" id="owProgress">0/0</span>
+                        </div>
+                        <div class="ow-header-stat">
+                            <span class="ow-header-stat__label">Party</span>
+                            <span class="ow-header-stat__value" id="owParty">—</span>
+                        </div>
                     </div>
+                    <button class="btn btn-sm wm-campaign-toggle" id="toggleCampaignBtn"
+                            onclick="toggleCampaignProgress()" aria-expanded="false"
+                            title="Ver progresso da campanha">📊 Campanha</button>
                 </div>
-                <!-- PR-11: Painel de Progresso Regional (colapsável) -->
+                <!-- Painel de Progresso Regional (colapsável) -->
                 <div id="campaignProgressPanel" class="wm-campaign-panel is-hidden" aria-label="Progresso da campanha">
                     <!-- Renderizado por renderCampaignPanel() -->
                 </div>
+                <!-- Mapa + Sidebar -->
+                <div class="ow-layout">
+                    <div class="ow-map-wrap" id="overworldMapContainer">
+                        <!-- SVG renderizado por renderOverworldPanel() -->
+                    </div>
+                    <div class="ow-sidebar-wrap" id="overworldSidebar">
+                        <p class="ow-sidebar__placeholder">👈 Selecione um local no mapa</p>
+                    </div>
+                </div>
+                <!-- Legenda -->
+                <div class="ow-legend">
+                    <div class="ow-legend-item"><div class="ow-legend-dot ow-legend-dot--current"></div> Local atual</div>
+                    <div class="ow-legend-item"><div class="ow-legend-dot ow-legend-dot--visited"></div> Visitado</div>
+                    <div class="ow-legend-item"><div class="ow-legend-dot ow-legend-dot--available"></div> Disponível</div>
+                    <div class="ow-legend-item"><div class="ow-legend-dot ow-legend-dot--locked"></div> Bloqueado</div>
+                    <div class="ow-legend-item"><div class="ow-legend-dot ow-legend-dot--boss"></div> Chefe</div>
+                </div>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════════
+                 MAPA DE NÓS — Camada 1: Mundo  (grade legada, oculta)
+                 ═══════════════════════════════════════════════════════════ -->
+            <div id="worldMapPanel" class="card is-hidden">
+                <div class="wm-header">
+                    <h3 style="margin:0">🗺️ Mapa do Mundo</h3>
+                </div>
                 <div id="worldMapGrid" class="wm-grid">
-                    <!-- Renderizado dinamicamente por renderWorldMapPanel() -->
+                    <!-- Grade legada — substituída pelo overworldPanel -->
                 </div>
             </div>
 
@@ -286,7 +325,7 @@
                  ═══════════════════════════════════════════════════════════ -->
             <div class="card encounter-setup is-hidden" id="wildSetupPanel">
                 <div class="wm-header">
-                    <button class="btn btn-sm" onclick="backToSpots()" aria-label="Voltar ao local">← Local</button>
+                    <button class="btn btn-sm" onclick="backToWorldMap()" aria-label="Voltar ao mapa">← Mapa</button>
                     <h3 id="wildSetupTitle" style="margin:0;flex:1;text-align:center">Spot</h3>
                 </div>
                 <p id="wildSetupDesc" class="text-small text-muted" style="margin:4px 0 12px"></p>
@@ -666,6 +705,10 @@
         import * as WorldMap from './js/encounter/worldMap.js';
         window.WorldMap = WorldMap;
 
+        // Overworld Map — Mapa visual interativo SVG
+        import * as OverworldMap from './js/encounter/overworldMap.js';
+        window.OverworldMap = OverworldMap;
+
         // Encounter Engine — Geração de encontros por área progressiva
         import * as EncounterEngine from './js/encounter/encounterEngine.js';
         window.EncounterEngine = EncounterEngine;
@@ -822,6 +865,7 @@
         window.backToWorldMap  = backToWorldMap;
         window.backToSpots     = backToSpots;
         window.showWorldMap    = showWorldMap;
+        window.owSelectNode    = owSelectNode;
 
         // Destructure groupCore for easier access
         const GroupCore = Combat.Group.Core;
@@ -8655,13 +8699,15 @@
         async function showWorldMap() {
             await _wmLoadData();
 
-            const mapPanel   = document.getElementById('worldMapPanel');
-            const spotsPanel = document.getElementById('locationSpotsPanel');
-            const bossPanel  = document.getElementById('bossNodePanel');
-            const setupPanel = document.getElementById('wildSetupPanel');
-            const legacyPanel= document.getElementById('encounterSetupCard');
+            const overworldEl = document.getElementById('overworldPanel');
+            const spotsPanel  = document.getElementById('locationSpotsPanel');
+            const bossPanel   = document.getElementById('bossNodePanel');
+            const setupPanel  = document.getElementById('wildSetupPanel');
+            const legacyPanel = document.getElementById('encounterSetupCard');
+            const mapPanel    = document.getElementById('worldMapPanel');
 
-            if (mapPanel)    showEl(mapPanel);
+            if (overworldEl) { overworldEl.style.display = ''; }
+            if (mapPanel)    hideEl(mapPanel);
             if (spotsPanel)  hideEl(spotsPanel);
             if (bossPanel)   hideEl(bossPanel);
             if (setupPanel)  hideEl(setupPanel);
@@ -8670,8 +8716,254 @@
             _wm.selectedLocationId = null;
             _wm.selectedSpotId     = null;
 
-            renderWorldMapPanel();
+            renderOverworldPanel();
         }
+
+        // ── OVERWORLD MAP — Renderização visual SVG ────────────────────────────────
+
+        /**
+         * Coleta o progresso atual do jogo para uso no overworld.
+         */
+        function _owGetProgressState() {
+            const visitedLocations   = new Set(GameState.data?.visitedLocations  ?? []);
+            const completedLocations = new Set(GameState.data?.completedLocations ?? []);
+            const nodeFlags          = GameState.data?.nodeFlags ?? {};
+            const completedQuestIds  = new Set();
+            (GameState.players ?? []).forEach(player => {
+                (player?.questState?.completedQuestIds ?? []).forEach(id => completedQuestIds.add(id));
+            });
+            // Nó atual: último visitado (ou null)
+            const visited = GameState.data?.visitedLocations ?? [];
+            const currentNodeId = visited.length > 0 ? visited[visited.length - 1] : null;
+            const partySize = (GameState.players ?? []).filter(Boolean).length;
+            return { visitedLocations, completedLocations, nodeFlags, completedQuestIds, currentNodeId, partySize };
+        }
+
+        /** Renderiza o SVG do overworld no container e atualiza o header. */
+        function renderOverworldPanel() {
+            const container = document.getElementById('overworldMapContainer');
+            if (!container || !window.WorldMap || !window.OverworldMap) return;
+
+            const progress = _owGetProgressState();
+
+            const enriched = window.WorldMap.getEnrichedNodes(
+                _wm.worldMapNodes ?? [],
+                _wm.locationsData ?? []
+            ).map(node => {
+                const unlocked = window.WorldMap.isNodeUnlocked(
+                    node,
+                    progress.visitedLocations,
+                    progress.completedLocations,
+                    progress.nodeFlags,
+                    progress.completedQuestIds
+                );
+                const state = window.OverworldMap.getNodeVisualState(node, {
+                    visitedLocations:   progress.visitedLocations,
+                    completedLocations: progress.completedLocations,
+                    nodeFlags:          progress.nodeFlags,
+                    currentNodeId:      progress.currentNodeId
+                });
+                return { ...node, _unlocked: unlocked, _state: state };
+            });
+
+            container.innerHTML = window.OverworldMap.buildMapSVG(enriched);
+
+            // Atualizar header stats
+            const totalNodes   = enriched.filter(n => n.type !== 'boss').length;
+            const visitedCount = enriched.filter(n => n._state === 'visited' || n._state === 'current').length;
+            const currentLoc   = enriched.find(n => n._state === 'current');
+            const currentName  = currentLoc?.name ?? '—';
+
+            const elLocal    = document.getElementById('owCurrentLocal');
+            const elProgress = document.getElementById('owProgress');
+            const elParty    = document.getElementById('owParty');
+            if (elLocal)    elLocal.textContent    = currentName.length > 16 ? currentName.slice(0, 15) + '…' : currentName;
+            if (elProgress) elProgress.textContent = `${visitedCount}/${totalNodes}`;
+            if (elParty)    elParty.textContent    = progress.partySize > 0 ? `${progress.partySize} 🎒` : '—';
+        }
+
+        /**
+         * Chamado pelo onclick dos nós SVG. Atualiza o sidebar.
+         * @param {string} nodeId
+         */
+        function owSelectNode(nodeId) {
+            document.querySelectorAll('.ow-node--selected').forEach(el => el.classList.remove('ow-node--selected'));
+            const nodeEl = document.querySelector(`.ow-node[data-node="${nodeId}"]`);
+            if (nodeEl) nodeEl.classList.add('ow-node--selected');
+            _owRenderSidebar(nodeId);
+        }
+
+        /**
+         * Renderiza o sidebar do overworld para o nó especificado.
+         * @param {string} nodeId
+         */
+        function _owRenderSidebar(nodeId) {
+            const sidebar = document.getElementById('overworldSidebar');
+            if (!sidebar || !_wm.locationsData || !window.WorldMap) return;
+
+            const node     = (_wm.worldMapNodes ?? []).find(n => n.nodeId === nodeId);
+            const loc      = (_wm.locationsData ?? []).find(l => l.id === nodeId);
+            const progress = _owGetProgressState();
+
+            if (!node) {
+                sidebar.innerHTML = '<p class="ow-sidebar__placeholder">Local não encontrado.</p>';
+                return;
+            }
+
+            const unlocked = window.WorldMap.isNodeUnlocked(
+                node,
+                progress.visitedLocations,
+                progress.completedLocations,
+                progress.nodeFlags,
+                progress.completedQuestIds
+            );
+
+            if (!unlocked) {
+                const lockReason = window.WorldMap.getNodeLockReason
+                    ? window.WorldMap.getNodeLockReason(node, progress.completedLocations, progress.nodeFlags, progress.completedQuestIds, progress.visitedLocations, _wm.locationsData ?? [])
+                    : 'Bloqueado';
+                sidebar.innerHTML = `
+                    <div class="ow-sidebar__locked">
+                        <span class="ow-sidebar__lock-icon">🔒</span>
+                        <p class="ow-sidebar__lock-reason">${lockReason}</p>
+                    </div>`;
+                return;
+            }
+
+            const biome    = loc?.biome ?? 'campos';
+            const emoji    = window.OverworldMap.BIOME_EMOJI[biome] ?? '🗺️';
+            const name     = loc?.name ?? nodeId;
+            const desc     = loc?.description ?? '';
+            const lvRange  = loc?.levelRange ? `Lv ${loc.levelRange[0]}–${loc.levelRange[1]}` : '';
+            const isBoss   = node.type === 'boss';
+            const isCity   = node.type === 'city';
+            const bossMeta = node.bossMeta ?? {};
+            const regionType = bossMeta.regionType ?? 'main';
+            const defeated = progress.nodeFlags[nodeId]?.bossDefeated === true;
+            const isCurrent = nodeId === progress.currentNodeId;
+            const isDone    = progress.completedLocations.has(nodeId);
+
+            // Badges
+            let badgesHtml = '';
+            if (isBoss) {
+                const bossClass = regionType === 'optional' ? 'ow-sidebar__badge--optional'
+                                : regionType === 'side'     ? 'ow-sidebar__badge--side'
+                                : 'ow-sidebar__badge--boss';
+                const bossTag = regionType === 'optional' ? 'Opcional' : regionType === 'side' ? 'Alternativo' : 'Principal';
+                badgesHtml += `<span class="ow-sidebar__badge ${bossClass}">👑 Chefe ${bossTag}</span>`;
+                if (defeated) badgesHtml += `<span class="ow-sidebar__badge ow-sidebar__badge--done">⚔️ Derrotado</span>`;
+            } else if (isCity) {
+                badgesHtml += `<span class="ow-sidebar__badge ow-sidebar__badge--city">🏙️ Cidade</span>`;
+            } else {
+                if (isCurrent) badgesHtml += `<span class="ow-sidebar__badge ow-sidebar__badge--current">📍 Atual</span>`;
+                if (isDone)    badgesHtml += `<span class="ow-sidebar__badge ow-sidebar__badge--done">✅ Concluído</span>`;
+            }
+
+            // Quest ativa neste local
+            let questHtml = '';
+            if (window.GameFlow) {
+                for (const player of (GameState.players ?? [])) {
+                    if (!player) continue;
+                    const summary = window.GameFlow.getActiveQuestsSummary(player);
+                    const match   = summary.find(({ quest }) => quest?.localId === nodeId);
+                    if (match) {
+                        const { quest, progress: prog, needed } = match;
+                        questHtml = `
+                            <div class="ow-sidebar__quest">
+                                <span class="ow-sidebar__quest-icon">❗</span>
+                                <div class="ow-sidebar__quest-body">
+                                    <p class="ow-sidebar__quest-name">${quest.nome}</p>
+                                    <p class="ow-sidebar__quest-player">${player.name} — ${prog}/${needed}</p>
+                                </div>
+                            </div>`;
+                        break;
+                    }
+                }
+            }
+
+            // ── Boss sidebar ────────────────────────────────────────────────────
+            if (isBoss) {
+                const bossLabel  = bossMeta.bossLabel ?? name;
+                const bossFlavor = bossMeta.bossFlavor ?? desc;
+                const bossLevel  = bossMeta.bossLevel ?? '?';
+                const btnClass   = defeated ? 'ow-sidebar__boss-btn--defeated' : '';
+                const btnText    = defeated
+                    ? `🔄 Desafiar Novamente`
+                    : `⚔️ Desafiar ${bossLabel}`;
+                sidebar.innerHTML = `
+                    <div class="ow-sidebar__header">
+                        <span class="ow-sidebar__emoji">👑</span>
+                        <div class="ow-sidebar__title-block">
+                            <h3 class="ow-sidebar__name">${bossLabel}</h3>
+                            <div class="ow-sidebar__meta">
+                                <span class="ow-sidebar__level">Lv ${bossLevel}</span>
+                                ${badgesHtml}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ow-sidebar__body">
+                        ${questHtml}
+                        <p class="ow-sidebar__flavor">${bossFlavor}</p>
+                        <button class="ow-sidebar__boss-btn ${btnClass}"
+                                onclick="selectWorldNode('${nodeId}')">
+                            ${btnText}
+                        </button>
+                    </div>`;
+                return;
+            }
+
+            // ── Exploração / Cidade: mostra spots ───────────────────────────────
+            const spots = window.WorldMap.getSpotsForLocation(nodeId, _wm.locationsData ?? []);
+            const spotsHtml = spots.length > 0
+                ? spots.map(spot => {
+                    const isService = spot.type === 'service' || spot.profileKey === 'service';
+                    const onclick   = isService
+                        ? `onclick="selectCityService('${spot.serviceAction}')"`
+                        : `onclick="owGoToSpot('${spot.id}')"`;
+                    const cls = isService ? 'ow-spot--service' : '';
+                    return `
+                        <div class="ow-spot ${cls}" ${onclick}>
+                            <span class="ow-spot__icon">${spot.icon}</span>
+                            <div class="ow-spot__info">
+                                <p class="ow-spot__name">${spot.name}</p>
+                                <p class="ow-spot__desc">${spot.description}</p>
+                            </div>
+                            <span class="ow-spot__arrow">›</span>
+                        </div>`;
+                }).join('')
+                : '<p style="font-size:11px;color:rgba(255,255,255,0.4);margin:8px 0">Nenhum spot disponível.</p>';
+
+            sidebar.innerHTML = `
+                <div class="ow-sidebar__header">
+                    <span class="ow-sidebar__emoji">${emoji}</span>
+                    <div class="ow-sidebar__title-block">
+                        <h3 class="ow-sidebar__name">${name}</h3>
+                        <div class="ow-sidebar__meta">
+                            ${lvRange ? `<span class="ow-sidebar__level">${lvRange}</span>` : ''}
+                            ${badgesHtml}
+                        </div>
+                    </div>
+                </div>
+                <div class="ow-sidebar__body">
+                    <p class="ow-sidebar__desc">${desc}</p>
+                    ${questHtml}
+                    <p class="ow-sidebar__section-title">O que fazer aqui</p>
+                    ${spotsHtml}
+                </div>`;
+        }
+
+        /**
+         * Navega de um spot no overworld para o wildSetupPanel.
+         * @param {string} spotId
+         */
+        function owGoToSpot(spotId) {
+            const locId = window.WorldMap?.locationIdFromSpotId?.(spotId) ?? null;
+            if (locId) _wm.selectedLocationId = locId;
+            selectSpot(spotId);
+        }
+        window.owGoToSpot = owGoToSpot;
+
+        // ── Grade legada (usada como fallback) ─────────────────────────────────
 
         /** Renderiza o grid de nós do mapa. */
         function renderWorldMapPanel() {
@@ -8786,6 +9078,10 @@
 
             _wm.selectedLocationId = locationId;
             _wm.selectedSpotId     = null;
+
+            // Ocultar o overworld ao navegar para sub-painel
+            const overworldEl = document.getElementById('overworldPanel');
+            if (overworldEl) overworldEl.style.display = 'none';
 
             // PR-09: Se for boss node, abrir painel específico de boss
             const bossNode = (_wm.worldMapNodes ?? []).find(n => n.nodeId === locationId && n.type === 'boss');
@@ -9191,10 +9487,12 @@
          * @param {Object} bossNode - Nó do boss (de worldMap.json)
          */
         function openBossPanel(nodeId, bossNode) {
-            const mapPanel  = document.getElementById('worldMapPanel');
-            const bossPanel = document.getElementById('bossNodePanel');
-            if (mapPanel)  hideEl(mapPanel);
-            if (bossPanel) showEl(bossPanel);
+            const overworldEl = document.getElementById('overworldPanel');
+            const mapPanel    = document.getElementById('worldMapPanel');
+            const bossPanel   = document.getElementById('bossNodePanel');
+            if (overworldEl) overworldEl.style.display = 'none';
+            if (mapPanel)    hideEl(mapPanel);
+            if (bossPanel)   showEl(bossPanel);
 
             const loc = (_wm.locationsData ?? []).find(l => l.id === nodeId);
             const nodeFlags         = GameState.data?.nodeFlags ?? {};
@@ -9388,10 +9686,12 @@
 
             _wm.selectedSpotId = spotId;
 
-            const spotsPanel = document.getElementById('locationSpotsPanel');
-            const setupPanel = document.getElementById('wildSetupPanel');
-            if (spotsPanel) hideEl(spotsPanel);
-            if (setupPanel) showEl(setupPanel);
+            const overworldEl = document.getElementById('overworldPanel');
+            const spotsPanel  = document.getElementById('locationSpotsPanel');
+            const setupPanel  = document.getElementById('wildSetupPanel');
+            if (overworldEl) overworldEl.style.display = 'none';
+            if (spotsPanel)  hideEl(spotsPanel);
+            if (setupPanel)  showEl(setupPanel);
 
             // Preencher título e descrição do spot
             const spot  = window.WorldMap.findSpot(spotId, _wm.locationsData ?? []);
@@ -9468,25 +9768,33 @@
             }
         }
 
-        /** Volta do painel de spots para o mapa (botão ← Mapa). */
+        /** Volta do painel de spots/boss/setup para o overworld. */
         function backToWorldMap() {
             _wm.selectedLocationId = null;
             _wm.selectedSpotId     = null;
-            const mapPanel   = document.getElementById('worldMapPanel');
-            const spotsPanel = document.getElementById('locationSpotsPanel');
-            const bossPanel  = document.getElementById('bossNodePanel');
-            if (mapPanel)    showEl(mapPanel);
-            if (spotsPanel)  hideEl(spotsPanel);
-            if (bossPanel)   hideEl(bossPanel);
+            const overworldEl = document.getElementById('overworldPanel');
+            const mapPanel    = document.getElementById('worldMapPanel');
+            const spotsPanel  = document.getElementById('locationSpotsPanel');
+            const bossPanel   = document.getElementById('bossNodePanel');
+            const setupPanel  = document.getElementById('wildSetupPanel');
+            if (spotsPanel)   hideEl(spotsPanel);
+            if (bossPanel)    hideEl(bossPanel);
+            if (setupPanel)   hideEl(setupPanel);
+            if (mapPanel)     hideEl(mapPanel);
+            if (overworldEl)  { overworldEl.style.display = ''; }
+            // Re-renderizar para refletir mudanças de estado pós-batalha
+            renderOverworldPanel();
         }
 
-        /** Volta do painel de setup para os spots (botão ← Local). */
+        /** Volta do painel de setup para o mapa (fluxo legado, redireciona ao overworld). */
         function backToSpots() {
             _wm.selectedSpotId = null;
-            const spotsPanel = document.getElementById('locationSpotsPanel');
-            const setupPanel = document.getElementById('wildSetupPanel');
-            if (spotsPanel)  showEl(spotsPanel);
-            if (setupPanel)  hideEl(setupPanel);
+            const overworldEl = document.getElementById('overworldPanel');
+            const spotsPanel  = document.getElementById('locationSpotsPanel');
+            const setupPanel  = document.getElementById('wildSetupPanel');
+            if (setupPanel)   hideEl(setupPanel);
+            if (overworldEl)  { overworldEl.style.display = ''; renderOverworldPanel(); }
+            else if (spotsPanel) showEl(spotsPanel);
         }
 
         function updateGroupParticipantsList() {
