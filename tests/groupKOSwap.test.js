@@ -249,7 +249,7 @@ describe('advanceGroupTurn — KO do ativo no loop de turno', () => {
 
         // Modal abre para o jogador
         expect(switchModalCalls).toHaveLength(1);
-        expect(switchModalCalls[0].playerId).toBe('p1' === player.id ? player.id : player.id);
+        expect(switchModalCalls[0].playerId).toBe(player.id);
         // Encounter NÃO terminou (há substituto)
         expect(enc.finished).toBe(false);
         // Ator atual é o player (turno pausado aguardando troca)
