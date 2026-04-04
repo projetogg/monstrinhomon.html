@@ -149,6 +149,7 @@
       "bossMeta": {
         "bossLevel": 15,
         "regionId": "forest_arc_1",
+        "regionLabel": "Floresta Antiga",
         "unlocksNodes": ["LOC_009"],
         "defeatMarksRegionComplete": true,
         "bossLabel": "Guardião da Floresta",

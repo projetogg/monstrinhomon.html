@@ -19,7 +19,10 @@ import {
     isRegionComplete,
     getRegionalProgressSummary,
     isQuestRegionObjectiveComplete,
-    isBossDefeated
+    isBossDefeated,
+    deriveRegionLabel,
+    getRegionStatus,
+    getRegionNextObjective
 } from '../js/encounter/worldMap.js';
 
 // ── Fixtures ───────────────────────────────────────────────────────────────────
@@ -458,6 +461,216 @@ describe('Regressão — sistema existente não afetado', () => {
         ];
         const result = getRegionalProgressSummary(nodesWithoutRegion, {}, {});
         expect(result).toHaveLength(0);
+    });
+
+});
+
+// ── PR-11: deriveRegionLabel ────────────────────────────────────────────────
+
+describe('deriveRegionLabel — nome amigável a partir do regionId (PR-11)', () => {
+
+    it('deve capitalizar palavras e substituir underscores', () => {
+        expect(deriveRegionLabel('forest_arc_1')).toBe('Forest Arc 1');
+        expect(deriveRegionLabel('cave_arc_1')).toBe('Cave Arc 1');
+        expect(deriveRegionLabel('minas_profundas')).toBe('Minas Profundas');
+    });
+
+    it('deve tratar regionId com uma só palavra', () => {
+        expect(deriveRegionLabel('floresta')).toBe('Floresta');
+    });
+
+    it('deve retornar fallback para entrada vazia ou null', () => {
+        expect(deriveRegionLabel('')).toBe('Região Desconhecida');
+        expect(deriveRegionLabel(null)).toBe('Região Desconhecida');
+        expect(deriveRegionLabel(undefined)).toBe('Região Desconhecida');
+    });
+
+});
+
+// ── PR-11: getRegionStatus ──────────────────────────────────────────────────
+
+describe('getRegionStatus — status visual da região (PR-11)', () => {
+
+    const BOSS_NODE_WITH_RULE = {
+        nodeId: 'BOSS_FOREST_01',
+        type: 'boss',
+        unlockRule: { type: 'complete_node', nodeId: 'LOC_008' },
+        connections: ['LOC_008', 'LOC_009'],
+        bossMeta: BOSS_META_WITH_REGION
+    };
+
+    it('deve retornar "completed" se região foi concluída', () => {
+        const status = getRegionStatus(BOSS_NODE_WITH_RULE, true, true);
+        expect(status).toBe('completed');
+    });
+
+    it('deve retornar "in_progress" se boss desbloqueado mas não derrotado', () => {
+        const completedLocations = new Set(['LOC_008']);
+        const status = getRegionStatus(
+            BOSS_NODE_WITH_RULE, false, false, new Set(), completedLocations, {}, new Set()
+        );
+        expect(status).toBe('in_progress');
+    });
+
+    it('deve retornar "available" se algum vizinho foi visitado mas boss não desbloqueado', () => {
+        // LOC_008 foi visitado mas não concluído, então boss ainda bloqueado
+        const visitedLocations  = new Set(['LOC_008']);
+        const completedLocations = new Set(); // LOC_008 não concluído → boss locked
+        const status = getRegionStatus(
+            BOSS_NODE_WITH_RULE, false, false, visitedLocations, completedLocations, {}, new Set()
+        );
+        expect(status).toBe('available');
+    });
+
+    it('deve retornar "locked" se nenhum vizinho foi visitado/concluído', () => {
+        const status = getRegionStatus(
+            BOSS_NODE_WITH_RULE, false, false, new Set(), new Set(), {}, new Set()
+        );
+        expect(status).toBe('locked');
+    });
+
+    it('deve usar defaults vazios quando parâmetros opcionais são omitidos', () => {
+        const status = getRegionStatus(BOSS_NODE_WITH_RULE, false, false);
+        expect(status).toBe('locked');
+    });
+
+});
+
+// ── PR-11: getRegionNextObjective ───────────────────────────────────────────
+
+describe('getRegionNextObjective — próximo objetivo macro (PR-11)', () => {
+
+    it('deve retornar null para região concluída', () => {
+        expect(getRegionNextObjective('completed', 'Guardião', 'Floresta Antiga')).toBeNull();
+    });
+
+    it('deve recomendar derrotar o boss para in_progress', () => {
+        const obj = getRegionNextObjective('in_progress', 'Guardião da Floresta', 'Floresta Antiga');
+        expect(obj).toBe('Derrote Guardião da Floresta');
+    });
+
+    it('deve recomendar explorar a região para available', () => {
+        const obj = getRegionNextObjective('available', 'Guardião da Floresta', 'Floresta Antiga');
+        expect(obj).toContain('Floresta Antiga');
+        expect(obj).toContain('Guardião da Floresta');
+    });
+
+    it('deve recomendar desbloquear regiões anteriores para locked', () => {
+        const obj = getRegionNextObjective('locked', 'Guardião', 'Floresta Antiga');
+        expect(obj).toContain('Desbloqueie');
+    });
+
+    it('deve retornar null para status desconhecido', () => {
+        expect(getRegionNextObjective('unknown', 'Boss', 'Região')).toBeNull();
+    });
+
+});
+
+// ── PR-11: getRegionalProgressSummary enriquecido ──────────────────────────
+
+describe('getRegionalProgressSummary — campos enriquecidos (PR-11)', () => {
+
+    const NODES_PR11 = [
+        {
+            nodeId: 'BOSS_FOREST_01',
+            type: 'boss',
+            unlockDefault: false,
+            unlockRule: { type: 'complete_node', nodeId: 'LOC_008' },
+            connections: ['LOC_008', 'LOC_009'],
+            bossMeta: {
+                ...BOSS_META_WITH_REGION,
+                regionLabel: 'Floresta Antiga'
+            }
+        },
+        {
+            nodeId: 'BOSS_CAVE_01',
+            type: 'boss',
+            unlockDefault: false,
+            unlockRule: { type: 'complete_node', nodeId: 'LOC_020' },
+            connections: ['LOC_020'],
+            bossMeta: BOSS_META_NO_FLAG
+        }
+    ];
+
+    it('deve retornar regionLabel de bossMeta quando disponível', () => {
+        const result = getRegionalProgressSummary(NODES_PR11, {}, {});
+        const forest = result.find(r => r.regionId === 'forest_arc_1');
+        expect(forest.regionLabel).toBe('Floresta Antiga');
+    });
+
+    it('deve derivar regionLabel se bossMeta.regionLabel não está definido', () => {
+        const result = getRegionalProgressSummary(NODES_PR11, {}, {});
+        const cave = result.find(r => r.regionId === 'cave_arc_1');
+        // BOSS_META_NO_FLAG não tem regionLabel → deriva de 'cave_arc_1'
+        expect(cave.regionLabel).toBe('Cave Arc 1');
+    });
+
+    it('deve retornar status "completed" para região concluída', () => {
+        const progress = { 'forest_arc_1': { completed: true, completedByBossNodeId: 'BOSS_FOREST_01' } };
+        const result = getRegionalProgressSummary(NODES_PR11, {}, progress);
+        const forest = result.find(r => r.regionId === 'forest_arc_1');
+        expect(forest.status).toBe('completed');
+        expect(forest.nextObjective).toBeNull();
+    });
+
+    it('deve retornar status "in_progress" quando boss node está desbloqueado', () => {
+        const completedLocations = new Set(['LOC_008']);
+        const result = getRegionalProgressSummary(
+            NODES_PR11, {}, {}, new Set(), completedLocations, new Set()
+        );
+        const forest = result.find(r => r.regionId === 'forest_arc_1');
+        expect(forest.status).toBe('in_progress');
+        expect(forest.nextObjective).toContain('Derrote');
+    });
+
+    it('deve retornar status "locked" sem progresso', () => {
+        const result = getRegionalProgressSummary(NODES_PR11, {}, {});
+        const forest = result.find(r => r.regionId === 'forest_arc_1');
+        expect(forest.status).toBe('locked');
+    });
+
+    it('deve marcar isCurrent=true para a primeira região não concluída', () => {
+        const result = getRegionalProgressSummary(NODES_PR11, {}, {});
+        const currentRegions = result.filter(r => r.isCurrent);
+        expect(currentRegions).toHaveLength(1);
+        expect(result[0].isCurrent).toBe(true); // primeira região não concluída
+    });
+
+    it('deve marcar isCurrent=false para todas quando todas concluídas', () => {
+        const progress = {
+            'forest_arc_1': { completed: true },
+            'cave_arc_1':   { completed: true }
+        };
+        const result = getRegionalProgressSummary(NODES_PR11, {}, progress);
+        // Nenhuma isCurrent quando tudo concluído
+        expect(result.every(r => r.isCurrent === false)).toBe(true);
+    });
+
+    it('deve retornar nextObjective para região não concluída', () => {
+        const result = getRegionalProgressSummary(NODES_PR11, {}, {});
+        const forest = result.find(r => r.regionId === 'forest_arc_1');
+        expect(forest.nextObjective).toBeTruthy();
+    });
+
+    it('deve funcionar com parâmetros de context omitidos (retrocompatibilidade)', () => {
+        // Assinatura original: (worldMapNodes, nodeFlags, regionalProgress)
+        const result = getRegionalProgressSummary(NODES_PR11, {}, {});
+        // NODES_PR11 tem 2 bosses com regionId: forest_arc_1 e cave_arc_1
+        expect(result).toHaveLength(2);
+        result.forEach(r => {
+            expect(r.regionId).toBeDefined();
+            expect(r.regionLabel).toBeDefined();
+            expect(r.status).toMatch(/^(completed|in_progress|available|locked)$/);
+            expect(r.bossLabel).toBeDefined();
+        });
+    });
+
+    it('não deve expor IDs técnicos como regionLabel principal', () => {
+        const result = getRegionalProgressSummary(NODES_PR11, {}, {});
+        result.forEach(r => {
+            // regionLabel não deve ser igual ao regionId (id técnico)
+            expect(r.regionLabel).not.toBe(r.regionId);
+        });
     });
 
 });
