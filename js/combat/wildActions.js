@@ -77,10 +77,16 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
             dependencies.recordD20Roll(encounter, player.name, d20Roll, rollType);
         }
         
+        // Fase 11.2: bônus de agilidade por SPD (±1 no check de acerto)
+        const playerSpdBonus = WildCore.getSpdAdvantage(playerMonster, encounter.wildMonster);
+        if (playerSpdBonus !== 0) {
+            encounter.log.push(`⚡ Agilidade: ${playerMonster.name} ${playerSpdBonus > 0 ? '+1' : '-1'} (SPD ${WildCore.getEffectiveSpd(playerMonster)} vs ${WildCore.getEffectiveSpd(encounter.wildMonster)})`);
+        }
+
         // d20=1 sempre erra, d20=20 sempre acerta
         const playerHit = critResult.isFail1 ? false : (
             critResult.isCrit20 ? true : 
-            WildCore.checkHit(d20Roll, playerMonster, encounter.wildMonster, dependencies.classAdvantages)
+            WildCore.checkHit(d20Roll, playerMonster, encounter.wildMonster, dependencies.classAdvantages, playerSpdBonus)
         );
         
         // Tocar som
@@ -309,7 +315,9 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
     const enemyRoll = rollEnemyD20(dependencies);
     const alwaysMiss = (enemyRoll === 1);
     const isCrit = (enemyRoll === 20);
-    const enemyHit = !alwaysMiss && (isCrit || WildCore.checkHit(enemyRoll, wildMonster, playerMonster, dependencies.classAdvantages));
+    // Fase 11.2: bônus de agilidade por SPD para o inimigo (contra o jogador)
+    const enemySpdBonusSkill = WildCore.getSpdAdvantage(wildMonster, playerMonster);
+    const enemyHit = !alwaysMiss && (isCrit || WildCore.checkHit(enemyRoll, wildMonster, playerMonster, dependencies.classAdvantages, enemySpdBonusSkill));
     encounter.log.push(`🎲 ${wildMonster.name} rolls ${enemyRoll}`);
     
     // Gravar roll
@@ -420,7 +428,9 @@ function processEnemyBasicAttack(encounter, wildMonster, playerMonster, dependen
     const enemyRoll = rollEnemyD20(dependencies);
     const alwaysMiss = (enemyRoll === 1);
     const isCrit = (enemyRoll === 20);
-    const enemyHit = !alwaysMiss && (isCrit || WildCore.checkHit(enemyRoll, wildMonster, playerMonster, dependencies.classAdvantages));
+    // Fase 11.2: bônus de agilidade por SPD para o inimigo (contra o jogador)
+    const enemySpdBonusBasic = WildCore.getSpdAdvantage(wildMonster, playerMonster);
+    const enemyHit = !alwaysMiss && (isCrit || WildCore.checkHit(enemyRoll, wildMonster, playerMonster, dependencies.classAdvantages, enemySpdBonusBasic));
     encounter.log.push(`🎲 Wild ${wildMonster.name} rolls ${enemyRoll} (ATK: ${wildMonster.atk})`);
     
     // Gravar roll
@@ -939,6 +949,82 @@ export function executeWildItemUse({ encounter, player, playerMonster, itemId, d
         return { success: true, result: 'ongoing', actualHeal };
     } catch (error) {
         console.error('executeWildItemUse failed:', error);
+        return { success: false, result: 'error' };
+    }
+}
+
+/**
+ * Executa uma tentativa de fuga de um encontro selvagem.
+ *
+ * Fase 11.2: SPD agora importa de verdade para a fuga.
+ * A chance de fuga é determinística baseada em SPD relativo (playerMonster vs wildMonster),
+ * e só uma chance aleatória decide o resultado — mas a probabilidade é controlada por SPD.
+ *
+ * Pipeline:
+ * 1. Calcula fleeChance via WildCore.calculateFleeChance (SPD-based)
+ * 2. Rola fuga (dependencies.rollFlee ou Math.random * 100)
+ * 3. Se fugiu: encounter.active = false, result = 'fled'
+ * 4. Se falhou: inimigo contra-ataca imediatamente (consequência)
+ *
+ * Impacto em espécies:
+ * - bellwave: Nota Discordante (-2 SPD inimigo) aumenta diretamente fleeChance em +4%
+ * - moonquill: spdBuff (+1 SPD) aumenta fleeChance em +2%
+ *
+ * @param {object} params
+ * @param {object} params.encounter      - Encontro atual
+ * @param {object} params.playerMonster  - Monstrinho do jogador
+ * @param {number} params.fleeBaseChance - Chance base de fuga (% por raridade, ex: 10–25)
+ * @param {object} params.dependencies   - Dependências injetadas:
+ *   rollFlee {function?}            () → number [0,100) — para testes determinísticos
+ *   eneRegenData {object}           tabela de regen por classe
+ *   classAdvantages {object}        tabela de vantagens de classe
+ *   getBasicPower {function}        (monsterClass) → number
+ *   rollD20 {function?}             () → number
+ * @returns {{ success: boolean, result: string }}
+ *   result: 'fled' | 'ongoing' | 'defeat' | 'invalid' | 'error'
+ */
+export function executeWildFlee({ encounter, playerMonster, fleeBaseChance, dependencies }) {
+    try {
+        const wildMonster = encounter?.wildMonster;
+        if (!wildMonster) return { success: false, result: 'invalid' };
+
+        encounter.log = encounter.log || [];
+
+        // Calcular chance de fuga baseada em SPD efetivo (Fase 11.2)
+        const fleeChance = WildCore.calculateFleeChance(playerMonster, wildMonster, fleeBaseChance ?? 15);
+        const playerSpd = WildCore.getEffectiveSpd(playerMonster);
+        const wildSpd = WildCore.getEffectiveSpd(wildMonster);
+
+        encounter.log.push(
+            `🏃 ${playerMonster.name} tenta fugir! (SPD ${playerSpd} vs ${wildSpd} → ${fleeChance}% de chance)`
+        );
+
+        // Rolar tentativa de fuga (0–100)
+        const fleeRoll = typeof dependencies?.rollFlee === 'function'
+            ? dependencies.rollFlee()
+            : Math.random() * 100;
+
+        if (fleeRoll < fleeChance) {
+            encounter.log.push(`✅ Fugiu com sucesso! (${Math.round(fleeRoll)} < ${fleeChance})`);
+            encounter.active = false;
+            encounter.result = 'fled';
+            return { success: true, result: 'fled' };
+        }
+
+        // Fuga falhou: inimigo contra-ataca imediatamente (reação, sem ENE regen)
+        encounter.log.push(`❌ Fuga falhou! (${Math.round(fleeRoll)} >= ${fleeChance}) ${wildMonster.name} contra-ataca!`);
+        const counterResult = processEnemyCounterattack(encounter, wildMonster, playerMonster, dependencies);
+        if (counterResult.defeated) {
+            encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
+            playerMonster.status = 'fainted';
+            encounter.active = false;
+            encounter.result = 'defeat';
+            return { success: true, result: 'defeat' };
+        }
+
+        return { success: true, result: 'ongoing' };
+    } catch (error) {
+        console.error('executeWildFlee failed:', error);
         return { success: false, result: 'error' };
     }
 }

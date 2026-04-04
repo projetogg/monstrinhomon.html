@@ -15,12 +15,14 @@
  * @param {object} attacker - Monstrinho atacante
  * @param {object} defender - Monstrinho defensor
  * @param {object} classAdvantages - Tabela de vantagens de classe
+ * @param {number} [spdBonus=0] - Bônus de agilidade por SPD (+1, 0 ou -1) — Fase 11.2
  * @returns {boolean} true se acerta, false se erra
  * 
- * REGRA: d20 + ATK + bônus_classe >= DEF
+ * REGRA: d20 + ATK + bônus_classe + bônus_agilidade >= DEF
  * Bônus de classe: +2 se vantagem, -2 se desvantagem
+ * Bônus de agilidade (Fase 11.2): +1 se SPD_atacante >= SPD_defensor + 3; -1 se inverso
  */
-export function checkHit(d20Roll, attacker, defender, classAdvantages) {
+export function checkHit(d20Roll, attacker, defender, classAdvantages, spdBonus = 0) {
     try {
         if (!attacker || !defender) return false;
         
@@ -38,12 +40,84 @@ export function checkHit(d20Roll, attacker, defender, classAdvantages) {
             }
         }
         
-        const totalAtk = d20Roll + atkMod + atkBonus;
+        // Fase 11.2: bônus de agilidade por SPD (±1, leve)
+        const totalAtk = d20Roll + atkMod + atkBonus + spdBonus;
         return totalAtk >= defValue;
     } catch (error) {
         console.error('Hit check failed:', error);
         return false;
     }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SISTEMA DE SPD — Fase 11.2
+//
+// SPD passou a influenciar dois pontos reais do runtime:
+//   1. Bônus de agilidade no acerto (±1 ATK no checkHit)
+//   2. Chance de fuga (flee chance baseada em SPD relativo)
+//
+// As funções abaixo são 100% puras e testáveis.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Calcula o SPD efetivo de um monstrinho, aplicando buffs/debuffs ativos.
+ *
+ * @param {object} monster - Monstrinho (com .spd e .buffs opcional)
+ * @returns {number} SPD efetivo (mínimo 1)
+ *
+ * Fase 11.2: ponto central para consumo real de mods.spd.
+ * Qualquer buff/debuff de SPD (ex.: Nota Discordante, moonquill spdBuff)
+ * passa a afetar resultados reais de combate via esta função.
+ */
+export function getEffectiveSpd(monster) {
+    if (!monster) return 1;
+    const baseSpd = monster.spd || 1;
+    const mods = getBuffModifiers(monster);
+    return Math.max(1, baseSpd + mods.spd);
+}
+
+/**
+ * Calcula o bônus de agilidade baseado em SPD relativo entre atacante e defensor.
+ *
+ * @param {object} attacker - Monstrinho atacante
+ * @param {object} defender - Monstrinho defensor
+ * @returns {number} +1 se atacante mais rápido (diff ≥ 3), -1 se mais lento (diff ≤ -3), 0 neutro
+ *
+ * Design conservador (Fase 11.2):
+ * - Threshold de 3: evita que qualquer diferença trivial de SPD mude o hit
+ * - Nota Discordante I (-2 SPD inimigo) cruzará o threshold quando bellwave
+ *   já tem vantagem de velocidade moderada → Nota passa a importar de verdade
+ * - moonquill spdBuff (+1 SPD) cruzará o threshold quando o Mago estava a 2
+ *   pontos da vantagem → buff deixa de ser cosmético
+ * - Bonus máximo: ±1 (análogo à 1/4 do bônus de classe) — sem dominância
+ */
+export function getSpdAdvantage(attacker, defender) {
+    const diff = getEffectiveSpd(attacker) - getEffectiveSpd(defender);
+    if (diff >= 3) return 1;
+    if (diff <= -3) return -1;
+    return 0;
+}
+
+/**
+ * Calcula a chance de fuga de um encontro selvagem, baseada em SPD relativo.
+ *
+ * @param {object} playerMonster - Monstrinho do jogador (com .spd e .buffs)
+ * @param {object} wildMonster - Monstrinho selvagem (com .spd e .buffs)
+ * @param {number} [baseChance=15] - Chance base de fuga em % (típico: 10–25 por raridade)
+ * @returns {number} Chance de fuga em % (clampada a [5, 95])
+ *
+ * Fórmula: baseChance + (playerSpd - wildSpd) * 2
+ * - +2% por ponto de SPD a favor do jogador
+ * - -2% por ponto de SPD a favor do inimigo
+ * - Nota Discordante (-2 SPD inimigo): +4% de chance de fuga adicional
+ * - moonquill spdBuff (+1 SPD): +2% de chance de fuga adicional
+ * - Clampado em [5%, 95%]: sempre há risco mínimo ou máximo razoável
+ */
+export function calculateFleeChance(playerMonster, wildMonster, baseChance = 15) {
+    const playerSpd = getEffectiveSpd(playerMonster);
+    const wildSpd = getEffectiveSpd(wildMonster);
+    const spdDiff = playerSpd - wildSpd;
+    return Math.min(95, Math.max(5, Math.round(baseChance + spdDiff * 2)));
 }
 
 /**

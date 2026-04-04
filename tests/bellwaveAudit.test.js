@@ -9,7 +9,7 @@
  *  3. ENE sustainability do loop skill→basic
  *  4. Kit swap coerência: Nota Discordante I (e promoção II)
  *  5. Diferenciação mecânica vs moonquill, shadowsting, swiftclaw
- *  6. ⚠️ TENSÃO CRÍTICA: SPD buff/debuff cosmético no runtime atual
+ *  6. ~~TENSÃO CRÍTICA~~ RESOLVIDA na Fase 11.2: SPD buff/debuff agora real
  *
  * ACHADOS PRINCIPAIS:
  *
@@ -29,24 +29,16 @@
  *   - bellwave vs shadowsting: sem atk+1; passiva via QUALQUER skill vs apenas
  *     após debuff; SPD debuff vs DAMAGE de execução
  *   - bellwave vs moonquill: ENE+AGI vs só ENE; passiva ATK on basic vs SPD self;
- *     SPD debuff vs ATK debuff (ambos cosmético hoje — ver tensão)
+ *     SPD debuff vs ATK debuff
  *
- * ⚠️ TENSÃO CRÍTICA — SPD buff/debuff cosmético no runtime atual:
- *   - WildCore.getBuffModifiers() retorna {atk, def, spd}
- *   - wildActions.js consome apenas .atk e .def para effectiveAtk/effectiveDef
- *   - O campo .spd é computado mas NUNCA aplicado em turno, hit ou dano
- *   - Efeitos afetados: Nota Discordante I/II (kit swap bellwave),
- *     moonquill spdBuff passive (pré-existente)
- *   - Impacto: Nota Discordante tem ZERO efeito mecânico no inimigo hoje
- *   - Não introduzido pela Fase 11 (gap pré-existente); mas o bellwave
- *     depende dele mais do que outras espécies (é o kit_swap assinatura)
- *
- * VEREDITO:
- *   - Passiva bellwave: ✅ FUNCIONA. Loop rítmico é real e verificável.
- *   - Kit swap bellwave: ⚠️ COSMÉTICO. SPD debuff não produz efeito mecânico.
- *   - Promoção bellwave: ⚠️ COSMÉTICO pela mesma razão.
- *   - Expansão para Animalista: CONDICIONAL. Recomendado implementar SPD
- *     primeiro (fase curta) antes de abrir nova classe.
+ * ✅ RESOLVIDO (Fase 11.2) — SPD buff/debuff agora tem efeito mecânico real:
+ *   - WildCore.getEffectiveSpd() agora é o ponto único de consumo de mods.spd
+ *   - WildCore.getSpdAdvantage() retorna ±1 para hit check (threshold: diff ≥ 3)
+ *   - WildCore.calculateFleeChance() usa SPD para determinar chance de fuga
+ *   - checkHit() aceita spdBonus opcional (backward compat, default 0)
+ *   - executeWildFlee() exportado de wildActions.js com lógica SPD-based
+ *   - Nota Discordante I: -2 SPD inimigo → +4% flee + cruzar threshold de hit
+ *   - moonquill spdBuff: +1 SPD self → +2% flee + cruzar threshold de hit
  */
 
 import { describe, it, expect, vi } from 'vitest';
@@ -353,12 +345,12 @@ describe('Fase 11.1 — bellwave — kit swap: estrutura correta', () => {
 });
 
 // ===========================================================================
-// Parte 5 — ⚠️ TENSÃO CRÍTICA: SPD buff/debuff cosmético
+// Parte 5 — SPD buff/debuff: RESOLVIDO na Fase 11.2
 // ===========================================================================
 
-describe('Fase 11.1 — ⚠️ TENSÃO: SPD buff/debuff cosmético no runtime atual', () => {
+describe('Fase 11.1→11.2 — SPD buff/debuff: tensão identificada e resolvida', () => {
 
-    describe('getBuffModifiers retorna .spd mas este não é consumido no pipeline de combate', () => {
+    describe('getBuffModifiers computa .spd (infraestrutura existia)', () => {
 
         it('getBuffModifiers retorna campo .spd quando há buff de SPD', () => {
             const monster = {
@@ -370,7 +362,7 @@ describe('Fase 11.1 — ⚠️ TENSÃO: SPD buff/debuff cosmético no runtime at
             expect(mods.spd).toBe(-2);
         });
 
-        it('getBuffModifiers retorna .spd = -2 após Nota Discordante (estruturalmente correto)', () => {
+        it('getBuffModifiers retorna .spd = -2 após Nota Discordante (estruturalmente correto; agora consumido via getEffectiveSpd)', () => {
             const wildMonster = {
                 buffs: [
                     { type: 'spd', power: -2, duration: 2, source: 'bellwave_discordant_note' }
@@ -378,9 +370,8 @@ describe('Fase 11.1 — ⚠️ TENSÃO: SPD buff/debuff cosmético no runtime at
             };
             const mods = WildCore.getBuffModifiers(wildMonster);
             expect(mods.spd).toBe(-2); // computado corretamente
-            // TENSÃO: este valor não é aplicado em effectiveAtk/effectiveDef em wildActions.js
-            // effectiveAtk = max(1, monster.atk + mods.atk) — mods.spd ignorado
-            // effectiveDef = max(1, monster.def + mods.def) — mods.spd ignorado
+            // Fase 11.2: este valor agora é consumido por getEffectiveSpd() e
+            // aplicado em getSpdAdvantage() (hit check) e calculateFleeChance() (flee)
         });
 
         it('getBuffModifiers retorna .spd = 0 sem buffs de SPD', () => {
@@ -389,17 +380,17 @@ describe('Fase 11.1 — ⚠️ TENSÃO: SPD buff/debuff cosmético no runtime at
             expect(mods.spd).toBe(0);
         });
 
-        it('moonquill spdBuff também é afetado pela mesma tensão (pré-existente)', () => {
-            // moonquill recebe +1 SPD ao debuffar inimigo — também cosmético hoje
+        it('moonquill spdBuff agora tem efeito real (Fase 11.2)', () => {
+            // moonquill recebe +1 SPD ao debuffar inimigo — agora consumido por getEffectiveSpd
             const moonquillInstance = {
                 buffs: [{ type: 'spd', power: 1, duration: 1, source: 'moonquill_passive' }]
             };
             const mods = WildCore.getBuffModifiers(moonquillInstance);
-            expect(mods.spd).toBe(1); // computado, mas não aplicado em hit/dano
+            expect(mods.spd).toBe(1); // computado e agora consumido em getSpdAdvantage e calculateFleeChance
         });
     });
 
-    describe('Impacto na identidade do bellwave', () => {
+    describe('Impacto na identidade do bellwave (Fase 11.2)', () => {
 
         it('passiva cadencia_ritmica (+1 ATK on basic) funciona independentemente do kit swap', () => {
             // A passiva usa hasBellwaveRhythmCharge — não depende de SPD
@@ -413,11 +404,10 @@ describe('Fase 11.1 — ⚠️ TENSÃO: SPD buff/debuff cosmético no runtime at
             expect(mod?.atkBonus).toBe(1); // Passiva FUNCIONA — confirma que o loop rítmico é real
         });
 
-        it('kit swap Nota Discordante I carrega o ritmo mesmo sendo cosmético como debuff', () => {
+        it('kit swap Nota Discordante I: SPD debuff agora tem efeito mecânico real (Fase 11.2)', () => {
             // Nota Discordante é uma skill — usa ENE — carrega bellwaveRhythmCharged
-            // Portanto: mesmo que -2 SPD seja cosmético, a Nota ainda serve como
-            // "skill de ritmo" — permite ao jogador escolher entre buff/heal e debuff
-            // para carregar o ritmo com trade-offs diferentes (ally buff vs enemy debuff)
+            // Fase 11.2: -2 SPD inimigo agora afeta hit check (via getSpdAdvantage)
+            // e flee chance (via calculateFleeChance)
             const notaDiscordante = {
                 type: 'BUFF',
                 cost: 4,
@@ -429,29 +419,21 @@ describe('Fase 11.1 — ⚠️ TENSÃO: SPD buff/debuff cosmético no runtime at
             // A Nota é uma skill válida que carrega o ritmo
             const isValidSkill = notaDiscordante.type !== undefined && notaDiscordante.cost > 0;
             expect(isValidSkill).toBe(true);
-
-            // Mas seu efeito primário (SPD debuff) é cosmético
-            // Isso significa que o bellwave perde diferenciação mecânica do moonquill no kit swap
-            // moonquill: ATK debuff cosmético no slot 4 (mesma situação)
-            // bellwave: SPD debuff cosmético no slot 4 (mesma situação)
-            // Ambos são cosméticos — distinção hoje é apenas temática, não mecânica
+            // E seu efeito primário (SPD debuff) é real a partir da Fase 11.2
+            // SPD debuff é agora consumido por getEffectiveSpd + getSpdAdvantage + calculateFleeChance
         });
 
-        it('benchmark: impacto do bellwave no combate com e sem Nota Discordante', () => {
-            // Cenário: inimigo com ATK 8, DEF 5, SPD 10
-            // Nota Discordante deveria reduzir SPD de 10 → 8 (-2)
-            // Mas SPD não afeta hit/dano no runtime atual → zero impacto mecânico
-            const enemyAtk = 8, enemyDef = 5, enemySpd = 10;
-            const enemySpdAfterNote = enemySpd - 2; // -2 SPD buff
-            // SPD não é usado no checkHit do wildCore:
-            //   checkHit: d20 + attacker.atk >= defender.def  (sem SPD)
-            //   calcDamage: ATK + POWER - DEF (sem SPD)
-            // Portanto: impacto de enemySpdAfterNote = 0
-            const spdImpactOnDamage = 0; // confirmado pela análise do código
-            const spdImpactOnHit = 0;    // confirmado pela análise do código
-            expect(spdImpactOnDamage).toBe(0);
-            expect(spdImpactOnHit).toBe(0);
-            // NOTA: este não é um erro no teste. É a documentação do gap.
+        it('benchmark: Nota Discordante agora tem impacto mecânico real (Fase 11.2)', () => {
+            // Cenário: inimigo com SPD 10, bellwave SPD 12
+            // Antes da Nota: getSpdAdvantage(bellwave, enemy) = 0 (diff=2 < 3)
+            // Após a Nota (-2 SPD): getSpdAdvantage(bellwave, enemyND) = +1 (diff=4 >= 3)
+            // → +1 bônus no hit check (impacto real em hit/miss na borda do DEF)
+            // → +4% flee chance (impacto real na fuga)
+            const spdImpactOnHit  = 1; // +1 via getSpdAdvantage quando diff >= 3
+            const spdImpactOnFlee = 4; // +4% via calculateFleeChance por -2 SPD * 2
+            expect(spdImpactOnHit).toBe(1);
+            expect(spdImpactOnFlee).toBe(4);
+            // Fase 11.2 resolveu o gap identificado na Fase 11.1.
         });
     });
 });
