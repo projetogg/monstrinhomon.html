@@ -76,6 +76,9 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
         const hp = Number(mon.hp) || 0;
         const hpMax = Number(mon.hpMax) || 1;
         const hpPct = Math.max(0, Math.min(100, (hp / hpMax) * 100));
+        const ene = Number(mon.ene) || 0;
+        const eneMax = Number(mon.eneMax) || 10;
+        const enePct = Math.max(0, Math.min(100, (ene / eneMax) * 100));
         const isKO = hp <= 0;
         const isCurrent = actor && actor.side === 'player' && actor.id === pid;
 
@@ -114,12 +117,16 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
         <div id="grpP_${pid}" class="${unitClass}">
             <div class="group-unit-name">${mon.emoji || ''} ${mon.name || mon.nome} <small>Nv ${mon.level}</small>
                 ${isKO ? '<span class="group-unit-ko-badge">💀 KO</span>' : ''}
-                ${isCurrent ? '<span class="group-unit-active-badge">▶ Ativa</span>' : ''}
+                ${isCurrent ? '<span class="group-unit-active-badge">▶ Em batalha</span>' : ''}
             </div>
             <div class="group-unit-owner">${p.name || p.nome} (${p.class})</div>
             <div class="battle-bar-row">
                 <div class="battle-bar-label"><span>❤️ HP</span><span>${hp}/${hpMax}</span></div>
                 <div class="battle-bar"><div class="battle-bar-fill hp" style="width:${hpPct}%"></div></div>
+            </div>
+            <div class="battle-bar-row">
+                <div class="battle-bar-label"><span>⚡ ENE</span><span>${ene}/${eneMax}</span></div>
+                <div class="battle-bar"><div class="battle-bar-fill ene" style="width:${enePct}%"></div></div>
             </div>
             ${teamHintHtml}
             ${itemHtml}
@@ -377,7 +384,10 @@ function renderActionBar(encounter, actor, isPlayerTurn, state, helpers) {
             const onclickAttr = idx === 0
                 ? `onclick="enterSkillMode(0)"`
                 : `onclick="enterSkillMode(${idx})"`;
-            const tooltip = canUse ? (skill.desc || '') : 'Sem ENE';
+            const cost = Number(skill.cost ?? skill.energy_cost ?? 0) || 0;
+            const tooltip = canUse
+                ? (skill.desc || '')
+                : `ENE insuficiente (${Number(mon.ene) || 0}/${cost})`;
             skillButtonsHtml += `<button class="btn btn-info" ${onclickAttr} ${!canUse ? 'disabled' : ''} title="${tooltip}">✨ ${label}</button>`;
         }
     }
