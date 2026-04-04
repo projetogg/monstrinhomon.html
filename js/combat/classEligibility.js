@@ -87,7 +87,7 @@ export function getEligibilityLabel(monster, player, config = {}) {
     return {
         eligible: false,
         text: '✖ Fora da classe',
-        title: `Classe ${monClass} — só ${playerClass}s podem batalhar com este treinador`
+        title: `Classe ${monClass} — este treinador é da classe ${playerClass}`
     };
 }
 

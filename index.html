@@ -10099,9 +10099,9 @@
                         : '';
 
                     // Fase 19: Badge de elegibilidade por classe para combate
+                    const isEligible = window.ClassEligibility?.isEligibleForBattle?.(monster, player) ?? true;
                     const eligibilityHtml = renderEligibilityBadgeForTeam(monster, player);
-                    const ineligibleClass = (window.ClassEligibility?.isEligibleForBattle?.(monster, player) === false)
-                        ? ' team-member-card--ineligible' : '';
+                    const ineligibleClass = isEligible ? '' : ' team-member-card--ineligible';
 
                     html += `
                         <div class="team-member-card ${isActive ? 'team-member-card-active' : 'team-member-card-inactive'}${ineligibleClass}">
