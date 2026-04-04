@@ -9887,11 +9887,16 @@
                 ? `<div class="${kitCssClass}">${promotionBadge} ${info.kitSwapName}${promotionSuffix}</div>`
                 : '';
 
+            const milestoneHtml = info.nextMilestone
+                ? `<div class="species-identity__milestone">⏳ ${info.nextMilestone}</div>`
+                : '';
+
             return `
                 <div class="species-identity">
                     <div class="species-identity__header">🧬 ${info.speciesLabel} · ${info.archetype}</div>
                     <div class="species-identity__passive">✨ ${info.passiveName} — ${info.passiveDesc}</div>
                     ${kitHtml}
+                    ${milestoneHtml}
                 </div>
             `;
         }
