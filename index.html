@@ -4024,10 +4024,11 @@
 
                     if (isWildViaMap && window.EncounterEngine && _wm.locationsData) {
                         const spot       = window.WorldMap?.findSpot(_wm.selectedSpotId, _wm.locationsData);
-                        const spotCtx    = window.WorldMap?.getSpotEncounterContext(spot) ?? { rarityMods: [], trainerChanceDelta: 0, itemBonusDelta: 0, levelDelta: 0 };
+                        const spotCtx    = window.WorldMap?.getSpotEncounterContext(spot) ?? { rarityMods: [], trainerChanceDelta: 0, itemBonusDelta: 0, eventBonusDelta: 0, levelDelta: 0 };
                         const typeModifiers = [
                             { type: 'Treinador', delta: spotCtx.trainerChanceDelta },
-                            { type: 'Item',      delta: spotCtx.itemBonusDelta }
+                            { type: 'Item',      delta: spotCtx.itemBonusDelta },
+                            { type: 'Evento',    delta: spotCtx.eventBonusDelta }
                         ].filter(m => m.delta !== 0);
                         const generated = window.EncounterEngine.generateWildEncounter(
                             _wm.selectedLocationId,

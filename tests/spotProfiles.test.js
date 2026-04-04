@@ -132,24 +132,48 @@ describe('SPOT_PROFILE_DEFAULTS', () => {
         expect(SPOT_PROFILE_DEFAULTS.capture.trainerChanceDelta).toBeLessThan(0);
     });
 
-    it('combat tem trainerChanceDelta positivo (mais treinadores)', () => {
-        expect(SPOT_PROFILE_DEFAULTS.combat.trainerChanceDelta).toBeGreaterThan(0);
+    it('combat tem trainerChanceDelta negativo — perigo bruto, não mais treinadores', () => {
+        // combat = risco geral elevado (levelDelta+2), não encontros de treinador
+        expect(SPOT_PROFILE_DEFAULTS.combat.trainerChanceDelta).toBeLessThan(0);
     });
 
-    it('combat tem levelDelta positivo (nível levemente maior)', () => {
-        expect(SPOT_PROFILE_DEFAULTS.combat.levelDelta).toBeGreaterThan(0);
+    it('combat tem levelDelta alto (nível maior que qualquer outro perfil não-combat)', () => {
+        expect(SPOT_PROFILE_DEFAULTS.combat.levelDelta).toBeGreaterThan(1);
+    });
+
+    it('trainer tem trainerChanceDelta muito maior que combat', () => {
+        // trainer = encontro tático com treinador; combat = perigo bruto sem treinador
+        expect(SPOT_PROFILE_DEFAULTS.trainer.trainerChanceDelta).toBeGreaterThan(
+            SPOT_PROFILE_DEFAULTS.combat.trainerChanceDelta + 10
+        );
+    });
+
+    it('trainer tem levelDelta zero — tático, não perigoso', () => {
+        expect(SPOT_PROFILE_DEFAULTS.trainer.levelDelta).toBe(0);
     });
 
     it('rare tem trainerChanceDelta negativo', () => {
         expect(SPOT_PROFILE_DEFAULTS.rare.trainerChanceDelta).toBeLessThan(0);
     });
 
-    it('resource tem itemBonusDelta positivo', () => {
-        expect(SPOT_PROFILE_DEFAULTS.resource.itemBonusDelta).toBeGreaterThan(0);
+    it('resource tem levelDelta negativo (área mais segura)', () => {
+        expect(SPOT_PROFILE_DEFAULTS.resource.levelDelta).toBeLessThan(0);
     });
 
-    it('event tem itemBonusDelta positivo', () => {
-        expect(SPOT_PROFILE_DEFAULTS.event.itemBonusDelta).toBeGreaterThan(0);
+    it('event tem eventBonusDelta positivo (boost de tipo Evento)', () => {
+        expect(SPOT_PROFILE_DEFAULTS.event.eventBonusDelta).toBeGreaterThan(0);
+    });
+
+    it('resource tem eventBonusDelta zero (farm previsível, sem imprevistos)', () => {
+        expect(SPOT_PROFILE_DEFAULTS.resource.eventBonusDelta).toBe(0);
+    });
+
+    it('rare tem itemBonusDelta negativo — custo real por buscar raridade', () => {
+        expect(SPOT_PROFILE_DEFAULTS.rare.itemBonusDelta).toBeLessThan(0);
+    });
+
+    it('rare tem trainerChanceDelta negativo — custo: menos interação com treinadores', () => {
+        expect(SPOT_PROFILE_DEFAULTS.rare.trainerChanceDelta).toBeLessThan(0);
     });
 
     it('trainer tem trainerChanceDelta alto', () => {
@@ -159,6 +183,7 @@ describe('SPOT_PROFILE_DEFAULTS', () => {
     it('service tem todos os deltas em zero', () => {
         expect(SPOT_PROFILE_DEFAULTS.service.trainerChanceDelta).toBe(0);
         expect(SPOT_PROFILE_DEFAULTS.service.itemBonusDelta).toBe(0);
+        expect(SPOT_PROFILE_DEFAULTS.service.eventBonusDelta).toBe(0);
         expect(SPOT_PROFILE_DEFAULTS.service.levelDelta).toBe(0);
     });
 
@@ -183,13 +208,13 @@ describe('getSpotEncounterContext', () => {
         expect(ctx.levelDelta).toBe(0);
     });
 
-    it('retorna profileKey combat com levelDelta positivo', () => {
+    it('retorna profileKey combat com levelDelta alto e trainerChanceDelta negativo', () => {
         const spot = MOCK_LOCATIONS[0].spots[1]; // profileKey: 'combat'
         const ctx = getSpotEncounterContext(spot);
         expect(ctx.profileKey).toBe('combat');
         expect(ctx.label).toBe('Combate');
-        expect(ctx.trainerChanceDelta).toBeGreaterThan(0);
-        expect(ctx.levelDelta).toBeGreaterThan(0);
+        expect(ctx.trainerChanceDelta).toBeLessThan(0); // combat = perigo bruto, não treinadores
+        expect(ctx.levelDelta).toBeGreaterThan(1);      // level delta alto
     });
 
     it('retorna profileKey rare', () => {
@@ -199,9 +224,10 @@ describe('getSpotEncounterContext', () => {
         expect(ctx.label).toBe('Raridade');
     });
 
-    it('capture e combat têm trainerChanceDelta opostos', () => {
+    it('capture tem trainerChanceDelta menor que combat (ambos negativos, combat mais permissivo)', () => {
         const ctxCapture = getSpotEncounterContext(MOCK_LOCATIONS[0].spots[0]);
         const ctxCombat  = getSpotEncounterContext(MOCK_LOCATIONS[0].spots[1]);
+        // capture suprime mais treinadores que combat (-5 vs -3)
         expect(ctxCapture.trainerChanceDelta).toBeLessThan(ctxCombat.trainerChanceDelta);
     });
 
@@ -216,6 +242,7 @@ describe('getSpotEncounterContext', () => {
         expect(ctx.profileKey).toBe('fallback');
         expect(ctx.trainerChanceDelta).toBe(0);
         expect(ctx.itemBonusDelta).toBe(0);
+        expect(ctx.eventBonusDelta).toBe(0);
         expect(ctx.levelDelta).toBe(0);
         expect(ctx.rarityMods).toEqual([]);
     });
@@ -225,13 +252,15 @@ describe('getSpotEncounterContext', () => {
         const ctx = getSpotEncounterContext(spot);
         expect(ctx.profileKey).toBe('fallback');
         expect(ctx.trainerChanceDelta).toBe(0);
+        expect(ctx.eventBonusDelta).toBe(0);
     });
 
-    it('spot de serviço tem levelDelta zero e trainerChanceDelta zero', () => {
+    it('spot de serviço tem todos os deltas zero', () => {
         const spot = MOCK_LOCATIONS[1].spots[0]; // profileKey: 'service'
         const ctx = getSpotEncounterContext(spot);
         expect(ctx.profileKey).toBe('service');
         expect(ctx.trainerChanceDelta).toBe(0);
+        expect(ctx.eventBonusDelta).toBe(0);
         expect(ctx.levelDelta).toBe(0);
     });
 
@@ -240,11 +269,33 @@ describe('getSpotEncounterContext', () => {
             id: 'TEST_001_A',
             profileKey: 'capture',
             rarityModifiers: [],
-            encounterModifiers: { trainerChanceDelta: 20, levelDelta: 3 }
+            encounterModifiers: { trainerChanceDelta: 20, eventBonusDelta: 7, levelDelta: 3 }
         };
         const ctx = getSpotEncounterContext(spot);
         expect(ctx.trainerChanceDelta).toBe(20);
+        expect(ctx.eventBonusDelta).toBe(7);
         expect(ctx.levelDelta).toBe(3);
+    });
+
+    it('event tem eventBonusDelta positivo — diferencia de resource', () => {
+        const spotEvent = { id: 'e', profileKey: 'event', rarityModifiers: [] };
+        const spotRes   = { id: 'r', profileKey: 'resource', rarityModifiers: [] };
+        const ctxEvent = getSpotEncounterContext(spotEvent);
+        const ctxRes   = getSpotEncounterContext(spotRes);
+        expect(ctxEvent.eventBonusDelta).toBeGreaterThan(0);
+        expect(ctxRes.eventBonusDelta).toBe(0);
+    });
+
+    it('resource tem levelDelta negativo — mais seguro que outros perfis de exploração', () => {
+        const spot = { id: 'r', profileKey: 'resource', rarityModifiers: [] };
+        const ctx = getSpotEncounterContext(spot);
+        expect(ctx.levelDelta).toBeLessThan(0);
+    });
+
+    it('trainer tem trainerChanceDelta maior que combat', () => {
+        const ctxCombat  = getSpotEncounterContext({ id: 'c', profileKey: 'combat',  rarityModifiers: [] });
+        const ctxTrainer = getSpotEncounterContext({ id: 't', profileKey: 'trainer', rarityModifiers: [] });
+        expect(ctxTrainer.trainerChanceDelta).toBeGreaterThan(ctxCombat.trainerChanceDelta + 10);
     });
 });
 
