@@ -83,7 +83,7 @@ const LABEL_STYLES = {
 
 // ── Dimensões do SVG ──────────────────────────────────────────────────────────
 export const SVG_WIDTH  = 880;
-export const SVG_HEIGHT = 510;
+export const SVG_HEIGHT = 530; // +20px de margem inferior para não cortar nós próximos à borda
 
 /**
  * Retorna o estado visual de um nó.
