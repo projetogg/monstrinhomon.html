@@ -469,16 +469,22 @@ const PRIORITY_BASE_OPTIONAL = 500;
 const PRIORITY_BASE_SIDE     = 200;
 const PRIORITY_BASE_POSTGAME = 50;
 const PRIORITY_QUEST_BONUS   = 300; // bônus máximo quando há quest ativa na região
+const PRIORITY_LOCKED_PENALTY = -200; // regiões bloqueadas ficam abaixo de regiões acessíveis de qualquer tipo
 
 /**
  * Escalas de quest bonus por tipo de região.
- * Quests em side/postgame inflam menos a prioridade para não roubarem o foco da campanha principal.
+ * Quests em regiões menos importantes inflam menos a prioridade para não
+ * roubarem o foco da campanha principal.
+ *
+ * Escala 1.0 = bonus completo (main e optional)
+ * Escala 0.5 = metade do bonus (side — conteúdo lateral não deve dominar)
+ * Escala 0.25 = quarto do bonus (postgame — quase sem influência antes do momento certo)
  */
 const QUEST_BONUS_SCALE = {
     main:     1.0,
     optional: 1.0,
-    side:     0.5,   // quest side não deve subir demais
-    postgame: 0.25   // quest postgame quase não influencia prioridade
+    side:     0.5,
+    postgame: 0.25
 };
 
 /**
@@ -504,7 +510,7 @@ function _computePriorityScore(regionType, status, hasActiveQuest) {
         boss_available: 400,
         active:         300,
         available:      200,
-        locked:         -200, // locked não deve superar regiões acessíveis de outro tipo
+        locked:         PRIORITY_LOCKED_PENALTY, // locked não deve superar regiões acessíveis de outro tipo
         completed:      -2000 // regiões concluídas ficam no final
     }[status] ?? 0;
     const scale = QUEST_BONUS_SCALE[regionType] ?? 0.5;
@@ -586,9 +592,12 @@ export function getRegionalProgressSummary(
         const hasActiveQuest = connections.some(connId => safeActiveQL.has(connId));
 
         // Prioridade da quest ativa, derivada pelo tipo de região
-        const questPriority = hasActiveQuest
-            ? (regionType === 'main' ? 'main' : regionType === 'optional' ? 'secondary' : 'side')
-            : null;
+        let questPriority = null;
+        if (hasActiveQuest) {
+            if (regionType === 'main')         questPriority = 'main';
+            else if (regionType === 'optional') questPriority = 'secondary';
+            else                                questPriority = 'side';
+        }
 
         const status = getRegionStatus(
             node,
