@@ -19,6 +19,9 @@
  *  - Fase 11: bellwave (Bardo) — on_attack (basic only), hasBellwaveRhythmCharge.
  *    Bônus rítmico após qualquer skill usada; player-side apenas nesta fase.
  *    State: encounter.passiveState.bellwaveRhythmCharged (set em executeWildSkill).
+ *  - Fase 12: wildpace (Animalista) — on_attack (qualquer), hpPct < 0.40.
+ *    Bônus de sobrevivência automático quando HP está crítico; sem estado extra.
+ *    Único passive sem setup ou carga — dispara automaticamente ao atingir o threshold.
  *
  * O que este módulo NÃO faz (reservado para fases futuras):
  *  - Passivas em cadeia ou com múltiplos triggers por turno
@@ -81,6 +84,8 @@
  *                  |        |       | requer tracking de turno não disponível no wild pipeline
  *  bellwave        | ✅     | ❌    | Wild-side adiado (Fase 11); estado de ritmo carregado
  *                  |        |       | requer tracking de "skill usada no turno anterior" ausente no wild
+ *  wildpace        | ✅     | ❌    | Wild-side adiado (Fase 12); passiva stateless baseada em hpPct —
+ *                  |        |       | integração wild pode ser adicionada futuramente sem estado extra
  *
  * ─────────────────────────────────────────────────────────────────────────────
  */
@@ -266,6 +271,51 @@ const PASSIVE_HANDLERS = {
         // Apenas ataque básico (não skill) — identidade de "ritmo após skill"
         if (context.isOffensiveSkill) return null;
         if (!context.hasBellwaveRhythmCharge) return null;
+        return { atkBonus: 1 };
+    },
+
+    /**
+     * wildpace (Animalista, arquétipo equilíbrio_adaptativo) — Fase 12
+     *
+     * Passiva canônica: "Quando HP está abaixo de 40%, qualquer ataque
+     * recebe +1 bônus de ATK (instinto de sobrevivência)."
+     *
+     * Diferenciação de todas as espécies anteriores:
+     *   emberfang:   requer HP > 70% E skill ofensiva (pico de força no início).
+     *   swiftclaw:   one-time no primeiro ataque do combate (abertura direta).
+     *   shadowsting: requer debuff aplicado antes (setup → execução).
+     *   bellwave:    requer skill usada antes (ritmo → básico).
+     *   shieldhorn:  evento on_hit_received, não on_attack (passiva defensiva).
+     *   floracura:   evento on_heal_item, não on_attack (passiva de cura).
+     *   moonquill:   evento on_skill_used com debuff (controle → velocidade).
+     *   wildpace:    puramente baseada em HP vivo — nenhum setup, nenhuma carga,
+     *     nenhuma condição de tipo de skill. Dispara automaticamente quando o
+     *     animal está acuado. Cria identidade de "sobrevivente" que melhora
+     *     conforme o combate avança e o HP diminui.
+     *
+     * Loop mecânico do wildpace:
+     *   HP alta → sem bônus (joga normal, gere ENE)
+     *   HP cai < 40% → +1 ATK em qualquer ataque (virada instintiva)
+     *   Usar "Instinto Protetor" (kit swap) para sobreviver na zona de passiva ativa
+     *   → decisão: gastar ENE para se proteger vs. atacar com bônus ativo?
+     *
+     * Nota sobre BUFF skills em HP<40%:
+     *   Quando wildpace usa skill BUFF (ex: Instinto Protetor) com HP<40%,
+     *   a passiva dispara na resolução da fase on_attack mas o atkBonus é
+     *   aplicado como buff temporário e removido logo após — sem impacto real
+     *   no resultado da skill BUFF. É tecnicamente inerte neste edge case.
+     *   O efeito real é em ataques básicos e skills DAMAGE (que usam effectiveAtk).
+     *
+     * Implementação Fase 12:
+     *   No evento 'on_attack', retorna { atkBonus: 1 } quando hpPct < 0.40.
+     *   Sem estado de combate extra — usa diretamente o hpPct do contexto.
+     *   Player-side apenas (Fase 12). Wild-side pode ser adicionado futuramente
+     *   sem estado adicional (hpPct já seria calculável no wild pipeline).
+     */
+    wildpace: (_instance, context) => {
+        if (context.event !== 'on_attack') return null;
+        // Instinto de sobrevivência: ativo apenas em HP crítico (< 40%)
+        if ((context.hpPct ?? 1) >= 0.40) return null;
         return { atkBonus: 1 };
     },
 };

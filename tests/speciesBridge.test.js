@@ -72,10 +72,10 @@ const BASE_STATS = { hpMax: 30, atk: 7, def: 5, spd: 5, eneMax: 10 };
 
 describe('speciesBridge — tabela RUNTIME_TO_CANON_SPECIES', () => {
 
-    it('deve conter os 45 mapeamentos definidos na Fase 11 (12 bases + 20 evoluções MVP + 7 Caçador + 3 Ladino + 3 Bardo)', () => {
-        // Valor 45 fixo e intencional: documenta o estado do bridge após Fase 11.
+    it('deve conter os 48 mapeamentos definidos na Fase 12 (12 bases + 20 evoluções MVP + 7 Caçador + 3 Ladino + 3 Bardo + 3 Animalista)', () => {
+        // Valor 48 fixo e intencional: documenta o estado do bridge após Fase 12.
         // Atualizar junto com cada novo mapeamento adicionado à tabela.
-        expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(45);
+        expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(48);
     });
 
     it('MON_010 mapeia para shieldhorn (Guerreiro tank — DEF 9)', () => {
