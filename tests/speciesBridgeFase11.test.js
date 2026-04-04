@@ -122,15 +122,18 @@ describe('Fase 11 — Bardo → bellwave (bridge)', () => {
         });
 
         it('MON_011 (Dinomon) não mapeado — drift em MON_011D (ATK 16 > SPD 11)', () => {
-            expect(resolveCanonSpeciesId('MON_011')).toBeNull();
+            // Atualizado em Fase 13.2: MON_011 agora é bellwave (mapeamento parcial da linha)
+            expect(resolveCanonSpeciesId('MON_011')).toBe('bellwave');
         });
 
         it('MON_011B (Guitarapitormon) não mapeado — linha com drift no final', () => {
-            expect(resolveCanonSpeciesId('MON_011B')).toBeNull();
+            // Atualizado em Fase 13.2: MON_011B agora é bellwave (mapeamento parcial da linha)
+            expect(resolveCanonSpeciesId('MON_011B')).toBe('bellwave');
         });
 
         it('MON_011C (TRockmon) não mapeado — linha com drift no final', () => {
-            expect(resolveCanonSpeciesId('MON_011C')).toBeNull();
+            // Atualizado em Fase 13.2: MON_011C agora é bellwave (mapeamento parcial da linha)
+            expect(resolveCanonSpeciesId('MON_011C')).toBe('bellwave');
         });
 
         it('MON_011D (Giganotometalmon) não mapeado — pivot de arquétipo (bruiser pesado)', () => {
@@ -139,18 +142,18 @@ describe('Fase 11 — Bardo → bellwave (bridge)', () => {
     });
 
     describe('Presença na tabela RUNTIME_TO_CANON_SPECIES', () => {
-        it('3 mapeamentos de bellwave presentes na tabela', () => {
+        it('6 mapeamentos de bellwave presentes na tabela (3 Fase 11 + 3 Fase 13.2)', () => {
             const bellwaveMappings = Object.entries(RUNTIME_TO_CANON_SPECIES)
                 .filter(([, v]) => v === 'bellwave');
-            expect(bellwaveMappings).toHaveLength(3);
+            expect(bellwaveMappings).toHaveLength(6);
         });
 
-        it('mapeamentos são exatamente MON_027, MON_027B e MON_027C', () => {
+        it('mapeamentos são exatamente MON_027, MON_027B, MON_027C, MON_011, MON_011B, MON_011C', () => {
             const bellwaveIds = Object.entries(RUNTIME_TO_CANON_SPECIES)
                 .filter(([, v]) => v === 'bellwave')
                 .map(([k]) => k)
                 .sort();
-            expect(bellwaveIds).toEqual(['MON_027', 'MON_027B', 'MON_027C']);
+            expect(bellwaveIds).toEqual(['MON_011', 'MON_011B', 'MON_011C', 'MON_027', 'MON_027B', 'MON_027C']);
         });
     });
 });

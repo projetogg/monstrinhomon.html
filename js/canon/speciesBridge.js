@@ -222,6 +222,27 @@ export const RUNTIME_TO_CANON_SPECIES = {
     //   forma madura; SPD e ENE mantêm dominância relativa sobre ATK e DEF.
     'MON_027C': 'bellwave',
 
+    // ── Bardo segunda linha (bellwave) — Fase 13.2 — mapeamento parcial ────
+    // Linha Dinomon → Guitarapitormon → TRockmon (MON_011/B/C): os 3 estágios
+    //   iniciais da linha dino mantêm SPD/ATK ≥ 1.18 e ENE/ATK ≥ 1.0 após offsets,
+    //   preservando identidade cadencia_ritmica. DEF_off ≥ 4 em todos — sem floor.
+    //   O estágio final (MON_011D/Giganotometalmon) é explicitamente excluído:
+    //   ATK=16 > SPD=11 gera SPD/ATK=0.75 após offset — drift para perfil bruiser.
+    //   Mapeamento parcial é seguro: canonSpeciesId é estático por instância
+    //   (definido em createMonsterInstanceFromTemplate, nunca rederivado na evolução).
+    //   Instâncias criadas de MON_011D via encontro selvagem têm null canonSpeciesId;
+    //   instâncias evoluídas de MON_011C preservam bellwave por design intencional.
+    // Dinomon: ATK 6, DEF 5→4, SPD 8→9, ENE 6→7 — SPD/ATK 1.50, ENE/ATK 1.17;
+    //   offsets: def-1=4, ene+1=7, agi+1=9; início da cadência sonora.
+    'MON_011': 'bellwave',
+    // Guitarapitormon: ATK 8, DEF 6→5, SPD 10→11, ENE 8→9 — SPD/ATK 1.38, ENE/ATK 1.12;
+    //   identidade preservada; SPD e ENE superam ATK; DEF_off=5.
+    'MON_011B': 'bellwave',
+    // TRockmon: ATK 11, DEF 9→8, SPD 12→13, ENE 10→11 — SPD/ATK 1.18, ENE/ATK 1.00;
+    //   forma madura da segunda linha; arquétipo ainda sustentado; DEF_off=8.
+    'MON_011C': 'bellwave',
+    // MON_011D (Giganotometalmon): excluído — ver justificativa na seção "Sem mapeamento".
+
     // ── Sem mapeamento — justificativas ─────────────────────────────────────
     // MON_100 (Rato-de-Lama, Guerreiro): ATK 5, DEF 3, HP 20 — stats fracos
     //   sem perfil defensivo claro; não se encaixa em tank_puro. Sem mapeamento.
@@ -234,19 +255,23 @@ export const RUNTIME_TO_CANON_SPECIES = {
     //   mesma razão que Garruncho — sem linha completa para validar o arquétipo.
     //   Não mapeado em Fase 10 por falta de linha canônica validável.
     //
-    // MON_030/B/C (Furtilhon, Velurino, Sombrifur): DEF_base=3 em MON_030 gera
-    //   DEF_off=2 com shadowsting (def-1) — floor marginal e perigoso.
-    //   ENE/ATK = 0.75 (mais baixo que Corvimon 0.86) — perfil mais similar a
-    //   swiftclaw do que ao arquétipo oportunista_furtivo. Excluído da Fase 10.
+    // MON_030/B/C (Furtilhon, Velurino, Sombrifur): linha mantida excluída em Fase 13.2.
+    //   Razão primária: ATK/DEF após offsets shadowsting (atk+1, def-1) é extremo —
+    //   MON_030: ATK/DEF=4.5; MON_030B: 3.0; MON_030C: 2.67 — perfil de striker puro,
+    //   não oportunista_furtivo. DEF_base=3 em MON_030 gera DEF_off=2 (floor marginal).
+    //   Razão secundária: ENE/ATK=0.75 (abaixo de Corvimon 0.86) — ENE menor que o
+    //   necessário para o loop debuff→execução. Linha excluída da Fase 10 e confirmada em 13.2.
     //
     // MON_001 (Cantapau, Bardo Comum): sem linha evolutiva (estágio único);
     //   mesma razão que Garruncho e Sombrio — sem linha completa para validar.
     //   Não mapeado em Fase 11.
     //
-    // MON_011/B/C/D (Dinomon → Giganotometalmon, Bardo): drift de arquétipo em MON_011D.
-    //   Estágios 1-3 têm SPD/ATK ≥ 1.09 (perfil de bardo veloz), mas MON_011D tem
-    //   ATK 16, DEF 12 e SPD 11 — SPD cai abaixo de ATK, perfil vira bruiser pesado.
-    //   Drift relevante de identidade no estágio final → linha excluída da Fase 11.
+    // MON_011D (Giganotometalmon, Bardo Místico): excluído por drift de arquétipo.
+    //   Enquanto MON_011/B/C têm SPD/ATK ≥ 1.18 (mapeados em Fase 13.2), MON_011D
+    //   tem ATK=16 > SPD=11: SPD/ATK=0.75 e ENE/ATK=0.81 após offsets — ambos abaixo
+    //   de 1.0. Perfil vira bruiser pesado, incompatível com cadencia_ritmica.
+    //   Mapeamento parcial da linha é seguro: instâncias selvagens de MON_011D têm
+    //   null canonSpeciesId; instâncias evoluídas de MON_011C preservam bellwave.
     //
     // ── Animalista — arquétipo equilíbrio_adaptativo (wildpace) — Fase 12 ────
     // Linha escolhida: Cervimon → Galhantemon → Bosquidalmon (MON_023/B/C).
