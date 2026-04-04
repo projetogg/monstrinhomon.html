@@ -302,7 +302,9 @@ describe('getTeamReadinessIndicator — casos de borda', () => {
 
     it('funciona corretamente com level como string numérica', () => {
         const mon = makeMonster({ canonSpeciesId: 'emberfang', level: '28', appliedKitSwaps: [], promotedKitSwaps: [] });
-        expect(getTeamReadinessIndicator(mon)?.state).toBe('near_unlock');
+        const result = getTeamReadinessIndicator(mon);
+        expect(result?.state).toBe('near_unlock');
+        expect(result?.targetLevel).toBe(30);
     });
 
     it('usa level mínimo 1 para input inválido (level=0)', () => {
