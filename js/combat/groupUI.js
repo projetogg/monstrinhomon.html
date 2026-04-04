@@ -12,6 +12,7 @@
 import * as GroupCore from './groupCore.js';
 import * as TargetSelection from '../ui/targetSelection.js';
 import { executePlayerAttackGroup, executePlayerSkillGroup } from './groupActions.js';
+import { categorizeBattleTeam, canManualSwap } from './battleSwap.js';
 
 /** IDs dos itens de cura consumíveis suportados em batalha. Manter alinhado com data/items.json. */
 const HEAL_ITEM_IDS = ['IT_HEAL_01', 'IT_HEAL_02', 'IT_HEAL_03'];
@@ -65,6 +66,7 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
 
     // ── JOGADORES (coluna esquerda) ──────────────────────────────────────────
     let playersHtml = '';
+    const masterMode = Boolean(state.config?.masterMode || state.config?.therapistMode);
     for (const pid of (encounter.participants || [])) {
         const p = state.players.find(x => x.id === pid);
         if (!p) continue;
@@ -99,11 +101,27 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
             }
         }
 
+        // Banco de reservas — mostra os outros monstrinhos do time com status
+        const teamEntries = categorizeBattleTeam(p, { masterMode });
+        const benchEntries = teamEntries.filter(e => e.category !== 'active');
+        let benchHtml = '';
+        if (benchEntries.length > 0) {
+            const benchItems = benchEntries.map(e => {
+                const cls = e.category === 'eligible'
+                    ? 'swap-bench-item swap-bench-item--eligible'
+                    : e.category === 'blocked_ko'
+                        ? 'swap-bench-item swap-bench-item--ko'
+                        : 'swap-bench-item swap-bench-item--blocked';
+                return `<span class="${cls}" title="${e.reason}">${e.monster.emoji || ''} ${e.monster.name || e.monster.nome}</span>`;
+            }).join('');
+            benchHtml = `<div class="group-unit-bench">${benchItems}</div>`;
+        }
+
         playersHtml += `
         <div id="grpP_${pid}" class="${unitClass}">
             <div class="group-unit-name">${mon.emoji || ''} ${mon.name || mon.nome} <small>Nv ${mon.level}</small>
                 ${isKO ? '<span class="group-unit-ko-badge">💀 KO</span>' : ''}
-                ${isCurrent ? '<span class="group-unit-active-badge">▶ Ativa</span>' : ''}
+                ${isCurrent ? '<span class="group-unit-active-badge">▶ Em batalha</span>' : ''}
             </div>
             <div class="group-unit-owner">${p.name || p.nome} (${p.class})</div>
             <div class="battle-bar-row">
@@ -115,6 +133,7 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
                 <div class="battle-bar"><div class="battle-bar-fill ene" style="width:${enePct}%"></div></div>
             </div>
             ${itemHtml}
+            ${benchHtml}
         </div>`;
     }
 
