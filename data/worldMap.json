@@ -1,6 +1,6 @@
 {
-  "version": "1.3",
-  "notes": "Mapa de nós do mundo Monstrinhomon. Cada nó representa uma área visitável. unlockRule define condição de desbloqueio além do unlockDefault. Tipos de unlockRule: complete_node, win_n_battles_in_node, visit_city, complete_quest, defeat_boss.",
+  "version": "1.4",
+  "notes": "Mapa de nós do mundo Monstrinhomon. Cada nó representa uma área visitável. unlockRule define condição de desbloqueio além do unlockDefault. Tipos de unlockRule: complete_node, win_n_battles_in_node, visit_city, complete_quest, defeat_boss. PR-14: adicionados BOSS_CAVES_OPT_01 (optional) e BOSS_RUINS_SIDE_01 (side) com regionFlavor.",
   "nodes": [
     {
       "nodeId": "CITY_001",
@@ -165,6 +165,58 @@
       "unlockDefault": false,
       "unlockRule": { "type": "defeat_boss", "nodeId": "BOSS_FOREST_01" },
       "connections": ["BOSS_FOREST_01"]
+    },
+    {
+      "nodeId": "BOSS_CAVES_OPT_01",
+      "type": "boss",
+      "unlockDefault": false,
+      "unlockRule": { "type": "complete_node", "nodeId": "LOC_005C" },
+      "connections": ["LOC_005C", "LOC_010"],
+      "bossMeta": {
+        "bossLevel": 12,
+        "regionId": "caves_optional_1",
+        "regionLabel": "Cavernas Cristalinas",
+        "regionType": "optional",
+        "regionFlavor": "Brilhos misteriosos emanam das profundezas. Caçadores relatam Monstrinhos raros nessas cavernas — e fortunas escondidas.",
+        "defeatMarksRegionComplete": true,
+        "bossLabel": "Golem de Cristal",
+        "bossFlavor": "Uma entidade formada por cristais vivos protege as cavernas há séculos.",
+        "bossEncounterMode": "fixed_pool",
+        "bossPool": ["MON_027B", "MON_023B"]
+      }
+    },
+    {
+      "nodeId": "LOC_010",
+      "type": "exploration",
+      "unlockDefault": false,
+      "unlockRule": { "type": "defeat_boss", "nodeId": "BOSS_CAVES_OPT_01" },
+      "connections": ["BOSS_CAVES_OPT_01"]
+    },
+    {
+      "nodeId": "BOSS_RUINS_SIDE_01",
+      "type": "boss",
+      "unlockDefault": false,
+      "unlockRule": { "type": "complete_node", "nodeId": "LOC_003B" },
+      "connections": ["LOC_003B", "LOC_011"],
+      "bossMeta": {
+        "bossLevel": 10,
+        "regionId": "ruins_side_1",
+        "regionLabel": "Ruínas Esquecidas",
+        "regionType": "side",
+        "regionFlavor": "Ruínas de uma civilização antiga, agora lar de criaturas oportunistas. Pouca coisa de valor sobrou — mas vale a visita.",
+        "defeatMarksRegionComplete": true,
+        "bossLabel": "Guardião das Ruínas",
+        "bossFlavor": "Uma construção de pedra animada pelos ecos do passado. Parece não gostar de visitas.",
+        "bossEncounterMode": "fixed_pool",
+        "bossPool": ["MON_022B", "MON_027B"]
+      }
+    },
+    {
+      "nodeId": "LOC_011",
+      "type": "exploration",
+      "unlockDefault": false,
+      "unlockRule": { "type": "defeat_boss", "nodeId": "BOSS_RUINS_SIDE_01" },
+      "connections": ["BOSS_RUINS_SIDE_01"]
     }
   ]
 }

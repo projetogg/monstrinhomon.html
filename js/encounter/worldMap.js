@@ -466,16 +466,34 @@ export function markRegionComplete(bossMeta, bossNodeId, regionalProgress = {}, 
 // Bases de prioridade por tipo de região (maior = mais prioritário no painel)
 const PRIORITY_BASE_MAIN     = 1000;
 const PRIORITY_BASE_OPTIONAL = 500;
-const PRIORITY_BASE_OTHER    = 100;
-const PRIORITY_QUEST_BONUS   = 300; // bônus quando há quest ativa na região
+const PRIORITY_BASE_SIDE     = 200;
+const PRIORITY_BASE_POSTGAME = 50;
+const PRIORITY_QUEST_BONUS   = 300; // bônus máximo quando há quest ativa na região
+const PRIORITY_LOCKED_PENALTY = -200; // regiões bloqueadas ficam abaixo de regiões acessíveis de qualquer tipo
+
+/**
+ * Escalas de quest bonus por tipo de região.
+ * Quests em regiões menos importantes inflam menos a prioridade para não
+ * roubarem o foco da campanha principal.
+ *
+ * Escala 1.0 = bonus completo (main e optional)
+ * Escala 0.5 = metade do bonus (side — conteúdo lateral não deve dominar)
+ * Escala 0.25 = quarto do bonus (postgame — quase sem influência antes do momento certo)
+ */
+const QUEST_BONUS_SCALE = {
+    main:     1.0,
+    optional: 1.0,
+    side:     0.5,
+    postgame: 0.25
+};
 
 /**
  * Calcula o score de prioridade de uma região para ordenação e seleção de "atual".
  *
  * Critérios (maior = mais prioritário):
- *   - Tipo main vale mais que optional
- *   - Estados mais avançados valem mais
- *   - Regiões com quest ativa ganham bônus adicional
+ *   - Tipo main vale mais que optional > side > postgame
+ *   - Estados mais avançados valem mais (boss_available > active > available > locked)
+ *   - Regiões com quest ativa ganham bônus, escalado pelo tipo (side/postgame recebem menos)
  *
  * @param {'main'|'optional'|'side'|'postgame'} regionType
  * @param {'completed'|'boss_available'|'active'|'available'|'locked'} status
@@ -485,37 +503,46 @@ const PRIORITY_QUEST_BONUS   = 300; // bônus quando há quest ativa na região
 function _computePriorityScore(regionType, status, hasActiveQuest) {
     const typeBase =
         regionType === 'main'     ? PRIORITY_BASE_MAIN     :
-        regionType === 'optional' ? PRIORITY_BASE_OPTIONAL : PRIORITY_BASE_OTHER;
+        regionType === 'optional' ? PRIORITY_BASE_OPTIONAL :
+        regionType === 'side'     ? PRIORITY_BASE_SIDE     :
+        regionType === 'postgame' ? PRIORITY_BASE_POSTGAME : PRIORITY_BASE_SIDE;
     const statusBonus = {
         boss_available: 400,
         active:         300,
         available:      200,
-        locked:         50,
+        locked:         PRIORITY_LOCKED_PENALTY, // locked não deve superar regiões acessíveis de outro tipo
         completed:      -2000 // regiões concluídas ficam no final
     }[status] ?? 0;
-    const questBonus = hasActiveQuest ? PRIORITY_QUEST_BONUS : 0;
+    const scale = QUEST_BONUS_SCALE[regionType] ?? 0.5;
+    const questBonus = hasActiveQuest ? Math.round(PRIORITY_QUEST_BONUS * scale) : 0;
     return typeBase + statusBonus + questBonus;
 }
 
 /**
  * Retorna um resumo do progresso regional a partir dos nós do mapa e nodeFlags.
- * Útil para render de painel de progresso de campanha (PR-11/PR-12).
+ * Útil para render de painel de progresso de campanha (PR-11/PR-12/PR-14).
  *
  * Cada entrada retornada inclui:
  *   regionId                 - ID técnico interno da região
  *   regionLabel              - Nome amigável exibido na UI
  *   regionType               - 'main' | 'optional' | 'side' | 'postgame'
+ *   regionFlavor             - Texto de sabor/contexto da região (se definido no bossMeta)
  *   isMainPath               - true se regionType === 'main'
- *   isOptional               - true se regionType === 'optional' ou 'side'
+ *   isOptional               - true se regionType === 'optional' (apenas optional, não side)
+ *   isSide                   - true se regionType === 'side'
+ *   isPostgame               - true se regionType === 'postgame'
+ *   isMainFocus              - true para a primeira região main não concluída (foco principal)
+ *   isSecondaryFocus         - true para a primeira região optional/side acessível não concluída
  *   bossNodeId               - ID do nó boss que fecha a região
  *   bossLabel                - Nome amigável do boss
  *   completed                - Se a região foi concluída
  *   bossDefeated             - Se o boss foi derrotado
  *   status                   - 'completed'|'boss_available'|'active'|'available'|'locked'
- *   isCurrent                - true para a região mais relevante no momento
+ *   isCurrent                - true para a região mais relevante no momento (retrocompat)
  *   nextObjective            - Texto do próximo objetivo, ou null se concluída
  *   priorityScore            - Score numérico para ordenação (maior = mais prioritário)
  *   hasActiveQuest           - true se há quest ativa nessa região (baseado em activeQuestLocalIds)
+ *   questPriority            - 'main'|'secondary'|'side'|null — importância da quest ativa
  *
  * @param {Array<Object>} worldMapNodes          - Nós do worldMap.json
  * @param {Object}        [nodeFlags={}]         - Estado de flags por nó
@@ -553,13 +580,24 @@ export function getRegionalProgressSummary(
         const bossDefeated = safeFlags[node.nodeId]?.bossDefeated === true;
         const regionLabel  = meta.regionLabel ?? deriveRegionLabel(meta.regionId);
         const bossLabel    = meta.bossLabel ?? node.nodeId;
+        const regionFlavor = meta.regionFlavor ?? null;
         const regionType   = getRegionType(meta);
         const isMainPath   = regionType === REGION_TYPES.MAIN;
-        const isOptional   = regionType === REGION_TYPES.OPTIONAL || regionType === REGION_TYPES.SIDE;
+        const isOptional   = regionType === REGION_TYPES.OPTIONAL;
+        const isSide       = regionType === REGION_TYPES.SIDE;
+        const isPostgame   = regionType === REGION_TYPES.POSTGAME;
 
         // Verificar se há quest ativa em algum nó conectado ao boss
         const connections = node.connections ?? [];
         const hasActiveQuest = connections.some(connId => safeActiveQL.has(connId));
+
+        // Prioridade da quest ativa, derivada pelo tipo de região
+        let questPriority = null;
+        if (hasActiveQuest) {
+            if (regionType === 'main')         questPriority = 'main';
+            else if (regionType === 'optional') questPriority = 'secondary';
+            else                                questPriority = 'side';
+        }
 
         const status = getRegionStatus(
             node,
@@ -578,8 +616,11 @@ export function getRegionalProgressSummary(
             regionId:      meta.regionId,
             regionLabel,
             regionType,
+            regionFlavor,
             isMainPath,
             isOptional,
+            isSide,
+            isPostgame,
             bossNodeId:    node.nodeId,
             bossLabel,
             completed,
@@ -587,43 +628,79 @@ export function getRegionalProgressSummary(
             status,
             nextObjective,
             priorityScore,
-            hasActiveQuest
+            hasActiveQuest,
+            questPriority
         });
     }
 
     // Ordenar por priorityScore descendente (maior prioridade primeiro)
     result.sort((a, b) => b.priorityScore - a.priorityScore);
 
-    // Marcar como "atual" a região não concluída de maior prioridade
+    // Marcar "atual" como região não concluída de maior prioridade (retrocompat)
     const currentIdx = result.findIndex(r => r.status !== 'completed');
-    return result.map((r, i) => ({ ...r, isCurrent: i === currentIdx }));
+
+    // Marcar foco principal (primeira main não concluída) e foco secundário (primeira optional/side acessível)
+    const mainFocusIdx      = result.findIndex(r => r.isMainPath && r.status !== 'completed');
+    const secondaryFocusIdx = result.findIndex(
+        r => (r.isOptional || r.isSide) && r.status !== 'completed' && r.status !== 'locked'
+    );
+
+    return result.map((r, i) => ({
+        ...r,
+        isCurrent:       i === currentIdx,
+        isMainFocus:     i === mainFocusIdx && mainFocusIdx !== -1,
+        isSecondaryFocus: i === secondaryFocusIdx && secondaryFocusIdx !== -1
+    }));
 }
 
 /**
- * Deriva o próximo objetivo principal e as oportunidades opcionais disponíveis
- * a partir do summary de progresso regional.
+ * Deriva o próximo objetivo principal, as oportunidades opcionais e as oportunidades side
+ * disponíveis a partir do summary de progresso regional.
  *
- * Separação clara:
+ * Separação semântica clara:
  *   nextMainObjective     → texto do próximo passo na rota principal (ou null)
- *   optionalOpportunities → array de textos de regiões opcionais acessíveis
+ *   optionalOpportunities → array de textos de regiões optional acessíveis (não side)
+ *   sideOpportunities     → array de textos de regiões side acessíveis (conteúdo lateral)
+ *
+ * Lógica de seleção do objetivo principal (em ordem de prioridade):
+ *   1. Boss de região main disponível (status boss_available)
+ *   2. Região main com quest ativa (status active ou available)
+ *   3. Região main ativa/em progresso (status active)
+ *   4. Região main disponível (status available)
+ *   5. Fallback: qualquer região main não concluída (status não completed)
  *
  * @param {Array<Object>} summary - Resultado de getRegionalProgressSummary()
- * @returns {{ nextMainObjective: string|null, optionalOpportunities: string[] }}
+ * @returns {{ nextMainObjective: string|null, optionalOpportunities: string[], sideOpportunities: string[] }}
  */
 export function deriveMainObjective(summary) {
-    if (!Array.isArray(summary)) return { nextMainObjective: null, optionalOpportunities: [] };
+    if (!Array.isArray(summary)) return { nextMainObjective: null, optionalOpportunities: [], sideOpportunities: [] };
 
-    // Próximo objetivo principal: primeira região main não concluída, na ordem de prioridade
-    const nextMain = summary.find(r => r.isMainPath && r.status !== 'completed');
+    const mainRegions = summary.filter(r => r.isMainPath && r.status !== 'completed');
+
+    // Seleção robusta do objetivo principal: boss > quest ativa > active > available > qualquer
+    let nextMain =
+        mainRegions.find(r => r.status === 'boss_available') ??
+        mainRegions.find(r => r.hasActiveQuest && (r.status === 'active' || r.status === 'available')) ??
+        mainRegions.find(r => r.status === 'active') ??
+        mainRegions.find(r => r.status === 'available') ??
+        mainRegions[0] ?? null;
+
     const nextMainObjective = nextMain?.nextObjective ?? null;
 
-    // Oportunidades opcionais: regiões optional/side disponíveis ou ativas (não concluídas)
+    // Oportunidades opcionais: apenas regiões 'optional' acessíveis (não side, não completed, não locked)
+    // Ordenadas: boss disponível > quest ativa > já iniciada > recém desbloqueada
     const optionalOpportunities = summary
         .filter(r => r.isOptional && r.status !== 'completed' && r.status !== 'locked')
         .map(r => r.nextObjective)
         .filter(Boolean);
 
-    return { nextMainObjective, optionalOpportunities };
+    // Oportunidades side: regiões 'side' acessíveis (não completed, não locked)
+    const sideOpportunities = summary
+        .filter(r => r.isSide && r.status !== 'completed' && r.status !== 'locked')
+        .map(r => r.nextObjective)
+        .filter(Boolean);
+
+    return { nextMainObjective, optionalOpportunities, sideOpportunities };
 }
 
 /**
