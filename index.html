@@ -4460,6 +4460,7 @@
          */
         function openManualSwapModal(playerId, encounterId) {
             try {
+                if (!window.BattleSwap) return;
                 const player = _getPlayerById(playerId);
                 const enc = GameState.currentEncounter;
                 if (!player || !enc || enc.id !== encounterId) return;
@@ -4531,6 +4532,7 @@
          */
         function groupManualSwap(playerId, newIndex, encounterId) {
             try {
+                if (!window.BattleSwap) return;
                 const player = _getPlayerById(playerId);
                 const enc = GameState.currentEncounter;
                 if (!player || !enc || enc.id !== encounterId) return;
