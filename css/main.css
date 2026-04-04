@@ -2818,3 +2818,279 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     font-weight: 700;
     color: #fdcb6e;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   MAPA DE NÓS — World Map Navigation (Super Mario World style)
+   ══════════════════════════════════════════════════════════════ */
+
+/* Header das camadas do mapa */
+.wm-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.wm-hint {
+    font-size: 12px;
+    opacity: 0.65;
+    font-style: italic;
+}
+
+/* Grid de nós do mapa mundial */
+.wm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+}
+
+/* Cada nó do mapa */
+.wm-node {
+    position: relative;
+    border-radius: 12px;
+    padding: 12px 8px 10px;
+    cursor: pointer;
+    text-align: center;
+    border: 2px solid transparent;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    user-select: none;
+    min-height: 90px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.wm-node:not(.wm-node--locked):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+
+.wm-node:not(.wm-node--locked):active {
+    transform: translateY(0);
+}
+
+.wm-node--locked {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(0.6);
+}
+
+.wm-node__emoji {
+    font-size: 28px;
+    line-height: 1;
+}
+
+.wm-node__name {
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+
+.wm-node__level {
+    font-size: 10px;
+    color: rgba(255,255,255,0.8);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.wm-node__tier {
+    position: absolute;
+    top: 5px;
+    right: 6px;
+    font-size: 9px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.7);
+    letter-spacing: 0.5px;
+}
+
+.wm-node__lock {
+    font-size: 16px;
+    opacity: 0.7;
+}
+
+/* Badges do nó (concluído, cidade, boss) */
+.wm-node__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    justify-content: center;
+    margin-top: 2px;
+    min-height: 16px;
+}
+
+.wm-node__badge {
+    font-size: 13px;
+    line-height: 1;
+}
+
+/* Variante: nó de cidade */
+.wm-node--city {
+    border: 2px solid rgba(255,255,255,0.5);
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.2);
+}
+
+.wm-node--city:not(.wm-node--locked):hover {
+    border-color: rgba(255,255,255,0.85);
+}
+
+/* Variante: nó de boss */
+.wm-node--boss {
+    border: 2px solid #d44;
+    box-shadow: 0 0 6px rgba(200,50,50,0.4);
+}
+
+/* Sublabel de motivo do bloqueio (PR-06) */
+.wm-node__lock-reason {
+    display: block;
+    font-size: 9px;
+    line-height: 1.2;
+    color: rgba(255,255,255,0.75);
+    text-align: center;
+    margin-top: 3px;
+    word-break: break-word;
+    max-width: 100%;
+}
+
+/* Grid de spots dentro de um local */
+.wm-spots-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Cada spot dentro do local */
+.wm-spot {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 2px solid #e0e0e0;
+    background: #f9f9f9;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    text-align: left;
+}
+
+.wm-spot:hover {
+    background: #f0f0f0;
+    border-color: #999;
+    transform: translateX(3px);
+}
+
+.wm-spot:active {
+    transform: translateX(0);
+}
+
+/* Spot de serviço de cidade — visual diferenciado */
+.wm-spot--service {
+    border-color: #7a8fc4;
+    background: #f0f3fb;
+}
+
+.wm-spot--service:hover {
+    background: #e4eaf7;
+    border-color: #5a7ab8;
+}
+
+.wm-spot__icon {
+    font-size: 26px;
+    flex-shrink: 0;
+}
+
+.wm-spot__info {
+    flex: 1;
+}
+
+.wm-spot__name {
+    font-weight: 700;
+    font-size: 14px;
+    margin: 0 0 2px;
+}
+
+.wm-spot__profile {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.65;
+    margin-bottom: 2px;
+}
+
+.wm-spot__desc {
+    font-size: 12px;
+    opacity: 0.75;
+    margin: 0;
+}
+
+.wm-spot__arrow {
+    font-size: 18px;
+    opacity: 0.45;
+    flex-shrink: 0;
+}
+
+/* Feedback de cura inline */
+.wm-heal-feedback {
+    background: #e8f5e9;
+    border: 1px solid #4CAF50;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: #2e7d32;
+    margin-bottom: 8px;
+    animation: fadeIn 0.2s ease;
+}
+
+/* PR-07: Quest hint no painel de spots */
+.location-quest-hint {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: #fff8e1;
+    border: 1.5px solid #f9a825;
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    font-size: 12px;
+}
+
+.location-quest-hint__icon {
+    font-size: 16px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.location-quest-hint__body {
+    flex: 1;
+    min-width: 0;
+}
+
+.location-quest-hint__name {
+    font-weight: 700;
+    margin: 0 0 1px;
+    font-size: 12px;
+}
+
+.location-quest-hint__player {
+    font-size: 10px;
+    opacity: 0.7;
+    margin: 0 0 4px;
+}
+
+/* Responsivo: telas menores */
+@media (max-width: 400px) {
+    .wm-grid {
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 8px;
+    }
+    .wm-node {
+        min-height: 80px;
+        padding: 10px 6px 8px;
+    }
+    .wm-node__emoji { font-size: 22px; }
+    .wm-node__name  { font-size: 10px; }
+}
