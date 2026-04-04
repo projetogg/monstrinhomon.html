@@ -3722,6 +3722,16 @@
                 
                 encounter.log = encounter.log || [];
                 encounter.log.push(`✨ ${attacker.name} usa ${skill.name}! (-${skill.cost} ENE)`);
+
+                // Fase 14: indicador de kit_swap — distingue habilidade canônica da espécie
+                if (skill._kitSwapId) {
+                    const isPromoted = skill._kitSwapId.endsWith('_ii');
+                    if (isPromoted) {
+                        encounter.log.push(`⭐ Habilidade especial da espécie (Promoção II)!`);
+                    } else {
+                        encounter.log.push(`🌟 Habilidade especial da espécie!`);
+                    }
+                }
                 
                 // Aplicar efeito baseado no tipo
                 switch (skill.type) {
@@ -5811,13 +5821,18 @@
             // emoji opcional: se já tiver no dataset, usa
             const icon = skill.icon || "";
             
-            // MVP: nome + ENE (sem poluir)
+            // Fase 14: indicador visual de habilidade canônica da espécie
+            // 🌟 = kit_swap I (habilidade especial), ⭐ = kit_swap II (promoção)
+            const kitBadge = skill._kitSwapId
+                ? (skill._kitSwapId.endsWith('_ii') ? ' ⭐' : ' 🌟')
+                : '';
+            
             const parts = [];
             if (icon) parts.push(icon);
             parts.push(name);
             if (cost > 0) parts.push(`(ENE ${cost})`);
             
-            return parts.join(" ");
+            return parts.join(" ") + kitBadge;
         }
         
         /**

@@ -10,6 +10,30 @@ import * as WildUI from './wildUI.js';
 import { initializeBattleParticipation, markAsParticipated, processBattleItemBreakage } from './itemBreakage.js';
 import { resolvePassiveModifier } from '../canon/speciesPassives.js';
 
+// ── Telemetria de identidade canônica (Fase 14) ──────────────────────────────
+
+/**
+ * Retorna um rótulo amigável para a passiva de uma espécie, usado nos logs de combate.
+ * Deixa a identidade canônica legível para crianças/terapeutas sem precisar decodificar IDs.
+ *
+ * @param {string|null} canonSpeciesId - ID da espécie canônica do monstrinho
+ * @param {string}      event          - Evento que disparou a passiva
+ * @returns {string|null} Rótulo amigável, ou null se não houver mapeamento
+ */
+export function _passiveLabel(canonSpeciesId, event) {
+    const LABELS = {
+        shieldhorn:  { on_hit_received: 'Escudo Territorial' },
+        emberfang:   { on_attack: 'Fúria Crescente' },
+        floracura:   { on_heal_item: 'Cura Eficiente' },
+        swiftclaw:   { on_attack: 'Primeiro Ataque' },
+        shadowsting: { on_attack: 'Golpe Furtivo' },
+        bellwave:    { on_attack: 'Cadência Rítmica' },
+        moonquill:   { on_skill_used: 'Controle Arcano' },
+        wildpace:    { on_attack: 'Instinto Selvagem' },
+    };
+    return LABELS[canonSpeciesId]?.[event] ?? null;
+}
+
 /**
  * Rola d20 usando função injetada ou fallback para Math.random.
  * Centraliza o fallback para evitar duplicação entre funções de IA.
@@ -119,7 +143,12 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
             });
             if (atkPassive?.atkBonus) {
                 effectiveAtk = Math.max(1, effectiveAtk + atkPassive.atkBonus);
-                encounter.log.push(`✨ Passiva ${playerMonster.name}: +${atkPassive.atkBonus} ATK`);
+                const atkLabel = _passiveLabel(playerMonster.canonSpeciesId, 'on_attack');
+                encounter.log.push(
+                    atkLabel
+                        ? `✨ Passiva ${playerMonster.name} (${atkLabel}): +${atkPassive.atkBonus} ATK`
+                        : `✨ Passiva ${playerMonster.name}: +${atkPassive.atkBonus} ATK`
+                );
                 passiveStateAtk.swiftclawFirstStrikeDone = true; // Fase 9: consome bônus de primeiro ataque
                 passiveStateAtk.shadowstingDebuffCharged = false; // Fase 10: consome carga de debuff
                 passiveStateAtk.bellwaveRhythmCharged = false; // Fase 11: consome carga de ritmo
@@ -150,7 +179,12 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
             if (defPassive?.damageReduction) {
                 const reducedDamage = Math.max(1, damage - defPassive.damageReduction);
                 if (reducedDamage < damage) {
-                    encounter.log.push(`🛡️ Passiva ${encounter.wildMonster.name}: -${damage - reducedDamage} dano`);
+                    const shieldLabel = _passiveLabel(encounter.wildMonster.canonSpeciesId, 'on_hit_received');
+                    encounter.log.push(
+                        shieldLabel
+                            ? `🛡️ Passiva ${encounter.wildMonster.name} (${shieldLabel}): -${damage - reducedDamage} dano`
+                            : `🛡️ Passiva ${encounter.wildMonster.name}: -${damage - reducedDamage} dano`
+                    );
                 }
                 damage = reducedDamage;
             }
@@ -348,8 +382,11 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
             duration: wildSkillPassive.spdBuff.duration,
             source: 'moonquill_passive',
         });
+        const moonLabel = _passiveLabel(wildMonster.canonSpeciesId, 'on_skill_used');
         encounter.log.push(
-            `✨ Passiva ${wildMonster.name}: +${wildSkillPassive.spdBuff.power} SPD por ${wildSkillPassive.spdBuff.duration} turno(s)`
+            moonLabel
+                ? `✨ Passiva ${wildMonster.name} (${moonLabel}): +${wildSkillPassive.spdBuff.power} SPD por ${wildSkillPassive.spdBuff.duration} turno(s)`
+                : `✨ Passiva ${wildMonster.name}: +${wildSkillPassive.spdBuff.power} SPD por ${wildSkillPassive.spdBuff.duration} turno(s)`
         );
     }
 
@@ -365,7 +402,12 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
         });
         if (atkPassive?.atkBonus) {
             effectiveAtk = Math.max(1, effectiveAtk + atkPassive.atkBonus);
-            encounter.log.push(`✨ Passiva ${wildMonster.name}: +${atkPassive.atkBonus} ATK`);
+            const wildAtkLabel = _passiveLabel(wildMonster.canonSpeciesId, 'on_attack');
+            encounter.log.push(
+                wildAtkLabel
+                    ? `✨ Passiva ${wildMonster.name} (${wildAtkLabel}): +${atkPassive.atkBonus} ATK`
+                    : `✨ Passiva ${wildMonster.name}: +${atkPassive.atkBonus} ATK`
+            );
         }
         
         const defMods = WildCore.getBuffModifiers(playerMonster);
@@ -394,7 +436,12 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
         if (defPassive?.damageReduction) {
             const reducedDamage = Math.max(1, damage - defPassive.damageReduction);
             if (reducedDamage < damage) {
-                encounter.log.push(`🛡️ Passiva ${playerMonster.name}: -${damage - reducedDamage} dano`);
+                const playerShieldLabel = _passiveLabel(playerMonster.canonSpeciesId, 'on_hit_received');
+                encounter.log.push(
+                    playerShieldLabel
+                        ? `🛡️ Passiva ${playerMonster.name} (${playerShieldLabel}): -${damage - reducedDamage} dano`
+                        : `🛡️ Passiva ${playerMonster.name}: -${damage - reducedDamage} dano`
+                );
             }
             damage = reducedDamage;
             passiveState.shieldhornBlockedThisTurn = true; // Fase 4.2: marca turno como consumido
@@ -454,7 +501,12 @@ function processEnemyBasicAttack(encounter, wildMonster, playerMonster, dependen
         });
         if (atkPassive?.atkBonus) {
             effectiveAtk = Math.max(1, effectiveAtk + atkPassive.atkBonus);
-            encounter.log.push(`✨ Passiva ${wildMonster.name}: +${atkPassive.atkBonus} ATK`);
+            const basicAtkLabel = _passiveLabel(wildMonster.canonSpeciesId, 'on_attack');
+            encounter.log.push(
+                basicAtkLabel
+                    ? `✨ Passiva ${wildMonster.name} (${basicAtkLabel}): +${atkPassive.atkBonus} ATK`
+                    : `✨ Passiva ${wildMonster.name}: +${atkPassive.atkBonus} ATK`
+            );
         }
 
         const defMods = WildCore.getBuffModifiers(playerMonster);
@@ -484,7 +536,12 @@ function processEnemyBasicAttack(encounter, wildMonster, playerMonster, dependen
         if (defPassive?.damageReduction) {
             const reducedDamage = Math.max(1, damage - defPassive.damageReduction);
             if (reducedDamage < damage) {
-                encounter.log.push(`🛡️ Passiva ${playerMonster.name}: -${damage - reducedDamage} dano`);
+                const playerShieldLabelB = _passiveLabel(playerMonster.canonSpeciesId, 'on_hit_received');
+                encounter.log.push(
+                    playerShieldLabelB
+                        ? `🛡️ Passiva ${playerMonster.name} (${playerShieldLabelB}): -${damage - reducedDamage} dano`
+                        : `🛡️ Passiva ${playerMonster.name}: -${damage - reducedDamage} dano`
+                );
             }
             damage = reducedDamage;
             passiveState.shieldhornBlockedThisTurn = true; // Fase 4.2: marca turno como consumido
@@ -662,7 +719,12 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
                 duration: 1,
                 source: 'emberfang_passive',
             });
-            encounter.log.push(`✨ Passiva ${playerMonster.name}: +${emberfangMod.atkBonus} ATK (skill ofensiva)`);
+            const skillAtkLabel = _passiveLabel(playerMonster.canonSpeciesId, 'on_attack');
+            encounter.log.push(
+                skillAtkLabel
+                    ? `✨ Passiva ${playerMonster.name} (${skillAtkLabel}): +${emberfangMod.atkBonus} ATK (skill ofensiva)`
+                    : `✨ Passiva ${playerMonster.name}: +${emberfangMod.atkBonus} ATK (skill ofensiva)`
+            );
             passiveStateSkill.swiftclawFirstStrikeDone = true; // Fase 9: consome bônus de primeiro ataque
         }
 
@@ -694,8 +756,11 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
                 duration: skillPassive.spdBuff.duration,
                 source: 'moonquill_passive',
             });
+            const moonLabel = _passiveLabel(playerMonster.canonSpeciesId, 'on_skill_used');
             encounter.log.push(
-                `✨ Passiva ${playerMonster.name}: +${skillPassive.spdBuff.power} SPD por ${skillPassive.spdBuff.duration} turno(s)`
+                moonLabel
+                    ? `✨ Passiva ${playerMonster.name} (${moonLabel}): +${skillPassive.spdBuff.power} SPD por ${skillPassive.spdBuff.duration} turno(s)`
+                    : `✨ Passiva ${playerMonster.name}: +${skillPassive.spdBuff.power} SPD por ${skillPassive.spdBuff.duration} turno(s)`
             );
         }
 
@@ -705,7 +770,7 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
         if (isDebuff && playerMonster.canonSpeciesId === 'shadowsting') {
             const passiveStateShadow = encounter.passiveState || (encounter.passiveState = {});
             passiveStateShadow.shadowstingDebuffCharged = true;
-            encounter.log.push(`🎯 Passiva ${playerMonster.name}: carga de execução ativada`);
+            encounter.log.push(`🗡️ ${playerMonster.name} (Golpe Furtivo): carga preparada! Próximo ataque básico +ATK`);
         }
 
         // bellwave: carregar bônus rítmico quando qualquer skill é usada — Fase 11
@@ -714,7 +779,7 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
         if (playerMonster.canonSpeciesId === 'bellwave') {
             const passiveStateBell = encounter.passiveState || (encounter.passiveState = {});
             passiveStateBell.bellwaveRhythmCharged = true;
-            encounter.log.push(`🎵 Passiva ${playerMonster.name}: ritmo carregado`);
+            encounter.log.push(`🎵 ${playerMonster.name} (Cadência Rítmica): ritmo carregado! Próximo básico +ATK`);
         }
 
         // Marcar participação (item breakage)
@@ -906,7 +971,12 @@ export function executeWildItemUse({ encounter, player, playerMonster, itemId, d
             const bonus = Math.min(healPassive.healBonus, playerMonster.hpMax - playerMonster.hp);
             if (bonus > 0) {
                 playerMonster.hp += bonus;
-                encounter.log.push(`✨ Passiva ${playerMonster.name}: +${bonus} HP (primeira cura)`);
+                const healLabel = _passiveLabel(playerMonster.canonSpeciesId, 'on_heal_item');
+                encounter.log.push(
+                    healLabel
+                        ? `✨ Passiva ${playerMonster.name} (${healLabel}): +${bonus} HP (primeira cura)`
+                        : `✨ Passiva ${playerMonster.name}: +${bonus} HP (primeira cura)`
+                );
             }
             // Marca independentemente de bonus > 0 (HP pode já estar cheio)
             passiveState.floracuraHealUsed = true;
