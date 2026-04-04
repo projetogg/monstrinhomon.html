@@ -305,6 +305,9 @@ export function isRegionComplete(regionId, regionalProgress = {}) {
     return regionalProgress[regionId]?.completed === true;
 }
 
+// Fallback para nome de região desconhecida
+const REGION_LABEL_FALLBACK = 'Região Desconhecida';
+
 /**
  * Deriva um nome amigável a partir de um regionId técnico.
  * Usado como fallback quando bossMeta.regionLabel não está definido.
@@ -315,7 +318,7 @@ export function isRegionComplete(regionId, regionalProgress = {}) {
  * @returns {string}
  */
 export function deriveRegionLabel(regionId) {
-    if (!regionId) return 'Região Desconhecida';
+    if (!regionId) return REGION_LABEL_FALLBACK;
     return regionId
         .split('_')
         .map(w => w.charAt(0).toUpperCase() + w.slice(1))

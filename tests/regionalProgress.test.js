@@ -483,6 +483,8 @@ describe('deriveRegionLabel — nome amigável a partir do regionId (PR-11)', ()
         expect(deriveRegionLabel('')).toBe('Região Desconhecida');
         expect(deriveRegionLabel(null)).toBe('Região Desconhecida');
         expect(deriveRegionLabel(undefined)).toBe('Região Desconhecida');
+        expect(deriveRegionLabel(0)).toBe('Região Desconhecida');
+        expect(deriveRegionLabel(false)).toBe('Região Desconhecida');
     });
 
 });

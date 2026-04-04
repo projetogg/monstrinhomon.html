@@ -8737,16 +8737,18 @@
 
         /**
          * Formata um regionId para exibição legível.
-         * Usa bossMeta.regionLabel se disponível (via summary), senão deriva do ID.
+         * Usa WorldMap.deriveRegionLabel se disponível; senão capitaliza palavras
+         * com a mesma lógica de deriveRegionLabel para consistência.
          * @param {string} regionId
          * @returns {string}
          */
         function formatRegionName(regionId) {
-            // Tentar encontrar regionLabel no summary atual (se disponível)
+            if (!regionId) return '';
             if (window.WorldMap?.deriveRegionLabel) {
                 return window.WorldMap.deriveRegionLabel(regionId);
             }
-            return (regionId ?? '').replace(/_/g, ' ');
+            // Fallback consistente: capitaliza cada palavra, substitui underscores
+            return regionId.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
         }
 
         /**
@@ -8842,8 +8844,8 @@
                 if (window.GameFlow) {
                     for (const player of (GameState.players ?? [])) {
                         if (!player) continue;
-                        const summary2 = window.GameFlow.getActiveQuestsSummary(player);
-                        const questMatch = summary2.find(({ quest }) =>
+                        const playerQuestSummary = window.GameFlow.getActiveQuestsSummary(player);
+                        const questMatch = playerQuestSummary.find(({ quest }) =>
                             quest?.targetRegionId === region.regionId ||
                             quest?.localId === region.bossNodeId
                         );
