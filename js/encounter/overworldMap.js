@@ -13,6 +13,8 @@
  */
 
 // ── Posições dos nós no SVG (viewBox "0 0 880 530") ───────────────────────────
+// O container CSS usa aspect-ratio 88/55 (levemente mais alto que 88/53),
+// mas o viewBox do SVG permanece 880×530 — o preserveAspectRatio cuida do encaixe.
 // Distribuição ajustada para NODE_R=32: fileira superior elevada, inferior baixada,
 // pares problemáticos separados para evitar sobreposição com raio maior.
 export const NODE_POSITIONS = {
