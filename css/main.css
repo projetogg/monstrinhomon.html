@@ -3021,6 +3021,23 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     margin-bottom: 2px;
 }
 
+/* Cores de perfil por tipo — visual diferenciado por papel mecânico */
+.wm-spot__profile--capture  { color: #2e7d32; opacity: 1; }
+.wm-spot__profile--combat   { color: #b71c1c; opacity: 1; }
+.wm-spot__profile--rare     { color: #6a1b9a; opacity: 1; }
+.wm-spot__profile--resource { color: #e65100; opacity: 1; }
+.wm-spot__profile--event    { color: #0277bd; opacity: 1; }
+.wm-spot__profile--trainer  { color: #1565c0; opacity: 1; }
+.wm-spot__profile--service  { color: #37474f; opacity: 1; }
+
+/* Bordas sutis por perfil nos cards */
+.wm-spot--capture  { border-left: 3px solid #2e7d32; }
+.wm-spot--combat   { border-left: 3px solid #b71c1c; }
+.wm-spot--rare     { border-left: 3px solid #6a1b9a; }
+.wm-spot--resource { border-left: 3px solid #e65100; }
+.wm-spot--event    { border-left: 3px solid #0277bd; }
+.wm-spot--trainer  { border-left: 3px solid #1565c0; }
+
 .wm-spot__desc {
     font-size: 12px;
     opacity: 0.75;

@@ -264,3 +264,90 @@ export function buildSpotModifiers(spot) {
         m => m && typeof m.rarity === 'string' && typeof m.delta === 'number'
     );
 }
+
+// ── Perfis formais de spot ───────────────────────────────────────────────────
+
+/**
+ * Perfis canônicos de spot.
+ * Cada perfil define deltas de modificadores de encontro além dos rarityModifiers.
+ *
+ * trainerChanceDelta : ajuste no peso de Treinador em encounterTypeWeights
+ * itemBonusDelta     : ajuste no peso de Item em encounterTypeWeights
+ * levelDelta         : deslocamento inteiro aplicado ao nível sorteado (pode ser negativo)
+ */
+export const SPOT_PROFILE_DEFAULTS = {
+    capture:  { label: 'Captura',   icon: '🎯', trainerChanceDelta: -5,  itemBonusDelta: +3,  levelDelta:  0 },
+    combat:   { label: 'Combate',   icon: '⚔️', trainerChanceDelta: +8,  itemBonusDelta: -3,  levelDelta: +1 },
+    rare:     { label: 'Raridade',  icon: '✨', trainerChanceDelta: -3,  itemBonusDelta:  0,  levelDelta:  0 },
+    resource: { label: 'Recurso',   icon: '💎', trainerChanceDelta:  0,  itemBonusDelta: +8,  levelDelta:  0 },
+    event:    { label: 'Evento',    icon: '🎭', trainerChanceDelta:  0,  itemBonusDelta: +5,  levelDelta:  0 },
+    trainer:  { label: 'Treinador', icon: '🧑‍🏫', trainerChanceDelta: +15, itemBonusDelta:  0,  levelDelta: +1 },
+    service:  { label: 'Serviço',   icon: '🏪', trainerChanceDelta:  0,  itemBonusDelta:  0,  levelDelta:  0 }
+};
+
+/**
+ * Fallback para spots sem profileKey definido.
+ * Retorna modificadores neutros (sem impacto no encontro).
+ * @private
+ */
+const SPOT_PROFILE_FALLBACK = { label: 'Exploração', icon: '🗺️', trainerChanceDelta: 0, itemBonusDelta: 0, levelDelta: 0 };
+
+/**
+ * Retorna o contexto completo de modificadores de um spot para uso pelo encounterEngine.
+ *
+ * Combina:
+ * 1. rarityModifiers do spot (para applyModifiers)
+ * 2. Defaults do profileKey (trainerChanceDelta, itemBonusDelta, levelDelta)
+ * 3. encounterModifiers do spot (override individual, se existir)
+ *
+ * O campo `encounterModifiers` no JSON pode sobrescrever qualquer campo do perfil padrão:
+ * {
+ *   "trainerChanceDelta": 12,
+ *   "itemBonusDelta": -5,
+ *   "levelDelta": 2
+ * }
+ *
+ * @param {Object|null} spot - Dados do spot (de locations.json)
+ * @returns {{
+ *   profileKey: string,
+ *   label: string,
+ *   icon: string,
+ *   rarityMods: Array<{rarity: string, delta: number}>,
+ *   trainerChanceDelta: number,
+ *   itemBonusDelta: number,
+ *   levelDelta: number
+ * }}
+ */
+export function getSpotEncounterContext(spot) {
+    if (!spot) {
+        return {
+            profileKey: 'fallback',
+            label: SPOT_PROFILE_FALLBACK.label,
+            icon:  SPOT_PROFILE_FALLBACK.icon,
+            rarityMods: [],
+            trainerChanceDelta: 0,
+            itemBonusDelta: 0,
+            levelDelta: 0
+        };
+    }
+
+    const profileKey = spot.profileKey ?? 'fallback';
+    const profileDefaults = SPOT_PROFILE_DEFAULTS[profileKey] ?? SPOT_PROFILE_FALLBACK;
+
+    // Overrides individuais do spot (campo encounterModifiers no JSON)
+    const overrides = (spot.encounterModifiers && typeof spot.encounterModifiers === 'object')
+        ? spot.encounterModifiers
+        : {};
+
+    const rarityMods = buildSpotModifiers(spot);
+
+    return {
+        profileKey,
+        label: profileDefaults.label,
+        icon:  profileDefaults.icon,
+        rarityMods,
+        trainerChanceDelta: overrides.trainerChanceDelta ?? profileDefaults.trainerChanceDelta ?? 0,
+        itemBonusDelta:     overrides.itemBonusDelta     ?? profileDefaults.itemBonusDelta     ?? 0,
+        levelDelta:         overrides.levelDelta         ?? profileDefaults.levelDelta         ?? 0
+    };
+}

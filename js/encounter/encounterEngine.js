@@ -137,7 +137,41 @@ export function applyModifiers(baseWeights, modifiers = []) {
     return adjusted;
 }
 
-// Bônus aplicados quando o encontro acontece em spot raro (em pontos percentuais)
+/**
+ * Aplica modificadores ao encounterTypeWeights (Selvagem, Item, Evento, Treinador, SpotRaro).
+ * Funciona analogamente a applyModifiers(), mas opera sobre tipos de encontro.
+ * Cada modificador ajusta o peso de um tipo em até MAX_GROUP_MODIFIER_SHIFT pp.
+ *
+ * @param {Object} baseWeights - Pesos base por tipo (não são modificados)
+ * @param {Array<{type: string, delta: number}>} modifiers - Lista de modificadores
+ * @returns {Object} Pesos ajustados (renormalizados para manter soma original)
+ */
+export function applyEncounterTypeModifiers(baseWeights, modifiers = []) {
+    if (!baseWeights || typeof baseWeights !== 'object') return {};
+
+    const adjusted = { ...baseWeights };
+
+    for (const mod of modifiers) {
+        if (!mod || typeof mod.type !== 'string' || typeof mod.delta !== 'number') continue;
+        const clampedDelta = Math.max(-MAX_GROUP_MODIFIER_SHIFT, Math.min(MAX_GROUP_MODIFIER_SHIFT, mod.delta));
+        const current = adjusted[mod.type] ?? 0;
+        adjusted[mod.type] = Math.max(0, current + clampedDelta);
+    }
+
+    // Renormalizar para manter soma original
+    const originalTotal = Object.values(baseWeights).reduce((s, v) => s + (v ?? 0), 0);
+    const adjustedTotal = Object.values(adjusted).reduce((s, v) => s + (v ?? 0), 0);
+
+    if (adjustedTotal > 0 && originalTotal > 0 && adjustedTotal !== originalTotal) {
+        const scale = originalTotal / adjustedTotal;
+        for (const key of Object.keys(adjusted)) {
+            adjusted[key] = adjusted[key] * scale;
+        }
+    }
+
+    return adjusted;
+}
+
 const RARE_SPOT_RARO_BONUS    = 15;
 const RARE_SPOT_MISTICO_BONUS =  5;
 const RARE_SPOT_COMUM_PENALTY = -15;
@@ -208,13 +242,15 @@ export function resolveSpeciesPool(speciesPoolsByRarity, rarity) {
  * @param {string} areaId - ID da área
  * @param {Array<Object>} locationsData - Array de localizações (de locations.json)
  * @param {Object} [options] - Opções de geração
- * @param {Array<Object>} [options.modifiers] - Modificadores de progresso/grupo [{ rarity, delta }]
+ * @param {Array<Object>} [options.modifiers] - Modificadores de raridade [{ rarity, delta }]
+ * @param {Array<Object>} [options.encounterTypeModifiers] - Modificadores de tipo de encontro [{ type, delta }]
+ * @param {number} [options.levelDelta] - Deslocamento inteiro aplicado ao nível sorteado
  * @param {Function} [options.rng] - Função de randomização (padrão: Math.random)
  * @param {boolean} [options.forceRareSpot] - Força spot raro (para testes/eventos)
  * @returns {Object|null} Dados do encontro, ou null se área inválida
  */
 export function generateWildEncounter(areaId, locationsData, options = {}) {
-    const { modifiers = [], rng = Math.random, forceRareSpot = false } = options;
+    const { modifiers = [], encounterTypeModifiers = [], levelDelta = 0, rng = Math.random, forceRareSpot = false } = options;
 
     // Passo 1–2: Ler área
     const area = findArea(areaId, locationsData);
@@ -251,11 +287,15 @@ export function generateWildEncounter(areaId, locationsData, options = {}) {
     const speciesId = pickSpeciesFromPool(pool, rng);
     if (!speciesId) return null;
 
-    // Passo 7: Sortear nível
-    const level = generateEncounterLevel(levelRange, rng);
+    // Passo 7: Sortear nível (com delta de spot)
+    const rawLevel = generateEncounterLevel(levelRange, rng);
+    const level = Math.max(1, rawLevel + Math.round(levelDelta));
 
-    // Passo 8: Tipo de encontro
-    const encounterType = pickEncounterType(encounterTypeWeights, rng);
+    // Passo 8: Tipo de encontro (com modificadores de spot)
+    const finalTypeWeights = encounterTypeModifiers.length > 0
+        ? applyEncounterTypeModifiers(encounterTypeWeights ?? {}, encounterTypeModifiers)
+        : encounterTypeWeights;
+    const encounterType = pickEncounterType(finalTypeWeights, rng);
 
     return {
         speciesId,

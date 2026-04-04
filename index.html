@@ -4023,12 +4023,20 @@
                     let wildLevel      = null;
 
                     if (isWildViaMap && window.EncounterEngine && _wm.locationsData) {
-                        const spot      = window.WorldMap?.findSpot(_wm.selectedSpotId, _wm.locationsData);
-                        const spotMods  = window.WorldMap?.buildSpotModifiers(spot) ?? [];
+                        const spot       = window.WorldMap?.findSpot(_wm.selectedSpotId, _wm.locationsData);
+                        const spotCtx    = window.WorldMap?.getSpotEncounterContext(spot) ?? { rarityMods: [], trainerChanceDelta: 0, itemBonusDelta: 0, levelDelta: 0 };
+                        const typeModifiers = [
+                            { type: 'Treinador', delta: spotCtx.trainerChanceDelta },
+                            { type: 'Item',      delta: spotCtx.itemBonusDelta }
+                        ].filter(m => m.delta !== 0);
                         const generated = window.EncounterEngine.generateWildEncounter(
                             _wm.selectedLocationId,
                             _wm.locationsData,
-                            { modifiers: spotMods }
+                            {
+                                modifiers: spotCtx.rarityMods,
+                                encounterTypeModifiers: typeModifiers,
+                                levelDelta: spotCtx.levelDelta
+                            }
                         );
                         if (generated?.speciesId) {
                             wildTemplateId = generated.speciesId;
@@ -8542,17 +8550,24 @@
             }
 
             list.innerHTML = spots.map(spot => {
-                const isService = spot.type === 'service';
+                const isService = spot.type === 'service' || spot.profileKey === 'service';
                 const onclick   = isService
                     ? `onclick="selectCityService('${spot.serviceAction}')"`
                     : `onclick="selectSpot('${spot.id}')"`;
-                const extraClass = isService ? 'wm-spot--service' : '';
+                const profileKey = spot.profileKey ?? '';
+                const extraClass = [
+                    isService ? 'wm-spot--service' : '',
+                    profileKey ? `wm-spot--${profileKey}` : ''
+                ].filter(Boolean).join(' ');
+                // Obter ícone e label do perfil via WorldMap
+                const spotCtx = window.WorldMap?.getSpotEncounterContext?.(spot);
+                const profileLabel = spotCtx ? `${spotCtx.icon} ${spotCtx.label}` : (spot.profile ?? '');
                 return `
                   <div class="wm-spot ${extraClass}" ${onclick}>
                     <span class="wm-spot__icon">${spot.icon}</span>
                     <div class="wm-spot__info">
                       <p class="wm-spot__name">${spot.name}</p>
-                      <p class="wm-spot__profile">${spot.profile}</p>
+                      <p class="wm-spot__profile wm-spot__profile--${profileKey}">${profileLabel}</p>
                       <p class="wm-spot__desc">${spot.description}</p>
                     </div>
                     <span class="wm-spot__arrow">›</span>
