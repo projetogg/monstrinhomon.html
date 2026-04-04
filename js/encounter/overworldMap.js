@@ -69,16 +69,16 @@ export const BIOME_EMOJI = {
 };
 
 // Raio base do nó
-const NODE_R = 30;
+const NODE_R = 28;
 
 // Hierarquia visual dos labels: opacidade e tamanho por estado
 const LABEL_STYLES = {
-    current:       { opacity: '1',    fontSize: '10' },
-    boss:          { opacity: '0.9',  fontSize: '9'  },
-    'boss-defeated': { opacity: '0.8', fontSize: '9'  },
-    available:     { opacity: '0.6',  fontSize: '8'  },
-    visited:       { opacity: '0.4',  fontSize: '8'  },
-    locked:        { opacity: '0.2',  fontSize: '8'  },
+    current:         { opacity: '1',    fontSize: '10' },
+    boss:            { opacity: '0.92', fontSize: '9'  },
+    'boss-defeated': { opacity: '0.75', fontSize: '9'  },
+    available:       { opacity: '0.55', fontSize: '8'  },
+    visited:         { opacity: '0.30', fontSize: '7'  },
+    locked:          { opacity: '0.15', fontSize: '7'  },
 };
 
 // ── Dimensões do SVG ──────────────────────────────────────────────────────────
@@ -162,8 +162,8 @@ export function buildMapSVG(enrichedNodes) {
         const biome    = node.biome ?? 'campos';
         const fill     = locked ? '#222' : (BIOME_FILL[biome] ?? '#444');
         const emoji    = locked ? '❓' : (isBoss ? '👑' : (BIOME_EMOJI[biome] ?? '🗺️'));
-        const label    = locked ? '???' : (node.name ?? node.nodeId);
-        const shortLbl = label.length > 14 ? label.slice(0, 13) + '…' : label;
+        const label    = locked ? '' : (node.name ?? node.nodeId); // nós bloqueados: sem label visível, aria-label fallback aplicado abaixo
+        const shortLbl = label.length > 12 ? label.slice(0, 11) + '…' : label;
         const clickable = !locked;
 
         // Cor do anel de boss por tipo de região
@@ -176,24 +176,24 @@ export function buildMapSVG(enrichedNodes) {
         // Borda do círculo por estado
         let strokeColor = 'none';
         let strokeWidth = 0;
-        if      (state === 'current')       { strokeColor = '#20ddcc'; strokeWidth = 4.5; }
-        else if (state === 'boss')          { strokeColor = bossRingColor; strokeWidth = 3.5; }
-        else if (state === 'boss-defeated') { strokeColor = '#40cc60'; strokeWidth = 3; }
-        else if (state === 'available')     { strokeColor = 'rgba(255,255,255,0.30)'; strokeWidth = 2; }
-        else if (state === 'visited')       { strokeColor = 'rgba(255,255,255,0.18)'; strokeWidth = 1.5; }
+        if      (state === 'current')       { strokeColor = '#20ddcc'; strokeWidth = 3.5; }
+        else if (state === 'boss')          { strokeColor = bossRingColor; strokeWidth = 3; }
+        else if (state === 'boss-defeated') { strokeColor = '#40cc60'; strokeWidth = 2.5; }
+        else if (state === 'available')     { strokeColor = 'rgba(255,255,255,0.28)'; strokeWidth = 1.5; }
+        else if (state === 'visited')       { strokeColor = 'rgba(255,255,255,0.15)'; strokeWidth = 1; }
 
         // Marcador de party para o nó atual
         const partyMarker = (state === 'current')
-            ? `<text x="${pos.x}" y="${pos.y - NODE_R - 8}" text-anchor="middle"
-                     font-size="16" class="ow-party-marker">🎯</text>`
+            ? `<text x="${pos.x}" y="${pos.y - NODE_R - 7}" text-anchor="middle"
+                     font-size="13" class="ow-party-marker">📍</text>`
             : '';
 
         // Anel externo pulsante para boss não derrotado
         const bossRing = (isBoss && !locked && state === 'boss')
-            ? `<circle cx="${pos.x}" cy="${pos.y}" r="${NODE_R + 7}"
+            ? `<circle cx="${pos.x}" cy="${pos.y}" r="${NODE_R + 6}"
                        fill="none" stroke="${bossRingColor}"
-                       stroke-width="1.5" stroke-dasharray="5 3"
-                       opacity="0.65" class="ow-boss-ring"/>`
+                       stroke-width="1.2" stroke-dasharray="4 4"
+                       opacity="0.55" class="ow-boss-ring"/>`
             : '';
 
         // Badge de boss derrotado
@@ -211,16 +211,16 @@ export function buildMapSVG(enrichedNodes) {
         return `
         <g class="ow-node ${stateClass}" data-node="${node.nodeId}"
            style="cursor:${clickable ? 'pointer' : 'default'}" ${onclick}
-           role="${clickable ? 'button' : 'img'}" aria-label="${label}">
+           role="${clickable ? 'button' : 'img'}" aria-label="${label || 'Local bloqueado'}">
             ${bossRing}
             <circle cx="${pos.x}" cy="${pos.y}" r="${NODE_R}"
                     fill="${fill}" stroke="${strokeColor}" stroke-width="${strokeWidth}"
                     class="ow-node__circle"/>
-            <text x="${pos.x}" y="${pos.y - 5}" text-anchor="middle"
+            <text x="${pos.x}" y="${pos.y - 4}" text-anchor="middle"
                   font-size="15" class="ow-node__emoji">${emoji}</text>
-            <text x="${pos.x}" y="${pos.y + 12}" text-anchor="middle"
+            <text x="${pos.x}" y="${pos.y + 13}" text-anchor="middle"
                   font-size="${labelSize}" class="ow-node__label"
-                  fill="${locked ? '#555' : '#ddd'}" opacity="${labelOpacity}">${shortLbl}</text>
+                  fill="${locked ? '#444' : '#ddd'}" opacity="${labelOpacity}">${shortLbl}</text>
             ${defeatedBadge}
             ${partyMarker}
         </g>`;
@@ -228,26 +228,26 @@ export function buildMapSVG(enrichedNodes) {
 
     // Estilos inline no SVG (para garantir funcionamento sem CSS externo)
     const svgStyles = `
-        .ow-edge { stroke: rgba(255,255,255,0.10); stroke-width: 1.5; }
-        .ow-edge--active { stroke: rgba(255,255,255,0.25); stroke-width: 2; }
+        .ow-edge { stroke: rgba(255,255,255,0.08); stroke-width: 1; }
+        .ow-edge--active { stroke: rgba(255,255,255,0.22); stroke-width: 1.8; }
         .ow-node__circle { transition: filter 0.18s; }
         .ow-node--available:hover .ow-node__circle,
         .ow-node--visited:hover .ow-node__circle,
         .ow-node--boss:hover .ow-node__circle,
         .ow-node--boss-defeated:hover .ow-node__circle,
-        .ow-node--current:hover .ow-node__circle { filter: brightness(1.35); }
+        .ow-node--current:hover .ow-node__circle { filter: brightness(1.30); }
         .ow-node--current .ow-node__circle {
-            animation: owCurrentPulse 2.5s ease-in-out infinite;
+            animation: owCurrentPulse 3s ease-in-out infinite;
         }
-        .ow-boss-ring { animation: owBossRing 2s ease-in-out infinite; }
-        .ow-party-marker { font-size: 14px; animation: owBounce 1.5s ease-in-out infinite; }
+        .ow-boss-ring { animation: owBossRing 2.5s ease-in-out infinite; }
+        .ow-party-marker { animation: owBounce 2s ease-in-out infinite; }
         @keyframes owCurrentPulse {
-            0%,100% { stroke-width: 4.5; stroke-opacity: 1; }
-            50%      { stroke-width: 8;   stroke-opacity: 0.55; }
+            0%,100% { stroke-width: 3.5; stroke-opacity: 1; }
+            50%      { stroke-width: 6;   stroke-opacity: 0.5; }
         }
         @keyframes owBossRing {
-            0%,100% { opacity: 0.45; }
-            50%      { opacity: 0.9; }
+            0%,100% { opacity: 0.35; }
+            50%      { opacity: 0.75; }
         }
         @keyframes owBounce {
             0%,100% { transform: translateY(0); }
