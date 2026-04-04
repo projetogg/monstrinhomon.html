@@ -1712,17 +1712,6 @@
             { id: 'BOLA_FOGO_III', name: 'Bola de Fogo III', class: 'Mago', category: 'Ataque', power: 22, accuracy: 0.9, energy_cost: 8, target: 'Inimigo', status: '', desc: 'Ataque de fogo mestre.' }
         ];
 
-        // CLASS ENERGY REGEN (baseado em CLASSES.csv)
-        const CLASS_ENERGY_REGEN = {
-            'Guerreiro': { ene_regen_pct: 0.10, ene_regen_min: 2 },
-            'Mago': { ene_regen_pct: 0.25, ene_regen_min: 1 },
-            'Curandeiro': { ene_regen_pct: 0.20, ene_regen_min: 2 },
-            'Bárbaro': { ene_regen_pct: 0.10, ene_regen_min: 1 },
-            'Ladino': { ene_regen_pct: 0.15, ene_regen_min: 1 },
-            'Bardo': { ene_regen_pct: 0.18, ene_regen_min: 2 },
-            'Caçador': { ene_regen_pct: 0.12, ene_regen_min: 2 },
-            'Animalista': { ene_regen_pct: 0.15, ene_regen_min: 2 }
-        };
 
         // DEFAULT OBJECTIVES
         const DEFAULT_OBJECTIVES = [
@@ -6726,7 +6715,7 @@
                             const label = formatSkillButtonLabel(skill, playerMonster);
                             const canUse = canUseSkillNow(skill, playerMonster) && playerMonster.hp > 0;
                             const tutAllows = tutorialAllows("skill");
-                            const tooltip = !tutAllows ? 'Tutorial: ainda não liberado' : (canUse ? (skill.desc || '') : 'Sem ENE');
+                            const tooltip = !tutAllows ? 'Tutorial: ainda não liberado' : (canUse ? (skill.desc || '') : `ENE insuficiente (${Number(playerMonster.ene) || 0}/${Number(skill.cost ?? skill.energy_cost ?? 0) || 0})`);
                             return `<button class="btn btn-primary" onclick="useSkillWild(${idx})"
                                     ${!canUse || !tutAllows ? 'disabled' : ''} title="${tooltip}">${label}</button>`;
                         }).join('')}
