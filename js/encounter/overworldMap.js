@@ -69,7 +69,7 @@ export const BIOME_EMOJI = {
 };
 
 // Raio base do nó
-const NODE_R = 26;
+const NODE_R = 30;
 
 // ── Dimensões do SVG ──────────────────────────────────────────────────────────
 export const SVG_WIDTH  = 880;
@@ -166,16 +166,16 @@ export function buildMapSVG(enrichedNodes) {
         // Borda do círculo por estado
         let strokeColor = 'none';
         let strokeWidth = 0;
-        if      (state === 'current')       { strokeColor = '#20ddcc'; strokeWidth = 3.5; }
-        else if (state === 'boss')          { strokeColor = bossRingColor; strokeWidth = 3; }
-        else if (state === 'boss-defeated') { strokeColor = '#40cc60'; strokeWidth = 2.5; }
-        else if (state === 'available')     { strokeColor = 'rgba(255,255,255,0.25)'; strokeWidth = 1.5; }
-        else if (state === 'visited')       { strokeColor = 'rgba(255,255,255,0.15)'; strokeWidth = 1; }
+        if      (state === 'current')       { strokeColor = '#20ddcc'; strokeWidth = 4.5; }
+        else if (state === 'boss')          { strokeColor = bossRingColor; strokeWidth = 3.5; }
+        else if (state === 'boss-defeated') { strokeColor = '#40cc60'; strokeWidth = 3; }
+        else if (state === 'available')     { strokeColor = 'rgba(255,255,255,0.30)'; strokeWidth = 2; }
+        else if (state === 'visited')       { strokeColor = 'rgba(255,255,255,0.18)'; strokeWidth = 1.5; }
 
         // Marcador de party para o nó atual
         const partyMarker = (state === 'current')
-            ? `<text x="${pos.x}" y="${pos.y - NODE_R - 7}" text-anchor="middle"
-                     font-size="14" class="ow-party-marker">🎯</text>`
+            ? `<text x="${pos.x}" y="${pos.y - NODE_R - 8}" text-anchor="middle"
+                     font-size="16" class="ow-party-marker">🎯</text>`
             : '';
 
         // Anel externo pulsante para boss não derrotado
@@ -203,10 +203,10 @@ export function buildMapSVG(enrichedNodes) {
             <circle cx="${pos.x}" cy="${pos.y}" r="${NODE_R}"
                     fill="${fill}" stroke="${strokeColor}" stroke-width="${strokeWidth}"
                     class="ow-node__circle"/>
-            <text x="${pos.x}" y="${pos.y - 4}" text-anchor="middle"
-                  font-size="13" class="ow-node__emoji">${emoji}</text>
-            <text x="${pos.x}" y="${pos.y + 10}" text-anchor="middle"
-                  font-size="8" class="ow-node__label"
+            <text x="${pos.x}" y="${pos.y - 5}" text-anchor="middle"
+                  font-size="15" class="ow-node__emoji">${emoji}</text>
+            <text x="${pos.x}" y="${pos.y + 12}" text-anchor="middle"
+                  font-size="9" class="ow-node__label"
                   fill="${locked ? '#555' : '#ddd'}">${shortLbl}</text>
             ${defeatedBadge}
             ${partyMarker}
@@ -229,8 +229,8 @@ export function buildMapSVG(enrichedNodes) {
         .ow-boss-ring { animation: owBossRing 2s ease-in-out infinite; }
         .ow-party-marker { font-size: 14px; animation: owBounce 1.5s ease-in-out infinite; }
         @keyframes owCurrentPulse {
-            0%,100% { stroke-width: 3.5; stroke-opacity: 1; }
-            50%      { stroke-width: 6;   stroke-opacity: 0.65; }
+            0%,100% { stroke-width: 4.5; stroke-opacity: 1; }
+            50%      { stroke-width: 8;   stroke-opacity: 0.55; }
         }
         @keyframes owBossRing {
             0%,100% { opacity: 0.45; }
