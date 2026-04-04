@@ -1,5 +1,5 @@
 /**
- * REGIONAL PROGRESS TESTS (PR-10 / PR-11 / PR-12 / PR-13)
+ * REGIONAL PROGRESS TESTS (PR-10 / PR-11 / PR-12 / PR-14)
  *
  * Testes para o sistema de progressão regional pós-boss.
  * Cobertura:
@@ -16,10 +16,14 @@
  *   - PR-12: isMainPath, isOptional, priorityScore
  *   - PR-12: isCurrent refinado por prioridade
  *   - PR-12: deriveMainObjective (nextMainObjective + optionalOpportunities)
- *   - PR-13: isSide, isPostgame separados de isOptional
- *   - PR-13: regionFlavor no summary
- *   - PR-13: prioridade hierárquica main > optional > side > postgame
- *   - PR-13: sideOpportunities em deriveMainObjective
+ *   - PR-14: isSide, isPostgame, isOptional apenas para 'optional'
+ *   - PR-14: prioridades side=200, postgame=50
+ *   - PR-14: questPriority por tipo de região
+ *   - PR-14: isMainFocus e isSecondaryFocus
+ *   - PR-14: sideOpportunities em deriveMainObjective
+ *   - PR-14: cenários concorrentes (main + optional + side simultâneos)
+ *   - PR-14: regionFlavor no summary
+ *   - PR-14: nextMainObjective robusto (boss_available > quest > active > available)
  */
 
 import { describe, it, expect } from 'vitest';
@@ -1118,6 +1122,720 @@ describe('getRegionalProgressSummary — isCurrent refinado por prioridade de ca
 
 });
 
+// ══════════════════════════════════════════════════════════════════════════════
+// PR-14: Validação comportamental — múltiplas rotas concorrentes
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── Fixtures para PR-14 ───────────────────────────────────────────────────────
+
+const NODES_CONCURRENT = [
+    {
+        nodeId: 'BOSS_MAIN_PR14',
+        type: 'boss',
+        unlockDefault: false,
+        unlockRule: { type: 'complete_node', nodeId: 'LOC_008' },
+        connections: ['LOC_008', 'LOC_009'],
+        bossMeta: {
+            regionId: 'forest_arc_1',
+            regionLabel: 'Floresta Antiga',
+            regionType: 'main',
+            regionFlavor: 'Uma floresta ancestral cheia de perigos.',
+            defeatMarksRegionComplete: true,
+            bossLabel: 'Guardião da Floresta'
+        }
+    },
+    {
+        nodeId: 'BOSS_OPT_PR14',
+        type: 'boss',
+        unlockDefault: false,
+        unlockRule: { type: 'complete_node', nodeId: 'LOC_005C' },
+        connections: ['LOC_005C', 'LOC_010'],
+        bossMeta: {
+            regionId: 'caves_optional_1',
+            regionLabel: 'Cavernas Cristalinas',
+            regionType: 'optional',
+            regionFlavor: 'Brilhos misteriosos emanam das profundezas.',
+            defeatMarksRegionComplete: true,
+            bossLabel: 'Golem de Cristal'
+        }
+    },
+    {
+        nodeId: 'BOSS_SIDE_PR14',
+        type: 'boss',
+        unlockDefault: false,
+        unlockRule: { type: 'complete_node', nodeId: 'LOC_003B' },
+        connections: ['LOC_003B', 'LOC_011'],
+        bossMeta: {
+            regionId: 'ruins_side_1',
+            regionLabel: 'Ruínas Esquecidas',
+            regionType: 'side',
+            regionFlavor: 'Ruínas de uma civilização antiga.',
+            defeatMarksRegionComplete: true,
+            bossLabel: 'Guardião das Ruínas'
+        }
+    },
+    {
+        nodeId: 'BOSS_POST_PR14',
+        type: 'boss',
+        unlockDefault: false,
+        unlockRule: { type: 'complete_node', nodeId: 'LOC_009' },
+        connections: ['LOC_009', 'LOC_012'],
+        bossMeta: {
+            regionId: 'postgame_region_1',
+            regionLabel: 'Território Proibido',
+            regionType: 'postgame',
+            defeatMarksRegionComplete: true,
+            bossLabel: 'Entidade Primordial'
+        }
+    }
+];
+
+// ── PR-14: isSide, isPostgame, isOptional ─────────────────────────────────
+
+describe('getRegionalProgressSummary — PR-14: isSide, isPostgame, isOptional refinados', () => {
+
+    it('isOptional deve ser true APENAS para regionType optional (não side)', () => {
+        const result = getRegionalProgressSummary(NODES_CONCURRENT, {}, {});
+        const opt  = result.find(r => r.regionId === 'caves_optional_1');
+        const side = result.find(r => r.regionId === 'ruins_side_1');
+        const main = result.find(r => r.regionId === 'forest_arc_1');
+        expect(opt.isOptional).toBe(true);
+        expect(side.isOptional).toBe(false);
+        expect(main.isOptional).toBe(false);
+    });
+
+    it('isSide deve ser true apenas para regionType side', () => {
+        const result = getRegionalProgressSummary(NODES_CONCURRENT, {}, {});
+        const side = result.find(r => r.regionId === 'ruins_side_1');
+        const opt  = result.find(r => r.regionId === 'caves_optional_1');
+        const main = result.find(r => r.regionId === 'forest_arc_1');
+        expect(side.isSide).toBe(true);
+        expect(opt.isSide).toBe(false);
+        expect(main.isSide).toBe(false);
+    });
+
+    it('isPostgame deve ser true apenas para regionType postgame', () => {
+        const result = getRegionalProgressSummary(NODES_CONCURRENT, {}, {});
+        const post = result.find(r => r.regionId === 'postgame_region_1');
+        const main = result.find(r => r.regionId === 'forest_arc_1');
+        const opt  = result.find(r => r.regionId === 'caves_optional_1');
+        expect(post.isPostgame).toBe(true);
+        expect(main.isPostgame).toBe(false);
+        expect(opt.isPostgame).toBe(false);
+    });
+
+    it('regionFlavor deve estar presente quando definido no bossMeta', () => {
+        const result = getRegionalProgressSummary(NODES_CONCURRENT, {}, {});
+        const main = result.find(r => r.regionId === 'forest_arc_1');
+        const opt  = result.find(r => r.regionId === 'caves_optional_1');
+        expect(main.regionFlavor).toBe('Uma floresta ancestral cheia de perigos.');
+        expect(opt.regionFlavor).toBe('Brilhos misteriosos emanam das profundezas.');
+    });
+
+    it('regionFlavor deve ser null quando não definido no bossMeta', () => {
+        const result = getRegionalProgressSummary(NODES_CONCURRENT, {}, {});
+        const post = result.find(r => r.regionId === 'postgame_region_1');
+        expect(post.regionFlavor).toBeNull();
+    });
+
+});
+
+// ── PR-14: Prioridades por tipo de região ─────────────────────────────────
+
+describe('_computePriorityScore via getRegionalProgressSummary — PR-14: hierarquia main > optional > side > postgame', () => {
+
+    it('main deve ter priorityScore maior que optional, side e postgame (mesmos status locked)', () => {
+        const result = getRegionalProgressSummary(NODES_CONCURRENT, {}, {});
+        const main = result.find(r => r.regionId === 'forest_arc_1');
+        const opt  = result.find(r => r.regionId === 'caves_optional_1');
+        const side = result.find(r => r.regionId === 'ruins_side_1');
+        const post = result.find(r => r.regionId === 'postgame_region_1');
+        expect(main.priorityScore).toBeGreaterThan(opt.priorityScore);
+        expect(opt.priorityScore).toBeGreaterThan(side.priorityScore);
+        expect(side.priorityScore).toBeGreaterThan(post.priorityScore);
+    });
+
+    it('quest em região side deve escalar bonus menor do que em main ou optional', () => {
+        const resultSemQuest = getRegionalProgressSummary(NODES_CONCURRENT, {}, {});
+        // Quest em main (LOC_008) — comparação isolada
+        const resultComQuestMain = getRegionalProgressSummary(
+            NODES_CONCURRENT, {}, {}, new Set(), new Set(), new Set(), new Set(['LOC_008'])
+        );
+        // Quest em side (LOC_003B) — comparação isolada
+        const resultComQuestSide = getRegionalProgressSummary(
+            NODES_CONCURRENT, {}, {}, new Set(), new Set(), new Set(), new Set(['LOC_003B'])
+        );
+        const mainSemQuest  = resultSemQuest.find(r => r.regionId === 'forest_arc_1');
+        const mainComQuest  = resultComQuestMain.find(r => r.regionId === 'forest_arc_1');
+        const sideSemQuest  = resultSemQuest.find(r => r.regionId === 'ruins_side_1');
+        const sideComQuest  = resultComQuestSide.find(r => r.regionId === 'ruins_side_1');
+        // Side quest bonus (scale 0.5) é menor que main quest bonus (scale 1.0)
+        const mainBonusDiff = mainComQuest.priorityScore - mainSemQuest.priorityScore;
+        const sideBonusDiff = sideComQuest.priorityScore - sideSemQuest.priorityScore;
+        expect(sideBonusDiff).toBeGreaterThan(0);
+        expect(sideBonusDiff).toBeLessThan(mainBonusDiff);
+    });
+
+    it('side com quest ativa não deve superar optional sem quest (main base sempre lidera)', () => {
+        const activeQL = new Set(['LOC_003B']); // quest em side
+        const result = getRegionalProgressSummary(
+            NODES_CONCURRENT, {}, {}, new Set(), new Set(), new Set(), activeQL
+        );
+        const opt  = result.find(r => r.regionId === 'caves_optional_1');
+        const side = result.find(r => r.regionId === 'ruins_side_1');
+        // side locked + quest(scale 0.5) < optional locked (sem quest)
+        // side = 200-200+150=150 < opt = 500-200=300
+        expect(opt.priorityScore).toBeGreaterThan(side.priorityScore);
+    });
+
+    it('optional com quest ativa não deve superar main sem quest (main base sempre lidera)', () => {
+        const activeQL = new Set(['LOC_005C']); // quest em optional
+        const result = getRegionalProgressSummary(
+            NODES_CONCURRENT, {}, {}, new Set(), new Set(), new Set(), activeQL
+        );
+        const main = result.find(r => r.regionId === 'forest_arc_1');
+        const opt  = result.find(r => r.regionId === 'caves_optional_1');
+        // opt locked + quest(scale 1.0) < main locked
+        // opt = 500-200+300=600 < main = 1000-200=800
+        expect(main.priorityScore).toBeGreaterThan(opt.priorityScore);
+    });
+
+});
+
+// ── PR-14: questPriority ──────────────────────────────────────────────────
+
+describe('getRegionalProgressSummary — PR-14: questPriority por tipo de região', () => {
+
+    it('questPriority deve ser "main" quando há quest ativa em região main', () => {
+        const activeQL = new Set(['LOC_008']);
+        const result = getRegionalProgressSummary(
+            NODES_CONCURRENT, {}, {}, new Set(), new Set(), new Set(), activeQL
+        );
+        const main = result.find(r => r.regionId === 'forest_arc_1');
+        expect(main.hasActiveQuest).toBe(true);
+        expect(main.questPriority).toBe('main');
+    });
+
+    it('questPriority deve ser "secondary" quando há quest ativa em região optional', () => {
+        const activeQL = new Set(['LOC_005C']);
+        const result = getRegionalProgressSummary(
+            NODES_CONCURRENT, {}, {}, new Set(), new Set(), new Set(), activeQL
+        );
+        const opt = result.find(r => r.regionId === 'caves_optional_1');
+        expect(opt.hasActiveQuest).toBe(true);
+        expect(opt.questPriority).toBe('secondary');
+    });
+
+    it('questPriority deve ser "side" quando há quest ativa em região side', () => {
+        const activeQL = new Set(['LOC_003B']);
+        const result = getRegionalProgressSummary(
+            NODES_CONCURRENT, {}, {}, new Set(), new Set(), new Set(), activeQL
+        );
+        const side = result.find(r => r.regionId === 'ruins_side_1');
+        expect(side.hasActiveQuest).toBe(true);
+        expect(side.questPriority).toBe('side');
+    });
+
+    it('questPriority deve ser null quando não há quest ativa', () => {
+        const result = getRegionalProgressSummary(NODES_CONCURRENT, {}, {});
+        result.forEach(r => {
+            expect(r.questPriority).toBeNull();
+        });
+    });
+
+});
+
+// ── PR-14: isMainFocus e isSecondaryFocus ─────────────────────────────────
+
+describe('getRegionalProgressSummary — PR-14: isMainFocus e isSecondaryFocus', () => {
+
+    it('isMainFocus deve marcar apenas a primeira região main não concluída', () => {
+        const result = getRegionalProgressSummary(NODES_CONCURRENT, {}, {});
+        const mainFocusRegions = result.filter(r => r.isMainFocus);
+        expect(mainFocusRegions).toHaveLength(1);
+        expect(mainFocusRegions[0].regionId).toBe('forest_arc_1');
+    });
+
+    it('isSecondaryFocus deve marcar apenas a primeira optional/side acessível', () => {
+        // LOC_005C concluído → BOSS_OPT_PR14 boss_available (optional acessível)
+        const completedLocations = new Set(['LOC_005C']);
+        const result = getRegionalProgressSummary(
+            NODES_CONCURRENT, {}, {}, new Set(), completedLocations
+        );
+        const secondaryFocusRegions = result.filter(r => r.isSecondaryFocus);
+        expect(secondaryFocusRegions).toHaveLength(1);
+        expect(secondaryFocusRegions[0].regionId).toBe('caves_optional_1');
+    });
+
+    it('isMainFocus deve ser false para todas as regiões quando main está concluída', () => {
+        const progress = { 'forest_arc_1': { completed: true } };
+        const result = getRegionalProgressSummary(NODES_CONCURRENT, {}, progress);
+        expect(result.filter(r => r.isMainFocus)).toHaveLength(0);
+    });
+
+    it('isSecondaryFocus deve ser false para região side locked', () => {
+        // Nenhum predecessor concluído → todas locked → isSecondaryFocus = false para locked
+        const result = getRegionalProgressSummary(NODES_CONCURRENT, {}, {});
+        const side = result.find(r => r.regionId === 'ruins_side_1');
+        expect(side.status).toBe('locked');
+        expect(side.isSecondaryFocus).toBe(false);
+    });
+
+    it('isMainFocus e isSecondaryFocus podem coexistir simultaneamente', () => {
+        const completedLocations = new Set(['LOC_005C']); // optional acessível
+        const result = getRegionalProgressSummary(
+            NODES_CONCURRENT, {}, {}, new Set(), completedLocations
+        );
+        const hasMainFocus      = result.some(r => r.isMainFocus);
+        const hasSecondaryFocus = result.some(r => r.isSecondaryFocus);
+        // main locked mas ainda não concluída → isMainFocus existe
+        // optional boss_available → isSecondaryFocus existe
+        expect(hasMainFocus).toBe(true);
+        expect(hasSecondaryFocus).toBe(true);
+    });
+
+    it('isMainFocus e isSecondaryFocus não podem ser true na mesma região', () => {
+        const result = getRegionalProgressSummary(NODES_CONCURRENT, {}, {});
+        result.forEach(r => {
+            expect(r.isMainFocus && r.isSecondaryFocus).toBe(false);
+        });
+    });
+
+});
+
+// ── PR-14: deriveMainObjective com sideOpportunities ─────────────────────
+
+describe('deriveMainObjective — PR-14: sideOpportunities separado de optionalOpportunities', () => {
+
+    const SUMMARY_FULL = [
+        {
+            regionId: 'forest_arc_1',
+            regionType: 'main',
+            isMainPath: true,
+            isOptional: false,
+            isSide: false,
+            isPostgame: false,
+            status: 'boss_available',
+            nextObjective: 'Derrote Guardião da Floresta',
+            priorityScore: 1400,
+            hasActiveQuest: false
+        },
+        {
+            regionId: 'caves_optional_1',
+            regionType: 'optional',
+            isMainPath: false,
+            isOptional: true,
+            isSide: false,
+            isPostgame: false,
+            status: 'available',
+            nextObjective: 'Explore Cavernas Cristalinas',
+            priorityScore: 700,
+            hasActiveQuest: false
+        },
+        {
+            regionId: 'ruins_side_1',
+            regionType: 'side',
+            isMainPath: false,
+            isOptional: false,
+            isSide: true,
+            isPostgame: false,
+            status: 'active',
+            nextObjective: 'Continue explorando Ruínas Esquecidas',
+            priorityScore: 500,
+            hasActiveQuest: false
+        },
+        {
+            regionId: 'postgame_region_1',
+            regionType: 'postgame',
+            isMainPath: false,
+            isOptional: false,
+            isSide: false,
+            isPostgame: true,
+            status: 'locked',
+            nextObjective: 'Desbloqueie regiões anteriores para avançar',
+            priorityScore: 100,
+            hasActiveQuest: false
+        }
+    ];
+
+    it('deve retornar sideOpportunities separado de optionalOpportunities', () => {
+        const { optionalOpportunities, sideOpportunities } = deriveMainObjective(SUMMARY_FULL);
+        expect(optionalOpportunities).toHaveLength(1);
+        expect(optionalOpportunities[0]).toContain('Cavernas Cristalinas');
+        expect(sideOpportunities).toHaveLength(1);
+        expect(sideOpportunities[0]).toContain('Ruínas Esquecidas');
+    });
+
+    it('optionalOpportunities não deve incluir regiões side', () => {
+        const { optionalOpportunities } = deriveMainObjective(SUMMARY_FULL);
+        expect(optionalOpportunities.some(o => o.includes('Ruínas'))).toBe(false);
+    });
+
+    it('sideOpportunities não deve incluir regiões optional', () => {
+        const { sideOpportunities } = deriveMainObjective(SUMMARY_FULL);
+        expect(sideOpportunities.some(o => o.includes('Cavernas'))).toBe(false);
+    });
+
+    it('sideOpportunities deve ser vazio quando nenhuma side está acessível', () => {
+        const summaryNoSide = SUMMARY_FULL.filter(r => !r.isSide);
+        const { sideOpportunities } = deriveMainObjective(summaryNoSide);
+        expect(sideOpportunities).toEqual([]);
+    });
+
+    it('sideOpportunities não deve incluir regiões side locked', () => {
+        const summaryWithLockedSide = [
+            ...SUMMARY_FULL.filter(r => !r.isSide),
+            { ...SUMMARY_FULL[2], status: 'locked' }
+        ];
+        const { sideOpportunities } = deriveMainObjective(summaryWithLockedSide);
+        expect(sideOpportunities).toHaveLength(0);
+    });
+
+    it('deve retornar sideOpportunities vazio quando array é vazio', () => {
+        const { sideOpportunities } = deriveMainObjective([]);
+        expect(sideOpportunities).toEqual([]);
+    });
+
+    it('deve retornar sideOpportunities vazio quando null/undefined', () => {
+        expect(deriveMainObjective(null).sideOpportunities).toEqual([]);
+        expect(deriveMainObjective(undefined).sideOpportunities).toEqual([]);
+    });
+
+});
+
+// ── PR-14: nextMainObjective robusto ──────────────────────────────────────
+
+describe('deriveMainObjective — PR-14: nextMainObjective robusto com múltiplas rotas', () => {
+
+    it('deve preferir região main com boss_available sobre main apenas active', () => {
+        const summary = [
+            {
+                regionId: 'region_active',
+                regionType: 'main',
+                isMainPath: true,
+                isSide: false,
+                isOptional: false,
+                isPostgame: false,
+                status: 'active',
+                nextObjective: 'Continue explorando Zona Ativa',
+                hasActiveQuest: false
+            },
+            {
+                regionId: 'region_boss',
+                regionType: 'main',
+                isMainPath: true,
+                isSide: false,
+                isOptional: false,
+                isPostgame: false,
+                status: 'boss_available',
+                nextObjective: 'Derrote Chefe Disponível',
+                hasActiveQuest: false
+            }
+        ];
+        const { nextMainObjective } = deriveMainObjective(summary);
+        expect(nextMainObjective).toBe('Derrote Chefe Disponível');
+    });
+
+    it('deve preferir região main com quest ativa sobre region main sem quest (mesmos status)', () => {
+        const summary = [
+            {
+                regionId: 'region_a',
+                regionType: 'main',
+                isMainPath: true,
+                isSide: false,
+                isOptional: false,
+                isPostgame: false,
+                status: 'active',
+                nextObjective: 'Explore Região A',
+                hasActiveQuest: false
+            },
+            {
+                regionId: 'region_b',
+                regionType: 'main',
+                isMainPath: true,
+                isSide: false,
+                isOptional: false,
+                isPostgame: false,
+                status: 'active',
+                nextObjective: 'Explore Região B com Quest',
+                hasActiveQuest: true
+            }
+        ];
+        const { nextMainObjective } = deriveMainObjective(summary);
+        expect(nextMainObjective).toBe('Explore Região B com Quest');
+    });
+
+    it('deve retornar null quando não há regiões main não concluídas', () => {
+        const summary = [
+            {
+                regionId: 'forest_arc_1',
+                regionType: 'main',
+                isMainPath: true,
+                isSide: false,
+                isOptional: false,
+                isPostgame: false,
+                status: 'completed',
+                nextObjective: null,
+                hasActiveQuest: false
+            }
+        ];
+        const { nextMainObjective } = deriveMainObjective(summary);
+        expect(nextMainObjective).toBeNull();
+    });
+
+    it('região optional ou side nunca deve ser o nextMainObjective', () => {
+        const summaryOnlySide = [
+            {
+                regionId: 'ruins_side_1',
+                regionType: 'side',
+                isMainPath: false,
+                isOptional: false,
+                isSide: true,
+                isPostgame: false,
+                status: 'boss_available',
+                nextObjective: 'Derrote Guardião das Ruínas',
+                hasActiveQuest: false
+            }
+        ];
+        const { nextMainObjective } = deriveMainObjective(summaryOnlySide);
+        expect(nextMainObjective).toBeNull();
+    });
+
+});
+
+// ── PR-14: Cenários concorrentes ──────────────────────────────────────────
+
+describe('PR-14: Cenários concorrentes — comportamento real da campanha', () => {
+
+    // Cenário 1: main + optional abertas ao mesmo tempo
+    it('cenário: main + optional abertas — main continua sendo isCurrent', () => {
+        const completedLocations = new Set(['LOC_008', 'LOC_005C']); // ambas boss desbloqueadas
+        const result = getRegionalProgressSummary(
+            NODES_CONCURRENT, {}, {}, new Set(), completedLocations
+        );
+        const main = result.find(r => r.regionId === 'forest_arc_1');
+        const opt  = result.find(r => r.regionId === 'caves_optional_1');
+        expect(main.status).toBe('boss_available');
+        expect(opt.status).toBe('boss_available');
+        // main tem prioridade maior → é isCurrent
+        expect(main.isCurrent).toBe(true);
+        expect(opt.isCurrent).toBe(false);
+    });
+
+    // Cenário 2: main boss_available + side com quest ativa
+    it('cenário: main boss_available + side com quest — boss da main supera side', () => {
+        const completedLocations = new Set(['LOC_008']); // main boss disponível
+        const activeQL = new Set(['LOC_003B']); // quest ativa em side
+        const result = getRegionalProgressSummary(
+            NODES_CONCURRENT, {}, {}, new Set(), completedLocations, new Set(), activeQL
+        );
+        const main = result.find(r => r.regionId === 'forest_arc_1');
+        const side = result.find(r => r.regionId === 'ruins_side_1');
+        // main boss_available (1000+400=1400) > side quest (200+50+150=400)
+        expect(main.priorityScore).toBeGreaterThan(side.priorityScore);
+        expect(main.isCurrent).toBe(true);
+    });
+
+    // Cenário 3: main bloqueada, optional aberta
+    it('cenário: main bloqueada + optional aberta — optional é isCurrent como fallback', () => {
+        const completedLocations = new Set(['LOC_005C']); // só optional desbloqueada
+        const result = getRegionalProgressSummary(
+            NODES_CONCURRENT, {}, {}, new Set(), completedLocations
+        );
+        const main = result.find(r => r.regionId === 'forest_arc_1');
+        const opt  = result.find(r => r.regionId === 'caves_optional_1');
+        expect(main.status).toBe('locked');
+        expect(opt.status).toBe('boss_available');
+        // optional é mais avançada → isCurrent
+        expect(opt.isCurrent).toBe(true);
+        expect(main.isCurrent).toBe(false);
+    });
+
+    // Cenário 4: optional boss_available + main active
+    it('cenário: optional boss_available + main active — main ainda lidera (1000+300 > 500+400)', () => {
+        // Nodes customizados: main tem predecessor diferente da regra de unlock
+        // para conseguir status 'active' (predecessor concluído, unlock ainda bloqueado)
+        const customNodes = [
+            {
+                nodeId: 'BOSS_MAIN_ACTIVE',
+                type: 'boss',
+                unlockDefault: false,
+                unlockRule: { type: 'complete_node', nodeId: 'LOC_099' }, // nunca concluído
+                connections: ['LOC_008', 'LOC_099'],
+                bossMeta: {
+                    regionId: 'forest_active_1',
+                    regionLabel: 'Floresta Ativa',
+                    regionType: 'main',
+                    defeatMarksRegionComplete: true,
+                    bossLabel: 'Guardião Ativo'
+                }
+            },
+            {
+                nodeId: 'BOSS_OPT_AVAILABLE',
+                type: 'boss',
+                unlockDefault: false,
+                unlockRule: { type: 'complete_node', nodeId: 'LOC_005C' },
+                connections: ['LOC_005C', 'LOC_010'],
+                bossMeta: {
+                    regionId: 'caves_available_1',
+                    regionLabel: 'Cavernas Disponíveis',
+                    regionType: 'optional',
+                    defeatMarksRegionComplete: true,
+                    bossLabel: 'Golem Disponível'
+                }
+            }
+        ];
+        // LOC_008 concluído → main active (predecessor concluído, LOC_099 não concluído → unlock bloqueado)
+        // LOC_005C concluído → optional boss_available
+        const completedLocations = new Set(['LOC_008', 'LOC_005C']);
+        const result = getRegionalProgressSummary(
+            customNodes, {}, {}, new Set(), completedLocations
+        );
+        const main = result.find(r => r.regionId === 'forest_active_1');
+        const opt  = result.find(r => r.regionId === 'caves_available_1');
+        expect(main.status).toBe('active');
+        expect(opt.status).toBe('boss_available');
+        // main active = 1000+300=1300 > opt boss_available = 500+400=900
+        expect(main.priorityScore).toBeGreaterThan(opt.priorityScore);
+        expect(main.isCurrent).toBe(true);
+    });
+
+    // Cenário 5: main concluída + side aberta + postgame oculto
+    it('cenário: main concluída + side aberta — side pode ser isCurrent', () => {
+        const progress = { 'forest_arc_1': { completed: true } };
+        const completedLocations = new Set(['LOC_003B']); // side desbloqueada
+        const result = getRegionalProgressSummary(
+            NODES_CONCURRENT, {}, progress, new Set(), completedLocations
+        );
+        const main = result.find(r => r.regionId === 'forest_arc_1');
+        const side = result.find(r => r.regionId === 'ruins_side_1');
+        expect(main.status).toBe('completed');
+        expect(side.status).toBe('boss_available');
+        // Com main concluída, side sobe para isCurrent
+        expect(side.isCurrent).toBe(true);
+    });
+
+    // Cenário 6: side relevante aparece como side, não como objetivo principal
+    it('cenário: side com boss_available — não deve ser nextMainObjective', () => {
+        const completedLocations = new Set(['LOC_003B']); // side boss disponível
+        const result = getRegionalProgressSummary(
+            NODES_CONCURRENT, {}, {}, new Set(), completedLocations
+        );
+        const { nextMainObjective, sideOpportunities } = deriveMainObjective(result);
+        // Main continua sendo o nextMainObjective (mesmo se locked)
+        // side aparece em sideOpportunities, não em nextMainObjective
+        expect(nextMainObjective).not.toContain('Ruínas');
+        expect(sideOpportunities.some(o => o.includes('Ruínas'))).toBe(true);
+    });
+
+    // Cenário 7: painel com 4 tipos simultâneos — ordenação correta
+    it('cenário: 4 tipos simultâneos — ordenação: main > optional > side > postgame', () => {
+        const result = getRegionalProgressSummary(NODES_CONCURRENT, {}, {});
+        const types = result.map(r => r.regionType);
+        const mainIdx     = types.findIndex(t => t === 'main');
+        const optIdx      = types.findIndex(t => t === 'optional');
+        const sideIdx     = types.findIndex(t => t === 'side');
+        const postgameIdx = types.findIndex(t => t === 'postgame');
+        // Ordem esperada: main < optional < side < postgame (índices crescentes)
+        expect(mainIdx).toBeLessThan(optIdx);
+        expect(optIdx).toBeLessThan(sideIdx);
+        expect(sideIdx).toBeLessThan(postgameIdx);
+    });
+
+});
+
+// ── PR-14: Regressão — saves antigos e dados sem novos campos ────────────
+
+describe('PR-14: Regressão — compatibilidade com saves antigos e dados legados', () => {
+
+    it('nós boss sem regionType continuam com fallback "main"', () => {
+        const legacyNodes = [{
+            nodeId: 'BOSS_LEGACY',
+            type: 'boss',
+            connections: [],
+            bossMeta: {
+                regionId: 'legacy_region',
+                defeatMarksRegionComplete: true,
+                bossLabel: 'Boss Legado'
+            }
+        }];
+        const result = getRegionalProgressSummary(legacyNodes, {}, {});
+        expect(result[0].regionType).toBe('main');
+        expect(result[0].isMainPath).toBe(true);
+        expect(result[0].isOptional).toBe(false);
+        expect(result[0].isSide).toBe(false);
+        expect(result[0].isPostgame).toBe(false);
+    });
+
+    it('nós boss sem regionFlavor retornam regionFlavor=null (sem quebrar)', () => {
+        const noFlavorNodes = [{
+            nodeId: 'BOSS_NO_FLAVOR',
+            type: 'boss',
+            connections: [],
+            bossMeta: {
+                regionId: 'no_flavor_region',
+                regionType: 'optional',
+                defeatMarksRegionComplete: true,
+                bossLabel: 'Boss Sem Flavor'
+            }
+        }];
+        const result = getRegionalProgressSummary(noFlavorNodes, {}, {});
+        expect(result[0].regionFlavor).toBeNull();
+    });
+
+    it('deriveMainObjective com summary sem isSide/isOptional (legado) retorna sideOpportunities vazio', () => {
+        const legacySummary = [
+            {
+                regionId: 'forest_arc_1',
+                regionType: 'main',
+                isMainPath: true,
+                isOptional: false,
+                // sem isSide (legado)
+                status: 'active',
+                nextObjective: 'Continue explorando',
+                hasActiveQuest: false
+            }
+        ];
+        const { sideOpportunities } = deriveMainObjective(legacySummary);
+        // Sem isSide no objeto, o filter falha graciosamente (undefined é falsy)
+        expect(sideOpportunities).toEqual([]);
+    });
+
+    it('saves sem novos campos (isMainFocus/isSecondaryFocus) funcionam sem erro', () => {
+        // Chamada mínima de 3 parâmetros (retrocompat total)
+        expect(() => getRegionalProgressSummary(NODES_CONCURRENT, {}, {})).not.toThrow();
+        const result = getRegionalProgressSummary(NODES_CONCURRENT, {}, {});
+        // Novos campos sempre presentes no resultado
+        result.forEach(r => {
+            expect(typeof r.isSide).toBe('boolean');
+            expect(typeof r.isPostgame).toBe('boolean');
+            expect(typeof r.isMainFocus).toBe('boolean');
+            expect(typeof r.isSecondaryFocus).toBe('boolean');
+            expect('regionFlavor' in r).toBe(true);
+            expect('questPriority' in r).toBe(true);
+        });
+    });
+
+    it('isCurrent continua funcionando como antes (retrocompat)', () => {
+        const nodes = [{
+            nodeId: 'BOSS_FOREST_01',
+            type: 'boss',
+            connections: [],
+            bossMeta: {
+                regionId: 'forest_arc_1',
+                regionLabel: 'Floresta Antiga',
+                regionType: 'main',
+                defeatMarksRegionComplete: true,
+                bossLabel: 'Guardião da Floresta'
+            }
+        }];
+        const result = getRegionalProgressSummary(nodes, {}, {});
+        expect(result[0].isCurrent).toBe(true);
+    });
+
+});
+
+
 // ── PR-13: isSide e isPostgame separados de isOptional ────────────────────────
 
 describe('getRegionalProgressSummary — isSide e isPostgame (PR-13)', () => {
@@ -1325,10 +2043,13 @@ describe('Hierarquia de prioridade por tipo (PR-13)', () => {
         const optWithoutQuest  = withoutQuest.find(r => r.regionId === 'opt');
         const mainWithoutQuest = withoutQuest.find(r => r.regionId === 'main');
 
-        // side com quest (200+50+300=550) ≥ optional locked (500+50=550) — igual em score
-        // Portanto side com quest não é menor que optional locked
-        expect(sideWithQuest.priorityScore).toBeGreaterThanOrEqual(optWithoutQuest.priorityScore);
-        // main locked (1000+50=1050) ainda supera side com quest (550)
+        // PR-14: PRIORITY_LOCKED_PENALTY=-200 mudou a dinâmica de regiões locked.
+        // side com quest: 200 + (-200) + Math.round(300*0.5) = 150
+        // main locked: 1000 + (-200) = 800
+        // A invariante principal: quest em side aumenta o score vs side sem quest
+        const sideWithoutQuest = withoutQuest.find(r => r.regionId === 'side');
+        expect(sideWithQuest.priorityScore).toBeGreaterThan(sideWithoutQuest.priorityScore);
+        // main locked (800) ainda supera side com quest (150)
         expect(mainWithoutQuest.priorityScore).toBeGreaterThan(sideWithQuest.priorityScore);
     });
 

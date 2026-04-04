@@ -3217,7 +3217,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     gap: 8px;
 }
 
-/* ── Badge de tipo de região (⭐ Principal / 🌿 Opcional / 🧩 Paralelo / 🏁 Pós-jogo) ── */
+/* ── Badge de tipo de região (⭐ Principal / 🌿 Opcional) ──────────────── */
 
 .wm-campaign-region__type-badge {
     font-size: 10px;
@@ -3241,14 +3241,8 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 
 .wm-campaign-region__type-badge--side {
     background: #f3e5f5;
-    color: #4a148c;
+    color: #6a1b9a;
     border: 1px solid #ce93d8;
-}
-
-.wm-campaign-region__type-badge--postgame {
-    background: #efebe9;
-    color: #3e2723;
-    border: 1px solid #bcaaa4;
 }
 
 /* ── Separador visual de oportunidades opcionais ─────────────────────── */
@@ -3268,7 +3262,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     padding-left: 16px;
 }
 
-/* ── Separador visual de conteúdo paralelo (side) ────────────────────── */
+/* ── Separador visual de oportunidades side ──────────────────────────── */
 
 .wm-campaign-panel__side-goal {
     background: #f3e5f5;
@@ -3276,7 +3270,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     border-radius: 8px;
     padding: 8px 12px;
     font-size: 12px;
-    color: #4a148c;
+    color: #6a1b9a;
     margin-bottom: 10px;
 }
 
@@ -3285,14 +3279,13 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     padding-left: 16px;
 }
 
-/* ── Flavor (descrição diegética da região) ──────────────────────────── */
+/* ── Nota de desvio de rota principal ────────────────────────────────── */
 
-.wm-campaign-region__flavor {
-    font-size: 11px;
-    color: #777;
+.wm-campaign-panel__deviating-note {
+    font-size: 10px;
+    color: #e65100;
     font-style: italic;
-    margin: 0 0 5px;
-    line-height: 1.4;
+    font-weight: 400;
 }
 
 .wm-campaign-region__header {
@@ -3317,6 +3310,43 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     color: #fff;
     padding: 2px 7px;
     border-radius: 10px;
+}
+
+/* ── Badges de foco principal e secundário ────────────────────────────── */
+
+.wm-campaign-region__focus-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
+.wm-campaign-region__focus-badge--main {
+    background: #fff3e0;
+    color: #e65100;
+    border: 1px solid #ffcc80;
+}
+
+.wm-campaign-region__focus-badge--secondary {
+    background: #ede7f6;
+    color: #4527a0;
+    border: 1px solid #b39ddb;
+}
+
+/* ── Destaque visual para região com foco principal ──────────────────── */
+
+.wm-campaign-region--main-focus {
+    border-left: 3px solid #e65100;
+}
+
+/* ── Flavor text da região ──────────────────────────────────────────── */
+
+.wm-campaign-region__flavor {
+    font-size: 11px;
+    color: #757575;
+    font-style: italic;
+    margin: 3px 0 0;
 }
 
 .wm-campaign-region__status {

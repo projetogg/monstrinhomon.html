@@ -8831,9 +8831,16 @@
                 return;
             }
 
-            // Derivar objetivo principal e oportunidades separadas por tipo
+            // Derivar objetivo principal separado de oportunidades opcionais
             const { nextMainObjective, optionalOpportunities, sideOpportunities } =
                 window.WorldMap.deriveMainObjective(summary);
+
+            // Detectar se o jogador está explorando conteúdo não-principal com main disponível
+            const hasMainAvailable = summary.some(
+                r => r.isMainPath && r.status !== 'completed' && r.status !== 'locked'
+            );
+            const currentRegion = summary.find(r => r.isCurrent);
+            const playerDeviating = hasMainAvailable && currentRegion && !currentRegion.isMainPath;
 
             // Bloco de objetivo principal
             const allCompleted = summary.every(r => r.completed);
@@ -8843,12 +8850,15 @@
                     🏆 <strong>Campanha concluída!</strong> Todas as regiões foram conquistadas.
                 </div>`;
             } else if (nextMainObjective) {
+                const deviatingNote = playerDeviating
+                    ? `<span class="wm-campaign-panel__deviating-note"> — Rota principal disponível</span>`
+                    : '';
                 nextGoalHtml = `<div class="wm-campaign-panel__next-goal">
-                    🎯 <strong>Rota principal:</strong> ${nextMainObjective}
+                    🎯 <strong>Rota principal:</strong> ${nextMainObjective}${deviatingNote}
                 </div>`;
             }
 
-            // Bloco de oportunidades opcionais
+            // Bloco de oportunidades opcionais (apenas optional, não side)
             let optionalGoalHtml = '';
             if (optionalOpportunities.length > 0) {
                 const opList = optionalOpportunities
@@ -8860,14 +8870,14 @@
                 </div>`;
             }
 
-            // Bloco de conteúdo paralelo (side)
+            // Bloco de oportunidades side (conteúdo lateral)
             let sideGoalHtml = '';
             if (sideOpportunities.length > 0) {
                 const sideList = sideOpportunities
                     .map(o => `<li>${o}</li>`)
                     .join('');
                 sideGoalHtml = `<div class="wm-campaign-panel__side-goal">
-                    🧩 <strong>Conteúdo paralelo disponível:</strong>
+                    📍 <strong>Conteúdo lateral disponível:</strong>
                     <ul>${sideList}</ul>
                 </div>`;
             }
@@ -8888,19 +8898,30 @@
                     ? '<span class="wm-campaign-region__current-badge">▶ Atual</span>'
                     : '';
 
-                const typeKey = region.isMainPath ? 'main' : region.isOptional ? 'optional' : region.isSide ? 'side' : region.isPostgame ? 'postgame' : null;
-                const typeBadge = {
-                    main:     '<span class="wm-campaign-region__type-badge wm-campaign-region__type-badge--main">⭐ Principal</span>',
-                    optional: '<span class="wm-campaign-region__type-badge wm-campaign-region__type-badge--optional">🌿 Opcional</span>',
-                    side:     '<span class="wm-campaign-region__type-badge wm-campaign-region__type-badge--side">🧩 Paralelo</span>',
-                    postgame: '<span class="wm-campaign-region__type-badge wm-campaign-region__type-badge--postgame">🏁 Pós-jogo</span>'
-                }[typeKey] ?? '';
+                const mainFocusBadge = region.isMainFocus
+                    ? '<span class="wm-campaign-region__focus-badge wm-campaign-region__focus-badge--main">🎯 Foco</span>'
+                    : '';
+
+                const secondaryFocusBadge = region.isSecondaryFocus
+                    ? '<span class="wm-campaign-region__focus-badge wm-campaign-region__focus-badge--secondary">✨ Destaque</span>'
+                    : '';
+
+                const typeBadge = region.isMainPath
+                    ? '<span class="wm-campaign-region__type-badge wm-campaign-region__type-badge--main">⭐ Principal</span>'
+                    : region.isSide
+                        ? '<span class="wm-campaign-region__type-badge wm-campaign-region__type-badge--side">📍 Lateral</span>'
+                        : '<span class="wm-campaign-region__type-badge wm-campaign-region__type-badge--optional">🌿 Opcional</span>';
 
                 const bossStatusLabel = region.bossDefeated
                     ? `<span class="wm-campaign-boss--defeated">⚔️ Derrotado</span>`
                     : (region.status === 'boss_available' || region.status === 'in_progress')
                         ? `<span class="wm-campaign-boss--available">👑 Disponível</span>`
                         : `<span class="wm-campaign-boss--locked">🔒 Bloqueado</span>`;
+
+                // Flavor text da região (contexto narrativo)
+                const flavorHtml = region.regionFlavor
+                    ? `<p class="wm-campaign-region__flavor">${region.regionFlavor}</p>`
+                    : '';
 
                 // Verificar se há quest ativa ligada à região
                 let questHtml = '';
@@ -8922,10 +8943,12 @@
                 }
 
                 return `
-                  <div class="wm-campaign-region ${statusClass}${region.isCurrent ? ' wm-campaign-region--current' : ''}">
+                  <div class="wm-campaign-region ${statusClass}${region.isCurrent ? ' wm-campaign-region--current' : ''}${region.isMainFocus ? ' wm-campaign-region--main-focus' : ''}">
                     <div class="wm-campaign-region__header">
                         <span class="wm-campaign-region__name">${region.regionLabel}</span>
                         ${typeBadge}
+                        ${mainFocusBadge}
+                        ${secondaryFocusBadge}
                         ${currentBadge}
                         <span class="wm-campaign-region__status">${statusLabel}</span>
                     </div>
@@ -8934,6 +8957,7 @@
                         <span class="wm-campaign-region__boss-label">Chefe: ${region.bossLabel}</span>
                         ${bossStatusLabel}
                     </div>
+                    ${flavorHtml}
                     ${questHtml}
                     ${region.nextObjective ? `<p class="wm-campaign-region__objective">${region.nextObjective}</p>` : ''}
                   </div>`;
@@ -8944,6 +8968,7 @@
             const optionalRegions = summary.filter(r => r.isOptional);
             const sideRegions     = summary.filter(r => r.isSide);
             const postgameRegions = summary.filter(r => r.isPostgame);
+            // Retrocompat: regiões sem tipo definido (não main/optional/side/postgame)
             const otherRegions    = summary.filter(r => !r.isMainPath && !r.isOptional && !r.isSide && !r.isPostgame);
 
             let sectionsHtml = '';
@@ -8971,7 +8996,7 @@
             if (sideRegions.length > 0) {
                 sectionsHtml += `
                     <div class="wm-campaign-section wm-campaign-section--side">
-                        <div class="wm-campaign-section__title">🧩 Conteúdo Paralelo</div>
+                        <div class="wm-campaign-section__title">📍 Conteúdo Lateral</div>
                         <div class="wm-campaign-section__regions">
                             ${sideRegions.map(_renderRegionCard).join('')}
                         </div>
@@ -8981,7 +9006,7 @@
             if (postgameRegions.length > 0) {
                 sectionsHtml += `
                     <div class="wm-campaign-section wm-campaign-section--postgame">
-                        <div class="wm-campaign-section__title">🏁 Pós-jogo</div>
+                        <div class="wm-campaign-section__title">🌟 Pós-Campanha</div>
                         <div class="wm-campaign-section__regions">
                             ${postgameRegions.map(_renderRegionCard).join('')}
                         </div>

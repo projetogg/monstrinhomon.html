@@ -117,8 +117,8 @@ describe('Fase 9 — Caçador → swiftclaw (bridge)', () => {
     });
 
     describe('Integridade da tabela pós-Fase 9', () => {
-        it('deve conter exatamente 48 mapeamentos (32 Fase 8 + 7 swiftclaw + 3 shadowsting Fase 10 + 3 bellwave Fase 11 + 3 wildpace Fase 12)', () => {
-            expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(48);
+        it('deve conter exatamente 51 mapeamentos (32 Fase 8 + 7 swiftclaw + 3 shadowsting Fase 10 + 6 bellwave Fases 11+13.2 + 3 wildpace Fase 12)', () => {
+            expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(51);
         });
 
         it('todos os 7 novos mapeamentos de swiftclaw devem estar presentes', () => {

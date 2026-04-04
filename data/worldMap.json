@@ -1,6 +1,6 @@
 {
   "version": "1.4",
-  "notes": "Mapa de nós do mundo Monstrinhomon. Cada nó representa uma área visitável. unlockRule define condição de desbloqueio além do unlockDefault. Tipos de unlockRule: complete_node, win_n_battles_in_node, visit_city, complete_quest, defeat_boss. regionType: main=rota principal, optional=exploração paralela sem bloquear campanha, side=conteúdo lateral temático curto, postgame=conteúdo pós-campanha.",
+  "notes": "Mapa de nós do mundo Monstrinhomon. Cada nó representa uma área visitável. unlockRule define condição de desbloqueio além do unlockDefault. Tipos de unlockRule: complete_node, win_n_battles_in_node, visit_city, complete_quest, defeat_boss. PR-14: adicionados BOSS_CAVES_OPT_01 (optional) e BOSS_RUINS_SIDE_01 (side) com regionFlavor.",
   "nodes": [
     {
       "nodeId": "CITY_001",
@@ -96,7 +96,7 @@
       "type": "exploration",
       "unlockDefault": false,
       "unlockRule": { "type": "complete_node", "nodeId": "LOC_005B" },
-      "connections": ["LOC_005B", "BOSS_CAVES_OPT_01"]
+      "connections": ["LOC_005B"]
     },
     {
       "nodeId": "LOC_006",
@@ -138,7 +138,7 @@
       "type": "exploration",
       "unlockDefault": false,
       "unlockRule": { "type": "win_n_battles_in_node", "nodeId": "LOC_008", "n": 3 },
-      "connections": ["LOC_008", "BOSS_RUINS_SIDE_01"]
+      "connections": ["LOC_008"]
     },
     {
       "nodeId": "BOSS_FOREST_01",
@@ -150,7 +150,6 @@
         "bossLevel": 15,
         "regionId": "forest_arc_1",
         "regionLabel": "Floresta Antiga",
-        "regionFlavor": "A Floresta Antiga é o primeiro grande obstáculo da rota principal. Densa e intimidadora, ela separa os aventureiros inexperientes dos verdadeiros exploradores.",
         "regionType": "main",
         "unlocksNodes": ["LOC_009"],
         "defeatMarksRegionComplete": true,
@@ -161,49 +160,63 @@
       }
     },
     {
-      "nodeId": "BOSS_CAVES_OPT_01",
-      "type": "boss",
-      "unlockDefault": false,
-      "unlockRule": { "type": "complete_node", "nodeId": "LOC_005C" },
-      "connections": ["LOC_005C"],
-      "bossMeta": {
-        "bossLevel": 12,
-        "regionId": "caves_optional_1",
-        "regionLabel": "Cavernas Cristalinas",
-        "regionFlavor": "Cavernas repletas de criaturas raras e cristais bioluminescentes. Ignorar esta rota não trava a campanha, mas quem explorar encontrará espécies difíceis de capturar em outro lugar.",
-        "regionType": "optional",
-        "defeatMarksRegionComplete": true,
-        "bossLabel": "Aranha das Profundezas",
-        "bossFlavor": "Uma criatura ancestral habita o coração das cavernas, pronta para defender seu território com veneno e teias.",
-        "bossEncounterMode": "fixed_pool",
-        "bossPool": ["MON_022B", "MON_013C"]
-      }
-    },
-    {
-      "nodeId": "BOSS_RUINS_SIDE_01",
-      "type": "boss",
-      "unlockDefault": false,
-      "unlockRule": { "type": "complete_node", "nodeId": "LOC_008B" },
-      "connections": ["LOC_008B"],
-      "bossMeta": {
-        "bossLevel": 14,
-        "regionId": "ruins_side_1",
-        "regionLabel": "Ruínas Esquecidas",
-        "regionFlavor": "Ruínas de uma civilização perdida, acessíveis apenas para aventureiros veteranos da floresta. Um evento pontual e temático aguarda quem tiver determinação de chegar até cá.",
-        "regionType": "side",
-        "defeatMarksRegionComplete": true,
-        "bossLabel": "Guardião das Ruínas",
-        "bossFlavor": "Um golem de pedra que desperta quando alguém perturba as ruínas. Sua presença não é hostil por natureza, mas sua missão de guarda é impassível.",
-        "bossEncounterMode": "fixed_pool",
-        "bossPool": ["MON_023B", "MON_025B"]
-      }
-    },
-    {
       "nodeId": "LOC_009",
       "type": "exploration",
       "unlockDefault": false,
       "unlockRule": { "type": "defeat_boss", "nodeId": "BOSS_FOREST_01" },
       "connections": ["BOSS_FOREST_01"]
+    },
+    {
+      "nodeId": "BOSS_CAVES_OPT_01",
+      "type": "boss",
+      "unlockDefault": false,
+      "unlockRule": { "type": "complete_node", "nodeId": "LOC_005C" },
+      "connections": ["LOC_005C", "LOC_010"],
+      "bossMeta": {
+        "bossLevel": 12,
+        "regionId": "caves_optional_1",
+        "regionLabel": "Cavernas Cristalinas",
+        "regionType": "optional",
+        "regionFlavor": "Brilhos misteriosos emanam das profundezas. Caçadores relatam Monstrinhos raros nessas cavernas — e fortunas escondidas.",
+        "defeatMarksRegionComplete": true,
+        "bossLabel": "Golem de Cristal",
+        "bossFlavor": "Uma entidade formada por cristais vivos protege as cavernas há séculos.",
+        "bossEncounterMode": "fixed_pool",
+        "bossPool": ["MON_027B", "MON_023B"]
+      }
+    },
+    {
+      "nodeId": "LOC_010",
+      "type": "exploration",
+      "unlockDefault": false,
+      "unlockRule": { "type": "defeat_boss", "nodeId": "BOSS_CAVES_OPT_01" },
+      "connections": ["BOSS_CAVES_OPT_01"]
+    },
+    {
+      "nodeId": "BOSS_RUINS_SIDE_01",
+      "type": "boss",
+      "unlockDefault": false,
+      "unlockRule": { "type": "complete_node", "nodeId": "LOC_003B" },
+      "connections": ["LOC_003B", "LOC_011"],
+      "bossMeta": {
+        "bossLevel": 10,
+        "regionId": "ruins_side_1",
+        "regionLabel": "Ruínas Esquecidas",
+        "regionType": "side",
+        "regionFlavor": "Ruínas de uma civilização antiga, agora lar de criaturas oportunistas. Pouca coisa de valor sobrou — mas vale a visita.",
+        "defeatMarksRegionComplete": true,
+        "bossLabel": "Guardião das Ruínas",
+        "bossFlavor": "Uma construção de pedra animada pelos ecos do passado. Parece não gostar de visitas.",
+        "bossEncounterMode": "fixed_pool",
+        "bossPool": ["MON_022B", "MON_027B"]
+      }
+    },
+    {
+      "nodeId": "LOC_011",
+      "type": "exploration",
+      "unlockDefault": false,
+      "unlockRule": { "type": "defeat_boss", "nodeId": "BOSS_RUINS_SIDE_01" },
+      "connections": ["BOSS_RUINS_SIDE_01"]
     }
   ]
 }

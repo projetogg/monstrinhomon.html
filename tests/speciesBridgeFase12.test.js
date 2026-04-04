@@ -159,8 +159,8 @@ describe('Fase 12 — Animalista → wildpace (bridge)', () => {
             expect(wildpaceIds).toEqual(['MON_023', 'MON_023B', 'MON_023C']);
         });
 
-        it('tabela total: 48 mapeamentos após Fase 12 (45 Fase 11 + 3 wildpace)', () => {
-            expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(48);
+        it('tabela total: 51 mapeamentos após Fase 13.2 (45 Fase 11 + 3 wildpace + 3 bellwave Fase 13.2)', () => {
+            expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(51);
         });
     });
 });
