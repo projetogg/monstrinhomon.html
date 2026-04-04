@@ -3029,7 +3029,308 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     cursor: pointer;
 }
 
-/* Sublabel de motivo do bloqueio (PR-06) */
+/* Contexto de região/arco do boss (PR-10) */
+.wm-boss-panel__region {
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    letter-spacing: 0.3px;
+}
+
+/* Flavor text do boss (PR-10) */
+.wm-boss-panel__flavor {
+    font-size: 12px;
+    color: #777;
+    font-style: italic;
+    max-width: 400px;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Banner de região concluída (PR-10) */
+.wm-boss-panel__region-complete {
+    background: #e8f5e9;
+    border: 1.5px solid #66bb6a;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #2e7d32;
+    width: 100%;
+    max-width: 380px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+/* ── PR-11: Campaign Progress Panel ──────────────────────────────────────── */
+
+.wm-campaign-toggle {
+    font-size: 11px;
+    padding: 4px 10px;
+    background: #e8eaf6;
+    color: #3949ab;
+    border: 1px solid #9fa8da;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.wm-campaign-toggle:hover {
+    background: #c5cae9;
+}
+.wm-campaign-toggle[aria-expanded="true"] {
+    background: #3949ab;
+    color: #fff;
+    border-color: #3949ab;
+}
+
+.wm-campaign-panel {
+    border: 1.5px solid #9fa8da;
+    border-radius: 10px;
+    background: #f3f4fb;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+}
+
+.wm-campaign-panel__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.wm-campaign-panel__title {
+    font-weight: 700;
+    font-size: 13px;
+    color: #283593;
+}
+
+.wm-campaign-panel__count {
+    font-size: 11px;
+    color: #5c6bc0;
+    background: #c5cae9;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.wm-campaign-panel__next-goal {
+    background: #fff8e1;
+    border: 1.5px solid #ffca28;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #5d4037;
+    margin-bottom: 10px;
+}
+
+.wm-campaign-panel__next-goal--done {
+    background: #e8f5e9;
+    border-color: #66bb6a;
+    color: #2e7d32;
+}
+
+.wm-campaign-panel__regions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.wm-campaign-region {
+    background: #fff;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px 12px;
+}
+
+.wm-campaign-region--current {
+    border-color: #5c6bc0;
+    box-shadow: 0 0 0 2px rgba(92,107,192,0.18);
+}
+
+.wm-campaign-region--completed {
+    background: #f1f8f1;
+    border-color: #a5d6a7;
+}
+
+.wm-campaign-region--in_progress {
+    background: #fff8e1;
+    border-color: #ffe082;
+}
+
+.wm-campaign-region--boss_available {
+    background: #fff3e0;
+    border-color: #ffb74d;
+}
+
+.wm-campaign-region--active {
+    background: #fff8e1;
+    border-color: #ffd54f;
+}
+
+.wm-campaign-region--available {
+    background: #e8f4fd;
+    border-color: #81d4fa;
+}
+
+.wm-campaign-region--locked {
+    background: #fafafa;
+    border-color: #e0e0e0;
+    opacity: 0.8;
+}
+
+/* ── Seções de campanha: principal vs opcional ───────────────────────── */
+
+.wm-campaign-section {
+    margin-bottom: 10px;
+}
+
+.wm-campaign-section__title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 4px 0 6px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.wm-campaign-section--main .wm-campaign-section__title {
+    color: #1565c0;
+}
+
+.wm-campaign-section--optional .wm-campaign-section__title {
+    color: #2e7d32;
+}
+
+.wm-campaign-section__regions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* ── Badge de tipo de região (⭐ Principal / 🌿 Opcional) ──────────────── */
+
+.wm-campaign-region__type-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
+.wm-campaign-region__type-badge--main {
+    background: #e3f2fd;
+    color: #0d47a1;
+    border: 1px solid #90caf9;
+}
+
+.wm-campaign-region__type-badge--optional {
+    background: #e8f5e9;
+    color: #1b5e20;
+    border: 1px solid #a5d6a7;
+}
+
+/* ── Separador visual de oportunidades opcionais ─────────────────────── */
+
+.wm-campaign-panel__optional-goal {
+    background: #f1f8e9;
+    border: 1.5px solid #aed581;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #33691e;
+    margin-bottom: 10px;
+}
+
+.wm-campaign-panel__optional-goal ul {
+    margin: 4px 0 0;
+    padding-left: 16px;
+}
+
+.wm-campaign-region__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+    flex-wrap: wrap;
+}
+
+.wm-campaign-region__name {
+    font-weight: 700;
+    font-size: 13px;
+    flex: 1;
+    min-width: 0;
+}
+
+.wm-campaign-region__current-badge {
+    font-size: 10px;
+    font-weight: 700;
+    background: #5c6bc0;
+    color: #fff;
+    padding: 2px 7px;
+    border-radius: 10px;
+}
+
+.wm-campaign-region__status {
+    font-size: 11px;
+    color: #555;
+}
+
+.wm-campaign-region--completed .wm-campaign-region__status { color: #2e7d32; font-weight: 600; }
+.wm-campaign-region--in_progress .wm-campaign-region__status { color: #e65100; font-weight: 600; }
+.wm-campaign-region--boss_available .wm-campaign-region__status { color: #e65100; font-weight: 600; }
+.wm-campaign-region--active .wm-campaign-region__status { color: #f57f17; font-weight: 600; }
+.wm-campaign-region--available .wm-campaign-region__status { color: #01579b; font-weight: 600; }
+.wm-campaign-region--locked .wm-campaign-region__status { color: #9e9e9e; }
+
+.wm-campaign-region__boss {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #555;
+    margin-bottom: 3px;
+}
+
+.wm-campaign-region__boss-label {
+    flex: 1;
+}
+
+.wm-campaign-boss--defeated {
+    font-size: 11px;
+    color: #2e7d32;
+    font-weight: 600;
+}
+
+.wm-campaign-boss--available {
+    font-size: 11px;
+    color: #e65100;
+    font-weight: 600;
+}
+
+.wm-campaign-boss--locked {
+    font-size: 11px;
+    color: #9e9e9e;
+}
+
+.wm-campaign-region__quest {
+    font-size: 11px;
+    color: #bf360c;
+    background: #fbe9e7;
+    border-radius: 6px;
+    padding: 4px 8px;
+    margin: 4px 0 0;
+}
+
+.wm-campaign-region__objective {
+    font-size: 11px;
+    color: #666;
+    margin: 4px 0 0;
+    font-style: italic;
+}
+
+
 .wm-node__lock-reason {
     display: block;
     font-size: 9px;

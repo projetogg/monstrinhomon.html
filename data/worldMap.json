@@ -149,8 +149,14 @@
       "bossMeta": {
         "bossLevel": 15,
         "regionId": "forest_arc_1",
+        "regionLabel": "Floresta Antiga",
+        "regionType": "main",
         "unlocksNodes": ["LOC_009"],
-        "defeatMarksRegionComplete": true
+        "defeatMarksRegionComplete": true,
+        "bossLabel": "Guardião da Floresta",
+        "bossFlavor": "Uma presença ancestral protege esta mata. Dizem que nenhum caçador voltou são de seu território.",
+        "bossEncounterMode": "fixed_pool",
+        "bossPool": ["MON_023C", "MON_022B"]
       }
     },
     {

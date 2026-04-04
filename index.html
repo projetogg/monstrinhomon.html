@@ -215,7 +215,16 @@
             <div id="worldMapPanel" class="card">
                 <div class="wm-header">
                     <h3 style="margin:0">🗺️ Mapa do Mundo</h3>
-                    <span class="wm-hint">Escolha um local para explorar</span>
+                    <div style="display:flex;gap:8px;align-items:center">
+                        <span class="wm-hint">Escolha um local para explorar</span>
+                        <button class="btn btn-sm wm-campaign-toggle" id="toggleCampaignBtn"
+                                onclick="toggleCampaignProgress()" aria-expanded="false"
+                                title="Ver progresso da campanha">📊 Campanha</button>
+                    </div>
+                </div>
+                <!-- PR-11: Painel de Progresso Regional (colapsável) -->
+                <div id="campaignProgressPanel" class="wm-campaign-panel is-hidden" aria-label="Progresso da campanha">
+                    <!-- Renderizado por renderCampaignPanel() -->
                 </div>
                 <div id="worldMapGrid" class="wm-grid">
                     <!-- Renderizado dinamicamente por renderWorldMapPanel() -->
@@ -232,10 +241,16 @@
                 </div>
                 <div class="wm-boss-panel">
                     <div class="wm-boss-panel__icon" id="bossNodeIcon">👑</div>
+                    <!-- Contexto de região/arco (PR-10) -->
+                    <div id="bossNodeRegionContext" class="wm-boss-panel__region is-hidden"></div>
                     <p class="wm-boss-panel__desc" id="bossNodeDesc"></p>
+                    <!-- Flavor text do boss (PR-10) -->
+                    <p class="wm-boss-panel__flavor is-hidden" id="bossNodeFlavor"></p>
                     <div id="bossNodeDefeatedBanner" class="wm-boss-panel__defeated is-hidden">
                         ✅ Área conquistada! O caminho adiante foi aberto.
                     </div>
+                    <!-- Banner de região concluída (PR-10) -->
+                    <div id="bossNodeRegionComplete" class="wm-boss-panel__region-complete is-hidden"></div>
                     <!-- Quest hint para boss node (PR-07/09) -->
                     <div id="bossNodeQuestHint" class="location-quest-hint is-hidden" aria-live="polite"></div>
                     <div class="wm-boss-panel__actions" id="bossNodeActions">
@@ -4140,7 +4155,7 @@
          * WRAPPER FUTURO: Combat.Group.Actions.initializeGroupEncounter()
          * Inicializa encounter de grupo/boss
          */
-        function startGroupEncounter(selectedPlayerIds, encounterType, enemyLevel) {
+        function startGroupEncounter(selectedPlayerIds, encounterType, enemyLevel, options = {}) {
             try {
                 // TODO PR5B: Mover para Combat.Group.Actions.initializeGroupEncounter()
                 // Initialize activeIndex for all participating players
@@ -4166,18 +4181,26 @@
                     }
                 }
                 
-                // Wave B2: enemy instances now use factory
-                const randomMonster = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
+                // PR-10: suporte a bossPool — usar monstro específico se fornecido
+                // options.monsterTemplateId: ID de template do catálogo a usar (bossPool)
+                // Fallback: monstro aleatório do catálogo
+                let selectedMonsterTemplate;
+                if (options.monsterTemplateId) {
+                    selectedMonsterTemplate = MONSTER_CATALOG.find(m => m.id === options.monsterTemplateId);
+                }
+                if (!selectedMonsterTemplate) {
+                    selectedMonsterTemplate = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
+                }
                 const enemy = createMonsterInstanceFromTemplate(
-                    randomMonster.id,  // Template ID from catalog
+                    selectedMonsterTemplate.id,  // Template ID from catalog
                     enemyLevel, 
                     null, // Use template's default rarity
                     { id: 'enemy_1' } // Override with group encounter enemy ID
                 );
                 
-                // PR16A: Mark as seen in PartyDex (randomMonster.id is the template ID)
+                // PR16A: Mark as seen in PartyDex (selectedMonsterTemplate.id is the template ID)
                 if (window.PartyDex) {
-                    window.PartyDex.markDexSeen(GameState, randomMonster.id);
+                    window.PartyDex.markDexSeen(GameState, selectedMonsterTemplate.id);
                 }
                 
                 // Criar encounter de grupo via fábrica canônica de groupCore
@@ -6148,11 +6171,36 @@
                         GameState.data.nodeFlags[locationId] = {};
                     }
                     const flags = GameState.data.nodeFlags[locationId];
+                    const wasAlreadyDefeated = flags.bossDefeated === true;
                     if (!flags.bossDefeated) {
                         flags.bossDefeated      = true;
                         flags.firstDefeatedAt   = new Date().toISOString();
                     }
                     flags.bossAttempts = (flags.bossAttempts ?? 0) + 1;
+
+                    // PR-10: Aplicar progressão regional se defeatMarksRegionComplete === true
+                    const bossMeta = bossNode.bossMeta ?? {};
+                    if (!wasAlreadyDefeated && bossMeta.defeatMarksRegionComplete && bossMeta.regionId) {
+                        if (!GameState.data.regionalProgress) GameState.data.regionalProgress = {};
+                        const updated = window.WorldMap.markRegionComplete(
+                            bossMeta,
+                            locationId,
+                            GameState.data.regionalProgress
+                        );
+                        GameState.data.regionalProgress = updated;
+                    }
+
+                    // PR-10: Aftermath — mostrar toast de conquista de região
+                    if (!wasAlreadyDefeated) {
+                        const bossLabel = bossMeta.bossLabel ?? bossNode.name ?? locationId;
+                        const toastMsg = bossMeta.regionId
+                            ? `🏆 ${bossLabel} derrotado — Região concluída!`
+                            : `🏆 ${bossLabel} derrotado!`;
+                        showToast(toastMsg, 'success');
+                        if (bossMeta.unlocksNodes?.length) {
+                            setTimeout(() => showToast('🗺️ Novo caminho liberado no mapa!', 'success'), 600);
+                        }
+                    }
                 } else {
                     // Nó de exploração normal
 
@@ -8544,9 +8592,14 @@
                     ? `<span class="wm-node__lock-reason">${lockReason}</span>`
                     : '';
 
-                // Sublabel de boss derrotado (PR-09)
+                // Sublabel de boss derrotado (PR-09) e região concluída (PR-10)
+                const regionalProgress = GameState.data?.regionalProgress ?? {};
+                const bossRegionId     = node.bossMeta?.regionId;
+                const bossRegionDone   = isBossDefeated && bossRegionId
+                    ? window.WorldMap?.isRegionComplete(bossRegionId, regionalProgress)
+                    : false;
                 const defeatedLabel = isBossDefeated
-                    ? `<span class="wm-node__boss-status">Conquistado</span>`
+                    ? `<span class="wm-node__boss-status">${bossRegionDone ? '🏆 Região concluída' : 'Conquistado'}</span>`
                     : '';
 
                 return `
@@ -8680,6 +8733,228 @@
         }
 
         // ── PR-09: Boss Node Functions ──────────────────────────────────────────
+        // ── PR-11: Campaign Progress Panel ─────────────────────────────────────
+
+        /**
+         * Formata um regionId para exibição legível.
+         * Usa WorldMap.deriveRegionLabel se disponível; senão capitaliza palavras
+         * com a mesma lógica de deriveRegionLabel para consistência.
+         * @param {string} regionId
+         * @returns {string}
+         */
+        function formatRegionName(regionId) {
+            if (!regionId) return '';
+            if (window.WorldMap?.deriveRegionLabel) {
+                return window.WorldMap.deriveRegionLabel(regionId);
+            }
+            // Fallback consistente: capitaliza cada palavra, substitui underscores
+            return regionId.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        }
+
+        /**
+         * Alterna a visibilidade do painel de progresso de campanha.
+         * PR-11: painel colapsável acima do grid do mapa.
+         */
+        function toggleCampaignProgress() {
+            const panel  = document.getElementById('campaignProgressPanel');
+            const btn    = document.getElementById('toggleCampaignBtn');
+            if (!panel) return;
+
+            const isHidden = panel.classList.contains('is-hidden');
+            if (isHidden) {
+                showEl(panel);
+                renderCampaignPanel();
+                if (btn) btn.setAttribute('aria-expanded', 'true');
+            } else {
+                hideEl(panel);
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+            }
+        }
+        window.toggleCampaignProgress = toggleCampaignProgress;
+
+        /**
+         * Renderiza o painel de progresso de campanha regional.
+         * PR-12: separa rota principal de conteúdo opcional, exibe prioridade macro.
+         */
+        function renderCampaignPanel() {
+            const panel = document.getElementById('campaignProgressPanel');
+            if (!panel || !window.WorldMap) return;
+
+            const nodeFlags         = GameState.data?.nodeFlags ?? {};
+            const regionalProgress  = GameState.data?.regionalProgress ?? {};
+            const visitedLocations  = new Set(GameState.data?.visitedLocations ?? []);
+            const completedLocations= new Set(GameState.data?.completedLocations ?? []);
+
+            // Coletar quests concluídas e localIds ativos para priorização
+            const completedQuestIds     = new Set();
+            const activeQuestLocalIds   = new Set();
+            if (window.GameFlow) {
+                (GameState.players ?? []).forEach(player => {
+                    if (!player?.questState) return;
+                    (player.questState.completedQuestIds ?? []).forEach(id => completedQuestIds.add(id));
+                    // Detectar localIds de quests ativas (para boost de prioridade)
+                    if (window.GameFlow.getActiveQuestsSummary) {
+                        window.GameFlow.getActiveQuestsSummary(player).forEach(({ quest }) => {
+                            if (quest?.localId) activeQuestLocalIds.add(quest.localId);
+                        });
+                    }
+                });
+            }
+
+            const summary = window.WorldMap.getRegionalProgressSummary(
+                _wm.worldMapNodes ?? [],
+                nodeFlags,
+                regionalProgress,
+                visitedLocations,
+                completedLocations,
+                completedQuestIds,
+                activeQuestLocalIds
+            );
+
+            if (summary.length === 0) {
+                panel.innerHTML = '<p class="text-small text-muted" style="padding:8px 0">Nenhuma região encontrada no mapa.</p>';
+                return;
+            }
+
+            // Derivar objetivo principal separado de oportunidades opcionais
+            const { nextMainObjective, optionalOpportunities } =
+                window.WorldMap.deriveMainObjective(summary);
+
+            // Bloco de objetivo principal
+            const allCompleted = summary.every(r => r.completed);
+            let nextGoalHtml = '';
+            if (allCompleted) {
+                nextGoalHtml = `<div class="wm-campaign-panel__next-goal wm-campaign-panel__next-goal--done">
+                    🏆 <strong>Campanha concluída!</strong> Todas as regiões foram conquistadas.
+                </div>`;
+            } else if (nextMainObjective) {
+                nextGoalHtml = `<div class="wm-campaign-panel__next-goal">
+                    🎯 <strong>Rota principal:</strong> ${nextMainObjective}
+                </div>`;
+            }
+
+            // Bloco de oportunidades opcionais
+            let optionalGoalHtml = '';
+            if (optionalOpportunities.length > 0) {
+                const opList = optionalOpportunities
+                    .map(o => `<li>${o}</li>`)
+                    .join('');
+                optionalGoalHtml = `<div class="wm-campaign-panel__optional-goal">
+                    🌿 <strong>Exploração opcional disponível:</strong>
+                    <ul>${opList}</ul>
+                </div>`;
+            }
+
+            // Função auxiliar para renderizar card de região
+            function _renderRegionCard(region) {
+                const statusClass = `wm-campaign-region--${region.status}`;
+                const statusLabel = {
+                    completed:      '✅ Concluída',
+                    boss_available: '👑 Boss disponível',
+                    active:         '⚔️ Em progresso',
+                    available:      '🗺️ Disponível',
+                    locked:         '🔒 Bloqueada',
+                    in_progress:    '⚔️ Em progresso' // retrocompat
+                }[region.status] ?? region.status;
+
+                const currentBadge = region.isCurrent
+                    ? '<span class="wm-campaign-region__current-badge">▶ Atual</span>'
+                    : '';
+
+                const typeBadge = region.isMainPath
+                    ? '<span class="wm-campaign-region__type-badge wm-campaign-region__type-badge--main">⭐ Principal</span>'
+                    : '<span class="wm-campaign-region__type-badge wm-campaign-region__type-badge--optional">🌿 Opcional</span>';
+
+                const bossStatusLabel = region.bossDefeated
+                    ? `<span class="wm-campaign-boss--defeated">⚔️ Derrotado</span>`
+                    : (region.status === 'boss_available' || region.status === 'in_progress')
+                        ? `<span class="wm-campaign-boss--available">👑 Disponível</span>`
+                        : `<span class="wm-campaign-boss--locked">🔒 Bloqueado</span>`;
+
+                // Verificar se há quest ativa ligada à região
+                let questHtml = '';
+                if (window.GameFlow) {
+                    for (const player of (GameState.players ?? [])) {
+                        if (!player) continue;
+                        const playerQuestSummary = window.GameFlow.getActiveQuestsSummary(player);
+                        const questMatch = playerQuestSummary.find(({ quest }) =>
+                            quest?.targetRegionId === region.regionId ||
+                            quest?.localId === region.bossNodeId
+                        );
+                        if (questMatch) {
+                            questHtml = `<p class="wm-campaign-region__quest">
+                                ❗ Missão ativa: ${questMatch.quest.nome} (${player.name})
+                            </p>`;
+                            break;
+                        }
+                    }
+                }
+
+                return `
+                  <div class="wm-campaign-region ${statusClass}${region.isCurrent ? ' wm-campaign-region--current' : ''}">
+                    <div class="wm-campaign-region__header">
+                        <span class="wm-campaign-region__name">${region.regionLabel}</span>
+                        ${typeBadge}
+                        ${currentBadge}
+                        <span class="wm-campaign-region__status">${statusLabel}</span>
+                    </div>
+                    <div class="wm-campaign-region__boss">
+                        <span class="wm-campaign-region__boss-label">Chefe: ${region.bossLabel}</span>
+                        ${bossStatusLabel}
+                    </div>
+                    ${questHtml}
+                    ${region.nextObjective ? `<p class="wm-campaign-region__objective">${region.nextObjective}</p>` : ''}
+                  </div>`;
+            }
+
+            // Separar regiões por tipo e agrupar em seções
+            const mainRegions     = summary.filter(r => r.isMainPath);
+            const optionalRegions = summary.filter(r => r.isOptional);
+            const otherRegions    = summary.filter(r => !r.isMainPath && !r.isOptional);
+
+            let sectionsHtml = '';
+
+            if (mainRegions.length > 0) {
+                sectionsHtml += `
+                    <div class="wm-campaign-section wm-campaign-section--main">
+                        <div class="wm-campaign-section__title">⭐ Rota Principal</div>
+                        <div class="wm-campaign-section__regions">
+                            ${mainRegions.map(_renderRegionCard).join('')}
+                        </div>
+                    </div>`;
+            }
+
+            if (optionalRegions.length > 0) {
+                sectionsHtml += `
+                    <div class="wm-campaign-section wm-campaign-section--optional">
+                        <div class="wm-campaign-section__title">🌿 Exploração Opcional</div>
+                        <div class="wm-campaign-section__regions">
+                            ${optionalRegions.map(_renderRegionCard).join('')}
+                        </div>
+                    </div>`;
+            }
+
+            // Regiões sem tipo definido (retrocompat) ficam agrupadas sem seção
+            if (otherRegions.length > 0) {
+                sectionsHtml += `
+                    <div class="wm-campaign-section">
+                        <div class="wm-campaign-section__regions">
+                            ${otherRegions.map(_renderRegionCard).join('')}
+                        </div>
+                    </div>`;
+            }
+
+            panel.innerHTML = `
+                <div class="wm-campaign-panel__header">
+                    <span class="wm-campaign-panel__title">📋 Progresso da Campanha</span>
+                    <span class="wm-campaign-panel__count">${summary.filter(r => r.completed).length}/${summary.length} regiões</span>
+                </div>
+                ${nextGoalHtml}
+                ${optionalGoalHtml}
+                ${sectionsHtml}
+            `;
+        }
+        window.renderCampaignPanel = renderCampaignPanel;
 
         /**
          * Abre o painel de boss node (Camada 2b).
@@ -8693,30 +8968,78 @@
             if (bossPanel) showEl(bossPanel);
 
             const loc = (_wm.locationsData ?? []).find(l => l.id === nodeId);
-            const nodeFlags = GameState.data?.nodeFlags ?? {};
-            const defeated  = nodeFlags[nodeId]?.bossDefeated === true;
-            const bossMeta  = bossNode?.bossMeta ?? {};
+            const nodeFlags         = GameState.data?.nodeFlags ?? {};
+            const regionalProgress  = GameState.data?.regionalProgress ?? {};
+            const defeated          = nodeFlags[nodeId]?.bossDefeated === true;
+            const bossMeta          = bossNode?.bossMeta ?? {};
+            const bossLabel         = bossMeta.bossLabel ?? loc?.name ?? nodeId;
+            const regionId          = bossMeta.regionId;
+            const regionComplete    = regionId
+                ? window.WorldMap?.isRegionComplete(regionId, regionalProgress) ?? false
+                : false;
 
             // Preencher título e descrição
             const titleEl = document.getElementById('bossNodeTitle');
             const descEl  = document.getElementById('bossNodeDesc');
             const iconEl  = document.getElementById('bossNodeIcon');
-            if (titleEl) titleEl.textContent = `👑 ${loc?.name ?? nodeId}`;
+            if (titleEl) titleEl.textContent = `👑 ${bossLabel}`;
             if (descEl)  descEl.textContent  = loc?.description ?? '';
             if (iconEl)  iconEl.textContent  = defeated ? '⚔️' : '👑';
+
+            // Contexto de região/arco (PR-10 / PR-11: usa regionLabel se disponível)
+            const regionCtxEl = document.getElementById('bossNodeRegionContext');
+            if (regionCtxEl && regionId) {
+                const regionLabel = bossMeta.regionLabel ?? formatRegionName(regionId);
+                regionCtxEl.textContent = `🗺️ Chefe da região: ${regionLabel}`;
+                showEl(regionCtxEl);
+            } else if (regionCtxEl) {
+                hideEl(regionCtxEl);
+            }
+
+            // Flavor text (PR-10)
+            const flavorEl = document.getElementById('bossNodeFlavor');
+            const flavor   = bossMeta.bossFlavor ?? loc?.flavor;
+            if (flavorEl && flavor) {
+                flavorEl.textContent = flavor;
+                showEl(flavorEl);
+            } else if (flavorEl) {
+                hideEl(flavorEl);
+            }
 
             // Banner de boss derrotado
             const defeatedBanner = document.getElementById('bossNodeDefeatedBanner');
             const actionsEl      = document.getElementById('bossNodeActions');
             if (defeated) {
-                if (defeatedBanner) showEl(defeatedBanner);
+                if (defeatedBanner) {
+                    defeatedBanner.textContent = `✅ ${bossLabel} foi derrotado! O caminho adiante foi aberto.`;
+                    showEl(defeatedBanner);
+                }
                 // Mantém botão mas mostra que pode rejugar
                 const startBtn = document.getElementById('bossStartBtn');
-                if (startBtn) startBtn.textContent = '🔄 Desafiar Novamente o Guardião';
+                if (startBtn) startBtn.textContent = `🔄 Desafiar Novamente ${bossLabel}`;
             } else {
                 if (defeatedBanner) hideEl(defeatedBanner);
                 const startBtn = document.getElementById('bossStartBtn');
-                if (startBtn) startBtn.textContent = '⚔️ Desafiar o Guardião';
+                if (startBtn) startBtn.textContent = `⚔️ Desafiar ${bossLabel}`;
+            }
+
+            // Banner de região concluída (PR-10 / PR-11: usa regionLabel)
+            const regionCompleteEl = document.getElementById('bossNodeRegionComplete');
+            if (regionCompleteEl) {
+                if (regionComplete && regionId) {
+                    const regionLabel = bossMeta.regionLabel ?? formatRegionName(regionId);
+                    regionCompleteEl.textContent = `🏆 Região concluída: ${regionLabel}`;
+                    showEl(regionCompleteEl);
+                } else {
+                    // Mostrar o que será liberado ao vencer
+                    const unlocks = bossMeta.unlocksNodes ?? [];
+                    if (!defeated && unlocks.length) {
+                        regionCompleteEl.textContent = `🗺️ Ao derrotá-lo: ${unlocks.join(', ')} será liberado`;
+                        showEl(regionCompleteEl);
+                    } else {
+                        hideEl(regionCompleteEl);
+                    }
+                }
             }
 
             // Quest hint para o boss node
@@ -8795,6 +9118,8 @@
         /**
          * Inicia o encontro de boss com os jogadores selecionados no painel.
          * Usa startGroupEncounter com type 'boss' e o nível definido em bossMeta.
+         * PR-10: suporte a bossPool — se bossEncounterMode === 'fixed_pool' e bossPool existir,
+         * seleciona aleatoriamente um monstro da pool específica do boss.
          */
         function startBossEncounter() {
             const nodeId    = _wm.selectedLocationId;
@@ -8811,12 +9136,19 @@
                 return;
             }
 
+            // PR-10: Resolver monstro do boss (pool específica ou aleatório)
+            let monsterTemplateId = null;
+            if (bossMeta.bossEncounterMode === 'fixed_pool' && Array.isArray(bossMeta.bossPool) && bossMeta.bossPool.length > 0) {
+                const pool = bossMeta.bossPool;
+                monsterTemplateId = pool[Math.floor(Math.random() * pool.length)];
+            }
+
             // Esconder painel de boss
             const bossPanel = document.getElementById('bossNodePanel');
             if (bossPanel) hideEl(bossPanel);
 
             // Iniciar encontro de grupo com tipo 'boss'
-            startGroupEncounter(selectedIds, 'boss', bossLevel);
+            startGroupEncounter(selectedIds, 'boss', bossLevel, { monsterTemplateId });
         }
         window.startBossEncounter = startBossEncounter;
         window.openBossPanel      = openBossPanel;
