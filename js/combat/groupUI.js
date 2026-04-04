@@ -76,7 +76,7 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
         const hpMax = Number(mon.hpMax) || 1;
         const hpPct = Math.max(0, Math.min(100, (hp / hpMax) * 100));
         const ene = Number(mon.ene) || 0;
-        const eneMax = Number(mon.eneMax) || 1;
+        const eneMax = Number(mon.eneMax) || 10;
         const enePct = Math.max(0, Math.min(100, (ene / eneMax) * 100));
         const isKO = hp <= 0;
         const isCurrent = actor && actor.side === 'player' && actor.id === pid;

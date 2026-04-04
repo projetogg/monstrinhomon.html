@@ -259,8 +259,8 @@ describe('ENE — custo de skill', () => {
             const skill = makeSkill({ cost: 4 });
             mon.ene = 20;
             executePlayerSkillGroup(skill, 0, deps);
-            // ENE deve ter sido reduzido em 4 (custo da skill)
-            expect(mon.ene).toBeLessThanOrEqual(16);
+            // ENE deve ter sido reduzido exatamente em 4 (custo da skill; regen mockada não age)
+            expect(mon.ene).toBe(16);
         });
 
         it('bloqueia skill quando ENE insuficiente (ENE < custo)', () => {
@@ -383,7 +383,8 @@ describe('ENE — regeneração por turno', () => {
             const guerreiro = makeMon({ class: 'Guerreiro', ene: 0, eneMax: 20 });
             const gainsM = applyEneRegen(mago);
             const gainsG = applyEneRegen(guerreiro);
-            expect(gainsM).toBeGreaterThanOrEqual(gainsG);
+            // Mago pct=0.18 → 4, Guerreiro pct=0.10 → 2; sempre estritamente maior
+            expect(gainsM).toBeGreaterThan(gainsG);
         });
     });
 });
