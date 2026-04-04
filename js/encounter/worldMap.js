@@ -464,18 +464,25 @@ export function markRegionComplete(bossMeta, bossNodeId, regionalProgress = {}, 
 }
 
 // Bases de prioridade por tipo de região (maior = mais prioritário no painel)
+// Hierarquia semântica intencional: main > optional > side > postgame
+// "other" (100) é fallback para tipos desconhecidos/legados — não representa um tipo de produto
 const PRIORITY_BASE_MAIN     = 1000;
-const PRIORITY_BASE_OPTIONAL = 500;
-const PRIORITY_BASE_OTHER    = 100;
-const PRIORITY_QUEST_BONUS   = 300; // bônus quando há quest ativa na região
+const PRIORITY_BASE_OPTIONAL = 500;  // exploração paralela de peso real
+const PRIORITY_BASE_SIDE     = 200;  // conteúdo lateral curto/temático; quest pode elevar
+const PRIORITY_BASE_POSTGAME = 50;   // desbloqueado após marco avançado; geralmente baixo
+const PRIORITY_BASE_OTHER    = 100;  // fallback para tipos desconhecidos — não use em conteúdo novo
+const PRIORITY_QUEST_BONUS   = 300;  // bônus quando há quest ativa na região
 
 /**
  * Calcula o score de prioridade de uma região para ordenação e seleção de "atual".
  *
- * Critérios (maior = mais prioritário):
- *   - Tipo main vale mais que optional
- *   - Estados mais avançados valem mais
- *   - Regiões com quest ativa ganham bônus adicional
+ * Hierarquia semântica (maior = mais prioritário):
+ *   main     → muito alta  (1000 + status)
+ *   optional → média       (500 + status); conteúdo paralelo real sem bloquear campanha
+ *   side     → média-baixa (200 + status); pode igualar optional quando há quest ativa
+ *   postgame → muito baixa (50 + status);  desbloqueado apenas após marco avançado
+ *
+ * Quest ativa (+300) pode elevar side acima de optional locked, mas nunca acima de main.
  *
  * @param {'main'|'optional'|'side'|'postgame'} regionType
  * @param {'completed'|'boss_available'|'active'|'available'|'locked'} status
@@ -485,7 +492,9 @@ const PRIORITY_QUEST_BONUS   = 300; // bônus quando há quest ativa na região
 function _computePriorityScore(regionType, status, hasActiveQuest) {
     const typeBase =
         regionType === 'main'     ? PRIORITY_BASE_MAIN     :
-        regionType === 'optional' ? PRIORITY_BASE_OPTIONAL : PRIORITY_BASE_OTHER;
+        regionType === 'optional' ? PRIORITY_BASE_OPTIONAL :
+        regionType === 'side'     ? PRIORITY_BASE_SIDE     :
+        regionType === 'postgame' ? PRIORITY_BASE_POSTGAME : PRIORITY_BASE_OTHER;
     const statusBonus = {
         boss_available: 400,
         active:         300,
@@ -504,9 +513,12 @@ function _computePriorityScore(regionType, status, hasActiveQuest) {
  * Cada entrada retornada inclui:
  *   regionId                 - ID técnico interno da região
  *   regionLabel              - Nome amigável exibido na UI
+ *   regionFlavor             - Descrição diegética da região (null se não definido)
  *   regionType               - 'main' | 'optional' | 'side' | 'postgame'
  *   isMainPath               - true se regionType === 'main'
- *   isOptional               - true se regionType === 'optional' ou 'side'
+ *   isOptional               - true se regionType === 'optional' (exploração paralela real)
+ *   isSide                   - true se regionType === 'side' (conteúdo lateral temático)
+ *   isPostgame               - true se regionType === 'postgame' (conteúdo pós-campanha)
  *   bossNodeId               - ID do nó boss que fecha a região
  *   bossLabel                - Nome amigável do boss
  *   completed                - Se a região foi concluída
@@ -552,10 +564,13 @@ export function getRegionalProgressSummary(
         const completed    = isRegionComplete(meta.regionId, safeProgress);
         const bossDefeated = safeFlags[node.nodeId]?.bossDefeated === true;
         const regionLabel  = meta.regionLabel ?? deriveRegionLabel(meta.regionId);
+        const regionFlavor = meta.regionFlavor ?? null;
         const bossLabel    = meta.bossLabel ?? node.nodeId;
         const regionType   = getRegionType(meta);
         const isMainPath   = regionType === REGION_TYPES.MAIN;
-        const isOptional   = regionType === REGION_TYPES.OPTIONAL || regionType === REGION_TYPES.SIDE;
+        const isOptional   = regionType === REGION_TYPES.OPTIONAL;
+        const isSide       = regionType === REGION_TYPES.SIDE;
+        const isPostgame   = regionType === REGION_TYPES.POSTGAME;
 
         // Verificar se há quest ativa em algum nó conectado ao boss
         const connections = node.connections ?? [];
@@ -577,9 +592,12 @@ export function getRegionalProgressSummary(
         result.push({
             regionId:      meta.regionId,
             regionLabel,
+            regionFlavor,
             regionType,
             isMainPath,
             isOptional,
+            isSide,
+            isPostgame,
             bossNodeId:    node.nodeId,
             bossLabel,
             completed,
@@ -600,30 +618,41 @@ export function getRegionalProgressSummary(
 }
 
 /**
- * Deriva o próximo objetivo principal e as oportunidades opcionais disponíveis
- * a partir do summary de progresso regional.
+ * Deriva o próximo objetivo principal, as oportunidades opcionais e o conteúdo paralelo
+ * disponíveis a partir do summary de progresso regional.
  *
- * Separação clara:
+ * Separação semântica clara:
  *   nextMainObjective     → texto do próximo passo na rota principal (ou null)
- *   optionalOpportunities → array de textos de regiões opcionais acessíveis
+ *   optionalOpportunities → array de textos de regiões optional acessíveis
+ *   sideOpportunities     → array de textos de regiões side acessíveis (conteúdo lateral)
+ *
+ * optional e side são intencionalmente distintos:
+ *   optional = rota paralela de exploração/avanço secundário
+ *   side     = conteúdo lateral mais curto, temático, focado em quest/evento
  *
  * @param {Array<Object>} summary - Resultado de getRegionalProgressSummary()
- * @returns {{ nextMainObjective: string|null, optionalOpportunities: string[] }}
+ * @returns {{ nextMainObjective: string|null, optionalOpportunities: string[], sideOpportunities: string[] }}
  */
 export function deriveMainObjective(summary) {
-    if (!Array.isArray(summary)) return { nextMainObjective: null, optionalOpportunities: [] };
+    if (!Array.isArray(summary)) return { nextMainObjective: null, optionalOpportunities: [], sideOpportunities: [] };
 
     // Próximo objetivo principal: primeira região main não concluída, na ordem de prioridade
     const nextMain = summary.find(r => r.isMainPath && r.status !== 'completed');
     const nextMainObjective = nextMain?.nextObjective ?? null;
 
-    // Oportunidades opcionais: regiões optional/side disponíveis ou ativas (não concluídas)
+    // Oportunidades opcionais: regiões optional disponíveis ou ativas (não concluídas, não locked)
     const optionalOpportunities = summary
         .filter(r => r.isOptional && r.status !== 'completed' && r.status !== 'locked')
         .map(r => r.nextObjective)
         .filter(Boolean);
 
-    return { nextMainObjective, optionalOpportunities };
+    // Conteúdo paralelo (side): regiões side disponíveis ou ativas (não concluídas, não locked)
+    const sideOpportunities = summary
+        .filter(r => r.isSide && r.status !== 'completed' && r.status !== 'locked')
+        .map(r => r.nextObjective)
+        .filter(Boolean);
+
+    return { nextMainObjective, optionalOpportunities, sideOpportunities };
 }
 
 /**

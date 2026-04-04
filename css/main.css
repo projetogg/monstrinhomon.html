@@ -3203,13 +3203,21 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     color: #2e7d32;
 }
 
+.wm-campaign-section--side .wm-campaign-section__title {
+    color: #6a1b9a;
+}
+
+.wm-campaign-section--postgame .wm-campaign-section__title {
+    color: #4e342e;
+}
+
 .wm-campaign-section__regions {
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
-/* ── Badge de tipo de região (⭐ Principal / 🌿 Opcional) ──────────────── */
+/* ── Badge de tipo de região (⭐ Principal / 🌿 Opcional / 🧩 Paralelo / 🏁 Pós-jogo) ── */
 
 .wm-campaign-region__type-badge {
     font-size: 10px;
@@ -3231,6 +3239,18 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     border: 1px solid #a5d6a7;
 }
 
+.wm-campaign-region__type-badge--side {
+    background: #f3e5f5;
+    color: #4a148c;
+    border: 1px solid #ce93d8;
+}
+
+.wm-campaign-region__type-badge--postgame {
+    background: #efebe9;
+    color: #3e2723;
+    border: 1px solid #bcaaa4;
+}
+
 /* ── Separador visual de oportunidades opcionais ─────────────────────── */
 
 .wm-campaign-panel__optional-goal {
@@ -3246,6 +3266,33 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .wm-campaign-panel__optional-goal ul {
     margin: 4px 0 0;
     padding-left: 16px;
+}
+
+/* ── Separador visual de conteúdo paralelo (side) ────────────────────── */
+
+.wm-campaign-panel__side-goal {
+    background: #f3e5f5;
+    border: 1.5px solid #ce93d8;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #4a148c;
+    margin-bottom: 10px;
+}
+
+.wm-campaign-panel__side-goal ul {
+    margin: 4px 0 0;
+    padding-left: 16px;
+}
+
+/* ── Flavor (descrição diegética da região) ──────────────────────────── */
+
+.wm-campaign-region__flavor {
+    font-size: 11px;
+    color: #777;
+    font-style: italic;
+    margin: 0 0 5px;
+    line-height: 1.4;
 }
 
 .wm-campaign-region__header {

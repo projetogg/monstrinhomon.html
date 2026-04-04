@@ -8816,8 +8816,8 @@
                 return;
             }
 
-            // Derivar objetivo principal separado de oportunidades opcionais
-            const { nextMainObjective, optionalOpportunities } =
+            // Derivar objetivo principal e oportunidades separadas por tipo
+            const { nextMainObjective, optionalOpportunities, sideOpportunities } =
                 window.WorldMap.deriveMainObjective(summary);
 
             // Bloco de objetivo principal
@@ -8845,6 +8845,18 @@
                 </div>`;
             }
 
+            // Bloco de conteúdo paralelo (side)
+            let sideGoalHtml = '';
+            if (sideOpportunities.length > 0) {
+                const sideList = sideOpportunities
+                    .map(o => `<li>${o}</li>`)
+                    .join('');
+                sideGoalHtml = `<div class="wm-campaign-panel__side-goal">
+                    🧩 <strong>Conteúdo paralelo disponível:</strong>
+                    <ul>${sideList}</ul>
+                </div>`;
+            }
+
             // Função auxiliar para renderizar card de região
             function _renderRegionCard(region) {
                 const statusClass = `wm-campaign-region--${region.status}`;
@@ -8861,9 +8873,13 @@
                     ? '<span class="wm-campaign-region__current-badge">▶ Atual</span>'
                     : '';
 
-                const typeBadge = region.isMainPath
-                    ? '<span class="wm-campaign-region__type-badge wm-campaign-region__type-badge--main">⭐ Principal</span>'
-                    : '<span class="wm-campaign-region__type-badge wm-campaign-region__type-badge--optional">🌿 Opcional</span>';
+                const typeKey = region.isMainPath ? 'main' : region.isOptional ? 'optional' : region.isSide ? 'side' : region.isPostgame ? 'postgame' : null;
+                const typeBadge = {
+                    main:     '<span class="wm-campaign-region__type-badge wm-campaign-region__type-badge--main">⭐ Principal</span>',
+                    optional: '<span class="wm-campaign-region__type-badge wm-campaign-region__type-badge--optional">🌿 Opcional</span>',
+                    side:     '<span class="wm-campaign-region__type-badge wm-campaign-region__type-badge--side">🧩 Paralelo</span>',
+                    postgame: '<span class="wm-campaign-region__type-badge wm-campaign-region__type-badge--postgame">🏁 Pós-jogo</span>'
+                }[typeKey] ?? '';
 
                 const bossStatusLabel = region.bossDefeated
                     ? `<span class="wm-campaign-boss--defeated">⚔️ Derrotado</span>`
@@ -8898,6 +8914,7 @@
                         ${currentBadge}
                         <span class="wm-campaign-region__status">${statusLabel}</span>
                     </div>
+                    ${region.regionFlavor ? `<p class="wm-campaign-region__flavor">${region.regionFlavor}</p>` : ''}
                     <div class="wm-campaign-region__boss">
                         <span class="wm-campaign-region__boss-label">Chefe: ${region.bossLabel}</span>
                         ${bossStatusLabel}
@@ -8907,10 +8924,12 @@
                   </div>`;
             }
 
-            // Separar regiões por tipo e agrupar em seções
+            // Separar regiões por tipo e agrupar em seções semânticas
             const mainRegions     = summary.filter(r => r.isMainPath);
             const optionalRegions = summary.filter(r => r.isOptional);
-            const otherRegions    = summary.filter(r => !r.isMainPath && !r.isOptional);
+            const sideRegions     = summary.filter(r => r.isSide);
+            const postgameRegions = summary.filter(r => r.isPostgame);
+            const otherRegions    = summary.filter(r => !r.isMainPath && !r.isOptional && !r.isSide && !r.isPostgame);
 
             let sectionsHtml = '';
 
@@ -8934,6 +8953,26 @@
                     </div>`;
             }
 
+            if (sideRegions.length > 0) {
+                sectionsHtml += `
+                    <div class="wm-campaign-section wm-campaign-section--side">
+                        <div class="wm-campaign-section__title">🧩 Conteúdo Paralelo</div>
+                        <div class="wm-campaign-section__regions">
+                            ${sideRegions.map(_renderRegionCard).join('')}
+                        </div>
+                    </div>`;
+            }
+
+            if (postgameRegions.length > 0) {
+                sectionsHtml += `
+                    <div class="wm-campaign-section wm-campaign-section--postgame">
+                        <div class="wm-campaign-section__title">🏁 Pós-jogo</div>
+                        <div class="wm-campaign-section__regions">
+                            ${postgameRegions.map(_renderRegionCard).join('')}
+                        </div>
+                    </div>`;
+            }
+
             // Regiões sem tipo definido (retrocompat) ficam agrupadas sem seção
             if (otherRegions.length > 0) {
                 sectionsHtml += `
@@ -8951,6 +8990,7 @@
                 </div>
                 ${nextGoalHtml}
                 ${optionalGoalHtml}
+                ${sideGoalHtml}
                 ${sectionsHtml}
             `;
         }

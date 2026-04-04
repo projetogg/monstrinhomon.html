@@ -1,5 +1,5 @@
 /**
- * REGIONAL PROGRESS TESTS (PR-10 / PR-11 / PR-12)
+ * REGIONAL PROGRESS TESTS (PR-10 / PR-11 / PR-12 / PR-13)
  *
  * Testes para o sistema de progressão regional pós-boss.
  * Cobertura:
@@ -16,6 +16,10 @@
  *   - PR-12: isMainPath, isOptional, priorityScore
  *   - PR-12: isCurrent refinado por prioridade
  *   - PR-12: deriveMainObjective (nextMainObjective + optionalOpportunities)
+ *   - PR-13: isSide, isPostgame separados de isOptional
+ *   - PR-13: regionFlavor no summary
+ *   - PR-13: prioridade hierárquica main > optional > side > postgame
+ *   - PR-13: sideOpportunities em deriveMainObjective
  */
 
 import { describe, it, expect } from 'vitest';
@@ -1110,6 +1114,338 @@ describe('getRegionalProgressSummary — isCurrent refinado por prioridade de ca
             nodes, {}, {}, new Set(), new Set(), new Set(), new Set(['LOC_008'])
         );
         expect(resultComQuest[0].priorityScore).toBeGreaterThan(resultSemQuest[0].priorityScore);
+    });
+
+});
+
+// ── PR-13: isSide e isPostgame separados de isOptional ────────────────────────
+
+describe('getRegionalProgressSummary — isSide e isPostgame (PR-13)', () => {
+
+    const NODES_ALL_TYPES = [
+        {
+            nodeId: 'BOSS_MAIN',
+            type: 'boss',
+            connections: [],
+            bossMeta: { regionId: 'main_1', regionLabel: 'Floresta Antiga', regionType: 'main', defeatMarksRegionComplete: true, bossLabel: 'Chefe Principal' }
+        },
+        {
+            nodeId: 'BOSS_OPT',
+            type: 'boss',
+            connections: [],
+            bossMeta: { regionId: 'opt_1', regionLabel: 'Costa Cristalina', regionType: 'optional', defeatMarksRegionComplete: true, bossLabel: 'Titan Costeiro' }
+        },
+        {
+            nodeId: 'BOSS_SIDE',
+            type: 'boss',
+            connections: [],
+            bossMeta: { regionId: 'side_1', regionLabel: 'Ruínas Esquecidas', regionType: 'side', defeatMarksRegionComplete: true, bossLabel: 'Guardião das Ruínas' }
+        },
+        {
+            nodeId: 'BOSS_PG',
+            type: 'boss',
+            connections: [],
+            bossMeta: { regionId: 'pg_1', regionLabel: 'Torre Etérea', regionType: 'postgame', defeatMarksRegionComplete: true, bossLabel: 'Chefe Pós-jogo' }
+        }
+    ];
+
+    it('deve definir isSide=true apenas para regionType "side"', () => {
+        const result = getRegionalProgressSummary(NODES_ALL_TYPES, {}, {});
+        const side = result.find(r => r.regionId === 'side_1');
+        expect(side.isSide).toBe(true);
+        expect(side.isOptional).toBe(false);
+        expect(side.isMainPath).toBe(false);
+        expect(side.isPostgame).toBe(false);
+    });
+
+    it('deve definir isPostgame=true apenas para regionType "postgame"', () => {
+        const result = getRegionalProgressSummary(NODES_ALL_TYPES, {}, {});
+        const pg = result.find(r => r.regionId === 'pg_1');
+        expect(pg.isPostgame).toBe(true);
+        expect(pg.isSide).toBe(false);
+        expect(pg.isOptional).toBe(false);
+        expect(pg.isMainPath).toBe(false);
+    });
+
+    it('deve definir isOptional=false para regiões side (não colapsar semântica)', () => {
+        const result = getRegionalProgressSummary(NODES_ALL_TYPES, {}, {});
+        const side = result.find(r => r.regionId === 'side_1');
+        // side NÃO é opcional — são tipos distintos
+        expect(side.isOptional).toBe(false);
+    });
+
+    it('deve ter isSide=false e isPostgame=false para regiões main e optional', () => {
+        const result = getRegionalProgressSummary(NODES_ALL_TYPES, {}, {});
+        const main = result.find(r => r.regionId === 'main_1');
+        const opt  = result.find(r => r.regionId === 'opt_1');
+        expect(main.isSide).toBe(false);
+        expect(main.isPostgame).toBe(false);
+        expect(opt.isSide).toBe(false);
+        expect(opt.isPostgame).toBe(false);
+    });
+
+    it('deve retornar isSide=false para regionType inválido ou ausente (fallback main)', () => {
+        const nodesInvalid = [
+            {
+                nodeId: 'BOSS_TYPO',
+                type: 'boss',
+                connections: [],
+                bossMeta: { regionId: 'typo_1', regionLabel: 'Erro', regionType: 'sied', defeatMarksRegionComplete: true, bossLabel: 'Chefe' }
+            },
+            {
+                nodeId: 'BOSS_NULL',
+                type: 'boss',
+                connections: [],
+                bossMeta: { regionId: 'null_1', regionLabel: 'Nulo', defeatMarksRegionComplete: true, bossLabel: 'Chefe' }
+            }
+        ];
+        const result = getRegionalProgressSummary(nodesInvalid, {}, {});
+        result.forEach(r => {
+            expect(r.isSide).toBe(false);
+            expect(r.isPostgame).toBe(false);
+            // Fallback para main
+            expect(r.isMainPath).toBe(true);
+        });
+    });
+
+});
+
+// ── PR-13: regionFlavor no summary ─────────────────────────────────────────────
+
+describe('getRegionalProgressSummary — regionFlavor (PR-13)', () => {
+
+    it('deve incluir regionFlavor quando definido no bossMeta', () => {
+        const nodes = [{
+            nodeId: 'BOSS_FLAVOR',
+            type: 'boss',
+            connections: [],
+            bossMeta: {
+                regionId: 'flavored_1',
+                regionLabel: 'Floresta Antiga',
+                regionFlavor: 'Uma mata ancestral densa e intimidadora.',
+                regionType: 'main',
+                defeatMarksRegionComplete: true,
+                bossLabel: 'Guardião'
+            }
+        }];
+        const result = getRegionalProgressSummary(nodes, {}, {});
+        expect(result[0].regionFlavor).toBe('Uma mata ancestral densa e intimidadora.');
+    });
+
+    it('deve retornar regionFlavor=null quando não definido no bossMeta', () => {
+        const nodes = [{
+            nodeId: 'BOSS_NO_FLAVOR',
+            type: 'boss',
+            connections: [],
+            bossMeta: {
+                regionId: 'noflavor_1',
+                regionLabel: 'Região Sem Sabor',
+                regionType: 'main',
+                defeatMarksRegionComplete: true,
+                bossLabel: 'Chefe'
+            }
+        }];
+        const result = getRegionalProgressSummary(nodes, {}, {});
+        expect(result[0].regionFlavor).toBeNull();
+    });
+
+    it('deve manter retrocompatibilidade com bossMeta antigo sem regionFlavor', () => {
+        const nodes = [{
+            nodeId: 'BOSS_LEGACY',
+            type: 'boss',
+            connections: [],
+            bossMeta: {
+                regionId: 'legacy_1',
+                bossLabel: 'Boss Legado',
+                defeatMarksRegionComplete: true
+            }
+        }];
+        expect(() => getRegionalProgressSummary(nodes, {}, {})).not.toThrow();
+        const result = getRegionalProgressSummary(nodes, {}, {});
+        expect(result[0].regionFlavor).toBeNull();
+    });
+
+});
+
+// ── PR-13: hierarquia de prioridade main > optional > side > postgame ──────────
+
+describe('Hierarquia de prioridade por tipo (PR-13)', () => {
+
+    const makeNode = (nodeId, regionId, regionType) => ({
+        nodeId,
+        type: 'boss',
+        connections: [],
+        bossMeta: { regionId, regionLabel: regionId, regionType, defeatMarksRegionComplete: true, bossLabel: 'Chefe' }
+    });
+
+    it('prioridade: main > optional > side > postgame (todos locked)', () => {
+        const nodes = [
+            makeNode('BOSS_PG', 'pg', 'postgame'),
+            makeNode('BOSS_SIDE', 'side', 'side'),
+            makeNode('BOSS_OPT', 'opt', 'optional'),
+            makeNode('BOSS_MAIN', 'main', 'main')
+        ];
+        const result = getRegionalProgressSummary(nodes, {}, {});
+        const mainScore = result.find(r => r.regionId === 'main').priorityScore;
+        const optScore  = result.find(r => r.regionId === 'opt').priorityScore;
+        const sideScore = result.find(r => r.regionId === 'side').priorityScore;
+        const pgScore   = result.find(r => r.regionId === 'pg').priorityScore;
+
+        expect(mainScore).toBeGreaterThan(optScore);
+        expect(optScore).toBeGreaterThan(sideScore);
+        // postgame (50+50=100) vs side (200+50=250): side > postgame
+        expect(sideScore).toBeGreaterThan(pgScore);
+    });
+
+    it('side com quest ativa pode superar optional locked, mas não main locked', () => {
+        const nodes = [
+            makeNode('BOSS_MAIN', 'main', 'main'),
+            makeNode('BOSS_OPT', 'opt', 'optional'),
+            makeNode('BOSS_SIDE', 'side', 'side')
+        ];
+        // Ativa quest ligada ao boss side
+        const activeQuestLocalIds = new Set([]);  // sem conexões para garantir hasActiveQuest via nodeId
+        // Usar um node com conexão para o id de quest
+        const nodesSideWithConn = [
+            makeNode('BOSS_MAIN', 'main', 'main'),
+            makeNode('BOSS_OPT', 'opt', 'optional'),
+            {
+                nodeId: 'BOSS_SIDE',
+                type: 'boss',
+                connections: ['QUEST_NODE'],
+                bossMeta: { regionId: 'side', regionLabel: 'Ruínas', regionType: 'side', defeatMarksRegionComplete: true, bossLabel: 'Guardião' }
+            }
+        ];
+        const withQuestSide = getRegionalProgressSummary(
+            nodesSideWithConn, {}, {}, new Set(), new Set(), new Set(), new Set(['QUEST_NODE'])
+        );
+        const withoutQuest = getRegionalProgressSummary(nodesSideWithConn, {}, {});
+
+        const sideWithQuest    = withQuestSide.find(r => r.regionId === 'side');
+        const optWithoutQuest  = withoutQuest.find(r => r.regionId === 'opt');
+        const mainWithoutQuest = withoutQuest.find(r => r.regionId === 'main');
+
+        // side com quest (200+50+300=550) ≥ optional locked (500+50=550) — igual em score
+        // Portanto side com quest não é menor que optional locked
+        expect(sideWithQuest.priorityScore).toBeGreaterThanOrEqual(optWithoutQuest.priorityScore);
+        // main locked (1000+50=1050) ainda supera side com quest (550)
+        expect(mainWithoutQuest.priorityScore).toBeGreaterThan(sideWithQuest.priorityScore);
+    });
+
+    it('resultado ordenado por prioridade: main aparece antes de side que aparece antes de postgame', () => {
+        const nodes = [
+            makeNode('BOSS_PG', 'pg', 'postgame'),
+            makeNode('BOSS_SIDE', 'side', 'side'),
+            makeNode('BOSS_MAIN', 'main', 'main')
+        ];
+        const result = getRegionalProgressSummary(nodes, {}, {});
+        const mainIdx = result.findIndex(r => r.regionId === 'main');
+        const sideIdx = result.findIndex(r => r.regionId === 'side');
+        const pgIdx   = result.findIndex(r => r.regionId === 'pg');
+        expect(mainIdx).toBeLessThan(sideIdx);
+        expect(sideIdx).toBeLessThan(pgIdx);
+    });
+
+});
+
+// ── PR-13: deriveMainObjective com sideOpportunities ──────────────────────────
+
+describe('deriveMainObjective — sideOpportunities (PR-13)', () => {
+
+    const SUMMARY_COM_SIDE = [
+        {
+            regionId: 'main_1',
+            regionType: 'main',
+            isMainPath: true,
+            isOptional: false,
+            isSide: false,
+            isPostgame: false,
+            status: 'active',
+            nextObjective: 'Continue explorando Floresta Antiga',
+            priorityScore: 1300,
+            isCurrent: true
+        },
+        {
+            regionId: 'opt_1',
+            regionType: 'optional',
+            isMainPath: false,
+            isOptional: true,
+            isSide: false,
+            isPostgame: false,
+            status: 'available',
+            nextObjective: 'Explore Costa Cristalina',
+            priorityScore: 700,
+            isCurrent: false
+        },
+        {
+            regionId: 'side_1',
+            regionType: 'side',
+            isMainPath: false,
+            isOptional: false,
+            isSide: true,
+            isPostgame: false,
+            status: 'available',
+            nextObjective: 'Explore Ruínas Esquecidas',
+            priorityScore: 400,
+            isCurrent: false
+        },
+        {
+            regionId: 'side_locked',
+            regionType: 'side',
+            isMainPath: false,
+            isOptional: false,
+            isSide: true,
+            isPostgame: false,
+            status: 'locked',
+            nextObjective: 'Desbloqueie regiões anteriores para avançar',
+            priorityScore: 250,
+            isCurrent: false
+        }
+    ];
+
+    it('deve retornar sideOpportunities separado de optionalOpportunities', () => {
+        const { optionalOpportunities, sideOpportunities } = deriveMainObjective(SUMMARY_COM_SIDE);
+        expect(optionalOpportunities).toHaveLength(1);
+        expect(optionalOpportunities[0]).toContain('Costa Cristalina');
+        expect(sideOpportunities).toHaveLength(1);
+        expect(sideOpportunities[0]).toContain('Ruínas Esquecidas');
+    });
+
+    it('sideOpportunities não deve incluir regiões side locked', () => {
+        const { sideOpportunities } = deriveMainObjective(SUMMARY_COM_SIDE);
+        // side_locked está locked → não deve aparecer
+        expect(sideOpportunities).toHaveLength(1);
+    });
+
+    it('sideOpportunities não deve incluir regiões side concluídas', () => {
+        const summaryComDone = SUMMARY_COM_SIDE.map(r =>
+            r.regionId === 'side_1' ? { ...r, status: 'completed', nextObjective: null } : r
+        );
+        const { sideOpportunities } = deriveMainObjective(summaryComDone);
+        expect(sideOpportunities).toHaveLength(0);
+    });
+
+    it('optionalOpportunities não deve incluir regiões side (separação semântica)', () => {
+        const { optionalOpportunities } = deriveMainObjective(SUMMARY_COM_SIDE);
+        // side_1 NÃO deve aparecer em optionalOpportunities
+        const hasSide = optionalOpportunities.some(o => o.includes('Ruínas'));
+        expect(hasSide).toBe(false);
+    });
+
+    it('deve retornar sideOpportunities vazio quando não há side acessível', () => {
+        const summaryNoSide = SUMMARY_COM_SIDE.filter(r => !r.isSide);
+        const { sideOpportunities } = deriveMainObjective(summaryNoSide);
+        expect(sideOpportunities).toEqual([]);
+    });
+
+    it('deve retornar sideOpportunities=[] para array vazio', () => {
+        const { sideOpportunities } = deriveMainObjective([]);
+        expect(sideOpportunities).toEqual([]);
+    });
+
+    it('deve manter retrocompatibilidade: null/undefined retorna sideOpportunities=[]', () => {
+        expect(deriveMainObjective(null).sideOpportunities).toEqual([]);
+        expect(deriveMainObjective(undefined).sideOpportunities).toEqual([]);
     });
 
 });
