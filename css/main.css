@@ -1361,6 +1361,12 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     color: #82cfff;
 }
 
+.species-identity__milestone {
+    color: #8aab8a;
+    font-style: italic;
+    margin-top: 2px;
+}
+
 /* ============================================================================
    REFACTOR PR1: Static styles extracted from inline
    ============================================================================ */
