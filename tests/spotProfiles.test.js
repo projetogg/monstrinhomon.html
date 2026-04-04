@@ -305,11 +305,6 @@ describe('applyEncounterTypeModifiers', () => {
 // ── generateWildEncounter com levelDelta e encounterTypeModifiers ────────────
 
 describe('generateWildEncounter — levelDelta e encounterTypeModifiers', () => {
-    const rngSeq = (values) => {
-        let i = 0;
-        return () => values[i++ % values.length];
-    };
-
     it('levelDelta positivo aumenta o nível gerado', () => {
         const rngZero = () => 0; // sempre pega o mínimo
         const base = generateWildEncounter('TEST_001', MOCK_LOCATIONS, { rng: rngZero, levelDelta: 0 });

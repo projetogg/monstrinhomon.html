@@ -286,7 +286,8 @@ export const SPOT_PROFILE_DEFAULTS = {
 };
 
 /**
- * Fallback para spots sem profileKey definido.
+ * Fallback para spots sem profileKey definido — garante compatibilidade retroativa
+ * com spots legados que ainda não foram migrados para o sistema de profileKey.
  * Retorna modificadores neutros (sem impacto no encontro).
  * @private
  */

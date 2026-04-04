@@ -8555,9 +8555,10 @@
                     ? `onclick="selectCityService('${spot.serviceAction}')"`
                     : `onclick="selectSpot('${spot.id}')"`;
                 const profileKey = spot.profileKey ?? '';
+                // Classe de serviço é garantida pelo profileKey 'service' ou type 'service'
                 const extraClass = [
                     isService ? 'wm-spot--service' : '',
-                    profileKey ? `wm-spot--${profileKey}` : ''
+                    profileKey && profileKey !== 'service' ? `wm-spot--${profileKey}` : ''
                 ].filter(Boolean).join(' ');
                 // Obter ícone e label do perfil via WorldMap
                 const spotCtx = window.WorldMap?.getSpotEncounterContext?.(spot);
