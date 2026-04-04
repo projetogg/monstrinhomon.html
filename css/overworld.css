@@ -76,7 +76,6 @@
     gap: 12px;
     min-height: 520px;
     max-height: 620px;
-    height: 570px;
     align-items: stretch;
 }
 
@@ -465,8 +464,8 @@
     .ow-layout {
         grid-template-columns: 1fr;
         height: auto;
-        min-height: unset;
-        max-height: unset;
+        min-height: auto;
+        max-height: auto;
     }
 
     .ow-sidebar-wrap {

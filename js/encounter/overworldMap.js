@@ -162,7 +162,7 @@ export function buildMapSVG(enrichedNodes) {
         const biome    = node.biome ?? 'campos';
         const fill     = locked ? '#222' : (BIOME_FILL[biome] ?? '#444');
         const emoji    = locked ? '❓' : (isBoss ? '👑' : (BIOME_EMOJI[biome] ?? '🗺️'));
-        const label    = locked ? '' : (node.name ?? node.nodeId);
+        const label    = locked ? '' : (node.name ?? node.nodeId); // nós bloqueados: sem label visível, aria-label fallback aplicado abaixo
         const shortLbl = label.length > 12 ? label.slice(0, 11) + '…' : label;
         const clickable = !locked;
 
