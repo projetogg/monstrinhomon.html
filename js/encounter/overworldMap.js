@@ -71,6 +71,16 @@ export const BIOME_EMOJI = {
 // Raio base do nó
 const NODE_R = 30;
 
+// Hierarquia visual dos labels: opacidade e tamanho por estado
+const LABEL_STYLES = {
+    current:       { opacity: '1',    fontSize: '10' },
+    boss:          { opacity: '0.9',  fontSize: '9'  },
+    'boss-defeated': { opacity: '0.8', fontSize: '9'  },
+    available:     { opacity: '0.6',  fontSize: '8'  },
+    visited:       { opacity: '0.4',  fontSize: '8'  },
+    locked:        { opacity: '0.2',  fontSize: '8'  },
+};
+
 // ── Dimensões do SVG ──────────────────────────────────────────────────────────
 export const SVG_WIDTH  = 880;
 export const SVG_HEIGHT = 510;
@@ -196,13 +206,7 @@ export function buildMapSVG(enrichedNodes) {
         const onclick    = clickable ? `onclick="owSelectNode('${node.nodeId}')"` : '';
 
         // Hierarquia visual dos labels: atual e boss se destacam; visitados e bloqueados ficam discretos
-        const labelOpacity = state === 'current'        ? '1'
-                           : state === 'boss'           ? '0.9'
-                           : state === 'boss-defeated'  ? '0.8'
-                           : state === 'available'      ? '0.6'
-                           : state === 'visited'        ? '0.4'
-                           : '0.2'; // locked
-        const labelSize    = state === 'current' ? '10' : '8';
+        const { opacity: labelOpacity, fontSize: labelSize } = LABEL_STYLES[state] ?? LABEL_STYLES.locked;
 
         return `
         <g class="ow-node ${stateClass}" data-node="${node.nodeId}"
