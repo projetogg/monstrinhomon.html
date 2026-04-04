@@ -364,7 +364,7 @@ describe('isReadyForKitSwap — retorna false', () => {
 describe('isReadyForKitSwap — coexistência com Fase 17', () => {
     it('monster "ready" não gera near_unlock (está além do limiar de 5 níveis)', async () => {
         const { getTeamReadinessIndicator } = await import('../js/canon/speciesDisplay.js');
-        // lv30: exact unlock level — not within "near" range (near_unlock is for lv25-29)
+        // nv30: nível exato de desbloqueio — fora da faixa "em breve" (near_unlock é para nv25-29)
         const mon = makeInstance({ canonSpeciesId: 'emberfang', level: 30 });
         const readiness = getTeamReadinessIndicator(mon);
         const isReady = isReadyForKitSwap(mon);
