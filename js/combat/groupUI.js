@@ -12,6 +12,7 @@
 import * as GroupCore from './groupCore.js';
 import * as TargetSelection from '../ui/targetSelection.js';
 import { executePlayerAttackGroup, executePlayerSkillGroup } from './groupActions.js';
+import { categorizeBattleTeam, canManualSwap } from './battleSwap.js';
 
 /** IDs dos itens de cura consumíveis suportados em batalha. Manter alinhado com data/items.json. */
 const HEAL_ITEM_IDS = ['IT_HEAL_01', 'IT_HEAL_02', 'IT_HEAL_03'];
@@ -96,6 +97,19 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
             }
         }
 
+        // Indicador de time — quantos elegíveis/bloqueados na reserva (Fase 20)
+        const masterMode = state.config?.masterMode || false;
+        const cats = categorizeBattleTeam(p, { masterMode });
+        const eligibleCount = cats.eligible.length;
+        const blockedClassCount = cats.blocked_class.length;
+        let teamHintHtml = '';
+        if (eligibleCount > 0 || blockedClassCount > 0) {
+            const parts = [];
+            if (eligibleCount > 0) parts.push(`${eligibleCount} pronto${eligibleCount > 1 ? 's' : ''}`);
+            if (blockedClassCount > 0) parts.push(`${blockedClassCount} fora da classe`);
+            teamHintHtml = `<div class="group-unit-eligibility">🔄 Reserva: ${parts.join(' · ')}</div>`;
+        }
+
         playersHtml += `
         <div id="grpP_${pid}" class="${unitClass}">
             <div class="group-unit-name">${mon.emoji || ''} ${mon.name || mon.nome} <small>Nv ${mon.level}</small>
@@ -107,6 +121,7 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
                 <div class="battle-bar-label"><span>❤️ HP</span><span>${hp}/${hpMax}</span></div>
                 <div class="battle-bar"><div class="battle-bar-fill hp" style="width:${hpPct}%"></div></div>
             </div>
+            ${teamHintHtml}
             ${itemHtml}
         </div>`;
     }
@@ -385,6 +400,13 @@ function renderActionBar(encounter, actor, isPlayerTurn, state, helpers) {
         ? `<button class="btn btn-warning" onclick="groupFlee()">🏃 Fugir</button>`
         : '';
 
+    // Troca manual: disponível quando o ativo está vivo e há substituto elegível (Fase 20)
+    const masterMode = state.config?.masterMode || false;
+    const swapCheck = canManualSwap(player, { masterMode });
+    const swapButtonHtml = isAlive && swapCheck.allowed
+        ? `<button class="btn btn-secondary" onclick="groupManualSwap()" title="Trocar monstrinho ativo (usa o turno)">🔄 Trocar</button>`
+        : '';
+
     return `
     <div class="battle-actions-row group-actions-bar">
         <span class="group-actions-label">⚔️ ${player.name || player.nome}:</span>
@@ -392,6 +414,7 @@ function renderActionBar(encounter, actor, isPlayerTurn, state, helpers) {
             <button class="btn btn-danger" onclick="enterAttackMode()">⚔️ Atacar</button>
             ${skillButtonsHtml}
             ${itemButtonHtml}
+            ${swapButtonHtml}
             ${fleeButtonHtml}
             <button class="btn btn-secondary" onclick="groupPassTurn()">⏭️ Passar</button>
         </div>
