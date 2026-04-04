@@ -770,7 +770,8 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
         if (isDebuff && playerMonster.canonSpeciesId === 'shadowsting') {
             const passiveStateShadow = encounter.passiveState || (encounter.passiveState = {});
             passiveStateShadow.shadowstingDebuffCharged = true;
-            encounter.log.push(`🗡️ ${playerMonster.name} (Golpe Furtivo): carga preparada! Próximo ataque básico +ATK`);
+            const shadowLabel = _passiveLabel(playerMonster.canonSpeciesId, 'on_attack') || 'Golpe Furtivo';
+            encounter.log.push(`🗡️ ${playerMonster.name} (${shadowLabel}): carga preparada! Próximo ataque básico +ATK`);
         }
 
         // bellwave: carregar bônus rítmico quando qualquer skill é usada — Fase 11
@@ -779,7 +780,8 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
         if (playerMonster.canonSpeciesId === 'bellwave') {
             const passiveStateBell = encounter.passiveState || (encounter.passiveState = {});
             passiveStateBell.bellwaveRhythmCharged = true;
-            encounter.log.push(`🎵 ${playerMonster.name} (Cadência Rítmica): ritmo carregado! Próximo básico +ATK`);
+            const bellLabel = _passiveLabel(playerMonster.canonSpeciesId, 'on_attack') || 'Cadência Rítmica';
+            encounter.log.push(`🎵 ${playerMonster.name} (${bellLabel}): ritmo carregado! Próximo básico +ATK`);
         }
 
         // Marcar participação (item breakage)

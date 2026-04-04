@@ -465,7 +465,7 @@ export function markRegionComplete(bossMeta, bossNodeId, regionalProgress = {}, 
 
 // Bases de prioridade por tipo de região (maior = mais prioritário no painel)
 // Hierarquia semântica intencional: main > optional > side > postgame
-// "other" (100) é fallback para tipos desconhecidos/legados — não representa um tipo de produto
+// "other" (100) é fallback para tipos desconhecidos/legados — não representa um tipo de conteúdo intencional
 const PRIORITY_BASE_MAIN     = 1000;
 const PRIORITY_BASE_OPTIONAL = 500;  // exploração paralela de peso real
 const PRIORITY_BASE_SIDE     = 200;  // conteúdo lateral curto/temático; quest pode elevar
