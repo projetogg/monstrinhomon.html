@@ -640,7 +640,9 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
 
         // Passiva canônica — emberfang (+1 ATK em skill ofensiva com HP > 70%) — Fase 4.2
         // swiftclaw (+1 ATK no primeiro ataque do combate) — Fase 9
-        // Nota: shadowsting NÃO dispara em skill (isOffensiveSkill: true nunca ativa shadowsting)
+        // Nota: shadowsting via resolvePassiveModifier NÃO dispara em skill ofensiva qualquer
+        //   (isOffensiveSkill: true nunca ativa shadowsting via passive handler).
+        //   A execução canônica do shadowsting (Golpe Furtivo) é tratada em bloco dedicado abaixo.
         // Nota: bellwave NÃO dispara em skill (isOffensiveSkill: true nunca ativa bellwave) — Fase 11
         // Aplica como buff temporário antes de useSkill para que getBuffModifiers o inclua.
         // Removido imediatamente após a skill para não persistir ao turno do inimigo.
@@ -651,7 +653,7 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
             hpPct: playerMonster.hpMax > 0 ? playerMonster.hp / playerMonster.hpMax : 0,
             isOffensiveSkill,
             isFirstAttackOfCombat: !passiveStateSkill.swiftclawFirstStrikeDone, // Fase 9
-            hasShadowstingCharge: false, // Fase 10: skill ofensiva nunca ativa shadowsting
+            hasShadowstingCharge: false, // Fase 10: passive handler nunca ativa shadowsting em skill
             hasBellwaveRhythmCharge: false, // Fase 11: skill nunca ativa bellwave (só ataque básico)
         });
         if (emberfangMod?.atkBonus) {
@@ -666,11 +668,31 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
             passiveStateSkill.swiftclawFirstStrikeDone = true; // Fase 9: consome bônus de primeiro ataque
         }
 
+        // Fase 13.1: shadowsting — Golpe Furtivo (kit swap de execução) consome carga de debuff.
+        // Loop canônico do Ladino: debuff (skill legada) → carga → Golpe Furtivo (+1 ATK execução).
+        // O buff é aplicado antes de useSkill (mesmo padrão de emberfang) para que
+        // getBuffModifiers inclua o bônus no cálculo de dano da skill.
+        // Distinção vs bellwave: shadowsting exige debuff prévio; bellwave aceita qualquer skill.
+        const isShadowstingKitSwap = playerMonster.canonSpeciesId === 'shadowsting' &&
+            (skill._kitSwapId === 'shadowsting_ambush_strike' ||
+             skill._kitSwapId === 'shadowsting_ambush_strike_ii');
+        const shadowstingExecutionActive = isShadowstingKitSwap && !!passiveStateSkill.shadowstingDebuffCharged;
+        if (shadowstingExecutionActive) {
+            playerMonster.buffs = playerMonster.buffs || [];
+            playerMonster.buffs.push({ type: 'atk', power: 1, duration: 1, source: 'shadowsting_passive' });
+            encounter.log.push(`✨ Passiva ${playerMonster.name}: +1 ATK (execução furtiva)`);
+        }
+
         // Executar habilidade
         const success = dependencies.useSkill(playerMonster, skill, wildMonster, encounter);
 
-        // Remover buff temporário de emberfang após uso da skill (não persiste ao turno inimigo)
+        // Remover buffs temporários de passiva que não devem persistir ao turno inimigo.
         playerMonster.buffs = (playerMonster.buffs || []).filter(b => b.source !== 'emberfang_passive');
+        // Fase 13.1: remover buff de execução furtiva e consumir carga após Golpe Furtivo.
+        if (shadowstingExecutionActive) {
+            playerMonster.buffs = (playerMonster.buffs || []).filter(b => b.source !== 'shadowsting_passive');
+            passiveStateSkill.shadowstingDebuffCharged = false; // consome janela de execução
+        }
 
         if (!success) return { success: false, result: 'invalid' };
 
