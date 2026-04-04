@@ -508,6 +508,7 @@ export function enterSkillMode(skillIndex, enc, deps) {
  */
 export function applyTargetSelectionVisuals(enc) {
     if (!enc || !enc.enemies) return;
+    if (typeof document === 'undefined') return; // ambiente sem DOM (testes Node)
 
     enc.enemies.forEach((enemy, idx) => {
         const card = document.getElementById(`grpE_${idx}`);
