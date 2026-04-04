@@ -195,6 +195,15 @@ export function buildMapSVG(enrichedNodes) {
         const stateClass = `ow-node--${state}`;
         const onclick    = clickable ? `onclick="owSelectNode('${node.nodeId}')"` : '';
 
+        // Hierarquia visual dos labels: atual e boss se destacam; visitados e bloqueados ficam discretos
+        const labelOpacity = state === 'current'        ? '1'
+                           : state === 'boss'           ? '0.9'
+                           : state === 'boss-defeated'  ? '0.8'
+                           : state === 'available'      ? '0.6'
+                           : state === 'visited'        ? '0.4'
+                           : '0.2'; // locked
+        const labelSize    = state === 'current' ? '10' : '8';
+
         return `
         <g class="ow-node ${stateClass}" data-node="${node.nodeId}"
            style="cursor:${clickable ? 'pointer' : 'default'}" ${onclick}
@@ -206,8 +215,8 @@ export function buildMapSVG(enrichedNodes) {
             <text x="${pos.x}" y="${pos.y - 5}" text-anchor="middle"
                   font-size="15" class="ow-node__emoji">${emoji}</text>
             <text x="${pos.x}" y="${pos.y + 12}" text-anchor="middle"
-                  font-size="9" class="ow-node__label"
-                  fill="${locked ? '#555' : '#ddd'}">${shortLbl}</text>
+                  font-size="${labelSize}" class="ow-node__label"
+                  fill="${locked ? '#555' : '#ddd'}" opacity="${labelOpacity}">${shortLbl}</text>
             ${defeatedBadge}
             ${partyMarker}
         </g>`;
