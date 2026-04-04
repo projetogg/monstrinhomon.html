@@ -334,44 +334,25 @@ function renderActionBar(encounter, actor, isPlayerTurn, state, helpers) {
     const hpMax = Number(mon.hpMax) || 1;
     const isAlive = hp > 0;
 
-    // Skills disponíveis — tenta primeiro o sistema canônico (IDs em mon.skills),
-    // com fallback para getMonsterSkills (SKILL_DEFS por classe/stage).
-    const skillIds = helpers.getSkillsArray(mon);
+    // Skills disponíveis — usa resolveMonsterSkills (único ponto de entrada canônico).
+    // retorna skills normalizadas (formato operacional único); mostra habilitadas e desabilitadas.
     let skillButtonsHtml = '';
-    if (isAlive) {
-        if (skillIds && skillIds.length > 0) {
-            // Sistema canônico: IDs mapeados → lookup no catálogo
-            for (let idx = 0; idx < skillIds.length; idx++) {
-                const skill = helpers.getSkillById(skillIds[idx]);
-                if (skill && helpers.canUseSkillNow(skill, mon)) {
-                    const label = helpers.formatSkillButtonLabel
-                        ? helpers.formatSkillButtonLabel(skill, mon)
-                        : (skill.name || skill.nome);
-                    // Nota: o caso idx=0 usa literal "enterSkillMode(0)" para que o
-                    // teste de auditoria de fonte (uiAudit.test.js) encontre a string exata.
-                    const onclickAttr = idx === 0
-                        ? `onclick="enterSkillMode(0)"`
-                        : `onclick="enterSkillMode(${idx})"`;
-                    skillButtonsHtml += `<button class="btn btn-info" ${onclickAttr} title="${skill.desc || skill.descricao || ''}">✨ ${label}</button>`;
-                }
-            }
-        } else if (helpers.getMonsterSkills) {
-            // Fallback legado: SKILL_DEFS por classe/stage — sempre disponível
-            const legacySkills = helpers.getMonsterSkills(mon);
-            for (let idx = 0; idx < legacySkills.length; idx++) {
-                const skill = legacySkills[idx];
-                if (!skill) continue;
-                const canUse = helpers.canUseSkillNow(skill, mon);
-                const label = helpers.formatSkillButtonLabel
-                    ? helpers.formatSkillButtonLabel(skill, mon)
-                    : (skill.name || skill.nome);
-                // Nota: o caso idx=0 usa literal "enterSkillMode(0)" para coerência com uiAudit.test.js.
-                const onclickAttr = idx === 0
-                    ? `onclick="enterSkillMode(0)"`
-                    : `onclick="enterSkillMode(${idx})"`;
-                const tooltip = canUse ? (skill.desc || skill.descricao || '') : 'Sem ENE';
-                skillButtonsHtml += `<button class="btn btn-info" ${onclickAttr} ${!canUse ? 'disabled' : ''} title="${tooltip}">✨ ${label}</button>`;
-            }
+    if (isAlive && helpers.resolveMonsterSkills) {
+        const resolvedSkills = helpers.resolveMonsterSkills(mon);
+        for (let idx = 0; idx < resolvedSkills.length; idx++) {
+            const skill = resolvedSkills[idx];
+            if (!skill) continue;
+            const canUse = helpers.canUseSkillNow(skill, mon);
+            const label = helpers.formatSkillButtonLabel
+                ? helpers.formatSkillButtonLabel(skill, mon)
+                : (skill.name || 'Habilidade');
+            // Nota: o caso idx=0 usa literal "enterSkillMode(0)" para que o
+            // teste de auditoria de fonte (uiAudit.test.js) encontre a string exata.
+            const onclickAttr = idx === 0
+                ? `onclick="enterSkillMode(0)"`
+                : `onclick="enterSkillMode(${idx})"`;
+            const tooltip = canUse ? (skill.desc || '') : 'Sem ENE';
+            skillButtonsHtml += `<button class="btn btn-info" ${onclickAttr} ${!canUse ? 'disabled' : ''} title="${tooltip}">✨ ${label}</button>`;
         }
     }
 
@@ -453,46 +434,25 @@ export function enterSkillMode(skillIndex, enc, deps) {
     const mon = deps.helpers.getActiveMonsterOfPlayer(player);
     if (!mon) return { ok: false, reason: 'no_monster' };
 
-    // Sistema canônico: IDs em mon.skills
-    const skillIds = deps.helpers.getSkillsArray(mon);
-    let skillId = skillIds[skillIndex];
-    let skill = skillId ? deps.helpers.getSkillById(skillId) : null;
+    // Usa resolveMonsterSkills como único ponto de entrada canônico (sistema SKILL_DEFS)
+    const resolvedSkills = deps.helpers.resolveMonsterSkills
+        ? deps.helpers.resolveMonsterSkills(mon)
+        : (deps.helpers.getMonsterSkills ? deps.helpers.getMonsterSkills(mon) : []);
 
-    // Fallback legado: SKILL_DEFS por índice (quando mon.skills está vazio)
-    if (!skillId && deps.helpers.getMonsterSkills) {
-        const legacySkills = deps.helpers.getMonsterSkills(mon);
-        const legacySkill = legacySkills[skillIndex];
-        if (!legacySkill) return { ok: false, reason: 'no_skill' };
+    const skill = resolvedSkills[skillIndex];
+    if (!skill) return { ok: false, reason: 'no_skill' };
 
-        // Skills defensivas (HEAL/BUFF/target self/ally): executar diretamente
-        const legacyTarget = legacySkill.target || '';
-        const legacyType = legacySkill.type || '';
-        const isLegacyOffensive = legacyType === 'DAMAGE' || legacyTarget === 'enemy';
+    // Skill já está em formato operacional normalizado: target é 'enemy'/'self'/'ally'
+    const isOffensive = skill.target === 'enemy' || skill.target === 'area';
 
-        if (!isLegacyOffensive) {
-            executePlayerSkillGroup(legacySkill, null, deps);
-            return { ok: true, direct: true };
-        }
-
-        // Skills ofensivas: entrar em modo de seleção de alvo com objeto de skill direto
-        TargetSelection.enterTargetMode('skill', `__legacy_${skillIndex}`, legacySkill);
-        deps.ui?.render?.();
-        applyTargetSelectionVisuals(enc);
-        return { ok: true };
-    }
-
-    if (!skillId) return { ok: false, reason: 'no_skill' };
-
-    const skillTarget = skill?.target || '';
-
-    // Skills de suporte (Self/Aliado) não precisam de seleção de inimigo
-    if (skillTarget === 'Self' || skillTarget === 'Aliado') {
-        executePlayerSkillGroup(skillId, null, deps);
+    if (!isOffensive) {
+        // Skills defensivas (HEAL/BUFF, alvo self/ally): executar diretamente, sem target selection
+        executePlayerSkillGroup(skill, null, deps);
         return { ok: true, direct: true };
     }
 
-    // Skills ofensivas: entrar em modo de seleção de alvo
-    TargetSelection.enterTargetMode('skill', skillId);
+    // Skills ofensivas: entrar em modo de seleção de alvo com skill object normalizado
+    TargetSelection.enterTargetMode('skill', `skill_${skillIndex}`, skill);
     deps.ui?.render?.();
     applyTargetSelectionVisuals(enc);
     return { ok: true };

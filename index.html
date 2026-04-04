@@ -1615,7 +1615,21 @@
         // End of Commit 12 (Wave C12.3)
         // ============================================================================
 
-        // SKILLS CATALOG (baseado em HABILIDADES.csv)
+        // ⚠️ SKILLS_CATALOG — CATÁLOGO EXTERNO / NÃO OPERACIONAL EM COMBATE RUNTIME ⚠️
+        //
+        // Este catálogo (baseado em HABILIDADES.csv) NÃO é usado diretamente no combate.
+        // O sistema canônico de runtime é o SKILL_DEFS (acima), consumido por getMonsterSkills().
+        //
+        // O SKILLS_CATALOG serve como:
+        //   • catálogo de referência externo (potencial futuro de migração JSON)
+        //   • fonte para getSkillById(id) quando chamado com IDs como 'SK_WAR_01'
+        //   • integração com Data.getSkillsMapSync() para dados externos
+        //
+        // Para adicionar skills ao combate: editar SKILL_DEFS acima.
+        // Para migrar futuramente para SKILLS_CATALOG: popular mon.skills[] na criação
+        //   de instância e atualizar resolveMonsterSkills() para chamar getSkillsArray().
+        //
+        // Ver: js/combat/skillResolver.js — decisão arquitetural documentada.
         const SKILLS_CATALOG = [
             // Tier I skills (original)
             { id: 'SK_WAR_01', name: 'Golpe de Escudo', class: 'Guerreiro', category: 'Controle', power: 6, accuracy: 0.9, energy_cost: 2, target: 'Inimigo', status: 'Atordoado', desc: 'Ataque curto com chance de atordoar.' },
@@ -3689,6 +3703,81 @@
             }
         }
 
+        // ============================================================================
+        // RESOLVER CANÔNICO DE HABILIDADES — Único ponto de entrada para combate
+        // ============================================================================
+        //
+        // DECISÃO ARQUITETURAL: SKILL_DEFS é o sistema canônico de runtime.
+        //
+        // resolveMonsterSkills(mon) é o único helper que deve ser chamado pelo
+        // pipeline de combate (wild e group) para obter as skills de um Monstrinho.
+        // Retorna skills no formato operacional único (ver js/combat/skillResolver.js).
+        //
+        // Hierarquia interna (encapsulada, não exposta ao pipeline):
+        //   1. getMonsterSkills(mon) → SKILL_DEFS filtrado por classe/stage
+        //      + KitSwap.getEffectiveSkills() se espécie canônica presente
+        //   2. normalização para formato operacional único
+        //
+        // Para adicionar skills: editar SKILL_DEFS.
+        // Não chamar getMonsterSkills() ou getSkillsArray() diretamente no pipeline.
+
+        /**
+         * Normaliza um objeto de skill bruto para o formato operacional único.
+         * Compatível com SKILL_DEFS e SKILLS_CATALOG (para migração futura).
+         *
+         * @param {object} rawSkill - Skill em qualquer formato
+         * @returns {object|null} Skill no formato operacional único
+         */
+        function normalizeSkill(rawSkill) {
+            if (!rawSkill || typeof rawSkill !== 'object') return null;
+
+            const TARGET_MAP = { 'Inimigo': 'enemy', 'Área': 'enemy', 'Aliado': 'ally', 'Self': 'self', 'Todos': 'enemy' };
+            const CATEGORY_MAP = { 'Ataque': 'DAMAGE', 'Controle': 'DAMAGE', 'Cura': 'HEAL', 'Suporte': 'BUFF' };
+
+            const name = rawSkill.name || rawSkill.nome || 'Habilidade';
+            const cost = Number(rawSkill.cost ?? rawSkill.energy_cost ?? rawSkill.eneCost ?? 0) || 0;
+
+            let type = (rawSkill.type || '').toUpperCase();
+            if (!type && rawSkill.category) type = CATEGORY_MAP[rawSkill.category] || 'DAMAGE';
+            if (!type) type = 'DAMAGE';
+
+            const rawTarget = rawSkill.target || '';
+            const target = TARGET_MAP[rawTarget] || rawTarget || 'enemy';
+
+            const power = Number(rawSkill.power ?? rawSkill.pwr ?? 0) || 0;
+            const desc = rawSkill.desc || rawSkill.descricao || rawSkill.description || '';
+
+            let _source = 'skill_defs';
+            if (rawSkill._kitSwapId) _source = 'kit_swap';
+            else if (rawSkill.energy_cost !== undefined && rawSkill.cost === undefined) _source = 'skills_catalog';
+
+            const normalized = { name, type, cost, target, power, desc, _source, _raw: rawSkill };
+
+            if (rawSkill.buffType   !== undefined) normalized.buffType   = rawSkill.buffType;
+            if (rawSkill.duration   !== undefined) normalized.duration   = rawSkill.duration;
+            if (rawSkill.debuffType !== undefined) normalized.debuffType = rawSkill.debuffType;
+            if (rawSkill.debuffPower !== undefined) normalized.debuffPower = rawSkill.debuffPower;
+            if (rawSkill._kitSwapId !== undefined) normalized._kitSwapId = rawSkill._kitSwapId;
+
+            return normalized;
+        }
+
+        /**
+         * Ponto de entrada canônico de skills para combate.
+         *
+         * Obtém as skills do Monstrinho (SKILL_DEFS + KitSwap) e as normaliza
+         * para o formato operacional único. Deve ser o único helper chamado pelo
+         * pipeline de combate (wild e group).
+         *
+         * @param {object} mon - Instância do Monstrinho
+         * @returns {Array} Skills no formato operacional único
+         */
+        function resolveMonsterSkills(mon) {
+            if (!mon) return [];
+            const rawSkills = getMonsterSkills(mon);
+            return rawSkills.filter(Boolean).map(normalizeSkill).filter(Boolean);
+        }
+
         // Aplicar regeneração de ENE
         function applyEneRegen(monster, encounter) {
             try {
@@ -4617,6 +4706,9 @@
                     handleVictoryRewards: handleVictoryRewards,
                     getSkillById: getSkillById,
                     getSkillsArray: getSkillsArray,
+                    // Ponto de entrada canônico — use sempre resolveMonsterSkills, não getMonsterSkills direto
+                    resolveMonsterSkills: resolveMonsterSkills,
+                    // Mantidos para compatibilidade e fallback interno
                     getMonsterSkills: getMonsterSkills,
                     canUseSkillNow: canUseSkillNow,
                     formatSkillButtonLabel: formatSkillButtonLabel,
@@ -5838,16 +5930,18 @@
         }
         
         /**
-         * Verifica se o monstro tem ENE suficiente para usar a skill
-         * @param {Object} skill - Skill do catálogo
-         * @param {Object} mon - Monstro
-         * @returns {boolean} - true se pode usar
+         /**
+         * Verifica se o monstro tem ENE suficiente para usar a skill.
+         * Compatível com formato operacional (cost) e SKILLS_CATALOG legado (energy_cost).
+         * @param {Object} skill - Skill (preferencialmente no formato operacional único)
+         * @param {Object} mon - Instância do Monstrinho
+         * @returns {boolean}
          */
         function canUseSkillNow(skill, mon) {
             if (!skill || !mon) return false;
-            const cost = Number(skill.energy_cost ?? skill.eneCost ?? skill.cost ?? skill.ene ?? 0) || 0;
-            const ene = Number(mon.ene ?? mon.ENE ?? 0) || 0;
-            return ene >= cost;
+            // 'cost' é o campo canônico do formato operacional; energy_cost é compat. legada
+            const cost = Number(skill.cost ?? skill.energy_cost ?? skill.eneCost ?? 0) || 0;
+            return (Number(mon.ene) || 0) >= cost;
         }
         
         /**
@@ -6349,11 +6443,10 @@
                         : '';
                 })() : '';
 
-                // Habilidades — usa getMonsterSkills (SKILL_DEFS por classe/stage) como fonte primária.
-                // getSkillsArray lê mon.skills (IDs canônicos) que só existe em monstros do novo sistema;
-                // getMonsterSkills sempre retorna os objetos corretos baseados em classe e estágio.
+                // Habilidades — usa resolveMonsterSkills() como único ponto de entrada canônico.
+                // Retorna skills normalizadas (formato operacional único do skillResolver).
                 const skillsHtml = playerMonster ? (() => {
-                    const skills = getMonsterSkills(playerMonster);
+                    const skills = resolveMonsterSkills(playerMonster);
                     if (!skills || skills.length === 0) return '<small style="opacity:0.5">Sem habilidades</small>';
                     return `<div style="display:flex;gap:5px;flex-wrap:wrap">
                         ${skills.map((skill, idx) => {
@@ -6361,7 +6454,7 @@
                             const label = formatSkillButtonLabel(skill, playerMonster);
                             const canUse = canUseSkillNow(skill, playerMonster) && playerMonster.hp > 0;
                             const tutAllows = tutorialAllows("skill");
-                            const tooltip = !tutAllows ? 'Tutorial: ainda não liberado' : (canUse ? (skill.desc || skill.descricao || '') : 'Sem ENE');
+                            const tooltip = !tutAllows ? 'Tutorial: ainda não liberado' : (canUse ? (skill.desc || '') : 'Sem ENE');
                             return `<button class="btn btn-primary" onclick="useSkillWild(${idx})"
                                     ${!canUse || !tutAllows ? 'disabled' : ''} title="${tooltip}">${label}</button>`;
                         }).join('')}
@@ -6906,7 +6999,7 @@
                     return;
                 }
 
-                const skills = getMonsterSkills(playerMonster);
+                const skills = resolveMonsterSkills(playerMonster);
                 if (!skills || skillIndex >= skills.length || !skills[skillIndex]) {
                     alert('Skill not available'); return;
                 }
@@ -6917,7 +7010,9 @@
                 const result = Combat.Wild.Actions.executeWildSkill({
                     encounter, player, playerMonster, skillIndex,
                     dependencies: {
-                        getMonsterSkills,
+                        // resolveMonsterSkills é canônico; getMonsterSkills é mantido como alias
+                        // para retrocompatibilidade com executeWildSkill (lê skill.cost diretamente)
+                        getMonsterSkills: resolveMonsterSkills,
                         useSkill,
                         handleVictoryRewards,
                         tutorialOnAction,

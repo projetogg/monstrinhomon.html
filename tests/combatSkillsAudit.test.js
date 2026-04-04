@@ -114,7 +114,7 @@ function makeLegacyHealSkill(overrides = {}) {
     };
 }
 
-function makeDeps({ mon, player, enemies, getSkillById = null, getMonsterSkills = null, rollD20Val = 15 }) {
+function makeDeps({ mon, player, enemies, getSkillById = null, getMonsterSkills = null, resolveMonsterSkills = null, rollD20Val = 15 }) {
     const enc = {
         active: true,
         finished: false,
@@ -171,8 +171,10 @@ function makeDeps({ mon, player, enemies, getSkillById = null, getMonsterSkills 
             getSkillById: (id) => getSkillById ? getSkillById(id) : null,
             getSkillsArray: (m) => (Array.isArray(m?.skills) ? m.skills : []),
             getMonsterSkills: getMonsterSkills || null,
+            // resolveMonsterSkills: ponto de entrada canônico (sistema unificado SKILL_DEFS)
+            resolveMonsterSkills: resolveMonsterSkills || null,
             canUseSkillNow: (skill, m) => {
-                const cost = Number(skill?.energy_cost ?? skill?.cost ?? 0) || 0;
+                const cost = Number(skill?.cost ?? skill?.energy_cost ?? 0) || 0;
                 return (Number(m?.ene) || 0) >= cost;
             },
             formatSkillButtonLabel: (skill) => skill?.name || 'Habilidade',
@@ -404,10 +406,10 @@ describe('TargetSelection — selectedSkillObject (SKILL_DEFS legado)', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Seção 4: enterSkillMode (groupUI) — fallback getMonsterSkills
+// Seção 4: enterSkillMode (groupUI) — sistema unificado via resolveMonsterSkills
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('enterSkillMode — fallback getMonsterSkills (sistema legado)', () => {
+describe('enterSkillMode — sistema unificado via resolveMonsterSkills', () => {
     beforeEach(() => {
         TargetSelection._resetForTesting();
     });
@@ -416,11 +418,11 @@ describe('enterSkillMode — fallback getMonsterSkills (sistema legado)', () => 
         const mon = makeMon({ ene: 20 });
         const player = makePlayer(mon);
         const enemy = makeEnemy();
-        const healSkill = makeLegacyHealSkill({ cost: 5, power: 15 });
+        const healSkill = { name: 'Cura I', type: 'HEAL', cost: 5, target: 'self', power: 15, desc: '' };
 
         const { deps, enc, logs } = makeDeps({
             mon, player, enemies: [enemy],
-            getMonsterSkills: () => [healSkill]
+            resolveMonsterSkills: () => [healSkill]
         });
 
         const result = enterSkillMode(0, enc, deps);
@@ -435,11 +437,11 @@ describe('enterSkillMode — fallback getMonsterSkills (sistema legado)', () => 
         const mon = makeMon({ ene: 20 });
         const player = makePlayer(mon);
         const enemy = makeEnemy();
-        const attackSkill = makeLegacySkill({ cost: 4, type: 'DAMAGE', target: 'enemy' });
+        const attackSkill = { name: 'Golpe I', type: 'DAMAGE', cost: 4, target: 'enemy', power: 18, desc: '' };
 
         const { deps, enc } = makeDeps({
             mon, player, enemies: [enemy],
-            getMonsterSkills: () => [attackSkill]
+            resolveMonsterSkills: () => [attackSkill]
         });
 
         const result = enterSkillMode(0, enc, deps);
@@ -447,7 +449,7 @@ describe('enterSkillMode — fallback getMonsterSkills (sistema legado)', () => 
         expect(result.ok).toBe(true);
         expect(TargetSelection.isInTargetMode()).toBe(true);
         expect(TargetSelection.getActionType()).toBe('skill');
-        // Deve armazenar o objeto de skill diretamente
+        // Deve armazenar o objeto de skill normalizado
         expect(TargetSelection.getSelectedSkillObject()).toEqual(attackSkill);
     });
 
@@ -458,7 +460,7 @@ describe('enterSkillMode — fallback getMonsterSkills (sistema legado)', () => 
 
         const { deps, enc } = makeDeps({
             mon, player, enemies: [enemy],
-            getMonsterSkills: () => [] // sem skills
+            resolveMonsterSkills: () => [] // sem skills
         });
 
         const result = enterSkillMode(0, enc, deps);
@@ -487,14 +489,14 @@ describe('enterSkillMode — fallback getMonsterSkills (sistema legado)', () => 
         expect(result.reason).toBe('not_player_turn');
     });
 
-    it('deve retornar no_skill com sistema canônico e mon.skills vazio', () => {
-        const mon = makeMon({ skills: [] }); // skills array vazio
+    it('deve retornar no_skill quando resolveMonsterSkills retorna vazio', () => {
+        const mon = makeMon({ skills: [] });
         const player = makePlayer(mon);
         const enemy = makeEnemy();
 
         const { deps, enc } = makeDeps({
             mon, player, enemies: [enemy],
-            getMonsterSkills: () => [] // também sem fallback
+            resolveMonsterSkills: () => []
         });
 
         const result = enterSkillMode(0, enc, deps);
@@ -505,24 +507,25 @@ describe('enterSkillMode — fallback getMonsterSkills (sistema legado)', () => 
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Seção 5: handleEnemyClick com skill objeto (sistema legado)
+// Seção 5: handleEnemyClick com skill objeto normalizado
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('handleEnemyClick — skill objeto via selectedSkillObject', () => {
+describe('handleEnemyClick — skill objeto via selectedSkillObject (sistema unificado)', () => {
     beforeEach(() => {
         TargetSelection._resetForTesting();
     });
 
-    it('deve executar skill legada quando clica em inimigo após target selection', () => {
+    it('deve executar skill normalizada quando clica em inimigo após target selection', () => {
         const mon = makeMon({ ene: 20 });
         const player = makePlayer(mon);
         const enemy = makeEnemy({ hp: 40 });
-        const attackSkill = makeLegacySkill({ cost: 4, type: 'DAMAGE', target: 'enemy', power: 18 });
+        // Skill no formato operacional normalizado (SKILL_DEFS)
+        const attackSkill = { name: 'Golpe I', type: 'DAMAGE', cost: 4, target: 'enemy', power: 18, desc: '' };
 
         const { deps, enc, logs } = makeDeps({ mon, player, enemies: [enemy], rollD20Val: 15 });
 
-        // Simula: enterSkillMode armazenou skill offensiva em target selection
-        TargetSelection.enterTargetMode('skill', '__legacy_0', attackSkill);
+        // Simula: enterSkillMode armazenou skill ofensiva em target selection
+        TargetSelection.enterTargetMode('skill', 'skill_0', attackSkill);
 
         const result = handleEnemyClick(0, enc, deps);
 
@@ -535,10 +538,10 @@ describe('handleEnemyClick — skill objeto via selectedSkillObject', () => {
         const mon = makeMon({ ene: 20 });
         const player = makePlayer(mon);
         const enemy = makeEnemy({ hp: 0 }); // morto
-        const attackSkill = makeLegacySkill();
+        const attackSkill = { name: 'Golpe I', type: 'DAMAGE', cost: 4, target: 'enemy', power: 18, desc: '' };
 
         const { deps, enc } = makeDeps({ mon, player, enemies: [enemy] });
-        TargetSelection.enterTargetMode('skill', '__legacy_0', attackSkill);
+        TargetSelection.enterTargetMode('skill', 'skill_0', attackSkill);
 
         const result = handleEnemyClick(0, enc, deps);
 
@@ -550,40 +553,40 @@ describe('handleEnemyClick — skill objeto via selectedSkillObject', () => {
 // Seção 6: Regressão — sistema canônico preservado
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('Regressão — sistema canônico SKILLS_CATALOG preservado', () => {
+describe('Regressão — sistema unificado via resolveMonsterSkills', () => {
     beforeEach(() => {
         TargetSelection._resetForTesting();
     });
 
-    it('enterSkillMode canônico deve entrar em target selection para skill ofensiva', () => {
-        const catalogSkill = makeCatalogSkill({ target: 'Inimigo', energy_cost: 3 });
-        const mon = makeMon({ skills: ['SK_WAR_01'], ene: 10 });
+    it('enterSkillMode deve entrar em target selection para skill ofensiva normalizada', () => {
+        const mon = makeMon({ ene: 10 });
         const player = makePlayer(mon);
         const enemy = makeEnemy();
 
         const { deps, enc } = makeDeps({
             mon, player, enemies: [enemy],
-            getSkillById: (id) => id === 'SK_WAR_01' ? catalogSkill : null
+            // resolveMonsterSkills como helper canônico (formato operacional normalizado)
+            resolveMonsterSkills: () => [{ name: 'Golpe', type: 'DAMAGE', cost: 3, target: 'enemy', power: 8, desc: '' }]
         });
 
         const result = enterSkillMode(0, enc, deps);
 
         expect(result.ok).toBe(true);
         expect(TargetSelection.isInTargetMode()).toBe(true);
-        expect(TargetSelection.getSelectedSkillId()).toBe('SK_WAR_01');
-        // Não deve usar skill object (é canônico)
-        expect(TargetSelection.getSelectedSkillObject()).toBeNull();
+        // Skill object normalizado é armazenado em selectedSkillObject
+        expect(TargetSelection.getSelectedSkillObject()).not.toBeNull();
+        expect(TargetSelection.getSelectedSkillObject().name).toBe('Golpe');
+        expect(TargetSelection.getSelectedSkillObject().type).toBe('DAMAGE');
     });
 
-    it('enterSkillMode canônico deve executar diretamente skill Self', () => {
-        const selfSkill = makeCatalogSkill({ id: 'SK_SELF', target: 'Self', energy_cost: 2 });
-        const mon = makeMon({ skills: ['SK_SELF'], ene: 10 });
+    it('enterSkillMode deve executar diretamente skill self normalizada', () => {
+        const mon = makeMon({ ene: 10 });
         const player = makePlayer(mon);
         const enemy = makeEnemy();
 
-        const { deps, enc, logs } = makeDeps({
+        const { deps, enc } = makeDeps({
             mon, player, enemies: [enemy],
-            getSkillById: (id) => id === 'SK_SELF' ? selfSkill : null
+            resolveMonsterSkills: () => [{ name: 'Cura', type: 'HEAL', cost: 2, target: 'self', power: 15, desc: '' }]
         });
 
         const result = enterSkillMode(0, enc, deps);
