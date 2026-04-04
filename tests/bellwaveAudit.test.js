@@ -547,8 +547,9 @@ describe('Fase 11.1 — bellwave — canonSpeciesId estático na linha', () => {
 
     it('templates excluídos permanecem nulos (MON_001 sem linha, MON_011D drift)', () => {
         expect(resolveCanonSpeciesId('MON_001')).toBeNull();   // sem linha evolutiva
-        expect(resolveCanonSpeciesId('MON_011')).toBeNull();   // drift no final
-        expect(resolveCanonSpeciesId('MON_011D')).toBeNull();  // pivot bruiser
+        // MON_011 agora é bellwave (Fase 13.2: mapeamento parcial da linha Dinomon)
+        expect(resolveCanonSpeciesId('MON_011')).toBe('bellwave');
+        expect(resolveCanonSpeciesId('MON_011D')).toBeNull();  // pivot bruiser — excluído
     });
 
     it('canonSpeciesId não varia entre estágios — arquétipo é da espécie, não do template', () => {

@@ -72,10 +72,10 @@ const BASE_STATS = { hpMax: 30, atk: 7, def: 5, spd: 5, eneMax: 10 };
 
 describe('speciesBridge — tabela RUNTIME_TO_CANON_SPECIES', () => {
 
-    it('deve conter os 48 mapeamentos definidos na Fase 12 (12 bases + 20 evoluções MVP + 7 Caçador + 3 Ladino + 3 Bardo + 3 Animalista)', () => {
-        // Valor 48 fixo e intencional: documenta o estado do bridge após Fase 12.
+    it('deve conter os 51 mapeamentos definidos na Fase 13.2 (12 bases + 20 evoluções MVP + 7 Caçador + 3 Ladino + 6 Bardo + 3 Animalista)', () => {
+        // Valor 51 fixo e intencional: documenta o estado do bridge após Fase 13.2.
         // Atualizar junto com cada novo mapeamento adicionado à tabela.
-        expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(48);
+        expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(51);
     });
 
     it('MON_010 mapeia para shieldhorn (Guerreiro tank — DEF 9)', () => {
@@ -394,13 +394,14 @@ describe('speciesBridge — resolveAndApply()', () => {
 // passa a ser elegível pelo getEligibleUnmappedTemplateIds mas não foi mapeado
 // intencionalmente (sem linha evolutiva validável).
 // Atualizado na Fase 11: Bardo agora tem species (bellwave). MON_027/B/C mapeados.
+// Atualizado na Fase 13.2: MON_011/B/C mapeados como bellwave. MON_011D continua excluído.
 // MON_001 permanece não mapeado (sem linha evolutiva validável).
 // SAMPLE_CATALOG usa MON_030B (linha Furtilhon — não mapeada) para representar Ladino
 // não mapeado (substituiu MON_022B que foi mapeado na Fase 10).
 const SAMPLE_CATALOG = [
     { id: 'MON_001', class: 'Bardo' },          // não mapeado — sem linha evolutiva (Fase 11)
     { id: 'MON_002', class: 'Guerreiro' },       // mapeado → shieldhorn (Fase 3.2)
-    { id: 'MON_011B', class: 'Bardo' },          // não mapeado — linha com drift em MON_011D (Fase 11)
+    { id: 'MON_011D', class: 'Bardo' },          // não mapeado — drift irreversível em estágio final (excluído Fase 13.2)
     { id: 'MON_003', class: 'Mago' },            // mapeado → moonquill
     { id: 'MON_004', class: 'Curandeiro' },      // mapeado → floracura
     { id: 'MON_007', class: 'Bárbaro' },         // mapeado → emberfang
@@ -416,7 +417,7 @@ describe('speciesBridge — getUnmappedTemplateIds()', () => {
     it('deve retornar lista de templates sem mapeamento', () => {
         const unmapped = getUnmappedTemplateIds(SAMPLE_CATALOG);
         expect(unmapped).toContain('MON_001');
-        expect(unmapped).toContain('MON_011B');
+        expect(unmapped).toContain('MON_011D');
         expect(unmapped).toContain('MON_030B');
         expect(unmapped).toContain('MON_005');
         expect(unmapped).toContain('MON_100');
@@ -511,7 +512,7 @@ describe('speciesBridge — getBridgeCoverageReport()', () => {
         const report = getBridgeCoverageReport(SAMPLE_CATALOG);
         // SAMPLE_CATALOG: 11 entradas
         // Mapeados: MON_002, MON_003, MON_004, MON_007, MON_010, MON_014 = 6
-        // Não mapeados: MON_001, MON_011B, MON_030B, MON_005, MON_100 = 5
+        // Não mapeados: MON_001, MON_011D, MON_030B, MON_005, MON_100 = 5
         expect(report.total).toBe(11);
         expect(report.mapped).toBe(6);
         expect(report.unmapped).toBe(5);
