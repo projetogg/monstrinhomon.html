@@ -76,12 +76,14 @@ export const BIOME_EMOJI = {
 const NODE_R = 32;
 
 // Hierarquia visual dos labels: opacidade e tamanho por estado
+// available: alta opacidade — jogador precisa ler para onde pode ir
+// visited: baixa opacidade — info secundária, caminho já percorrido
 const LABEL_STYLES = {
     current:         { opacity: '1',    fontSize: '11' },
     boss:            { opacity: '0.92', fontSize: '10' },
     'boss-defeated': { opacity: '0.75', fontSize: '10' },
-    available:       { opacity: '0.55', fontSize: '9'  },
-    visited:         { opacity: '0.30', fontSize: '8'  },
+    available:       { opacity: '0.72', fontSize: '9'  },
+    visited:         { opacity: '0.28', fontSize: '8'  },
     locked:          { opacity: '0.15', fontSize: '8'  },
 };
 
@@ -178,13 +180,19 @@ export function buildMapSVG(enrichedNodes) {
                             : '#ffdd44';
 
         // Borda do círculo por estado
+        // available: borda mais visível — sinaliza "você pode ir aqui"
+        // visited: borda discreta — informação secundária de progresso passado
         let strokeColor = 'none';
         let strokeWidth = 0;
         if      (state === 'current')       { strokeColor = '#20ddcc'; strokeWidth = 3.5; }
         else if (state === 'boss')          { strokeColor = bossRingColor; strokeWidth = 3; }
         else if (state === 'boss-defeated') { strokeColor = '#40cc60'; strokeWidth = 2.5; }
-        else if (state === 'available')     { strokeColor = 'rgba(255,255,255,0.28)'; strokeWidth = 1.5; }
-        else if (state === 'visited')       { strokeColor = 'rgba(255,255,255,0.15)'; strokeWidth = 1; }
+        else if (state === 'available')     { strokeColor = 'rgba(255,255,255,0.52)'; strokeWidth = 2; }
+        else if (state === 'visited')       { strokeColor = 'rgba(255,255,255,0.14)'; strokeWidth = 1; }
+
+        // Fill-opacity: nós visitados ficam semi-opacos (tonalidade apagada = "já passei aqui")
+        // Nós disponíveis têm cor cheia = "posso ir aqui"
+        const fillOpacity = state === 'visited' ? '0.42' : '1';
 
         // Marcador de party para o nó atual
         const partyMarker = (state === 'current')
@@ -218,7 +226,7 @@ export function buildMapSVG(enrichedNodes) {
            role="${clickable ? 'button' : 'img'}" aria-label="${label || 'Local bloqueado'}">
             ${bossRing}
             <circle cx="${pos.x}" cy="${pos.y}" r="${NODE_R}"
-                    fill="${fill}" stroke="${strokeColor}" stroke-width="${strokeWidth}"
+                    fill="${fill}" fill-opacity="${fillOpacity}" stroke="${strokeColor}" stroke-width="${strokeWidth}"
                     class="ow-node__circle"/>
             <text x="${pos.x}" y="${pos.y - 5}" text-anchor="middle"
                   font-size="16" class="ow-node__emoji">${emoji}</text>
@@ -232,8 +240,8 @@ export function buildMapSVG(enrichedNodes) {
 
     // Estilos inline no SVG (para garantir funcionamento sem CSS externo)
     const svgStyles = `
-        .ow-edge { stroke: rgba(255,255,255,0.08); stroke-width: 1; }
-        .ow-edge--active { stroke: rgba(255,255,255,0.22); stroke-width: 1.8; }
+        .ow-edge { stroke: rgba(255,255,255,0.07); stroke-width: 1; }
+        .ow-edge--active { stroke: rgba(255,255,255,0.30); stroke-width: 2.2; }
         .ow-node__circle { transition: filter 0.18s; }
         .ow-node--available:hover .ow-node__circle,
         .ow-node--visited:hover .ow-node__circle,
