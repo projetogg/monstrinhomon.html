@@ -4187,7 +4187,7 @@
                         return;
                     }
                     
-                    // GAME_RULES.md: Em batalha, só pode usar monstros da mesma classe do jogador
+                    // GAME_RULES.md: Em batalha, só pode usar monstros da mesma classe do jogador.
                     // Usa m.hp > 0 (consistente com _isAlive) para detectar monstrinhos vivos,
                     // evitando falso negativo quando status não foi atualizado pelo combate de grupo.
                     const validMonsters = player.team.filter(m => m.class === player.class && m.hp > 0);
@@ -4196,11 +4196,9 @@
                         return;
                     }
 
-                    // Garantir que activeIndex aponte para um monstrinho válido (vivo + mesma classe)
-                    const firstValidIdx = player.team.findIndex(m => m.class === player.class && m.hp > 0);
-                    if (firstValidIdx >= 0 && player.team[firstValidIdx]?.hp > 0) {
-                        player.activeIndex = firstValidIdx;
-                    }
+                    // Garantir que activeIndex aponte para o primeiro monstrinho válido (vivo + mesma classe).
+                    const firstValidIdx = player.team.indexOf(validMonsters[0]);
+                    if (firstValidIdx >= 0) player.activeIndex = firstValidIdx;
                 }
                 
                 const encounter = {
