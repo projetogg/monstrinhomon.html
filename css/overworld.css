@@ -3,6 +3,11 @@
    Tema escuro estilo RPG. Polish visual — composição madura de tela principal.
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* ── Custom properties ───────────────────────────────────────────────────── */
+#overworldPanel {
+    --ow-sidebar-width: 320px; /* largura da sidebar de contexto do nó */
+}
+
 /* ── Painel principal ────────────────────────────────────────────────────── */
 #overworldPanel {
     padding: 0;
@@ -14,11 +19,12 @@
 }
 
 /* ── Header do overworld ─────────────────────────────────────────────────── */
+/* Padding reduzido: barra de status de jogo, não header de dashboard */
 .ow-header {
     display: flex;
     align-items: center;
     gap: 20px;
-    padding: 16px 24px 15px;
+    padding: 11px 20px 10px;
     background: linear-gradient(180deg, #1c2136 0%, #141820 100%);
     border-bottom: 2px solid rgba(32,221,204,0.12);
     flex-wrap: nowrap;
@@ -77,22 +83,41 @@
 }
 
 /* ── Layout mapa + sidebar ───────────────────────────────────────────────── */
+/* Sidebar estreita — mapa é o protagonista; sidebar é complemento */
 .ow-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 440px);
+    grid-template-columns: minmax(0, 1fr) minmax(0, var(--ow-sidebar-width, 320px));
     gap: 0;
     align-items: stretch;
 }
 
 /* ── Área do mapa (SVG) ──────────────────────────────────────────────────── */
+/* aspect-ratio 88/53 = viewport 880×530 — alinha exatamente com o viewBox visível */
 .ow-map-wrap {
     background: #080a10;
     border-right: 1px solid rgba(255,255,255,0.06);
     overflow: hidden;
     min-width: 0;
-    aspect-ratio: 88 / 55;  /* mais alto que 88/53 (55 > 53 = mais altura por px de largura) */
-    max-height: 680px;
+    aspect-ratio: 88 / 53;
+    max-height: 740px;
     min-height: 360px;
+    position: relative;
+}
+
+/* Vinheta lateral — sugere que o mundo continua além da tela */
+.ow-map-wrap::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        rgba(8,10,16,0.55) 0%,
+        transparent 12%,
+        transparent 88%,
+        rgba(8,10,16,0.55) 100%
+    );
+    pointer-events: none;
+    z-index: 1;
 }
 
 .ow-svg {
@@ -100,6 +125,53 @@
     height: 100%;
     display: block;
 }
+
+/* ── Botões de pan — navegação lateral do mapa ───────────────────────────── */
+/* Posicionados sobre o mapa como controles de câmera */
+.ow-pan-buttons {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.ow-pan-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: all;
+    background: rgba(8,10,16,0.72);
+    border: 1px solid rgba(255,255,255,0.10);
+    color: rgba(255,255,255,0.45);
+    font-size: 22px;
+    width: 30px;
+    height: 56px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    padding: 0;
+    line-height: 1;
+    user-select: none;
+}
+
+.ow-pan-btn:hover {
+    background: rgba(32,221,204,0.12);
+    color: #20ddcc;
+    border-color: rgba(32,221,204,0.28);
+}
+
+.ow-pan-btn:active {
+    background: rgba(32,221,204,0.20);
+}
+
+.ow-pan-btn--left  { left: 6px; }
+.ow-pan-btn--right { right: 6px; }
 
 /* ── Sidebar de informações do nó ────────────────────────────────────────── */
 .ow-sidebar-wrap {
@@ -445,22 +517,24 @@
     line-height: 1.5;
 }
 
-/* ── Legenda ─────────────────────────────────────────────────────────────── */
+/* ── Legenda — HUD compacto embaixo do mapa ──────────────────────────────── */
+/* Trata como elemento de jogo, não rodapé de dashboard */
 .ow-legend {
     display: flex;
-    gap: 20px;
+    gap: 16px;
     flex-wrap: wrap;
-    padding: 10px 20px 14px;
+    padding: 7px 20px 9px;
     border-top: 1px solid rgba(255,255,255,0.05);
+    background: rgba(8,10,16,0.60);
 }
 
 .ow-legend-item {
     display: flex;
     align-items: center;
     gap: 5px;
-    font-size: 9px;
-    color: rgba(255,255,255,0.28);
-    letter-spacing: 0.3px;
+    font-size: 8.5px;
+    color: rgba(255,255,255,0.22);
+    letter-spacing: 0.4px;
 }
 
 .ow-legend-dot {
@@ -475,6 +549,18 @@
 .ow-legend-dot--available { background: transparent; border: 1px solid rgba(255,255,255,0.30); }
 .ow-legend-dot--locked   { background: #1a1a1a; border: 1px solid #333; }
 .ow-legend-dot--boss     { background: #6a4c10; border: 2px solid rgba(255,221,68,0.65); }
+
+/* ── Campaign panel — limitar altura para não comprimir o mapa ───────────── */
+#campaignProgressPanel.wm-campaign-panel {
+    max-height: 260px;
+    overflow-y: auto;
+    margin: 0;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
 
 /* ── Responsividade ──────────────────────────────────────────────────────── */
 @media (max-width: 860px) {

@@ -5,45 +5,64 @@
  * O SVG gerado usa onclick globais (window.owSelectNode) definidos em index.html.
  *
  * Arquitetura:
- *   NODE_POSITIONS  — coordenadas (x, y) de cada nó no SVG
+ *   NODE_POSITIONS  — coordenadas (x, y) de cada nó no espaço-mundo (WORLD_W × WORLD_H)
  *   BIOME_FILL      — cor de fundo por bioma
  *   BIOME_EMOJI     — emoji por bioma
  *   getNodeVisualState(node, progressState) → estado visual do nó
- *   buildMapSVG(enrichedNodes) → string HTML do SVG completo
+ *   buildMapSVG(enrichedNodes, viewBoxX) → string HTML do SVG completo
+ *
+ * MODELO DE VIEWPORT PROGRESSIVO:
+ *   O mundo (WORLD_W × WORLD_H) é maior que a janela visível (VIEWPORT_W × VIEWPORT_H).
+ *   A câmera centra no nó atual via atributo viewBox do SVG.
+ *   Viajar entre nós anima o viewBox suavemente — o jogador sente deslocamento no mundo.
+ *   Regiões avançadas ficam literalmente fora da tela até o jogador avançar.
  */
 
-// ── Posições dos nós no SVG (viewBox "0 0 880 530") ───────────────────────────
-// O container CSS usa aspect-ratio 88/55 (levemente mais alto que 88/53),
-// mas o viewBox do SVG permanece 880×530 — o preserveAspectRatio cuida do encaixe.
-// Distribuição ajustada para NODE_R=32: fileira superior elevada, inferior baixada,
-// pares problemáticos separados para evitar sobreposição com raio maior.
+// ── Dimensões do mundo e da viewport ──────────────────────────────────────────
+// Mundo: 1760 × 530 (dobro da viewport em largura)
+// Viewport: 880 × 530 (janela visível a qualquer momento = metade do mundo)
+// O SVG usa viewBox="${viewBoxX} 0 ${VIEWPORT_W} ${WORLD_H}" para controlar a câmera.
+export const WORLD_W    = 1760; // largura total do espaço-mundo em coordenadas SVG
+export const WORLD_H    = 530;  // altura total do espaço-mundo
+export const VIEWPORT_W = 880;  // largura da janela visível (metade do mundo)
+export const VIEWPORT_H = 530;  // altura da janela visível
+
+// Aliases de compatibilidade (caso algum código externo use SVG_WIDTH/SVG_HEIGHT)
+export const SVG_WIDTH  = WORLD_W;
+export const SVG_HEIGHT = WORLD_H;
+
+// ── Posições dos nós no espaço-mundo (1760 × 530) ─────────────────────────────
+// Coordenadas x multiplicadas por 2.0 em relação ao layout anterior (880 × 530).
+// Isso dobra a separação horizontal entre nós, dando escala de mundo real.
+// Com VIEWPORT_W=880, o jogador vê metade do mapa de cada vez.
+// NODE_R=36 (maior que 32 anterior) — há espaço suficiente para nós maiores.
 export const NODE_POSITIONS = {
-    'CITY_001':           { x: 85,  y: 270 },
-    'LOC_001':            { x: 195, y: 408 },
-    'LOC_001B':           { x: 300, y: 322 },
-    'LOC_002':            { x: 400, y: 240 },
-    'LOC_002B':           { x: 495, y: 182 },
-    'LOC_002C':           { x: 590, y: 140 },
-    'LOC_003':            { x: 340, y: 422 },
-    'LOC_003B':           { x: 420, y: 468 },
-    'LOC_003C':           { x: 512, y: 428 },   // subiu de 445 → evita colisão com BOSS_RUINS
-    'LOC_004':            { x: 565, y: 245 },
-    'LOC_004B':           { x: 648, y: 300 },
-    'LOC_005':            { x: 455, y: 140 },
-    'LOC_005B':           { x: 540, y: 78 },    // subiu de 92
-    'LOC_005C':           { x: 622, y: 52 },    // subiu de 65
-    'BOSS_CAVES_OPT_01':  { x: 706, y: 52 },   // subiu de 65
-    'LOC_010':            { x: 792, y: 52 },    // subiu de 65
-    'LOC_006':            { x: 608, y: 456 },
-    'LOC_006B':           { x: 696, y: 422 },
-    'LOC_007':            { x: 668, y: 182 },
-    'LOC_007B':           { x: 748, y: 237 },
-    'LOC_008':            { x: 768, y: 360 },
-    'LOC_008B':           { x: 848, y: 310 },
-    'BOSS_FOREST_01':     { x: 840, y: 414 },   // subiu de 420 → cria espaço para LOC_009
-    'LOC_009':            { x: 828, y: 494 },   // desceu e deslocou → evita colisão com BOSS_FOREST_01
-    'BOSS_RUINS_SIDE_01': { x: 492, y: 498 },
-    'LOC_011':            { x: 574, y: 498 },
+    'CITY_001':           { x: 170,  y: 270 },
+    'LOC_001':            { x: 390,  y: 408 },
+    'LOC_001B':           { x: 600,  y: 322 },
+    'LOC_002':            { x: 800,  y: 240 },
+    'LOC_002B':           { x: 990,  y: 182 },
+    'LOC_002C':           { x: 1180, y: 140 },
+    'LOC_003':            { x: 680,  y: 422 },
+    'LOC_003B':           { x: 840,  y: 468 },
+    'LOC_003C':           { x: 1024, y: 428 },
+    'LOC_004':            { x: 1130, y: 245 },
+    'LOC_004B':           { x: 1296, y: 300 },
+    'LOC_005':            { x: 910,  y: 140 },
+    'LOC_005B':           { x: 1080, y: 78  },
+    'LOC_005C':           { x: 1244, y: 52  },
+    'BOSS_CAVES_OPT_01':  { x: 1412, y: 52  },
+    'LOC_010':            { x: 1584, y: 52  },
+    'LOC_006':            { x: 1216, y: 456 },
+    'LOC_006B':           { x: 1392, y: 422 },
+    'LOC_007':            { x: 1336, y: 182 },
+    'LOC_007B':           { x: 1496, y: 237 },
+    'LOC_008':            { x: 1536, y: 360 },
+    'LOC_008B':           { x: 1696, y: 310 },
+    'BOSS_FOREST_01':     { x: 1680, y: 414 },
+    'LOC_009':            { x: 1656, y: 494 },
+    'BOSS_RUINS_SIDE_01': { x: 984,  y: 498 },
+    'LOC_011':            { x: 1148, y: 498 },
 };
 
 // ── Cor de preenchimento base por bioma ───────────────────────────────────────
@@ -72,22 +91,22 @@ export const BIOME_EMOJI = {
     cidade:    '🏙️',
 };
 
-// Raio base do nó — aumentado para os nós dominarem melhor o palco visual
-const NODE_R = 32;
+// Raio base do nó — maior (36) porque o mundo tem o dobro da separação horizontal
+const NODE_R = 36;
 
 // Hierarquia visual dos labels: opacidade e tamanho por estado
+// available: alta opacidade — jogador precisa ler para onde pode ir
+// visited: baixa opacidade — info secundária, caminho já percorrido
 const LABEL_STYLES = {
     current:         { opacity: '1',    fontSize: '11' },
     boss:            { opacity: '0.92', fontSize: '10' },
     'boss-defeated': { opacity: '0.75', fontSize: '10' },
-    available:       { opacity: '0.55', fontSize: '9'  },
-    visited:         { opacity: '0.30', fontSize: '8'  },
+    available:       { opacity: '0.72', fontSize: '9'  },
+    visited:         { opacity: '0.28', fontSize: '8'  },
     locked:          { opacity: '0.15', fontSize: '8'  },
 };
 
-// ── Dimensões do SVG ──────────────────────────────────────────────────────────
-export const SVG_WIDTH  = 880;
-export const SVG_HEIGHT = 530; // +20px de margem inferior para não cortar nós próximos à borda
+// ── Dimensões do SVG — removidas daqui (agora em WORLD_W/VIEWPORT_W acima) ──────
 
 /**
  * Retorna o estado visual de um nó.
@@ -120,11 +139,13 @@ export function getNodeVisualState(node, { visitedLocations, completedLocations,
  * Gera o SVG completo do mapa-mundo.
  *
  * Cada nó recebe _unlocked e _state pré-computados externamente.
+ * O parâmetro viewBoxX controla qual porção do mundo é visível (viewport progressiva).
  *
  * @param {Array<Object>} enrichedNodes - Nós enriquecidos com _unlocked, _state e dados de loc
+ * @param {number} [viewBoxX=0] - Coordenada x inicial da viewport (0 = início do mundo)
  * @returns {string} HTML do elemento <svg>
  */
-export function buildMapSVG(enrichedNodes) {
+export function buildMapSVG(enrichedNodes, viewBoxX = 0) {
     const nodeMap = new Map(enrichedNodes.map(n => [n.nodeId, n]));
 
     // ── 1. Arestas únicas ──────────────────────────────────────────────────────
@@ -178,13 +199,19 @@ export function buildMapSVG(enrichedNodes) {
                             : '#ffdd44';
 
         // Borda do círculo por estado
+        // available: borda mais visível — sinaliza "você pode ir aqui"
+        // visited: borda discreta — informação secundária de progresso passado
         let strokeColor = 'none';
         let strokeWidth = 0;
         if      (state === 'current')       { strokeColor = '#20ddcc'; strokeWidth = 3.5; }
         else if (state === 'boss')          { strokeColor = bossRingColor; strokeWidth = 3; }
         else if (state === 'boss-defeated') { strokeColor = '#40cc60'; strokeWidth = 2.5; }
-        else if (state === 'available')     { strokeColor = 'rgba(255,255,255,0.28)'; strokeWidth = 1.5; }
-        else if (state === 'visited')       { strokeColor = 'rgba(255,255,255,0.15)'; strokeWidth = 1; }
+        else if (state === 'available')     { strokeColor = 'rgba(255,255,255,0.52)'; strokeWidth = 2; }
+        else if (state === 'visited')       { strokeColor = 'rgba(255,255,255,0.14)'; strokeWidth = 1; }
+
+        // Fill-opacity: nós visitados ficam semi-opacos (tonalidade apagada = "já passei aqui")
+        // Nós disponíveis têm cor cheia = "posso ir aqui"
+        const fillOpacity = state === 'visited' ? '0.42' : '1';
 
         // Marcador de party para o nó atual
         const partyMarker = (state === 'current')
@@ -218,7 +245,7 @@ export function buildMapSVG(enrichedNodes) {
            role="${clickable ? 'button' : 'img'}" aria-label="${label || 'Local bloqueado'}">
             ${bossRing}
             <circle cx="${pos.x}" cy="${pos.y}" r="${NODE_R}"
-                    fill="${fill}" stroke="${strokeColor}" stroke-width="${strokeWidth}"
+                    fill="${fill}" fill-opacity="${fillOpacity}" stroke="${strokeColor}" stroke-width="${strokeWidth}"
                     class="ow-node__circle"/>
             <text x="${pos.x}" y="${pos.y - 5}" text-anchor="middle"
                   font-size="16" class="ow-node__emoji">${emoji}</text>
@@ -232,8 +259,8 @@ export function buildMapSVG(enrichedNodes) {
 
     // Estilos inline no SVG (para garantir funcionamento sem CSS externo)
     const svgStyles = `
-        .ow-edge { stroke: rgba(255,255,255,0.08); stroke-width: 1; }
-        .ow-edge--active { stroke: rgba(255,255,255,0.22); stroke-width: 1.8; }
+        .ow-edge { stroke: rgba(255,255,255,0.07); stroke-width: 1; }
+        .ow-edge--active { stroke: rgba(255,255,255,0.30); stroke-width: 2.2; }
         .ow-node__circle { transition: filter 0.18s; }
         .ow-node--available:hover .ow-node__circle,
         .ow-node--visited:hover .ow-node__circle,
@@ -259,7 +286,7 @@ export function buildMapSVG(enrichedNodes) {
         }
     `;
 
-    return `<svg viewBox="0 0 ${SVG_WIDTH} ${SVG_HEIGHT}"
+    return `<svg viewBox="${viewBoxX} 0 ${VIEWPORT_W} ${WORLD_H}"
                  xmlns="http://www.w3.org/2000/svg"
                  class="ow-svg" id="overworldSVG"
                  preserveAspectRatio="xMidYMid meet">
