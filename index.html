@@ -8870,13 +8870,22 @@
         /** Duração da animação de pan manual do mapa (ms). */
         const OW_PAN_ANIM_MS = 350;
 
-        // ── Câmera com safe area — composição para layout com sidebar ──────────
+        // ── Câmera com safe area e framing por contexto ────────────────────────
         // A sidebar fixa à direita desloca o centro perceptivo do mapa.
-        // O nó focado é posicionado no centro útil, não no centro matemático.
-        const OW_SAFE_LEFT   = 70;  // margem de segurança esquerda (px mundo)
-        const OW_SAFE_RIGHT  = 140; // margem de segurança direita — respiro real entre conteúdo e sidebar
-        const OW_FOCUS_RATIO = 0.40; // foco em 40% da área útil — nó mais à esquerda, mais ar à direita
-        const OW_PAN_RATIO   = 0.38; // passo de pan = 38% do viewport
+        // Cada modo de câmera prioriza uma experiência diferente:
+        //   'opening'  — abertura: cidade no terço esquerdo, mundo se abre à direita
+        //   'travel'   — viagem: enquadramento levemente à esquerda para mais ar
+        //   'select'   — seleção: equilíbrio padrão, balanceado
+        //   'boss'     — boss: centralizado no espaço útil para dramatismo
+        const OW_SAFE_LEFT  = 65;  // limiar de conforto esquerdo (px mundo — visibilidade)
+        const OW_SAFE_RIGHT = 160; // limiar de conforto direito — mais respiro vs sidebar
+        const OW_PAN_RATIO  = 0.38; // passo de pan = 38% do viewport
+        const OW_FRAMING = {
+            opening: { safeLeft: 55,  safeRight: 155, focusRatio: 0.18 }, // cidade à esq, mundo à direita
+            travel:  { safeLeft: 65,  safeRight: 160, focusRatio: 0.36 }, // desloca levemente à esq
+            select:  { safeLeft: 65,  safeRight: 160, focusRatio: 0.40 }, // equilíbrio padrão
+            boss:    { safeLeft: 90,  safeRight: 160, focusRatio: 0.48 }, // centralizado para dramatismo
+        };
 
         /** Carrega os dados de localização e do mapa (com cache). */
         async function _wmLoadData() {
@@ -8935,25 +8944,26 @@
         // ── Viewport progressiva — câmera do mapa ──────────────────────────────────
 
         /**
-         * Calcula a coordenada x do viewBox para enquadrar o nó no centro útil do mapa.
+         * Calcula a coordenada x do viewBox para enquadrar o nó com o framing adequado.
          *
-         * A câmera usa safe areas para compensar a sidebar fixa à direita:
-         *   - OW_SAFE_LEFT / OW_SAFE_RIGHT: margens de segurança que evitam nós colados nas bordas
-         *   - OW_FOCUS_RATIO: posiciona o foco em ~40% da área útil — dá respiro real à direita (sidebar)
-         *
-         * Isso faz o nó aparecer ligeiramente à esquerda do centro matemático,
-         * que é o ponto perceptivamente equilibrado quando há painel lateral à direita.
+         * Cada modo de câmera posiciona o nó diferentemente no espaço útil:
+         *   'opening' — cidade âncora à esquerda, mundo se abre à direita
+         *   'travel'  — nó levemente à esquerda do centro útil (mais ar à frente)
+         *   'select'  — equilíbrio padrão com safe area
+         *   'boss'    — nó centralizado no espaço útil para dramatismo
          *
          * @param {string} nodeId
+         * @param {'opening'|'travel'|'select'|'boss'} [mode='select']
          * @returns {number}
          */
-        function _owComputeViewBoxX(nodeId) {
+        function _owComputeViewBoxX(nodeId, mode = 'select') {
             if (!window.OverworldMap) return 0;
             const { NODE_POSITIONS, WORLD_W, VIEWPORT_W } = window.OverworldMap;
             const pos = NODE_POSITIONS[nodeId];
             if (!pos) return 0;
-            const usableW       = VIEWPORT_W - OW_SAFE_LEFT - OW_SAFE_RIGHT;
-            const targetScreenX = OW_SAFE_LEFT + usableW * OW_FOCUS_RATIO;
+            const { safeLeft, safeRight, focusRatio } = OW_FRAMING[mode] ?? OW_FRAMING.select;
+            const usableW       = VIEWPORT_W - safeLeft - safeRight;
+            const targetScreenX = safeLeft + usableW * focusRatio;
             const raw           = pos.x - targetScreenX;
             return Math.max(0, Math.min(raw, WORLD_W - VIEWPORT_W));
         }
@@ -9064,7 +9074,8 @@
             // caso contrário (primeiro carregamento ou retorno ao mapa), centrar no nó atual.
             const centerNodeId = progress.currentNodeId ?? OW_INITIAL_NODE;
             if (_wm.viewBoxX === null) {
-                _wm.viewBoxX = _owComputeViewBoxX(centerNodeId);
+                // Abertura: cidade âncora à esquerda, mundo se abre — framing intencional
+                _wm.viewBoxX = _owComputeViewBoxX(centerNodeId, 'opening');
             }
 
             // Recriar SVG com os botões de pan preservados (estão fora do innerHTML do SVG)
@@ -9100,6 +9111,7 @@
         /**
          * Chamado pelo onclick dos nós SVG. Atualiza o sidebar e enquadra a câmera.
          * Só anima a câmera se o nó não estiver confortavelmente visível na safe area.
+         * Boss nodes recebem framing centralizado para dramatismo.
          * @param {string} nodeId
          */
         function owSelectNode(nodeId) {
@@ -9110,7 +9122,10 @@
             // Só move a câmera se o nó estiver fora da zona confortável — evita micro-movimentos
             const pos = window.OverworldMap?.NODE_POSITIONS?.[nodeId];
             if (pos && !_owIsNodeComfortablyVisible(pos.x, _wm.viewBoxX ?? 0)) {
-                _owAnimateToViewBoxX(_owComputeViewBoxX(nodeId), OW_SELECT_ANIM_MS, null);
+                // Boss: enquadramento centralizado para dramatismo; demais: select padrão
+                const isBossNode = nodeEl?.classList.contains('ow-node--boss');
+                const mode = isBossNode ? 'boss' : 'select';
+                _owAnimateToViewBoxX(_owComputeViewBoxX(nodeId, mode), OW_SELECT_ANIM_MS, null);
             }
             _owRenderSidebar(nodeId);
         }
@@ -9295,12 +9310,12 @@
 
         /**
          * Move a party para o nó especificado com animação de câmera.
-         * A câmera desliza suavemente até o destino antes de atualizar o estado.
+         * Usa framing de viagem: levemente à esquerda, mais ar à frente.
          * @param {string} nodeId
          */
         function owTravelToNode(nodeId) {
             if (!GameState.data) GameState.data = {};
-            const targetX = _owComputeViewBoxX(nodeId);
+            const targetX = _owComputeViewBoxX(nodeId, 'travel');
             // Animar câmera até o destino — só então atualizar dados e re-renderizar
             _owAnimateToViewBoxX(targetX, OW_TRAVEL_ANIM_MS, () => {
                 GameState.data.currentNodeId = nodeId;

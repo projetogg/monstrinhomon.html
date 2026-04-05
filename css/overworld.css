@@ -5,7 +5,7 @@
 
 /* ── Custom properties ───────────────────────────────────────────────────── */
 #overworldPanel {
-    --ow-sidebar-width: 360px; /* largura da sidebar de contexto do nó */
+    --ow-sidebar-width: 388px; /* largura da sidebar de contexto do nó */
 }
 
 /* ── Painel principal ────────────────────────────────────────────────────── */
@@ -196,7 +196,7 @@
     display: flex;
     align-items: flex-start;
     gap: 14px;
-    padding: 20px 20px 16px;
+    padding: 22px 24px 18px;
     border-bottom: 1px solid rgba(255,255,255,0.07);
 }
 
@@ -255,7 +255,7 @@
 
 /* Corpo do sidebar — rolável */
 .ow-sidebar__body {
-    padding: 16px 20px;
+    padding: 18px 24px;
     flex: 1;
     overflow-y: auto;
     min-height: 0;
@@ -264,10 +264,10 @@
 .ow-sidebar__desc {
     font-size: 12px;
     color: rgba(255,255,255,0.48);
-    margin: 0 0 12px;
-    line-height: 1.6;
+    margin: 0 0 14px;
+    line-height: 1.65;
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 4;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -318,7 +318,7 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 13px 6px;
+    padding: 14px 6px;
     background: transparent;
     border: none;
     border-bottom: 1px solid rgba(255,255,255,0.05);
@@ -368,9 +368,11 @@
     font-weight: 700;
     color: #e0e0e0;
     margin: 0 0 3px;
-    white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.3;
 }
 
 .ow-spot__desc {
@@ -445,7 +447,7 @@
 
 /* ── Botão de viagem e indicador de posição ──────────────────────────────── */
 .ow-sidebar__footer {
-    padding: 14px 20px 20px;
+    padding: 16px 24px 22px;
     border-top: 1px solid rgba(255,255,255,0.06);
     flex-shrink: 0;
 }
