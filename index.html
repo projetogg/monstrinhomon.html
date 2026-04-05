@@ -246,10 +246,10 @@
                         <!-- Botões de pan — câmera do mundo -->
                         <div class="ow-pan-buttons" id="owPanButtons">
                             <button class="ow-pan-btn ow-pan-btn--left"
-                                    onclick="owPanMap(-300)"
+                                    onclick="owPanMap(-1)"
                                     aria-label="Mover mapa para esquerda">‹</button>
                             <button class="ow-pan-btn ow-pan-btn--right"
-                                    onclick="owPanMap(300)"
+                                    onclick="owPanMap(1)"
                                     aria-label="Mover mapa para direita">›</button>
                         </div>
                     </div>
@@ -8858,8 +8858,19 @@
         /** Duração da animação de câmera ao viajar entre nós (ms). */
         const OW_TRAVEL_ANIM_MS = 580;
 
+        /** Duração da animação ao selecionar um nó fora da safe area (ms). */
+        const OW_SELECT_ANIM_MS = 280;
+
         /** Duração da animação de pan manual do mapa (ms). */
         const OW_PAN_ANIM_MS = 350;
+
+        // ── Câmera com safe area — composição para layout com sidebar ──────────
+        // A sidebar fixa à direita desloca o centro perceptivo do mapa.
+        // O nó focado é posicionado no centro útil, não no centro matemático.
+        const OW_SAFE_LEFT   = 70;  // margem de segurança esquerda (px mundo)
+        const OW_SAFE_RIGHT  = 110; // margem de segurança direita (evita sidebar/bordas)
+        const OW_FOCUS_RATIO = 0.45; // foco em 45% da área útil (não 50%)
+        const OW_PAN_RATIO   = 0.38; // passo de pan = 38% do viewport
 
         /** Carrega os dados de localização e do mapa (com cache). */
         async function _wmLoadData() {
@@ -8918,8 +8929,15 @@
         // ── Viewport progressiva — câmera do mapa ──────────────────────────────────
 
         /**
-         * Calcula a coordenada x do viewBox para centrar a câmera em um nó.
-         * Respeita os limites do mundo (0 a WORLD_W - VIEWPORT_W).
+         * Calcula a coordenada x do viewBox para enquadrar o nó no centro útil do mapa.
+         *
+         * A câmera usa safe areas para compensar a sidebar fixa à direita:
+         *   - OW_SAFE_LEFT / OW_SAFE_RIGHT: margens de segurança que evitam nós colados nas bordas
+         *   - OW_FOCUS_RATIO: posiciona o foco em ~45% da área útil (não 50%) — compensa peso visual da sidebar
+         *
+         * Isso faz o nó aparecer ligeiramente à esquerda do centro matemático,
+         * que é o ponto perceptivamente equilibrado quando há painel lateral à direita.
+         *
          * @param {string} nodeId
          * @returns {number}
          */
@@ -8928,8 +8946,24 @@
             const { NODE_POSITIONS, WORLD_W, VIEWPORT_W } = window.OverworldMap;
             const pos = NODE_POSITIONS[nodeId];
             if (!pos) return 0;
-            const x = pos.x - VIEWPORT_W / 2;
-            return Math.max(0, Math.min(x, WORLD_W - VIEWPORT_W));
+            const usableW       = VIEWPORT_W - OW_SAFE_LEFT - OW_SAFE_RIGHT;
+            const targetScreenX = OW_SAFE_LEFT + usableW * OW_FOCUS_RATIO;
+            const raw           = pos.x - targetScreenX;
+            return Math.max(0, Math.min(raw, WORLD_W - VIEWPORT_W));
+        }
+
+        /**
+         * Retorna true se o nó já está confortavelmente visível dentro da safe area.
+         * Quando true, a câmera não precisa se mover ao selecionar esse nó.
+         * @param {number} nodeX   - Coordenada x do nó no espaço-mundo
+         * @param {number} viewBoxX - Posição atual do viewBox
+         * @returns {boolean}
+         */
+        function _owIsNodeComfortablyVisible(nodeX, viewBoxX) {
+            if (!window.OverworldMap) return false;
+            const { VIEWPORT_W } = window.OverworldMap;
+            const screenX = nodeX - viewBoxX;
+            return screenX >= OW_SAFE_LEFT && screenX <= VIEWPORT_W - OW_SAFE_RIGHT;
         }
 
         /**
@@ -9058,7 +9092,8 @@
         }
 
         /**
-         * Chamado pelo onclick dos nós SVG. Atualiza o sidebar e centraliza a câmera no nó.
+         * Chamado pelo onclick dos nós SVG. Atualiza o sidebar e enquadra a câmera.
+         * Só anima a câmera se o nó não estiver confortavelmente visível na safe area.
          * @param {string} nodeId
          */
         function owSelectNode(nodeId) {
@@ -9066,8 +9101,11 @@
             const nodeEl = document.querySelector(`.ow-node[data-node="${nodeId}"]`);
             if (nodeEl) nodeEl.classList.add('ow-node--selected');
             _wm.selectedNodeId = nodeId;
-            // Centralizar câmera no nó selecionado (imediato, sem animação)
-            _owSetViewBox(_owComputeViewBoxX(nodeId));
+            // Só move a câmera se o nó estiver fora da zona confortável — evita micro-movimentos
+            const pos = window.OverworldMap?.NODE_POSITIONS?.[nodeId];
+            if (pos && !_owIsNodeComfortablyVisible(pos.x, _wm.viewBoxX ?? 0)) {
+                _owAnimateToViewBoxX(_owComputeViewBoxX(nodeId), OW_SELECT_ANIM_MS, null);
+            }
             _owRenderSidebar(nodeId);
         }
 
@@ -9270,10 +9308,10 @@
 
         /**
          * Desloca a câmera do mapa lateralmente (pan manual pelo jogador).
-         * Lê a posição real do SVG para que pans rápidos encadeiem suavemente.
-         * @param {number} delta - Quantidade de pixels SVG para deslocar (negativo=esquerda)
+         * Recebe direção (-1 = esquerda, +1 = direita) e calcula o passo como fração do viewport.
+         * @param {number} direction - Direção: -1 (esquerda) ou +1 (direita)
          */
-        function owPanMap(delta) {
+        function owPanMap(direction) {
             if (!window.OverworldMap) return;
             const { WORLD_W, VIEWPORT_W } = window.OverworldMap;
             // Ler posição atual do viewBox do SVG (pode estar em mid-animation)
@@ -9282,6 +9320,8 @@
                 const vb = svg.getAttribute('viewBox');
                 if (vb) _wm.viewBoxX = parseFloat(vb.split(' ')[0]);
             }
+            const step    = VIEWPORT_W * OW_PAN_RATIO; // ~38% da janela visível
+            const delta   = direction * step;
             const current = _wm.viewBoxX ?? 0;
             const targetX = Math.max(0, Math.min(current + delta, WORLD_W - VIEWPORT_W));
             _owAnimateToViewBoxX(targetX, OW_PAN_ANIM_MS, null);
