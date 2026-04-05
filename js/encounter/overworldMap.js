@@ -37,32 +37,35 @@ export const SVG_HEIGHT = WORLD_H;
 // Com VIEWPORT_W=880, o jogador vê metade do mapa de cada vez.
 // NODE_R=36 (maior que 32 anterior) — há espaço suficiente para nós maiores.
 export const NODE_POSITIONS = {
-    'CITY_001':           { x: 170,  y: 270 },
-    'LOC_001':            { x: 390,  y: 408 },
-    'LOC_001B':           { x: 600,  y: 322 },
-    'LOC_002':            { x: 800,  y: 240 },
-    'LOC_002B':           { x: 990,  y: 182 },
-    'LOC_002C':           { x: 1180, y: 140 },
-    'LOC_003':            { x: 680,  y: 422 },
-    'LOC_003B':           { x: 840,  y: 468 },
-    'LOC_003C':           { x: 1024, y: 428 },
-    'LOC_004':            { x: 1130, y: 245 },
-    'LOC_004B':           { x: 1296, y: 300 },
-    'LOC_005':            { x: 910,  y: 140 },
-    'LOC_005B':           { x: 1080, y: 78  },
-    'LOC_005C':           { x: 1244, y: 52  },
-    'BOSS_CAVES_OPT_01':  { x: 1412, y: 52  },
-    'LOC_010':            { x: 1584, y: 52  },
+    // ── Rota inicial — concentrada e legível, respirando verticalmente ──────
+    // CITY_001 levemente acima do centro; primeiros nós distribuídos para evitar
+    // área escura ociosa no topo e no rodapé do viewport inicial.
+    'CITY_001':           { x: 160,  y: 255 },
+    'LOC_001':            { x: 370,  y: 330 }, // subiu de y=408 → 330 (menos mergulho)
+    'LOC_001B':           { x: 570,  y: 250 }, // subiu levemente para manter fluxo suave
+    'LOC_002':            { x: 760,  y: 185 }, // caminho principal sobe gradualmente
+    'LOC_002B':           { x: 970,  y: 145 },
+    'LOC_002C':           { x: 1170, y: 115 },
+    'LOC_003':            { x: 680,  y: 390 }, // ramo inferior — separação vertical clara
+    'LOC_003B':           { x: 850,  y: 448 },
+    'LOC_003C':           { x: 1040, y: 412 },
+    'LOC_004':            { x: 1130, y: 235 },
+    'LOC_004B':           { x: 1296, y: 295 },
+    'LOC_005':            { x: 910,  y: 118 },
+    'LOC_005B':           { x: 1080, y: 65  },
+    'LOC_005C':           { x: 1244, y: 42  },
+    'BOSS_CAVES_OPT_01':  { x: 1412, y: 42  },
+    'LOC_010':            { x: 1584, y: 42  },
     'LOC_006':            { x: 1216, y: 456 },
-    'LOC_006B':           { x: 1392, y: 422 },
-    'LOC_007':            { x: 1336, y: 182 },
-    'LOC_007B':           { x: 1496, y: 237 },
-    'LOC_008':            { x: 1536, y: 360 },
-    'LOC_008B':           { x: 1696, y: 310 },
-    'BOSS_FOREST_01':     { x: 1680, y: 414 },
-    'LOC_009':            { x: 1656, y: 494 },
-    'BOSS_RUINS_SIDE_01': { x: 984,  y: 498 },
-    'LOC_011':            { x: 1148, y: 498 },
+    'LOC_006B':           { x: 1392, y: 420 },
+    'LOC_007':            { x: 1336, y: 172 },
+    'LOC_007B':           { x: 1496, y: 228 },
+    'LOC_008':            { x: 1536, y: 350 },
+    'LOC_008B':           { x: 1696, y: 300 },
+    'BOSS_FOREST_01':     { x: 1680, y: 410 },
+    'LOC_009':            { x: 1656, y: 488 },
+    'BOSS_RUINS_SIDE_01': { x: 984,  y: 490 },
+    'LOC_011':            { x: 1148, y: 490 },
 };
 
 // ── Cor de preenchimento base por bioma ───────────────────────────────────────
