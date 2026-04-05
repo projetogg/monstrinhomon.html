@@ -8873,20 +8873,76 @@
         // ── Câmera com safe area e framing por contexto ────────────────────────
         // A sidebar fixa à direita desloca o centro perceptivo do mapa.
         // Cada modo de câmera prioriza uma experiência diferente:
-        //   'opening'  — abertura: cidade no terço esquerdo, mundo se abre à direita
-        //   'travel'   — viagem: enquadramento levemente à esquerda para mais ar
-        //   'select'   — seleção: equilíbrio padrão, balanceado
-        //   'boss'     — boss: centralizado no espaço útil para dramatismo
         const OW_PAN_RATIO  = 0.38; // passo de pan = 38% do viewport
-        const OW_FRAMING = {
-            opening: { safeLeft: 55,  safeRight: 172, focusRatio: 0.18 }, // cidade à esq, mundo à direita
-            travel:  { safeLeft: 65,  safeRight: 178, focusRatio: 0.35 }, // nó levemente à esq, mais ar à frente
-            select:  { safeLeft: 65,  safeRight: 175, focusRatio: 0.38 }, // equilíbrio com respiro real à direita
-            boss:    { safeLeft: 90,  safeRight: 175, focusRatio: 0.46 }, // centralizado para dramatismo
+
+        // ── Safe area — limites de conforto para visibilidade do nó ──────────────
+        // A sidebar à direita ocupa espaço visual; a borda esquerda tem vinheta leve.
+        // Nós dentro desta faixa [OW_SAFE_LEFT, VIEWPORT_W - OW_SAFE_RIGHT] são
+        // considerados confortavelmente visíveis sem micro-movimentos de câmera.
+        const OW_SAFE_LEFT  = 65;
+        const OW_SAFE_RIGHT = 175;
+
+        // ── Clusters de enquadramento — microcenas do overworld ───────────────────
+        // Em vez de centrar a câmera no nó selecionado, o mapa é dividido em
+        // clusters/trechos, cada um com um viewBoxX planejado que mostra o trecho
+        // como uma cena composta: nó atual + contexto de chegada + próximos destinos.
+        //
+        // Filosofia: a câmera não pergunta "onde está este nó?", mas
+        //            "qual é o melhor enquadramento deste trecho do mapa?"
+        //
+        // Cada cluster tem um viewBoxX preferido que compõe bem o trecho:
+        //   opening (0)       — Quadro 1 completo: cidade âncora + bifurcação inicial
+        //   early_fork (300)  — Transição pós-hub: ruínas, saída leste, primeiros caminhos
+        //   mid_exploration (480) — Exploração central: rotas divergem em três direções
+        //   upper_route (660) — Rota avançada: montanhas, cavernas opcionais, junção
+        //   final_area (880)  — Área final: convergência épica + bosses finais
+        const OW_CLUSTERS = {
+            opening:         { viewBoxX: 0   }, // Quadro 1: cidade hub + arredores imediatos
+            early_fork:      { viewBoxX: 300 }, // Transição: ruínas + saída leste + LOC_005
+            mid_exploration: { viewBoxX: 480 }, // Exploração: minas, costa, junção central
+            upper_route:     { viewBoxX: 660 }, // Avançado: montanha + cavernas opcionais
+            final_area:      { viewBoxX: 880 }, // Final: convergência + bosses finais
         };
-        // Limiares de conforto para visibilidade do nó — derivados do framing padrão (select)
-        const OW_SAFE_LEFT  = OW_FRAMING.select.safeLeft;
-        const OW_SAFE_RIGHT = OW_FRAMING.select.safeRight;
+
+        // Mapeamento direto: nodeId → cluster principal do nó.
+        // Determina qual microcena enquadrar ao viajar ou selecionar o nó.
+        const OW_NODE_CLUSTER = {
+            // ── Cluster 1: Abertura — Quadro 1 do mapa ───────────────────────────
+            'CITY_001':           'opening',
+            'LOC_001':            'opening',
+            'LOC_001B':           'opening',
+            'LOC_002':            'opening',
+            'LOC_003':            'opening',
+            'LOC_003B':           'opening',
+            'BOSS_RUINS_SIDE_01': 'opening',
+
+            // ── Cluster 2: Bifurcação inicial — transição pós-hub ─────────────────
+            'LOC_011':            'early_fork',
+            'LOC_002B':           'early_fork',
+            'LOC_003C':           'early_fork',
+            'LOC_005':            'early_fork',
+
+            // ── Cluster 3: Exploração central — rotas divergentes ─────────────────
+            'LOC_005B':           'mid_exploration',
+            'LOC_006':            'mid_exploration',
+            'LOC_004':            'mid_exploration',
+            'LOC_002C':           'mid_exploration',
+
+            // ── Cluster 4: Rota avançada — montanha + cavernas ───────────────────
+            'LOC_005C':           'upper_route',
+            'LOC_006B':           'upper_route',
+            'LOC_004B':           'upper_route',
+            'LOC_007':            'upper_route',
+            'BOSS_CAVES_OPT_01':  'upper_route',
+
+            // ── Cluster 5: Área final — convergência épica ───────────────────────
+            'LOC_010':            'final_area',
+            'LOC_007B':           'final_area',
+            'LOC_008':            'final_area',
+            'LOC_008B':           'final_area',
+            'BOSS_FOREST_01':     'final_area',
+            'LOC_009':            'final_area',
+        };
 
         /** Carrega os dados de localização e do mapa (com cache). */
         async function _wmLoadData() {
@@ -8945,13 +9001,16 @@
         // ── Viewport progressiva — câmera do mapa ──────────────────────────────────
 
         /**
-         * Calcula a coordenada x do viewBox para enquadrar o nó com o framing adequado.
+         * Retorna o viewBoxX para enquadrar o trecho (cluster) do nó.
          *
-         * Cada modo de câmera posiciona o nó diferentemente no espaço útil:
-         *   'opening' — cidade âncora à esquerda, mundo se abre à direita
-         *   'travel'  — nó levemente à esquerda do centro útil (mais ar à frente)
-         *   'select'  — equilíbrio padrão com safe area
-         *   'boss'    — nó centralizado no espaço útil para dramatismo
+         * Lógica de cluster:
+         *   - Cada nó pertence a um cluster/microcena com um viewBoxX planejado.
+         *   - A câmera enquadra o TRECHO, não apenas o nó individual.
+         *   - Resultado: o jogador vê o contexto — de onde veio, para onde pode ir.
+         *
+         * Modo 'opening': sempre retorna 0 (cidade âncora à esquerda no primeiro load).
+         * Demais modos: usa o viewBoxX do cluster do nó como enquadramento principal.
+         * Fallback: se o nó não tiver cluster mapeado, centra conservadoramente.
          *
          * @param {string} nodeId
          * @param {'opening'|'travel'|'select'|'boss'} [mode='select']
@@ -8959,14 +9018,26 @@
          */
         function _owComputeViewBoxX(nodeId, mode = 'select') {
             if (!window.OverworldMap) return 0;
-            const { NODE_POSITIONS, WORLD_W, VIEWPORT_W } = window.OverworldMap;
+            const { WORLD_W, VIEWPORT_W } = window.OverworldMap;
+            const maxVBX = WORLD_W - VIEWPORT_W;
+
+            // Abertura: câmera na origem — cidade âncora à esquerda, mundo se abre
+            if (mode === 'opening') return 0;
+
+            // Enquadramento por cluster: posiciona o trecho como microcena
+            const clusterName = OW_NODE_CLUSTER[nodeId];
+            const cluster     = clusterName ? OW_CLUSTERS[clusterName] : undefined;
+            if (cluster) {
+                return Math.max(0, Math.min(cluster.viewBoxX, maxVBX));
+            }
+
+            // Fallback conservador: centra o nó com safe area padrão
+            const { NODE_POSITIONS } = window.OverworldMap;
             const pos = NODE_POSITIONS[nodeId];
             if (!pos) return 0;
-            const { safeLeft, safeRight, focusRatio } = OW_FRAMING[mode] ?? OW_FRAMING.select;
-            const usableW       = VIEWPORT_W - safeLeft - safeRight;
-            const targetScreenX = safeLeft + usableW * focusRatio;
-            const raw           = pos.x - targetScreenX;
-            return Math.max(0, Math.min(raw, WORLD_W - VIEWPORT_W));
+            const usableW       = VIEWPORT_W - OW_SAFE_LEFT - OW_SAFE_RIGHT;
+            const targetScreenX = OW_SAFE_LEFT + usableW * 0.38;
+            return Math.max(0, Math.min(pos.x - targetScreenX, maxVBX));
         }
 
         /**
@@ -9111,8 +9182,10 @@
 
         /**
          * Chamado pelo onclick dos nós SVG. Atualiza o sidebar e enquadra a câmera.
-         * Só anima a câmera se o nó não estiver confortavelmente visível na safe area.
-         * Boss nodes recebem framing centralizado para dramatismo.
+         *
+         * Modo inspeção: só move a câmera se o nó estiver fora da safe area.
+         * Quando move, enquadra o trecho (cluster) do nó — não apenas o nó individual.
+         * Isso garante que boss nodes também apareçam com contexto cênico adequado.
          * @param {string} nodeId
          */
         function owSelectNode(nodeId) {
@@ -9120,13 +9193,11 @@
             const nodeEl = document.querySelector(`.ow-node[data-node="${nodeId}"]`);
             if (nodeEl) nodeEl.classList.add('ow-node--selected');
             _wm.selectedNodeId = nodeId;
-            // Só move a câmera se o nó estiver fora da zona confortável — evita micro-movimentos
+            // Só move se o nó estiver fora da zona confortável — evita micro-movimentos
+            // Ao mover, usa o cluster do nó para enquadrar o trecho completo
             const pos = window.OverworldMap?.NODE_POSITIONS?.[nodeId];
             if (pos && !_owIsNodeComfortablyVisible(pos.x, _wm.viewBoxX ?? 0)) {
-                // Boss: enquadramento centralizado para dramatismo; demais: select padrão
-                const isBossNode = nodeEl?.classList.contains('ow-node--boss');
-                const mode = isBossNode ? 'boss' : 'select';
-                _owAnimateToViewBoxX(_owComputeViewBoxX(nodeId, mode), OW_SELECT_ANIM_MS, null);
+                _owAnimateToViewBoxX(_owComputeViewBoxX(nodeId, 'select'), OW_SELECT_ANIM_MS, null);
             }
             _owRenderSidebar(nodeId);
         }
