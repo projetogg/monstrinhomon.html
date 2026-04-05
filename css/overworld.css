@@ -3,6 +3,11 @@
    Tema escuro estilo RPG. Polish visual — composição madura de tela principal.
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* ── Custom properties ───────────────────────────────────────────────────── */
+#overworldPanel {
+    --ow-sidebar-width: 320px; /* largura da sidebar de contexto do nó */
+}
+
 /* ── Painel principal ────────────────────────────────────────────────────── */
 #overworldPanel {
     padding: 0;
@@ -78,16 +83,16 @@
 }
 
 /* ── Layout mapa + sidebar ───────────────────────────────────────────────── */
-/* Sidebar estreita (320px) — mapa é o protagonista; sidebar é complemento */
+/* Sidebar estreita — mapa é o protagonista; sidebar é complemento */
 .ow-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
+    grid-template-columns: minmax(0, 1fr) minmax(0, var(--ow-sidebar-width, 320px));
     gap: 0;
     align-items: stretch;
 }
 
 /* ── Área do mapa (SVG) ──────────────────────────────────────────────────── */
-/* aspect-ratio 88/53 alinha com o viewBox do SVG (880×530), eliminando letterboxing */
+/* aspect-ratio 88/53 = viewport 880×530 — alinha exatamente com o viewBox visível */
 .ow-map-wrap {
     background: #080a10;
     border-right: 1px solid rgba(255,255,255,0.06);
@@ -99,11 +104,74 @@
     position: relative;
 }
 
+/* Vinheta lateral — sugere que o mundo continua além da tela */
+.ow-map-wrap::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        rgba(8,10,16,0.55) 0%,
+        transparent 12%,
+        transparent 88%,
+        rgba(8,10,16,0.55) 100%
+    );
+    pointer-events: none;
+    z-index: 1;
+}
+
 .ow-svg {
     width: 100%;
     height: 100%;
     display: block;
 }
+
+/* ── Botões de pan — navegação lateral do mapa ───────────────────────────── */
+/* Posicionados sobre o mapa como controles de câmera */
+.ow-pan-buttons {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.ow-pan-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: all;
+    background: rgba(8,10,16,0.72);
+    border: 1px solid rgba(255,255,255,0.10);
+    color: rgba(255,255,255,0.45);
+    font-size: 22px;
+    width: 30px;
+    height: 56px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    padding: 0;
+    line-height: 1;
+    user-select: none;
+}
+
+.ow-pan-btn:hover {
+    background: rgba(32,221,204,0.12);
+    color: #20ddcc;
+    border-color: rgba(32,221,204,0.28);
+}
+
+.ow-pan-btn:active {
+    background: rgba(32,221,204,0.20);
+}
+
+.ow-pan-btn--left  { left: 6px; }
+.ow-pan-btn--right { right: 6px; }
 
 /* ── Sidebar de informações do nó ────────────────────────────────────────── */
 .ow-sidebar-wrap {

@@ -243,6 +243,15 @@
                 <div class="ow-layout">
                     <div class="ow-map-wrap" id="overworldMapContainer">
                         <!-- SVG renderizado por renderOverworldPanel() -->
+                        <!-- Botões de pan — câmera do mundo -->
+                        <div class="ow-pan-buttons" id="owPanButtons">
+                            <button class="ow-pan-btn ow-pan-btn--left"
+                                    onclick="owPanMap(-300)"
+                                    aria-label="Mover mapa para esquerda">‹</button>
+                            <button class="ow-pan-btn ow-pan-btn--right"
+                                    onclick="owPanMap(300)"
+                                    aria-label="Mover mapa para direita">›</button>
+                        </div>
                     </div>
                     <div class="ow-sidebar-wrap" id="overworldSidebar">
                         <p class="ow-sidebar__placeholder">👈 Selecione um local no mapa</p>
@@ -8839,11 +8848,18 @@
             selectedSpotId: null,
             selectedNodeId: null,       // nó inspecionado no mapa (não é posição da party)
             locationsData: null,        // cache do JSON carregado
-            worldMapNodes: null         // cache do worldMap.json
+            worldMapNodes: null,        // cache do worldMap.json
+            viewBoxX: null              // posição atual da câmera no eixo X (null = não inicializado)
         };
 
         /** Nó inicial da party em jogo novo. */
         const OW_INITIAL_NODE = 'CITY_001';
+
+        /** Duração da animação de câmera ao viajar entre nós (ms). */
+        const OW_TRAVEL_ANIM_MS = 580;
+
+        /** Duração da animação de pan manual do mapa (ms). */
+        const OW_PAN_ANIM_MS = 350;
 
         /** Carrega os dados de localização e do mapa (com cache). */
         async function _wmLoadData() {
@@ -8885,6 +8901,7 @@
 
             _wm.selectedLocationId = null;
             _wm.selectedSpotId     = null;
+            _wm.viewBoxX           = null; // resetar câmera — será centrada no nó atual
 
             // Inicializar posição da party se ainda não definida
             if (!GameState.data) GameState.data = {};
@@ -8897,6 +8914,65 @@
         }
 
         // ── OVERWORLD MAP — Renderização visual SVG ────────────────────────────────
+
+        // ── Viewport progressiva — câmera do mapa ──────────────────────────────────
+
+        /**
+         * Calcula a coordenada x do viewBox para centrar a câmera em um nó.
+         * Respeita os limites do mundo (0 a WORLD_W - VIEWPORT_W).
+         * @param {string} nodeId
+         * @returns {number}
+         */
+        function _owComputeViewBoxX(nodeId) {
+            if (!window.OverworldMap) return 0;
+            const { NODE_POSITIONS, WORLD_W, VIEWPORT_W } = window.OverworldMap;
+            const pos = NODE_POSITIONS[nodeId];
+            if (!pos) return 0;
+            const x = pos.x - VIEWPORT_W / 2;
+            return Math.max(0, Math.min(x, WORLD_W - VIEWPORT_W));
+        }
+
+        /**
+         * Define a câmera imediatamente (sem animação).
+         * @param {number} x - Coordenada x do viewBox
+         */
+        function _owSetViewBox(x) {
+            const svg = document.getElementById('overworldSVG');
+            if (!svg || !window.OverworldMap) return;
+            const { VIEWPORT_W, WORLD_H } = window.OverworldMap;
+            _wm.viewBoxX = x;
+            svg.setAttribute('viewBox', `${x} 0 ${VIEWPORT_W} ${WORLD_H}`);
+        }
+
+        /**
+         * Anima a câmera suavemente de _wm.viewBoxX até targetX.
+         * Usa easing ease-in-out para sensação de peso/movimento.
+         * @param {number} targetX - Posição final do viewBox
+         * @param {number} duration - Duração em ms
+         * @param {Function|null} onComplete - Callback ao terminar
+         */
+        function _owAnimateToViewBoxX(targetX, duration, onComplete) {
+            const svg = document.getElementById('overworldSVG');
+            if (!svg || !window.OverworldMap) { _wm.viewBoxX = targetX; onComplete?.(); return; }
+            const { VIEWPORT_W, WORLD_H } = window.OverworldMap;
+            const fromX = _wm.viewBoxX ?? targetX;
+            if (fromX === targetX) { onComplete?.(); return; }
+            const start = performance.now();
+            function step(now) {
+                const t = Math.min((now - start) / duration, 1);
+                // Ease in-out quadrático: aceleração suave + desaceleração
+                const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+                const x = Math.round(fromX + (targetX - fromX) * ease);
+                svg.setAttribute('viewBox', `${x} 0 ${VIEWPORT_W} ${WORLD_H}`);
+                if (t < 1) {
+                    requestAnimationFrame(step);
+                } else {
+                    _wm.viewBoxX = targetX;
+                    onComplete?.();
+                }
+            }
+            requestAnimationFrame(step);
+        }
 
         /**
          * Coleta o progresso atual do jogo para uso no overworld.
@@ -8943,7 +9019,29 @@
                 return { ...nodeWithUnlocked, _state: state };
             });
 
-            container.innerHTML = window.OverworldMap.buildMapSVG(enriched);
+            // Câmera: centrar no nó atual ao renderizar
+            // Se _wm.viewBoxX foi definido por uma animação de viagem, usá-lo;
+            // caso contrário (primeiro carregamento ou retorno ao mapa), centrar no nó atual.
+            const centerNodeId = progress.currentNodeId ?? OW_INITIAL_NODE;
+            if (_wm.viewBoxX === null) {
+                _wm.viewBoxX = _owComputeViewBoxX(centerNodeId);
+            }
+
+            // Recriar SVG com os botões de pan preservados (estão fora do innerHTML do SVG)
+            const svgHtml = window.OverworldMap.buildMapSVG(enriched, _wm.viewBoxX);
+            // Inserir SVG antes dos botões de pan (que são filhos do container)
+            const panButtons = container.querySelector('#owPanButtons');
+            if (panButtons) {
+                const tmp = document.createElement('div');
+                tmp.innerHTML = svgHtml;
+                const svgEl = tmp.firstElementChild;
+                // Remover SVG anterior se existir
+                const oldSvg = container.querySelector('#overworldSVG');
+                if (oldSvg) oldSvg.remove();
+                container.insertBefore(svgEl, panButtons);
+            } else {
+                container.innerHTML = svgHtml;
+            }
 
             // Atualizar header stats
             const totalNodes   = enriched.filter(n => n.type !== 'boss').length;
@@ -8960,7 +9058,7 @@
         }
 
         /**
-         * Chamado pelo onclick dos nós SVG. Atualiza o sidebar.
+         * Chamado pelo onclick dos nós SVG. Atualiza o sidebar e centraliza a câmera no nó.
          * @param {string} nodeId
          */
         function owSelectNode(nodeId) {
@@ -8968,6 +9066,8 @@
             const nodeEl = document.querySelector(`.ow-node[data-node="${nodeId}"]`);
             if (nodeEl) nodeEl.classList.add('ow-node--selected');
             _wm.selectedNodeId = nodeId;
+            // Centralizar câmera no nó selecionado (imediato, sem animação)
+            _owSetViewBox(_owComputeViewBoxX(nodeId));
             _owRenderSidebar(nodeId);
         }
 
@@ -9150,18 +9250,43 @@
         window.owGoToSpot = owGoToSpot;
 
         /**
-         * Move a party para o nó especificado (atualiza currentNodeId explicitamente).
+         * Move a party para o nó especificado com animação de câmera.
+         * A câmera desliza suavemente até o destino antes de atualizar o estado.
          * @param {string} nodeId
          */
         function owTravelToNode(nodeId) {
             if (!GameState.data) GameState.data = {};
-            GameState.data.currentNodeId = nodeId;
-            saveToLocalStorage();
-            renderOverworldPanel();
-            // Restaurar seleção visual e atualizar sidebar
-            owSelectNode(nodeId);
+            const targetX = _owComputeViewBoxX(nodeId);
+            // Animar câmera até o destino — só então atualizar dados e re-renderizar
+            _owAnimateToViewBoxX(targetX, OW_TRAVEL_ANIM_MS, () => {
+                GameState.data.currentNodeId = nodeId;
+                saveToLocalStorage();
+                renderOverworldPanel();
+                // Restaurar seleção visual e atualizar sidebar
+                owSelectNode(nodeId);
+            });
         }
         window.owTravelToNode = owTravelToNode;
+
+        /**
+         * Desloca a câmera do mapa lateralmente (pan manual pelo jogador).
+         * Lê a posição real do SVG para que pans rápidos encadeiem suavemente.
+         * @param {number} delta - Quantidade de pixels SVG para deslocar (negativo=esquerda)
+         */
+        function owPanMap(delta) {
+            if (!window.OverworldMap) return;
+            const { WORLD_W, VIEWPORT_W } = window.OverworldMap;
+            // Ler posição atual do viewBox do SVG (pode estar em mid-animation)
+            const svg = document.getElementById('overworldSVG');
+            if (svg) {
+                const vb = svg.getAttribute('viewBox');
+                if (vb) _wm.viewBoxX = parseFloat(vb.split(' ')[0]);
+            }
+            const current = _wm.viewBoxX ?? 0;
+            const targetX = Math.max(0, Math.min(current + delta, WORLD_W - VIEWPORT_W));
+            _owAnimateToViewBoxX(targetX, OW_PAN_ANIM_MS, null);
+        }
+        window.owPanMap = owPanMap;
 
         // ── Grade legada (usada como fallback) ─────────────────────────────────
 
@@ -9972,6 +10097,7 @@
         function backToWorldMap() {
             _wm.selectedLocationId = null;
             _wm.selectedSpotId     = null;
+            _wm.viewBoxX           = null; // recentrar câmera no nó atual ao voltar
             const overworldEl = document.getElementById('overworldPanel');
             const mapPanel    = document.getElementById('worldMapPanel');
             const spotsPanel  = document.getElementById('locationSpotsPanel');
