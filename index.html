@@ -4187,12 +4187,18 @@
                         return;
                     }
                     
-                    // GAME_RULES.md: Em batalha, só pode usar monstros da mesma classe do jogador
-                    const validMonsters = player.team.filter(m => m.class === player.class && m.status !== 'fainted');
+                    // GAME_RULES.md: Em batalha, só pode usar monstros da mesma classe do jogador.
+                    // Usa m.hp > 0 (consistente com _isAlive) para detectar monstrinhos vivos,
+                    // evitando falso negativo quando status não foi atualizado pelo combate de grupo.
+                    const validMonsters = player.team.filter(m => m.class === player.class && m.hp > 0);
                     if (validMonsters.length === 0) {
                         alert(`⚠️ ${player.name} não tem monstrinhos da classe ${player.class} disponíveis!\n\nREGRA: Em batalha, você só pode usar monstrinhos da SUA classe.\nTroque com outros jogadores para conseguir monstrinhos da sua classe!`);
                         return;
                     }
+
+                    // Garantir que activeIndex aponte para o primeiro monstrinho válido (vivo + mesma classe).
+                    const firstValidIdx = player.team.indexOf(validMonsters[0]);
+                    if (firstValidIdx >= 0) player.activeIndex = firstValidIdx;
                 }
                 
                 const encounter = {
@@ -10094,9 +10100,17 @@
                 (player.team ?? []).forEach(mi => {
                     if (mi && mi.hpMax && mi.hp < mi.hpMax) {
                         mi.hp = mi.hpMax;
+                        // Limpar status 'fainted' ao curar — garante que o monstrinho
+                        // seja reconhecido como elegível na próxima batalha selvagem.
+                        if (mi.status === 'fainted') mi.status = 'healthy';
                         healed++;
                     }
                 });
+                // Recalcular activeIndex para o primeiro monstrinho vivo após a cura
+                if (Array.isArray(player.team)) {
+                    const idx = firstAliveIndex(player.team);
+                    if (idx >= 0) player.activeIndex = idx;
+                }
             });
             saveToLocalStorage();
             render();
