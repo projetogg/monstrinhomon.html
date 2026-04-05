@@ -35,53 +35,62 @@ export const SVG_HEIGHT = WORLD_H;
 // Com VIEWPORT_W=880, o jogador vê metade do mapa de cada vez.
 // NODE_R=36 — há espaço suficiente para nós maiores.
 //
-// COMPOSIÇÃO DO VIEWPORT INICIAL (x: 0–880):
-//   Objetivo: enquadramento de abertura legível e bem distribuído verticalmente.
-//   CITY_001 âncora a esquerda; LOC_001 e LOC_001B sobem para o terço superior;
-//   LOC_003 e LOC_003B descem para o terço inferior — fork visual imediato.
-//   O viewport inicial cobre da cidade até o início das duas rotas divergentes,
-//   eliminando a massa escura ociosa no topo e na parte central do palco.
+// FILOSOFIA DE COMPOSIÇÃO POR QUADRO:
+//   O mapa é desenhado como sequência de enquadramentos — cada porção visível
+//   do viewport deve funcionar como uma composição cênica forte por si só.
 //
-// SEGUNDO VIEWPORT (x: 880–1760):
-//   Rota superior (montanha) avança pelo topo; rota inferior (ruínas/costa)
-//   segue na base; convergência final em LOC_008.
+// QUADRO 1 — "Abertura" (viewBoxX=0, visível x: 0–880):
+//   CITY_001 âncora no terço esquerdo. LOC_001 é o gateway imediato.
+//   Fork superior (LOC_001B) e inferior (LOC_003) divergem visivelmente.
+//   LOC_002 e BOSS_RUINS_SIDE_01 fecham o quadro dentro da safe zone (x ≤ 705),
+//   deixando ~175px de respiro antes da borda — sem nó "colado" na lateral.
+//   A câmera 'opening' (focusRatio=0.18) mantém viewBoxX=0 para CITY_001,
+//   então o conteúdo visível é exatamente x: 0–880.
+//
+// TRANSIÇÃO (x: 680–1000):
+//   Zona de sobreposição entre os dois quadros. LOC_002B e LOC_003C ficam
+//   logo após a borda do quadro 1 — um pan revela continuidade orgânica.
+//
+// QUADRO 2 — "Exploração" (viewBoxX=880, visível x: 880–1760):
+//   Rotas superior (montanha) e inferior (costa) se afastam no eixo vertical.
+//   Convergência gradual em LOC_004/007B/008 — boss final emerge da junção.
 export const NODE_POSITIONS = {
-    // ── VIEWPORT INICIAL (x: 0–880) ─────────────────────────────────────────
-    'CITY_001':           { x: 200,  y: 270 }, // hub inicial — âncora esquerda
-    'LOC_001':            { x: 410,  y: 175 }, // gateway — rota sobe claramente
-    'LOC_001B':           { x: 620,  y: 110 }, // fork: superior segue, inferior desce
-    'LOC_002':            { x: 830,  y: 195 }, // borda direita do viewport inicial
-    'LOC_003':            { x: 450,  y: 415 }, // rota inferior — fork visual claro
-    'LOC_003B':           { x: 650,  y: 460 }, // rota inferior avança
+    // ── QUADRO 1: ABERTURA (x: 0–880) ──────────────────────────────────────
+    'CITY_001':           { x: 110,  y: 265 }, // hub inicial — âncora no terço esquerdo
+    'LOC_001':            { x: 312,  y: 190 }, // gateway — fork começa a divergir
+    'LOC_001B':           { x: 505,  y: 108 }, // rota superior — ascensão clara
+    'LOC_002':            { x: 678,  y: 182 }, // rota superior — dentro da safe zone (≤705)
+    'LOC_003':            { x: 348,  y: 412 }, // fork inferior — bifurcação visível
+    'LOC_003B':           { x: 555,  y: 460 }, // rota inferior — avança mas respira
+    // Boss lateral — isca no canto inferior-direito, dentro da safe zone
+    'BOSS_RUINS_SIDE_01': { x: 698,  y: 486 },
+    'LOC_011':            { x: 968,  y: 490 }, // logo após boss — revela no primeiro pan
 
-    // ── SEGUNDO VIEWPORT (x: 880–1760) ──────────────────────────────────────
-    // Rota superior principal
-    'LOC_002B':           { x: 1020, y: 145 },
-    'LOC_002C':           { x: 1200, y: 88  },
-    // Rota montanha (opcional — cavernas) — extremo superior
-    'LOC_005':            { x: 940,  y: 58  },
-    'LOC_005B':           { x: 1100, y: 42  },
-    'LOC_005C':           { x: 1264, y: 42  },
-    'BOSS_CAVES_OPT_01':  { x: 1440, y: 52  },
-    'LOC_010':            { x: 1640, y: 52  },
-    // Rota inferior (ruínas/costa) — segue na base
-    'LOC_003C':           { x: 880,  y: 418 },
-    'LOC_006':            { x: 1075, y: 455 },
-    'LOC_006B':           { x: 1280, y: 428 },
-    // Rota do meio — junção central
-    'LOC_004':            { x: 1155, y: 262 },
-    'LOC_004B':           { x: 1340, y: 315 },
+    // ── QUADRO 2: EXPLORAÇÃO (x: 880–1760) ──────────────────────────────────
+    // Rota superior principal — continua alto no frame
+    'LOC_002B':           { x: 985,  y: 142 },
+    'LOC_002C':           { x: 1180, y: 85  },
+    // Rota montanha (opcional — cavernas) — extremo superior, zona "elite"
+    'LOC_005':            { x: 940,  y: 44  },
+    'LOC_005B':           { x: 1105, y: 34  },
+    'LOC_005C':           { x: 1262, y: 34  },
+    'BOSS_CAVES_OPT_01':  { x: 1440, y: 44  },
+    'LOC_010':            { x: 1634, y: 44  },
+    // Rota inferior (ruínas/costa) — transição suave desde LOC_003B e boss lateral
+    'LOC_003C':           { x: 882,  y: 420 },
+    'LOC_006':            { x: 1065, y: 455 },
+    'LOC_006B':           { x: 1268, y: 435 },
+    // Rota central — junção das duas rotas principais
+    'LOC_004':            { x: 1145, y: 268 },
+    'LOC_004B':           { x: 1328, y: 318 },
     // Rota superior-direita (de LOC_002C → LOC_007)
-    'LOC_007':            { x: 1368, y: 168 },
-    'LOC_007B':           { x: 1528, y: 238 },
-    // Convergência final
-    'LOC_008':            { x: 1600, y: 352 },
-    'LOC_008B':           { x: 1724, y: 298 },
+    'LOC_007':            { x: 1355, y: 165 },
+    'LOC_007B':           { x: 1515, y: 238 },
+    // Convergência final — boss e recompensa
+    'LOC_008':            { x: 1592, y: 348 },
+    'LOC_008B':           { x: 1722, y: 292 },
     'BOSS_FOREST_01':     { x: 1704, y: 432 },
     'LOC_009':            { x: 1660, y: 498 },
-    // Boss lateral das ruínas (conecta a LOC_003B — visível no viewport inicial)
-    'BOSS_RUINS_SIDE_01': { x: 820,  y: 490 },
-    'LOC_011':            { x: 1000, y: 492 },
 };
 
 // ── Cor de preenchimento base por bioma ───────────────────────────────────────
