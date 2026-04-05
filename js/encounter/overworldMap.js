@@ -99,13 +99,15 @@ export const NODE_POSITIONS = {
     'LOC_007':            { x: 1355, y: 165 },
 
     // ── CLUSTER 5: FINAL_AREA (viewBoxX=880, x: 880–1760) ───────────────────────
-    'LOC_007B':           { x: 1515, y: 238 },
+    'LOC_007B':           { x: 1508, y: 238 },
     // Convergência final — boss e recompensa
-    'LOC_008':            { x: 1510, y: 348 }, // era 1592 — recuado para caber na safe area
-    'LOC_010':            { x: 1515, y: 44  }, // era 1634 — recuado para caber na safe area
-    'LOC_008B':           { x: 1555, y: 292 }, // era 1680 — recuado para caber na safe area
-    'BOSS_FOREST_01':     { x: 1540, y: 432 }, // era 1650 — recuado para caber na safe area
-    'LOC_009':            { x: 1545, y: 498 }, // era 1660 — recuado para caber na safe area
+    // Nós recuados (era 1592–1680) para caber dentro da safe area no maxVBX=880.
+    // Mantidos em x distintos (1480–1555) para evitar clustering visual.
+    'LOC_010':            { x: 1480, y: 44  }, // era 1634 — topo, mais à esquerda
+    'LOC_008':            { x: 1492, y: 348 }, // era 1592
+    'BOSS_FOREST_01':     { x: 1528, y: 432 }, // era 1650
+    'LOC_009':            { x: 1542, y: 498 }, // era 1660
+    'LOC_008B':           { x: 1555, y: 292 }, // era 1680 — mais à direita
 };
 
 // ── Cor de preenchimento base por bioma ───────────────────────────────────────

@@ -8879,8 +8879,10 @@
         // A sidebar à direita ocupa espaço visual; a borda esquerda tem vinheta leve.
         // Nós dentro desta faixa [OW_SAFE_LEFT, VIEWPORT_W - OW_SAFE_RIGHT] são
         // considerados confortavelmente visíveis sem micro-movimentos de câmera.
+        // OW_SAFE_LEFT (75): margem esquerda — compensa vinheta e ícone de pan.
+        // OW_SAFE_RIGHT (185): margem direita — protege sidebar de sobreposição com nós.
         const OW_SAFE_LEFT  = 75;
-        const OW_SAFE_RIGHT = 185; // maior: protege a sidebar de sobreposição com nós
+        const OW_SAFE_RIGHT = 185; // maior que a sidebar real para garantir conforto visual
 
         // ── Modelo híbrido: cluster + ajuste local por nó ─────────────────────────
         // O cluster define a "cena" (trecho do mapa); o ajuste local desloca a câmera
