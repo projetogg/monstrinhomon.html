@@ -8868,8 +8868,8 @@
         // A sidebar fixa à direita desloca o centro perceptivo do mapa.
         // O nó focado é posicionado no centro útil, não no centro matemático.
         const OW_SAFE_LEFT   = 70;  // margem de segurança esquerda (px mundo)
-        const OW_SAFE_RIGHT  = 110; // margem de segurança direita (evita sidebar/bordas)
-        const OW_FOCUS_RATIO = 0.45; // foco em 45% da área útil (não 50%)
+        const OW_SAFE_RIGHT  = 140; // margem de segurança direita — respiro real entre conteúdo e sidebar
+        const OW_FOCUS_RATIO = 0.40; // foco em 40% da área útil — nó mais à esquerda, mais ar à direita
         const OW_PAN_RATIO   = 0.38; // passo de pan = 38% do viewport
 
         /** Carrega os dados de localização e do mapa (com cache). */
@@ -8933,7 +8933,7 @@
          *
          * A câmera usa safe areas para compensar a sidebar fixa à direita:
          *   - OW_SAFE_LEFT / OW_SAFE_RIGHT: margens de segurança que evitam nós colados nas bordas
-         *   - OW_FOCUS_RATIO: posiciona o foco em ~45% da área útil (não 50%) — compensa peso visual da sidebar
+         *   - OW_FOCUS_RATIO: posiciona o foco em ~40% da área útil — dá respiro real à direita (sidebar)
          *
          * Isso faz o nó aparecer ligeiramente à esquerda do centro matemático,
          * que é o ponto perceptivamente equilibrado quando há painel lateral à direita.
