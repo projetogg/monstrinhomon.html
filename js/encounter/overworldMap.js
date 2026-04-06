@@ -102,7 +102,7 @@ export const NODE_POSITIONS = {
     // Nós espalhados para evitar sobreposição visual — safe boundary x≤1590 com
     // OW_SAFE_RIGHT=160 e maxVBX=880 (1600 é o limite absoluto, usamos 1590 com folga).
     // Verificação: distância entre nós conectados ≥ 2×NODE_R=72px.
-    'LOC_010':            { x: 1520, y: 36  }, // após boss opcional — topo, claramente à frente de BOSS_CAVES
+    'LOC_010':            { x: 1520, y: 36  }, // após boss opcional — topo, recuado à direita (≥72px de BOSS_CAVES_OPT_01 em x=1440)
     'LOC_007B':           { x: 1510, y: 238 }, // rota superior → junção final
     'LOC_008B':           { x: 1572, y: 285 }, // bônus — borda direita drama
     'LOC_008':            { x: 1510, y: 352 }, // hub final — confluência das rotas
@@ -192,8 +192,6 @@ export function getNodeVisualState(node, { visitedLocations, completedLocations,
  */
 export function buildMapSVG(enrichedNodes, viewBoxX = 0) {
     const nodeMap = new Map(enrichedNodes.map(n => [n.nodeId, n]));
-    // Mapa de estados para computar arestas percorridas
-    const nodeStateMap = new Map(enrichedNodes.map(n => [n.nodeId, n._state]));
     const traveledStates = new Set(['visited', 'current', 'boss-defeated']);
 
     // ── 1. Arestas únicas ──────────────────────────────────────────────────────
@@ -215,8 +213,8 @@ export function buildMapSVG(enrichedNodes, viewBoxX = 0) {
             const connNode    = nodeMap.get(connId);
             const bothVisible = node._unlocked || connNode?._unlocked;
             // Aresta percorrida: ambos os nós foram visitados/atual
-            const traveled    = traveledStates.has(nodeStateMap.get(node.nodeId)) &&
-                                traveledStates.has(nodeStateMap.get(connId));
+            const traveled    = traveledStates.has(nodeMap.get(node.nodeId)?._state) &&
+                                traveledStates.has(nodeMap.get(connId)?._state);
             edges.push({ x1: pA.x, y1: pA.y, x2: pB.x, y2: pB.y, active: bothVisible, traveled });
         }
     }
