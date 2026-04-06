@@ -8882,7 +8882,7 @@
         // OW_SAFE_LEFT (75): margem esquerda — compensa vinheta e ícone de pan.
         // OW_SAFE_RIGHT (185): margem direita — protege sidebar de sobreposição com nós.
         const OW_SAFE_LEFT  = 75;
-        const OW_SAFE_RIGHT = 185; // maior que a sidebar real para garantir conforto visual
+        const OW_SAFE_RIGHT = 160; // margem direita — conforto visual sem ser excessivamente conservador
 
         // ── Modelo híbrido: cluster + ajuste local por nó ─────────────────────────
         // O cluster define a "cena" (trecho do mapa); o ajuste local desloca a câmera
@@ -8891,7 +8891,7 @@
         //   em relação ao viewBoxX base do cluster. Mantém a composição de cena.
         // OW_TARGET_SCREEN_X: fração da área útil onde o nó deve aparecer na tela.
         const OW_CLUSTER_ADJUST_LIMIT = 120; // ±120 px de ajuste fino por nó
-        const OW_TARGET_SCREEN_X      = 0.38; // 38% da área útil (levemente à esquerda)
+        const OW_TARGET_SCREEN_X      = 0.35; // 35% da área útil — mostra mais horizonte à frente
 
         // ── Clusters de enquadramento — microcenas do overworld ───────────────────
         // Em vez de centrar a câmera no nó selecionado, o mapa é dividido em
