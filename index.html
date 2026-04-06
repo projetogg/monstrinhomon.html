@@ -8879,8 +8879,19 @@
         // A sidebar à direita ocupa espaço visual; a borda esquerda tem vinheta leve.
         // Nós dentro desta faixa [OW_SAFE_LEFT, VIEWPORT_W - OW_SAFE_RIGHT] são
         // considerados confortavelmente visíveis sem micro-movimentos de câmera.
-        const OW_SAFE_LEFT  = 65;
-        const OW_SAFE_RIGHT = 175;
+        // OW_SAFE_LEFT (75): margem esquerda — compensa vinheta e ícone de pan.
+        // OW_SAFE_RIGHT (185): margem direita — protege sidebar de sobreposição com nós.
+        const OW_SAFE_LEFT  = 75;
+        const OW_SAFE_RIGHT = 185; // maior que a sidebar real para garantir conforto visual
+
+        // ── Modelo híbrido: cluster + ajuste local por nó ─────────────────────────
+        // O cluster define a "cena" (trecho do mapa); o ajuste local desloca a câmera
+        // dentro de um limite para posicionar melhor o nó selecionado.
+        // OW_CLUSTER_ADJUST_LIMIT: deslocamento máximo (px) que um nó pode pedir
+        //   em relação ao viewBoxX base do cluster. Mantém a composição de cena.
+        // OW_TARGET_SCREEN_X: fração da área útil onde o nó deve aparecer na tela.
+        const OW_CLUSTER_ADJUST_LIMIT = 120; // ±120 px de ajuste fino por nó
+        const OW_TARGET_SCREEN_X      = 0.38; // 38% da área útil (levemente à esquerda)
 
         // ── Clusters de enquadramento — microcenas do overworld ───────────────────
         // Em vez de centrar a câmera no nó selecionado, o mapa é dividido em
@@ -9003,14 +9014,16 @@
         /**
          * Retorna o viewBoxX para enquadrar o trecho (cluster) do nó.
          *
-         * Lógica de cluster:
-         *   - Cada nó pertence a um cluster/microcena com um viewBoxX planejado.
-         *   - A câmera enquadra o TRECHO, não apenas o nó individual.
-         *   - Resultado: o jogador vê o contexto — de onde veio, para onde pode ir.
+         * Modelo HÍBRIDO: cluster como base + ajuste local por nó.
+         *   - O cluster define a "cena" (microcena do mapa) com um viewBoxX planejado.
+         *   - O nó aplica um deslocamento limitado (±OW_CLUSTER_ADJUST_LIMIT) para
+         *     se posicionar confortavelmente dentro da safe area sem destruir a cena.
+         *   - Assim, nós diferentes no mesmo cluster recebem enquadramentos similares
+         *     mas com correção fina para nenhum ficar cortado pela sidebar ou borda.
          *
          * Modo 'opening': sempre retorna 0 (cidade âncora à esquerda no primeiro load).
-         * Demais modos: usa o viewBoxX do cluster do nó como enquadramento principal.
-         * Fallback: se o nó não tiver cluster mapeado, centra conservadoramente.
+         * Demais modos: cluster base + ajuste fino por posição do nó.
+         * Fallback: centra o nó com safe area padrão se não houver cluster.
          *
          * @param {string} nodeId
          * @param {'opening'|'travel'|'select'|'boss'} [mode='select']
@@ -9018,26 +9031,41 @@
          */
         function _owComputeViewBoxX(nodeId, mode = 'select') {
             if (!window.OverworldMap) return 0;
-            const { WORLD_W, VIEWPORT_W } = window.OverworldMap;
+            const { WORLD_W, VIEWPORT_W, NODE_POSITIONS } = window.OverworldMap;
             const maxVBX = WORLD_W - VIEWPORT_W;
 
             // Abertura: câmera na origem — cidade âncora à esquerda, mundo se abre
             if (mode === 'opening') return 0;
 
-            // Enquadramento por cluster: posiciona o trecho como microcena
             const clusterName = OW_NODE_CLUSTER[nodeId];
             const cluster     = clusterName ? OW_CLUSTERS[clusterName] : undefined;
-            if (cluster) {
-                return Math.max(0, Math.min(cluster.viewBoxX, maxVBX));
+            const pos         = NODE_POSITIONS[nodeId];
+
+            // Modelo híbrido: cluster como base + ajuste fino por nó
+            if (cluster && pos) {
+                const usableW       = VIEWPORT_W - OW_SAFE_LEFT - OW_SAFE_RIGHT;
+                const targetScreenX = OW_SAFE_LEFT + usableW * OW_TARGET_SCREEN_X;
+
+                // viewBoxX ideal para centralizar o nó na targetScreenX
+                const idealVBX  = pos.x - targetScreenX;
+                // Deslocamento em relação ao viewBoxX base do cluster — limitado
+                const rawOffset = idealVBX - cluster.viewBoxX;
+                const offset    = Math.max(-OW_CLUSTER_ADJUST_LIMIT,
+                                           Math.min(OW_CLUSTER_ADJUST_LIMIT, rawOffset));
+                return Math.max(0, Math.min(cluster.viewBoxX + offset, maxVBX));
             }
 
-            // Fallback conservador: centra o nó com safe area padrão
-            const { NODE_POSITIONS } = window.OverworldMap;
-            const pos = NODE_POSITIONS[nodeId];
-            if (!pos) return 0;
-            const usableW       = VIEWPORT_W - OW_SAFE_LEFT - OW_SAFE_RIGHT;
-            const targetScreenX = OW_SAFE_LEFT + usableW * 0.38;
-            return Math.max(0, Math.min(pos.x - targetScreenX, maxVBX));
+            // Fallback apenas com cluster (nó sem coordenada mapeada)
+            if (cluster) return Math.max(0, Math.min(cluster.viewBoxX, maxVBX));
+
+            // Fallback sem cluster: centra o nó com safe area padrão
+            if (pos) {
+                const usableW       = VIEWPORT_W - OW_SAFE_LEFT - OW_SAFE_RIGHT;
+                const targetScreenX = OW_SAFE_LEFT + usableW * OW_TARGET_SCREEN_X;
+                return Math.max(0, Math.min(pos.x - targetScreenX, maxVBX));
+            }
+
+            return 0;
         }
 
         /**

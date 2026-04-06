@@ -93,19 +93,21 @@ export const NODE_POSITIONS = {
     // ── CLUSTER 4: UPPER_ROUTE (viewBoxX=660, x: 660–1540) ─────────────────────
     'LOC_005C':           { x: 1262, y: 34  },
     'BOSS_CAVES_OPT_01':  { x: 1440, y: 44  }, // boss opcional — borda dramática intencional
-    'LOC_010':            { x: 1634, y: 44  },
     'LOC_006B':           { x: 1268, y: 435 },
     'LOC_004B':           { x: 1328, y: 318 },
     // Rota superior-direita (de LOC_002C → LOC_007)
     'LOC_007':            { x: 1355, y: 165 },
 
     // ── CLUSTER 5: FINAL_AREA (viewBoxX=880, x: 880–1760) ───────────────────────
-    'LOC_007B':           { x: 1515, y: 238 },
+    'LOC_007B':           { x: 1508, y: 238 },
     // Convergência final — boss e recompensa
-    'LOC_008':            { x: 1592, y: 348 },
-    'LOC_008B':           { x: 1680,  y: 292 },
-    'BOSS_FOREST_01':     { x: 1650,  y: 432 },
-    'LOC_009':            { x: 1660, y: 498 },
+    // Nós recuados (era 1592–1680) para caber dentro da safe area no maxVBX=880.
+    // Mantidos em x distintos (1480–1555) para evitar clustering visual.
+    'LOC_010':            { x: 1480, y: 44  }, // era 1634 — topo, mais à esquerda
+    'LOC_008':            { x: 1492, y: 348 }, // era 1592
+    'BOSS_FOREST_01':     { x: 1528, y: 432 }, // era 1650
+    'LOC_009':            { x: 1542, y: 498 }, // era 1660
+    'LOC_008B':           { x: 1555, y: 292 }, // era 1680 — mais à direita
 };
 
 // ── Cor de preenchimento base por bioma ───────────────────────────────────────
