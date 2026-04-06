@@ -24,8 +24,8 @@ import {
     executeWildCaptureAction,
     executeWildItemUse,
     executeWildEnemyFullTurn,
+    executeWildAttack,
 } from '../js/combat/wildActions.js';
-import { executeWildAttack } from '../js/combat/wildActions.js';
 import {
     resolveD20Hit,
     CAPTURE_ACTIONS,
