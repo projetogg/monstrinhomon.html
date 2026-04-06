@@ -12,6 +12,18 @@ import { initializeBattleParticipation, markAsParticipated, processBattleItemBre
 import { isOffensiveSkill } from './skillResolver.js';
 
 /**
+ * Passivas de combate por classe — aplicadas após cálculo de dano base.
+ * defenseBonus: redução percentual de dano recebido (ex.: 0.15 = -15%)
+ * attackBonus: aumento percentual de dano causado (ex.: 0.10 = +10%)
+ */
+const CLASS_COMBAT_PASSIVES = {
+    'Guerreiro':  { defenseBonus: 0.15 },  // resistência passiva: -15% dano recebido
+    'Bárbaro':    { defenseBonus: 0.10 },  // resistência passiva: -10% dano recebido
+    'Curandeiro': { defenseBonus: 0.10 },  // resistência passiva: -10% dano recebido
+    'Ladino':     { attackBonus:  0.10 },  // precisão: +10% dano causado
+};
+
+/**
  * PR11B: Inicializa participação de batalha para group/boss
  * Deve ser chamado no início do encounter
  * 
@@ -173,8 +185,8 @@ export function executePlayerAttackGroup(deps, targetEnemyIndex = null) {
     let powerUsed = basicPower;
 
     if (isCrit) {
-        powerUsed = basicPower * 2;
-        helpers.log(enc, `💥 CRIT 20! ${monName} ativou Poder Duplo!`);
+        powerUsed = Math.round(basicPower * 1.5); // A1: crit ×1.5 (era ×2)
+        helpers.log(enc, `💥 CRIT 20! ${monName} ativou Poder Reforçado!`);
     }
 
     // Aplicar modificadores de buff
@@ -191,12 +203,24 @@ export function executePlayerAttackGroup(deps, targetEnemyIndex = null) {
         state.config?.classAdvantages
     );
 
-    const dmg = core.calcDamage({
+    let dmg = core.calcDamage({
         atk: effectiveAtk,
         def: effectiveDef,
         power: powerUsed,
         damageMult: classAdv.damageMult
     });
+
+    // A4: Passiva ofensiva do atacante (Ladino +10% dano)
+    const atkClassPassive = CLASS_COMBAT_PASSIVES[mon.class];
+    if (atkClassPassive?.attackBonus) {
+        dmg = Math.max(1, Math.round(dmg * (1 + atkClassPassive.attackBonus)));
+    }
+
+    // A4: Passiva defensiva do defensor (Guerreiro/Bárbaro/Curandeiro)
+    const defClassPassive = CLASS_COMBAT_PASSIVES[enemy.class];
+    if (defClassPassive?.defenseBonus) {
+        dmg = Math.max(1, Math.round(dmg * (1 - defClassPassive.defenseBonus)));
+    }
     
     // Apply damage
     helpers.applyDamage(enemy, dmg);
@@ -353,8 +377,8 @@ export function executeEnemyTurnGroup(enc, deps) {
     let powerUsed = basicPower;
 
     if (isCrit) {
-        powerUsed = basicPower * 2;
-        helpers.log(enc, `💥 CRIT 20! ${enemyName} ativou Poder Duplo!`);
+        powerUsed = Math.round(basicPower * 1.5); // A1: crit ×1.5 (era ×2)
+        helpers.log(enc, `💥 CRIT 20! ${enemyName} ativou Poder Reforçado!`);
     }
 
     // Aplicar modificadores de buff
@@ -371,12 +395,24 @@ export function executeEnemyTurnGroup(enc, deps) {
         state.config?.classAdvantages
     );
 
-    const dmg = core.calcDamage({
+    let dmg = core.calcDamage({
         atk: effectiveAtk,
         def: effectiveDef,
         power: powerUsed,
         damageMult: classAdv.damageMult
     });
+
+    // A4: Passiva ofensiva do inimigo atacante (Ladino +10% dano)
+    const atkClassPassive = CLASS_COMBAT_PASSIVES[enemy.class];
+    if (atkClassPassive?.attackBonus) {
+        dmg = Math.max(1, Math.round(dmg * (1 + atkClassPassive.attackBonus)));
+    }
+
+    // A4: Passiva defensiva do defensor (Guerreiro/Bárbaro/Curandeiro)
+    const defClassPassive = CLASS_COMBAT_PASSIVES[targetMon?.class];
+    if (defClassPassive?.defenseBonus) {
+        dmg = Math.max(1, Math.round(dmg * (1 - defClassPassive.defenseBonus)));
+    }
     
     // Apply damage
     helpers.applyDamage(targetMon, dmg);
@@ -818,14 +854,31 @@ export function executePlayerSkillGroup(skillOrId, enemyIndex, deps) {
         );
 
         let power = Number(skill.power) || 0;
-        if (isCrit) power = power * 2;
+        if (isCrit) power = Math.round(power * 1.5); // A1: crit ×1.5 (era ×2)
 
-        const dmg = core.calcDamage({
+        let dmg = core.calcDamage({
             atk: effectiveAtk,
             def: effectiveDef,
             power: power,
-            damageMult: classAdv.damageMult
+            damageMult: classAdv.damageMult,
+            defMult: 1.5  // A2: DEF mais relevante contra habilidades
         });
+
+        // A4: Passiva ofensiva do atacante (Ladino +10% dano)
+        const skillAtkPassive = CLASS_COMBAT_PASSIVES[mon.class];
+        if (skillAtkPassive?.attackBonus) {
+            dmg = Math.max(1, Math.round(dmg * (1 + skillAtkPassive.attackBonus)));
+        }
+
+        // A4: Passiva defensiva do defensor
+        const skillDefPassive = CLASS_COMBAT_PASSIVES[enemy.class];
+        if (skillDefPassive?.defenseBonus) {
+            dmg = Math.max(1, Math.round(dmg * (1 - skillDefPassive.defenseBonus)));
+        }
+
+        // A1: Cap de dano por turno: máximo 60% do HP máximo do defensor
+        const skillEnemyHpMax = Number(enemy.hpMax) || 100;
+        dmg = Math.min(dmg, Math.round(skillEnemyHpMax * 0.6));
 
         helpers.applyDamage(enemy, dmg);
         markAsParticipated(enemy);

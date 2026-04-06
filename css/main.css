@@ -338,6 +338,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .group-unit-owner { font-size: 11px; opacity: 0.6; margin-bottom: 4px; }
 .group-unit-stats { font-size: 11px; opacity: 0.6; margin-bottom: 4px; }
 .group-unit-item { font-size: 11px; opacity: 0.7; margin-top: 3px; }
+.group-unit-class-passive { font-size: 10px; opacity: 0.65; margin-top: 2px; color: #a8d8ff; }
 
 .group-unit-ko-badge {
     display: inline-block;

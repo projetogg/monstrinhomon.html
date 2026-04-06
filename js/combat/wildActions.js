@@ -126,7 +126,7 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
             // Calcular dano
             let power = dependencies.getBasicPower(playerMonster.class);
             if (critResult.isCrit20 && critResult.critBonus === 'double_power') {
-                power *= 2; // Dobrar POWER antes do cálculo
+                power = Math.round(power * 1.5); // A1: crit ×1.5 (era ×2)
             }
             
             const atkMods = WildCore.getBuffModifiers(playerMonster);
