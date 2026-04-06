@@ -37,7 +37,7 @@ import {
 
 function makeMonster(overrides = {}) {
     return {
-        id: 'pm_1', name: 'PM', class: 'Guerreiro',
+        id: 'pm_1', name: 'PM', class: 'Bardo',
         hp: 80, hpMax: 80, atk: 7, def: 4,
         ene: 10, eneMax: 20, buffs: [], ...overrides,
     };
@@ -45,7 +45,7 @@ function makeMonster(overrides = {}) {
 
 function makeWild(overrides = {}) {
     return {
-        id: 'w_1', name: 'Wild', class: 'Guerreiro',
+        id: 'w_1', name: 'Wild', class: 'Bardo',
         hp: 60, hpMax: 80, atk: 6, def: 3, poder: 8,
         ene: 5, eneMax: 20, aggression: 60, buffs: [], skill: null, ...overrides,
     };
@@ -53,7 +53,7 @@ function makeWild(overrides = {}) {
 
 function makePlayer(overrides = {}) {
     return {
-        id: 'p1', name: 'Jogador', class: 'Guerreiro',
+        id: 'p1', name: 'Jogador', class: 'Bardo',
         inventory: {}, team: [], money: 0, ...overrides,
     };
 }

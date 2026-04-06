@@ -497,6 +497,10 @@
                     <input type="checkbox" id="therapistMode" onchange="toggleTherapistMode()">
                     Therapist Mode (Show advanced controls)
                 </label>
+                <label style="margin-top:8px;display:block">
+                    <input type="checkbox" id="simplifiedLogMode" onchange="toggleSimplifiedLog()">
+                    📋 Log simplificado (apenas ações principais no combate)
+                </label>
             </div>
 
             <div class="card">
@@ -3856,10 +3860,13 @@
                 const regenData = ENE_REGEN_BY_CLASS[monster.class] || { pct: 0.10, min: 1 };
                 const eneGain = Math.max(regenData.min, Math.ceil(monster.eneMax * regenData.pct));
                 
+                const eneBefore = monster.ene;
                 monster.ene = Math.min(monster.eneMax, monster.ene + eneGain);
-                
-                if (encounter && encounter.log) {
-                    encounter.log.push(`⚡ ${monster.name} regenerou ${eneGain} ENE (${monster.ene}/${monster.eneMax})`);
+                const deltaEne = monster.ene - eneBefore;
+
+                // E1: Só loga se houve ganho real de ENE (evita poluição quando ENE já está cheia)
+                if (deltaEne > 0 && encounter && encounter.log) {
+                    encounter.log.push(`⚡ ${monster.name} recuperou ${deltaEne} ENE (${monster.ene}/${monster.eneMax})`);
                 }
             } catch (error) {
                 console.error('Failed to apply ENE regen:', error);
@@ -5347,7 +5354,7 @@
                 
                 // Detectar level up: por emoji OU por texto
                 const isLevelUp = line.includes("✨") || /subiu para o nível/i.test(line);
-                if (isLevelUp) showToast(line);
+                if (isLevelUp) showToast(line, 'level-up');
                 
                 // Detectar evolução: por emoji OU por texto
                 const isEvo = line.includes("🌟") || /evoluiu para/i.test(line);
@@ -6692,6 +6699,11 @@
                                     <div class="battle-bar-label"><span>❤️ HP</span><span>${monster.hp}/${monster.hpMax} (${Math.floor(hpPercent*100)}%)</span></div>
                                     <div class="battle-bar"><div class="battle-bar-fill hp" style="width:${hpPercent*100}%"></div></div>
                                 </div>
+                                ${(monster.eneMax > 0) ? `
+                                <div class="battle-bar-row">
+                                    <div class="battle-bar-label"><span>⚡ ENE</span><span>${monster.ene ?? 0}/${monster.eneMax}</span></div>
+                                    <div class="battle-bar"><div class="battle-bar-fill ene" style="width:${Math.max(0,Math.min(100,((monster.ene??0)/monster.eneMax)*100))}%"></div></div>
+                                </div>` : ''}
                                 <div class="battle-bar-row">
                                     <div class="battle-bar-label"><span>😤 Agressividade</span><span>${monster.aggression ?? 100}/100</span></div>
                                     <div class="battle-bar"><div class="battle-bar-fill aggr" style="width:${monster.aggression ?? 100}%"></div></div>
@@ -11396,6 +11408,20 @@
                 showToast('❌ Erro ao alterar modo terapeuta: ' + error.message, 'error');
             }
         }
+
+        // H1: Toggle de log simplificado — salva no GameState.config
+        function toggleSimplifiedLog() {
+            try {
+                const checked = document.getElementById('simplifiedLogMode')?.checked;
+                if (!GameState.config) GameState.config = {};
+                GameState.config.simplifiedLog = !!checked;
+                saveToLocalStorage();
+                showToast(checked ? '📋 Log simplificado ativado' : '📋 Log completo ativado', 'info');
+            } catch (error) {
+                console.error('[toggleSimplifiedLog] Erro:', error);
+            }
+        }
+        window.toggleSimplifiedLog = toggleSimplifiedLog;
 
         // Feature 4.4: Global click listener for button sounds
         document.addEventListener("click", (e) => {

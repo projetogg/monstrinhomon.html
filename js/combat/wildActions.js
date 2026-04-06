@@ -10,6 +10,17 @@ import * as WildUI from './wildUI.js';
 import { initializeBattleParticipation, markAsParticipated, processBattleItemBreakage } from './itemBreakage.js';
 import { resolvePassiveModifier } from '../canon/speciesPassives.js';
 
+// ── F1: Passivas de Classe em combate selvagem ────────────────────────────────
+// Espelha CLASS_COMBAT_PASSIVES de groupActions.js para consistência entre modos.
+// defenseBonus: redução percentual de dano recebido (ex.: 0.15 = -15%)
+// attackBonus: aumento percentual de dano causado (ex.: 0.10 = +10%)
+const CLASS_COMBAT_PASSIVES = {
+    'Guerreiro':  { defenseBonus: 0.15 },  // resistência passiva: -15% dano recebido
+    'Bárbaro':    { defenseBonus: 0.10 },  // resistência passiva: -10% dano recebido
+    'Curandeiro': { defenseBonus: 0.10 },  // resistência passiva: -10% dano recebido
+    'Ladino':     { attackBonus:  0.10 },  // precisão: +10% dano causado
+};
+
 // ── Telemetria de identidade canônica (Fase 14) ──────────────────────────────
 
 /**
@@ -192,7 +203,27 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
                 }
                 damage = reducedDamage;
             }
+
+            // F1: Passiva de classe do atacante (Ladino +10% dano)
+            const atkClassPassive = CLASS_COMBAT_PASSIVES[playerMonster.class];
+            if (atkClassPassive?.attackBonus) {
+                damage = Math.max(1, Math.round(damage * (1 + atkClassPassive.attackBonus)));
+            }
+
+            // F1: Passiva de classe do defensor (Guerreiro/Bárbaro/Curandeiro)
+            const defClassPassive = CLASS_COMBAT_PASSIVES[encounter.wildMonster.class];
+            if (defClassPassive?.defenseBonus) {
+                damage = Math.max(1, Math.round(damage * (1 - defClassPassive.defenseBonus)));
+            }
             
+            // F2: Ladino — debuff de DEF (-1) no primeiro ataque básico do combate
+            const passiveStateLadino = encounter.passiveState || (encounter.passiveState = {});
+            if (playerMonster.class === 'Ladino' && !passiveStateLadino.ladinoFirstStrikeDone) {
+                encounter.wildMonster.def = Math.max(1, (encounter.wildMonster.def || 1) - 1);
+                encounter.log.push(`🗡️ Ladino — Golpe Furtivo: ${encounter.wildMonster.name} perde 1 DEF permanentemente neste combate!`);
+                passiveStateLadino.ladinoFirstStrikeDone = true;
+            }
+
             // Aplicar dano
             encounter.wildMonster.hp = WildCore.applyDamageToHP(encounter.wildMonster.hp, damage);
             encounter.log.push(`💥 ${playerMonster.name} acerta! Causa ${damage} de dano!`);
@@ -261,10 +292,13 @@ function applyEneRegen(monster, encounter, eneRegenData) {
         const regenData = eneRegenData[monster.class] || { pct: 0.10, min: 1 };
         const eneGain = Math.max(regenData.min, Math.ceil(monster.eneMax * regenData.pct));
         
+        const eneBefore = monster.ene;
         monster.ene = Math.min(monster.eneMax, monster.ene + eneGain);
+        const deltaEne = monster.ene - eneBefore;
         
-        if (encounter && encounter.log) {
-            encounter.log.push(`⚡ ${monster.name} regenerou ${eneGain} ENE (${monster.ene}/${monster.eneMax})`);
+        // E1: Só loga se houve ganho real de ENE (evita poluição quando ENE já está cheia)
+        if (deltaEne > 0 && encounter && encounter.log) {
+            encounter.log.push(`⚡ ${monster.name} recuperou ${deltaEne} ENE (${monster.ene}/${monster.eneMax})`);
         }
     } catch (error) {
         console.error('Failed to apply ENE regen:', error);
@@ -450,6 +484,18 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
             damage = reducedDamage;
             passiveState.shieldhornBlockedThisTurn = true; // Fase 4.2: marca turno como consumido
         }
+
+        // F1: Passiva de classe do atacante selvagem (Ladino +10% dano)
+        const wildSkillAtkPassive = CLASS_COMBAT_PASSIVES[wildMonster.class];
+        if (wildSkillAtkPassive?.attackBonus) {
+            damage = Math.max(1, Math.round(damage * (1 + wildSkillAtkPassive.attackBonus)));
+        }
+
+        // F1: Passiva de classe do defensor (Guerreiro/Bárbaro/Curandeiro)
+        const wildSkillDefPassive = CLASS_COMBAT_PASSIVES[playerMonster.class];
+        if (wildSkillDefPassive?.defenseBonus) {
+            damage = Math.max(1, Math.round(damage * (1 - wildSkillDefPassive.defenseBonus)));
+        }
         
         playerMonster.hp = WildCore.applyDamageToHP(playerMonster.hp, damage);
         encounter.log.push(`💥 ${wildSkill.name} acerta! Causa ${damage} de dano!`);
@@ -549,6 +595,18 @@ function processEnemyBasicAttack(encounter, wildMonster, playerMonster, dependen
             }
             damage = reducedDamage;
             passiveState.shieldhornBlockedThisTurn = true; // Fase 4.2: marca turno como consumido
+        }
+
+        // F1: Passiva de classe do atacante selvagem (Ladino +10% dano)
+        const wildAtkClassPassive = CLASS_COMBAT_PASSIVES[wildMonster.class];
+        if (wildAtkClassPassive?.attackBonus) {
+            damage = Math.max(1, Math.round(damage * (1 + wildAtkClassPassive.attackBonus)));
+        }
+
+        // F1: Passiva de classe do defensor (Guerreiro/Bárbaro/Curandeiro)
+        const playerDefClassPassive = CLASS_COMBAT_PASSIVES[playerMonster.class];
+        if (playerDefClassPassive?.defenseBonus) {
+            damage = Math.max(1, Math.round(damage * (1 - playerDefClassPassive.defenseBonus)));
         }
 
         playerMonster.hp = WildCore.applyDamageToHP(playerMonster.hp, damage);

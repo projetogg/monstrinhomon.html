@@ -193,7 +193,14 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
     const actionsHtml = renderActionBar(encounter, actor, isPlayerTurn, state, helpers);
 
     // ── LOG COMPACTO ─────────────────────────────────────────────────────────
-    const logEntries = (encounter.log || []).slice(-6).map(msg => `<div>${msg}</div>`).join('');
+    // H1: Prefixos de mensagens "técnicas" que são filtradas no modo simplificado
+    const SIMPLIFIED_LOG_SKIP = ['🎲', '⚡', '✨ Passiva', '🛡️ Passiva', '🔮', '🗡️', '🎵'];
+    const allLog = encounter.log || [];
+    const simplifiedLog = state.config?.simplifiedLog;
+    const filteredLog = simplifiedLog
+        ? allLog.filter(msg => !SIMPLIFIED_LOG_SKIP.some(prefix => msg.startsWith(prefix)))
+        : allLog;
+    const logEntries = filteredLog.slice(-6).map(msg => `<div>${msg}</div>`).join('');
 
     // ── MONTAR HTML FINAL ────────────────────────────────────────────────────
     const html = `

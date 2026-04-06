@@ -25,6 +25,7 @@ import {
     executeWildItemUse,
     executeWildEnemyFullTurn,
 } from '../js/combat/wildActions.js';
+import { executeWildAttack } from '../js/combat/wildActions.js';
 import {
     resolveD20Hit,
     CAPTURE_ACTIONS,
@@ -717,5 +718,99 @@ describe('Regressão d20 crítico e falha no turno completo', () => {
         executeWildSkill({ encounter: enc, player: makePlayer(), playerMonster: pm, skillIndex: 0, dependencies: deps });
 
         expect(pm.hp).toBe(80); // inimigo falhou (d20=1), sem dano
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BLOCO 8: F1 — CLASS_COMBAT_PASSIVES no wild combat (Fase F)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('F1 — CLASS_COMBAT_PASSIVES no wild combat', () => {
+
+    function makeBasicDeps(overrides = {}) {
+        return {
+            getBasicPower: vi.fn(() => 10),
+            classAdvantages: {},
+            eneRegenData: { Bardo: { pct: 0.12, min: 2 } },
+            rollD20: vi.fn(() => 15),
+            recordD20Roll: vi.fn(),
+            tutorialOnAction: vi.fn(),
+            audio: null,
+            ui: { showDamageFeedback: vi.fn(), showMissFeedback: vi.fn(), showVictoryUI: vi.fn() },
+            handleVictoryRewards: vi.fn(),
+            updateFriendship: vi.fn(),
+            showToast: vi.fn(),
+            markAsParticipated: vi.fn(),
+            ...overrides,
+        };
+    }
+
+    it('Ladino (+10% dano): causa mais dano que classe neutra', () => {
+        // Ladino tem attackBonus: 0.10 → +10% dano
+        const wildNeutral = { id: 'w1', name: 'W', class: 'Bardo', hp: 100, hpMax: 100, atk: 4, def: 3, poder: 8, ene: 5, eneMax: 20, aggression: 60, buffs: [], skill: null };
+        const wildNeutral2 = { ...wildNeutral, hp: 100 };
+        const encNeutral = { id: 'enc1', type: 'wild', active: true, wildMonster: wildNeutral, selectedPlayerId: 'p1', log: [], rewardsGranted: false };
+        const encLadino = { id: 'enc2', type: 'wild', active: true, wildMonster: wildNeutral2, selectedPlayerId: 'p1', log: [], rewardsGranted: false };
+
+        const pmNeutral = { id: 'pm1', name: 'PM', class: 'Bardo', hp: 80, hpMax: 80, atk: 7, def: 4, ene: 10, eneMax: 20, buffs: [] };
+        const pmLadino = { ...pmNeutral, id: 'pm2', class: 'Ladino' };
+        const player = { id: 'p1', name: 'J', class: 'Guerreiro', inventory: {}, team: [], money: 0 };
+
+        const deps = makeBasicDeps();
+        executeWildAttack({ encounter: encNeutral, player, playerMonster: pmNeutral, d20Roll: 15, dependencies: deps });
+        executeWildAttack({ encounter: encLadino, player, playerMonster: pmLadino, d20Roll: 15, dependencies: deps });
+
+        const dmgNeutral = 100 - wildNeutral.hp;
+        const dmgLadino  = 100 - wildNeutral2.hp;
+
+        expect(dmgLadino).toBeGreaterThan(dmgNeutral); // Ladino causa mais dano
+    });
+
+    it('Guerreiro (-15% dano recebido): toma menos dano que classe neutra', () => {
+        // Guerreiro tem defenseBonus: 0.15 → -15% dano recebido como wild monster
+        const wildGuerreiro = { id: 'w1', name: 'W', class: 'Guerreiro', hp: 100, hpMax: 100, atk: 4, def: 3, poder: 8, ene: 5, eneMax: 20, aggression: 60, buffs: [], skill: null };
+        const wildBardo     = { ...wildGuerreiro, id: 'w2', hp: 100, class: 'Bardo' };
+        const encG = { id: 'enc1', type: 'wild', active: true, wildMonster: wildGuerreiro, selectedPlayerId: 'p1', log: [], rewardsGranted: false };
+        const encB = { id: 'enc2', type: 'wild', active: true, wildMonster: wildBardo,     selectedPlayerId: 'p1', log: [], rewardsGranted: false };
+
+        const pm     = { id: 'pm1', name: 'PM', class: 'Bardo', hp: 80, hpMax: 80, atk: 7, def: 4, ene: 10, eneMax: 20, buffs: [] };
+        const player = { id: 'p1', name: 'J', class: 'Guerreiro', inventory: {}, team: [], money: 0 };
+        const deps   = makeBasicDeps();
+
+        executeWildAttack({ encounter: encG, player, playerMonster: pm, d20Roll: 15, dependencies: { ...deps } });
+        executeWildAttack({ encounter: encB, player, playerMonster: { ...pm }, d20Roll: 15, dependencies: deps });
+
+        const dmgGuerreiro = 100 - wildGuerreiro.hp;
+        const dmgBardo     = 100 - wildBardo.hp;
+
+        expect(dmgGuerreiro).toBeLessThan(dmgBardo); // Guerreiro toma menos dano
+    });
+
+    it('F2 — Ladino: aplica -1 DEF ao wild no primeiro ataque básico', () => {
+        const wild = { id: 'w1', name: 'W', class: 'Bardo', hp: 100, hpMax: 100, atk: 4, def: 5, poder: 8, ene: 5, eneMax: 20, aggression: 60, buffs: [], skill: null };
+        const enc  = { id: 'enc1', type: 'wild', active: true, wildMonster: wild, selectedPlayerId: 'p1', log: [], rewardsGranted: false };
+        const pm   = { id: 'pm1', name: 'PM', class: 'Ladino', hp: 80, hpMax: 80, atk: 7, def: 4, ene: 10, eneMax: 20, buffs: [] };
+        const player = { id: 'p1', name: 'J', class: 'Guerreiro', inventory: {}, team: [], money: 0 };
+        const deps = makeBasicDeps();
+
+        const defBefore = wild.def;
+        executeWildAttack({ encounter: enc, player, playerMonster: pm, d20Roll: 15, dependencies: deps });
+
+        expect(wild.def).toBe(defBefore - 1); // DEF do wild reduziu em 1
+        expect(enc.log.some(l => l.includes('Golpe Furtivo'))).toBe(true);
+    });
+
+    it('F2 — Ladino: debuff de DEF só ocorre no primeiro ataque (não repete)', () => {
+        const wild = { id: 'w1', name: 'W', class: 'Bardo', hp: 200, hpMax: 200, atk: 4, def: 5, poder: 8, ene: 5, eneMax: 20, aggression: 60, buffs: [], skill: null };
+        const enc  = { id: 'enc1', type: 'wild', active: true, wildMonster: wild, selectedPlayerId: 'p1', log: [], rewardsGranted: false };
+        const pm   = { id: 'pm1', name: 'PM', class: 'Ladino', hp: 80, hpMax: 80, atk: 7, def: 4, ene: 10, eneMax: 20, buffs: [] };
+        const player = { id: 'p1', name: 'J', class: 'Guerreiro', inventory: {}, team: [], money: 0 };
+        const deps = makeBasicDeps({ rollD20: () => 15 });
+
+        executeWildAttack({ encounter: enc, player, playerMonster: pm, d20Roll: 15, dependencies: deps });
+        const defAfterFirst = wild.def;
+        executeWildAttack({ encounter: enc, player, playerMonster: pm, d20Roll: 15, dependencies: deps });
+
+        expect(wild.def).toBe(defAfterFirst); // DEF não diminuiu mais
     });
 });

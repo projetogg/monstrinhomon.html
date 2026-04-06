@@ -246,7 +246,7 @@ function makeDependencies(overrides = {}) {
 
 function makePlayerMon(overrides = {}) {
     return {
-        id: 'pm_1', name: 'Starter', class: 'Guerreiro',
+        id: 'pm_1', name: 'Starter', class: 'Bardo',
         hp: 80, hpMax: 80, atk: 7, def: 4, poder: 10,
         ene: 10, eneMax: 20, buffs: [], ...overrides,
     };
@@ -254,7 +254,7 @@ function makePlayerMon(overrides = {}) {
 
 function makeWild(overrides = {}) {
     return {
-        id: 'w_1', name: 'Selvagem', class: 'Guerreiro',
+        id: 'w_1', name: 'Selvagem', class: 'Bardo',
         hp: 50, hpMax: 80, atk: 6, def: 3, poder: 8,
         ene: 5, eneMax: 20, aggression: 60, buffs: [], skill: null,
         ...overrides,
