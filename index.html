@@ -4827,16 +4827,11 @@
         /**
          * Constrói o HTML de um card de monstrinho no modal de troca.
          * Exibe monstrinhos elegíveis, bloqueados por classe e KO'd — com rótulo claro.
-         *
-         * @param {object} monster   - Instância de monstrinho
-         * @param {number} index     - Índice na equipe
-         * @param {object} player    - Jogador com { class, activeIndex }
-         * @param {string} encId     - ID do encounter (para confirmar seleção)
                  /**
          * B1: _buildSwapCard — delegada para Combat.Group.UI.buildSwapCard (groupUI.js)
          */
         function _buildSwapCard(monster, index, player, encId, context, masterMode) {
-            return Combat.Group.UI.buildSwapCard(monster, index, player, encId, context, masterMode, BattleSwap);
+            return Combat.Group.UI.buildSwapCard({ monster, index, player, encId, context, masterMode, BattleSwap });
         }
 
         /**
@@ -4959,7 +4954,8 @@
             groupManualSwap,
             closeWithNoSwap,
         };
-        // Manter compat com call-sites legados por onclick (buttonHTML gerado por groupUI.js usa window.GroupUI)
+        // Manter compat legada: closeWithNoSwap e groupManualSwap chamados diretamente
+        // por onclick em HTML gerado antes do namespace window.GroupUI existir.
         window.closeWithNoSwap = closeWithNoSwap;
         window.groupManualSwap = groupManualSwap;
 

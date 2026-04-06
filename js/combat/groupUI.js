@@ -608,7 +608,9 @@ export function cancelTargetMode(deps) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MODAL DE TROCA — funções extraídas do index.html (B1)
-// Recebem deps com: state, BattleSwap, getPlayerById, log, advanceTurn, save, render
+// As funções buildSwapCard, buildKoSwapModalHTML, buildManualSwapModalHTML são
+// puras (sem side-effects): recebem todos os dados via parâmetros explícitos.
+// mountSwapModal é a única que acessa o DOM.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -624,7 +626,7 @@ export function cancelTargetMode(deps) {
  * @param {object} BattleSwap - Módulo de swap (passado como dep)
  * @returns {string} HTML do card
  */
-export function buildSwapCard(monster, index, player, encId, context, masterMode, BattleSwap) {
+export function buildSwapCard({ monster, index, player, encId, context, masterMode, BattleSwap }) {
     const status = BattleSwap.getSwapStatus(monster, index, player, { masterMode });
     const hpPct = Math.max(0, Math.min(100, ((monster.hp || 0) / (monster.hpMax || 1)) * 100));
     const name = monster.emoji ? `${monster.emoji} ${monster.name || monster.nome}` : (monster.name || monster.nome);
@@ -661,13 +663,13 @@ export function buildKoSwapModalHTML(player, enc, masterMode, BattleSwap) {
         if (cats.blocked_class.length > 0) {
             html += `<div class="swap-modal-section-title">Fora da classe (${player.class || '?'})</div>`;
             cats.blocked_class.forEach(({ monster, index }) => {
-                html += buildSwapCard(monster, index, player, enc.id, 'ko', masterMode, BattleSwap);
+                html += buildSwapCard({ monster, index, player, encId: enc.id, context: 'ko', masterMode, BattleSwap });
             });
         }
         if (cats.blocked_ko.length > 0) {
             html += `<div class="swap-modal-section-title">Derrotados</div>`;
             cats.blocked_ko.forEach(({ monster, index }) => {
-                html += buildSwapCard(monster, index, player, enc.id, 'ko', masterMode, BattleSwap);
+                html += buildSwapCard({ monster, index, player, encId: enc.id, context: 'ko', masterMode, BattleSwap });
             });
         }
         html += `<div style="margin-top:12px;text-align:center">`;
@@ -683,18 +685,18 @@ export function buildKoSwapModalHTML(player, enc, masterMode, BattleSwap) {
     html += `<p style="font-size:13px;opacity:0.8">Seu monstrinho foi derrotado. Escolha quem entra em campo:</p>`;
     html += `<div class="swap-modal-section-title">Podem entrar (${cats.eligible.length})</div>`;
     cats.eligible.forEach(({ monster, index }) => {
-        html += buildSwapCard(monster, index, player, enc.id, 'ko', masterMode, BattleSwap);
+        html += buildSwapCard({ monster, index, player, encId: enc.id, context: 'ko', masterMode, BattleSwap });
     });
     if (cats.blocked_class.length > 0) {
         html += `<div class="swap-modal-section-title">Fora da classe — não podem entrar (${cats.blocked_class.length})</div>`;
         cats.blocked_class.forEach(({ monster, index }) => {
-            html += buildSwapCard(monster, index, player, enc.id, 'ko', masterMode, BattleSwap);
+            html += buildSwapCard({ monster, index, player, encId: enc.id, context: 'ko', masterMode, BattleSwap });
         });
     }
     if (cats.blocked_ko.length > 0) {
         html += `<div class="swap-modal-section-title">Derrotados (${cats.blocked_ko.length})</div>`;
         cats.blocked_ko.forEach(({ monster, index }) => {
-            html += buildSwapCard(monster, index, player, enc.id, 'ko', masterMode, BattleSwap);
+            html += buildSwapCard({ monster, index, player, encId: enc.id, context: 'ko', masterMode, BattleSwap });
         });
     }
     html += '</div></div>';
@@ -716,25 +718,25 @@ export function buildManualSwapModalHTML(player, enc, masterMode, BattleSwap) {
     if (cats.active.length > 0) {
         html += `<div class="swap-modal-section-title">Em campo agora</div>`;
         cats.active.forEach(({ monster, index }) => {
-            html += buildSwapCard(monster, index, player, enc.id, 'manual', masterMode, BattleSwap);
+            html += buildSwapCard({ monster, index, player, encId: enc.id, context: 'manual', masterMode, BattleSwap });
         });
     }
     if (cats.eligible.length > 0) {
         html += `<div class="swap-modal-section-title">Podem entrar (${cats.eligible.length})</div>`;
         cats.eligible.forEach(({ monster, index }) => {
-            html += buildSwapCard(monster, index, player, enc.id, 'manual', masterMode, BattleSwap);
+            html += buildSwapCard({ monster, index, player, encId: enc.id, context: 'manual', masterMode, BattleSwap });
         });
     }
     if (cats.blocked_class.length > 0) {
         html += `<div class="swap-modal-section-title">Fora da classe — não podem entrar (${cats.blocked_class.length})</div>`;
         cats.blocked_class.forEach(({ monster, index }) => {
-            html += buildSwapCard(monster, index, player, enc.id, 'manual', masterMode, BattleSwap);
+            html += buildSwapCard({ monster, index, player, encId: enc.id, context: 'manual', masterMode, BattleSwap });
         });
     }
     if (cats.blocked_ko.length > 0) {
         html += `<div class="swap-modal-section-title">Derrotados (${cats.blocked_ko.length})</div>`;
         cats.blocked_ko.forEach(({ monster, index }) => {
-            html += buildSwapCard(monster, index, player, enc.id, 'manual', masterMode, BattleSwap);
+            html += buildSwapCard({ monster, index, player, encId: enc.id, context: 'manual', masterMode, BattleSwap });
         });
     }
     html += `<div style="margin-top:12px;text-align:center">`;
