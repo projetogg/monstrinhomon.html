@@ -243,6 +243,10 @@
                 <div class="ow-layout">
                     <div class="ow-map-wrap" id="overworldMapContainer">
                         <!-- SVG renderizado por renderOverworldPanel() -->
+                        <!-- Card de nó — overlay sobre o mapa, aparece ao selecionar -->
+                        <div class="ow-node-card" id="owNodeCard" aria-live="polite">
+                            <!-- Preenchido por _owRenderNodeCard() -->
+                        </div>
                         <!-- Botões de pan — câmera do mundo -->
                         <div class="ow-pan-buttons" id="owPanButtons">
                             <button class="ow-pan-btn ow-pan-btn--left"
@@ -253,8 +257,8 @@
                                     aria-label="Mover mapa para direita">›</button>
                         </div>
                     </div>
-                    <div class="ow-sidebar-wrap" id="overworldSidebar">
-                        <p class="ow-sidebar__placeholder">👈 Selecione um local no mapa</p>
+                    <div class="ow-state-panel" id="owStatePanel">
+                        <!-- Preenchido por _owRenderStatePanel() -->
                     </div>
                 </div>
                 <!-- Legenda -->
@@ -8784,7 +8788,7 @@
         // OW_SAFE_LEFT (75): margem esquerda — compensa vinheta e ícone de pan.
         // OW_SAFE_RIGHT (185): margem direita — protege sidebar de sobreposição com nós.
         const OW_SAFE_LEFT  = 75;
-        const OW_SAFE_RIGHT = 160; // margem direita — conforto visual sem ser excessivamente conservador
+        const OW_SAFE_RIGHT = 90; // margem direita — só compensa vinheta e botão de pan; state panel está fora do SVG
 
         // ── Modelo híbrido: cluster + ajuste local por nó ─────────────────────────
         // O cluster define a "cena" (trecho do mapa); o ajuste local desloca a câmera
@@ -9108,10 +9112,57 @@
             if (elLocal)    elLocal.textContent    = currentName.length > 16 ? currentName.slice(0, 15) + '…' : currentName;
             if (elProgress) elProgress.textContent = `${visitedCount}/${totalNodes}`;
             if (elParty)    elParty.textContent    = progress.partySize > 0 ? `${progress.partySize} 🎒` : '—';
+
+            _owRenderStatePanel();
         }
 
         /**
-         * Chamado pelo onclick dos nós SVG. Atualiza o sidebar e enquadra a câmera.
+         * Popula o painel de estado persistente (#owStatePanel) com informações globais.
+         * Chamado por renderOverworldPanel() sempre que o mapa é re-renderizado.
+         */
+        function _owRenderStatePanel() {
+            const panel = document.getElementById('owStatePanel');
+            if (!panel) return;
+
+            const progress    = _owGetProgressState();
+            const enriched    = window.WorldMap && _wm.worldMapNodes
+                ? window.WorldMap.getEnrichedNodes(_wm.worldMapNodes ?? [], _wm.locationsData ?? [])
+                : [];
+            const totalNodes  = enriched.filter(n => n.type !== 'boss').length;
+            const visitedCount = enriched.filter(n => {
+                const s = window.OverworldMap?.getNodeVisualState?.(
+                    { ...n, _unlocked: true },
+                    { visitedLocations: progress.visitedLocations, completedLocations: progress.completedLocations, nodeFlags: progress.nodeFlags, currentNodeId: progress.currentNodeId }
+                );
+                return s === 'visited' || s === 'current';
+            }).length;
+            const currentLoc  = enriched.find(n => {
+                const s = window.OverworldMap?.getNodeVisualState?.(
+                    { ...n, _unlocked: true },
+                    { visitedLocations: progress.visitedLocations, completedLocations: progress.completedLocations, nodeFlags: progress.nodeFlags, currentNodeId: progress.currentNodeId }
+                );
+                return s === 'current';
+            });
+            const currentName = currentLoc?.name ?? '—';
+            const partyNames  = (GameState.players ?? []).filter(Boolean).map(p => p.name ?? '?').join(', ') || '—';
+
+            panel.innerHTML = `
+                <div class="ow-state__item">
+                    <span class="ow-state__label">Local Atual</span>
+                    <span class="ow-state__value">${currentName}</span>
+                </div>
+                <div class="ow-state__item">
+                    <span class="ow-state__label">Progresso</span>
+                    <span class="ow-state__value">${visitedCount}/${totalNodes}</span>
+                </div>
+                <div class="ow-state__item">
+                    <span class="ow-state__label">Party</span>
+                    <span class="ow-state__value ow-state__value--party">${partyNames}</span>
+                </div>`;
+        }
+
+        /**
+         * Chamado pelo onclick dos nós SVG. Atualiza o node card e enquadra a câmera.
          *
          * Modo inspeção: só move a câmera se o nó estiver fora da safe area.
          * Quando move, enquadra o trecho (cluster) do nó — não apenas o nó individual.
@@ -9129,23 +9180,25 @@
             if (pos && !_owIsNodeComfortablyVisible(pos.x, _wm.viewBoxX ?? 0)) {
                 _owAnimateToViewBoxX(_owComputeViewBoxX(nodeId, 'select'), OW_SELECT_ANIM_MS, null);
             }
-            _owRenderSidebar(nodeId);
+            _owRenderNodeCard(nodeId);
         }
 
         /**
-         * Renderiza o sidebar do overworld para o nó especificado.
+         * Renderiza o node card do overworld para o nó especificado.
+         * O card é um overlay absoluto sobre o mapa — aparece ao selecionar um nó.
+         * Spots são chips compactos (ícone + nome, sem descrição completa).
          * @param {string} nodeId
          */
-        function _owRenderSidebar(nodeId) {
-            const sidebar = document.getElementById('overworldSidebar');
-            if (!sidebar || !_wm.locationsData || !window.WorldMap) return;
+        function _owRenderNodeCard(nodeId) {
+            const card = document.getElementById('owNodeCard');
+            if (!card || !_wm.locationsData || !window.WorldMap) return;
 
             const node     = (_wm.worldMapNodes ?? []).find(n => n.nodeId === nodeId);
             const loc      = (_wm.locationsData ?? []).find(l => l.id === nodeId);
             const progress = _owGetProgressState();
 
             if (!node) {
-                sidebar.innerHTML = '<p class="ow-sidebar__placeholder">Local não encontrado.</p>';
+                card.classList.remove('ow-node-card--visible');
                 return;
             }
 
@@ -9161,11 +9214,14 @@
                 const lockReason = window.WorldMap.getNodeLockReason
                     ? window.WorldMap.getNodeLockReason(node, progress.completedLocations, progress.nodeFlags, progress.completedQuestIds, progress.visitedLocations, _wm.locationsData ?? [])
                     : 'Bloqueado';
-                sidebar.innerHTML = `
-                    <div class="ow-sidebar__locked">
-                        <span class="ow-sidebar__lock-icon">🔒</span>
-                        <p class="ow-sidebar__lock-reason">${lockReason}</p>
+                card.innerHTML = `
+                    <div class="ow-node-card__main">
+                        <div class="ow-node-card__identity">
+                            <span class="ow-node-card__lock-icon">🔒</span>
+                            <p class="ow-node-card__lock-reason">${lockReason}</p>
+                        </div>
                     </div>`;
+                card.classList.add('ow-node-card--visible');
                 return;
             }
 
@@ -9182,7 +9238,7 @@
             const isCurrent = nodeId === progress.currentNodeId;
             const isDone    = progress.completedLocations.has(nodeId);
 
-            // D2: Detectar se este nó é o destino da quest principal ativa (badge de objetivo)
+            // Detectar se este nó é o destino da quest principal ativa
             let isMainObjectiveNode = false;
             if (window.GameFlow) {
                 for (const player of (GameState.players ?? [])) {
@@ -9207,7 +9263,6 @@
                 const bossTag = regionType === 'optional' ? 'Opcional' : regionType === 'side' ? 'Alternativo' : 'Principal';
                 badgesHtml += `<span class="ow-sidebar__badge ${bossClass}">👑 Chefe ${bossTag}</span>`;
                 if (defeated) badgesHtml += `<span class="ow-sidebar__badge ow-sidebar__badge--done">⚔️ Derrotado</span>`;
-                // D1: Recompensa de boss opcional/lateral
                 if (!defeated && (regionType === 'optional' || regionType === 'side')) {
                     badgesHtml += `<span class="ow-sidebar__badge ow-sidebar__badge--reward">🎁 Recompensa Exclusiva</span>`;
                 }
@@ -9216,7 +9271,6 @@
             } else {
                 if (isCurrent) badgesHtml += `<span class="ow-sidebar__badge ow-sidebar__badge--current">📍 Atual</span>`;
                 if (isDone)    badgesHtml += `<span class="ow-sidebar__badge ow-sidebar__badge--done">✅ Concluído</span>`;
-                // D1: Badge de conteúdo lateral com Monstrinho raro disponível
                 const nodeOptType = node.type;
                 if (!isDone && (nodeOptType === 'optional' || nodeOptType === 'side')) {
                     badgesHtml += `<span class="ow-sidebar__badge ow-sidebar__badge--reward">🌟 Monstrinho Raro</span>`;
@@ -9245,84 +9299,111 @@
                 }
             }
 
-            // ── Boss sidebar ────────────────────────────────────────────────────
+            // ── Boss card ────────────────────────────────────────────────────────
             if (isBoss) {
                 const bossLabel  = bossMeta.bossLabel ?? name;
                 const bossFlavor = bossMeta.bossFlavor ?? desc;
                 const bossLevel  = bossMeta.bossLevel ?? '?';
                 const btnClass   = defeated ? 'ow-sidebar__boss-btn--defeated' : '';
-                const btnText    = defeated
-                    ? `🔄 Desafiar Novamente`
-                    : `⚔️ Desafiar ${bossLabel}`;
-                sidebar.innerHTML = `
-                    <div class="ow-sidebar__header">
-                        <span class="ow-sidebar__emoji">👑</span>
-                        <div class="ow-sidebar__title-block">
-                            <h3 class="ow-sidebar__name">${bossLabel}</h3>
-                            <div class="ow-sidebar__meta">
-                                <span class="ow-sidebar__level">Lv ${bossLevel}</span>
-                                ${badgesHtml}
+                const btnText    = defeated ? `🔄 Desafiar Novamente` : `⚔️ Desafiar ${bossLabel}`;
+                card.innerHTML = `
+                    <div class="ow-node-card__main">
+                        <div class="ow-node-card__identity">
+                            <span class="ow-node-card__emoji">👑</span>
+                            <div class="ow-node-card__title-block">
+                                <h3 class="ow-node-card__name">${bossLabel}</h3>
+                                <div class="ow-node-card__meta">
+                                    <span class="ow-sidebar__level">Lv ${bossLevel}</span>
+                                    ${badgesHtml}
+                                </div>
                             </div>
                         </div>
+                        <div class="ow-node-card__cta">
+                            <button class="ow-sidebar__boss-btn ${btnClass}"
+                                    onclick="selectWorldNode('${nodeId}')">
+                                ${btnText}
+                            </button>
+                        </div>
                     </div>
-                    <div class="ow-sidebar__body">
+                    <div class="ow-node-card__body">
                         ${questHtml}
-                        <p class="ow-sidebar__flavor">${bossFlavor}</p>
-                    </div>
-                    <div class="ow-sidebar__footer">
-                        <button class="ow-sidebar__boss-btn ${btnClass}"
-                                onclick="selectWorldNode('${nodeId}')">
-                            ${btnText}
-                        </button>
+                        <p class="ow-node-card__desc">${bossFlavor}</p>
                     </div>`;
+                card.classList.add('ow-node-card--visible');
                 return;
             }
 
-            // ── Exploração / Cidade: mostra spots ───────────────────────────────
+            // ── Exploração / Cidade: chips de spots ──────────────────────────────
             const spots = window.WorldMap.getSpotsForLocation(nodeId, _wm.locationsData ?? []);
-            const spotsHtml = spots.length > 0
-                ? spots.map(spot => {
+            const MAX_CHIPS = 4;
+            let spotsHtml = '';
+            if (spots.length > 0) {
+                const visible = spots.slice(0, MAX_CHIPS);
+                const extra   = spots.length - MAX_CHIPS;
+                spotsHtml = visible.map(spot => {
                     const isService = spot.type === 'service' || spot.profileKey === 'service';
                     const onclick   = isService
                         ? `onclick="selectCityService('${spot.serviceAction}')"`
                         : `onclick="owGoToSpot('${spot.id}')"`;
-                    const cls = isService ? 'ow-spot--service' : '';
-                    return `
-                        <div class="ow-spot ${cls}" ${onclick}>
-                            <span class="ow-spot__icon">${spot.icon}</span>
-                            <div class="ow-spot__info">
-                                <p class="ow-spot__name">${spot.name}</p>
-                                <p class="ow-spot__desc">${spot.description}</p>
-                            </div>
-                            <span class="ow-spot__arrow">›</span>
-                        </div>`;
-                }).join('')
-                : '<p style="font-size:11px;color:rgba(255,255,255,0.4);margin:8px 0">Nenhum spot disponível.</p>';
+                    const cls = isService ? 'ow-spot-chip--service' : '';
+                    return `<button class="ow-spot-chip ${cls}" ${onclick}>${spot.icon} ${spot.name}</button>`;
+                }).join('');
+                if (extra > 0) {
+                    // Último chip visível já está no array — mostrar o 1º extra ao clicar
+                    const firstExtra = spots[MAX_CHIPS];
+                    const isService  = firstExtra.type === 'service' || firstExtra.profileKey === 'service';
+                    const onclickEx  = isService
+                        ? `onclick="selectCityService('${firstExtra.serviceAction}')"`
+                        : `onclick="owGoToSpot('${firstExtra.id}')"`;
+                    spotsHtml += `<button class="ow-spot-chip ow-spot-chip--more" ${onclickEx}>+${extra} mais</button>`;
+                }
+                spotsHtml = `<div class="ow-node-card__spots">${spotsHtml}</div>`;
+            }
 
-            sidebar.innerHTML = `
-                <div class="ow-sidebar__header">
-                    <span class="ow-sidebar__emoji">${emoji}</span>
-                    <div class="ow-sidebar__title-block">
-                        <h3 class="ow-sidebar__name">${name}</h3>
-                        <div class="ow-sidebar__meta">
-                            ${lvRange ? `<span class="ow-sidebar__level">${lvRange}</span>` : ''}
-                            ${badgesHtml}
+            const ctaHtml = isCurrent
+                ? '<p class="ow-sidebar__here">📍 Você está aqui</p>'
+                : `<button class="ow-sidebar__travel-btn" onclick="owTravelToNode('${nodeId}')">🚶 Viajar para cá</button>`;
+
+            card.innerHTML = `
+                <div class="ow-node-card__main">
+                    <div class="ow-node-card__identity">
+                        <span class="ow-node-card__emoji">${emoji}</span>
+                        <div class="ow-node-card__title-block">
+                            <h3 class="ow-node-card__name">${name}</h3>
+                            <div class="ow-node-card__meta">
+                                ${lvRange ? `<span class="ow-sidebar__level">${lvRange}</span>` : ''}
+                                ${badgesHtml}
+                            </div>
                         </div>
                     </div>
+                    <div class="ow-node-card__cta">
+                        ${ctaHtml}
+                    </div>
                 </div>
-                <div class="ow-sidebar__body">
-                    <p class="ow-sidebar__desc">${desc}</p>
+                <div class="ow-node-card__body">
+                    <p class="ow-node-card__desc">${desc}</p>
                     ${questHtml}
-                    <p class="ow-sidebar__section-title">O que fazer aqui</p>
                     ${spotsHtml}
-                </div>
-                <div class="ow-sidebar__footer">
-                    ${isCurrent
-                        ? '<p class="ow-sidebar__here">📍 Você está aqui</p>'
-                        : `<button class="ow-sidebar__travel-btn" onclick="owTravelToNode('${nodeId}')">🚶 Viajar para cá</button>`
-                    }
                 </div>`;
+            card.classList.add('ow-node-card--visible');
         }
+
+        /** Fecha o node card ao clicar fora de um nó ou do próprio card. */
+        function _owDismissNodeCard(e) {
+            const card = document.getElementById('owNodeCard');
+            if (!card) return;
+            if (card.contains(e.target)) return;
+            if (e.target.closest('.ow-node')) return;
+            card.classList.remove('ow-node-card--visible');
+            document.querySelectorAll('.ow-node--selected').forEach(el => el.classList.remove('ow-node--selected'));
+            _wm.selectedNodeId = null;
+        }
+
+        // Registrar click-outside no container do mapa (delegação)
+        document.addEventListener('click', e => {
+            if (!e.target.closest('#overworldMapContainer')) return;
+            _owDismissNodeCard(e);
+        });
 
         /**
          * Navega de um spot no overworld para o wildSetupPanel.
