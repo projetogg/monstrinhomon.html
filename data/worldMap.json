@@ -147,7 +147,7 @@
       "unlockRule": { "type": "complete_node", "nodeId": "LOC_008" },
       "connections": ["LOC_008", "LOC_009"],
       "bossMeta": {
-        "bossLevel": 15,
+        "bossLevel": 10,
         "regionId": "forest_arc_1",
         "regionLabel": "Floresta Antiga",
         "regionType": "main",
@@ -173,7 +173,7 @@
       "unlockRule": { "type": "complete_node", "nodeId": "LOC_005C" },
       "connections": ["LOC_005C", "LOC_010"],
       "bossMeta": {
-        "bossLevel": 12,
+        "bossLevel": 8,
         "regionId": "caves_optional_1",
         "regionLabel": "Cavernas Cristalinas",
         "regionType": "optional",
@@ -199,7 +199,7 @@
       "unlockRule": { "type": "complete_node", "nodeId": "LOC_003B" },
       "connections": ["LOC_003B", "LOC_011"],
       "bossMeta": {
-        "bossLevel": 10,
+        "bossLevel": 5,
         "regionId": "ruins_side_1",
         "regionLabel": "Ruínas Esquecidas",
         "regionType": "side",

@@ -153,10 +153,11 @@ export function calculateFleeChance(playerMonster, wildMonster, baseChance = 15)
  * base = 10 + 15 - 5 = 20
  * finalD = max(1, floor(20 * 1.0)) = 20
  */
-export function calcDamage({ atk, def, power, damageMult = 1.0 }) {
+export function calcDamage({ atk, def, power, damageMult = 1.0, defMult = 1.0 }) {
     try {
-        // FÓRMULA: ATK + POWER - DEF (GAME_RULES.md)
-        const base = atk + power - def;
+        // FÓRMULA: ATK + POWER - DEF * defMult (GAME_RULES.md)
+        // defMult > 1 aumenta relevância de DEF (ex.: 1.5 contra habilidades)
+        const base = atk + power - Math.round(def * defMult);
         
         // Aplicar multiplicador de classe e garantir dano mínimo 1
         const finalD = Math.floor(base * damageMult);

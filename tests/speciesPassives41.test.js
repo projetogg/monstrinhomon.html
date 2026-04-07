@@ -43,7 +43,7 @@ function makeMonster(overrides = {}) {
 
 function makeWild(overrides = {}) {
     return {
-        id: 'w_1', name: 'Selvagem', class: 'Guerreiro',
+        id: 'w_1', name: 'Selvagem', class: 'Bardo',
         hp: 60, hpMax: 80, atk: 6, def: 3, poder: 8,
         ene: 5, eneMax: 20, aggression: 60, buffs: [], skill: null, ...overrides,
     };
@@ -515,26 +515,26 @@ describe('speciesPassives 4.1 — impacto shieldhorn (simulação de 100 ataques
         for (let i = 0; i < 100; i++) {
             // SEM passiva
             const wildNoPassive = {
-                id: 'w', name: 'W', class: 'Guerreiro',
+                id: 'w', name: 'W', class: 'Bardo',
                 hp: 200, hpMax: 200, atk: ATK, def: DEF, poder: 8,
                 ene: 5, eneMax: 20, aggression: 60, buffs: [], skill: null,
             };
             const encNoPassive = makeEncounter(wildNoPassive);
-            const pmNoPassive = { id: 'pm', name: 'PM', class: 'Guerreiro', hp: 200, hpMax: 200, atk: ATK, def: DEF, ene: 10, eneMax: 20, buffs: [] };
-            const playerNoPassive = { id: 'p', name: 'J', class: 'Guerreiro', inventory: {}, team: [], money: 0 };
+            const pmNoPassive = { id: 'pm', name: 'PM', class: 'Bardo', hp: 200, hpMax: 200, atk: ATK, def: DEF, ene: 10, eneMax: 20, buffs: [] };
+            const playerNoPassive = { id: 'p', name: 'J', class: 'Bardo', inventory: {}, team: [], money: 0 };
             const hpBefore = wildNoPassive.hp;
             executeWildAttack({ encounter: encNoPassive, player: playerNoPassive, playerMonster: pmNoPassive, d20Roll: 15, dependencies: makeDepsForSimulation(1) });
             totalWithout += hpBefore - wildNoPassive.hp;
 
             // COM shieldhorn (wild é o defensor com passiva)
             const wildWithPassive = {
-                id: 'w', name: 'W', class: 'Guerreiro',
+                id: 'w', name: 'W', class: 'Bardo',
                 hp: 200, hpMax: 200, atk: ATK, def: DEF, poder: 8,
                 ene: 5, eneMax: 20, aggression: 60, buffs: [], skill: null,
                 canonSpeciesId: 'shieldhorn',
             };
             const encWithPassive = makeEncounter(wildWithPassive);
-            const pmWithPassive = { id: 'pm', name: 'PM', class: 'Guerreiro', hp: 200, hpMax: 200, atk: ATK, def: DEF, ene: 10, eneMax: 20, buffs: [] };
+            const pmWithPassive = { id: 'pm', name: 'PM', class: 'Bardo', hp: 200, hpMax: 200, atk: ATK, def: DEF, ene: 10, eneMax: 20, buffs: [] };
             const hpBefore2 = wildWithPassive.hp;
             executeWildAttack({ encounter: encWithPassive, player: playerNoPassive, playerMonster: pmWithPassive, d20Roll: 15, dependencies: makeDepsForSimulation(1) });
             totalWithPassive += hpBefore2 - wildWithPassive.hp;
@@ -566,14 +566,14 @@ describe('speciesPassives 4.1 — impacto shieldhorn (simulação de 100 ataques
         // Dano base: max(1, 1 + 10 - 15) = max(1, -4) = 1
         // Com passiva: max(1, 1 - 1) = max(1, 0) = 1
         const wild = {
-            id: 'w', name: 'W', class: 'Guerreiro',
+            id: 'w', name: 'W', class: 'Bardo',
             hp: 50, hpMax: 80, atk: 1, def: 15, poder: 8,
             ene: 5, eneMax: 20, aggression: 60, buffs: [], skill: null,
             canonSpeciesId: 'shieldhorn',
         };
         const enc = makeEncounter(wild);
-        const pm = { id: 'pm', name: 'PM', class: 'Guerreiro', hp: 80, hpMax: 80, atk: 1, def: 1, ene: 10, eneMax: 20, buffs: [] };
-        const player = { id: 'p', name: 'J', class: 'Guerreiro', inventory: {}, team: [], money: 0 };
+        const pm = { id: 'pm', name: 'PM', class: 'Bardo', hp: 80, hpMax: 80, atk: 1, def: 1, ene: 10, eneMax: 20, buffs: [] };
+        const player = { id: 'p', name: 'J', class: 'Bardo', inventory: {}, team: [], money: 0 };
         const deps = makeDepsForSimulation(1); // inimigo erra
 
         const hpBefore = wild.hp;
@@ -596,18 +596,18 @@ describe('speciesPassives 4.1 — impacto emberfang (simulação de 100 ataques)
 
         for (let i = 0; i < 100; i++) {
             // SEM passiva
-            const wildN = { id: 'w', name: 'W', class: 'Guerreiro', hp: 200, hpMax: 200, atk: ATK, def: DEF, poder: 8, ene: 5, eneMax: 20, aggression: 60, buffs: [], skill: null };
+            const wildN = { id: 'w', name: 'W', class: 'Bardo', hp: 200, hpMax: 200, atk: ATK, def: DEF, poder: 8, ene: 5, eneMax: 20, aggression: 60, buffs: [], skill: null };
             const encN = makeEncounter(wildN);
-            const pmN = { id: 'pm', name: 'PM', class: 'Guerreiro', hp: 80, hpMax: 80, atk: ATK, def: DEF, ene: 10, eneMax: 20, buffs: [] };
-            const playerN = { id: 'p', name: 'J', class: 'Guerreiro', inventory: {}, team: [], money: 0 };
+            const pmN = { id: 'pm', name: 'PM', class: 'Bardo', hp: 80, hpMax: 80, atk: ATK, def: DEF, ene: 10, eneMax: 20, buffs: [] };
+            const playerN = { id: 'p', name: 'J', class: 'Bardo', inventory: {}, team: [], money: 0 };
             const hpBefore = wildN.hp;
             executeWildAttack({ encounter: encN, player: playerN, playerMonster: pmN, d20Roll: 15, dependencies: makeDepsForSimulation(1) });
             totalWithout += hpBefore - wildN.hp;
 
             // COM emberfang (HP > 70%) — mas ataque básico → não dispara
-            const wildP = { id: 'w', name: 'W', class: 'Guerreiro', hp: 200, hpMax: 200, atk: ATK, def: DEF, poder: 8, ene: 5, eneMax: 20, aggression: 60, buffs: [], skill: null };
+            const wildP = { id: 'w', name: 'W', class: 'Bardo', hp: 200, hpMax: 200, atk: ATK, def: DEF, poder: 8, ene: 5, eneMax: 20, aggression: 60, buffs: [], skill: null };
             const encP = makeEncounter(wildP);
-            const pmP = { id: 'pm', name: 'PM', class: 'Guerreiro', hp: 80, hpMax: 80, atk: ATK, def: DEF, ene: 10, eneMax: 20, buffs: [], canonSpeciesId: 'emberfang' };
+            const pmP = { id: 'pm', name: 'PM', class: 'Bardo', hp: 80, hpMax: 80, atk: ATK, def: DEF, ene: 10, eneMax: 20, buffs: [], canonSpeciesId: 'emberfang' };
             const hpBefore2 = wildP.hp;
             executeWildAttack({ encounter: encP, player: playerN, playerMonster: pmP, d20Roll: 15, dependencies: makeDepsForSimulation(1) });
             totalWithPassive += hpBefore2 - wildP.hp;
@@ -626,10 +626,10 @@ describe('speciesPassives 4.1 — impacto emberfang (simulação de 100 ataques)
     it('emberfang NÃO dispara quando HP <= 70%', () => {
         // HP = 56/80 = 70% exato → não dispara
         const ATK = 7, DEF = 3;
-        const wild = { id: 'w', name: 'W', class: 'Guerreiro', hp: 200, hpMax: 200, atk: ATK, def: DEF, poder: 8, ene: 5, eneMax: 20, aggression: 60, buffs: [], skill: null };
+        const wild = { id: 'w', name: 'W', class: 'Bardo', hp: 200, hpMax: 200, atk: ATK, def: DEF, poder: 8, ene: 5, eneMax: 20, aggression: 60, buffs: [], skill: null };
         const enc = makeEncounter(wild);
-        const pm = { id: 'pm', name: 'PM', class: 'Guerreiro', hp: 56, hpMax: 80, atk: ATK, def: DEF, ene: 10, eneMax: 20, buffs: [], canonSpeciesId: 'emberfang' };
-        const player = { id: 'p', name: 'J', class: 'Guerreiro', inventory: {}, team: [], money: 0 };
+        const pm = { id: 'pm', name: 'PM', class: 'Bardo', hp: 56, hpMax: 80, atk: ATK, def: DEF, ene: 10, eneMax: 20, buffs: [], canonSpeciesId: 'emberfang' };
+        const player = { id: 'p', name: 'J', class: 'Bardo', inventory: {}, team: [], money: 0 };
         const hpBefore = wild.hp;
         executeWildAttack({ encounter: enc, player, playerMonster: pm, d20Roll: 15, dependencies: makeDepsForSimulation(1) });
         const damage = hpBefore - wild.hp;
@@ -671,14 +671,14 @@ describe('speciesPassives 4.1 — regressão passivas Fase 4.0', () => {
 
     it('shieldhorn ainda funciona após adição de floracura/moonquill', () => {
         const wild = {
-            id: 'w', name: 'W', class: 'Guerreiro',
+            id: 'w', name: 'W', class: 'Bardo',
             hp: 50, hpMax: 80, atk: 6, def: 3, poder: 8,
             ene: 5, eneMax: 20, aggression: 60, buffs: [], skill: null,
             canonSpeciesId: 'shieldhorn',
         };
         const enc = makeEncounter(wild);
-        const pm = { id: 'pm', name: 'PM', class: 'Guerreiro', hp: 80, hpMax: 80, atk: 7, def: 4, ene: 10, eneMax: 20, buffs: [] };
-        const player = { id: 'p', name: 'J', class: 'Guerreiro', inventory: {}, team: [], money: 0 };
+        const pm = { id: 'pm', name: 'PM', class: 'Bardo', hp: 80, hpMax: 80, atk: 7, def: 4, ene: 10, eneMax: 20, buffs: [] };
+        const player = { id: 'p', name: 'J', class: 'Bardo', inventory: {}, team: [], money: 0 };
         const deps = makeDepsForSimulation(1);
 
         // Dano esperado: 7+10-3=14 → com shieldhorn: 13
@@ -690,13 +690,13 @@ describe('speciesPassives 4.1 — regressão passivas Fase 4.0', () => {
     it('emberfang em ataque básico NÃO adiciona bônus após adição de floracura/moonquill (Fase 4.2)', () => {
         // Fase 4.2: emberfang não dispara em ataque básico (executeWildAttack)
         const wild = {
-            id: 'w', name: 'W', class: 'Guerreiro',
+            id: 'w', name: 'W', class: 'Bardo',
             hp: 50, hpMax: 80, atk: 6, def: 3, poder: 8,
             ene: 5, eneMax: 20, aggression: 60, buffs: [], skill: null,
         };
         const enc = makeEncounter(wild);
-        const pm = { id: 'pm', name: 'PM', class: 'Guerreiro', hp: 80, hpMax: 80, atk: 7, def: 4, ene: 10, eneMax: 20, buffs: [], canonSpeciesId: 'emberfang' };
-        const player = { id: 'p', name: 'J', class: 'Guerreiro', inventory: {}, team: [], money: 0 };
+        const pm = { id: 'pm', name: 'PM', class: 'Bardo', hp: 80, hpMax: 80, atk: 7, def: 4, ene: 10, eneMax: 20, buffs: [], canonSpeciesId: 'emberfang' };
+        const player = { id: 'p', name: 'J', class: 'Bardo', inventory: {}, team: [], money: 0 };
         const deps = makeDepsForSimulation(1);
 
         // HP 100% > 70% mas é ataque básico → emberfang NÃO dispara: 7+10-3=14

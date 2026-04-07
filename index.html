@@ -497,6 +497,10 @@
                     <input type="checkbox" id="therapistMode" onchange="toggleTherapistMode()">
                     Therapist Mode (Show advanced controls)
                 </label>
+                <label style="margin-top:8px;display:block">
+                    <input type="checkbox" id="simplifiedLogMode" onchange="toggleSimplifiedLog()">
+                    📋 Log simplificado (apenas ações principais no combate)
+                </label>
             </div>
 
             <div class="card">
@@ -1317,13 +1321,13 @@
 
         // ENE REGEN CONSTANTS por classe (fallback)
         const ENE_REGEN_BY_CLASS = {
-            'Mago': { pct: 0.18, min: 3 },
-            'Curandeiro': { pct: 0.18, min: 3 },
-            'Bardo': { pct: 0.14, min: 2 },
-            'Caçador': { pct: 0.14, min: 2 },
-            'Ladino': { pct: 0.14, min: 2 },
-            'Animalista': { pct: 0.12, min: 2 },
-            'Bárbaro': { pct: 0.12, min: 2 },
+            'Mago': { pct: 0.14, min: 2 },
+            'Curandeiro': { pct: 0.14, min: 2 },
+            'Bardo': { pct: 0.12, min: 2 },
+            'Caçador': { pct: 0.12, min: 2 },
+            'Ladino': { pct: 0.12, min: 2 },
+            'Animalista': { pct: 0.10, min: 1 },
+            'Bárbaro': { pct: 0.10, min: 1 },
             'Guerreiro': { pct: 0.10, min: 1 }
         };
 
@@ -1344,9 +1348,9 @@
             // GUERREIRO
             'Guerreiro': {
                 'Golpe de Espada': [
-                    { tier: 1, name: 'Golpe de Espada I', type: 'DAMAGE', cost: 4, power: 18, desc: 'Ataque com espada.' },
-                    { tier: 2, name: 'Golpe de Espada II', type: 'DAMAGE', cost: 6, power: 24, desc: 'Ataque forte com espada.' },
-                    { tier: 3, name: 'Golpe de Espada III', type: 'DAMAGE', cost: 8, power: 30, desc: 'Ataque devastador com espada.' }
+                    { tier: 1, name: 'Golpe de Espada I', type: 'DAMAGE', cost: 4, power: 14, desc: 'Ataque com espada.' },
+                    { tier: 2, name: 'Golpe de Espada II', type: 'DAMAGE', cost: 6, power: 20, desc: 'Ataque forte com espada.' },
+                    { tier: 3, name: 'Golpe de Espada III', type: 'DAMAGE', cost: 8, power: 28, desc: 'Ataque devastador com espada.' }
                 ],
                 'Escudo': [
                     { tier: 1, name: 'Escudo I', type: 'BUFF', cost: 4, power: 2, buffType: 'DEF', target: 'self', duration: 2, desc: 'Aumenta DEF temporariamente.' },
@@ -1375,14 +1379,19 @@
             // MAGO
             'Mago': {
                 'Magia Elemental': [
-                    { tier: 1, name: 'Magia Elemental I', type: 'DAMAGE', cost: 4, power: 20, desc: 'Magia elemental.' },
-                    { tier: 2, name: 'Magia Elemental II', type: 'DAMAGE', cost: 6, power: 26, desc: 'Magia elemental forte.' },
-                    { tier: 3, name: 'Magia Elemental III', type: 'DAMAGE', cost: 8, power: 32, desc: 'Magia elemental poderosa.' }
+                    { tier: 1, name: 'Magia Elemental I', type: 'DAMAGE', cost: 4, power: 15, desc: 'Magia elemental.' },
+                    { tier: 2, name: 'Magia Elemental II', type: 'DAMAGE', cost: 6, power: 20, desc: 'Magia elemental forte.' },
+                    { tier: 3, name: 'Magia Elemental III', type: 'DAMAGE', cost: 8, power: 28, desc: 'Magia elemental poderosa.' }
                 ],
                 'Explosão Elemental': [
-                    { tier: 1, name: 'Explosão Elemental I', type: 'DAMAGE', cost: 6, power: 24, desc: 'Explosão mágica.' },
-                    { tier: 2, name: 'Explosão Elemental II', type: 'DAMAGE', cost: 8, power: 32, desc: 'Explosão mágica forte.' },
-                    { tier: 3, name: 'Explosão Elemental III', type: 'DAMAGE', cost: 12, power: 38, desc: 'Explosão devastadora.' }
+                    { tier: 1, name: 'Explosão Elemental I', type: 'DAMAGE', cost: 6, power: 18, desc: 'Explosão mágica.' },
+                    { tier: 2, name: 'Explosão Elemental II', type: 'DAMAGE', cost: 8, power: 26, desc: 'Explosão mágica forte.' },
+                    { tier: 3, name: 'Explosão Elemental III', type: 'DAMAGE', cost: 12, power: 34, desc: 'Explosão devastadora.' }
+                ],
+                'Escudo Arcano': [
+                    { tier: 1, name: 'Escudo Arcano I', type: 'BUFF', cost: 3, power: 2, buffType: 'DEF', target: 'self', duration: 2, desc: 'Barreira mágica defensiva.' },
+                    { tier: 2, name: 'Escudo Arcano II', type: 'BUFF', cost: 5, power: 3, buffType: 'DEF', target: 'self', duration: 2, desc: 'Barreira mágica forte.' },
+                    { tier: 3, name: 'Escudo Arcano III', type: 'BUFF', cost: 7, power: 4, buffType: 'DEF', target: 'self', duration: 3, desc: 'Barreira arcana poderosa.' }
                 ]
             },
             // BÁRBARO
@@ -1393,17 +1402,17 @@
                     { tier: 3, name: 'Fúria III', type: 'BUFF', cost: 8, power: 6, buffType: 'ATK', target: 'self', duration: 3, debuffType: 'DEF', debuffPower: -2, desc: 'Fúria selvagem.' }
                 ],
                 'Golpe Brutal': [
-                    { tier: 1, name: 'Golpe Brutal I', type: 'DAMAGE', cost: 6, power: 24, desc: 'Golpe brutal.' },
-                    { tier: 2, name: 'Golpe Brutal II', type: 'DAMAGE', cost: 8, power: 32, desc: 'Golpe muito brutal.' },
-                    { tier: 3, name: 'Golpe Brutal III', type: 'DAMAGE', cost: 12, power: 38, desc: 'Golpe devastador.' }
+                    { tier: 1, name: 'Golpe Brutal I', type: 'DAMAGE', cost: 6, power: 18, desc: 'Golpe brutal.' },
+                    { tier: 2, name: 'Golpe Brutal II', type: 'DAMAGE', cost: 8, power: 26, desc: 'Golpe muito brutal.' },
+                    { tier: 3, name: 'Golpe Brutal III', type: 'DAMAGE', cost: 12, power: 34, desc: 'Golpe devastador.' }
                 ]
             },
             // LADINO
             'Ladino': {
                 'Ataque Preciso': [
-                    { tier: 1, name: 'Ataque Preciso I', type: 'DAMAGE', cost: 4, power: 19, desc: 'Ataque preciso.' },
-                    { tier: 2, name: 'Ataque Preciso II', type: 'DAMAGE', cost: 6, power: 24, desc: 'Ataque muito preciso.' },
-                    { tier: 3, name: 'Ataque Preciso III', type: 'DAMAGE', cost: 8, power: 30, desc: 'Ataque extremamente preciso.' }
+                    { tier: 1, name: 'Ataque Preciso I', type: 'DAMAGE', cost: 4, power: 15, desc: 'Ataque preciso.' },
+                    { tier: 2, name: 'Ataque Preciso II', type: 'DAMAGE', cost: 6, power: 20, desc: 'Ataque muito preciso.' },
+                    { tier: 3, name: 'Ataque Preciso III', type: 'DAMAGE', cost: 8, power: 26, desc: 'Ataque extremamente preciso.' }
                 ],
                 'Enfraquecer': [
                     null, // S0 não tem
@@ -1422,14 +1431,19 @@
                     { tier: 1, name: 'Canção Calmante I', type: 'HEAL', cost: 5, power: 12, target: 'ally', desc: 'Cura leve.' },
                     { tier: 2, name: 'Canção Calmante II', type: 'BUFF', cost: 6, power: 2, buffType: 'DEF', target: 'ally', duration: 2, desc: 'Aumenta DEF.' },
                     { tier: 3, name: 'Canção Calmante III', type: 'BUFF', cost: 8, power: 3, buffType: 'DEF', target: 'ally', duration: 3, desc: 'Canção protetora.' }
+                ],
+                'Nota Discordante': [
+                    { tier: 1, name: 'Nota Discordante I', type: 'DAMAGE', cost: 5, power: 12, desc: 'Nota sonora que causa dano.' },
+                    { tier: 2, name: 'Nota Discordante II', type: 'DAMAGE', cost: 7, power: 18, desc: 'Nota ensurdecedora.' },
+                    { tier: 3, name: 'Nota Discordante III', type: 'DAMAGE', cost: 9, power: 24, desc: 'Cacofonia devastadora.' }
                 ]
             },
             // CAÇADOR
             'Caçador': {
                 'Flecha Poderosa': [
-                    { tier: 1, name: 'Flecha Poderosa I', type: 'DAMAGE', cost: 4, power: 19, desc: 'Flecha poderosa.' },
-                    { tier: 2, name: 'Flecha Poderosa II', type: 'DAMAGE', cost: 6, power: 24, desc: 'Flecha muito poderosa.' },
-                    { tier: 3, name: 'Flecha Poderosa III', type: 'DAMAGE', cost: 8, power: 30, desc: 'Flecha devastadora.' }
+                    { tier: 1, name: 'Flecha Poderosa I', type: 'DAMAGE', cost: 4, power: 15, desc: 'Flecha poderosa.' },
+                    { tier: 2, name: 'Flecha Poderosa II', type: 'DAMAGE', cost: 6, power: 20, desc: 'Flecha muito poderosa.' },
+                    { tier: 3, name: 'Flecha Poderosa III', type: 'DAMAGE', cost: 8, power: 26, desc: 'Flecha devastadora.' }
                 ],
                 'Armadilha': [
                     null, // S0 não tem
@@ -1440,9 +1454,9 @@
             // ANIMALISTA
             'Animalista': {
                 'Investida Bestial': [
-                    { tier: 1, name: 'Investida Bestial I', type: 'DAMAGE', cost: 4, power: 19, desc: 'Investida feroz.' },
-                    { tier: 2, name: 'Investida Bestial II', type: 'DAMAGE', cost: 6, power: 24, desc: 'Investida muito feroz.' },
-                    { tier: 3, name: 'Investida Bestial III', type: 'DAMAGE', cost: 8, power: 30, desc: 'Investida selvagem.' }
+                    { tier: 1, name: 'Investida Bestial I', type: 'DAMAGE', cost: 4, power: 15, desc: 'Investida feroz.' },
+                    { tier: 2, name: 'Investida Bestial II', type: 'DAMAGE', cost: 6, power: 20, desc: 'Investida muito feroz.' },
+                    { tier: 3, name: 'Investida Bestial III', type: 'DAMAGE', cost: 8, power: 26, desc: 'Investida selvagem.' }
                 ],
                 'Instinto Selvagem': [
                     { tier: 1, name: 'Instinto Selvagem I', type: 'BUFF', cost: 4, power: 2, buffType: 'DEF', target: 'self', duration: 2, desc: 'Aumenta DEF.' },
@@ -1558,13 +1572,13 @@
             },
             
             ENERGY_REGEN: {
-                'Mago': { pct: 0.18, min: 3 },
-                'Curandeiro': { pct: 0.18, min: 3 },
-                'Bardo': { pct: 0.14, min: 2 },
-                'Caçador': { pct: 0.14, min: 2 },
-                'Ladino': { pct: 0.14, min: 2 },
-                'Animalista': { pct: 0.12, min: 2 },
-                'Bárbaro': { pct: 0.12, min: 2 },
+                'Mago': { pct: 0.14, min: 2 },
+                'Curandeiro': { pct: 0.14, min: 2 },
+                'Bardo': { pct: 0.12, min: 2 },
+                'Caçador': { pct: 0.12, min: 2 },
+                'Ladino': { pct: 0.12, min: 2 },
+                'Animalista': { pct: 0.10, min: 1 },
+                'Bárbaro': { pct: 0.10, min: 1 },
                 'Guerreiro': { pct: 0.10, min: 1 }
             },
             
@@ -3846,10 +3860,13 @@
                 const regenData = ENE_REGEN_BY_CLASS[monster.class] || { pct: 0.10, min: 1 };
                 const eneGain = Math.max(regenData.min, Math.ceil(monster.eneMax * regenData.pct));
                 
+                const eneBefore = monster.ene;
                 monster.ene = Math.min(monster.eneMax, monster.ene + eneGain);
-                
-                if (encounter && encounter.log) {
-                    encounter.log.push(`⚡ ${monster.name} regenerou ${eneGain} ENE (${monster.ene}/${monster.eneMax})`);
+                const deltaEne = monster.ene - eneBefore;
+
+                // E1: Só loga se houve ganho real de ENE (evita poluição quando ENE já está cheia)
+                if (deltaEne > 0 && encounter && encounter.log) {
+                    encounter.log.push(`⚡ ${monster.name} recuperou ${deltaEne} ENE (${monster.ene}/${monster.eneMax})`);
                 }
             } catch (error) {
                 console.error('Failed to apply ENE regen:', error);
@@ -4817,174 +4834,44 @@
         /**
          * Constrói o HTML de um card de monstrinho no modal de troca.
          * Exibe monstrinhos elegíveis, bloqueados por classe e KO'd — com rótulo claro.
-         *
-         * @param {object} monster   - Instância de monstrinho
-         * @param {number} index     - Índice na equipe
-         * @param {object} player    - Jogador com { class, activeIndex }
-         * @param {string} encId     - ID do encounter (para confirmar seleção)
-         * @param {'ko'|'manual'} context - Contexto da troca
-         * @param {boolean} masterMode
-         * @returns {string} HTML do card
+                 /**
+         * B1: _buildSwapCard — delegada para Combat.Group.UI.buildSwapCard (groupUI.js)
          */
         function _buildSwapCard(monster, index, player, encId, context, masterMode) {
-            const status = BattleSwap.getSwapStatus(monster, index, player, { masterMode });
-            const hpPct = Math.max(0, Math.min(100, ((monster.hp || 0) / (monster.hpMax || 1)) * 100));
-            const name = monster.emoji ? `${monster.emoji} ${monster.name || monster.nome}` : (monster.name || monster.nome);
-            const isEligible = status.category === 'eligible';
-            const clickAttr = isEligible
-                ? `onclick="selectReplacementMonster('${player.id}', ${index}, '${encId}', '${context}')" role="button" tabindex="0"`
-                : '';
-            const cardClass = `swap-card swap-card--${status.category}`;
-            return `
-            <div class="${cardClass}" ${clickAttr} title="${status.title}">
-                <div class="swap-card__name">${name} <small>Nv ${monster.level || 1}</small></div>
-                <div class="swap-card__meta">HP ${monster.hp || 0}/${monster.hpMax || 0} (${Math.floor(hpPct)}%) · Classe: ${monster.class || '—'}</div>
-                <span class="swap-card__reason">${status.label}</span>
-            </div>`;
+            return Combat.Group.UI.buildSwapCard({ monster, index, player, encId, context, masterMode, BattleSwap });
         }
 
         /**
          * Abre o modal de troca forçada por KO.
-         * Mostra TODOS os membros da equipe com status de elegibilidade (Fase 20).
+         * HTML construído por groupUI.js (buildKoSwapModalHTML) — B1.
          *
          * @param {object} player - Jogador cujo ativo desmaiou
          * @param {object} enc    - Encounter atual
          */
         function openSwitchMonsterModal(player, enc) {
             if (!player || !Array.isArray(player.team)) return;
-
             const masterMode = GameState.config?.masterMode || false;
-            const cats = BattleSwap.categorizeBattleTeam(player, { masterMode });
-
-            // Sem substituto elegível → exibir painel informativo dentro do modal (não alert)
-            if (cats.eligible.length === 0) {
-                let html = '<div class="modal-overlay-fixed" id="switchMonsterModal">';
-                html += '<div class="modal-content-card">';
-                html += `<h3>💀 ${player.name || player.nome}: Sem Substitutos</h3>`;
-                html += `<div class="swap-modal-no-option">`;
-                html += `<strong>Nenhum monstrinho elegível disponível.</strong><br>`;
-                html += `<span>Regra: em batalha, só podem entrar monstrinhos da classe <strong>${player.class || '?'}</strong>.</span><br>`;
-                html += `<span>Troque monstrinhos com outros jogadores para completar seu time!</span>`;
-                html += `</div>`;
-                // Mostrar bloqueados por classe e KO para clareza
-                if (cats.blocked_class.length > 0) {
-                    html += `<div class="swap-modal-section-title">Fora da classe (${player.class || '?'})</div>`;
-                    cats.blocked_class.forEach(({ monster, index }) => {
-                        html += _buildSwapCard(monster, index, player, enc.id, 'ko', masterMode);
-                    });
-                }
-                if (cats.blocked_ko.length > 0) {
-                    html += `<div class="swap-modal-section-title">Derrotados</div>`;
-                    cats.blocked_ko.forEach(({ monster, index }) => {
-                        html += _buildSwapCard(monster, index, player, enc.id, 'ko', masterMode);
-                    });
-                }
-                html += `<div style="margin-top:12px;text-align:center">`;
-                html += `<button class="btn btn-secondary" onclick="document.getElementById('switchMonsterModal')?.remove(); closeWithNoSwap('${player.id}', '${enc.id}')">✖ Continuar sem substituto</button>`;
-                html += `</div>`;
-                html += '</div></div>';
-                const modalDiv = document.createElement('div');
-                modalDiv.innerHTML = html;
-                document.body.appendChild(modalDiv);
-                return;
-            }
-
-            // Construir modal com todos os grupos
-            let html = '<div class="modal-overlay-fixed" id="switchMonsterModal">';
-            html += '<div class="modal-content-card">';
-            html += `<h3>💀 ${player.name || player.nome}: Escolha um Substituto</h3>`;
-            html += `<p style="font-size:13px;opacity:0.8">Seu monstrinho foi derrotado. Escolha quem entra em campo:</p>`;
-
-            // Elegíveis primeiro
-            html += `<div class="swap-modal-section-title">Podem entrar (${cats.eligible.length})</div>`;
-            cats.eligible.forEach(({ monster, index }) => {
-                html += _buildSwapCard(monster, index, player, enc.id, 'ko', masterMode);
-            });
-
-            // Bloqueados por classe
-            if (cats.blocked_class.length > 0) {
-                html += `<div class="swap-modal-section-title">Fora da classe — não podem entrar (${cats.blocked_class.length})</div>`;
-                cats.blocked_class.forEach(({ monster, index }) => {
-                    html += _buildSwapCard(monster, index, player, enc.id, 'ko', masterMode);
-                });
-            }
-
-            // Derrotados
-            if (cats.blocked_ko.length > 0) {
-                html += `<div class="swap-modal-section-title">Derrotados (${cats.blocked_ko.length})</div>`;
-                cats.blocked_ko.forEach(({ monster, index }) => {
-                    html += _buildSwapCard(monster, index, player, enc.id, 'ko', masterMode);
-                });
-            }
-
-            html += '</div></div>';
-            const modalDiv = document.createElement('div');
-            modalDiv.innerHTML = html;
-            document.body.appendChild(modalDiv);
+            const html = Combat.Group.UI.buildKoSwapModalHTML(player, enc, masterMode, BattleSwap);
+            Combat.Group.UI.mountSwapModal(html);
         }
 
         /**
          * Abre o modal de troca manual durante o turno do jogador.
-         * Usa o turno do jogador como custo.
+         * HTML construído por groupUI.js (buildManualSwapModalHTML) — B1.
          *
          * @param {object} player - Jogador ativo
          * @param {object} enc    - Encounter atual
          */
         function openManualSwapModal(player, enc) {
             if (!player || !Array.isArray(player.team)) return;
-
             const masterMode = GameState.config?.masterMode || false;
-            const cats = BattleSwap.categorizeBattleTeam(player, { masterMode });
-
-            let html = '<div class="modal-overlay-fixed" id="switchMonsterModal">';
-            html += '<div class="modal-content-card">';
-            html += `<h3>🔄 ${player.name || player.nome}: Trocar Monstrinho</h3>`;
-            html += `<p style="font-size:13px;opacity:0.8">A troca usa o turno. Escolha quem entra em campo:</p>`;
-
-            // Ativo atual
-            if (cats.active.length > 0) {
-                html += `<div class="swap-modal-section-title">Em campo agora</div>`;
-                cats.active.forEach(({ monster, index }) => {
-                    html += _buildSwapCard(monster, index, player, enc.id, 'manual', masterMode);
-                });
-            }
-
-            // Elegíveis
-            if (cats.eligible.length > 0) {
-                html += `<div class="swap-modal-section-title">Podem entrar (${cats.eligible.length})</div>`;
-                cats.eligible.forEach(({ monster, index }) => {
-                    html += _buildSwapCard(monster, index, player, enc.id, 'manual', masterMode);
-                });
-            }
-
-            // Bloqueados por classe
-            if (cats.blocked_class.length > 0) {
-                html += `<div class="swap-modal-section-title">Fora da classe — não podem entrar (${cats.blocked_class.length})</div>`;
-                cats.blocked_class.forEach(({ monster, index }) => {
-                    html += _buildSwapCard(monster, index, player, enc.id, 'manual', masterMode);
-                });
-            }
-
-            // Derrotados
-            if (cats.blocked_ko.length > 0) {
-                html += `<div class="swap-modal-section-title">Derrotados (${cats.blocked_ko.length})</div>`;
-                cats.blocked_ko.forEach(({ monster, index }) => {
-                    html += _buildSwapCard(monster, index, player, enc.id, 'manual', masterMode);
-                });
-            }
-
-            html += `<div style="margin-top:12px;text-align:center">`;
-            html += `<button class="btn btn-secondary" onclick="document.getElementById('switchMonsterModal')?.remove()">✖ Cancelar</button>`;
-            html += `</div>`;
-            html += '</div></div>';
-            const modalDiv = document.createElement('div');
-            modalDiv.innerHTML = html;
-            document.body.appendChild(modalDiv);
+            const html = Combat.Group.UI.buildManualSwapModalHTML(player, enc, masterMode, BattleSwap);
+            Combat.Group.UI.mountSwapModal(html);
         }
 
         /**
          * Lida com o caso sem substituto elegível: remove o jogador dos participantes e avança o turno.
-         * Exposto globalmente para uso no botão "Continuar sem substituto".
+         * Exposto via window.GroupUI.closeWithNoSwap (B1).
          */
         function closeWithNoSwap(playerId, encId) {
             try {
@@ -5004,7 +4891,6 @@
                 showError('Erro ao continuar sem substituto', error.stack);
             }
         }
-        window.closeWithNoSwap = closeWithNoSwap;
 
         function selectReplacementMonster(playerId, newActiveIndex, encounterId, context) {
             try {
@@ -5067,6 +4953,17 @@
                 showError('Falha ao abrir troca manual', error.stack);
             }
         }
+
+        // B1: Expor funções de troca via window.GroupUI (namespace único)
+        window.GroupUI = {
+            openSwitchMonsterModal,
+            openManualSwapModal,
+            groupManualSwap,
+            closeWithNoSwap,
+        };
+        // Manter compat legada: closeWithNoSwap e groupManualSwap chamados diretamente
+        // por onclick em HTML gerado antes do namespace window.GroupUI existir.
+        window.closeWithNoSwap = closeWithNoSwap;
         window.groupManualSwap = groupManualSwap;
 
         // ==================== FASE 3.C: Skills and Items ====================
@@ -5457,7 +5354,7 @@
                 
                 // Detectar level up: por emoji OU por texto
                 const isLevelUp = line.includes("✨") || /subiu para o nível/i.test(line);
-                if (isLevelUp) showToast(line);
+                if (isLevelUp) showToast(line, 'level-up');
                 
                 // Detectar evolução: por emoji OU por texto
                 const isEvo = line.includes("🌟") || /evoluiu para/i.test(line);
@@ -6802,6 +6699,11 @@
                                     <div class="battle-bar-label"><span>❤️ HP</span><span>${monster.hp}/${monster.hpMax} (${Math.floor(hpPercent*100)}%)</span></div>
                                     <div class="battle-bar"><div class="battle-bar-fill hp" style="width:${hpPercent*100}%"></div></div>
                                 </div>
+                                ${(monster.eneMax > 0) ? `
+                                <div class="battle-bar-row">
+                                    <div class="battle-bar-label"><span>⚡ ENE</span><span>${monster.ene ?? 0}/${monster.eneMax}</span></div>
+                                    <div class="battle-bar"><div class="battle-bar-fill ene" style="width:${Math.max(0,Math.min(100,((monster.ene??0)/monster.eneMax)*100))}%"></div></div>
+                                </div>` : ''}
                                 <div class="battle-bar-row">
                                     <div class="battle-bar-label"><span>😤 Agressividade</span><span>${monster.aggression ?? 100}/100</span></div>
                                     <div class="battle-bar"><div class="battle-bar-fill aggr" style="width:${monster.aggression ?? 100}%"></div></div>
@@ -9280,8 +9182,24 @@
             const isCurrent = nodeId === progress.currentNodeId;
             const isDone    = progress.completedLocations.has(nodeId);
 
+            // D2: Detectar se este nó é o destino da quest principal ativa (badge de objetivo)
+            let isMainObjectiveNode = false;
+            if (window.GameFlow) {
+                for (const player of (GameState.players ?? [])) {
+                    if (!player) continue;
+                    const summary = window.GameFlow.getActiveQuestsSummary(player);
+                    if (summary.some(({ quest }) => quest?.localId === nodeId)) {
+                        isMainObjectiveNode = true;
+                        break;
+                    }
+                }
+            }
+
             // Badges
             let badgesHtml = '';
+            if (isMainObjectiveNode) {
+                badgesHtml += `<span class="ow-sidebar__badge ow-sidebar__badge--objective">✨ Objetivo</span>`;
+            }
             if (isBoss) {
                 const bossClass = regionType === 'optional' ? 'ow-sidebar__badge--optional'
                                 : regionType === 'side'     ? 'ow-sidebar__badge--side'
@@ -9289,11 +9207,20 @@
                 const bossTag = regionType === 'optional' ? 'Opcional' : regionType === 'side' ? 'Alternativo' : 'Principal';
                 badgesHtml += `<span class="ow-sidebar__badge ${bossClass}">👑 Chefe ${bossTag}</span>`;
                 if (defeated) badgesHtml += `<span class="ow-sidebar__badge ow-sidebar__badge--done">⚔️ Derrotado</span>`;
+                // D1: Recompensa de boss opcional/lateral
+                if (!defeated && (regionType === 'optional' || regionType === 'side')) {
+                    badgesHtml += `<span class="ow-sidebar__badge ow-sidebar__badge--reward">🎁 Recompensa Exclusiva</span>`;
+                }
             } else if (isCity) {
                 badgesHtml += `<span class="ow-sidebar__badge ow-sidebar__badge--city">🏙️ Cidade</span>`;
             } else {
                 if (isCurrent) badgesHtml += `<span class="ow-sidebar__badge ow-sidebar__badge--current">📍 Atual</span>`;
                 if (isDone)    badgesHtml += `<span class="ow-sidebar__badge ow-sidebar__badge--done">✅ Concluído</span>`;
+                // D1: Badge de conteúdo lateral com Monstrinho raro disponível
+                const nodeOptType = node.type;
+                if (!isDone && (nodeOptType === 'optional' || nodeOptType === 'side')) {
+                    badgesHtml += `<span class="ow-sidebar__badge ow-sidebar__badge--reward">🌟 Monstrinho Raro</span>`;
+                }
             }
 
             // Quest ativa neste local
@@ -11481,6 +11408,20 @@
                 showToast('❌ Erro ao alterar modo terapeuta: ' + error.message, 'error');
             }
         }
+
+        // H1: Toggle de log simplificado — salva no GameState.config
+        function toggleSimplifiedLog() {
+            try {
+                const checked = document.getElementById('simplifiedLogMode')?.checked;
+                if (!GameState.config) GameState.config = {};
+                GameState.config.simplifiedLog = !!checked;
+                saveToLocalStorage();
+                showToast(checked ? '📋 Log simplificado ativado' : '📋 Log completo ativado', 'info');
+            } catch (error) {
+                console.error('[toggleSimplifiedLog] Erro:', error);
+            }
+        }
+        window.toggleSimplifiedLog = toggleSimplifiedLog;
 
         // Feature 4.4: Global click listener for button sounds
         document.addEventListener("click", (e) => {

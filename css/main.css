@@ -318,6 +318,13 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .group-unit--active {
     border-color: rgba(0,184,148,0.7);
     box-shadow: 0 0 10px rgba(0,184,148,0.35);
+    animation: group-unit-your-turn-pulse 1.4s ease-in-out infinite;
+}
+/* H3: Animação de pulso para indicar "sua vez!" ao jogador ativo */
+@keyframes group-unit-your-turn-pulse {
+    0%   { box-shadow: 0 0 8px rgba(0,184,148,0.35); border-color: rgba(0,184,148,0.7); }
+    50%  { box-shadow: 0 0 18px rgba(0,184,148,0.75); border-color: rgba(0,184,148,1.0); }
+    100% { box-shadow: 0 0 8px rgba(0,184,148,0.35); border-color: rgba(0,184,148,0.7); }
 }
 .group-unit--active-enemy {
     border-color: rgba(214,48,49,0.7);
@@ -338,6 +345,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .group-unit-owner { font-size: 11px; opacity: 0.6; margin-bottom: 4px; }
 .group-unit-stats { font-size: 11px; opacity: 0.6; margin-bottom: 4px; }
 .group-unit-item { font-size: 11px; opacity: 0.7; margin-top: 3px; }
+.group-unit-class-passive { font-size: 10px; opacity: 0.65; margin-top: 2px; color: #a8d8ff; }
 
 .group-unit-ko-badge {
     display: inline-block;
@@ -348,10 +356,16 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 }
 .group-unit-active-badge {
     display: inline-block;
-    background: rgba(0,184,148,0.3); color: #00b894;
+    background: rgba(0,184,148,0.4); color: #00e8c0;
     font-size: 10px; font-weight: bold;
     padding: 1px 6px; border-radius: 4px;
     margin-left: 4px; vertical-align: middle;
+    animation: group-badge-blink 1.4s ease-in-out infinite;
+}
+/* H3: badge piscante para "Em batalha / sua vez" */
+@keyframes group-badge-blink {
+    0%,100% { opacity: 1; }
+    50%      { opacity: 0.55; }
 }
 
 /* Barra de ações do grupo (slot na .battle-actions-row) */
@@ -606,6 +620,22 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 
 .mm-toast.error {
     background: rgba(214, 48, 49, 0.95);
+}
+
+/* H2: Toast especial de level-up — mais visível para crianças */
+.mm-toast.level-up {
+    background: linear-gradient(135deg, rgba(255,193,7,0.98), rgba(255,152,0,0.98));
+    color: #222;
+    font-size: 18px;
+    padding: 16px 28px;
+    animation: toast-bounce 0.5s ease-out;
+    box-shadow: 0 6px 20px rgba(255,152,0,0.5);
+}
+@keyframes toast-bounce {
+    0%   { transform: translateX(400px) scale(0.8); }
+    60%  { transform: translateX(-12px) scale(1.05); }
+    80%  { transform: translateX(6px) scale(0.98); }
+    100% { transform: translateX(0) scale(1); }
 }
 
 /* Therapist Log Panel */

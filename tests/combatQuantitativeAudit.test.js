@@ -53,26 +53,26 @@ const BASIC_ATTACK_POWER = {
 
 // ENE regenerada por turno: max(min, floor(eneMax * pct))
 const ENE_REGEN = {
-    Mago:       { pct: 0.18, min: 3 },
-    Curandeiro: { pct: 0.18, min: 3 },
-    Bardo:      { pct: 0.14, min: 2 },
-    Caçador:    { pct: 0.14, min: 2 },
-    Ladino:     { pct: 0.14, min: 2 },
-    Animalista: { pct: 0.12, min: 2 },
-    Bárbaro:    { pct: 0.12, min: 2 },
+    Mago:       { pct: 0.14, min: 2 },
+    Curandeiro: { pct: 0.14, min: 2 },
+    Bardo:      { pct: 0.12, min: 2 },
+    Caçador:    { pct: 0.12, min: 2 },
+    Ladino:     { pct: 0.12, min: 2 },
+    Animalista: { pct: 0.10, min: 1 },
+    Bárbaro:    { pct: 0.10, min: 1 },
     Guerreiro:  { pct: 0.10, min: 1 },
 };
 
 // Skills ofensivas tier-1 por classe (extraídas de SKILL_DEFS no index.html)
 const OFFENSIVE_SKILL_T1 = {
-    Guerreiro:  { name: 'Golpe de Espada I',   cost: 4,  power: 18 },
-    Mago:       { name: 'Magia Elemental I',   cost: 4,  power: 20 },
+    Guerreiro:  { name: 'Golpe de Espada I',   cost: 4,  power: 14 },
+    Mago:       { name: 'Magia Elemental I',   cost: 4,  power: 15 },
     Curandeiro: null, // Curandeiro não tem skill ofensiva T1 (só cura)
-    Bárbaro:    { name: 'Golpe Brutal I',      cost: 6,  power: 24 },
-    Ladino:     { name: 'Ataque Preciso I',    cost: 4,  power: 19 },
-    Bardo:      null, // Bardo T1 tem buff, não dano
-    Caçador:    { name: 'Flecha Poderosa I',   cost: 4,  power: 19 },
-    Animalista: { name: 'Investida Bestial I', cost: 4,  power: 19 },
+    Bárbaro:    { name: 'Golpe Brutal I',      cost: 6,  power: 18 },
+    Ladino:     { name: 'Ataque Preciso I',    cost: 4,  power: 15 },
+    Bardo:      { name: 'Nota Discordante I',  cost: 5,  power: 12 },
+    Caçador:    { name: 'Flecha Poderosa I',   cost: 4,  power: 15 },
+    Animalista: { name: 'Investida Bestial I', cost: 4,  power: 15 },
 };
 
 // Stats de starters (nível 1, Comum, levelMult=1.0, rarityMult=1.0)
@@ -531,33 +531,33 @@ describe('Bloco 2 — Skill vs Ataque Básico (com economia de ENE)', () => {
 
 describe('Bloco 3 — Ritmo de ENE/regen por classe', () => {
 
-    it('Mago: primeira skill disponível no turno 1 ou 2 (alta regen)', () => {
-        // eneMax=10, regen=max(3, floor(10*0.18))=max(3, floor(1.8))=max(3,1)=3
-        // Turno 1: ENE=3 < 4 → turno 2: ENE=6 ≥ 4 → skill no turno 2
+    it('Mago: primeira skill disponível no turno 1 ou 2 (regen moderada)', () => {
+        // eneMax=10, regen=max(2, floor(10*0.14))=max(2, 1)=2
+        // Turno 1: ENE=2 < 4, turno 2: ENE=4 ≥ 4 → skill no turno 2
         const turn = turnsToFirstSkill('Mago', 10, 4);
         expect(turn).toBeLessThanOrEqual(2);
     });
 
     it('Guerreiro: primeira skill mais tardia (baixa regen + eneMax pequeno)', () => {
-        // eneMax=4, regen=max(1, floor(4*0.10))=max(1, floor(0.4))=max(1,0)=1
+        // eneMax=4, regen=max(1, floor(4*0.10))=max(1, 0)=1
         // Turno 1: ENE=1, turno 2: ENE=2, turno 3: ENE=3, turno 4: ENE=4 → skill no turno 4
         const turn = turnsToFirstSkill('Guerreiro', 4, 4);
         expect(turn).toBeGreaterThanOrEqual(3);
     });
 
-    it('Curandeiro: primeira skill disponível cedo (alta regen + eneMax alto)', () => {
-        // eneMax=12, regen=max(3, floor(12*0.18))=max(3,2)=3
-        // Turno 1: ENE=3 < 5, turno 2: ENE=6 ≥ 5 → skill Cura I no turno 2
+    it('Curandeiro: primeira skill disponível em alguns turnos (regen reduzida)', () => {
+        // eneMax=12, regen=max(2, floor(12*0.14))=max(2, 1)=2
+        // Turno 1: ENE=2 < 5, turno 2: ENE=4 < 5, turno 3: ENE=6 ≥ 5 → skill no turno 3
         const turn = turnsToFirstSkill('Curandeiro', 12, 5); // Cura I cost=5
-        expect(turn).toBeLessThanOrEqual(2);
+        expect(turn).toBeLessThanOrEqual(4);
     });
 
     it('Bárbaro: skill cara (cost=6) exige mais turnos de acúmulo', () => {
-        // eneMax=6, regen=max(2, floor(6*0.12))=max(2,0)=2
-        // Turno 1: ENE=2, turno 2: ENE=4, turno 3: ENE=6 → skill no turno 3
+        // eneMax=6, regen=max(1, floor(6*0.10))=max(1, 0)=1
+        // Turno 1: ENE=1, turno 2: ENE=2, ..., turno 6: ENE=6 → skill no turno 6
         const turn = turnsToFirstSkill('Bárbaro', 6, 6); // Golpe Brutal I cost=6
-        expect(turn).toBeLessThanOrEqual(4);
-        expect(turn).toBeGreaterThanOrEqual(2);
+        expect(turn).toBeLessThanOrEqual(8);
+        expect(turn).toBeGreaterThanOrEqual(4);
     });
 
     it('tabela: regen por turno por classe está ordenada corretamente (Mago ≥ Guerreiro)', () => {

@@ -1,3 +1,11 @@
+/** Rótulos das passivas de combate por classe (C2 — telemetria de classe no card). */
+const CLASS_PASSIVE_LABELS = {
+    'Guerreiro':  { icon: '🛡️', label: '-15% dano recebido' },
+    'Bárbaro':    { icon: '🪓', label: '-10% dano recebido' },
+    'Curandeiro': { icon: '🌿', label: '-10% dano recebido' },
+    'Ladino':     { icon: '🗡️', label: '+10% dano causado' },
+};
+
 /**
  * GROUP COMBAT UI - Renderização e Feedback Visual
  *
@@ -113,6 +121,12 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
             teamHintHtml = `<div class="group-unit-eligibility">🔄 Reserva: ${parts.join(' · ')}</div>`;
         }
 
+        // C2: Passiva de classe do monstrinho em combate
+        const classPassive = CLASS_PASSIVE_LABELS[mon.class];
+        const classPassiveHtml = classPassive
+            ? `<div class="group-unit-class-passive">${classPassive.icon} ${classPassive.label}</div>`
+            : '';
+
         playersHtml += `
         <div id="grpP_${pid}" class="${unitClass}">
             <div class="group-unit-name">${mon.emoji || ''} ${mon.name || mon.nome} <small>Nv ${mon.level}</small>
@@ -128,6 +142,7 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
                 <div class="battle-bar-label"><span>⚡ ENE</span><span>${ene}/${eneMax}</span></div>
                 <div class="battle-bar"><div class="battle-bar-fill ene" style="width:${enePct}%"></div></div>
             </div>
+            ${classPassiveHtml}
             ${teamHintHtml}
             ${itemHtml}
         </div>`;
@@ -142,6 +157,9 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
         const hp = Number(e.hp) || 0;
         const hpMax = Number(e.hpMax) || 1;
         const hpPct = Math.max(0, Math.min(100, (hp / hpMax) * 100));
+        const ene = Number(e.ene) || 0;
+        const eneMax = Number(e.eneMax) || 10;
+        const enePct = Math.max(0, Math.min(100, (ene / eneMax) * 100));
         const isDead = hp <= 0;
         const isCurrent = actor && actor.side === 'enemy' && actor.id === i;
 
@@ -164,6 +182,10 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
                 <div class="battle-bar-label"><span>❤️ HP</span><span>${hp}/${hpMax}</span></div>
                 <div class="battle-bar"><div class="battle-bar-fill hp" style="width:${hpPct}%"></div></div>
             </div>
+            <div class="battle-bar-row">
+                <div class="battle-bar-label"><span>⚡ ENE</span><span>${ene}/${eneMax}</span></div>
+                <div class="battle-bar"><div class="battle-bar-fill ene" style="width:${enePct}%"></div></div>
+            </div>
         </div>`;
     }
 
@@ -171,7 +193,14 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
     const actionsHtml = renderActionBar(encounter, actor, isPlayerTurn, state, helpers);
 
     // ── LOG COMPACTO ─────────────────────────────────────────────────────────
-    const logEntries = (encounter.log || []).slice(-6).map(msg => `<div>${msg}</div>`).join('');
+    // H1: Prefixos de mensagens "técnicas" que são filtradas no modo simplificado
+    const SIMPLIFIED_LOG_SKIP = ['🎲', '⚡', '✨ Passiva', '🛡️ Passiva', '🔮', '🗡️', '🎵'];
+    const allLog = encounter.log || [];
+    const simplifiedLog = state.config?.simplifiedLog;
+    const filteredLog = simplifiedLog
+        ? allLog.filter(msg => !SIMPLIFIED_LOG_SKIP.some(prefix => msg.startsWith(prefix)))
+        : allLog;
+    const logEntries = filteredLog.slice(-6).map(msg => `<div>${msg}</div>`).join('');
 
     // ── MONTAR HTML FINAL ────────────────────────────────────────────────────
     const html = `
@@ -582,4 +611,156 @@ export function handleEnemyClick(enemyIndex, enc, deps) {
 export function cancelTargetMode(deps) {
     TargetSelection.exitTargetMode();
     deps.ui?.render?.();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MODAL DE TROCA — funções extraídas do index.html (B1)
+// As funções buildSwapCard, buildKoSwapModalHTML, buildManualSwapModalHTML são
+// puras (sem side-effects): recebem todos os dados via parâmetros explícitos.
+// mountSwapModal é a única que acessa o DOM.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Constrói o HTML de um card de monstrinho no modal de troca.
+ * Função pura: não acessa DOM nem state global.
+ *
+ * @param {object} monster   - Instância de monstrinho
+ * @param {number} index     - Índice na equipe
+ * @param {object} player    - Jogador com { class, activeIndex }
+ * @param {string} encId     - ID do encounter
+ * @param {'ko'|'manual'} context - Contexto da troca
+ * @param {boolean} masterMode
+ * @param {object} BattleSwap - Módulo de swap (passado como dep)
+ * @returns {string} HTML do card
+ */
+export function buildSwapCard({ monster, index, player, encId, context, masterMode, BattleSwap }) {
+    const status = BattleSwap.getSwapStatus(monster, index, player, { masterMode });
+    const hpPct = Math.max(0, Math.min(100, ((monster.hp || 0) / (monster.hpMax || 1)) * 100));
+    const name = monster.emoji ? `${monster.emoji} ${monster.name || monster.nome}` : (monster.name || monster.nome);
+    const isEligible = status.category === 'eligible';
+    const clickAttr = isEligible
+        ? `onclick="selectReplacementMonster('${player.id}', ${index}, '${encId}', '${context}')" role="button" tabindex="0"`
+        : '';
+    const cardClass = `swap-card swap-card--${status.category}`;
+    return `
+    <div class="${cardClass}" ${clickAttr} title="${status.title}">
+        <div class="swap-card__name">${name} <small>Nv ${monster.level || 1}</small></div>
+        <div class="swap-card__meta">HP ${monster.hp || 0}/${monster.hpMax || 0} (${Math.floor(hpPct)}%) · Classe: ${monster.class || '—'}</div>
+        <span class="swap-card__reason">${status.label}</span>
+    </div>`;
+}
+
+/**
+ * Constrói o HTML do modal de troca por KO.
+ * Função pura: retorna string HTML, não monta no DOM.
+ */
+export function buildKoSwapModalHTML(player, enc, masterMode, BattleSwap) {
+    const cats = BattleSwap.categorizeBattleTeam(player, { masterMode });
+
+    // Sem substituto elegível
+    if (cats.eligible.length === 0) {
+        let html = '<div class="modal-overlay-fixed" id="switchMonsterModal">';
+        html += '<div class="modal-content-card">';
+        html += `<h3>💀 ${player.name || player.nome}: Sem Substitutos</h3>`;
+        html += `<div class="swap-modal-no-option">`;
+        html += `<strong>Nenhum monstrinho elegível disponível.</strong><br>`;
+        html += `<span>Regra: em batalha, só podem entrar monstrinhos da classe <strong>${player.class || '?'}</strong>.</span><br>`;
+        html += `<span>Troque monstrinhos com outros jogadores para completar seu time!</span>`;
+        html += `</div>`;
+        if (cats.blocked_class.length > 0) {
+            html += `<div class="swap-modal-section-title">Fora da classe (${player.class || '?'})</div>`;
+            cats.blocked_class.forEach(({ monster, index }) => {
+                html += buildSwapCard({ monster, index, player, encId: enc.id, context: 'ko', masterMode, BattleSwap });
+            });
+        }
+        if (cats.blocked_ko.length > 0) {
+            html += `<div class="swap-modal-section-title">Derrotados</div>`;
+            cats.blocked_ko.forEach(({ monster, index }) => {
+                html += buildSwapCard({ monster, index, player, encId: enc.id, context: 'ko', masterMode, BattleSwap });
+            });
+        }
+        html += `<div style="margin-top:12px;text-align:center">`;
+        html += `<button class="btn btn-secondary" onclick="document.getElementById('switchMonsterModal')?.remove(); window.GroupUI.closeWithNoSwap('${player.id}', '${enc.id}')">✖ Continuar sem substituto</button>`;
+        html += `</div>`;
+        html += '</div></div>';
+        return html;
+    }
+
+    let html = '<div class="modal-overlay-fixed" id="switchMonsterModal">';
+    html += '<div class="modal-content-card">';
+    html += `<h3>💀 ${player.name || player.nome}: Escolha um Substituto</h3>`;
+    html += `<p style="font-size:13px;opacity:0.8">Seu monstrinho foi derrotado. Escolha quem entra em campo:</p>`;
+    html += `<div class="swap-modal-section-title">Podem entrar (${cats.eligible.length})</div>`;
+    cats.eligible.forEach(({ monster, index }) => {
+        html += buildSwapCard({ monster, index, player, encId: enc.id, context: 'ko', masterMode, BattleSwap });
+    });
+    if (cats.blocked_class.length > 0) {
+        html += `<div class="swap-modal-section-title">Fora da classe — não podem entrar (${cats.blocked_class.length})</div>`;
+        cats.blocked_class.forEach(({ monster, index }) => {
+            html += buildSwapCard({ monster, index, player, encId: enc.id, context: 'ko', masterMode, BattleSwap });
+        });
+    }
+    if (cats.blocked_ko.length > 0) {
+        html += `<div class="swap-modal-section-title">Derrotados (${cats.blocked_ko.length})</div>`;
+        cats.blocked_ko.forEach(({ monster, index }) => {
+            html += buildSwapCard({ monster, index, player, encId: enc.id, context: 'ko', masterMode, BattleSwap });
+        });
+    }
+    html += '</div></div>';
+    return html;
+}
+
+/**
+ * Constrói o HTML do modal de troca manual (ação voluntária do jogador).
+ * Função pura: retorna string HTML.
+ */
+export function buildManualSwapModalHTML(player, enc, masterMode, BattleSwap) {
+    const cats = BattleSwap.categorizeBattleTeam(player, { masterMode });
+
+    let html = '<div class="modal-overlay-fixed" id="switchMonsterModal">';
+    html += '<div class="modal-content-card">';
+    html += `<h3>🔄 ${player.name || player.nome}: Trocar Monstrinho</h3>`;
+    html += `<p style="font-size:13px;opacity:0.8">A troca usa o turno. Escolha quem entra em campo:</p>`;
+
+    if (cats.active.length > 0) {
+        html += `<div class="swap-modal-section-title">Em campo agora</div>`;
+        cats.active.forEach(({ monster, index }) => {
+            html += buildSwapCard({ monster, index, player, encId: enc.id, context: 'manual', masterMode, BattleSwap });
+        });
+    }
+    if (cats.eligible.length > 0) {
+        html += `<div class="swap-modal-section-title">Podem entrar (${cats.eligible.length})</div>`;
+        cats.eligible.forEach(({ monster, index }) => {
+            html += buildSwapCard({ monster, index, player, encId: enc.id, context: 'manual', masterMode, BattleSwap });
+        });
+    }
+    if (cats.blocked_class.length > 0) {
+        html += `<div class="swap-modal-section-title">Fora da classe — não podem entrar (${cats.blocked_class.length})</div>`;
+        cats.blocked_class.forEach(({ monster, index }) => {
+            html += buildSwapCard({ monster, index, player, encId: enc.id, context: 'manual', masterMode, BattleSwap });
+        });
+    }
+    if (cats.blocked_ko.length > 0) {
+        html += `<div class="swap-modal-section-title">Derrotados (${cats.blocked_ko.length})</div>`;
+        cats.blocked_ko.forEach(({ monster, index }) => {
+            html += buildSwapCard({ monster, index, player, encId: enc.id, context: 'manual', masterMode, BattleSwap });
+        });
+    }
+    html += `<div style="margin-top:12px;text-align:center">`;
+    html += `<button class="btn btn-secondary" onclick="document.getElementById('switchMonsterModal')?.remove()">✖ Cancelar</button>`;
+    html += `</div>`;
+    html += '</div></div>';
+    return html;
+}
+
+/**
+ * Monta e exibe um modal de troca no DOM.
+ * @param {string} htmlContent - HTML do modal
+ */
+export function mountSwapModal(htmlContent) {
+    const existing = document.getElementById('switchMonsterModal');
+    if (existing) existing.remove();
+    const modalDiv = document.createElement('div');
+    modalDiv.innerHTML = htmlContent;
+    document.body.appendChild(modalDiv);
 }
