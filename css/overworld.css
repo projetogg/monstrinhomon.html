@@ -5,7 +5,7 @@
 
 /* ── Custom properties ───────────────────────────────────────────────────── */
 #overworldPanel {
-    --ow-sidebar-width: 416px; /* largura da sidebar de contexto do nó */
+    --ow-sidebar-width: 370px; /* largura da sidebar de contexto do nó — mapa é protagonista */
 }
 
 /* ── Painel principal ────────────────────────────────────────────────────── */

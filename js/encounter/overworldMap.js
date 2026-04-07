@@ -99,15 +99,15 @@ export const NODE_POSITIONS = {
     'LOC_007':            { x: 1355, y: 165 },
 
     // ── CLUSTER 5: FINAL_AREA (viewBoxX=880, x: 880–1760) ───────────────────────
-    'LOC_007B':           { x: 1508, y: 238 },
-    // Convergência final — boss e recompensa
-    // Nós recuados (era 1592–1680) para caber dentro da safe area no maxVBX=880.
-    // Mantidos em x distintos (1480–1555) para evitar clustering visual.
-    'LOC_010':            { x: 1480, y: 44  }, // era 1634 — topo, mais à esquerda
-    'LOC_008':            { x: 1492, y: 348 }, // era 1592
-    'BOSS_FOREST_01':     { x: 1528, y: 432 }, // era 1650
-    'LOC_009':            { x: 1542, y: 498 }, // era 1660
-    'LOC_008B':           { x: 1555, y: 292 }, // era 1680 — mais à direita
+    // Nós espalhados para evitar sobreposição visual — safe boundary x≤1590 com
+    // OW_SAFE_RIGHT=160 e maxVBX=880 (1600 é o limite absoluto, usamos 1590 com folga).
+    // Verificação: distância entre nós conectados ≥ 2×NODE_R=72px.
+    'LOC_010':            { x: 1520, y: 36  }, // após boss opcional — topo, recuado à direita (≥72px de BOSS_CAVES_OPT_01 em x=1440)
+    'LOC_007B':           { x: 1510, y: 238 }, // rota superior → junção final
+    'LOC_008B':           { x: 1572, y: 285 }, // bônus — borda direita drama
+    'LOC_008':            { x: 1510, y: 352 }, // hub final — confluência das rotas
+    'BOSS_FOREST_01':     { x: 1545, y: 435 }, // boss principal — descida dramática
+    'LOC_009':            { x: 1585, y: 492 }, // recompensa final — canto inferior direito
 };
 
 // ── Cor de preenchimento base por bioma ───────────────────────────────────────
@@ -141,13 +141,13 @@ const NODE_R = 36;
 
 // Hierarquia visual dos labels: opacidade e tamanho por estado
 // available: alta opacidade — jogador precisa ler para onde pode ir
-// visited: baixa opacidade — info secundária, caminho já percorrido
+// visited: opacidade média — o caminho percorrido ainda é legível como narrativa
 const LABEL_STYLES = {
     current:         { opacity: '1',    fontSize: '11' },
     boss:            { opacity: '0.92', fontSize: '10' },
     'boss-defeated': { opacity: '0.75', fontSize: '10' },
-    available:       { opacity: '0.72', fontSize: '9'  },
-    visited:         { opacity: '0.28', fontSize: '8'  },
+    available:       { opacity: '0.75', fontSize: '10' },
+    visited:         { opacity: '0.42', fontSize: '9'  },
     locked:          { opacity: '0.15', fontSize: '8'  },
 };
 
@@ -192,6 +192,7 @@ export function getNodeVisualState(node, { visitedLocations, completedLocations,
  */
 export function buildMapSVG(enrichedNodes, viewBoxX = 0) {
     const nodeMap = new Map(enrichedNodes.map(n => [n.nodeId, n]));
+    const traveledStates = new Set(['visited', 'current', 'boss-defeated']);
 
     // ── 1. Arestas únicas ──────────────────────────────────────────────────────
     const drawnEdges = new Set();
@@ -211,15 +212,25 @@ export function buildMapSVG(enrichedNodes, viewBoxX = 0) {
 
             const connNode    = nodeMap.get(connId);
             const bothVisible = node._unlocked || connNode?._unlocked;
-            edges.push({ x1: pA.x, y1: pA.y, x2: pB.x, y2: pB.y, active: bothVisible });
+            // Aresta percorrida: ambos os nós foram visitados/atual
+            const traveled    = traveledStates.has(nodeMap.get(node.nodeId)?._state) &&
+                                traveledStates.has(nodeMap.get(connId)?._state);
+            edges.push({ x1: pA.x, y1: pA.y, x2: pB.x, y2: pB.y, active: bothVisible, traveled });
         }
     }
 
-    // ── 2. SVG das arestas ────────────────────────────────────────────────────
-    const linesHtml = edges.map(e => `
+    // ── 2. SVG das arestas — normais primeiro, percorridas por cima ───────────
+    const normalEdges   = edges.filter(e => !e.traveled);
+    const traveledEdges = edges.filter(e => e.traveled);
+
+    const linesHtml = [
+        ...normalEdges.map(e => `
         <line x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}"
-              class="ow-edge${e.active ? ' ow-edge--active' : ''}"/>`
-    ).join('');
+              class="ow-edge${e.active ? ' ow-edge--active' : ''}"/>`),
+        ...traveledEdges.map(e => `
+        <line x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}"
+              class="ow-edge ow-edge--traveled"/>`),
+    ].join('');
 
     // ── 3. SVG dos nós ────────────────────────────────────────────────────────
     const nodesHtml = enrichedNodes.map(node => {
@@ -254,9 +265,9 @@ export function buildMapSVG(enrichedNodes, viewBoxX = 0) {
         else if (state === 'available')     { strokeColor = 'rgba(255,255,255,0.52)'; strokeWidth = 2; }
         else if (state === 'visited')       { strokeColor = 'rgba(255,255,255,0.14)'; strokeWidth = 1; }
 
-        // Fill-opacity: nós visitados ficam semi-opacos (tonalidade apagada = "já passei aqui")
-        // Nós disponíveis têm cor cheia = "posso ir aqui"
-        const fillOpacity = state === 'visited' ? '0.42' : '1';
+        // Fill-opacity: nós visitados ficam levemente apagados (já esteve aqui),
+        // mas ainda legíveis como parte da narrativa de jornada
+        const fillOpacity = state === 'visited' ? '0.55' : '1';
 
         // Marcador de party para o nó atual
         const partyMarker = (state === 'current')
@@ -305,8 +316,15 @@ export function buildMapSVG(enrichedNodes, viewBoxX = 0) {
     // Estilos inline no SVG (para garantir funcionamento sem CSS externo)
     const svgStyles = `
         .ow-edge { stroke: rgba(255,255,255,0.07); stroke-width: 1; }
-        .ow-edge--active { stroke: rgba(255,255,255,0.30); stroke-width: 2.2; }
+        .ow-edge--active { stroke: rgba(255,255,255,0.42); stroke-width: 2.5; }
+        .ow-edge--traveled {
+            stroke: rgba(32,221,204,0.32);
+            stroke-width: 2.5;
+        }
         .ow-node__circle { transition: filter 0.18s; }
+        .ow-node--available .ow-node__circle {
+            filter: drop-shadow(0 0 5px rgba(255,255,255,0.18));
+        }
         .ow-node--available:hover .ow-node__circle,
         .ow-node--visited:hover .ow-node__circle,
         .ow-node--boss:hover .ow-node__circle,
@@ -331,11 +349,53 @@ export function buildMapSVG(enrichedNodes, viewBoxX = 0) {
         }
     `;
 
+    // ── Fundo de terreno — zonas de bioma e gradiente de progressão ─────────────
+    // Camadas de cor muito suaves que diferenciam regiões do mundo sem competir com os nós.
+    // Gradiente horizontal: abertura fria (azul-acinzentado) → exploração escura → final quente.
+    // Bandas verticais: cume (y=0) mais frio, costa (y=530) mais azul.
+    const gradientDefs = `
+        <linearGradient id="owBgWorldGrad" x1="0" y1="0" x2="1" y2="0"
+                        gradientUnits="objectBoundingBox">
+            <stop offset="0%"   stop-color="#0d1525"/>
+            <stop offset="30%"  stop-color="#080f14"/>
+            <stop offset="70%"  stop-color="#090c18"/>
+            <stop offset="100%" stop-color="#0e0910"/>
+        </linearGradient>
+        <linearGradient id="owBgTerrainGrad" x1="0" y1="0" x2="0" y2="1"
+                        gradientUnits="objectBoundingBox">
+            <stop offset="0%"   stop-color="#1a1020" stop-opacity="0.45"/>
+            <stop offset="30%"  stop-color="#080f14" stop-opacity="0"/>
+            <stop offset="70%"  stop-color="#0a0e18" stop-opacity="0"/>
+            <stop offset="100%" stop-color="#0a1828" stop-opacity="0.50"/>
+        </linearGradient>
+    `;
+    const terrainBg = `
+        <!-- Base: gradiente horizontal de progressão -->
+        <rect x="0" y="0" width="${WORLD_W}" height="${WORLD_H}"
+              fill="url(#owBgWorldGrad)"/>
+        <!-- Banda de altitude: cume (topo escuro-quente) e costa (fundo azul-fundo) -->
+        <rect x="0" y="0" width="${WORLD_W}" height="${WORLD_H}"
+              fill="url(#owBgTerrainGrad)"/>
+        <!-- Zona de cidade/campos (esquerda — abertura) -->
+        <rect x="0" y="60" width="440" height="410"
+              fill="#1e3a6a" opacity="0.05"/>
+        <!-- Zona de montanha (topo — rota elite) -->
+        <rect x="840" y="0" width="720" height="160"
+              fill="#4a3520" opacity="0.07"/>
+        <!-- Zona de costa (fundo — rota costa) -->
+        <rect x="840" y="380" width="720" height="150"
+              fill="#0a2855" opacity="0.08"/>
+        <!-- Zona final: floresta/boss (direita) -->
+        <rect x="1380" y="90" width="380" height="350"
+              fill="#0e3010" opacity="0.09"/>
+    `;
+
     return `<svg viewBox="${viewBoxX} 0 ${VIEWPORT_W} ${WORLD_H}"
                  xmlns="http://www.w3.org/2000/svg"
                  class="ow-svg" id="overworldSVG"
                  preserveAspectRatio="xMidYMid meet">
-        <defs><style>${svgStyles}</style></defs>
+        <defs><style>${svgStyles}</style>${gradientDefs}</defs>
+        ${terrainBg}
         <g class="ow-edges">${linesHtml}</g>
         <g class="ow-nodes">${nodesHtml}</g>
     </svg>`;
