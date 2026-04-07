@@ -22,20 +22,26 @@
 
 ---
 
-## HIERARQUIA DE AUTORIDADE (congelada neste patch)
+## CLÁUSULA DE AUTORIDADE DOCUMENTAL
 
-```
-Autoridade de combate (do mais alto ao mais baixo):
-1. docs/COMBATE_FORMULA_V2.md (v2.1) — fórmula de confronto e dano
-2. docs/POSICIONAMENTO_V2.md (v2.0) — grade, alcance, alvo
-3. docs/HABILIDADES_POR_CLASSE_V2.md (v2.1) — skills, slots, ENE
-4. docs/ATRIBUTOS_BASE_POR_CLASSE_V2.md (v2.1) — atributos, crescimento
-5. docs/TABELA_ENCONTROS_V2.md (v2.0) — tipos de encontro, boss, fuga
-6. docs/MATRIZ_MESTRA_BALANCEAMENTO.md (v1.0) — balanceamento complementar
-7. GAME_RULES.md §1–§2 (classes, ciclo de vantagens) — ainda válido
-8. GAME_RULES.md §3–§10 (fórmulas, skills, captura, sistema de terapia) — LEGADO v1
-   └─ Onde contradizer docs/*, o docs/* vence sem exceção
-```
+A partir deste patch, a autoridade do sistema de combate fica congelada da seguinte forma:
+
+| Nível | Fonte | Papel |
+|---|---|---|
+| **1 — Autoridade máxima** | **Documento Mestre + `docs/PATCH_CANONICO_COMBATE_V2.2.md`** | Interpretados em conjunto; vencem qualquer outra fonte sem exceção |
+| 2 — Documentos auxiliares subordinados | `docs/COMBATE_FORMULA_V2.md`, `docs/POSICIONAMENTO_V2.md`, `docs/HABILIDADES_POR_CLASSE_V2.md`, `docs/ATRIBUTOS_BASE_POR_CLASSE_V2.md`, `docs/TABELA_ENCONTROS_V2.md`, `docs/MATRIZ_MESTRA_BALANCEAMENTO.md` | Válidos apenas quando **compatíveis** com o nível 1 |
+| 3 — Legado parcialmente válido | `GAME_RULES.md §1–§2` (classes, ciclo de vantagens) | Ainda vigente onde não contradiz o nível 1 |
+| 4 — Legado revogado | `GAME_RULES.md §3–§10` (fórmulas, skills, ENE, captura) | Substituído pelo nível 1; usar apenas como referência histórica |
+| 5 — Runtime atual | código em `js/combat/` e `index.html` | Reflete estado de implementação, não autoridade de regra |
+| 6 — Análises auxiliares | diagnósticos, propostas, análises de conflito | Informativas; sem força de regra |
+
+### Regra interpretativa obrigatória
+
+- O **Documento Mestre, interpretado em conjunto com `docs/PATCH_CANONICO_COMBATE_V2.2.md`**, é a autoridade máxima do combate.
+- **Nenhum documento auxiliar em `docs/`** pode sobrescrever o Documento Mestre sem revisão explícita do autor.
+- A formulação anterior ("docs/* vence GAME_RULES.md §3–§10 sem exceção") era incorreta por ser abrangente demais — ela foi revogada por esta cláusula.
+- Onde houver conflito entre qualquer combinação de documentos auxiliares, `GAME_RULES.md`, runtime atual ou análises auxiliares: **vence o Documento Mestre + Patch Canônico v2.2**.
+- Um documento auxiliar que contradiga o Documento Mestre não é canônico — é um rascunho não aprovado.
 
 ---
 
@@ -494,7 +500,7 @@ IA inimiga escolhe alvo:
 | **Passivas de espécie** | ✅ RESOLVIDO | Valem em solo E grupo — atualmente ausentes no grupo |
 | **Captura** | ✅ RESOLVIDO | Apenas solo; não se aplica ao combate de grupo |
 | **Restrição de classe em batalha** | ✅ RESOLVIDO | Jogador usa apenas própria classe; exceção mestre/debug |
-| **GAME_RULES.md §3–§10** | ✅ RESOLVIDO | Legado v1; docs/* vencem em conflito |
+| **GAME_RULES.md §3–§10** | ✅ RESOLVIDO | Legado v1; Documento Mestre + Patch v2.2 vencem em conflito |
 
 ---
 
