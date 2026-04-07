@@ -5,7 +5,7 @@
 
 /* ── Custom properties ───────────────────────────────────────────────────── */
 #overworldPanel {
-    --ow-sidebar-width: 370px; /* largura da sidebar de contexto do nó — mapa é protagonista */
+    --ow-state-panel-width: 200px; /* painel de estado persistente — mapa é protagonista */
 }
 
 /* ── Painel principal ────────────────────────────────────────────────────── */
@@ -82,11 +82,11 @@
     color: #ffffff;
 }
 
-/* ── Layout mapa + sidebar ───────────────────────────────────────────────── */
-/* Sidebar estreita — mapa é o protagonista; sidebar é complemento */
+/* ── Layout mapa + painel de estado ─────────────────────────────────────── */
+/* Painel de estado estreito — mapa é o protagonista; estado é referência rápida */
 .ow-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, var(--ow-sidebar-width, 320px));
+    grid-template-columns: minmax(0, 1fr) minmax(0, var(--ow-state-panel-width, 200px));
     gap: 0;
     align-items: stretch;
 }
@@ -173,22 +173,197 @@
 .ow-pan-btn--left  { left: 6px; }
 .ow-pan-btn--right { right: 6px; }
 
-/* ── Sidebar de informações do nó ────────────────────────────────────────── */
-.ow-sidebar-wrap {
+/* ── Painel de estado persistente ────────────────────────────────────────── */
+/* Coluna direita compacta: estado global da party (local, progresso, party) */
+.ow-state-panel {
     background: rgba(255,255,255,0.015);
     display: flex;
     flex-direction: column;
+    justify-content: flex-start;
+    gap: 0;
+    padding: 18px 16px;
+    border-left: 1px solid rgba(255,255,255,0.06);
     overflow: hidden;
     min-height: 0;
 }
 
-.ow-sidebar__placeholder {
-    margin: auto;
-    text-align: center;
-    color: rgba(255,255,255,0.22);
+.ow-state__item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.ow-state__item:last-child {
+    border-bottom: none;
+}
+
+.ow-state__label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    opacity: 0.45;
+    color: #fff;
+    white-space: nowrap;
+}
+
+.ow-state__value {
     font-size: 13px;
-    padding: 40px 20px;
+    font-weight: 700;
+    color: #ffffff;
+    word-break: break-word;
+    line-height: 1.35;
+}
+
+.ow-state__value--party {
+    font-size: 12px;
+    color: rgba(255,255,255,0.75);
+}
+
+/* ── Node card — overlay sobre o mapa ───────────────────────────────────── */
+/* Aparece ao selecionar um nó; desaparece ao clicar fora */
+.ow-node-card {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    width: min(640px, 88%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    background: rgba(13,15,22,0.94);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 12px;
+    backdrop-filter: blur(8px);
+    z-index: 3;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.50);
+}
+
+.ow-node-card--visible {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateX(-50%) translateY(0);
+}
+
+.ow-node-card__main {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px 10px;
+}
+
+.ow-node-card__identity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.ow-node-card__emoji {
+    font-size: 26px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.ow-node-card__title-block {
+    flex: 1;
+    min-width: 0;
+}
+
+.ow-node-card__name {
+    font-size: 16px;
+    font-weight: 800;
+    color: #f2f2f2;
+    margin: 0 0 6px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ow-node-card__meta {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.ow-node-card__cta {
+    flex-shrink: 0;
+}
+
+.ow-node-card__body {
+    padding: 0 16px 14px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.ow-node-card__desc {
+    font-size: 12px;
+    color: rgba(255,255,255,0.50);
+    margin: 10px 0 0;
     line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Bloqueado dentro do card */
+.ow-node-card__lock-icon { font-size: 18px; flex-shrink: 0; }
+.ow-node-card__lock-reason {
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+    margin: 0;
+    line-height: 1.45;
+}
+
+/* ── Chips de spots — ações compactas do local ───────────────────────────── */
+.ow-node-card__spots {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.ow-spot-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 20px;
+    font-size: 12px;
+    color: #d0d0d0;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.12s, border-color 0.12s;
+    font-family: inherit;
+}
+
+.ow-spot-chip:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.16);
+}
+
+.ow-spot-chip:active {
+    background: rgba(255,255,255,0.18);
+}
+
+.ow-spot-chip--service {
+    border-color: rgba(80,130,255,0.20);
+}
+
+.ow-spot-chip--service:hover {
+    background: rgba(80,130,255,0.09);
+    border-color: rgba(80,130,255,0.30);
+}
+
+.ow-spot-chip--more {
+    color: rgba(255,255,255,0.45);
+    font-style: italic;
 }
 
 /* Header do sidebar — sem caixa, tipografia como hierarquia */
@@ -583,9 +758,39 @@
 }
 
 /* ── Responsividade ──────────────────────────────────────────────────────── */
-@media (max-width: 860px) {
+@media (max-width: 860px), (orientation: portrait) {
     .ow-layout {
         grid-template-columns: 1fr;
+    }
+
+    /* State panel vira barra horizontal compacta acima do mapa */
+    .ow-state-panel {
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 0;
+        padding: 0 16px;
+        max-height: 48px;
+        min-height: 48px;
+        border-left: none;
+        border-top: 1px solid rgba(255,255,255,0.06);
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        overflow: hidden;
+        order: -1;
+    }
+
+    .ow-state__item {
+        flex-direction: row;
+        align-items: baseline;
+        gap: 6px;
+        padding: 0 16px;
+        border-bottom: none;
+        border-right: 1px solid rgba(255,255,255,0.07);
+        white-space: nowrap;
+    }
+
+    .ow-state__item:last-child {
+        border-right: none;
     }
 
     .ow-map-wrap {
@@ -596,9 +801,25 @@
         border-bottom: 1px solid rgba(255,255,255,0.06);
     }
 
-    .ow-sidebar-wrap {
-        min-height: 300px;
-        max-height: 440px;
+    /* Node card em portrait: painel fixo abaixo do mapa (não overlay) */
+    .ow-node-card {
+        position: static;
+        transform: none;
+        width: 100%;
+        border-radius: 0;
+        left: auto;
+        bottom: auto;
+        opacity: 0;
+        pointer-events: none;
+        transition: none;
+        display: none;
+    }
+
+    .ow-node-card--visible {
+        display: block;
+        opacity: 1;
+        pointer-events: all;
+        transform: none;
     }
 
     .ow-header {
@@ -617,39 +838,5 @@
 
     .ow-header-stat {
         padding: 0 12px;
-    }
-}
-
-/* ── Tablet / iPad landscape ─────────────────────────────────────────────── */
-/* Faixa 861–1100px: sidebar menor para dar mais protagonismo ao mapa */
-@media (min-width: 861px) and (max-width: 1100px) {
-    #overworldPanel {
-        --ow-sidebar-width: 300px;
-    }
-
-    .ow-header {
-        flex-wrap: wrap;
-        gap: 10px;
-        padding: 10px 16px;
-    }
-
-    .ow-header h3 {
-        font-size: 17px;
-    }
-
-    .ow-header-stat {
-        padding: 0 12px;
-    }
-
-    .ow-sidebar__header {
-        padding: 16px 18px 14px;
-    }
-
-    .ow-sidebar__body {
-        padding: 14px 18px;
-    }
-
-    .ow-sidebar__footer {
-        padding: 12px 18px 18px;
     }
 }
