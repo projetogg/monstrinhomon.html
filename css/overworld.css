@@ -68,10 +68,10 @@
 }
 
 .ow-header-stat__label {
-    font-size: 9px;
+    font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 1.2px;
-    opacity: 0.42;
+    opacity: 0.55;
     color: #fff;
     white-space: nowrap;
 }
@@ -259,17 +259,23 @@
     50% { opacity: 0.6; }
 }
 
-/* Corpo do sidebar — rolável */
+/* Corpo do sidebar — rolável, com scroll hint */
 .ow-sidebar__body {
     padding: 18px 24px;
     flex: 1;
     overflow-y: auto;
     min-height: 0;
+    /* Scroll hint: gradiente sutil no fundo indica conteúdo além da dobra */
+    background:
+        linear-gradient(rgba(13,15,22,0) 80%, rgba(13,15,22,0.85) 100%)
+        local,
+        linear-gradient(rgba(13,15,22,0.85) 0%, rgba(13,15,22,0) 20%)
+        local;
 }
 
 .ow-sidebar__desc {
-    font-size: 12px;
-    color: rgba(255,255,255,0.48);
+    font-size: 13px;
+    color: rgba(255,255,255,0.55);
     margin: 0 0 14px;
     line-height: 1.65;
     display: -webkit-box;
@@ -295,25 +301,25 @@
 .ow-sidebar__quest-body { flex: 1; }
 
 .ow-sidebar__quest-name {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: #ff8888;
     margin: 0 0 2px;
 }
 
 .ow-sidebar__quest-player {
-    font-size: 10px;
-    color: rgba(255,255,255,0.38);
+    font-size: 11px;
+    color: rgba(255,255,255,0.50);
     margin: 0;
 }
 
 /* Seção "O que fazer aqui" — divisor com mais presença */
 .ow-sidebar__section-title {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 2px;
-    color: rgba(255,255,255,0.35);
+    color: rgba(255,255,255,0.50);
     margin: 0 0 12px;
     padding-bottom: 7px;
     border-bottom: 1px solid rgba(255,255,255,0.07);
@@ -324,7 +330,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 12px 4px;
+    padding: 12px 12px;
     background: transparent;
     border: none;
     border-bottom: 1px solid rgba(255,255,255,0.05);
@@ -342,7 +348,7 @@
 
 .ow-spot:hover {
     background: rgba(255,255,255,0.06);
-    padding-left: 8px;
+    padding-left: 16px;
     border-bottom-color: transparent;
 }
 
@@ -383,8 +389,8 @@
 }
 
 .ow-spot__desc {
-    font-size: 11.5px;
-    color: rgba(255,255,255,0.42);
+    font-size: 13px;
+    color: rgba(255,255,255,0.52);
     margin: 0;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -611,5 +617,39 @@
 
     .ow-header-stat {
         padding: 0 12px;
+    }
+}
+
+/* ── Tablet / iPad landscape ─────────────────────────────────────────────── */
+/* Faixa 861–1100px: sidebar menor para dar mais protagonismo ao mapa */
+@media (min-width: 861px) and (max-width: 1100px) {
+    #overworldPanel {
+        --ow-sidebar-width: 300px;
+    }
+
+    .ow-header {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 10px 16px;
+    }
+
+    .ow-header h3 {
+        font-size: 17px;
+    }
+
+    .ow-header-stat {
+        padding: 0 12px;
+    }
+
+    .ow-sidebar__header {
+        padding: 16px 18px 14px;
+    }
+
+    .ow-sidebar__body {
+        padding: 14px 18px;
+    }
+
+    .ow-sidebar__footer {
+        padding: 12px 18px 18px;
     }
 }
