@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="http://localhost:9000/css/overworld.css">
+<style>
+body { margin: 0; background: #0a0c12; font-family: sans-serif; }
+#overworldPanel {
+  max-width: 1200px;
+  margin: 20px auto;
+  border-radius: 16px;
+  overflow: hidden;
+}
+</style>
+</head>
+<body>
+<div id="overworldPanel">
+  <!-- Header -->
+  <div class="ow-header">
+    <h3>🗺 Monstrinhomon</h3>
+    <div class="ow-header-stats">
+      <div class="ow-header-stat">
+        <span class="ow-header-stat__label">Sessão</span>
+        <span class="ow-header-stat__value">Turma A</span>
+      </div>
+      <div class="ow-header-stat">
+        <span class="ow-header-stat__label">Jogadores</span>
+        <span class="ow-header-stat__value">4</span>
+      </div>
+      <div class="ow-header-stat">
+        <span class="ow-header-stat__label">Local</span>
+        <span class="ow-header-stat__value">Cidade Inicial</span>
+      </div>
+      <div class="ow-header-stat">
+        <span class="ow-header-stat__label">Quests</span>
+        <span class="ow-header-stat__value">2/8</span>
+      </div>
+    </div>
+  </div>
+  <!-- Layout -->
+  <div class="ow-layout">
+    <!-- Mapa placeholder -->
+    <div class="ow-map-wrap" style="background: linear-gradient(135deg, #0d1520 0%, #0a1a0a 50%, #1a0a0a 100%); min-height:480px; display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.15); font-size:18px; position:relative;">
+      <div class="ow-pan-buttons">
+        <button class="ow-pan-btn ow-pan-btn--left">‹</button>
+        <button class="ow-pan-btn ow-pan-btn--right">›</button>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:48px; margin-bottom:8px;">🗺</div>
+        <div style="font-size:13px; color:rgba(255,255,255,0.25);">Mapa SVG do Overworld</div>
+        <div style="font-size:11px; color:rgba(255,255,255,0.15); margin-top:4px;">880×530 viewport</div>
+      </div>
+    </div>
+    <!-- Sidebar -->
+    <div class="ow-sidebar-wrap">
+      <div class="ow-sidebar__header">
+        <div class="ow-sidebar__emoji">🏰</div>
+        <div class="ow-sidebar__title-block">
+          <h2 class="ow-sidebar__name">Cidade de Veranthis</h2>
+          <div class="ow-sidebar__meta">
+            <span class="ow-sidebar__level">Nível 1–3</span>
+            <span class="ow-sidebar__badge ow-sidebar__badge--city">Cidade</span>
+            <span class="ow-sidebar__badge ow-sidebar__badge--current">Você está aqui</span>
+          </div>
+        </div>
+      </div>
+      <div class="ow-sidebar__body">
+        <p class="ow-sidebar__desc">Uma cidade movimentada no coração da região. Aqui você pode descansar, explorar a arena local e encontrar novos Monstrinhos para capturar.</p>
+        
+        <div class="ow-sidebar__quest">
+          <span class="ow-sidebar__quest-icon">📜</span>
+          <div class="ow-sidebar__quest-body">
+            <p class="ow-sidebar__quest-name">O Primeiro Desafio</p>
+            <p class="ow-sidebar__quest-player">Ana · Guerreira · Nv. 3</p>
+          </div>
+        </div>
+
+        <div class="ow-sidebar__section-title">O que fazer aqui</div>
+
+        <button class="ow-spot ow-spot--service">
+          <span class="ow-spot__icon">⚔️</span>
+          <div class="ow-spot__info">
+            <div class="ow-spot__name">Arena de Treinamento</div>
+            <div class="ow-spot__desc">Batalhe contra outros treinadores e ganhe XP bônus.</div>
+          </div>
+          <span class="ow-spot__arrow">›</span>
+        </button>
+
+        <button class="ow-spot">
+          <span class="ow-spot__icon">🛒</span>
+          <div class="ow-spot__info">
+            <div class="ow-spot__name">Mercado Central</div>
+            <div class="ow-spot__desc">Compre itens de captura e poções de cura.</div>
+          </div>
+          <span class="ow-spot__arrow">›</span>
+        </button>
+
+        <button class="ow-spot">
+          <span class="ow-spot__icon">🌿</span>
+          <div class="ow-spot__info">
+            <div class="ow-spot__name">Área Selvagem Norte</div>
+            <div class="ow-spot__desc">Encontre Monstrinhos raros nas margens da floresta.</div>
+          </div>
+          <span class="ow-spot__arrow">›</span>
+        </button>
+
+        <button class="ow-spot">
+          <span class="ow-spot__icon">💊</span>
+          <div class="ow-spot__info">
+            <div class="ow-spot__name">Centro de Cura</div>
+            <div class="ow-spot__desc">Restaure o HP de todos os seus Monstrinhos.</div>
+          </div>
+          <span class="ow-spot__arrow">›</span>
+        </button>
+      </div>
+      <div class="ow-sidebar__footer">
+        <div class="ow-sidebar__here">✦ Você está aqui</div>
+      </div>
+    </div>
+  </div>
+  <!-- Legenda -->
+  <div class="ow-legend">
+    <div class="ow-legend-item"><div class="ow-legend-dot ow-legend-dot--current"></div>Atual</div>
+    <div class="ow-legend-item"><div class="ow-legend-dot ow-legend-dot--visited"></div>Visitado</div>
+    <div class="ow-legend-item"><div class="ow-legend-dot ow-legend-dot--available"></div>Disponível</div>
+    <div class="ow-legend-item"><div class="ow-legend-dot ow-legend-dot--locked"></div>Bloqueado</div>
+    <div class="ow-legend-item"><div class="ow-legend-dot ow-legend-dot--boss"></div>Boss</div>
+  </div>
+</div>
+</body>
+</html>
