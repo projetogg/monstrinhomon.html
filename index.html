@@ -1319,15 +1319,15 @@
             { id: 'MON_030C', name: 'Sombrifur', class: 'Ladino',   rarity: 'Raro',     baseHp: 40, baseAtk: 15, baseDef: 7, baseSpd: 16, baseEne: 10, emoji: '👤' }
         ];
 
-        // ENE REGEN CONSTANTS por classe (fallback)
+        // ENE REGEN CONSTANTS por classe (valores canônicos v2.2 — PATCH_CANONICO_COMBATE_V2.2.md BLOCO 4)
         const ENE_REGEN_BY_CLASS = {
-            'Mago': { pct: 0.14, min: 2 },
-            'Curandeiro': { pct: 0.14, min: 2 },
-            'Bardo': { pct: 0.12, min: 2 },
-            'Caçador': { pct: 0.12, min: 2 },
-            'Ladino': { pct: 0.12, min: 2 },
-            'Animalista': { pct: 0.10, min: 1 },
-            'Bárbaro': { pct: 0.10, min: 1 },
+            'Mago': { pct: 0.18, min: 3 },
+            'Curandeiro': { pct: 0.18, min: 3 },
+            'Bardo': { pct: 0.14, min: 2 },
+            'Caçador': { pct: 0.14, min: 2 },
+            'Ladino': { pct: 0.14, min: 2 },
+            'Animalista': { pct: 0.12, min: 2 },
+            'Bárbaro': { pct: 0.12, min: 2 },
             'Guerreiro': { pct: 0.10, min: 1 }
         };
 
@@ -1571,14 +1571,15 @@
                 'Animalista': 7
             },
             
+            // Valores canônicos v2.2 — PATCH_CANONICO_COMBATE_V2.2.md BLOCO 4
             ENERGY_REGEN: {
-                'Mago': { pct: 0.14, min: 2 },
-                'Curandeiro': { pct: 0.14, min: 2 },
-                'Bardo': { pct: 0.12, min: 2 },
-                'Caçador': { pct: 0.12, min: 2 },
-                'Ladino': { pct: 0.12, min: 2 },
-                'Animalista': { pct: 0.10, min: 1 },
-                'Bárbaro': { pct: 0.10, min: 1 },
+                'Mago': { pct: 0.18, min: 3 },
+                'Curandeiro': { pct: 0.18, min: 3 },
+                'Bardo': { pct: 0.14, min: 2 },
+                'Caçador': { pct: 0.14, min: 2 },
+                'Ladino': { pct: 0.14, min: 2 },
+                'Animalista': { pct: 0.12, min: 2 },
+                'Bárbaro': { pct: 0.12, min: 2 },
                 'Guerreiro': { pct: 0.10, min: 1 }
             },
             
@@ -4913,6 +4914,12 @@
                 
                 // Set new active index
                 player.activeIndex = newActiveIndex;
+                
+                // Canônico v2.2 BLOCO 11: ENE 100% ao entrar; buffs do anterior NÃO transferidos
+                if (newMon.eneMax > 0) {
+                    newMon.ene = newMon.eneMax;
+                }
+                newMon.buffs = [];
                 
                 const actionLabel = context === 'manual' ? 'trocou voluntariamente para' : 'enviou';
                 _log(enc, `🔄 ${player.name || player.nome} ${actionLabel} ${newMon.name || newMon.nome}!`);

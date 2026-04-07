@@ -1,6 +1,18 @@
 # Monstrinhomon - Regras Oficiais do Jogo v1.0
 
-Este documento define as regras oficiais e definitivas do jogo Monstrinhomon. Todas as implementações devem seguir estas regras rigorosamente.
+> ## ⚠️ AVISO DE HIERARQUIA DE AUTORIDADE
+>
+> Este documento **NÃO É** a autoridade máxima do sistema de combate.
+>
+> | Nível | Fonte | Status |
+> |---|---|---|
+> | **1 — Autoridade máxima** | **Documento Mestre + `docs/PATCH_CANONICO_COMBATE_V2.2.md`** | Vencem qualquer outra fonte |
+> | 2 — Documentos auxiliares | `docs/COMBATE_FORMULA_V2.md`, `docs/POSICIONAMENTO_V2.md`, `docs/HABILIDADES_POR_CLASSE_V2.md`, etc. | Válidos quando compatíveis com o nível 1 |
+> | 3 — Legado parcialmente válido | **Este arquivo §1–§2** (classes, ciclo de vantagens) | Ainda vigente onde não contradiz o nível 1 |
+> | 4 — **LEGADO REVOGADO** | **Este arquivo §3–§10** (fórmulas, skills, ENE, captura) | **Substituído pelo Patch Canônico v2.2** |
+>
+> **Em caso de conflito entre qualquer seção deste arquivo e o Patch Canônico v2.2: o Patch vence.**
+> A formulação anterior ("docs/* vence GAME_RULES.md §3–§10 sem exceção") foi revogada por ser abrangente demais — ver `docs/PATCH_CANONICO_COMBATE_V2.2.md § CLÁUSULA DE AUTORIDADE DOCUMENTAL`.
 
 ---
 
@@ -52,7 +64,10 @@ Animalista: neutro (sem vantagem ou desvantagem específica contra outras classe
 
 ---
 
-## 3. SISTEMA DE COMBATE
+## 3. SISTEMA DE COMBATE ⚠️ [LEGADO v1 — REVOGADO]
+
+> **Esta seção é LEGADO v1 e foi substituída pelo `docs/PATCH_CANONICO_COMBATE_V2.2.md` (BLOCO 1–3).**
+> Manter apenas como referência histórica. **Não implementar estas fórmulas.**
 
 ### 3.1 Acerto
 ```javascript
@@ -112,7 +127,10 @@ Quando **d20 = 20**:
 
 ---
 
-## 4. SISTEMA DE ENERGIA (ENE) E HABILIDADES
+## 4. SISTEMA DE ENERGIA (ENE) E HABILIDADES ⚠️ [LEGADO v1 — REVOGADO]
+
+> **Esta seção é LEGADO v1 e foi substituída pelo `docs/PATCH_CANONICO_COMBATE_V2.2.md` (BLOCO 4–5) e `docs/HABILIDADES_POR_CLASSE_V2.md`.**
+> Manter apenas como referência histórica. **Não implementar estes valores de regen/habilidades.**
 
 ### 4.1 Sistema de Energia
 - Cada monstrinho tem **ENE_MAX** e **ENE_atual**
@@ -188,7 +206,9 @@ Habilidades são **automaticamente upgradadas** baseado no estágio (S0-S3):
 
 ---
 
-## 5. SISTEMA DE CAPTURA (Sem Dado)
+## 5. SISTEMA DE CAPTURA (Sem Dado) ⚠️ [LEGADO v1 — REFERÊNCIA HISTÓRICA]
+
+> **Esta seção descreve o sistema de captura v1. Para regras canônicas atuais de captura, consulte `docs/PATCH_CANONICO_COMBATE_V2.2.md` (BLOCO 9).**
 
 ### 4.1 Quando Pode Capturar
 - ✅ **Somente em encontros INDIVIDUAIS** (Wild Monster)
@@ -247,7 +267,9 @@ HP: 12/50 (24%)
 
 ---
 
-## 5. ENERGIA (ENE) E HABILIDADES
+## 5. ENERGIA (ENE) E HABILIDADES ⚠️ [LEGADO v1 — DUPLICATA REVOGADA]
+
+> **Seção duplicada/legada. Ver §4 (marcado como LEGADO) e `docs/PATCH_CANONICO_COMBATE_V2.2.md` (BLOCO 4–5).**
 
 ### 5.1 Sistema de Energia
 - Cada monstrinho tem **ENE_MAX** e **ENE_atual**
@@ -281,7 +303,9 @@ regen = Math.max(
 
 ---
 
-## 6. STATUS EFFECTS
+## 6. STATUS EFFECTS ⚠️ [LEGADO v1 — REFERÊNCIA HISTÓRICA]
+
+> **Esta seção é LEGADO v1. Consulte `docs/PATCH_CANONICO_COMBATE_V2.2.md` para o estado canônico atual dos status effects.**
 
 ### 6.1 Status Disponíveis
 1. **STUN (Atordoado)**: Perde o próximo turno
@@ -301,7 +325,9 @@ regen = Math.max(
 
 ---
 
-## 7. PROGRESSÃO
+## 7. PROGRESSÃO ⚠️ [LEGADO v1 — REFERÊNCIA HISTÓRICA]
+
+> **Esta seção é LEGADO v1. Consulte `docs/ATRIBUTOS_BASE_POR_CLASSE_V2.md` e `docs/PATCH_CANONICO_COMBATE_V2.2.md` para progressão canônica.**
 
 ### 7.1 XP e Level Up
 **XP para próximo nível:**
@@ -333,7 +359,9 @@ xp_earned = (battleXpBase + level_enemy * 2) * rarity_multiplier
 
 ---
 
-## 8. TIPOS DE ENCONTRO
+## 8. TIPOS DE ENCONTRO ⚠️ [LEGADO v1 — REFERÊNCIA HISTÓRICA]
+
+> **Esta seção é LEGADO v1. Consulte `docs/TABELA_ENCONTROS_V2.md` e `docs/PATCH_CANONICO_COMBATE_V2.2.md` (BLOCO 10) para a tabela canônica.**
 
 ### 8.1 Encontro Individual (Wild Monster)
 - **Participantes**: 1 jogador selecionado
@@ -355,7 +383,9 @@ xp_earned = (battleXpBase + level_enemy * 2) * rarity_multiplier
 
 ---
 
-## 9. INVENTÁRIO
+## 9. INVENTÁRIO ⚠️ [LEGADO v1 — REFERÊNCIA HISTÓRICA]
+
+> **Esta seção é LEGADO v1. Não contradiz as regras canônicas mas pode estar desatualizada.**
 
 ### 9.1 Itens por Tipo
 - **Captura**: Orbe de Captura, Orbe Reforçado
@@ -374,7 +404,9 @@ xp_earned = (battleXpBase + level_enemy * 2) * rarity_multiplier
 
 ---
 
-## 10. ECONOMIA
+## 10. ECONOMIA ⚠️ [LEGADO v1 — REFERÊNCIA HISTÓRICA]
+
+> **Esta seção é LEGADO v1. Não contradiz as regras canônicas mas pode estar desatualizada.**
 
 ### 10.1 Moedas
 - **Moeda normal**: Ganha em batalhas, vende itens
