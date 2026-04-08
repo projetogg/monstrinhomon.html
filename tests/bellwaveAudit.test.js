@@ -102,8 +102,8 @@ const BELLWAVE_EFFECTIVE = BELLWAVE_LINE.map(m => ({
     ene: m.ene + BELLWAVE_OFFSETS.ene,
 }));
 
-// Bardo ENE regen: 18% eneMax, mínimo 2/turn
-const ENE_REGEN_PCT = 0.18;
+// Bardo ENE regen: 14% eneMax, mínimo 2/turn (canônico v2.2 — PATCH_CANONICO_COMBATE_V2.2.md BLOCO 4)
+const ENE_REGEN_PCT = 0.14;
 const ENE_REGEN_MIN = 2;
 function bardoRegen(eneMax) { return Math.max(ENE_REGEN_MIN, Math.round(eneMax * ENE_REGEN_PCT)); }
 

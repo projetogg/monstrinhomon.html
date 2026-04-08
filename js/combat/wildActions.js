@@ -661,6 +661,7 @@ function handleVictory(encounter, player, playerMonster, dependencies) {
     });
     
     // Finalizar encontro
+    encounter.result = 'victory';
     encounter.active = false;
     
     return { success: true, result: 'victory' };
@@ -1032,6 +1033,16 @@ export function executeWildItemUse({ encounter, player, playerMonster, itemId, d
 
         // Consumir 1 unidade do item
         player.inventory = player.inventory || {};
+        if ((player.inventory[itemId] || 0) <= 0) {
+            return { success: false, result: 'invalid' };
+        }
+
+        // Verificar se HP já está cheio antes de consumir
+        if (playerMonster.hp >= playerMonster.hpMax) {
+            encounter.log.push(`⚠️ ${playerMonster.name} já está com HP cheio!`);
+            return { success: false, result: 'invalid' };
+        }
+
         player.inventory[itemId]--;
         encounter.log.push(
             `${itemEmoji} ${player.name} usou ${itemName}! (Restam: ${player.inventory[itemId]})`
