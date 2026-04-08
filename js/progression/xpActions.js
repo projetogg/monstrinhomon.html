@@ -41,7 +41,8 @@ export function giveXP(deps, mon, amount, logArr) {
     const maxLevel = deps.constants?.maxLevel || 100;
     while (mon.xp >= mon.xpNeeded) {
         if (mon.level >= maxLevel) {
-            mon.xp = 0; // Zerar XP excedente ao atingir nível máximo
+            // Ao atingir o nível máximo, preservar XP abaixo do limite para consistência visual
+            mon.xp = mon.xpNeeded - 1;
             break;
         }
         mon.xp -= mon.xpNeeded;

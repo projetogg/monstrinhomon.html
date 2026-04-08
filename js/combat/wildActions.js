@@ -1031,15 +1031,16 @@ export function executeWildItemUse({ encounter, player, playerMonster, itemId, d
         const healMin   = Number(itemDef?.heal_min)  || 30;
         const itemEmoji = itemDef?.emoji || '💚';
 
-        // Consumir 1 unidade do item
-        player.inventory = player.inventory || {};
-        if ((player.inventory[itemId] || 0) <= 0) {
+        // Verificar se HP já está cheio antes de qualquer outra validação
+        if (playerMonster.hp >= playerMonster.hpMax) {
+            encounter.log.push(`⚠️ ${playerMonster.name} já está com HP cheio!`);
             return { success: false, result: 'invalid' };
         }
 
-        // Verificar se HP já está cheio antes de consumir
-        if (playerMonster.hp >= playerMonster.hpMax) {
-            encounter.log.push(`⚠️ ${playerMonster.name} já está com HP cheio!`);
+        // Consumir 1 unidade do item
+        player.inventory = player.inventory || {};
+        if ((player.inventory[itemId] || 0) <= 0) {
+            encounter.log.push(`⚠️ ${itemName} não disponível no inventário!`);
             return { success: false, result: 'invalid' };
         }
 
