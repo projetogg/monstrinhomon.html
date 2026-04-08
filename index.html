@@ -9202,6 +9202,11 @@
                 return;
             }
 
+            // Reset de classes de estado do ciclo anterior
+            ['state-current','state-boss','state-done','state-locked','state-available'].forEach(s =>
+                card.classList.remove('ow-node-card--' + s)
+            );
+
             const unlocked = window.WorldMap.isNodeUnlocked(
                 node,
                 progress.visitedLocations,
@@ -9221,6 +9226,7 @@
                             <p class="ow-node-card__lock-reason">${lockReason}</p>
                         </div>
                     </div>`;
+                card.classList.add('ow-node-card--state-locked');
                 card.classList.add('ow-node-card--visible');
                 return;
             }
@@ -9237,6 +9243,13 @@
             const defeated = progress.nodeFlags[nodeId]?.bossDefeated === true;
             const isCurrent = nodeId === progress.currentNodeId;
             const isDone    = progress.completedLocations.has(nodeId);
+
+            // Classe de estado visual para accent border
+            const stateClass = isBoss    ? 'state-boss'
+                             : isCurrent ? 'state-current'
+                             : isDone    ? 'state-done'
+                             : 'state-available';
+            card.classList.add('ow-node-card--' + stateClass);
 
             // Detectar se este nó é o destino da quest principal ativa
             let isMainObjectiveNode = false;
@@ -9277,7 +9290,7 @@
                 }
             }
 
-            // Quest ativa neste local
+            // Quest ativa neste local — aparece primeiro no body (elemento mais urgente)
             let questHtml = '';
             if (window.GameFlow) {
                 for (const player of (GameState.players ?? [])) {
@@ -9318,16 +9331,16 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="ow-node-card__cta">
-                            <button class="ow-sidebar__boss-btn ${btnClass}"
-                                    onclick="selectWorldNode('${nodeId}')">
-                                ${btnText}
-                            </button>
-                        </div>
                     </div>
                     <div class="ow-node-card__body">
                         ${questHtml}
                         <p class="ow-node-card__desc">${bossFlavor}</p>
+                    </div>
+                    <div class="ow-node-card__footer">
+                        <button class="ow-sidebar__boss-btn ${btnClass}"
+                                onclick="selectWorldNode('${nodeId}')">
+                            ${btnText}
+                        </button>
                     </div>`;
                 card.classList.add('ow-node-card--visible');
                 return;
@@ -9376,14 +9389,14 @@
                             </div>
                         </div>
                     </div>
-                    <div class="ow-node-card__cta">
-                        ${ctaHtml}
-                    </div>
                 </div>
                 <div class="ow-node-card__body">
-                    <p class="ow-node-card__desc">${desc}</p>
                     ${questHtml}
+                    <p class="ow-node-card__desc">${desc}</p>
                     ${spotsHtml}
+                </div>
+                <div class="ow-node-card__footer">
+                    ${ctaHtml}
                 </div>`;
             card.classList.add('ow-node-card--visible');
         }
