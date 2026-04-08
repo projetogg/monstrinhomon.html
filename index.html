@@ -4920,6 +4920,10 @@
                     newMon.ene = newMon.eneMax;
                 }
                 newMon.buffs = [];
+
+                // PR-02: on_swap — monstro substituto entrou em campo
+                const { fireCombatEvent: _fireCE, ON_SWAP: _ON_SWAP } = Combat.CombatEvents;
+                _fireCE(newMon, _ON_SWAP, { context: context || 'ko' });
                 
                 const actionLabel = context === 'manual' ? 'trocou voluntariamente para' : 'enviou';
                 _log(enc, `🔄 ${player.name || player.nome} ${actionLabel} ${newMon.name || newMon.nome}!`);
