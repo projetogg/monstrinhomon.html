@@ -4375,6 +4375,10 @@
                     selectedMonsterTemplate = MONSTER_CATALOG.find(m => m.id === options.monsterTemplateId);
                 }
                 if (!selectedMonsterTemplate) {
+                    if (!MONSTER_CATALOG || MONSTER_CATALOG.length === 0) {
+                        alert('❌ Catálogo de monstros vazio. Recarregue a página.');
+                        return;
+                    }
                     selectedMonsterTemplate = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
                 }
                 const enemy = createMonsterInstanceFromTemplate(
@@ -8185,8 +8189,8 @@
                 const equippedItems = new Set();
                 if (player.team && Array.isArray(player.team)) {
                     player.team.forEach(monster => {
-                        if (monster?.equippedItem) {
-                            equippedItems.add(monster.equippedItem);
+                        if (monster?.heldItemId) {
+                            equippedItems.add(monster.heldItemId);
                         }
                     });
                 }
@@ -8536,7 +8540,7 @@
                         return;
                     }
                     if (player.team && Array.isArray(player.team)) {
-                        const equippedMonster = player.team.find(m => m?.equippedItem === itemId);
+                        const equippedMonster = player.team.find(m => m?.heldItemId === itemId);
                         if (equippedMonster) {
                             showToast(`❌ Não é possível vender item equipado! ${item.name} está equipado em ${equippedMonster.name}.`, 'error');
                             return;
@@ -10266,7 +10270,7 @@
                 }
             });
             saveToLocalStorage();
-            render();
+            updateAllViews();
             const msg = healed > 0
                 ? `✅ ${healed} Monstrinho(s) curado(s) com sucesso!`
                 : 'Todos os Monstrinhos já estão com HP cheio.';

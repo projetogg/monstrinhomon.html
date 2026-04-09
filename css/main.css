@@ -450,6 +450,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 /* Bloco de grupo (trainer/boss) — mantém mt menor */
 .encounter-setup-group { margin-top: 8px; }
 #groupParticipantsList { max-height: 200px; overflow-y: auto; }
+#teamReorderContainer { max-height: 300px; overflow-y: auto; }
 
 .therapist-panel {
     border: 3px dashed var(--warning); border-radius: 20px; padding: 20px;
