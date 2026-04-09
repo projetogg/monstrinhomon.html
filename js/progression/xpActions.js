@@ -38,7 +38,13 @@ export function giveXP(deps, mon, amount, logArr) {
     }
     
     // Loop de level ups (pode subir múltiplos níveis de uma vez)
+    const maxLevel = deps.constants?.maxLevel || 100;
     while (mon.xp >= mon.xpNeeded) {
+        if (mon.level >= maxLevel) {
+            // Ao atingir o nível máximo, preservar XP abaixo do limite para consistência visual
+            mon.xp = mon.xpNeeded - 1;
+            break;
+        }
         mon.xp -= mon.xpNeeded;
         levelUpMonster(deps, mon, log);
     }
