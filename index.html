@@ -5117,7 +5117,8 @@
                 requestAnimationFrame(() => el.classList.add('show'));
             });
 
-            // Duração maior para crianças (level-up = 4s, demais = 3.5s)
+            // Duração maior para crianças. Level-up normalmente usa showLevelUpModal(),
+            // mas mantemos aqui como fallback caso showToast('...', 'level-up') seja chamado diretamente.
             const DURATION = type === 'level-up' ? 4000 : 3500;
 
             // Iniciar fade-out e slide-out antes de remover do DOM
@@ -7357,6 +7358,7 @@
             const val = parseInt(input.value, 10);
             input.classList.remove('battle-dice-input--active', 'battle-dice-input--hit', 'battle-dice-input--miss');
             if (!input.value || isNaN(val)) {
+                // Campo vazio: pulso ativo indica que o jogador deve digitar
                 input.classList.add('battle-dice-input--active');
                 return;
             }
@@ -7371,8 +7373,8 @@
                     return;
                 }
             } catch (_) { /* sem contexto de combate disponível */ }
-            // Feedback genérico: ≥ 10 = hit (estimativa)
-            input.classList.add(clamped >= 10 ? 'battle-dice-input--hit' : 'battle-dice-input--miss');
+            // Sem contexto de combate: não mostra hit/miss para evitar confusão
+            // apenas remove o pulso indicando que um valor foi digitado
         }
 
         function checkHit(d20Roll, attacker, defender) {
