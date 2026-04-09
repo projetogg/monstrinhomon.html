@@ -7654,6 +7654,17 @@
             // Remove from team
             player.team.splice(teamIndex, 1);
 
+            // Adjust activeIndex so it stays valid after the splice
+            if (typeof player.activeIndex === 'number') {
+                if (player.activeIndex === teamIndex) {
+                    // Removed the active monster: point to first alive remaining
+                    player.activeIndex = firstAliveIndex(player.team);
+                    if (player.activeIndex < 0) player.activeIndex = 0;
+                } else if (player.activeIndex > teamIndex) {
+                    player.activeIndex--;
+                }
+            }
+
             return { success: true, message: `${monster.name} enviado para Box` };
         }
 
@@ -8606,7 +8617,7 @@
                 
                 // Check team size
                 const teamSize = player.team?.length || 0;
-                const boxSize = player.box?.length || 0;
+                const boxSize = (GameState.sharedBox || []).filter(s => s.ownerPlayerId === player.id).length;
                 const totalMonsters = teamSize + boxSize;
                 
                 const MAX_TEAM_SIZE = 6;
@@ -8659,15 +8670,14 @@
                 
                 // Ensure arrays exist
                 player.team = player.team || [];
-                player.box = player.box || [];
-                
-                // Add to team or box
+
+                // Add to team or sharedBox (not legacy player.box)
                 let location = '';
                 if (teamSize < MAX_TEAM_SIZE) {
                     player.team.push(newMonster);
                     location = 'time';
                 } else {
-                    player.box.push(newMonster);
+                    addToSharedBox(player.id, newMonster);
                     location = 'box';
                 }
                 
@@ -10675,7 +10685,7 @@
                     if (!player) return;
                     
                     const teamCount = player.team?.length || 0;
-                    const boxCount = player.box?.length || 0;
+                    const boxCount = (GameState.sharedBox || []).filter(s => s.ownerPlayerId === player.id).length;
                     // Fix #4: usar player.class como fallback quando playerClassId não existe (saves do wizard)
                     const playerClass = player.class || player.playerClassId || '';
 
@@ -10976,13 +10986,15 @@
          */
         function applyKitSwapRetroactive(instanceId) {
             try {
-                // Buscar o monstrinho em todos os jogadores
+                // Buscar o monstrinho em todos os jogadores e na sharedBox
                 let targetMon = null;
                 for (const player of (GameState.players || [])) {
                     const inTeam = (player.team || []).find(m => m?.instanceId === instanceId);
-                    const inBox = (player.box || []).find(m => m?.instanceId === instanceId);
                     if (inTeam) { targetMon = inTeam; break; }
-                    if (inBox) { targetMon = inBox; break; }
+                }
+                if (!targetMon) {
+                    const boxSlot = (GameState.sharedBox || []).find(s => s?.monster?.instanceId === instanceId);
+                    if (boxSlot) targetMon = boxSlot.monster;
                 }
 
                 if (!targetMon) {
