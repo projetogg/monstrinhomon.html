@@ -12,6 +12,7 @@ import { initializeBattleParticipation, markAsParticipated, processBattleItemBre
 import { isOffensiveSkill } from './skillResolver.js';
 import { fireCombatEvent, ON_ATTACK, ON_HIT, ON_KO, ON_TURN_START, ON_HEAL_ITEM, ON_SKILL_USED } from './combatEvents.js';
 import { checkFleeCanonical } from './wildCore.js';
+import { checkBossPhaseTransition } from './bossSystem.js';
 
 /**
  * Passivas de combate por classe — aplicadas após cálculo de dano base.
@@ -262,6 +263,9 @@ export function executePlayerAttackGroup(deps, targetEnemyIndex = null) {
     // Apply damage
     helpers.applyDamage(enemy, dmg);
     
+    // PR-05: Verificar transição de Fase 2 do boss após receber dano
+    checkBossPhaseTransition(enemy, enc.log);
+
     // PR11B: Marcar que o inimigo participou (recebeu dano)
     markAsParticipated(enemy);
 
@@ -982,6 +986,8 @@ export function executePlayerSkillGroup(skillOrId, enemyIndex, deps) {
         dmg = Math.min(dmg, Math.round(skillEnemyHpMax * 0.6));
 
         helpers.applyDamage(enemy, dmg);
+        // PR-05: Verificar transição de Fase 2 do boss após receber dano (skill)
+        checkBossPhaseTransition(enemy, enc.log);
         markAsParticipated(enemy);
 
         const critText = isCrit ? ' CRÍTICO! 🌟' : '';
