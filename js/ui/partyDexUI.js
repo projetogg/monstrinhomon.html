@@ -290,7 +290,7 @@ function renderMonsterCard(template, status) {
                 <div class="dex-name">${template.name || 'Desconhecido'}</div>
                 <div class="dex-badges">
                     <span class="dex-badge-rarity dex-rarity-${rarityClass}">${template.rarity || 'Comum'}</span>
-                    <span class="dex-badge-class">${template.class || 'Neutro'}</span>
+                    <span class="dex-badge-class" data-class="${template.class || 'Neutro'}">${template.class || 'Neutro'}</span>
                 </div>
                 <div class="dex-stats-mini">
                     <span class="dex-stat-mini">HP: ${template.baseHp || '?'}</span>
