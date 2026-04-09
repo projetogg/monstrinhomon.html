@@ -7608,6 +7608,13 @@
         }
 
         /**
+         * Returns the number of monsters a player has in the sharedBox.
+         */
+        function getPlayerBoxSize(playerId) {
+            return (GameState.sharedBox || []).filter(s => s.ownerPlayerId === playerId).length;
+        }
+
+        /**
          * Add a monster to the shared box
          */
         function addToSharedBox(ownerPlayerId, monster) {
@@ -8617,7 +8624,7 @@
                 
                 // Check team size
                 const teamSize = player.team?.length || 0;
-                const boxSize = (GameState.sharedBox || []).filter(s => s.ownerPlayerId === player.id).length;
+                const boxSize = getPlayerBoxSize(player.id);
                 const totalMonsters = teamSize + boxSize;
                 
                 const MAX_TEAM_SIZE = 6;
@@ -10685,7 +10692,7 @@
                     if (!player) return;
                     
                     const teamCount = player.team?.length || 0;
-                    const boxCount = (GameState.sharedBox || []).filter(s => s.ownerPlayerId === player.id).length;
+                    const boxCount = getPlayerBoxSize(player.id);
                     // Fix #4: usar player.class como fallback quando playerClassId não existe (saves do wizard)
                     const playerClass = player.class || player.playerClassId || '';
 
