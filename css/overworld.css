@@ -4,9 +4,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── Custom properties ───────────────────────────────────────────────────── */
-#overworldPanel {
-    --ow-sidebar-width: 370px; /* largura da sidebar de contexto do nó — mapa é protagonista */
-}
+/* (nenhuma propriedade customizada ativa — layout de coluna única) */
 
 /* ── Painel principal ────────────────────────────────────────────────────── */
 #overworldPanel {
@@ -82,13 +80,11 @@
     color: #ffffff;
 }
 
-/* ── Layout mapa + sidebar ───────────────────────────────────────────────── */
-/* Sidebar estreita — mapa é o protagonista; sidebar é complemento */
+/* ── Layout mapa — protagonista absoluto ─────────────────────────────────── */
+/* Painel de estado suprimido: dados já presentes no header; mapa recebe 100% */
 .ow-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, var(--ow-sidebar-width, 320px));
-    gap: 0;
-    align-items: stretch;
+    display: block;
+    position: relative;
 }
 
 /* ── Área do mapa (SVG) ──────────────────────────────────────────────────── */
@@ -173,22 +169,190 @@
 .ow-pan-btn--left  { left: 6px; }
 .ow-pan-btn--right { right: 6px; }
 
-/* ── Sidebar de informações do nó ────────────────────────────────────────── */
-.ow-sidebar-wrap {
-    background: rgba(255,255,255,0.015);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    min-height: 0;
+/* ── Painel de estado persistente ────────────────────────────────────────── */
+/* Oculto: informações já exibidas no header (Local Atual, Progresso, Party) */
+.ow-state-panel {
+    display: none;
 }
 
-.ow-sidebar__placeholder {
-    margin: auto;
-    text-align: center;
-    color: rgba(255,255,255,0.22);
+/* ── Node card — overlay sobre o mapa ───────────────────────────────────── */
+/* Aparece ao selecionar um nó; desaparece ao clicar fora */
+.ow-node-card {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    width: min(720px, 92%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    background: rgba(13,15,22,0.95);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 12px;
+    backdrop-filter: blur(8px);
+    z-index: 3;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.25);
+    overflow: hidden; /* clip do accent border */
+}
+
+/* Accent line no topo — cor dinâmica por estado do nó */
+.ow-node-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: rgba(255,255,255,0.10);
+    pointer-events: none;
+}
+
+.ow-node-card--state-current::before  { background: #20ddcc; box-shadow: 0 0 10px rgba(32,221,204,0.45); }
+.ow-node-card--state-boss::before     { background: linear-gradient(90deg, #ffdd44 0%, #ffaa00 100%); box-shadow: 0 0 10px rgba(255,200,0,0.40); }
+.ow-node-card--state-done::before     { background: #40cc60; }
+.ow-node-card--state-available::before { background: rgba(255,255,255,0.20); }
+.ow-node-card--state-locked::before   { background: rgba(255,255,255,0.06); }
+
+.ow-node-card--visible {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Header do card — identidade do local sem competição com o CTA */
+.ow-node-card__main {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 20px 14px;
+}
+
+.ow-node-card__identity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex: 1;
+}
+
+/* Emoji em container visual — ancora a identidade */
+.ow-node-card__emoji {
+    font-size: 26px;
+    flex-shrink: 0;
+    line-height: 1;
+    width: 46px;
+    height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.06);
+    border-radius: 10px;
+}
+
+.ow-node-card__title-block {
+    flex: 1;
+    min-width: 0;
+}
+
+.ow-node-card__name {
+    font-size: 16px;
+    font-weight: 800;
+    color: #f2f2f2;
+    margin: 0 0 5px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ow-node-card__meta {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Corpo do card — quest primeiro, depois desc e spots */
+.ow-node-card__body {
+    padding: 6px 20px 14px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.ow-node-card__desc {
+    font-size: 12px;
+    color: rgba(255,255,255,0.48);
+    margin: 8px 0 0;
+    line-height: 1.65;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Bloqueado dentro do card */
+.ow-node-card__lock-icon { font-size: 18px; flex-shrink: 0; }
+.ow-node-card__lock-reason {
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+    margin: 0;
+    line-height: 1.45;
+}
+
+/* Footer do card — CTA sempre no fundo, separado do conteúdo */
+.ow-node-card__footer {
+    padding: 10px 20px 18px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+}
+
+/* ── Chips de spots — ações do local, com peso visual de ação ────────────── */
+.ow-node-card__spots {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.ow-spot-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: rgba(32,221,204,0.05);
+    border: 1px solid rgba(32,221,204,0.16);
+    border-radius: 20px;
     font-size: 13px;
-    padding: 40px 20px;
-    line-height: 1.6;
+    color: #c0ecea;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+    font-family: inherit;
+}
+
+.ow-spot-chip:hover {
+    background: rgba(32,221,204,0.12);
+    border-color: rgba(32,221,204,0.30);
+    color: #d8f5f3;
+}
+
+.ow-spot-chip:active {
+    background: rgba(32,221,204,0.20);
+}
+
+.ow-spot-chip--service {
+    background: rgba(80,130,255,0.05);
+    border-color: rgba(80,130,255,0.20);
+    color: #b0c4ff;
+}
+
+.ow-spot-chip--service:hover {
+    background: rgba(80,130,255,0.11);
+    border-color: rgba(80,130,255,0.32);
+    color: #c0d2ff;
+}
+
+.ow-spot-chip--more {
+    color: rgba(255,255,255,0.38);
+    background: rgba(255,255,255,0.03);
+    border-color: rgba(255,255,255,0.08);
+    font-style: italic;
 }
 
 /* Header do sidebar — sem caixa, tipografia como hierarquia */
@@ -583,10 +747,7 @@
 }
 
 /* ── Responsividade ──────────────────────────────────────────────────────── */
-@media (max-width: 860px) {
-    .ow-layout {
-        grid-template-columns: 1fr;
-    }
+@media (max-width: 860px), (orientation: portrait) {
 
     .ow-map-wrap {
         aspect-ratio: auto;
@@ -596,9 +757,25 @@
         border-bottom: 1px solid rgba(255,255,255,0.06);
     }
 
-    .ow-sidebar-wrap {
-        min-height: 300px;
-        max-height: 440px;
+    /* Node card em portrait: painel fixo abaixo do mapa (não overlay) */
+    .ow-node-card {
+        position: static;
+        transform: none;
+        width: 100%;
+        border-radius: 0;
+        left: auto;
+        bottom: auto;
+        opacity: 0;
+        pointer-events: none;
+        transition: none;
+        display: none;
+    }
+
+    .ow-node-card--visible {
+        display: block;
+        opacity: 1;
+        pointer-events: all;
+        transform: none;
     }
 
     .ow-header {
@@ -617,39 +794,5 @@
 
     .ow-header-stat {
         padding: 0 12px;
-    }
-}
-
-/* ── Tablet / iPad landscape ─────────────────────────────────────────────── */
-/* Faixa 861–1100px: sidebar menor para dar mais protagonismo ao mapa */
-@media (min-width: 861px) and (max-width: 1100px) {
-    #overworldPanel {
-        --ow-sidebar-width: 300px;
-    }
-
-    .ow-header {
-        flex-wrap: wrap;
-        gap: 10px;
-        padding: 10px 16px;
-    }
-
-    .ow-header h3 {
-        font-size: 17px;
-    }
-
-    .ow-header-stat {
-        padding: 0 12px;
-    }
-
-    .ow-sidebar__header {
-        padding: 16px 18px 14px;
-    }
-
-    .ow-sidebar__body {
-        padding: 14px 18px;
-    }
-
-    .ow-sidebar__footer {
-        padding: 12px 18px 18px;
     }
 }
