@@ -5564,10 +5564,10 @@
                 // NÃO usar line.includes("🌟") pois habilidades especiais também usam esse emoji
                 const isEvo = /evoluiu para/i.test(line);
                 if (isEvo) {
-                    const evoMatch = line.match(/🌟\s*(.+?)\s+evoluiu para\s+(.+?)!/i);
+                    const evoMatch = line.match(/🌟\s*(.+?)\s+evoluiu para\s+([^!]+)!/i);
                     const oldName = evoMatch ? evoMatch[1].trim() : '';
                     const newName = evoMatch ? evoMatch[2].trim() : '';
-                    showEvolutionModal(oldName, newName);
+                    if (oldName && newName) showEvolutionModal(oldName, newName);
                 }
 
                 // Detectar conclusão de quest
