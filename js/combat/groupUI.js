@@ -762,5 +762,8 @@ export function mountSwapModal(htmlContent) {
     if (existing) existing.remove();
     const modalDiv = document.createElement('div');
     modalDiv.innerHTML = htmlContent;
+    // Adiciona animação de entrada ao primeiro filho (o card do modal)
+    const firstChild = modalDiv.firstElementChild;
+    if (firstChild) firstChild.classList.add('swap-modal-animated');
     document.body.appendChild(modalDiv);
 }

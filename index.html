@@ -8,6 +8,10 @@
     <title>Monstrinhomon - Therapeutic Game</title>
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/overworld.css">
+    <!-- Nunito: tipografia lúdica para títulos e nomes de monstrinhos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <script src="js/storage.js"></script>
     <script src="js/saveLayer.js"></script>
 </head>
@@ -914,7 +918,7 @@
 
         function copyError() {
             const text = document.getElementById('errorMessage').innerText;
-            navigator.clipboard.writeText(text).catch(e => alert('Falha ao copiar: ' + e));
+            navigator.clipboard.writeText(text).catch(e => showToast('Falha ao copiar: ' + e, 'error'));
         }
 
         // ===== Feature 4.4: Audio (MVP without audio files) =====
@@ -2534,7 +2538,7 @@
                 
             } catch (error) {
                 console.error('[System] Critical error in loadGame:', error);
-                alert('Erro ao carregar o jogo. Verifique o console para detalhes.');
+                mmAlert('Erro ao carregar o jogo. Verifique o console para detalhes.', 'error');
                 return false;
             }
         }
@@ -2632,7 +2636,7 @@
 
         function mmRequireGameOrAlert() {
             if (!GameState?.players || GameState.players.length === 0) {
-                alert("Crie um novo jogo primeiro!");
+                mmAlert("Crie um novo jogo primeiro!", 'error');
                 return false;
             }
             return true;
@@ -2672,9 +2676,9 @@
                 // Copy to clipboard
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(saveData).then(() => {
-                        alert('✅ Save data copied to clipboard!\n\nYou can also download it as a file.');
+                        showToast('✅ Save data copied to clipboard!\n\nYou can also download it as a file.', 'success');
                     }).catch(() => {
-                        alert('⚠️ Não foi possível copiar para a área de transferência, mas você pode baixar o arquivo.');
+                        mmAlert('⚠️ Não foi possível copiar para a área de transferência, mas você pode baixar o arquivo.', 'warning');
                     });
                 }
                 
@@ -2690,7 +2694,7 @@
                 console.log('[Therapist] Save exported successfully');
             } catch (error) {
                 console.error('[Therapist] Export failed:', error);
-                alert('❌ Exportação falhou: ' + error.message);
+                mmAlert('❌ Exportação falhou: ' + error.message, 'error');
             }
         }
 
@@ -2711,7 +2715,7 @@
                 console.log('[Therapist] Ready to import save - paste JSON and click Load');
             } catch (error) {
                 console.error('[Therapist] Import UI failed:', error);
-                alert('❌ Importação falhou: ' + error.message);
+                mmAlert('❌ Importação falhou: ' + error.message, 'error');
             }
         }
 
@@ -2721,7 +2725,7 @@
                 const jsonText = textarea?.value?.trim();
                 
                 if (!jsonText) {
-                    alert('⚠️ Cole os dados JSON antes de importar');
+                    mmAlert('⚠️ Cole os dados JSON antes de importar', 'warning');
                     return;
                 }
                 
@@ -2731,13 +2735,13 @@
                     saveData = JSON.parse(jsonText);
                 } catch (parseError) {
                     console.error('[Therapist] Invalid JSON:', parseError);
-                    alert('❌ Formato JSON inválido:\n' + parseError.message);
+                    mmAlert('❌ Formato JSON inválido:\n' + parseError.message, 'error');
                     return;
                 }
                 
                 // Basic validation
                 if (typeof saveData !== 'object' || saveData === null) {
-                    alert('❌ Invalid save data: must be an object');
+                    mmAlert('❌ Invalid save data: must be an object', 'error');
                     return;
                 }
                 
@@ -2781,12 +2785,12 @@
                 // Hide import UI
                 therapistCancelImport();
                 
-                alert('✅ Save data loaded successfully!');
+                showToast('✅ Save data loaded successfully!', 'success');
                 console.log('[Therapist] Save imported and loaded successfully');
                 
             } catch (error) {
                 console.error('[Therapist] Load failed:', error);
-                alert('❌ Falha ao carregar: ' + error.message);
+                mmAlert('❌ Falha ao carregar: ' + error.message, 'error');
             }
         }
 
@@ -2956,12 +2960,12 @@
                 const playerClass = document.getElementById('playerClass')?.value;
                 
                 if (!name) {
-                    alert('Digite o nome do jogador');
+                    showToast('Digite o nome do jogador', 'error');
                     return;
                 }
                 
                 if (!playerClass) {
-                    alert('Selecione uma classe para o jogador');
+                    showToast('Selecione uma classe para o jogador', 'error');
                     return;
                 }
                 
@@ -4074,12 +4078,12 @@
                 const name = document.getElementById('sessionName')?.value?.trim();
                 
                 if (!name) {
-                    alert('Digite o nome da sessão');
+                    showToast('Digite o nome da sessão', 'error');
                     return;
                 }
                 
                 if (!GameState.players || GameState.players.length === 0) {
-                    alert('Adicione jogadores antes de criar uma sessão');
+                    showToast('Adicione jogadores antes de criar uma sessão', 'error');
                     return;
                 }
                 
@@ -4159,14 +4163,14 @@
                 const type = isWildViaMap ? 'wild' : (document.getElementById('encounterType')?.value);
                 
                 if (!type) {
-                    alert('Selecione o tipo de encontro');
+                    showToast('Selecione o tipo de encontro', 'error');
                     return;
                 }
                 
                 if (!GameState.currentSession) {
                     // Auto-criar sessão para não bloquear o usuário
                     if (!GameState.players || GameState.players.length === 0) {
-                        alert('Adicione jogadores antes de iniciar um encontro');
+                        showToast('Adicione jogadores antes de iniciar um encontro', 'error');
                         return;
                     }
                     mmCreateDefaultSession('Sessão');
@@ -4180,12 +4184,12 @@
                     const selectedPlayerIds = Array.from(checkboxes).map(cb => cb.value);
                     
                     if (selectedPlayerIds.length === 0) {
-                        alert('Selecione pelo menos 1 jogador para a batalha em grupo');
+                        showToast('Selecione pelo menos 1 jogador para a batalha em grupo', 'error');
                         return;
                     }
                     
                     if (selectedPlayerIds.length > 6) {
-                        alert('Máximo de 6 jogadores por batalha');
+                        mmAlert('Máximo de 6 jogadores por batalha', 'error');
                         return;
                     }
                     
@@ -4198,13 +4202,13 @@
                 if (type === 'wild') {
                     const selectedPlayerId = document.getElementById('encounterPlayer')?.value;
                     if (!selectedPlayerId) {
-                        alert('Selecione um jogador para o encontro individual');
+                        showToast('Selecione um jogador para o encontro individual', 'error');
                         return;
                     }
                     
                     const player = GameState.players.find(p => p.id === selectedPlayerId);
                     if (!player || !player.team || player.team.length === 0) {
-                        alert('O jogador selecionado não tem monstrinhos no time');
+                        mmAlert('O jogador selecionado não tem monstrinhos no time', 'error');
                         return;
                     }
                     
@@ -4213,7 +4217,7 @@
                     // evitando falso negativo quando status não foi atualizado pelo combate de grupo.
                     const validMonsters = player.team.filter(m => m.class === player.class && m.hp > 0);
                     if (validMonsters.length === 0) {
-                        alert(`⚠️ ${player.name} não tem monstrinhos da classe ${player.class} disponíveis!\n\nREGRA: Em batalha, você só pode usar monstrinhos da SUA classe.\nTroque com outros jogadores para conseguir monstrinhos da sua classe!`);
+                        mmAlert(`⚠️ ${player.name} não tem monstrinhos da classe ${player.class} disponíveis!\n\nREGRA: Em batalha, você só pode usar monstrinhos da SUA classe.\nTroque com outros jogadores para conseguir monstrinhos da sua classe!`, 'warning');
                         return;
                     }
 
@@ -4351,7 +4355,7 @@
                     
                     // Ensure player has valid starter
                     if (!autoSelectStarter(player)) {
-                        alert(`⚠️ ${player.name || player.nome} não tem monstrinhos vivos! Não pode participar da batalha.`);
+                        mmAlert(`⚠️ ${player.name || player.nome} não tem monstrinhos vivos! Não pode participar da batalha.`, 'warning');
                         return;
                     }
                 }
@@ -4485,7 +4489,7 @@
                 const enc = _getGroupEncounter();
                 const deps = createGroupCombatDeps();
                 const result = Combat.Group.UI.enterAttackMode(enc, deps);
-                if (result?.reason === 'not_player_turn') alert('⚠️ Não é sua vez!');
+                if (result?.reason === 'not_player_turn') mmAlert('⚠️ Não é sua vez!', 'warning');
             } catch (error) {
                 showError('Failed to enter attack mode', error.stack);
             }
@@ -4497,8 +4501,8 @@
                 const enc = _getGroupEncounter();
                 const deps = createGroupCombatDeps();
                 const result = Combat.Group.UI.enterSkillMode(skillIndex, enc, deps);
-                if (result?.reason === 'not_player_turn') alert('⚠️ Não é sua vez!');
-                else if (result?.reason === 'no_skill') alert('⚠️ Habilidade não encontrada!');
+                if (result?.reason === 'not_player_turn') mmAlert('⚠️ Não é sua vez!', 'warning');
+                else if (result?.reason === 'no_skill') mmAlert('⚠️ Habilidade não encontrada!', 'warning');
             } catch (error) {
                 showError('Failed to enter skill mode', error.stack);
             }
@@ -4510,8 +4514,8 @@
                 const enc = _getGroupEncounter();
                 const deps = createGroupCombatDeps();
                 const result = Combat.Group.UI.handleEnemyClick(enemyIndex, enc, deps);
-                if (result?.reason === 'not_player_turn') alert('⚠️ Não é sua vez!');
-                else if (result?.reason === 'enemy_dead') alert('⚠️ Este inimigo já foi derrotado!');
+                if (result?.reason === 'not_player_turn') mmAlert('⚠️ Não é sua vez!', 'warning');
+                else if (result?.reason === 'enemy_dead') mmAlert('⚠️ Este inimigo já foi derrotado!', 'warning');
             } catch (error) {
                 showError('Failed to handle enemy click', error.stack);
             }
@@ -4537,7 +4541,7 @@
                 if (!enc || enc.finished) return;
 
                 if (enc.type === 'boss') {
-                    alert('⚠️ Não é possível fugir de uma batalha contra um Boss!');
+                    mmAlert('⚠️ Não é possível fugir de uma batalha contra um Boss!', 'warning');
                     return;
                 }
 
@@ -5108,20 +5112,120 @@
 
             host.appendChild(el);
 
-            // Show toast with slide-in animation
-            setTimeout(() => {
-                el.classList.add('show');
-            }, 10);
+            // Double-rAF garante que a transição CSS dispare corretamente
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => el.classList.add('show'));
+            });
 
-            // Start fade-out after 1.5 seconds
+            // Duração maior para crianças (level-up = 4s, demais = 3.5s)
+            const DURATION = type === 'level-up' ? 4000 : 3500;
+
+            // Iniciar fade-out e slide-out antes de remover do DOM
             setTimeout(() => {
                 el.style.opacity = "0";
-                el.style.transform = "translateY(-4px)";
-                el.style.transition = "opacity .2s ease, transform .2s ease";
+                el.style.transform = "translateX(calc(100% + 32px))";
+                el.style.transition = "opacity .25s ease, transform .25s ease";
+            }, DURATION);
+
+            // Remover do DOM após a animação
+            setTimeout(() => el.remove(), DURATION + 350);
+        }
+
+        /**
+         * mmAlert — substitui o alert() nativo com um modal estilizado no universo do jogo.
+         * Casos simples (validação/erro): usa showToast('msg', 'error').
+         * Para mensagens longas ou confirmações importantes, mostra overlay modal.
+         * @param {string} msg   - Mensagem a exibir
+         * @param {string} type  - 'error' | 'success' | 'warning' | 'info' (default: 'info')
+         */
+        function mmAlert(msg, type = 'info') {
+            // Mensagens curtas viram toasts — menos disruptivo
+            const TOAST_MAX_LENGTH = 120;
+            if (msg.length < TOAST_MAX_LENGTH && !msg.includes('\n')) {
+                const toastType = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+                showToast(msg, toastType);
+                return;
+            }
+            // Mensagens longas ou multi-linha: modal estilizado
+            const iconMap = { error: '❌', success: '✅', warning: '⚠️', info: 'ℹ️' };
+            const icon = iconMap[type] || 'ℹ️';
+            const overlay = document.createElement('div');
+            overlay.className = 'mm-alert-overlay';
+            overlay.innerHTML = `
+                <div class="mm-alert-card">
+                    <span class="mm-alert-icon">${icon}</span>
+                    <p class="mm-alert-msg">${msg}</p>
+                    <button class="mm-alert-btn mm-alert-btn--${type}" onclick="this.closest('.mm-alert-overlay').remove()">OK</button>
+                </div>`;
+            document.body.appendChild(overlay);
+            // Fechar ao clicar fora do card
+            overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+        }
+
+        /**
+         * showLevelUpModal — exibe modal de celebração de level-up.
+         * Substitui o toast de level-up para dar mais destaque ao momento.
+         * @param {string} text - Texto completo do evento de level-up
+         */
+        function showLevelUpModal(text) {
+            // Extrai número do nível e nome do monstrinho do texto de log
+            const levelMatch = text.match(/nível\s+(\d+)/i) || text.match(/level\s+(\d+)/i);
+            const newLevel   = levelMatch ? levelMatch[1] : '?';
+            // Tenta extrair o nome antes do primeiro espaço/emoji
+            const nameMatch  = text.match(/^[^\w]*(\w[\w\s]+?)\s+(subiu|reached|leveled)/i);
+            const monsterName = nameMatch ? nameMatch[1].trim() : '';
+
+            const overlay = document.createElement('div');
+            overlay.className = 'mm-levelup-overlay';
+            overlay.innerHTML = `
+                <div class="mm-levelup-card">
+                    <span class="mm-levelup-emoji">✨</span>
+                    <div class="mm-levelup-title">Level Up!</div>
+                    ${monsterName ? `<div class="mm-levelup-monster">${monsterName}</div>` : ''}
+                    <div class="mm-levelup-level">Nv. ${newLevel}</div>
+                    <div class="mm-levelup-subtitle">${text}</div>
+                    <button class="mm-levelup-btn" onclick="this.closest('.mm-levelup-overlay').remove()">🎉 Incrível!</button>
+                </div>`;
+            document.body.appendChild(overlay);
+            overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+            // Fecha automaticamente após 5 segundos
+            setTimeout(() => overlay.remove(), 5000);
+        }
+
+        /**
+         * showCaptureAnimation — exibe animação de pokébola durante tentativa de captura.
+         * Chame antes da lógica de captura; retorna uma função para fechar.
+         * @param {boolean} success - true se captura bem-sucedida
+         * @returns {Function} close() — chama para fechar o overlay
+         */
+        function showCaptureAnimation(success) {
+            const overlay = document.createElement('div');
+            overlay.className = 'mm-capture-overlay';
+            overlay.innerHTML = `
+                <span class="mm-capture-ball">🔮</span>
+                <div class="mm-capture-status">Tentando capturar...</div>`;
+            document.body.appendChild(overlay);
+
+            const ballEl   = overlay.querySelector('.mm-capture-ball');
+            const statusEl = overlay.querySelector('.mm-capture-status');
+
+            // Após animação da bola, mostra resultado
+            setTimeout(() => {
+                if (success) {
+                    ballEl.textContent = '⭐';
+                    statusEl.textContent = '🎉 Captura bem-sucedida!';
+                    statusEl.classList.add('mm-capture-status--success');
+                } else {
+                    ballEl.classList.add('mm-capture-ball--shake');
+                    statusEl.textContent = '💨 Escapou!';
+                    statusEl.classList.add('mm-capture-status--fail');
+                }
+                // Remove overlay após mostrar resultado
+                setTimeout(() => overlay.remove(), 1200);
             }, 1500);
 
-            // Remove from DOM after animation
-            setTimeout(() => el.remove(), 2000);
+            return () => overlay.remove();
         }
 
         /**
@@ -5356,9 +5460,9 @@
             for (let i = start; i < enc.log.length; i++) {
                 const line = String(enc.log[i] || "");
                 
-                // Detectar level up: por emoji OU por texto
+                // Detectar level up: por emoji OU por texto → usa modal de celebração
                 const isLevelUp = line.includes("✨") || /subiu para o nível/i.test(line);
-                if (isLevelUp) showToast(line, 'level-up');
+                if (isLevelUp) showLevelUpModal(line);
                 
                 // Detectar evolução: por emoji OU por texto
                 const isEvo = line.includes("🌟") || /evoluiu para/i.test(line);
@@ -6726,7 +6830,9 @@
                             <div class="battle-dice-section">
                                 <label class="battle-dice-label" for="diceRoll" title="Role o dado físico d20 e digite o resultado aqui antes de atacar">🎲 d20:</label>
                                 <input type="number" id="diceRoll" min="1" max="20" placeholder="1–20"
-                                       class="battle-dice-input" title="Role o dado físico d20 e digite o resultado (1 a 20)">
+                                       class="battle-dice-input battle-dice-input--active"
+                                       oninput="onDiceRollInput(this)"
+                                       title="Role o dado físico d20 e digite o resultado (1 a 20)">
                             </div>
                             ${advantageHtml}
                             <div class="battle-main-actions">
@@ -6870,20 +6976,20 @@
                 const playerId = encounter.selectedPlayerId;
                 const player = GameState.players.find(p => p.id === playerId);
 
-                if (!player) { alert('Nenhum jogador selecionado.'); return; }
+                if (!player) { mmAlert('Nenhum jogador selecionado.', 'error'); return; }
 
                 const playerMonster = _getActiveMonsterOfPlayer(player);
                 if (!playerMonster || playerMonster.hp <= 0) {
-                    alert('❌ Seu monstrinho está desmaiado!'); return;
+                    mmAlert('❌ Seu monstrinho está desmaiado!', 'error'); return;
                 }
                 if (monster.hp <= 0) {
-                    alert('❌ Selvagem já está desmaiado — não pode usar ação de captura.'); return;
+                    mmAlert('❌ Selvagem já está desmaiado — não pode usar ação de captura.', 'error'); return;
                 }
                 if (encounter.behaviorallyResolved) {
-                    alert('✅ Selvagem já está calmo! Use uma ClasterOrb para capturar.'); return;
+                    showToast('✅ Selvagem já está calmo! Use uma ClasterOrb para capturar.', 'success'); return;
                 }
                 if (!CAPTURE_ACTIONS[player.class]) {
-                    alert(`❌ Classe ${player.class} não tem ação de captura definida.`); return;
+                    mmAlert(`❌ Classe ${player.class} não tem ação de captura definida.`, 'error'); return;
                 }
 
                 const result = Combat.Wild.Actions.executeWildCaptureAction({
@@ -6923,34 +7029,34 @@
                 const player = GameState.players.find(p => p.id === playerId);
 
                 if (!player) {
-                    alert('No player selected for this encounter');
+                    mmAlert('No player selected for this encounter', 'error');
                     return;
                 }
 
                 // Validação: HP > 0 obrigatório (capturar desmaiado é proibido)
                 if (monster.hp <= 0) {
-                    alert('❌ Não pode capturar um monstrinho desmaiado! HP deve ser > 0.');
+                    mmAlert('❌ Não pode capturar um monstrinho desmaiado! HP deve ser > 0.', 'error');
                     return;
                 }
 
                 // Obter ClasterOrb selecionada (dependência de DOM — fica no wrapper)
                 const select = document.getElementById('captureOrbSelect');
                 if (!select) {
-                    alert('❌ Erro ao ler seleção de ClasterOrb.');
+                    mmAlert('❌ Erro ao ler seleção de ClasterOrb.', 'error');
                     return;
                 }
 
                 const selectedOrbId = select.value;
                 const orbInfo = CLASTERORBS[selectedOrbId];
                 if (!orbInfo) {
-                    alert('❌ ClasterOrb inválida.');
+                    mmAlert('❌ ClasterOrb inválida.', 'error');
                     return;
                 }
 
                 // Validação: precisa ter a orb no inventário
                 player.inventory = player.inventory || {};
                 if ((player.inventory[selectedOrbId] || 0) <= 0) {
-                    alert(`❌ Você não tem ${orbInfo.name}!`);
+                    mmAlert(`❌ Você não tem ${orbInfo.name}!`, 'error');
                     return;
                 }
 
@@ -7026,23 +7132,23 @@
 
                 const playerId = encounter.selectedPlayerId;
                 const player = GameState.players.find(p => p.id === playerId);
-                if (!player) { alert('Nenhum jogador selecionado para este encontro'); return; }
+                if (!player) { mmAlert('Nenhum jogador selecionado para este encontro', 'error'); return; }
 
                 const playerMonster = _getActiveMonsterOfPlayer(player);
-                if (!playerMonster) { alert('Jogador não tem monstrinhos no time'); return; }
+                if (!playerMonster) { mmAlert('Jogador não tem monstrinhos no time', 'error'); return; }
 
                 if (playerMonster.hp <= 0) {
-                    alert('❌ Não pode usar item! Monstrinho está desmaiado (HP = 0).'); return;
+                    mmAlert('❌ Não pode usar item! Monstrinho está desmaiado (HP = 0).', 'error'); return;
                 }
                 if (playerMonster.hp >= playerMonster.hpMax) {
-                    alert('⚠️ HP já está no máximo! Não é necessário usar item de cura.'); return;
+                    mmAlert('⚠️ HP já está no máximo! Não é necessário usar item de cura.', 'warning'); return;
                 }
 
                 player.inventory = player.inventory || {};
                 const itemDef = getItemDef(itemId);
                 const itemName = itemDef?.name || itemId;
                 if ((player.inventory[itemId] || 0) <= 0) {
-                    alert(`❌ Você não tem ${itemName} disponível!`); return;
+                    mmAlert(`❌ Você não tem ${itemName} disponível!`, 'error'); return;
                 }
 
                 const result = Combat.Wild.Actions.executeWildItemUse({
@@ -7084,26 +7190,26 @@
                 const playerId = encounter.selectedPlayerId;
                 const player = GameState.players.find(p => p.id === playerId);
                 if (!player) {
-                    alert('No player selected for this encounter');
+                    mmAlert('No player selected for this encounter', 'error');
                     return;
                 }
                 
                 const playerMonster = _getActiveMonsterOfPlayer(player);
                 if (!playerMonster) {
-                    alert('Player has no monsters in team');
+                    mmAlert('Player has no monsters in team', 'error');
                     return;
                 }
                 
                 // GAME_RULES.md: Validar que monstrinho é da mesma classe do jogador
                 if (playerMonster.class !== player.class) {
-                    alert(`⚠️ Você só pode usar monstrinhos da classe ${player.class} em batalha!\n\nEste ${playerMonster.name} é da classe ${playerMonster.class}.\nTroque-o por um monstrinho da sua classe.`);
+                    mmAlert(`⚠️ Você só pode usar monstrinhos da classe ${player.class} em batalha!\n\nEste ${playerMonster.name} é da classe ${playerMonster.class}.\nTroque-o por um monstrinho da sua classe.`, 'warning');
                     return;
                 }
                 
                 // 2. Capturar input do usuário
                 const d20Roll = Combat.Wild.UI.getCombatInputRoll();
                 if (!d20Roll) {
-                    alert('🎲 Role o dado físico d20, depois digite o resultado (1 a 20) no campo de dado e clique Atacar!');
+                    mmAlert('🎲 Role o dado físico d20, depois digite o resultado (1 a 20) no campo de dado e clique Atacar!', 'error');
                     return;
                 }
                 Combat.Wild.UI.clearCombatInput();
@@ -7171,22 +7277,22 @@
                 if (!player) return;
 
                 const playerMonster = _getActiveMonsterOfPlayer(player);
-                if (!playerMonster) { alert('No monster available'); return; }
+                if (!playerMonster) { mmAlert('No monster available', 'error'); return; }
 
                 if (playerMonster.hp <= 0) {
-                    alert('❌ Seu monstrinho está desmaiado! Não pode usar habilidade.'); return;
+                    mmAlert('❌ Seu monstrinho está desmaiado! Não pode usar habilidade.', 'error'); return;
                 }
                 if (playerMonster.class !== player.class) {
-                    alert(`⚠️ Você só pode usar monstrinhos da classe ${player.class} em batalha!\n\nEste ${playerMonster.name} é da classe ${playerMonster.class}.\nTroque-o por um monstrinho da sua classe.`);
+                    mmAlert(`⚠️ Você só pode usar monstrinhos da classe ${player.class} em batalha!\n\nEste ${playerMonster.name} é da classe ${playerMonster.class}.\nTroque-o por um monstrinho da sua classe.`, 'warning');
                     return;
                 }
 
                 const skills = resolveMonsterSkills(playerMonster);
                 if (!skills || skillIndex >= skills.length || !skills[skillIndex]) {
-                    alert('Skill not available'); return;
+                    mmAlert('Skill not available', 'error'); return;
                 }
                 if ((playerMonster.ene || 0) < skills[skillIndex].cost) {
-                    alert(`❌ ENE insuficiente! Precisa de ${skills[skillIndex].cost} ENE.`); return;
+                    mmAlert(`❌ ENE insuficiente! Precisa de ${skills[skillIndex].cost} ENE.`, 'error'); return;
                 }
 
                 const result = Combat.Wild.Actions.executeWildSkill({
@@ -7207,7 +7313,7 @@
                 });
 
                 if (!result.success) {
-                    alert('Falha ao usar habilidade');
+                    mmAlert('Falha ao usar habilidade', 'error');
                     return;
                 }
 
@@ -7243,6 +7349,32 @@
          * - d20 = 1: sempre erra (falha crítica)
          * - d20 = 20: sempre acerta (acerto crítico)
          */
+        /**
+         * onDiceRollInput — feedback visual imediato no input de d20.
+         * Pulso ativo → hit (verde) ou miss (vermelho) conforme a regra.
+         */
+        function onDiceRollInput(input) {
+            const val = parseInt(input.value, 10);
+            input.classList.remove('battle-dice-input--active', 'battle-dice-input--hit', 'battle-dice-input--miss');
+            if (!input.value || isNaN(val)) {
+                input.classList.add('battle-dice-input--active');
+                return;
+            }
+            // Clamp para feedback visual mesmo com valor fora de range
+            const clamped = Math.max(1, Math.min(20, val));
+            // Tenta verificar acerto com o monstro atual para feedback em tempo real
+            try {
+                const enc = GameState && GameState.data && GameState.data.wildEncounter;
+                if (enc && enc.playerMonster && enc.monster) {
+                    const hit = checkHit(clamped, enc.playerMonster, enc.monster);
+                    input.classList.add(hit ? 'battle-dice-input--hit' : 'battle-dice-input--miss');
+                    return;
+                }
+            } catch (_) { /* sem contexto de combate disponível */ }
+            // Feedback genérico: ≥ 10 = hit (estimativa)
+            input.classList.add(clamped >= 10 ? 'battle-dice-input--hit' : 'battle-dice-input--miss');
+        }
+
         function checkHit(d20Roll, attacker, defender) {
             try {
                 if (!attacker || !defender) return false;
@@ -7815,7 +7947,7 @@
             try {
                 const activePlayer = getActivePlayerForBox();
                 if (!activePlayer) {
-                    alert('Jogador ativo não encontrado');
+                    mmAlert('Jogador ativo não encontrado', 'error');
                     return;
                 }
 
@@ -7826,7 +7958,7 @@
                     renderBoxTab();
                     updateAllViews();
                 } else {
-                    alert(result.message || 'Erro ao enviar para Box');
+                    mmAlert(result.message || 'Erro ao enviar para Box', 'error');
                 }
             } catch (error) {
                 showError('Erro ao enviar para Box', error.stack);
@@ -7840,7 +7972,7 @@
             try {
                 const activePlayer = getActivePlayerForBox();
                 if (!activePlayer) {
-                    alert('Jogador ativo não encontrado');
+                    mmAlert('Jogador ativo não encontrado', 'error');
                     return;
                 }
 
@@ -7851,7 +7983,7 @@
                     renderBoxTab();
                     updateAllViews();
                 } else {
-                    alert(result.message || 'Erro ao retirar da Box');
+                    mmAlert(result.message || 'Erro ao retirar da Box', 'error');
                 }
             } catch (error) {
                 showError('Erro ao retirar da Box', error.stack);
@@ -7873,7 +8005,7 @@
                 const weight = parseInt(document.getElementById('objectiveWeight')?.value || '1');
                 
                 if (!text) {
-                    alert('Digite a descrição do objetivo');
+                    showToast('Digite a descrição do objetivo', 'error');
                     return;
                 }
                 
@@ -8556,14 +8688,14 @@
                 // Find player
                 const player = GameState.players?.find(p => p.id === playerId);
                 if (!player) {
-                    alert('❌ Jogador não encontrado!');
+                    mmAlert('❌ Jogador não encontrado!', 'error');
                     return;
                 }
                 
                 // Validate player has the egg
                 const eggQty = player.inventory?.[eggItemId] || 0;
                 if (eggQty <= 0) {
-                    alert('❌ Você não tem este ovo no inventário!');
+                    mmAlert('❌ Você não tem este ovo no inventário!', 'error');
                     return;
                 }
                 
@@ -8571,14 +8703,14 @@
                 const allItems = window.itemsData || [];
                 const eggItem = allItems.find(i => i.id === eggItemId);
                 if (!eggItem || eggItem.category !== 'egg') {
-                    alert('❌ Este item não é um ovo válido!');
+                    mmAlert('❌ Este item não é um ovo válido!', 'error');
                     return;
                 }
                 
                 // Get rarity from egg effect
                 const hatchEffect = eggItem.effects?.find(e => e.type === 'hatch_egg');
                 if (!hatchEffect || !hatchEffect.rarity) {
-                    alert('❌ Ovo não possui efeito de choque válido!');
+                    mmAlert('❌ Ovo não possui efeito de choque válido!', 'error');
                     return;
                 }
                 
@@ -8587,7 +8719,7 @@
                 // Get monsters of that rarity
                 const monstersMap = window.Data?.getMonstersMapSync?.();
                 if (!monstersMap || monstersMap.size === 0) {
-                    alert('❌ Dados de monstros não carregados. Recarregue a página.');
+                    mmAlert('❌ Dados de monstros não carregados. Recarregue a página.', 'error');
                     return;
                 }
                 
@@ -8600,7 +8732,7 @@
                 }
                 
                 if (monsterPool.length === 0) {
-                    alert(`❌ Nenhum Monstrinhomon ${targetRarity} disponível ainda.`);
+                    mmAlert(`❌ Nenhum Monstrinhomon ${targetRarity} disponível ainda.`, 'error');
                     return;
                 }
                 
@@ -8613,7 +8745,7 @@
                 const MAX_TOTAL = 100;
                 
                 if (totalMonsters >= MAX_TOTAL) {
-                    alert('❌ Você atingiu o limite máximo de Monstrinhomons (100)!');
+                    mmAlert('❌ Você atingiu o limite máximo de Monstrinhomons (100)!', 'error');
                     return;
                 }
                 
@@ -8628,7 +8760,7 @@
                     template.rarity
                 );
                 if (!newMonster) {
-                    alert('❌ Falha ao criar instância do Monstrinhomon. Tente novamente.');
+                    mmAlert('❌ Falha ao criar instância do Monstrinhomon. Tente novamente.', 'error');
                     return;
                 }
                 
@@ -8649,7 +8781,7 @@
                     }
                 } catch (error) {
                     console.error('[EggHatch] Modal error - egg NOT consumed:', error);
-                    alert('❌ Erro ao exibir resultado. Ovo não foi consumido.');
+                    mmAlert('❌ Erro ao exibir resultado. Ovo não foi consumido.', 'error');
                     return; // Exit without consuming egg
                 }
                 
@@ -8699,7 +8831,7 @@
                 
             } catch (error) {
                 console.error('[EggHatch] Failed to hatch egg:', error);
-                alert(`❌ Erro ao chocar ovo: ${error.message}`);
+                mmAlert(`❌ Erro ao chocar ovo: ${error.message}`, 'error');
             }
         }
 
@@ -10166,7 +10298,7 @@
             const selectedIds = Array.from(checkboxes).map(cb => cb.value).filter(Boolean);
 
             if (selectedIds.length === 0) {
-                alert('Selecione ao menos 1 jogador para desafiar o boss!');
+                showToast('Selecione ao menos 1 jogador para desafiar o boss!', 'error');
                 return;
             }
 
@@ -10700,10 +10832,10 @@
                     }
                     
                     html += `
-                        <div class="card group-player-card">
+                        <div class="card group-player-card" data-class="${playerClass}">
                             <div class="group-player-header">
                                 <span class="group-player-name">${player.name}</span>
-                                <div class="badge badge-${playerClass}">${playerClass}</div>
+                                <div class="badge badge-${playerClass}" data-class="${playerClass}">${playerClass}</div>
                             </div>
                             <div class="group-player-stats">
                                 <span class="group-stat-pill">💰 ${player.money || 0}</span>
@@ -11439,7 +11571,7 @@
                             Object.assign(GameState, data);
                             saveToLocalStorage();
                             updateAllViews();
-                            alert('Data imported successfully!');
+                            showToast('Data imported successfully!', 'success');
                         } catch (error) {
                             showError('Import failed', error.stack);
                         }
@@ -12209,12 +12341,12 @@
                 }
             } catch (e) {
                 console.warn('[mmContinue] Fallback de slot falhou:', e);
-                alert("Erro ao carregar o save: " + e.message);
+                mmAlert("Erro ao carregar o save: " + e.message, 'error');
                 mmCloseAllOverlays();
                 return;
             }
 
-            alert("Nenhum save encontrado para continuar.");
+            mmAlert("Nenhum save encontrado para continuar.", 'error');
         }
 
         function mmResetSaveConfirm(){
@@ -12222,9 +12354,9 @@
             if (!ok) return;
             try {
                 StorageManager.remove(MM_SAVE_KEY); // PR3
-                alert("Save apagado com sucesso!");
+                showToast("Save apagado com sucesso!", 'success');
             } catch(e){
-                alert("Erro ao apagar save: " + e.message);
+                mmAlert("Erro ao apagar save: " + e.message, 'error');
             }
             mmShowMainMenu();
         }
@@ -12441,9 +12573,9 @@
                 // Salva via camada canônica: auto-save + espelha no slot ativo (se houver)
                 const saveResult = SaveLayer.saveActiveGame(GameState, mmBuildSaveEnvelope);
                 if (!saveResult.autoSaved) {
-                    alert("⚠️ Falha ao salvar o jogo! Verifique se há espaço disponível no dispositivo.");
+                    mmAlert("⚠️ Falha ao salvar o jogo! Verifique se há espaço disponível no dispositivo.", 'warning');
                 } else if (!saveResult.slotSaved && saveResult.slot) {
-                    alert(`⚠️ Jogo criado, mas falhou ao gravar snapshot no Slot ${saveResult.slot}. O progresso está seguro no auto-save.`);
+                    mmAlert(`⚠️ Jogo criado, mas falhou ao gravar snapshot no Slot ${saveResult.slot}. O progresso está seguro no auto-save.`, 'warning');
                 }
                 
                 // Update UI
@@ -12451,7 +12583,7 @@
                 
             } catch(e) {
                 console.error("mmFinishNewGame failed", e);
-                alert("Erro ao criar novo jogo: " + e.message);
+                mmAlert("Erro ao criar novo jogo: " + e.message, 'error');
                 mmCloseAllOverlays();
                 return;
             }
@@ -12547,7 +12679,7 @@
                 showToast(`💾 Salvo no Slot ${slot}!`);
                 mmRenderSavesScreen();
             } else {
-                alert("Falha ao salvar no slot.");
+                mmAlert("Falha ao salvar no slot.", 'error');
             }
         }
 
@@ -12571,7 +12703,7 @@
                 if (slot) msg += ` · Slot ${slot}`;
                 showToast(msg);
             } else {
-                alert('❌ Falha ao salvar o jogo. Verifique se há espaço disponível no dispositivo ou tente limpar o cache do navegador.');
+                mmAlert('❌ Falha ao salvar o jogo. Verifique se há espaço disponível no dispositivo ou tente limpar o cache do navegador.', 'error');
             }
 
             // Atualiza tela de saves se estiver aberta
@@ -12585,7 +12717,7 @@
         function mmLoadFromSlot(slot) {
             const env = mmReadSlot(slot);
             if (!env || !env.state) {
-                alert("Slot vazio ou inválido.");
+                mmAlert("Slot vazio ou inválido.", 'error');
                 return;
             }
             if (!confirm(`Restaurar snapshot do Slot ${slot}? O progresso atual será substituído.`)) return;
@@ -12611,7 +12743,7 @@
                 mmPostGameStartFlow();
             } catch (e) {
                 console.error("Failed to restore slot", e);
-                alert("Erro ao restaurar o slot.");
+                mmAlert("Erro ao restaurar o slot.", 'error');
             }
         }
 
@@ -12625,7 +12757,7 @@
         function mmExportSlot(slot) {
             const env = mmReadSlot(slot);
             if (!env) { 
-                alert("Slot vazio."); 
+                mmAlert("Slot vazio.", 'error'); 
                 return; 
             }
             
@@ -12641,7 +12773,7 @@
                 showToast(`⬇️ Exportado Slot ${slot}.`);
             } catch (e) {
                 console.error("Failed to export slot", e);
-                alert("Erro ao exportar o slot.");
+                mmAlert("Erro ao exportar o slot.", 'error');
             }
         }
 
@@ -12675,7 +12807,7 @@
                 } catch (err) {
                     console.error("Import failed", err);
                     const msg = err?.message || "Arquivo inválido ou corrompido";
-                    alert("Falha ao importar: " + msg);
+                    mmAlert("Falha ao importar: " + msg, 'error');
                 } finally {
                     fileInput.value = ""; // Allow re-import of same file
                 }
@@ -12881,7 +13013,7 @@
             
             // Se não há jogadores, precisa criar um jogo primeiro
             if (!GameState.players || GameState.players.length === 0) {
-                alert("Por favor, crie um novo jogo primeiro!");
+                mmAlert("Por favor, crie um novo jogo primeiro!", 'warning');
                 return;
             }
             
@@ -13015,7 +13147,7 @@
         function startTutorialEncounter_Attack() {
             const player = GameState.players?.[0];
             if (!player) {
-                alert("Nenhum jogador disponível para o tutorial!");
+                mmAlert("Nenhum jogador disponível para o tutorial!", 'error');
                 return;
             }
             
