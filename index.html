@@ -7377,9 +7377,13 @@
             const clamped = Math.max(1, Math.min(20, val));
             // Tenta verificar acerto com o monstro atual para feedback em tempo real
             try {
-                const enc = GameState && GameState.data && GameState.data.wildEncounter;
-                if (enc && enc.playerMonster && enc.monster) {
-                    const hit = checkHit(clamped, enc.playerMonster, enc.monster);
+                const enc = GameState && GameState.currentEncounter;
+                const playerId = enc?.selectedPlayerId;
+                const player = playerId && GameState.players.find(p => p.id === playerId);
+                const playerMonster = player && _getActiveMonsterOfPlayer(player);
+                const wildMonster = enc?.wildMonster;
+                if (enc && enc.type === 'wild' && playerMonster && wildMonster) {
+                    const hit = checkHit(clamped, playerMonster, wildMonster);
                     input.classList.add(hit ? 'battle-dice-input--hit' : 'battle-dice-input--miss');
                     return;
                 }
