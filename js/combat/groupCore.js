@@ -309,6 +309,70 @@ export function isAlive(entity) {
 }
 
 /**
+ * Remove entidades KO'd (HP=0) do turnOrder de um encounter.
+ *
+ * PR-04: Garante que o turnOrder só contém atores vivos.
+ * Chamada ao detectar KO ou no início de advanceGroupTurn.
+ *
+ * Regras:
+ * - Entradas de jogador são removidas se o monstrinho ATIVO está com HP=0
+ *   E o jogador não tem substitutos vivos elegíveis. Também remove de enc.participants.
+ * - Entradas de inimigo são removidas se o inimigo correspondente está com HP=0.
+ * - Ajusta turnIndex para continuar no mesmo "próximo" ator após a remoção.
+ *
+ * @param {object} enc         - Encounter com { turnOrder, turnIndex, enemies, participants }
+ * @param {object[]} playersData - Array de jogadores (com .id, .team, .activeIndex)
+ * @param {object} [config={}] - Configuração do jogo (ex: { masterMode })
+ * @returns {number} Quantidade de entradas removidas
+ */
+export function removeKOedFromTurnOrder(enc, playersData, config = {}) {
+    if (!enc || !Array.isArray(enc.turnOrder)) return 0;
+
+    const before = enc.turnOrder.length;
+
+    enc.turnOrder = enc.turnOrder.filter((actor) => {
+        if (actor.side === 'enemy') {
+            const enemy = enc.enemies?.[actor.id];
+            return enemy ? isAlive(enemy) : false;
+        }
+        if (actor.side === 'player') {
+            const p = playersData?.find(x => x.id === actor.id);
+            if (!p) {
+                // Jogador não encontrado → também remover de participants
+                if (enc.participants) {
+                    enc.participants = enc.participants.filter(pid => pid !== actor.id);
+                }
+                return false;
+            }
+            const activeIdx = typeof p.activeIndex === 'number' ? p.activeIndex : 0;
+            const mon = p.team?.[activeIdx];
+            // Mantém no turnOrder se o ativo está vivo
+            if (isAlive(mon)) return true;
+            // Mantém no turnOrder se tem substituto disponível (modal de troca será aberto)
+            const subs = getEligibleSubstitutes(p, config);
+            if (subs.length > 0) return true;
+            // Sem substitutos → eliminar de turnOrder e de participants
+            if (enc.participants) {
+                enc.participants = enc.participants.filter(pid => pid !== actor.id);
+            }
+            return false;
+        }
+        return true;
+    });
+
+    const removed = before - enc.turnOrder.length;
+
+    // Ajustar turnIndex: não ultrapassar o tamanho do array
+    if (enc.turnOrder.length > 0) {
+        enc.turnIndex = (Number(enc.turnIndex) || 0) % enc.turnOrder.length;
+    } else {
+        enc.turnIndex = 0;
+    }
+
+    return removed;
+}
+
+/**
  * Clamp de número entre min e max
  * 
  * PURE: Sem side effects, matemática pura

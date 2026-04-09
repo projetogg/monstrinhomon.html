@@ -30,6 +30,7 @@ import * as ItemBreakage from './itemBreakage.js';
 import * as GroupBattleState from './groupBattleState.js';
 import * as GroupBattleLoop from './groupBattleLoop.js';
 import * as GroupRewards from './groupRewards.js';
+import * as CombatEvents from './combatEvents.js';
 
 export const Combat = {
     Wild: {
@@ -57,7 +58,9 @@ export const Combat = {
         BattleLoop: GroupBattleLoop
     },
     // PR11B: Item Breakage System
-    ItemBreakage: ItemBreakage
+    ItemBreakage: ItemBreakage,
+    // PR-02: Contratos internos de combate (eventos canônicos)
+    CombatEvents: CombatEvents,
 };
 
 export default Combat;

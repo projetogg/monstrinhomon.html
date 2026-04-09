@@ -8,6 +8,35 @@
  * são passadas como parâmetros
  */
 
+// ── PR-03: Fuga canônica (BLOCO 11 do Patch v2.2) ────────────────────────────
+
+/**
+ * DCs de fuga canônicos (PATCH_CANONICO_COMBATE_V2.2 BLOCO 11).
+ * Fórmula: d20 + SPD >= DC_fuga
+ */
+export const FLEE_DC = {
+    normal:       12,
+    intimidating: 16,
+    elite:        18,
+};
+
+/**
+ * Verifica se uma tentativa de fuga canônica é bem-sucedida.
+ *
+ * Fórmula: d20 + SPD >= DC_fuga
+ *
+ * @param {object} monster   - Monstrinho que tenta fugir (precisa de .spd ou campos de buff)
+ * @param {number} d20Roll   - Resultado do d20 (1–20)
+ * @param {string} [fleeType='normal'] - Tipo do encontro: 'normal' | 'intimidating' | 'elite'
+ * @returns {{ success: boolean, roll: number, spd: number, dc: number, total: number }}
+ */
+export function checkFleeCanonical(monster, d20Roll, fleeType = 'normal') {
+    const spd = getEffectiveSpd(monster);
+    const dc  = FLEE_DC[fleeType] ?? FLEE_DC.normal;
+    const total = d20Roll + spd;
+    return { success: total >= dc, roll: d20Roll, spd, dc, total };
+}
+
 /**
  * Verifica se um ataque acerta o alvo
  * 

@@ -375,38 +375,40 @@ describe('Fase 11.2 — executeWildFlee: fuga com chance de SPD', () => {
     });
 
     it('fuga falhou e inimigo derrota jogador: result=defeat', () => {
-        const player = makeMonster({ spd: 5, hp: 1, hpMax: 20, def: 1 }); // fraco
+        const player = makeMonster({ spd: 1, hp: 1, hpMax: 20, def: 1 }); // fraco, spd baixo
         const wild   = makeMonster({ spd: 20, atk: 20, def: 3, hp: 20, hpMax: 20, class: 'Guerreiro' });
         const enc = makeEncounter(player, wild);
+        // Primeiro rollD20() é para a fuga (1 + 1 = 2 < 12 → falha),
+        // segundo é para o contra-ataque inimigo (15 → acerto garantido)
+        let callCount = 0;
         const result = executeWildFlee({
             encounter: enc,
             playerMonster: player,
-            fleeBaseChance: 15,
+            fleeType: 'normal',
             dependencies: {
-                rollFlee: () => 90, // fuga sempre falha
                 classAdvantages: {},
                 getBasicPower: () => 7,
                 eneRegenData: {},
-                rollD20: () => 15, // garantir acerto do inimigo
+                rollD20: () => { callCount++; return callCount === 1 ? 1 : 15; },
             },
         });
         expect(result.result).toBe('defeat');
         expect(enc.active).toBe(false);
     });
 
-    it('log contém informação de SPD e chance', () => {
+    it('log contém informação de SPD e DC (canônico PR-03)', () => {
         const player = makeMonster({ spd: 12, name: 'Zunzumon' });
         const wild   = makeMonster({ spd: 8,  name: 'Inimigo', atk: 4, def: 3, hp: 20, hpMax: 20 });
         const enc = makeEncounter(player, wild);
         executeWildFlee({
             encounter: enc,
             playerMonster: player,
-            fleeBaseChance: 15,
-            dependencies: makeDeps(1), // fuga bem-sucedida
+            fleeType: 'normal',
+            dependencies: { classAdvantages: {}, getBasicPower: () => 7, eneRegenData: {}, rollD20: () => 10 }, // 10 + 12 = 22 >= 12 → sucesso
         });
         const logStr = enc.log.join(' ');
         expect(logStr).toContain('SPD');
-        expect(logStr).toContain('%');
+        expect(logStr).toContain('DC 12');
     });
 
     it('retorna invalid sem wildMonster', () => {

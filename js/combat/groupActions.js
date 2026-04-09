@@ -10,6 +10,9 @@
 import * as GroupCore from './groupCore.js';
 import { initializeBattleParticipation, markAsParticipated, processBattleItemBreakage } from './itemBreakage.js';
 import { isOffensiveSkill } from './skillResolver.js';
+import { fireCombatEvent, ON_ATTACK, ON_HIT, ON_KO, ON_TURN_START, ON_HEAL_ITEM, ON_SKILL_USED } from './combatEvents.js';
+import { checkFleeCanonical } from './wildCore.js';
+import { checkBossPhaseTransition } from './bossSystem.js';
 
 /**
  * Passivas de combate por classe — aplicadas após cálculo de dano base.
@@ -139,6 +142,11 @@ export function executePlayerAttackGroup(deps, targetEnemyIndex = null) {
     // Atualizar buffs (reduzir duração)
     helpers.updateBuffs(mon);
 
+    // PR-02: on_turn_start — início do turno do jogador (após regen/buffs, antes da ação)
+    fireCombatEvent(mon, ON_TURN_START, {
+        hpPct: (Number(mon.hpMax) || 1) > 0 ? (Number(mon.hp) || 0) / (Number(mon.hpMax) || 1) : 0,
+    });
+
     // Alvo: inimigo especificado ou primeiro inimigo vivo
     const enemyIndex = resolveEnemyIndex(enc, targetEnemyIndex, core);
 
@@ -216,15 +224,48 @@ export function executePlayerAttackGroup(deps, targetEnemyIndex = null) {
         dmg = Math.max(1, Math.round(dmg * (1 + atkClassPassive.attackBonus)));
     }
 
+    // PR-02: passiva de espécie do atacante (on_attack — ataque básico)
+    const passiveStateAtk = enc.passiveState || (enc.passiveState = {});
+    const atkSpeciesPassive = fireCombatEvent(mon, ON_ATTACK, {
+        hpPct: (Number(mon.hpMax) || 1) > 0 ? (Number(mon.hp) || 0) / (Number(mon.hpMax) || 1) : 0,
+        isOffensiveSkill: false,
+        isFirstAttackOfCombat: !passiveStateAtk.swiftclawFirstStrikeDone,
+        hasShadowstingCharge: !!passiveStateAtk.shadowstingDebuffCharged,
+        hasBellwaveRhythmCharge: !!passiveStateAtk.bellwaveRhythmCharged,
+    });
+    if (atkSpeciesPassive?.atkBonus) {
+        dmg = Math.max(1, dmg + atkSpeciesPassive.atkBonus);
+        helpers.log(enc, `✨ Passiva ${monName}: +${atkSpeciesPassive.atkBonus} ATK`);
+        passiveStateAtk.swiftclawFirstStrikeDone = true;
+        passiveStateAtk.shadowstingDebuffCharged = false;
+        passiveStateAtk.bellwaveRhythmCharged = false;
+    }
+
     // A4: Passiva defensiva do defensor (Guerreiro/Bárbaro/Curandeiro)
     const defClassPassive = CLASS_COMBAT_PASSIVES[enemy.class];
     if (defClassPassive?.defenseBonus) {
         dmg = Math.max(1, Math.round(dmg * (1 - defClassPassive.defenseBonus)));
     }
+
+    // PR-02: passiva de espécie do defensor (on_hit — primeiro hit do turno)
+    const defSpeciesPassive = fireCombatEvent(enemy, ON_HIT, {
+        hpPct: (Number(enemy.hpMax) || 1) > 0 ? (Number(enemy.hp) || 0) / (Number(enemy.hpMax) || 1) : 0,
+        isFirstHitThisTurn: true,
+    });
+    if (defSpeciesPassive?.damageReduction) {
+        const reduced = Math.max(1, dmg - defSpeciesPassive.damageReduction);
+        if (reduced < dmg) {
+            helpers.log(enc, `🛡️ Passiva ${enemyName}: -${dmg - reduced} dano`);
+        }
+        dmg = reduced;
+    }
     
     // Apply damage
     helpers.applyDamage(enemy, dmg);
     
+    // PR-05: Verificar transição de Fase 2 do boss após receber dano
+    checkBossPhaseTransition(enemy, enc.log);
+
     // PR11B: Marcar que o inimigo participou (recebeu dano)
     markAsParticipated(enemy);
 
@@ -237,6 +278,8 @@ export function executePlayerAttackGroup(deps, targetEnemyIndex = null) {
 
     if (!core.isAlive(enemy)) {
         helpers.log(enc, `🏁 ${enemyName} foi derrotado!`);
+        // PR-02: on_ko — inimigo derrotado
+        fireCombatEvent(enemy, ON_KO, { hpPct: 0 });
     }
 
     advanceGroupTurn(enc, deps);
@@ -310,6 +353,11 @@ export function executeEnemyTurnGroup(enc, deps) {
     
     // Atualizar buffs (reduzir duração)
     helpers.updateBuffs(enemy);
+
+    // PR-02: on_turn_start — início do turno do inimigo (após regen/buffs, antes da ação)
+    fireCombatEvent(enemy, ON_TURN_START, {
+        hpPct: (Number(enemy.hpMax) || 1) > 0 ? (Number(enemy.hp) || 0) / (Number(enemy.hpMax) || 1) : 0,
+    });
 
     // IA v1: Escolhe alvo por DEF (aggro)
     // Inicializar recentTargets se não existir
@@ -408,10 +456,38 @@ export function executeEnemyTurnGroup(enc, deps) {
         dmg = Math.max(1, Math.round(dmg * (1 + atkClassPassive.attackBonus)));
     }
 
+    // PR-02: passiva de espécie do inimigo atacante (on_attack — ataque básico)
+    const passiveStateEnemy = enc.passiveState || (enc.passiveState = {});
+    const enemyAtkSpeciesPassive = fireCombatEvent(enemy, ON_ATTACK, {
+        hpPct: (Number(enemy.hpMax) || 1) > 0 ? (Number(enemy.hp) || 0) / (Number(enemy.hpMax) || 1) : 0,
+        isOffensiveSkill: false,
+        hasShadowstingCharge: !!passiveStateEnemy[`${enemy.id}_shadowsting`],
+        hasBellwaveRhythmCharge: !!passiveStateEnemy[`${enemy.id}_bellwave`],
+    });
+    if (enemyAtkSpeciesPassive?.atkBonus) {
+        dmg = Math.max(1, dmg + enemyAtkSpeciesPassive.atkBonus);
+        helpers.log(enc, `✨ Passiva ${enemyName}: +${enemyAtkSpeciesPassive.atkBonus} ATK`);
+    }
+
     // A4: Passiva defensiva do defensor (Guerreiro/Bárbaro/Curandeiro)
     const defClassPassive = CLASS_COMBAT_PASSIVES[targetMon?.class];
     if (defClassPassive?.defenseBonus) {
         dmg = Math.max(1, Math.round(dmg * (1 - defClassPassive.defenseBonus)));
+    }
+
+    // PR-02: passiva de espécie do alvo defensor (on_hit — primeiro hit do turno)
+    if (targetMon) {
+        const targetDefSpeciesPassive = fireCombatEvent(targetMon, ON_HIT, {
+            hpPct: (Number(targetMon.hpMax) || 1) > 0 ? (Number(targetMon.hp) || 0) / (Number(targetMon.hpMax) || 1) : 0,
+            isFirstHitThisTurn: true,
+        });
+        if (targetDefSpeciesPassive?.damageReduction) {
+            const reduced = Math.max(1, dmg - targetDefSpeciesPassive.damageReduction);
+            if (reduced < dmg) {
+                helpers.log(enc, `🛡️ Passiva ${targetMonName}: -${dmg - reduced} dano`);
+            }
+            dmg = reduced;
+        }
     }
     
     // Apply damage
@@ -434,6 +510,8 @@ export function executeEnemyTurnGroup(enc, deps) {
 
     if (!core.isAlive(targetMon)) {
         helpers.log(enc, `💀 ${targetName} (${targetMonName}) foi derrotado!`);
+        // PR-02: on_ko — monstro do jogador derrotado
+        if (targetMon) fireCombatEvent(targetMon, ON_KO, { hpPct: 0 });
         
         // Verificar substitutos elegíveis respeitando restrição de classe (GAME_RULES.md)
         const eligibleSubs = GroupCore.getEligibleSubstitutes(targetPlayer, state.config);
@@ -682,15 +760,20 @@ export function passTurn(deps) {
 /**
  * Processa fuga de um jogador no combate em grupo.
  *
- * Lógica canônica: verificação de boss, remoção do participante,
- * detecção de fim de batalha (todos fugiram → retreat), avanço de turno.
- * A confirmação UI (window.confirm) fica no wrapper de index.html.
+ * PR-03: Fuga canônica (PATCH_CANONICO_COMBATE_V2.2 BLOCO 11).
+ * Fórmula: d20 + SPD >= DC_fuga  (Normal=12, Intimidating=16, Elite=18)
+ *
+ * Sucesso: monstrinho ativo removido do combate, turno gasto, grupo continua.
+ * Falha:   turno gasto, próximo na fila age normalmente.
+ * Boss:    fuga proibida.
  *
  * Retorna { ok, reason? }:
- *   reason: 'no_encounter' | 'boss_no_flee' | 'not_player_turn' | 'no_player'
+ *   reason: 'no_encounter' | 'boss_no_flee' | 'not_player_turn' | 'no_player' | 'no_monster'
  *
  * @param {object} deps - Dependências injetadas (mesmo padrão dos demais actions)
- * @returns {{ ok: boolean, reason?: string }}
+ *   deps.rollD20 {function?} - () → number 1–20 (para testes determinísticos)
+ *   deps.fleeType {string?}  - 'normal' | 'intimidating' | 'elite' (default: 'normal')
+ * @returns {{ ok: boolean, reason?: string, result?: string }}
  */
 export function executeGroupFlee(deps) {
     const { state, core, helpers, storage, ui } = deps;
@@ -707,9 +790,31 @@ export function executeGroupFlee(deps) {
     const player = helpers.getPlayerById(actor.id);
     if (!player) return { ok: false, reason: 'no_player' };
 
-    helpers.log(enc, `🏃 ${player.name || player.nome} fugiu da batalha!`);
+    const mon = helpers.getActiveMonsterOfPlayer(player);
+    if (!mon) return { ok: false, reason: 'no_monster' };
 
-    // Remover participante
+    // PR-03: rolar d20 canônico
+    const rollFn = typeof deps.rollD20 === 'function' ? deps.rollD20
+                 : typeof deps.helpers?.rollD20 === 'function' ? deps.helpers.rollD20
+                 : () => Math.floor(Math.random() * 20) + 1;
+    const fleeType = deps.fleeType ?? enc.fleeType ?? 'normal';
+    const fleeCheck = checkFleeCanonical(mon, rollFn(), fleeType);
+
+    helpers.log(enc,
+        `🏃 ${player.name || player.nome}'s ${mon.name} tenta fugir! (🎲${fleeCheck.roll} + SPD ${fleeCheck.spd} = ${fleeCheck.total} vs DC ${fleeCheck.dc})`
+    );
+
+    if (!fleeCheck.success) {
+        helpers.log(enc, `❌ Fuga falhou! (${fleeCheck.total} < ${fleeCheck.dc}) Turno perdido.`);
+        advanceGroupTurn(enc, deps);
+        storage?.save?.();
+        ui?.render?.();
+        return { ok: true, result: 'failed' };
+    }
+
+    helpers.log(enc, `✅ ${mon.name} fugiu com sucesso! (${fleeCheck.total} >= ${fleeCheck.dc})`);
+
+    // Remover participante da batalha
     if (enc.participants) {
         enc.participants = enc.participants.filter(pid => pid !== player.id);
     }
@@ -726,7 +831,7 @@ export function executeGroupFlee(deps) {
     storage?.save?.();
     ui?.render?.();
 
-    return { ok: true };
+    return { ok: true, result: 'fled' };
 }
 
 /**
@@ -881,6 +986,8 @@ export function executePlayerSkillGroup(skillOrId, enemyIndex, deps) {
         dmg = Math.min(dmg, Math.round(skillEnemyHpMax * 0.6));
 
         helpers.applyDamage(enemy, dmg);
+        // PR-05: Verificar transição de Fase 2 do boss após receber dano (skill)
+        checkBossPhaseTransition(enemy, enc.log);
         markAsParticipated(enemy);
 
         const critText = isCrit ? ' CRÍTICO! 🌟' : '';
@@ -972,6 +1079,22 @@ export function executeGroupUseItem(itemId, deps) {
     const newHp = Math.min(hpMax, hp + healAmount);
     const healed = newHp - hp;
     mon.hp = newHp;
+
+    // PR-02: on_heal_item — passiva de espécie ao usar item de cura (floracura)
+    const passiveStateHeal = enc.passiveState || (enc.passiveState = {});
+    const healSpeciesPassive = fireCombatEvent(mon, ON_HEAL_ITEM, {
+        hpPct: hpMax > 0 ? hp / hpMax : 0,
+        isFirstHeal: !passiveStateHeal.floracuraHealUsed,
+    });
+    if (healSpeciesPassive?.healBonus) {
+        const bonus = Math.min(healSpeciesPassive.healBonus, hpMax - mon.hp);
+        if (bonus > 0) {
+            mon.hp += bonus;
+        const monNameForLog = mon.nickname || mon.name || mon.nome || "Monstrinho";
+            helpers.log(enc, `✨ Passiva ${monNameForLog}: +${bonus} HP (primeira cura)`);
+        }
+        passiveStateHeal.floracuraHealUsed = true;
+    }
 
     const playerName = player.name || player.nome || "Jogador";
     const monName = mon.nickname || mon.name || mon.nome || "Monstrinho";

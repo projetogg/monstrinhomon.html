@@ -8,7 +8,7 @@
 import * as WildCore from './wildCore.js';
 import * as WildUI from './wildUI.js';
 import { initializeBattleParticipation, markAsParticipated, processBattleItemBreakage } from './itemBreakage.js';
-import { resolvePassiveModifier } from '../canon/speciesPassives.js';
+import { fireCombatEvent, ON_ATTACK, ON_HIT, ON_KO, ON_TURN_START, ON_HEAL_ITEM, ON_SKILL_USED } from './combatEvents.js';
 
 // ── F1: Passivas de Classe em combate selvagem ────────────────────────────────
 // Espelha CLASS_COMBAT_PASSIVES de groupActions.js para consistência entre modos.
@@ -103,6 +103,11 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
         
         // Atualizar buffs (reduzir duração)
         updateBuffs(playerMonster);
+
+        // PR-02: on_turn_start — início do turno do jogador (após regen/buffs, antes da ação)
+        fireCombatEvent(playerMonster, ON_TURN_START, {
+            hpPct: playerMonster.hpMax > 0 ? playerMonster.hp / playerMonster.hpMax : 0,
+        });
         
         // Verificar crítico/falha
         const critResult = processCritical(d20Roll, player, encounter);
@@ -148,8 +153,7 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
             // shadowsting: +1 ATK em ataque básico se debuff foi aplicado antes) — Fase 4.2 / Fase 9 / Fase 10
             // bellwave: +1 ATK em ataque básico se qualquer skill foi usada antes — Fase 11
             const passiveStateAtk = encounter.passiveState || (encounter.passiveState = {});
-            const atkPassive = resolvePassiveModifier(playerMonster, {
-                event: 'on_attack',
+            const atkPassive = fireCombatEvent(playerMonster, ON_ATTACK, {
                 hpPct: playerMonster.hpMax > 0 ? playerMonster.hp / playerMonster.hpMax : 0,
                 isOffensiveSkill: false, // Fase 4.2: ataque básico → emberfang não dispara
                 isFirstAttackOfCombat: !passiveStateAtk.swiftclawFirstStrikeDone, // Fase 9
@@ -186,8 +190,7 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
             });
 
             // Passiva canônica — defensor (shieldhorn: -1 dano; jogador só ataca 1x por turno)
-            const defPassive = resolvePassiveModifier(encounter.wildMonster, {
-                event: 'on_hit_received',
+            const defPassive = fireCombatEvent(encounter.wildMonster, ON_HIT, {
                 hpPct: encounter.wildMonster.hpMax > 0 ? encounter.wildMonster.hp / encounter.wildMonster.hpMax : 0,
                 isFirstHitThisTurn: true, // Fase 4.2: jogador ataca apenas uma vez por turno
             });
@@ -407,8 +410,7 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
         wildSkill.type === 'BUFF' &&
         (wildSkill.target === 'enemy' || wildSkill.target === 'Inimigo') &&
         (wildSkill.power || 0) < 0;
-    const wildSkillPassive = resolvePassiveModifier(wildMonster, {
-        event: 'on_skill_used',
+    const wildSkillPassive = fireCombatEvent(wildMonster, ON_SKILL_USED, {
         skillType: wildSkill.type, // Fase 4.3: tipo da skill explícito
         isDebuff: isWildDebuff,
     });
@@ -433,8 +435,7 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
         let effectiveAtk = Math.max(1, wildMonster.atk + atkMods.atk);
 
         // Passiva canônica — atacante selvagem (emberfang: +1 ATK em skill ofensiva com HP > 70%)
-        const atkPassive = resolvePassiveModifier(wildMonster, {
-            event: 'on_attack',
+        const atkPassive = fireCombatEvent(wildMonster, ON_ATTACK, {
             hpPct: wildMonster.hpMax > 0 ? wildMonster.hp / wildMonster.hpMax : 0,
             isOffensiveSkill: wildSkill.type === 'DAMAGE', // Fase 4.2: emberfang só em skill ofensiva
         });
@@ -466,8 +467,7 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
 
         // Passiva canônica — defensor (shieldhorn: -1 dano no primeiro hit do turno)
         const passiveState = encounter.passiveState || (encounter.passiveState = {});
-        const defPassive = resolvePassiveModifier(playerMonster, {
-            event: 'on_hit_received',
+        const defPassive = fireCombatEvent(playerMonster, ON_HIT, {
             hpPct: playerMonster.hpMax > 0 ? playerMonster.hp / playerMonster.hpMax : 0,
             isFirstHitThisTurn: !passiveState.shieldhornBlockedThisTurn, // Fase 4.2
         });
@@ -544,8 +544,7 @@ function processEnemyBasicAttack(encounter, wildMonster, playerMonster, dependen
         let effectiveAtk = Math.max(1, wildMonster.atk + atkMods.atk);
 
         // Passiva canônica — atacante selvagem (emberfang: não dispara em ataque básico)
-        const atkPassive = resolvePassiveModifier(wildMonster, {
-            event: 'on_attack',
+        const atkPassive = fireCombatEvent(wildMonster, ON_ATTACK, {
             hpPct: wildMonster.hpMax > 0 ? wildMonster.hp / wildMonster.hpMax : 0,
             isOffensiveSkill: false, // Fase 4.2: ataque básico → emberfang não dispara
         });
@@ -578,8 +577,7 @@ function processEnemyBasicAttack(encounter, wildMonster, playerMonster, dependen
 
         // Passiva canônica — defensor (shieldhorn: -1 dano no primeiro hit do turno)
         const passiveState = encounter.passiveState || (encounter.passiveState = {});
-        const defPassive = resolvePassiveModifier(playerMonster, {
-            event: 'on_hit_received',
+        const defPassive = fireCombatEvent(playerMonster, ON_HIT, {
             hpPct: playerMonster.hpMax > 0 ? playerMonster.hp / playerMonster.hpMax : 0,
             isFirstHitThisTurn: !passiveState.shieldhornBlockedThisTurn, // Fase 4.2
         });
@@ -641,6 +639,9 @@ function handleVictory(encounter, player, playerMonster, dependencies) {
     }
     
     encounter.log.push(`🏆 ${encounter.wildMonster.name} fainted! Victory!`);
+
+    // PR-02: on_ko — selvagem derrotado
+    fireCombatEvent(encounter.wildMonster, ON_KO, { hpPct: 0 });
     
     // Som de vitória
     WildUI.showVictoryUI(encounter, dependencies.audio);
@@ -695,6 +696,11 @@ export function executeWildEnemyFullTurn({ encounter, wildMonster, playerMonster
 
     // 2. Atualização de buffs (reduz durações)
     updateBuffs(wildMonster);
+
+    // PR-02: on_turn_start — início do turno do inimigo (após regen/buffs, antes da ação)
+    fireCombatEvent(wildMonster, ON_TURN_START, {
+        hpPct: wildMonster.hpMax > 0 ? wildMonster.hp / wildMonster.hpMax : 0,
+    });
 
     // 3. Decisão de IA + resolução de ataque
     return processEnemyCounterattack(encounter, wildMonster, playerMonster, dependencies);
@@ -767,8 +773,7 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
         // Removido imediatamente após a skill para não persistir ao turno do inimigo.
         const isOffensiveSkill = skill.type === 'DAMAGE';
         const passiveStateSkill = encounter.passiveState || (encounter.passiveState = {});
-        const emberfangMod = resolvePassiveModifier(playerMonster, {
-            event: 'on_attack',
+        const emberfangMod = fireCombatEvent(playerMonster, ON_ATTACK, {
             hpPct: playerMonster.hpMax > 0 ? playerMonster.hp / playerMonster.hpMax : 0,
             isOffensiveSkill,
             isFirstAttackOfCombat: !passiveStateSkill.swiftclawFirstStrikeDone, // Fase 9
@@ -825,8 +830,7 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
             skill.type === 'BUFF' &&
             (skill.target === 'enemy' || skill.target === 'Inimigo') &&
             (skill.power || 0) < 0;
-        const skillPassive = resolvePassiveModifier(playerMonster, {
-            event: 'on_skill_used',
+        const skillPassive = fireCombatEvent(playerMonster, ON_SKILL_USED, {
             hpPct: playerMonster.hpMax > 0 ? playerMonster.hp / playerMonster.hpMax : 0,
             skillType: skill.type,  // Fase 4.3: tipo da skill explícito no contexto
             isDebuff,
@@ -1047,8 +1051,7 @@ export function executeWildItemUse({ encounter, player, playerMonster, itemId, d
         // passiveState é inicializado lazily no encounter para não poluir o objeto de encontro
         // nos casos em que nenhuma passiva com estado dispara.
         const passiveState = encounter.passiveState || (encounter.passiveState = {});
-        const healPassive = resolvePassiveModifier(playerMonster, {
-            event: 'on_heal_item',
+        const healPassive = fireCombatEvent(playerMonster, ON_HEAL_ITEM, {
             hpPct: playerMonster.hpMax > 0 ? hpBefore / playerMonster.hpMax : 0,
             isFirstHeal: !passiveState.floracuraHealUsed,
         });
@@ -1113,63 +1116,56 @@ export function executeWildItemUse({ encounter, player, playerMonster, itemId, d
 /**
  * Executa uma tentativa de fuga de um encontro selvagem.
  *
- * Fase 11.2: SPD agora importa de verdade para a fuga.
- * A chance de fuga é determinística baseada em SPD relativo (playerMonster vs wildMonster),
- * e só uma chance aleatória decide o resultado — mas a probabilidade é controlada por SPD.
+ * PR-03: Fuga canônica (PATCH_CANONICO_COMBATE_V2.2 BLOCO 11).
+ * Fórmula: d20 + SPD >= DC_fuga  (Normal=12, Intimidating=16, Elite=18)
  *
  * Pipeline:
- * 1. Calcula fleeChance via WildCore.calculateFleeChance (SPD-based)
- * 2. Rola fuga (dependencies.rollFlee ou Math.random * 100)
+ * 1. Rola d20 (injetado via rollD20 ou aleatório)
+ * 2. Verifica d20 + SPD >= DC via WildCore.checkFleeCanonical
  * 3. Se fugiu: encounter.active = false, result = 'fled'
  * 4. Se falhou: inimigo contra-ataca imediatamente (consequência)
  *
- * Impacto em espécies:
- * - bellwave: Nota Discordante (-2 SPD inimigo) aumenta diretamente fleeChance em +4%
- * - moonquill: spdBuff (+1 SPD) aumenta fleeChance em +2%
- *
  * @param {object} params
- * @param {object} params.encounter      - Encontro atual
- * @param {object} params.playerMonster  - Monstrinho do jogador
- * @param {number} params.fleeBaseChance - Chance base de fuga (% por raridade, ex: 10–25)
- * @param {object} params.dependencies   - Dependências injetadas:
- *   rollFlee {function?}            () → number [0,100) — para testes determinísticos
+ * @param {object} params.encounter          - Encontro atual
+ * @param {object} params.playerMonster      - Monstrinho do jogador
+ * @param {string} [params.fleeType]         - 'normal' | 'intimidating' | 'elite' (default: 'normal')
+ * @param {number} [params.fleeBaseChance]   - Legado: ignorado quando fleeType está presente
+ * @param {object} params.dependencies       - Dependências injetadas:
+ *   rollD20 {function?}             () → number 1–20 — para testes determinísticos
+ *   rollFlee {function?}            Legado: () → number [0,100) — usado apenas sem rollD20
  *   eneRegenData {object}           tabela de regen por classe
  *   classAdvantages {object}        tabela de vantagens de classe
  *   getBasicPower {function}        (monsterClass) → number
- *   rollD20 {function?}             () → number
  * @returns {{ success: boolean, result: string }}
  *   result: 'fled' | 'ongoing' | 'defeat' | 'invalid' | 'error'
  */
-export function executeWildFlee({ encounter, playerMonster, fleeBaseChance, dependencies }) {
+export function executeWildFlee({ encounter, playerMonster, fleeType, fleeBaseChance, dependencies }) {
     try {
         const wildMonster = encounter?.wildMonster;
         if (!wildMonster) return { success: false, result: 'invalid' };
 
         encounter.log = encounter.log || [];
 
-        // Calcular chance de fuga baseada em SPD efetivo (Fase 11.2)
-        const fleeChance = WildCore.calculateFleeChance(playerMonster, wildMonster, fleeBaseChance ?? 15);
-        const playerSpd = WildCore.getEffectiveSpd(playerMonster);
-        const wildSpd = WildCore.getEffectiveSpd(wildMonster);
+        // PR-03: fuga canônica — d20 + SPD >= DC
+        const d20Roll = typeof dependencies?.rollD20 === 'function'
+            ? dependencies.rollD20()
+            : Math.floor(Math.random() * 20) + 1;
+
+        const fleeCheck = WildCore.checkFleeCanonical(playerMonster, d20Roll, fleeType ?? 'normal');
 
         encounter.log.push(
-            `🏃 ${playerMonster.name} tenta fugir! (SPD ${playerSpd} vs ${wildSpd} → ${fleeChance}% de chance)`
+            `🏃 ${playerMonster.name} tenta fugir! (🎲${d20Roll} + SPD ${fleeCheck.spd} = ${fleeCheck.total} vs DC ${fleeCheck.dc})`
         );
 
-        // Rolar tentativa de fuga (0–100)
-        const fleeRoll = typeof dependencies?.rollFlee === 'function'
-            ? dependencies.rollFlee()
-            : Math.random() * 100;
-
-        if (fleeRoll < fleeChance) {
-            encounter.log.push(`✅ Fugiu com sucesso! (${Math.round(fleeRoll)} < ${fleeChance})`);
+        if (fleeCheck.success) {
+            encounter.log.push(`✅ Fugiu com sucesso! (${fleeCheck.total} >= ${fleeCheck.dc})`);
             encounter.active = false;
             encounter.result = 'fled';
             return { success: true, result: 'fled' };
         }
 
         // Fuga falhou: inimigo contra-ataca imediatamente (reação, sem ENE regen)
-        encounter.log.push(`❌ Fuga falhou! (${Math.round(fleeRoll)} >= ${fleeChance}) ${wildMonster.name} contra-ataca!`);
+        encounter.log.push(`❌ Fuga falhou! (${fleeCheck.total} < ${fleeCheck.dc}) ${wildMonster.name} contra-ataca!`);
         const counterResult = processEnemyCounterattack(encounter, wildMonster, playerMonster, dependencies);
         if (counterResult.defeated) {
             encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
@@ -1318,6 +1314,8 @@ function handleDefeat(encounter, player, playerMonster, dependencies) {
     }
     
     encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);
+    // PR-02: on_ko — jogador derrotado
+    fireCombatEvent(playerMonster, ON_KO, { hpPct: 0 });
     playerMonster.status = 'fainted';
     
     // Stats
