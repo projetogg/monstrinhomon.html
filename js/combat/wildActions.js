@@ -1116,63 +1116,56 @@ export function executeWildItemUse({ encounter, player, playerMonster, itemId, d
 /**
  * Executa uma tentativa de fuga de um encontro selvagem.
  *
- * Fase 11.2: SPD agora importa de verdade para a fuga.
- * A chance de fuga é determinística baseada em SPD relativo (playerMonster vs wildMonster),
- * e só uma chance aleatória decide o resultado — mas a probabilidade é controlada por SPD.
+ * PR-03: Fuga canônica (PATCH_CANONICO_COMBATE_V2.2 BLOCO 11).
+ * Fórmula: d20 + SPD >= DC_fuga  (Normal=12, Intimidating=16, Elite=18)
  *
  * Pipeline:
- * 1. Calcula fleeChance via WildCore.calculateFleeChance (SPD-based)
- * 2. Rola fuga (dependencies.rollFlee ou Math.random * 100)
+ * 1. Rola d20 (injetado via rollD20 ou aleatório)
+ * 2. Verifica d20 + SPD >= DC via WildCore.checkFleeCanonical
  * 3. Se fugiu: encounter.active = false, result = 'fled'
  * 4. Se falhou: inimigo contra-ataca imediatamente (consequência)
  *
- * Impacto em espécies:
- * - bellwave: Nota Discordante (-2 SPD inimigo) aumenta diretamente fleeChance em +4%
- * - moonquill: spdBuff (+1 SPD) aumenta fleeChance em +2%
- *
  * @param {object} params
- * @param {object} params.encounter      - Encontro atual
- * @param {object} params.playerMonster  - Monstrinho do jogador
- * @param {number} params.fleeBaseChance - Chance base de fuga (% por raridade, ex: 10–25)
- * @param {object} params.dependencies   - Dependências injetadas:
- *   rollFlee {function?}            () → number [0,100) — para testes determinísticos
+ * @param {object} params.encounter          - Encontro atual
+ * @param {object} params.playerMonster      - Monstrinho do jogador
+ * @param {string} [params.fleeType]         - 'normal' | 'intimidating' | 'elite' (default: 'normal')
+ * @param {number} [params.fleeBaseChance]   - Legado: ignorado quando fleeType está presente
+ * @param {object} params.dependencies       - Dependências injetadas:
+ *   rollD20 {function?}             () → number 1–20 — para testes determinísticos
+ *   rollFlee {function?}            Legado: () → number [0,100) — usado apenas sem rollD20
  *   eneRegenData {object}           tabela de regen por classe
  *   classAdvantages {object}        tabela de vantagens de classe
  *   getBasicPower {function}        (monsterClass) → number
- *   rollD20 {function?}             () → number
  * @returns {{ success: boolean, result: string }}
  *   result: 'fled' | 'ongoing' | 'defeat' | 'invalid' | 'error'
  */
-export function executeWildFlee({ encounter, playerMonster, fleeBaseChance, dependencies }) {
+export function executeWildFlee({ encounter, playerMonster, fleeType, fleeBaseChance, dependencies }) {
     try {
         const wildMonster = encounter?.wildMonster;
         if (!wildMonster) return { success: false, result: 'invalid' };
 
         encounter.log = encounter.log || [];
 
-        // Calcular chance de fuga baseada em SPD efetivo (Fase 11.2)
-        const fleeChance = WildCore.calculateFleeChance(playerMonster, wildMonster, fleeBaseChance ?? 15);
-        const playerSpd = WildCore.getEffectiveSpd(playerMonster);
-        const wildSpd = WildCore.getEffectiveSpd(wildMonster);
+        // PR-03: fuga canônica — d20 + SPD >= DC
+        const d20Roll = typeof dependencies?.rollD20 === 'function'
+            ? dependencies.rollD20()
+            : Math.floor(Math.random() * 20) + 1;
+
+        const fleeCheck = WildCore.checkFleeCanonical(playerMonster, d20Roll, fleeType ?? 'normal');
 
         encounter.log.push(
-            `🏃 ${playerMonster.name} tenta fugir! (SPD ${playerSpd} vs ${wildSpd} → ${fleeChance}% de chance)`
+            `🏃 ${playerMonster.name} tenta fugir! (🎲${d20Roll} + SPD ${fleeCheck.spd} = ${fleeCheck.total} vs DC ${fleeCheck.dc})`
         );
 
-        // Rolar tentativa de fuga (0–100)
-        const fleeRoll = typeof dependencies?.rollFlee === 'function'
-            ? dependencies.rollFlee()
-            : Math.random() * 100;
-
-        if (fleeRoll < fleeChance) {
-            encounter.log.push(`✅ Fugiu com sucesso! (${Math.round(fleeRoll)} < ${fleeChance})`);
+        if (fleeCheck.success) {
+            encounter.log.push(`✅ Fugiu com sucesso! (${fleeCheck.total} >= ${fleeCheck.dc})`);
             encounter.active = false;
             encounter.result = 'fled';
             return { success: true, result: 'fled' };
         }
 
         // Fuga falhou: inimigo contra-ataca imediatamente (reação, sem ENE regen)
-        encounter.log.push(`❌ Fuga falhou! (${Math.round(fleeRoll)} >= ${fleeChance}) ${wildMonster.name} contra-ataca!`);
+        encounter.log.push(`❌ Fuga falhou! (${fleeCheck.total} < ${fleeCheck.dc}) ${wildMonster.name} contra-ataca!`);
         const counterResult = processEnemyCounterattack(encounter, wildMonster, playerMonster, dependencies);
         if (counterResult.defeated) {
             encounter.log.push(`😵 ${playerMonster.name} desmaiou!`);

@@ -11,6 +11,7 @@ import * as GroupCore from './groupCore.js';
 import { initializeBattleParticipation, markAsParticipated, processBattleItemBreakage } from './itemBreakage.js';
 import { isOffensiveSkill } from './skillResolver.js';
 import { fireCombatEvent, ON_ATTACK, ON_HIT, ON_KO, ON_TURN_START, ON_HEAL_ITEM, ON_SKILL_USED } from './combatEvents.js';
+import { checkFleeCanonical } from './wildCore.js';
 
 /**
  * Passivas de combate por classe — aplicadas após cálculo de dano base.
@@ -755,15 +756,20 @@ export function passTurn(deps) {
 /**
  * Processa fuga de um jogador no combate em grupo.
  *
- * Lógica canônica: verificação de boss, remoção do participante,
- * detecção de fim de batalha (todos fugiram → retreat), avanço de turno.
- * A confirmação UI (window.confirm) fica no wrapper de index.html.
+ * PR-03: Fuga canônica (PATCH_CANONICO_COMBATE_V2.2 BLOCO 11).
+ * Fórmula: d20 + SPD >= DC_fuga  (Normal=12, Intimidating=16, Elite=18)
+ *
+ * Sucesso: monstrinho ativo removido do combate, turno gasto, grupo continua.
+ * Falha:   turno gasto, próximo na fila age normalmente.
+ * Boss:    fuga proibida.
  *
  * Retorna { ok, reason? }:
- *   reason: 'no_encounter' | 'boss_no_flee' | 'not_player_turn' | 'no_player'
+ *   reason: 'no_encounter' | 'boss_no_flee' | 'not_player_turn' | 'no_player' | 'no_monster'
  *
  * @param {object} deps - Dependências injetadas (mesmo padrão dos demais actions)
- * @returns {{ ok: boolean, reason?: string }}
+ *   deps.rollD20 {function?} - () → number 1–20 (para testes determinísticos)
+ *   deps.fleeType {string?}  - 'normal' | 'intimidating' | 'elite' (default: 'normal')
+ * @returns {{ ok: boolean, reason?: string, result?: string }}
  */
 export function executeGroupFlee(deps) {
     const { state, core, helpers, storage, ui } = deps;
@@ -780,9 +786,31 @@ export function executeGroupFlee(deps) {
     const player = helpers.getPlayerById(actor.id);
     if (!player) return { ok: false, reason: 'no_player' };
 
-    helpers.log(enc, `🏃 ${player.name || player.nome} fugiu da batalha!`);
+    const mon = helpers.getActiveMonsterOfPlayer(player);
+    if (!mon) return { ok: false, reason: 'no_monster' };
 
-    // Remover participante
+    // PR-03: rolar d20 canônico
+    const rollFn = typeof deps.rollD20 === 'function' ? deps.rollD20
+                 : typeof deps.helpers?.rollD20 === 'function' ? deps.helpers.rollD20
+                 : () => Math.floor(Math.random() * 20) + 1;
+    const fleeType = deps.fleeType ?? enc.fleeType ?? 'normal';
+    const fleeCheck = checkFleeCanonical(mon, rollFn(), fleeType);
+
+    helpers.log(enc,
+        `🏃 ${player.name || player.nome}'s ${mon.name} tenta fugir! (🎲${fleeCheck.roll} + SPD ${fleeCheck.spd} = ${fleeCheck.total} vs DC ${fleeCheck.dc})`
+    );
+
+    if (!fleeCheck.success) {
+        helpers.log(enc, `❌ Fuga falhou! (${fleeCheck.total} < ${fleeCheck.dc}) Turno perdido.`);
+        advanceGroupTurn(enc, deps);
+        storage?.save?.();
+        ui?.render?.();
+        return { ok: true, result: 'failed' };
+    }
+
+    helpers.log(enc, `✅ ${mon.name} fugiu com sucesso! (${fleeCheck.total} >= ${fleeCheck.dc})`);
+
+    // Remover participante da batalha
     if (enc.participants) {
         enc.participants = enc.participants.filter(pid => pid !== player.id);
     }
@@ -799,7 +827,7 @@ export function executeGroupFlee(deps) {
     storage?.save?.();
     ui?.render?.();
 
-    return { ok: true };
+    return { ok: true, result: 'fled' };
 }
 
 /**
