@@ -4173,50 +4173,164 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
     transform: scale(0.96);
 }
 
-/* ── Animação de captura — pokébola ──────────────────────────────────────── */
+/* ── Animação de captura — orbe mágico ───────────────────────────────────── */
 .mm-capture-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.78);
+    background: rgba(0, 0, 0, 0.88);
     z-index: 10400;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    gap: 16px;
+    gap: 22px;
+    animation: mm-cap-bg-in 0.3s ease;
 }
-.mm-capture-ball {
-    font-size: 72px;
-    line-height: 1;
-    animation: capture-spin 1.5s ease-in-out;
-    display: block;
+@keyframes mm-cap-bg-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
-@keyframes capture-spin {
-    0%   { transform: scale(0.5) rotate(0deg); opacity: 0.5; }
-    25%  { transform: scale(1.2) rotate(180deg); opacity: 1; }
-    50%  { transform: scale(0.9) rotate(360deg); }
-    75%  { transform: scale(1.05) rotate(360deg); }
-    100% { transform: scale(1) rotate(360deg); }
+
+/* Orbe — círculo mágico (não é pokébola) */
+.mm-capture-orb {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 32%, #b8a9ff, #7c5fe0 55%, #2a1060);
+    box-shadow:
+        0 0 28px rgba(124, 95, 224, 0.9),
+        0 0 64px rgba(124, 95, 224, 0.45),
+        inset 0 0 22px rgba(255, 255, 255, 0.18);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: mm-orb-enter 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    flex-shrink: 0;
 }
-.mm-capture-ball--shake {
-    animation: capture-shake 0.5s ease-in-out;
+/* Brilho/reflexo no orbe */
+.mm-capture-orb::before {
+    content: '';
+    position: absolute;
+    width: 30px;
+    height: 18px;
+    background: rgba(255, 255, 255, 0.52);
+    border-radius: 50%;
+    top: 13px;
+    left: 17px;
+    filter: blur(3px);
+    pointer-events: none;
 }
-@keyframes capture-shake {
-    0%, 100% { transform: rotate(0deg); }
-    20%       { transform: rotate(-15deg); }
-    40%       { transform: rotate(15deg); }
-    60%       { transform: rotate(-10deg); }
-    80%       { transform: rotate(10deg); }
+/* Símbolo interno */
+.mm-capture-orb::after {
+    content: '✦';
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 32px;
+    text-shadow: 0 0 12px #fff, 0 0 24px rgba(180, 160, 255, 0.8);
+    position: relative;
+    z-index: 1;
 }
+@keyframes mm-orb-enter {
+    0%   { transform: scale(0) rotate(-200deg); opacity: 0; }
+    70%  { transform: scale(1.18) rotate(8deg);  opacity: 1; }
+    100% { transform: scale(1)    rotate(0deg);  opacity: 1; }
+}
+
+/* Chacoalhada de suspense (reutilizada 3×) */
+.mm-capture-orb--shaking {
+    animation: mm-orb-shake 0.72s ease-in-out both !important;
+}
+@keyframes mm-orb-shake {
+    0%   { transform: rotate(0deg)   scale(1);    }
+    12%  { transform: rotate(-20deg) scale(0.96); }
+    30%  { transform: rotate(20deg)  scale(0.96); }
+    48%  { transform: rotate(-13deg) scale(0.98); }
+    65%  { transform: rotate(13deg)  scale(0.98); }
+    80%  { transform: rotate(-5deg)  scale(1);    }
+    100% { transform: rotate(0deg)   scale(1);    }
+}
+
+/* Estado: captura bem-sucedida */
+.mm-capture-orb--success {
+    background: radial-gradient(circle at 35% 32%, #fff6c0, #fdc832 55%, #c07000) !important;
+    box-shadow:
+        0 0 40px rgba(253, 200, 50, 1),
+        0 0 90px rgba(253, 200, 50, 0.65),
+        inset 0 0 24px rgba(255, 255, 255, 0.4) !important;
+    animation: mm-orb-success 0.55s ease-out both !important;
+}
+@keyframes mm-orb-success {
+    0%   { transform: scale(1);    }
+    35%  { transform: scale(1.35); }
+    65%  { transform: scale(0.94); }
+    100% { transform: scale(1.08); }
+}
+
+/* Estado: falha — orbe se dissolve */
+.mm-capture-orb--fail {
+    animation: mm-orb-fail 0.65s ease-out forwards !important;
+}
+@keyframes mm-orb-fail {
+    0%   { transform: scale(1);              opacity: 1; }
+    25%  { transform: scale(1.12) rotate(4deg);  }
+    50%  { transform: scale(0.85) rotate(-6deg); }
+    75%  { transform: scale(0.6)  rotate(8deg);  opacity: 0.6; }
+    100% { transform: scale(0)    rotate(15deg);  opacity: 0; }
+}
+
+/* Container relativo para partículas */
+.mm-capture-orb-wrap {
+    position: relative;
+    width: 96px;
+    height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Partículas de sucesso (geradas via JS) */
+@keyframes mm-particle-fly {
+    0%   { transform: translate(-50%, -50%) translate(0, 0) scale(1);   opacity: 1; }
+    100% { transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+}
+
+/* Dots de suspense */
+.mm-capture-dots {
+    display: flex;
+    gap: 10px;
+    opacity: 0;
+    transition: opacity 0.35s;
+}
+.mm-capture-dots--visible { opacity: 1; }
+.mm-capture-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.22);
+    transition: background 0.25s, transform 0.25s, box-shadow 0.25s;
+}
+.mm-capture-dot--lit {
+    background: #a89eff;
+    box-shadow: 0 0 8px #a89eff;
+    transform: scale(1.35);
+}
+
+/* Texto de status */
 .mm-capture-status {
     font-size: 20px;
     font-weight: 800;
-    color: #fff;
+    color: rgba(255, 255, 255, 0.92);
     text-align: center;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    letter-spacing: 0.4px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.4s, transform 0.4s;
+    min-height: 28px;
 }
-.mm-capture-status--success { color: #00b894; }
-.mm-capture-status--fail    { color: #d63031; }
+.mm-capture-status--visible { opacity: 1; transform: translateY(0); }
+.mm-capture-status--success  { color: #ffe680; }
+.mm-capture-status--fail     { color: #ff7675; }
 
 /* ── mmAlert — modal de alerta estilizado ────────────────────────────────── */
 .mm-alert-overlay {
