@@ -5210,6 +5210,88 @@
         }
 
         /**
+         * showEvolutionModal — exibe animação dramática de evolução.
+         * Fases: suspense → flash → reveal da forma evoluída.
+         * Bloqueia interação até o jogador confirmar.
+         * @param {string} oldName - Nome da forma anterior
+         * @param {string} newName - Nome da forma evoluída
+         */
+        function showEvolutionModal(oldName, newName) {
+            // Busca emojis nas templates do catálogo para tornar mais visual
+            const catalog = (typeof MONSTER_CATALOG !== 'undefined' ? MONSTER_CATALOG : []);
+            const oldTmpl = catalog.find(m => m.name === oldName || m.nome === oldName);
+            const newTmpl = catalog.find(m => m.name === newName || m.nome === newName);
+            const oldEmoji = (oldTmpl?.emoji) || '✨';
+            const newEmoji = (newTmpl?.emoji) || '🌟';
+
+            const overlay = document.createElement('div');
+            overlay.className = 'mm-evo-overlay';
+            overlay.setAttribute('role', 'dialog');
+            overlay.setAttribute('aria-modal', 'true');
+
+            // Gera partículas como spans HTML
+            let particlesHtml = '';
+            for (let k = 0; k < 18; k++) {
+                particlesHtml += `<span class="mm-evo-particle" style="--i:${k}"></span>`;
+            }
+
+            overlay.innerHTML = `
+                <div class="mm-evo-scene">
+                    <!-- Fase 1: Suspense -->
+                    <div class="mm-evo-phase mm-evo-phase--suspense" id="evoPhase1">
+                        <div class="mm-evo-question">O que está acontecendo?!</div>
+                        <div class="mm-evo-old-emoji">${oldEmoji}</div>
+                        <div class="mm-evo-old-name">${escapeHtml(oldName)}</div>
+                        <div class="mm-evo-dots"><span></span><span></span><span></span></div>
+                    </div>
+
+                    <!-- Fase 2: Flash + partículas (oculto até ativar) -->
+                    <div class="mm-evo-phase mm-evo-phase--flash mm-evo-hidden" id="evoPhase2">
+                        <div class="mm-evo-burst">
+                            ${particlesHtml}
+                            <div class="mm-evo-ring mm-evo-ring--1"></div>
+                            <div class="mm-evo-ring mm-evo-ring--2"></div>
+                            <div class="mm-evo-ring mm-evo-ring--3"></div>
+                        </div>
+                    </div>
+
+                    <!-- Fase 3: Reveal (oculto até ativar) -->
+                    <div class="mm-evo-phase mm-evo-phase--reveal mm-evo-hidden" id="evoPhase3">
+                        <div class="mm-evo-tada">✨ Taram! ✨</div>
+                        <div class="mm-evo-new-emoji">${newEmoji}</div>
+                        <div class="mm-evo-new-name">${escapeHtml(newName)}</div>
+                        <div class="mm-evo-subtitle">${escapeHtml(oldName)} evoluiu!</div>
+                        <button class="mm-evo-btn" onclick="this.closest('.mm-evo-overlay').remove()">🌟 Incrível!</button>
+                    </div>
+                </div>`;
+
+            document.body.appendChild(overlay);
+
+            // Sequência de fases
+            // Fase 1: 2s de suspense
+            setTimeout(() => {
+                const p1 = overlay.querySelector('#evoPhase1');
+                const p2 = overlay.querySelector('#evoPhase2');
+                if (p1) p1.classList.add('mm-evo-exit');
+                setTimeout(() => {
+                    if (p1) p1.classList.add('mm-evo-hidden');
+                    if (p2) p2.classList.remove('mm-evo-hidden');
+                }, 400);
+            }, 2000);
+
+            // Fase 2: 1.8s de flash/partículas
+            setTimeout(() => {
+                const p2 = overlay.querySelector('#evoPhase2');
+                const p3 = overlay.querySelector('#evoPhase3');
+                if (p2) p2.classList.add('mm-evo-exit');
+                setTimeout(() => {
+                    if (p2) p2.classList.add('mm-evo-hidden');
+                    if (p3) p3.classList.remove('mm-evo-hidden');
+                }, 400);
+            }, 2000 + 400 + 1800);
+        }
+
+        /**
          * showCaptureAnimation — exibe animação de pokébola durante tentativa de captura.
          * Chame antes da lógica de captura; retorna uma função para fechar.
          * @param {boolean} success - true se captura bem-sucedida
@@ -5464,7 +5546,8 @@
         /**
          * Verifica novas entradas no log e exibe toasts para eventos importantes
          * Usa cursor para evitar repetir toasts em re-render
-         * Detecta level up e evolução por emoji OU por texto
+         * Detecta level up pelo texto específico "subiu para o nível" (não por emoji genérico)
+         * Detecta evolução pelo texto específico "evoluiu para" (não por emoji genérico)
          */
         function maybeToastFromLog(enc) {
             if (!enc || !Array.isArray(enc.log)) return;
@@ -5476,13 +5559,20 @@
             for (let i = start; i < enc.log.length; i++) {
                 const line = String(enc.log[i] || "");
                 
-                // Detectar level up: por emoji OU por texto → usa modal de celebração
-                const isLevelUp = line.includes("✨") || /subiu para o nível/i.test(line);
+                // Detectar level up: apenas pelo texto específico → usa modal de celebração
+                // NÃO usar line.includes("✨") pois habilidades também usam esse emoji
+                const isLevelUp = /subiu para o nível/i.test(line);
                 if (isLevelUp) showLevelUpModal(line);
                 
-                // Detectar evolução: por emoji OU por texto
-                const isEvo = line.includes("🌟") || /evoluiu para/i.test(line);
-                if (isEvo) showToast(line);
+                // Detectar evolução: apenas pelo texto específico → usa modal dramático
+                // NÃO usar line.includes("🌟") pois habilidades especiais também usam esse emoji
+                const isEvo = /evoluiu para/i.test(line);
+                if (isEvo) {
+                    const evoMatch = line.match(/🌟\s*(.+?)\s+evoluiu para\s+([^!]+)!/i);
+                    const oldName = evoMatch ? evoMatch[1].trim() : '';
+                    const newName = evoMatch ? evoMatch[2].trim() : '';
+                    if (oldName && newName) showEvolutionModal(oldName, newName);
+                }
 
                 // Detectar conclusão de quest
                 if (line.startsWith("🏆 Quest concluída:")) showToast(line, 'success');
@@ -5507,17 +5597,13 @@
             for (let i = start; i < enc.log.length; i++) {
                 const line = String(enc.log[i] || "");
                 
-                // Detect level up - check emoji first to avoid double-trigger
-                if (line.includes("✨")) {
-                    Audio.playSfx("levelup");
-                } else if (/subiu para o nível/i.test(line)) {
+                // Detectar level up: apenas pelo texto específico (não por emoji genérico ✨)
+                if (/subiu para o nível/i.test(line)) {
                     Audio.playSfx("levelup");
                 }
                 
-                // Detect evolution - check emoji first to avoid double-trigger
-                if (line.includes("🌟")) {
-                    Audio.playSfx("evolve");
-                } else if (/evoluiu para/i.test(line)) {
+                // Detectar evolução: apenas pelo texto específico (não por emoji genérico 🌟)
+                if (/evoluiu para/i.test(line)) {
                     Audio.playSfx("evolve");
                 }
             }

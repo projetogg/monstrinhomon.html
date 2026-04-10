@@ -4287,3 +4287,218 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
     letter-spacing: 0.01em;
 }
 .nav-breadcrumb-sep { opacity: 0.5; margin: 0 4px; }
+
+/* ── Animação de Evolução — Modal Dramático ──────────────────────────────── */
+.mm-evo-overlay {
+    position: fixed;
+    inset: 0;
+    background: #0a0a1a;
+    z-index: 10600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: evo-bg-in 0.3s ease;
+}
+@keyframes evo-bg-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+.mm-evo-scene {
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    padding: 24px;
+    position: relative;
+}
+
+/* Fases */
+.mm-evo-phase {
+    transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.mm-evo-hidden { display: none !important; }
+.mm-evo-exit   { opacity: 0; transform: scale(0.85); pointer-events: none; }
+
+/* Fase 1 — Suspense */
+.mm-evo-phase--suspense {
+    animation: evo-phase-in 0.5s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes evo-phase-in {
+    from { opacity: 0; transform: scale(0.7); }
+    to   { opacity: 1; transform: scale(1); }
+}
+.mm-evo-question {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 24px;
+    letter-spacing: 0.02em;
+    animation: evo-question-flicker 0.8s ease-in-out infinite alternate;
+}
+@keyframes evo-question-flicker {
+    from { color: #fff; text-shadow: 0 0 12px rgba(255,255,255,0.3); }
+    to   { color: #c8a0ff; text-shadow: 0 0 24px rgba(180,100,255,0.7); }
+}
+.mm-evo-old-emoji {
+    font-size: 72px;
+    line-height: 1;
+    animation: evo-old-pulse 0.9s ease-in-out infinite alternate;
+    display: block;
+    margin-bottom: 12px;
+    filter: brightness(0.9);
+}
+@keyframes evo-old-pulse {
+    from { transform: scale(1);    filter: brightness(0.9) drop-shadow(0 0  8px rgba(180,100,255,0.3)); }
+    to   { transform: scale(1.08); filter: brightness(1.2) drop-shadow(0 0 28px rgba(180,100,255,0.9)); }
+}
+.mm-evo-old-name {
+    font-size: 22px;
+    font-weight: 800;
+    color: rgba(255,255,255,0.9);
+    margin-bottom: 20px;
+}
+.mm-evo-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+.mm-evo-dots span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #c8a0ff;
+    animation: evo-dot-bounce 1.2s ease-in-out infinite;
+}
+.mm-evo-dots span:nth-child(2) { animation-delay: 0.2s; }
+.mm-evo-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes evo-dot-bounce {
+    0%, 80%, 100% { transform: scale(1);    opacity: 0.5; }
+    40%            { transform: scale(1.5); opacity: 1; }
+}
+
+/* Fase 2 — Flash + Partículas */
+.mm-evo-phase--flash {
+    animation: evo-phase-in 0.3s ease;
+}
+.mm-evo-burst {
+    position: relative;
+    width: 260px;
+    height: 260px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Anéis expansivos */
+.mm-evo-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 3px solid #ffd700;
+    animation: evo-ring-expand 1.2s ease-out forwards;
+}
+.mm-evo-ring--1 { width: 60px;  height: 60px;  animation-delay: 0s;    border-color: #ffd700; }
+.mm-evo-ring--2 { width: 60px;  height: 60px;  animation-delay: 0.2s;  border-color: #c8a0ff; }
+.mm-evo-ring--3 { width: 60px;  height: 60px;  animation-delay: 0.4s;  border-color: #00e5ff; }
+@keyframes evo-ring-expand {
+    0%   { transform: scale(0); opacity: 1; }
+    100% { transform: scale(4); opacity: 0; }
+}
+
+/* Partículas voando para fora */
+.mm-evo-particle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: evo-particle-fly 1.5s ease-out forwards;
+    animation-delay: calc(var(--i) * 0.06s);
+    background: hsl(calc(var(--i) * 20deg), 90%, 65%);
+}
+@keyframes evo-particle-fly {
+    0%   {
+        transform: translate(-50%, -50%) rotate(calc(var(--i) * 20deg)) translateY(0px);
+        opacity: 1;
+        width: 10px;
+        height: 10px;
+    }
+    60%  {
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) rotate(calc(var(--i) * 20deg)) translateY(-130px);
+        opacity: 0;
+        width: 6px;
+        height: 6px;
+    }
+}
+
+/* Fase 3 — Reveal */
+.mm-evo-phase--reveal {
+    animation: evo-reveal-in 0.6s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes evo-reveal-in {
+    from { opacity: 0; transform: scale(0.4) rotate(-8deg); }
+    60%  { transform: scale(1.06) rotate(2deg); opacity: 1; }
+    to   { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.mm-evo-tada {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffd700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    animation: evo-tada-shine 1.2s ease-in-out infinite alternate;
+}
+@keyframes evo-tada-shine {
+    from { text-shadow: 0 0 10px rgba(255,215,0,0.4); }
+    to   { text-shadow: 0 0 30px rgba(255,215,0,1), 0 0 60px rgba(255,100,0,0.5); }
+}
+.mm-evo-new-emoji {
+    font-size: 88px;
+    line-height: 1;
+    display: block;
+    margin-bottom: 16px;
+    animation: evo-new-pop 0.7s cubic-bezier(0.34,1.56,0.64,1);
+    filter: drop-shadow(0 0 20px rgba(255,215,0,0.8));
+}
+@keyframes evo-new-pop {
+    from { transform: scale(0.3) rotate(-15deg); opacity: 0; }
+    to   { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.mm-evo-new-name {
+    font-size: 28px;
+    font-weight: 900;
+    color: #ffd700;
+    text-shadow: 0 4px 20px rgba(255,215,0,0.5);
+    margin-bottom: 8px;
+}
+.mm-evo-subtitle {
+    font-size: 14px;
+    color: rgba(255,255,255,0.65);
+    margin-bottom: 28px;
+}
+.mm-evo-btn {
+    background: linear-gradient(135deg, #ffd700, #ff6b00);
+    color: #1a1a2e;
+    border: none;
+    border-radius: 14px;
+    padding: 14px 40px;
+    font-size: 18px;
+    font-weight: 900;
+    cursor: pointer;
+    min-height: 52px;
+    min-width: 150px;
+    box-shadow: 0 4px 20px rgba(255,215,0,0.5);
+    transition: transform 0.15s, box-shadow 0.15s;
+    animation: evo-btn-pulse 1.5s ease-in-out infinite alternate;
+}
+@keyframes evo-btn-pulse {
+    from { box-shadow: 0 4px 20px rgba(255,215,0,0.5); }
+    to   { box-shadow: 0 6px 36px rgba(255,215,0,0.9), 0 0 0 4px rgba(255,215,0,0.15); }
+}
+.mm-evo-btn:hover  { transform: translateY(-2px); }
+.mm-evo-btn:active { transform: scale(0.96); }
