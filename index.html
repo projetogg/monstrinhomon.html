@@ -4380,6 +4380,10 @@
                     selectedMonsterTemplate = MONSTER_CATALOG.find(m => m.id === options.monsterTemplateId);
                 }
                 if (!selectedMonsterTemplate) {
+                    if (!MONSTER_CATALOG || MONSTER_CATALOG.length === 0) {
+                        alert('❌ Catálogo de monstros vazio. Recarregue a página.');
+                        return;
+                    }
                     selectedMonsterTemplate = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
                 }
                 const enemy = createMonsterInstanceFromTemplate(
@@ -7843,6 +7847,13 @@
         }
 
         /**
+         * Returns the number of monsters a player has in the sharedBox.
+         */
+        function getPlayerBoxSize(playerId) {
+            return (GameState.sharedBox || []).filter(s => s.ownerPlayerId === playerId).length;
+        }
+
+        /**
          * Add a monster to the shared box
          */
         function addToSharedBox(ownerPlayerId, monster) {
@@ -7888,6 +7899,17 @@
 
             // Remove from team
             player.team.splice(teamIndex, 1);
+
+            // Adjust activeIndex so it stays valid after the splice
+            if (typeof player.activeIndex === 'number') {
+                if (player.activeIndex === teamIndex) {
+                    // Removed the active monster: point to first alive remaining
+                    player.activeIndex = firstAliveIndex(player.team);
+                    if (player.activeIndex < 0) player.activeIndex = 0;
+                } else if (player.activeIndex > teamIndex) {
+                    player.activeIndex--;
+                }
+            }
 
             return { success: true, message: `${monster.name} enviado para Box` };
         }
@@ -8402,8 +8424,8 @@
                 const equippedItems = new Set();
                 if (player.team && Array.isArray(player.team)) {
                     player.team.forEach(monster => {
-                        if (monster?.equippedItem) {
-                            equippedItems.add(monster.equippedItem);
+                        if (monster?.heldItemId) {
+                            equippedItems.add(monster.heldItemId);
                         }
                     });
                 }
@@ -8753,7 +8775,7 @@
                         return;
                     }
                     if (player.team && Array.isArray(player.team)) {
-                        const equippedMonster = player.team.find(m => m?.equippedItem === itemId);
+                        const equippedMonster = player.team.find(m => m?.heldItemId === itemId);
                         if (equippedMonster) {
                             showToast(`❌ Não é possível vender item equipado! ${item.name} está equipado em ${equippedMonster.name}.`, 'error');
                             return;
@@ -8841,7 +8863,7 @@
                 
                 // Check team size
                 const teamSize = player.team?.length || 0;
-                const boxSize = player.box?.length || 0;
+                const boxSize = getPlayerBoxSize(player.id);
                 const totalMonsters = teamSize + boxSize;
                 
                 const MAX_TEAM_SIZE = 6;
@@ -8894,15 +8916,14 @@
                 
                 // Ensure arrays exist
                 player.team = player.team || [];
-                player.box = player.box || [];
-                
-                // Add to team or box
+
+                // Add to team or sharedBox (not legacy player.box)
                 let location = '';
                 if (teamSize < MAX_TEAM_SIZE) {
                     player.team.push(newMonster);
                     location = 'time';
                 } else {
-                    player.box.push(newMonster);
+                    addToSharedBox(player.id, newMonster);
                     location = 'box';
                 }
                 
@@ -10484,7 +10505,7 @@
                 }
             });
             saveToLocalStorage();
-            render();
+            updateAllViews();
             const msg = healed > 0
                 ? `✅ ${healed} Monstrinho(s) curado(s) com sucesso!`
                 : 'Todos os Monstrinhos já estão com HP cheio.';
@@ -10910,7 +10931,7 @@
                     if (!player) return;
                     
                     const teamCount = player.team?.length || 0;
-                    const boxCount = player.box?.length || 0;
+                    const boxCount = getPlayerBoxSize(player.id);
                     // Fix #4: usar player.class como fallback quando playerClassId não existe (saves do wizard)
                     const playerClass = player.class || player.playerClassId || '';
 
@@ -11211,13 +11232,15 @@
          */
         function applyKitSwapRetroactive(instanceId) {
             try {
-                // Buscar o monstrinho em todos os jogadores
+                // Buscar o monstrinho em todos os jogadores e na sharedBox
                 let targetMon = null;
                 for (const player of (GameState.players || [])) {
                     const inTeam = (player.team || []).find(m => m?.instanceId === instanceId);
-                    const inBox = (player.box || []).find(m => m?.instanceId === instanceId);
                     if (inTeam) { targetMon = inTeam; break; }
-                    if (inBox) { targetMon = inBox; break; }
+                }
+                if (!targetMon) {
+                    const boxSlot = (GameState.sharedBox || []).find(s => s?.monster?.instanceId === instanceId);
+                    if (boxSlot) targetMon = boxSlot.monster;
                 }
 
                 if (!targetMon) {

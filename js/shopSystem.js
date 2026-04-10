@@ -140,7 +140,7 @@ export function canSell(player, itemDef, qty = 1) {
 
     // Verifica se item está equipado em algum monstro do time
     if (player.team && Array.isArray(player.team)) {
-        const equippedMonster = player.team.find(m => m?.equippedItem === itemDef.id);
+        const equippedMonster = player.team.find(m => m?.heldItemId === itemDef.id);
         if (equippedMonster) {
             return {
                 ok: false,
@@ -212,7 +212,7 @@ export function getSellableInventory(player, allItems) {
     const equippedIds = new Set();
     if (player.team && Array.isArray(player.team)) {
         player.team.forEach(m => {
-            if (m?.equippedItem) equippedIds.add(m.equippedItem);
+            if (m?.heldItemId) equippedIds.add(m.heldItemId);
         });
     }
 

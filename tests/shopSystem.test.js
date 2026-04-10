@@ -299,7 +299,7 @@ describe('canSell', () => {
     it('retorna ok=false quando item está equipado no time', () => {
         const player = makePlayer({
             inventory: { 'IT_ATK_COMUM': 1 },
-            team: [{ name: 'Guerreirin', equippedItem: 'IT_ATK_COMUM' }]
+            team: [{ name: 'Guerreirin', heldItemId: 'IT_ATK_COMUM' }]
         });
         const result = canSell(player, ITEM_ATK_COMUM, 1);
         expect(result.ok).toBe(false);
@@ -467,7 +467,7 @@ describe('getSellableInventory', () => {
     it('exclui itens equipados no time', () => {
         const player = makePlayer({
             inventory: { 'IT_ATK_COMUM': 2, 'IT_HEAL_01': 3 },
-            team: [{ name: 'Guerreirin', equippedItem: 'IT_ATK_COMUM' }]
+            team: [{ name: 'Guerreirin', heldItemId: 'IT_ATK_COMUM' }]
         });
         const allItems = [ITEM_ATK_COMUM, ITEM_HEAL_01];
         const sellable = getSellableInventory(player, allItems);
