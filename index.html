@@ -7227,6 +7227,9 @@
 
                     saveToLocalStorage();
                     renderEncounter();
+
+                    // Re-habilitar botão (renderEncounter recria o DOM; isso cobre o caso de falha)
+                    if (captureBtn) captureBtn.disabled = false;
                 }, POST_ANIM_DELAY);
             } catch (error) {
                 showError('Capture attempt failed', error.stack);
