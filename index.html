@@ -5220,7 +5220,7 @@
             overlay.className = 'mm-capture-overlay';
             overlay.innerHTML = `
                 <div class="mm-capture-orb-wrap">
-                    <div class="mm-capture-orb"></div>
+                <div class="mm-capture-orb mm-capture-orb--entering"></div>
                 </div>
                 <div class="mm-capture-dots">
                     <div class="mm-capture-dot"></div>
@@ -5236,10 +5236,10 @@
             const dotsEl   = overlay.querySelector('.mm-capture-dots');
             const dotEls   = overlay.querySelectorAll('.mm-capture-dot');
 
-            // Reinicia animação CSS do orbe (força reflow)
+            // Reinicia animação CSS do orbe (força reflow para o browser reconhecer a mudança de classe)
             function triggerShake() {
                 orbEl.classList.remove('mm-capture-orb--shaking');
-                void orbEl.offsetWidth;
+                void orbEl.offsetWidth; // força reflow — necessário para reiniciar a animação CSS
                 orbEl.classList.add('mm-capture-orb--shaking');
             }
 
@@ -5283,7 +5283,6 @@
                 if (success) {
                     // Orbe vira dourado e explode em partículas
                     orbEl.classList.add('mm-capture-orb--success');
-                    orbEl.style.setProperty('--after-content', '"★"');
 
                     // Partículas voadoras
                     const colors = ['#fdc832', '#fff6c0', '#ffffff', '#b8a9ff', '#ffeaa7'];

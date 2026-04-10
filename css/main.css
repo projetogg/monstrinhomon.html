@@ -4205,8 +4205,11 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: mm-orb-enter 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) both;
     flex-shrink: 0;
+}
+/* Animação de entrada — aplicada via classe */
+.mm-capture-orb--entering {
+    animation: mm-orb-enter 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 /* Brilho/reflexo no orbe */
 .mm-capture-orb::before {
@@ -4236,9 +4239,9 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
     100% { transform: scale(1)    rotate(0deg);  opacity: 1; }
 }
 
-/* Chacoalhada de suspense (reutilizada 3×) */
-.mm-capture-orb--shaking {
-    animation: mm-orb-shake 0.72s ease-in-out both !important;
+/* Chacoalhada de suspense (reutilizada 3×, sobrescreve --entering) */
+.mm-capture-orb.mm-capture-orb--shaking {
+    animation: mm-orb-shake 0.72s ease-in-out both;
 }
 @keyframes mm-orb-shake {
     0%   { transform: rotate(0deg)   scale(1);    }
@@ -4251,13 +4254,13 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
 }
 
 /* Estado: captura bem-sucedida */
-.mm-capture-orb--success {
-    background: radial-gradient(circle at 35% 32%, #fff6c0, #fdc832 55%, #c07000) !important;
+.mm-capture-orb.mm-capture-orb--success {
+    background: radial-gradient(circle at 35% 32%, #fff6c0, #fdc832 55%, #c07000);
     box-shadow:
         0 0 40px rgba(253, 200, 50, 1),
         0 0 90px rgba(253, 200, 50, 0.65),
-        inset 0 0 24px rgba(255, 255, 255, 0.4) !important;
-    animation: mm-orb-success 0.55s ease-out both !important;
+        inset 0 0 24px rgba(255, 255, 255, 0.4);
+    animation: mm-orb-success 0.55s ease-out both;
 }
 @keyframes mm-orb-success {
     0%   { transform: scale(1);    }
@@ -4267,8 +4270,8 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
 }
 
 /* Estado: falha — orbe se dissolve */
-.mm-capture-orb--fail {
-    animation: mm-orb-fail 0.65s ease-out forwards !important;
+.mm-capture-orb.mm-capture-orb--fail {
+    animation: mm-orb-fail 0.65s ease-out forwards;
 }
 @keyframes mm-orb-fail {
     0%   { transform: scale(1);              opacity: 1; }
