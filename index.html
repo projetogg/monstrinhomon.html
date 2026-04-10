@@ -7208,15 +7208,26 @@
                     return;
                 }
 
-                if (result.captured) {
-                    // Quests: processado após captura, antes de null-ar o encounter
-                    const capturedTemplateId = monster.templateId || monster.monsterId || null;
-                    processQuestProgressFromEncounter(encounter, capturedTemplateId);
-                    GameState.currentEncounter = null;
-                }
+                // Mostrar animação de suspense de captura antes de atualizar a UI
+                showCaptureAnimation(result.captured);
 
-                saveToLocalStorage();
-                renderEncounter();
+                // Desabilitar botão durante animação para evitar duplo clique
+                const captureBtn = document.querySelector('.btn-success[onclick="attemptCapture()"]');
+                if (captureBtn) captureBtn.disabled = true;
+
+                // Aplicar efeitos pós-captura após o resultado aparecer na animação (~3.8s)
+                const POST_ANIM_DELAY = 3800;
+                setTimeout(() => {
+                    if (result.captured) {
+                        // Quests: processado após captura, antes de null-ar o encounter
+                        const capturedTemplateId = monster.templateId || monster.monsterId || null;
+                        processQuestProgressFromEncounter(encounter, capturedTemplateId);
+                        GameState.currentEncounter = null;
+                    }
+
+                    saveToLocalStorage();
+                    renderEncounter();
+                }, POST_ANIM_DELAY);
             } catch (error) {
                 showError('Capture attempt failed', error.stack);
             }
