@@ -5292,36 +5292,119 @@
         }
 
         /**
-         * showCaptureAnimation — exibe animação de pokébola durante tentativa de captura.
+         * showCaptureAnimation — exibe animação de orbe mágico durante tentativa de captura.
+         * Suspense com 3 chacoalhadas progressivas (estilo Pokémon, sem pokébola).
          * Chame antes da lógica de captura; retorna uma função para fechar.
          * @param {boolean} success - true se captura bem-sucedida
-         * @returns {Function} close() — chama para fechar o overlay
+         * @returns {Function} close() — chama para fechar o overlay imediatamente
          */
         function showCaptureAnimation(success) {
             const overlay = document.createElement('div');
             overlay.className = 'mm-capture-overlay';
             overlay.innerHTML = `
-                <span class="mm-capture-ball">🔮</span>
-                <div class="mm-capture-status">Tentando capturar...</div>`;
+                <div class="mm-capture-orb-wrap">
+                <div class="mm-capture-orb mm-capture-orb--entering"></div>
+                </div>
+                <div class="mm-capture-dots">
+                    <div class="mm-capture-dot"></div>
+                    <div class="mm-capture-dot"></div>
+                    <div class="mm-capture-dot"></div>
+                </div>
+                <div class="mm-capture-status"></div>`;
             document.body.appendChild(overlay);
 
-            const ballEl   = overlay.querySelector('.mm-capture-ball');
+            const orbWrap  = overlay.querySelector('.mm-capture-orb-wrap');
+            const orbEl    = overlay.querySelector('.mm-capture-orb');
             const statusEl = overlay.querySelector('.mm-capture-status');
+            const dotsEl   = overlay.querySelector('.mm-capture-dots');
+            const dotEls   = overlay.querySelectorAll('.mm-capture-dot');
 
-            // Após animação da bola, mostra resultado
+            // Reinicia animação CSS do orbe (força reflow para o browser reconhecer a mudança de classe)
+            function triggerShake() {
+                orbEl.classList.remove('mm-capture-orb--shaking');
+                void orbEl.offsetWidth; // força reflow — necessário para reiniciar a animação CSS
+                orbEl.classList.add('mm-capture-orb--shaking');
+            }
+
+            // Fase 1 — orbe entra (animação CSS automática), texto aparece
             setTimeout(() => {
+                statusEl.textContent = 'Capturando...';
+                statusEl.classList.add('mm-capture-status--visible');
+                dotsEl.classList.add('mm-capture-dots--visible');
+            }, 680);
+
+            // Fase 2 — chacoalhada 1
+            const SHAKE_DUR = 820;
+            const shakeStart = 1050;
+            setTimeout(() => {
+                statusEl.textContent = 'Vai segurar?';
+                triggerShake();
+                dotEls[0].classList.add('mm-capture-dot--lit');
+            }, shakeStart);
+
+            // Fase 3 — chacoalhada 2
+            setTimeout(() => {
+                statusEl.textContent = 'Segurando...';
+                triggerShake();
+                dotEls[1].classList.add('mm-capture-dot--lit');
+            }, shakeStart + SHAKE_DUR);
+
+            // Fase 4 — chacoalhada 3
+            setTimeout(() => {
+                statusEl.textContent = 'Quase lá...';
+                triggerShake();
+                dotEls[2].classList.add('mm-capture-dot--lit');
+            }, shakeStart + SHAKE_DUR * 2);
+
+            // Fase 5 — resultado
+            const resultAt = shakeStart + SHAKE_DUR * 3 + 150;
+            setTimeout(() => {
+                orbEl.classList.remove('mm-capture-orb--shaking');
+                dotsEl.style.opacity = '0';
+                statusEl.classList.remove('mm-capture-status--visible');
+
                 if (success) {
-                    ballEl.textContent = '⭐';
-                    statusEl.textContent = '🎉 Captura bem-sucedida!';
-                    statusEl.classList.add('mm-capture-status--success');
+                    // Orbe vira dourado e explode em partículas
+                    orbEl.classList.add('mm-capture-orb--success');
+
+                    // Partículas voadoras
+                    const colors = ['#fdc832', '#fff6c0', '#ffffff', '#b8a9ff', '#ffeaa7'];
+                    for (let i = 0; i < 14; i++) {
+                        const p = document.createElement('div');
+                        const angle = (i / 14) * Math.PI * 2;
+                        const dist  = 55 + Math.random() * 45;
+                        p.style.cssText = `
+                            position: absolute;
+                            width: ${5 + Math.random() * 7}px;
+                            height: ${5 + Math.random() * 7}px;
+                            border-radius: 50%;
+                            background: ${colors[Math.floor(Math.random() * colors.length)]};
+                            top: 50%; left: 50%;
+                            animation: mm-particle-fly ${0.65 + Math.random() * 0.4}s ease-out ${Math.random() * 0.15}s forwards;
+                            --dx: ${Math.cos(angle) * dist}px;
+                            --dy: ${Math.sin(angle) * dist}px;
+                        `;
+                        orbWrap.appendChild(p);
+                    }
+
+                    setTimeout(() => {
+                        statusEl.textContent = '✨ Capturado!';
+                        statusEl.classList.add('mm-capture-status--success', 'mm-capture-status--visible');
+                    }, 200);
+
                 } else {
-                    ballEl.classList.add('mm-capture-ball--shake');
-                    statusEl.textContent = '💨 Escapou!';
-                    statusEl.classList.add('mm-capture-status--fail');
+                    // Orbe se dissolve — monstro escapa
+                    orbEl.classList.add('mm-capture-orb--fail');
+
+                    setTimeout(() => {
+                        statusEl.textContent = '💨 Escapou!';
+                        statusEl.classList.add('mm-capture-status--fail', 'mm-capture-status--visible');
+                    }, 300);
                 }
-                // Remove overlay após mostrar resultado
-                setTimeout(() => overlay.remove(), 1200);
-            }, 1500);
+
+                // Remove overlay após exibir resultado
+                setTimeout(() => overlay.remove(), 1900);
+            }, resultAt);
 
             return () => overlay.remove();
         }
@@ -7215,15 +7298,29 @@
                     return;
                 }
 
-                if (result.captured) {
-                    // Quests: processado após captura, antes de null-ar o encounter
-                    const capturedTemplateId = monster.templateId || monster.monsterId || null;
-                    processQuestProgressFromEncounter(encounter, capturedTemplateId);
-                    GameState.currentEncounter = null;
-                }
+                // Mostrar animação de suspense de captura antes de atualizar a UI
+                showCaptureAnimation(result.captured);
 
-                saveToLocalStorage();
-                renderEncounter();
+                // Desabilitar botão durante animação para evitar duplo clique
+                const captureBtn = document.querySelector('.btn-success[onclick="attemptCapture()"]');
+                if (captureBtn) captureBtn.disabled = true;
+
+                // Aplicar efeitos pós-captura após o resultado aparecer na animação (~3.8s)
+                const POST_ANIM_DELAY = 3800;
+                setTimeout(() => {
+                    if (result.captured) {
+                        // Quests: processado após captura, antes de null-ar o encounter
+                        const capturedTemplateId = monster.templateId || monster.monsterId || null;
+                        processQuestProgressFromEncounter(encounter, capturedTemplateId);
+                        GameState.currentEncounter = null;
+                    }
+
+                    saveToLocalStorage();
+                    renderEncounter();
+
+                    // Re-habilitar botão (renderEncounter recria o DOM; isso cobre o caso de falha)
+                    if (captureBtn) captureBtn.disabled = false;
+                }, POST_ANIM_DELAY);
             } catch (error) {
                 showError('Capture attempt failed', error.stack);
             }
