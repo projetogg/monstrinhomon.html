@@ -6677,6 +6677,9 @@
 
         function renderEncounter() {
             try {
+                // Não re-renderizar durante animação de captura para evitar interferência visual
+                if (window._captureAnimating) return;
+
                 const panel = document.getElementById('encounterPanel');
                 if (!panel) return;
                 
@@ -7298,6 +7301,9 @@
                     return;
                 }
 
+                // Bloquear renderEncounter durante a animação para evitar interferência visual
+                window._captureAnimating = true;
+
                 // Mostrar animação de suspense de captura antes de atualizar a UI
                 showCaptureAnimation(result.captured);
 
@@ -7308,12 +7314,19 @@
                 // Aplicar efeitos pós-captura após o resultado aparecer na animação (~3.8s)
                 const POST_ANIM_DELAY = 3800;
                 setTimeout(() => {
+                    // Liberar renderEncounter antes de atualizar o estado
+                    window._captureAnimating = false;
+
                     if (result.captured) {
                         // Quests: processado após captura, antes de null-ar o encounter
                         const capturedTemplateId = monster.templateId || monster.monsterId || null;
                         processQuestProgressFromEncounter(encounter, capturedTemplateId);
                         GameState.currentEncounter = null;
+                    } else if (result.result === 'defeat') {
+                        // Jogador foi derrotado pelo contra-ataque — exibir resultado e limpar
+                        GameState.currentEncounter = null;
                     }
+                    // Caso 'ongoing': encounter continua ativo → battle retorna de onde parou
 
                     saveToLocalStorage();
                     renderEncounter();
@@ -7322,6 +7335,7 @@
                     if (captureBtn) captureBtn.disabled = false;
                 }, POST_ANIM_DELAY);
             } catch (error) {
+                window._captureAnimating = false; // segurança: libera o lock em caso de erro
                 showError('Capture attempt failed', error.stack);
             }
         }
