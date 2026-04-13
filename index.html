@@ -6876,6 +6876,9 @@
                                 <button class="btn btn-primary btn-large" onclick="closeBattleResult()">✅ Continuar</button>
                             </div>
                         </div>`;
+                    // Exibir toasts/modal de evolução e level-up mesmo no painel de resultado
+                    maybeToastFromLog(encounter);
+                    maybeSfxFromLog(encounter);
                     return;
                 }
                 
