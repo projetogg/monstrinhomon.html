@@ -14,14 +14,16 @@ export {
     clearCache
 } from './dataLoader.js';
 
-// Skills (PR10A)
+// Skills (PR10A + FASE A)
 export {
     loadSkills,
     getSkillsMapSync,
     validateSkillSchema,
     normalizeSkillData,
     getSkillsCacheStatus,
-    clearSkillsCache
+    clearSkillsCache,
+    buildRuntimeSkillDefs,
+    getSkillDefsSync
 } from './skillsLoader.js';
 
 // Items (PR11B + PR14A)

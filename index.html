@@ -1351,8 +1351,13 @@
             'Animalista': 7
         };
 
-        // SKILL DEFINITIONS (inline - por classe e estágio)
-        const SKILL_DEFS = {
+        // SKILL_DEFS — construído dinamicamente a partir de data/skills.json via skillsLoader.
+        // Populado em initSkillDefs() após o carregamento assíncrono dos dados.
+        // Fallback estático mantido em SKILL_DEFS_FALLBACK para compatibilidade.
+        let SKILL_DEFS = null;  // será populado por initSkillDefs()
+
+        // LEGADO - remover após validação
+        const SKILL_DEFS_FALLBACK = {
             // GUERREIRO
             'Guerreiro': {
                 'Golpe de Espada': [
@@ -1473,6 +1478,19 @@
                 ]
             }
         };
+
+        /**
+         * Inicializa SKILL_DEFS a partir do cache de skills.json (sem fetch).
+         * Se o cache ainda não foi carregado, usa SKILL_DEFS_FALLBACK.
+         */
+        function initSkillDefs() {
+            const built = window.Data?.getSkillDefsSync?.();
+            if (built && Object.keys(built).length > 0) {
+                SKILL_DEFS = built;
+            } else {
+                SKILL_DEFS = SKILL_DEFS_FALLBACK;
+            }
+        }
 
         // CLASTERORB TIERS (Sistema de captura em tiers)
         // Valores maiores = melhor item de captura = mais útil
@@ -1880,10 +1898,16 @@
                 
                 // PR10B: Preload skills from JSON in background (non-blocking)
                 if (window.Data && window.Data.loadSkills) {
-                    window.Data.loadSkills().catch(() => {
+                    window.Data.loadSkills().then(() => {
+                        // Atualiza SKILL_DEFS com dados do JSON após carregamento
+                        initSkillDefs();
+                    }).catch(() => {
                         // Errors already logged by SkillsLoader, silently continue with hardcoded fallback
                     });
                 }
+                
+                // Inicializa SKILL_DEFS com fallback até loadSkills() completar
+                initSkillDefs();
                 
                 // PR12A: Preload items from JSON in background (non-blocking)
                 if (window.Data && window.Data.loadItems) {
@@ -3040,79 +3064,8 @@
             }
         }
 
-        /**
-         * @deprecated Função legada — use createMonsterInstanceFromTemplate() para novas criações.
-         *
-         * Riscos de divergência desta função:
-         *  - NÃO aplica offsets de espécie canônica (speciesBridge).
-         *  - NÃO registra canonSpeciesId / canonAppliedOffsets na instância.
-         *  - NÃO normaliza o schema via normalizeMonster().
-         *  - Usa campo "monsterId" em vez de "templateId" (legado).
-         *  - Usa "id" em vez de "instanceId" (legado).
-         *
-         * Mantida para compatibilidade com código legado que ainda a chama.
-         * Não remover sem auditar todos os callers; não adicionar novos callers.
-         *
-         * Único chamador conhecido (2026-04): nenhum chamador direto identificado.
-         * Pode ser removida com segurança após confirmar que todos os fluxos
-         * usam createMonsterInstanceFromTemplate() ou awardMonster().
-         */
-        function createMonsterInstance(template, ownerId, level = 1) {
-            try {
-                if (!template) return null;
-                
-                // Calcular stats baseados no nível
-                const rarityMult = GameState.config?.rarityPower?.[template.rarity] || 1.0;
-                const levelMult = (1 + (level - 1) * 0.1);
-                
-                const hpMax = Math.floor((template.baseHp || 30) * levelMult);
-                const atk = Math.floor((template.baseAtk || 5) * levelMult * rarityMult);
-                const def = Math.floor((template.baseDef || 3) * levelMult * rarityMult);
-                const spd = Math.floor((template.baseSpd || 5) * levelMult * rarityMult); // SPD adicionado
-                const poder = Math.floor(atk * 0.5); // PODER é derivado de ATK
-                
-                // Calcular ENE (Sistema ENE)
-                const baseEne = template.baseEne || 10; // Fallback se não tiver no template
-                const eneGrowth = 2; // growth_ene padrão
-                const eneMax = Math.floor(baseEne + eneGrowth * (level - 1));
-                
-                // Determinar stage baseado no nível (simplificado)
-                // S0: nível 1-9, S1: 10-24, S2: 25-44, S3: 45+
-                let stage = 0;
-                if (level >= 45) stage = 3;
-                else if (level >= 25) stage = 2;
-                else if (level >= 10) stage = 1;
-                
-                return {
-                    id: Date.now() + Math.random(),
-                    ownerId: ownerId,
-                    monsterId: template.id,
-                    name: template.name,
-                    nickname: template.name, // Nickname padrão
-                    class: template.class,
-                    rarity: template.rarity,
-                    emoji: template.emoji,
-                    level: level,
-                    xp: 0,
-                    xpNeeded: calculateXPNeeded(level), // Feature 3.3
-                    hp: hpMax,
-                    hpMax: hpMax,
-                    atk: atk,
-                    def: def,
-                    spd: spd,           // SPD adicionado
-                    poder: poder,
-                    ene: eneMax,      // ENE atual (começa cheio)
-                    eneMax: eneMax,   // ENE máximo
-                    stage: stage,     // Estágio de evolução (0-3)
-                    status: 'healthy',
-                    buffs: [],        // Array para buffs temporários
-                    friendship: DEFAULT_FRIENDSHIP    // Sistema de Amizade (0-100, padrão neutro)
-                };
-            } catch (error) {
-                console.error('Failed to create monster instance:', error);
-                return null;
-            }
-        }
+        // FASE E: createMonsterInstance() removida — sem chamadores diretos confirmados.
+        // Use createMonsterInstanceFromTemplate() ou awardMonster() para todas as criações.
 
         // COMMIT 7: Factory Pattern - createMonsterInstanceFromTemplate()
         /**
@@ -3336,7 +3289,7 @@
             }
         }
 
-        // TODO (Commit 8): Substituir chamadas de createMonsterInstance() por createMonsterInstanceFromTemplate()
+        // FASE E: Migração para createMonsterInstanceFromTemplate() concluída.
         // A função antiga ainda funciona para compatibilidade, mas a nova garante schema canônico.
 
         // ============================================================================
@@ -3740,7 +3693,7 @@
             try {
                 if (!monster || !monster.class) return [];
                 
-                const classSkills = SKILL_DEFS[monster.class];
+                const classSkills = (SKILL_DEFS || SKILL_DEFS_FALLBACK)[monster.class];
                 if (!classSkills) return [];
                 
                 const stage = monster.stage || 0;
