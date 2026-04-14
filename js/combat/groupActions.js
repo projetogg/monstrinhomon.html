@@ -228,7 +228,7 @@ export function executePlayerAttackGroup(deps, targetEnemyIndex = null) {
         dmg = Math.max(1, Math.round(dmg * (1 + atkClassPassive.attackBonus)));
     }
 
-    // Passiva Caçador: +2 ATK vs alvo com HP < 50%
+    // Passiva Caçador: +2 de dano plano vs alvo com HP < 50% (aplicado após cálculo de dano base)
     if (atkClassPassive?.weakTargetAtkBonus) {
         const eHp = Number(enemy.hp) || 0;
         const eHpMax = Number(enemy.hpMax) || 1;
