@@ -206,6 +206,7 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
             <div class="group-unit-name">${e.emoji || ''} ${e.name || e.nome} <small>Nv ${e.level}</small>
                 ${isDead ? '<span class="group-unit-ko-badge">💀 KO</span>' : ''}
                 ${isCurrent ? '<span class="group-unit-active-badge">▶ Atacando</span>' : ''}
+                ${encounter.positions ? `<span class="badge bg-secondary ms-1" style="font-size:0.7em">${encounter.positions['enemy_'+i] === 'front' ? '⚔️Frente' : encounter.positions['enemy_'+i] === 'mid' ? '🛡️Meio' : '🎯Trás'}</span>` : ''}
             </div>
             <div class="group-unit-stats">ATK ${e.atk} · DEF ${e.def} · SPD ${e.spd}</div>
             ${(() => {
@@ -499,6 +500,7 @@ function renderActionBar(encounter, actor, isPlayerTurn, state, helpers) {
             ${itemButtonHtml}
             ${swapButtonHtml}
             ${fleeButtonHtml}
+            <button class="btn btn-outline-secondary btn-sm" onclick="window.groupMovePosition && window.groupMovePosition()">📍 Mover</button>
             <button class="btn btn-secondary" onclick="groupPassTurn()">⏭️ Passar</button>
         </div>
     </div>`;

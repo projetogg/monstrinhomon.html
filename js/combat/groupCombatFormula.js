@@ -224,3 +224,27 @@ export function computeGroupDamage(params) {
 export function checkOneTurnBonus(category, classAdvIsStronger) {
     return category === RC_CATEGORY.ACERTO_FORTE && classAdvIsStronger === true;
 }
+
+/**
+ * Aplica um buff a um monstro com regras de empilhamento:
+ * - Máximo 2 buffs ativos.
+ * - Buffs do mesmo tipo se substituem (não acumulam).
+ *
+ * @param {object} monster - Monstrinho alvo
+ * @param {object} buff    - { type, power, duration, source }
+ */
+export function applyBuff(monster, buff) {
+    if (!monster) return;
+    monster.buffs = monster.buffs || [];
+    // Substituir buff do mesmo tipo se existir
+    const existingIdx = monster.buffs.findIndex(b => b.type === buff.type);
+    if (existingIdx !== -1) {
+        monster.buffs[existingIdx] = buff;
+        return;
+    }
+    // Limite de 2 buffs: remove o mais antigo se cheio
+    if (monster.buffs.length >= 2) {
+        monster.buffs.shift();
+    }
+    monster.buffs.push(buff);
+}

@@ -13,6 +13,11 @@ import { isOffensiveSkill } from './skillResolver.js';
 import { fireCombatEvent, ON_ATTACK, ON_HIT, ON_KO, ON_TURN_START, ON_HEAL_ITEM, ON_SKILL_USED } from './combatEvents.js';
 import { checkFleeCanonical } from './wildCore.js';
 import { checkBossPhaseTransition } from './bossSystem.js';
+import { resolveConfrontation, computeGroupDamage, RC_CATEGORY, applyBuff } from './groupCombatFormula.js';
+import {
+    getDefensiveBonus, lineHasAlive, filterReachableTargets,
+    assignDefaultPositions, autoAdvancePositions, suggestPosition, POSITION, RANGE_BY_CLASS
+} from './positionSystem.js';
 
 /**
  * Passivas de combate por classe — aplicadas após cálculo de dano base.
@@ -47,6 +52,69 @@ function applyHunterWeakTargetBonus(dmg, target, classPass) {
         return Math.max(1, dmg + classPass.weakTargetAtkBonus);
     }
     return dmg;
+}
+
+/**
+ * Calibra HP dos inimigos em batalhas de grupo (não boss).
+ * 1 inimigo → ×1.0; 2 → ×0.75; 3+ → ×0.60
+ * Executado uma vez por encontro (guard: enc._hpCalibrated).
+ *
+ * @param {object} enc - Encounter
+ */
+function calibrateEnemyHP(enc) {
+    if (enc._hpCalibrated || enc.type === 'boss') return;
+    enc._hpCalibrated = true;
+    const count = (enc.enemies || []).filter(e => e).length;
+    if (count <= 1) return;
+    const mult = count === 2 ? 0.75 : 0.60;
+    for (const e of (enc.enemies || [])) {
+        if (!e) continue;
+        const origHp = Number(e.hpMax) || 1;
+        const newHpMax = Math.max(1, Math.round(origHp * mult));
+        e.hpMax = newHpMax;
+        e.hp = Math.min(Number(e.hp) || newHpMax, newHpMax);
+    }
+}
+
+/**
+ * Garante que o encounter tem posições inicializadas.
+ * Chamado automaticamente antes do primeiro uso de enc.positions.
+ *
+ * @param {object} enc  - Encounter atual
+ * @param {object} deps - Dependências
+ */
+function ensurePositions(enc, deps) {
+    if (enc.positions) return;
+    const { state } = deps;
+    const playerIds = enc.participants || [];
+    const playerData = {};
+    for (const pid of playerIds) {
+        const p = state.players.find(x => x.id === pid);
+        const mon = p?.team?.[p.activeIndex ?? 0];
+        if (mon) playerData[pid] = { class: mon.class };
+    }
+    const playerPositions = assignDefaultPositions(playerIds, playerData);
+    const enemyPositions = {};
+    for (let i = 0; i < (enc.enemies || []).length; i++) {
+        const e = enc.enemies[i];
+        if (e) enemyPositions[`enemy_${i}`] = suggestPosition(e.class) || POSITION.FRONT;
+    }
+    enc.positions = { ...playerPositions, ...enemyPositions };
+}
+
+/**
+ * Retorna o posMod defensivo de um alvo.
+ *
+ * @param {object} enc        - Encounter
+ * @param {string} targetKey  - 'pid' para jogador, 'enemy_N' para inimigo
+ * @param {string} side       - 'player'|'enemy'
+ * @param {Array}  combatantList - Lista de {id, side, position, hp}
+ * @returns {number} 0, 1 ou 2
+ */
+function getTargetPosMod(enc, targetKey, side, combatantList) {
+    const pos = enc.positions?.[targetKey] || POSITION.FRONT;
+    const frontHasAlly = lineHasAlive(combatantList, POSITION.FRONT, side);
+    return getDefensiveBonus(pos, frontHasAlly);
 }
 
 /**
@@ -170,6 +238,9 @@ export function executePlayerAttackGroup(deps, targetEnemyIndex = null) {
         hpPct: (Number(mon.hpMax) || 1) > 0 ? (Number(mon.hp) || 0) / (Number(mon.hpMax) || 1) : 0,
     });
 
+    // FASE I/II: garantir posições
+    ensurePositions(enc, deps);
+
     // Alvo: inimigo especificado ou primeiro inimigo vivo
     const enemyIndex = resolveEnemyIndex(enc, targetEnemyIndex, core);
 
@@ -181,76 +252,90 @@ export function executePlayerAttackGroup(deps, targetEnemyIndex = null) {
         return false;
     }
 
-    const d20 = helpers.rollD20();
-    
-    const alwaysMiss = (d20 === 1);
-    const isCrit = (d20 === 20);
-    // Bug Fix #3: Adicionar classAdvantages como 4º parâmetro
-    const hit = !alwaysMiss && (isCrit || core.checkHit(d20, mon, enemy, state.config?.classAdvantages));
-
     const attackerName = player.name || player.nome || actor.name || "Jogador";
     const monName = mon.nickname || mon.name || mon.nome || "Monstrinho";
     const enemyName = enemy.name || enemy.nome || "Inimigo";
-    
-    // Feature 3.8: Record d20 roll
+
+    // Rolagens bilaterais: jogador ataca, inimigo defende
+    const d20A = helpers.rollD20();
+    const d20D = helpers.rollD20();
+    const isCrit = (d20A === 20);
+    const alwaysMiss = (d20A === 1);
     const rollType = isCrit ? 'crit' : alwaysMiss ? 'fail' : 'normal';
-    helpers.recordD20Roll(enc, attackerName, d20, rollType);
+    helpers.recordD20Roll(enc, attackerName, d20A, rollType);
+    ui.playAttackFeedback(d20A, true, isCrit, audio);
 
-    // Feature 4.4: Play attack sound
-    ui.playAttackFeedback(d20, hit, isCrit, audio);
+    // Modificadores de classe
+    const classAdv = core.getClassAdvantageModifiers(mon.class, enemy.class, state.config?.classAdvantages);
 
-    if (!hit) {
-        helpers.log(enc, `🎲 ${attackerName} (${monName}) rolou ${d20} e ERROU o ataque em ${enemyName}.`);
-        
-        // Feature 3.8: Flash fail on player
+    // Buffs
+    const atkMods = core.getBuffModifiers(mon);
+    const defMods = core.getBuffModifiers(enemy);
+    const effectiveAtk = Math.max(1, (Number(mon.atk) || 0) + atkMods.atk);
+    const effectiveDef = Math.max(1, (Number(enemy.def) || 0) + defMods.def);
+
+    // Posição defensiva do inimigo
+    const enemyCombatants = (enc.enemies || []).map((e, i) => ({
+        id: `enemy_${i}`, side: 'enemy',
+        position: enc.positions?.[`enemy_${i}`] || POSITION.FRONT,
+        hp: Number(e?.hp) || 0,
+    }));
+    const posMod = getTargetPosMod(enc, `enemy_${enemyIndex}`, 'enemy', enemyCombatants);
+
+    // MARK: -2 buffDef para inimigo marcado
+    const markDebuff = (enc.markedEnemyIndex === enemyIndex) ? -2 : 0;
+
+    // Resolver confronto bilateral (FASE I)
+    const confrontResult = resolveConfrontation({
+        d20A, d20D,
+        atkAtk: effectiveAtk,
+        atkDef: effectiveDef,
+        atkLvl: Number(mon.level) || 1,
+        defLvl: Number(enemy.level) || 1,
+        classModAtk: classAdv.atkBonus,
+        posMod,
+        buffOff: 0,
+        buffDef: markDebuff,
+    });
+
+    const isHit = !alwaysMiss && confrontResult.category !== RC_CATEGORY.FALHA_TOTAL;
+
+    if (!isHit) {
+        helpers.log(enc, `🎲 ${attackerName} (${monName}) rolou d20A:${d20A} vs d20D:${d20D} → RC${confrontResult.rc} ERROU. ${enemyName} esquivou!`);
         ui.showMissFeedback(`grpP_${actor.id}`);
-        
         advanceGroupTurn(enc, deps);
         storage.save();
         ui.render();
         return true;
     }
 
-    // POWER básico
+    // Calcular dano via fórmula canônica
     const basicPower = helpers.getBasicAttackPower(mon.class);
-    let powerUsed = basicPower;
+    const lvlDiff = (Number(mon.level) || 1) - (Number(enemy.level) || 1);
 
-    if (isCrit) {
-        powerUsed = Math.round(basicPower * 1.5); // A1: crit ×1.5 (era ×2)
-        helpers.log(enc, `💥 CRIT 20! ${monName} ativou Poder Reforçado!`);
-    }
-
-    // Aplicar modificadores de buff
-    const atkMods = core.getBuffModifiers(mon);
-    const effectiveAtk = Math.max(1, (Number(mon.atk) || 0) + atkMods.atk);
-    
-    const defMods = core.getBuffModifiers(enemy);
-    const effectiveDef = Math.max(1, (Number(enemy.def) || 0) + defMods.def);
-
-    // Bug Fix #4: Usar getClassAdvantageModifiers() corretamente
-    const classAdv = core.getClassAdvantageModifiers(
-        mon.class,
-        enemy.class,
-        state.config?.classAdvantages
-    );
-
-    let dmg = core.calcDamage({
+    const { damage: baseDmg, isIlusory } = computeGroupDamage({
+        pwr: basicPower,
         atk: effectiveAtk,
-        def: effectiveDef,
-        power: powerUsed,
-        damageMult: classAdv.damageMult
+        lvlDiff,
+        defEnemy: effectiveDef,
+        damageMult: classAdv.damageMult,
+        critBonus: confrontResult.critDmgBonus,
+        category: confrontResult.category,
+        d20ANatural: confrontResult.d20ANatural,
+        d20DNatural: confrontResult.d20DNatural,
     });
+
+    let dmg = baseDmg;
 
     // A4: Passiva ofensiva do atacante (Ladino +10% dano)
     const atkClassPassive = CLASS_COMBAT_PASSIVES[mon.class];
     if (atkClassPassive?.attackBonus) {
         dmg = Math.max(1, Math.round(dmg * (1 + atkClassPassive.attackBonus)));
     }
-
-    // Passiva Caçador: +2 de dano plano vs alvo com HP < 50%
+    // Passiva Caçador: +2 dano plano vs alvo HP < 50%
     dmg = applyHunterWeakTargetBonus(dmg, enemy, atkClassPassive);
 
-    // PR-02: passiva de espécie do atacante (on_attack — ataque básico)
+    // PR-02: passiva de espécie do atacante
     const passiveStateAtk = enc.passiveState || (enc.passiveState = {});
     const atkSpeciesPassive = fireCombatEvent(mon, ON_ATTACK, {
         hpPct: (Number(mon.hpMax) || 1) > 0 ? (Number(mon.hp) || 0) / (Number(mon.hpMax) || 1) : 0,
@@ -267,45 +352,55 @@ export function executePlayerAttackGroup(deps, targetEnemyIndex = null) {
         passiveStateAtk.bellwaveRhythmCharged = false;
     }
 
-    // A4: Passiva defensiva do defensor (Guerreiro/Bárbaro/Curandeiro)
+    // A4: Passiva defensiva do defensor
     const defClassPassive = CLASS_COMBAT_PASSIVES[enemy.class];
     if (defClassPassive?.defenseBonus) {
         dmg = Math.max(1, Math.round(dmg * (1 - defClassPassive.defenseBonus)));
     }
 
-    // PR-02: passiva de espécie do defensor (on_hit — primeiro hit do turno)
+    // PR-02: passiva de espécie do defensor
     const defSpeciesPassive = fireCombatEvent(enemy, ON_HIT, {
         hpPct: (Number(enemy.hpMax) || 1) > 0 ? (Number(enemy.hp) || 0) / (Number(enemy.hpMax) || 1) : 0,
         isFirstHitThisTurn: true,
     });
     if (defSpeciesPassive?.damageReduction) {
         const reduced = Math.max(1, dmg - defSpeciesPassive.damageReduction);
-        if (reduced < dmg) {
-            helpers.log(enc, `🛡️ Passiva ${enemyName}: -${dmg - reduced} dano`);
-        }
+        if (reduced < dmg) helpers.log(enc, `🛡️ Passiva ${enemyName}: -${dmg - reduced} dano`);
         dmg = reduced;
     }
-    
-    // Apply damage
-    helpers.applyDamage(enemy, dmg);
-    
-    // PR-05: Verificar transição de Fase 2 do boss após receber dano
-    checkBossPhaseTransition(enemy, enc.log);
 
-    // PR11B: Marcar que o inimigo participou (recebeu dano)
+    helpers.applyDamage(enemy, dmg);
+    checkBossPhaseTransition(enemy, enc.log);
     markAsParticipated(enemy);
 
-    helpers.log(enc, `🎲 ${attackerName} (${monName}) rolou ${d20} e acertou ${enemyName} causando ${dmg} de dano!`);
-    
-    // Feature 3.8: Visual feedback
+    // Log RC detalhado
+    const rcLabel = confrontResult.category === RC_CATEGORY.ACERTO_FORTE ? 'Acerto Forte ×1.25'
+        : confrontResult.category === RC_CATEGORY.ACERTO_NORMAL ? 'Acerto Normal ×1.00'
+        : confrontResult.category === RC_CATEGORY.ACERTO_REDUZIDO ? 'Acerto Reduzido ×0.60'
+        : 'Contato Neutralizado';
+    const critText = isCrit ? ' 💥CRIT!' : '';
+    const ilusText = isIlusory ? ' (ilusório)' : '';
+    helpers.log(enc, `🎲 ${attackerName} (${monName}) d20A:${d20A}/d20D:${d20D} RC${confrontResult.rc} → ${rcLabel}${critText} | acertou ${enemyName} ${dmg} dano${ilusText}`);
+
     storage.save();
     ui.render();
     ui.showDamageFeedback(`grpE_${enemyIndex}`, dmg, isCrit);
 
     if (!core.isAlive(enemy)) {
         helpers.log(enc, `🏁 ${enemyName} foi derrotado!`);
-        // PR-02: on_ko — inimigo derrotado
         fireCombatEvent(enemy, ON_KO, { hpPct: 0 });
+        // FASE II: autoAdvancePositions após KO de inimigo
+        if (enc.positions) {
+            const updatedCombatants = (enc.enemies || []).map((e, i) => ({
+                id: `enemy_${i}`, side: 'enemy',
+                position: enc.positions?.[`enemy_${i}`] || POSITION.FRONT,
+                hp: Number(e?.hp) || 0,
+            }));
+            const enemyPosEntries = Object.fromEntries(
+                Object.entries(enc.positions).filter(([k]) => k.startsWith('enemy_'))
+            );
+            enc.positions = { ...enc.positions, ...autoAdvancePositions(enemyPosEntries, updatedCombatants, 'enemy') };
+        }
     }
 
     advanceGroupTurn(enc, deps);
@@ -440,6 +535,10 @@ export function executeEnemyTurnGroup(enc, deps) {
         hpPct: (Number(enemy.hpMax) || 1) > 0 ? (Number(enemy.hp) || 0) / (Number(enemy.hpMax) || 1) : 0,
     });
 
+    // FASE I/II/V: garantir posições e calibrar HP
+    ensurePositions(enc, deps);
+    calibrateEnemyHP(enc);
+
     // IA v1: Escolhe alvo por DEF (aggro)
     // Inicializar recentTargets se não existir
     if (!enc.recentTargets) {
@@ -498,8 +597,7 @@ export function executeEnemyTurnGroup(enc, deps) {
     if (enemyAction === 'skill' && enemyClass === 'Guerreiro') {
         if ((Number(enemy.ene) || 0) >= 1) {
             enemy.ene = Math.max(0, (Number(enemy.ene) || 0) - 1);
-            enemy.buffs = enemy.buffs || [];
-            enemy.buffs.push({ type: 'def', power: 2, duration: 1, source: 'Postura Defensiva' });
+            applyBuff(enemy, { type: 'def', power: 2, duration: 1, source: 'Postura Defensiva' });
             helpers.log(enc, `🛡️ ${enemyName} (Guerreiro) assumiu Postura Defensiva! DEF +2 por 1 turno.`);
             advanceGroupTurn(enc, deps);
             storage.save();
@@ -529,67 +627,90 @@ export function executeEnemyTurnGroup(enc, deps) {
         if (weakest) finalTargetPid = weakest.playerId;
     }
 
+    // FASE III: TAUNT — inimigo deve focar no portador de TAUNT
+    if (enc.tauntActiveId != null) {
+        const tauntTarget = eligibleTargets.find(t => t.monster?.id === enc.tauntActiveId);
+        if (tauntTarget) {
+            finalTargetPid = tauntTarget.playerId;
+        } else {
+            // Portador derrotado — limpar TAUNT
+            enc.tauntActiveId = null;
+            enc.tauntActiveMonName = null;
+        }
+    }
+
     const targetPlayer = helpers.getPlayerById(finalTargetPid);
     const targetMon = helpers.getActiveMonsterOfPlayer(targetPlayer);
     const targetName = targetPlayer?.name || targetPlayer?.nome || "Jogador";
     const targetMonName = targetMon?.nickname || targetMon?.name || targetMon?.nome || "Monstrinho";
 
-    const d20 = helpers.rollD20();
-
-    const alwaysMiss = (d20 === 1);
-    const isCrit = (d20 === 20);
-    // Bug Fix #5: Adicionar classAdvantages como 4º parâmetro
-    const hit = !alwaysMiss && (isCrit || core.checkHit(d20, enemy, targetMon, state.config?.classAdvantages));
-    
-    // Feature 3.8: Record d20 roll
+    // Rolagens bilaterais: inimigo ataca, jogador defende
+    const d20A = helpers.rollD20();
+    const d20D = helpers.rollD20();
+    const isCrit = (d20A === 20);
+    const alwaysMiss = (d20A === 1);
     const rollType = isCrit ? 'crit' : alwaysMiss ? 'fail' : 'normal';
-    helpers.recordD20Roll(enc, enemyName, d20, rollType);
+    helpers.recordD20Roll(enc, enemyName, d20A, rollType);
+    ui.playAttackFeedback(d20A, true, isCrit, audio);
 
-    // Feature 4.4: Enemy attack sound (group)
-    ui.playAttackFeedback(d20, hit, isCrit, audio);
+    // Modificadores de classe
+    const classAdv = core.getClassAdvantageModifiers(enemy.class, targetMon?.class, state.config?.classAdvantages);
 
-    if (!hit) {
-        helpers.log(enc, `🎲 ${enemyName} rolou ${d20} e ERROU o ataque em ${targetName} (${targetMonName}).`);
-        
-        // Feature 3.8: Flash fail on enemy
-        // Bug Fix #8: Usar actor.id diretamente (já é o índice)
+    // Buffs
+    const atkMods = core.getBuffModifiers(enemy);
+    const defMods = core.getBuffModifiers(targetMon);
+    const effectiveAtk = Math.max(1, (Number(enemy.atk) || 0) + atkMods.atk);
+    const effectiveDef = Math.max(1, (Number(targetMon?.def) || 0) + defMods.def);
+
+    // Posição defensiva do jogador alvo
+    const playerCombatants = (enc.participants || []).map(pid => {
+        const p = helpers.getPlayerById(pid);
+        const m = helpers.getActiveMonsterOfPlayer(p);
+        return { id: pid, side: 'player', position: enc.positions?.[pid] || POSITION.FRONT, hp: Number(m?.hp) || 0 };
+    });
+    const playerPosMod = getTargetPosMod(enc, finalTargetPid, 'player', playerCombatants);
+
+    // Resolver confronto bilateral (FASE I — inimigo ataca)
+    const confrontResult = resolveConfrontation({
+        d20A, d20D,
+        atkAtk: effectiveAtk,
+        atkDef: effectiveDef,
+        atkLvl: Number(enemy.level) || 1,
+        defLvl: Number(targetMon?.level) || 1,
+        classModAtk: classAdv.atkBonus,
+        posMod: playerPosMod,
+        buffOff: 0,
+        buffDef: 0,
+    });
+
+    const isHit = !alwaysMiss && confrontResult.category !== RC_CATEGORY.FALHA_TOTAL;
+
+    if (!isHit) {
+        helpers.log(enc, `🎲 ${enemyName} rolou d20A:${d20A} vs d20D:${d20D} → RC${confrontResult.rc} ERROU. ${targetName} (${targetMonName}) esquivou!`);
         ui.showMissFeedback(`grpE_${actor.id}`);
-        
         advanceGroupTurn(enc, deps);
         storage.save();
         ui.render();
         return true;
     }
 
-    // POWER básico do inimigo
+    // Calcular dano via fórmula canônica
     const basicPower = helpers.getBasicAttackPower(enemy.class);
-    let powerUsed = basicPower;
+    const lvlDiff = (Number(enemy.level) || 1) - (Number(targetMon?.level) || 1);
 
-    if (isCrit) {
-        powerUsed = Math.round(basicPower * 1.5); // A1: crit ×1.5 (era ×2)
-        helpers.log(enc, `💥 CRIT 20! ${enemyName} ativou Poder Reforçado!`);
-    }
-
-    // Aplicar modificadores de buff
-    const atkMods = core.getBuffModifiers(enemy);
-    const effectiveAtk = Math.max(1, (Number(enemy.atk) || 0) + atkMods.atk);
-    
-    const defMods = core.getBuffModifiers(targetMon);
-    const effectiveDef = Math.max(1, (Number(targetMon?.def) || 0) + defMods.def);
-
-    // Bug Fix #4: Usar getClassAdvantageModifiers() corretamente
-    const classAdv = core.getClassAdvantageModifiers(
-        enemy.class,
-        targetMon?.class,
-        state.config?.classAdvantages
-    );
-
-    let dmg = core.calcDamage({
+    const { damage: baseDmg } = computeGroupDamage({
+        pwr: basicPower,
         atk: effectiveAtk,
-        def: effectiveDef,
-        power: powerUsed,
-        damageMult: classAdv.damageMult
+        lvlDiff,
+        defEnemy: effectiveDef,
+        damageMult: classAdv.damageMult,
+        critBonus: confrontResult.critDmgBonus,
+        category: confrontResult.category,
+        d20ANatural: confrontResult.d20ANatural,
+        d20DNatural: confrontResult.d20DNatural,
     });
+
+    let dmg = baseDmg;
 
     // A4: Passiva ofensiva do inimigo atacante (Ladino +10% dano)
     const atkClassPassive = CLASS_COMBAT_PASSIVES[enemy.class];
@@ -603,7 +724,7 @@ export function executeEnemyTurnGroup(enc, deps) {
         helpers.log(enc, `🔮 ${enemyName} (Mago) usou skill ofensiva! Dano amplificado!`);
     }
 
-    // PR-02: passiva de espécie do inimigo atacante (on_attack — ataque básico)
+    // PR-02: passiva de espécie do inimigo atacante (on_attack)
     const passiveStateEnemy = enc.passiveState || (enc.passiveState = {});
     const enemyAtkSpeciesPassive = fireCombatEvent(enemy, ON_ATTACK, {
         hpPct: (Number(enemy.hpMax) || 1) > 0 ? (Number(enemy.hp) || 0) / (Number(enemy.hpMax) || 1) : 0,
@@ -616,13 +737,13 @@ export function executeEnemyTurnGroup(enc, deps) {
         helpers.log(enc, `✨ Passiva ${enemyName}: +${enemyAtkSpeciesPassive.atkBonus} ATK`);
     }
 
-    // A4: Passiva defensiva do defensor (Guerreiro/Bárbaro/Curandeiro)
+    // A4: Passiva defensiva do defensor
     const defClassPassive = CLASS_COMBAT_PASSIVES[targetMon?.class];
     if (defClassPassive?.defenseBonus) {
         dmg = Math.max(1, Math.round(dmg * (1 - defClassPassive.defenseBonus)));
     }
 
-    // PR-02: passiva de espécie do alvo defensor (on_hit — primeiro hit do turno)
+    // PR-02: passiva de espécie do defensor
     if (targetMon) {
         const targetDefSpeciesPassive = fireCombatEvent(targetMon, ON_HIT, {
             hpPct: (Number(targetMon.hpMax) || 1) > 0 ? (Number(targetMon.hp) || 0) / (Number(targetMon.hpMax) || 1) : 0,
@@ -630,30 +751,26 @@ export function executeEnemyTurnGroup(enc, deps) {
         });
         if (targetDefSpeciesPassive?.damageReduction) {
             const reduced = Math.max(1, dmg - targetDefSpeciesPassive.damageReduction);
-            if (reduced < dmg) {
-                helpers.log(enc, `🛡️ Passiva ${targetMonName}: -${dmg - reduced} dano`);
-            }
+            if (reduced < dmg) helpers.log(enc, `🛡️ Passiva ${targetMonName}: -${dmg - reduced} dano`);
             dmg = reduced;
         }
     }
-    
-    // Apply damage
-    helpers.applyDamage(targetMon, dmg);
-    
-    // PR11B: Marcar que o monstro do jogador participou (recebeu dano)
-    markAsParticipated(targetMon);
-    // PR11B: Marcar que o inimigo participou (causou dano)
-    markAsParticipated(enemy);
-    
-    // IA v1: Atualizar recentTargets para focusPenalty
-    enc.recentTargets[targetPid] = (enc.recentTargets[targetPid] || 0) + 1;
 
-    helpers.log(enc, `🎲 ${enemyName} rolou ${d20} e acertou ${targetName} (${targetMonName}) causando ${dmg} de dano!`);
-    
-    // Feature 3.8: Visual feedback
+    helpers.applyDamage(targetMon, dmg);
+    markAsParticipated(targetMon);
+    markAsParticipated(enemy);
+    enc.recentTargets[finalTargetPid] = (enc.recentTargets[finalTargetPid] || 0) + 1;
+
+    const rcLabelEnemy = confrontResult.category === RC_CATEGORY.ACERTO_FORTE ? 'Acerto Forte ×1.25'
+        : confrontResult.category === RC_CATEGORY.ACERTO_NORMAL ? 'Acerto Normal ×1.00'
+        : confrontResult.category === RC_CATEGORY.ACERTO_REDUZIDO ? 'Acerto Reduzido ×0.60'
+        : 'Contato Neutralizado';
+    const critTextEnemy = isCrit ? ' 💥CRIT!' : '';
+    helpers.log(enc, `🎲 ${enemyName} d20A:${d20A}/d20D:${d20D} RC${confrontResult.rc} → ${rcLabelEnemy}${critTextEnemy} | ${targetName} (${targetMonName}) ${dmg} dano`);
+
     storage.save();
     ui.render();
-    ui.showDamageFeedback(`grpP_${targetPid}`, dmg, isCrit);
+    ui.showDamageFeedback(`grpP_${finalTargetPid}`, dmg, isCrit);
 
     if (!core.isAlive(targetMon)) {
         helpers.log(enc, `💀 ${targetName} (${targetMonName}) foi derrotado!`);
@@ -788,6 +905,17 @@ export function advanceGroupTurn(enc, deps) {
     }
     
     // Avançar para próximo ator válido
+    // FASE III: Rastrear rodadas e limpar TAUNT/MARK ao final de cada rodada
+    const nextTurnIndex = ((Number(enc.turnIndex) || 0) + 1) % enc.turnOrder.length;
+    if (nextTurnIndex === 0) {
+        // Nova rodada iniciada
+        enc._roundNumber = (enc._roundNumber || 1) + 1;
+        // Limpar TAUNT e MARK: efeitos duram apenas 1 rodada
+        enc.tauntActiveId = null;
+        enc.tauntActiveMonName = null;
+        enc.markedEnemyIndex = undefined;
+    }
+
     const maxLoops = enc.turnOrder.length + 2;
     let loops = 0;
     
@@ -971,6 +1099,8 @@ export function executeGroupFlee(deps) {
         enc.finished = true;
         enc.result = 'retreat';
         helpers.log(enc, '🏁 Todos os participantes fugiram. Batalha encerrada.');
+        enc.therapyLog = enc.therapyLog || [];
+        enc.therapyLog.push({ event: 'flee', playerId: player.id });
     } else {
         advanceGroupTurn(enc, deps);
     }
@@ -1038,6 +1168,8 @@ function executeNonOffensiveSkillGroup(skill, context) {
             totalCurado += healAmt;
         }
         helpers.log(enc, `💚 ${monName} usou ${skillName}! Todos os aliados recuperaram ~25% HP! (total: ${totalCurado})`);
+        enc.therapyLog = enc.therapyLog || [];
+        enc.therapyLog.push({ event: 'ally_heal', playerId: player?.id, skillName });
         return;
     }
 
