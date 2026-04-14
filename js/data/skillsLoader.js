@@ -37,8 +37,8 @@ export function validateSkillSchema(skill) {
     if (typeof skill.category !== 'string') return false;
     if (typeof skill.target !== 'string') return false;
     
-    // Validação de números
-    if (typeof skill.power !== 'number' || skill.power < 0) return false;
+    // Validação de números (power pode ser negativo — debuff skills como Enfraquecer/Armadilha)
+    if (typeof skill.power !== 'number') return false;
     if (typeof skill.accuracy !== 'number' || skill.accuracy < 0 || skill.accuracy > 1) return false;
     if (typeof skill.energy_cost !== 'number' || skill.energy_cost < 0) return false;
     
@@ -218,4 +218,87 @@ export function getSkillsCacheStatus() {
 export function clearSkillsCache() {
     skillsCache = null;
     cacheStatus = { loaded: false, error: null, timestamp: null };
+}
+
+// ============================================================================
+// FASE A: buildRuntimeSkillDefs — constrói SKILL_DEFS a partir de skills.json
+// ============================================================================
+
+/**
+ * Converte campo target do formato SKILLS_CATALOG para o formato runtime SKILL_DEFS.
+ * @param {string|undefined} target
+ * @returns {string|undefined}
+ */
+function convertTarget(target) {
+    if (!target) return undefined;
+    const map = { 'Inimigo': 'enemy', 'Self': 'self', 'Aliado': 'ally' };
+    return map[target] ?? target;
+}
+
+/**
+ * Constrói a estrutura SKILL_DEFS a partir do array de skills.json.
+ * SKILL_DEFS = { [class]: { [groupKey]: [tier_stage0, tier_stage1, tier_stage2] } }
+ * Onde cada elemento do array é o objeto de skill para aquele stage (ou null se não existir).
+ *
+ * @param {Object[]|Map} skillsData - Array de skills (data.skills) ou Map por ID
+ * @returns {Object} Estrutura SKILL_DEFS compatível com getMonsterSkills()
+ */
+export function buildRuntimeSkillDefs(skillsData) {
+    if (!skillsData) return {};
+
+    // Normalizar para array
+    const arr = skillsData instanceof Map
+        ? Array.from(skillsData.values())
+        : Array.isArray(skillsData) ? skillsData : [];
+
+    const defs = {};
+
+    for (const skill of arr) {
+        if (!skill || !skill.class || !skill.groupKey || skill.stageIndex == null) continue;
+
+        const cls = skill.class;
+        const grp = skill.groupKey;
+        const idx = skill.stageIndex;
+
+        if (!defs[cls]) defs[cls] = {};
+        if (!defs[cls][grp]) defs[cls][grp] = [null, null, null];
+
+        // Converter para formato SKILL_DEFS runtime
+        const runtimeSkill = {
+            tier: idx + 1,
+            name: skill.name,
+            type: skill.type,
+            cost: skill.energy_cost,
+            power: skill.power,
+            desc: skill.desc || ''
+        };
+
+        // target (opcional — presente em BUFF/HEAL/TAUNT mas não em DAMAGE)
+        const target = convertTarget(skill.target);
+        if (target !== undefined) runtimeSkill.target = target;
+
+        // Campos opcionais de BUFF
+        if (skill.buffType !== undefined) runtimeSkill.buffType = skill.buffType;
+        if (skill.duration !== undefined) runtimeSkill.duration = skill.duration;
+
+        // Campos de debuff (Fúria)
+        if (skill.debuffType !== undefined) runtimeSkill.debuffType = skill.debuffType;
+        if (skill.debuffPower !== undefined) runtimeSkill.debuffPower = skill.debuffPower;
+
+        defs[cls][grp][idx] = runtimeSkill;
+    }
+
+    return defs;
+}
+
+/**
+ * Retorna SKILL_DEFS construído sincronamente do cache (sem fetch).
+ * Retorna null se o cache ainda não foi carregado.
+ *
+ * @returns {Object|null} SKILL_DEFS ou null se cache não carregado
+ */
+export function getSkillDefsSync() {
+    if (!skillsCache) return null;
+    const arr = Array.from(skillsCache.values());
+    return buildRuntimeSkillDefs(arr);
 }

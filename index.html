@@ -1351,8 +1351,13 @@
             'Animalista': 7
         };
 
-        // SKILL DEFINITIONS (inline - por classe e estágio)
-        const SKILL_DEFS = {
+        // SKILL_DEFS — construído dinamicamente a partir de data/skills.json via skillsLoader.
+        // Populado em initSkillDefs() após o carregamento assíncrono dos dados.
+        // Fallback estático mantido em SKILL_DEFS_FALLBACK para compatibilidade.
+        let SKILL_DEFS = null;  // será populado por initSkillDefs()
+
+        // LEGADO - remover após validação
+        const SKILL_DEFS_FALLBACK = {
             // GUERREIRO
             'Guerreiro': {
                 'Golpe de Espada': [
@@ -1473,6 +1478,19 @@
                 ]
             }
         };
+
+        /**
+         * Inicializa SKILL_DEFS a partir do cache de skills.json (sem fetch).
+         * Se o cache ainda não foi carregado, usa SKILL_DEFS_FALLBACK.
+         */
+        function initSkillDefs() {
+            const built = window.Data?.getSkillDefsSync?.();
+            if (built && Object.keys(built).length > 0) {
+                SKILL_DEFS = built;
+            } else {
+                SKILL_DEFS = SKILL_DEFS_FALLBACK;
+            }
+        }
 
         // CLASTERORB TIERS (Sistema de captura em tiers)
         // Valores maiores = melhor item de captura = mais útil
@@ -1880,10 +1898,16 @@
                 
                 // PR10B: Preload skills from JSON in background (non-blocking)
                 if (window.Data && window.Data.loadSkills) {
-                    window.Data.loadSkills().catch(() => {
+                    window.Data.loadSkills().then(() => {
+                        // Atualiza SKILL_DEFS com dados do JSON após carregamento
+                        initSkillDefs();
+                    }).catch(() => {
                         // Errors already logged by SkillsLoader, silently continue with hardcoded fallback
                     });
                 }
+                
+                // Inicializa SKILL_DEFS com fallback até loadSkills() completar
+                initSkillDefs();
                 
                 // PR12A: Preload items from JSON in background (non-blocking)
                 if (window.Data && window.Data.loadItems) {
@@ -3740,7 +3764,7 @@
             try {
                 if (!monster || !monster.class) return [];
                 
-                const classSkills = SKILL_DEFS[monster.class];
+                const classSkills = (SKILL_DEFS || SKILL_DEFS_FALLBACK)[monster.class];
                 if (!classSkills) return [];
                 
                 const stage = monster.stage || 0;
