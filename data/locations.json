@@ -2559,6 +2559,96 @@
           "profileKey": "resource"
         }
       ]
+    },
+    {
+      "id": "HEAL_001",
+      "name": "Acampamento do Viajante",
+      "description": "Um acampamento tranquilo onde Monstrinhos podem descansar. Vovó Orba cuida de todos com carinho.",
+      "biome": "healing",
+      "tier": "S",
+      "levelRange": null,
+      "rarityWeights": {},
+      "speciesPoolsByRarity": {},
+      "encounterTypeWeights": {},
+      "allowedEvolutionStages": [],
+      "unlockRules": [],
+      "specialRules": ["service_only"],
+      "rareSpotBonus": 0,
+      "bossRule": null,
+      "notes": "Centro de cura regional — restaura HP/ENE de todos os Monstrinhos.",
+      "spots": [
+        {
+          "id": "HEAL_001_CURE",
+          "name": "Centro de Cura",
+          "icon": "💚",
+          "profile": "Curar Monstrinhos",
+          "description": "Restaure o HP de todos os seus Monstrinhos gratuitamente.",
+          "type": "service",
+          "serviceAction": "heal",
+          "rarityModifiers": [],
+          "profileKey": "service"
+        }
+      ]
+    },
+    {
+      "id": "SHOP_MID_01",
+      "name": "Bazar do Cruzamento",
+      "description": "Uma barraca colorida no meio da estrada. O mercador Zito oferece itens para quem está indo adiante.",
+      "biome": "shop",
+      "tier": "S",
+      "levelRange": null,
+      "rarityWeights": {},
+      "speciesPoolsByRarity": {},
+      "encounterTypeWeights": {},
+      "allowedEvolutionStages": [],
+      "unlockRules": [],
+      "specialRules": ["service_only"],
+      "rareSpotBonus": 0,
+      "bossRule": null,
+      "notes": "Loja regional — itens de nível médio/alto.",
+      "spots": [
+        {
+          "id": "SHOP_MID_01_BUY",
+          "name": "Loja do Zito",
+          "icon": "🛒",
+          "profile": "Comprar itens",
+          "description": "Itens de captura e cura para aventureiros de médio porte.",
+          "type": "service",
+          "serviceAction": "shop",
+          "rarityModifiers": [],
+          "profileKey": "service"
+        }
+      ]
+    },
+    {
+      "id": "HEAL_FINAL_01",
+      "name": "Santuário da Floresta",
+      "description": "Uma clareira mágica protegida por espíritos antigos. Os Monstrinhos sentem sua energia restauradora.",
+      "biome": "healing",
+      "tier": "S",
+      "levelRange": null,
+      "rarityWeights": {},
+      "speciesPoolsByRarity": {},
+      "encounterTypeWeights": {},
+      "allowedEvolutionStages": [],
+      "unlockRules": [],
+      "specialRules": ["service_only"],
+      "rareSpotBonus": 0,
+      "bossRule": null,
+      "notes": "Centro de cura avançado — antes dos bosses finais.",
+      "spots": [
+        {
+          "id": "HEAL_FINAL_01_CURE",
+          "name": "Centro de Cura",
+          "icon": "💚",
+          "profile": "Curar Monstrinhos",
+          "description": "Restaure o HP de todos os seus Monstrinhos antes do confronto final.",
+          "type": "service",
+          "serviceAction": "heal",
+          "rarityModifiers": [],
+          "profileKey": "service"
+        }
+      ]
     }
   ]
 }
