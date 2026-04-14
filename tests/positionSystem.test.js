@@ -14,7 +14,6 @@ import {
     getDefensiveBonus,
     lineHasAlive,
     assignDefaultPositions,
-    autoAdvancePositions,
     filterReachableTargets,
 } from '../js/combat/positionSystem.js';
 

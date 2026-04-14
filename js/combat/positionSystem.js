@@ -40,10 +40,11 @@ export function suggestPosition(monClass) {
  * - Alcance 2 (médio): pode atingir frente e meio
  * - Alcance 3 (longo): pode atingir qualquer posição
  *
- * A posição do atacante (`attackerPos`) está disponível para extensões futuras
- * (ex.: restrição de que corpo-a-corpo exige estar na frente).
- *
  * Mapeamento de posição para índice: front=0, mid=1, back=2
+ *
+ * @param {number} attackerRange - Alcance do atacante (1=curto, 2=médio, 3=longo)
+ * @param {string} attackerPos   - Posição do atacante ('front'|'mid'|'back') — reservado para uso futuro (restrição corpo-a-corpo)
+ * @param {string} targetPos     - Posição do alvo ('front'|'mid'|'back')
  */
 export function canReach(attackerRange, attackerPos, targetPos) {
     const posIndex = { front: 0, mid: 1, back: 2 };

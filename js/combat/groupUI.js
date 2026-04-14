@@ -142,7 +142,8 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
                 else if (t === 'spd' && buff.power < 0) buffBadgesHtml += `<span class="buff-badge buff-debuff">🐢AGI(${buff.power}${dur})</span>`;
             }
         }
-        if (encounter.tauntActiveId && encounter.tauntActiveId === (mon.id || mon.name || mon.nome)) {
+        // TAUNT badge: usa mon.id para comparação consistente
+        if (encounter.tauntActiveId != null && encounter.tauntActiveId === mon.id) {
             buffBadgesHtml += `<span class="buff-badge buff-taunt">🎯TAUNT</span>`;
         }
         const buffBadgesContainerHtml = buffBadgesHtml

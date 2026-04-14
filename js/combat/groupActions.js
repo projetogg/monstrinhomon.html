@@ -31,6 +31,25 @@ const CLASS_COMBAT_PASSIVES = {
 };
 
 /**
+ * Aplica o bônus passivo do Caçador: +N de dano plano vs alvo com HP < 50%.
+ * Centralizado para evitar duplicação em ataque básico e skill.
+ *
+ * @param {number} dmg        - Dano atual
+ * @param {object} target     - Alvo (precisa de .hp e .hpMax)
+ * @param {object} classPass  - Entrada do CLASS_COMBAT_PASSIVES do atacante
+ * @returns {number} Dano ajustado (mínimo 1)
+ */
+function applyHunterWeakTargetBonus(dmg, target, classPass) {
+    if (!classPass?.weakTargetAtkBonus || !target) return dmg;
+    const tHp = Number(target.hp) || 0;
+    const tHpMax = Number(target.hpMax) || 1;
+    if (tHp / tHpMax < 0.50) {
+        return Math.max(1, dmg + classPass.weakTargetAtkBonus);
+    }
+    return dmg;
+}
+
+/**
  * PR11B: Inicializa participação de batalha para group/boss
  * Deve ser chamado no início do encounter
  * 
@@ -228,14 +247,8 @@ export function executePlayerAttackGroup(deps, targetEnemyIndex = null) {
         dmg = Math.max(1, Math.round(dmg * (1 + atkClassPassive.attackBonus)));
     }
 
-    // Passiva Caçador: +2 de dano plano vs alvo com HP < 50% (aplicado após cálculo de dano base)
-    if (atkClassPassive?.weakTargetAtkBonus) {
-        const eHp = Number(enemy.hp) || 0;
-        const eHpMax = Number(enemy.hpMax) || 1;
-        if (eHp / eHpMax < 0.50) {
-            dmg = Math.max(1, dmg + atkClassPassive.weakTargetAtkBonus);
-        }
-    }
+    // Passiva Caçador: +2 de dano plano vs alvo com HP < 50%
+    dmg = applyHunterWeakTargetBonus(dmg, enemy, atkClassPassive);
 
     // PR-02: passiva de espécie do atacante (on_attack — ataque básico)
     const passiveStateAtk = enc.passiveState || (enc.passiveState = {});
@@ -495,12 +508,13 @@ export function executeEnemyTurnGroup(enc, deps) {
         }
     }
 
-    // Mago: marcar que deve aplicar bônus de dano neste ataque
+    // Mago: marcar que deve aplicar bônus de dano neste ataque (usando estado do encounter, não mutando o inimigo)
+    let magoDmgBonus = false;
     if (enemyAction === 'skill' && enemyClass === 'Mago') {
         const magoCost = 2;
         if ((Number(enemy.ene) || 0) >= magoCost) {
             enemy.ene = Math.max(0, (Number(enemy.ene) || 0) - magoCost);
-            enemy._magoDmgBonus = true;
+            magoDmgBonus = true;
         }
     }
 
@@ -584,10 +598,9 @@ export function executeEnemyTurnGroup(enc, deps) {
     }
 
     // IA Mago: bônus de dano de skill (+20%)
-    if (enemy._magoDmgBonus) {
+    if (magoDmgBonus) {
         dmg = Math.max(1, Math.round(dmg * 1.20));
         helpers.log(enc, `🔮 ${enemyName} (Mago) usou skill ofensiva! Dano amplificado!`);
-        delete enemy._magoDmgBonus;
     }
 
     // PR-02: passiva de espécie do inimigo atacante (on_attack — ataque básico)
@@ -987,20 +1000,20 @@ function executeNonOffensiveSkillGroup(skill, context) {
     const { state, helpers } = deps;
     const skillName = skill.name || 'Habilidade';
 
-    // TAUNT: ativa provocação por 1 turno
+    // TAUNT: ativa provocação por 1 turno; usa mon.id como identificador canônico
     if (skill.effect === 'taunt' || skill.type === 'TAUNT') {
-        enc.tauntActiveId = mon.id || monName;
+        // Preferir mon.id para identificação consistente; fallback ao nome apenas se id ausente
+        enc.tauntActiveId = mon.id ?? null;
+        enc.tauntActiveMonName = monName; // campo auxiliar apenas para log/exibição
         helpers.log(enc, `🎯 ${monName} usou ${skillName}! TAUNT ativo: inimigos focam neste alvo!`);
         return;
     }
 
     // MARK: marca inimigo (pega o primeiro vivo)
     if (skill.effect === 'mark') {
-        let markIdx = 0;
         const enemies = enc.enemies || [];
-        while (markIdx < enemies.length &&
-               (Number(enemies[markIdx]?.hp) || 0) <= 0) markIdx++;
-        if (markIdx < enemies.length) {
+        const markIdx = enemies.findIndex(e => (Number(e?.hp) || 0) > 0);
+        if (markIdx !== -1) {
             enc.markedEnemyIndex = markIdx;
             const markedEnemy = enemies[markIdx];
             const markedName = markedEnemy?.name || markedEnemy?.nome || 'Inimigo';
@@ -1201,6 +1214,9 @@ export function executePlayerSkillGroup(skillOrId, enemyIndex, deps) {
                 dmg = Math.max(1, Math.round(dmg * (1 + skillAtkPassive.skillDmgBonus)));
             }
         }
+
+        // Passiva Caçador: +2 de dano plano vs alvo com HP < 50%
+        dmg = applyHunterWeakTargetBonus(dmg, enemy, skillAtkPassive);
 
         // A4: Passiva defensiva do defensor
         const skillDefPassive = CLASS_COMBAT_PASSIVES[enemy.class];

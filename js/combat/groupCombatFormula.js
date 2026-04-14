@@ -173,12 +173,12 @@ export function computeGroupDamage(params) {
     }
 
     // Regra especial: superioridade real (atacante muito superior)
-    // Se lvlDiff >= 10 e categoria CONTATO_NEUTRALIZADO, sobe para ACERTO_REDUZIDO
-    // Exceção: d20D=20 (defensor tirou máximo) representa esquiva excepcional
+    // Se lvlDiff >= 10 e categoria CONTATO_NEUTRALIZADO, sobe para ACERTO_REDUZIDO.
+    // Exceção: d20D=20 (defensor tirou máximo) representa esquiva excepcional real.
     let effectiveCategory = category;
     if (lvlDiff >= 10 &&
         category === RC_CATEGORY.CONTATO_NEUTRALIZADO &&
-        !d20ANatural && !d20DNatural) {
+        !d20DNatural) {
         effectiveCategory = RC_CATEGORY.ACERTO_REDUZIDO;
     }
 
