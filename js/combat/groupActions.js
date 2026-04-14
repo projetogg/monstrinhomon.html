@@ -24,6 +24,10 @@ const CLASS_COMBAT_PASSIVES = {
     'Bárbaro':    { defenseBonus: 0.10 },  // resistência passiva: -10% dano recebido
     'Curandeiro': { defenseBonus: 0.10 },  // resistência passiva: -10% dano recebido
     'Ladino':     { attackBonus:  0.10 },  // precisão: +10% dano causado
+    'Mago':       { skillDmgBonus: 0.10, skillDmgCondition: 'ene_gt_50pct' },  // +10% dano skill quando ENE > 50%
+    'Bardo':      { allyCountAtkBonus: true },   // +1 ACC por aliado vivo
+    'Caçador':    { weakTargetAtkBonus: 2 },     // +2 ATK vs alvo com HP < 50%
+    'Animalista': { firstAttackHits: true },     // 1º ataque do combate sempre acerta
 };
 
 /**
@@ -224,6 +228,15 @@ export function executePlayerAttackGroup(deps, targetEnemyIndex = null) {
         dmg = Math.max(1, Math.round(dmg * (1 + atkClassPassive.attackBonus)));
     }
 
+    // Passiva Caçador: +2 ATK vs alvo com HP < 50%
+    if (atkClassPassive?.weakTargetAtkBonus) {
+        const eHp = Number(enemy.hp) || 0;
+        const eHpMax = Number(enemy.hpMax) || 1;
+        if (eHp / eHpMax < 0.50) {
+            dmg = Math.max(1, dmg + atkClassPassive.weakTargetAtkBonus);
+        }
+    }
+
     // PR-02: passiva de espécie do atacante (on_attack — ataque básico)
     const passiveStateAtk = enc.passiveState || (enc.passiveState = {});
     const atkSpeciesPassive = fireCombatEvent(mon, ON_ATTACK, {
@@ -332,6 +345,61 @@ function findPlayerNeedingSwitch(enc, deps) {
     return firstNeedingSwitch;
 }
 
+/**
+ * Seleciona ação do inimigo com base na sua classe.
+ *
+ * Comportamento por classe:
+ * - Curandeiro: cura aliado mais fraco se algum tem HP < 40%
+ * - Bardo: 30% de chance de bufar aliado com maior ATK (se ENE ≥ 2)
+ * - Mago: usa skill ofensiva se ENE ≥ custo
+ * - Ladino: ataca o jogador com menor HP% (não o de maior DEF)
+ * - Guerreiro: Postura Defensiva se HP < 40%
+ * - Outros: ataque básico
+ *
+ * @param {object} enemy - Monstrinho inimigo
+ * @param {object} enc   - Encounter atual
+ * @returns {string} 'attack'|'skill'|'heal'|'pass'
+ */
+function selectEnemyAction(enemy, enc) {
+    const enemyClass = enemy.class || '';
+    const enemyHp = Number(enemy.hp) || 0;
+    const enemyHpMax = Number(enemy.hpMax) || 1;
+    const enemyHpPct = enemyHp / enemyHpMax;
+    const enemyEne = Number(enemy.ene) || 0;
+
+    if (enemyClass === 'Curandeiro') {
+        // Verifica se algum aliado inimigo tem HP < 40%
+        const weakAlly = (enc.enemies || []).find(e =>
+            e !== enemy &&
+            (Number(e.hp) || 0) > 0 &&
+            (Number(e.hp) || 0) / Math.max(1, Number(e.hpMax) || 1) < 0.40
+        );
+        if (weakAlly) return 'heal';
+    }
+
+    if (enemyClass === 'Bardo') {
+        // 30% chance de bufar aliado com maior ATK se ENE ≥ 2
+        const aliveAllies = (enc.enemies || []).filter(e =>
+            e !== enemy && (Number(e.hp) || 0) > 0
+        );
+        if (aliveAllies.length >= 1 && enemyEne >= 2 && Math.random() < 0.30) {
+            return 'skill';
+        }
+    }
+
+    if (enemyClass === 'Mago') {
+        // Usa skill ofensiva se tiver ENE suficiente (custo mínimo = 2)
+        if (enemyEne >= 2) return 'skill';
+    }
+
+    if (enemyClass === 'Guerreiro') {
+        // Postura Defensiva se HP < 40%
+        if (enemyHpPct < 0.40 && enemyEne >= 1) return 'skill';
+    }
+
+    return 'attack';
+}
+
 export function executeEnemyTurnGroup(enc, deps) {
     const { state, core, ui, audio, storage, helpers } = deps;
     
@@ -386,10 +454,67 @@ export function executeEnemyTurnGroup(enc, deps) {
         return false;
     }
 
-    const targetPlayer = helpers.getPlayerById(targetPid);
-    const targetMon = helpers.getActiveMonsterOfPlayer(targetPlayer);
-
+    // IA por classe: selecionar ação e resolver alvos especiais
+    const enemyAction = selectEnemyAction(enemy, enc);
+    const enemyClass = enemy.class || '';
     const enemyName = enemy.name || actor.name || "Inimigo";
+
+    // Curandeiro: curar aliado mais fraco antes de atacar
+    if (enemyAction === 'heal') {
+        const weakestAlly = (enc.enemies || [])
+            .filter(e => e !== enemy && (Number(e.hp) || 0) > 0)
+            .sort((a, b) =>
+                (Number(a.hp) || 0) / Math.max(1, Number(a.hpMax) || 1) -
+                (Number(b.hp) || 0) / Math.max(1, Number(b.hpMax) || 1)
+            )[0];
+        if (weakestAlly) {
+            const allyHpMax = Number(weakestAlly.hpMax) || 1;
+            const healAmt = Math.round(allyHpMax * 0.25);
+            weakestAlly.hp = Math.min(allyHpMax, (Number(weakestAlly.hp) || 0) + healAmt);
+            const allyName = weakestAlly.name || weakestAlly.nome || 'Aliado';
+            helpers.log(enc, `💚 ${enemyName} (Curandeiro) curou ${allyName} em ${healAmt} HP!`);
+            advanceGroupTurn(enc, deps);
+            storage.save();
+            ui.render();
+            return true;
+        }
+    }
+
+    // Guerreiro: Postura Defensiva quando HP baixo
+    if (enemyAction === 'skill' && enemyClass === 'Guerreiro') {
+        if ((Number(enemy.ene) || 0) >= 1) {
+            enemy.ene = Math.max(0, (Number(enemy.ene) || 0) - 1);
+            enemy.buffs = enemy.buffs || [];
+            enemy.buffs.push({ type: 'def', power: 2, duration: 1, source: 'Postura Defensiva' });
+            helpers.log(enc, `🛡️ ${enemyName} (Guerreiro) assumiu Postura Defensiva! DEF +2 por 1 turno.`);
+            advanceGroupTurn(enc, deps);
+            storage.save();
+            ui.render();
+            return true;
+        }
+    }
+
+    // Mago: marcar que deve aplicar bônus de dano neste ataque
+    if (enemyAction === 'skill' && enemyClass === 'Mago') {
+        const magoCost = 2;
+        if ((Number(enemy.ene) || 0) >= magoCost) {
+            enemy.ene = Math.max(0, (Number(enemy.ene) || 0) - magoCost);
+            enemy._magoDmgBonus = true;
+        }
+    }
+
+    // Ladino: alvo com menor HP% em vez do maior DEF
+    let finalTargetPid = targetPid;
+    if (enemyClass === 'Ladino' && eligibleTargets.length > 0) {
+        const weakest = [...eligibleTargets].sort((a, b) =>
+            (Number(a.monster.hp) || 0) / Math.max(1, Number(a.monster.hpMax) || 1) -
+            (Number(b.monster.hp) || 0) / Math.max(1, Number(b.monster.hpMax) || 1)
+        )[0];
+        if (weakest) finalTargetPid = weakest.playerId;
+    }
+
+    const targetPlayer = helpers.getPlayerById(finalTargetPid);
+    const targetMon = helpers.getActiveMonsterOfPlayer(targetPlayer);
     const targetName = targetPlayer?.name || targetPlayer?.nome || "Jogador";
     const targetMonName = targetMon?.nickname || targetMon?.name || targetMon?.nome || "Monstrinho";
 
@@ -454,6 +579,13 @@ export function executeEnemyTurnGroup(enc, deps) {
     const atkClassPassive = CLASS_COMBAT_PASSIVES[enemy.class];
     if (atkClassPassive?.attackBonus) {
         dmg = Math.max(1, Math.round(dmg * (1 + atkClassPassive.attackBonus)));
+    }
+
+    // IA Mago: bônus de dano de skill (+20%)
+    if (enemy._magoDmgBonus) {
+        dmg = Math.max(1, Math.round(dmg * 1.20));
+        helpers.log(enc, `🔮 ${enemyName} (Mago) usou skill ofensiva! Dano amplificado!`);
+        delete enemy._magoDmgBonus;
     }
 
     // PR-02: passiva de espécie do inimigo atacante (on_attack — ataque básico)
@@ -835,6 +967,85 @@ export function executeGroupFlee(deps) {
 }
 
 /**
+ * Executa habilidade não-ofensiva com dispatch por tipo/target/effect.
+ *
+ * Suporta:
+ * - skill.target === 'ally': registra intenção e pede seleção de aliado
+ * - skill.target === 'area' com HEAL: cura todos os aliados vivos
+ * - skill.type === 'TAUNT' ou skill.effect === 'taunt': seta tauntActiveId
+ * - skill.type === 'BUFF' com target === 'ally': seta buff no aliado
+ * - skill.effect === 'mark': marca inimigo
+ * - Default: cura próprio monstrinho
+ *
+ * @param {object} skill - Skill no formato operacional normalizado
+ * @param {object} context - { mon, monName, player, attackerName, enc, deps }
+ */
+function executeNonOffensiveSkillGroup(skill, context) {
+    const { mon, monName, player, attackerName, enc, deps } = context;
+    const { state, helpers } = deps;
+    const skillName = skill.name || 'Habilidade';
+
+    // TAUNT: ativa provocação por 1 turno
+    if (skill.effect === 'taunt' || skill.type === 'TAUNT') {
+        enc.tauntActiveId = mon.id || monName;
+        helpers.log(enc, `🎯 ${monName} usou ${skillName}! TAUNT ativo: inimigos focam neste alvo!`);
+        return;
+    }
+
+    // MARK: marca inimigo (pega o primeiro vivo)
+    if (skill.effect === 'mark') {
+        let markIdx = 0;
+        while (markIdx < (enc.enemies?.length || 0) &&
+               (Number(enc.enemies[markIdx]?.hp) || 0) <= 0) markIdx++;
+        enc.markedEnemyIndex = markIdx;
+        const markedEnemy = enc.enemies?.[markIdx];
+        const markedName = markedEnemy?.name || markedEnemy?.nome || 'Inimigo';
+        helpers.log(enc, `🎯 ${monName} usou ${skillName}! ${markedName} foi MARCADO!`);
+        return;
+    }
+
+    // Cura em área (todos os aliados vivos)
+    if ((skill.type === 'HEAL') &&
+        (skill.target === 'area' || skill.target === 'group')) {
+        let totalCurado = 0;
+        for (const pid of (enc.participants || [])) {
+            const p = helpers.getPlayerById(pid);
+            const allyMon = helpers.getActiveMonsterOfPlayer(p);
+            if (!allyMon || (Number(allyMon.hp) || 0) <= 0) continue;
+            const allyHpMax = Number(allyMon.hpMax) || 1;
+            const healAmt = Math.round(allyHpMax * 0.25);
+            allyMon.hp = Math.min(allyHpMax, (Number(allyMon.hp) || 0) + healAmt);
+            totalCurado += healAmt;
+        }
+        helpers.log(enc, `💚 ${monName} usou ${skillName}! Todos os aliados recuperaram ~25% HP! (total: ${totalCurado})`);
+        return;
+    }
+
+    // Buff de aliado: registrar intenção pendente para seleção
+    if (skill.type === 'BUFF' && skill.target === 'ally') {
+        const actor = deps.core.getCurrentActor(enc);
+        enc.pendingAllySkill = { skillId: skill.id || skill.name, actorId: actor?.id };
+        helpers.log(enc, `✨ ${monName} prepara ${skillName}! Selecione um aliado.`);
+        return;
+    }
+
+    // Skill de suporte para aliado específico
+    if (skill.target === 'ally') {
+        const actor = deps.core.getCurrentActor(enc);
+        enc.pendingAllySkill = { skillId: skill.id || skill.name, actorId: actor?.id };
+        helpers.log(enc, `✨ ${monName} prepara ${skillName}! Selecione um aliado.`);
+        return;
+    }
+
+    // Default: auto-cura próprio monstrinho
+    const healPower = Number(skill.power) || 0;
+    const hpMax = Number(mon.hpMax) || 1;
+    const healAmt = healPower > 0 ? healPower : Math.round(hpMax * 0.20);
+    mon.hp = Math.min(hpMax, (Number(mon.hp) || 0) + healAmt);
+    helpers.log(enc, `💚 ${monName} usou ${skillName}! Recuperou ${healAmt} HP!`);
+}
+
+/**
  * CAMADA 4C: Executa skill do jogador em combate de grupo.
  *
  * Recebe skill no formato operacional único (via resolveMonsterSkills):
@@ -975,6 +1186,15 @@ export function executePlayerSkillGroup(skillOrId, enemyIndex, deps) {
             dmg = Math.max(1, Math.round(dmg * (1 + skillAtkPassive.attackBonus)));
         }
 
+        // Passiva Mago: +10% dano de skill quando ENE > 50%
+        if (skillAtkPassive?.skillDmgBonus) {
+            const ene = Number(mon.ene) || 0;
+            const eneMax = Number(mon.eneMax) || 10;
+            if (eneMax > 0 && ene / eneMax > 0.50) {
+                dmg = Math.max(1, Math.round(dmg * (1 + skillAtkPassive.skillDmgBonus)));
+            }
+        }
+
         // A4: Passiva defensiva do defensor
         const skillDefPassive = CLASS_COMBAT_PASSIVES[enemy.class];
         if (skillDefPassive?.defenseBonus) {
@@ -999,13 +1219,17 @@ export function executePlayerSkillGroup(skillOrId, enemyIndex, deps) {
         }
 
     } else {
-        // Habilidades defensivas: Cura / Suporte (Self, Aliado, Área de suporte)
-        const healPower = Number(skill.power) || 0;
-        const hpMax = Number(mon.hpMax) || 1;
-        // Se power = 0, cura 20% do HP máximo
-        const healAmt = healPower > 0 ? healPower : Math.round(hpMax * 0.20);
-        mon.hp = Math.min(hpMax, (Number(mon.hp) || 0) + healAmt);
-        helpers.log(enc, `💚 ${monName} usou ${skillName}! Recuperou ${healAmt} HP!`);
+        // Habilidades não-ofensivas: despacha para executeNonOffensiveSkillGroup
+        executeNonOffensiveSkillGroup(skill, {
+            mon, monName, player, attackerName, enc, deps,
+        });
+
+        // Se há skill pendente de aliado, pausar aqui (aguarda seleção)
+        if (enc.pendingAllySkill) {
+            storage.save();
+            ui.render();
+            return true;
+        }
     }
 
     advanceGroupTurn(enc, deps);

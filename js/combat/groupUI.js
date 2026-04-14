@@ -4,6 +4,10 @@ const CLASS_PASSIVE_LABELS = {
     'Bárbaro':    { icon: '🪓', label: '-10% dano recebido' },
     'Curandeiro': { icon: '🌿', label: '-10% dano recebido' },
     'Ladino':     { icon: '🗡️', label: '+10% dano causado' },
+    'Mago':       { icon: '🔮', label: '+10% dano skill (ENE>50%)' },
+    'Bardo':      { icon: '🎵', label: '+1 ACC por aliado vivo' },
+    'Caçador':    { icon: '🏹', label: '+2 ATK vs alvo fraco' },
+    'Animalista': { icon: '🐾', label: '1º ataque sempre acerta' },
 };
 
 /**
@@ -127,6 +131,29 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
             ? `<div class="group-unit-class-passive">${classPassive.icon} ${classPassive.label}</div>`
             : '';
 
+        // Badges de buff/debuff ativos
+        let buffBadgesHtml = '';
+        if (Array.isArray(mon.buffs) && mon.buffs.length > 0) {
+            for (const buff of mon.buffs) {
+                const t = (buff.type || '').toLowerCase();
+                const dur = buff.duration > 0 ? `, ${buff.duration}r` : '';
+                if (t === 'atk') buffBadgesHtml += `<span class="buff-badge buff-atk">🔺ATK(+${buff.power}${dur})</span>`;
+                else if (t === 'def') buffBadgesHtml += `<span class="buff-badge buff-def">🛡️DEF(+${buff.power}${dur})</span>`;
+                else if (t === 'spd' && buff.power < 0) buffBadgesHtml += `<span class="buff-badge buff-debuff">🐢AGI(${buff.power}${dur})</span>`;
+            }
+        }
+        if (encounter.tauntActiveId && encounter.tauntActiveId === (mon.id || mon.name || mon.nome)) {
+            buffBadgesHtml += `<span class="buff-badge buff-taunt">🎯TAUNT</span>`;
+        }
+        const buffBadgesContainerHtml = buffBadgesHtml
+            ? `<div class="buff-badges">${buffBadgesHtml}</div>`
+            : '';
+
+        // Indicador de posição
+        const pos = encounter.positions?.[pid];
+        const posLabel = pos === 'front' ? '🗡️Frente' : pos === 'mid' ? '⚔️Meio' : pos === 'back' ? '🛡️Trás' : '';
+        const posHtml = posLabel ? `<span class="position-badge">${posLabel}</span>` : '';
+
         playersHtml += `
         <div id="grpP_${pid}" class="${unitClass}">
             <div class="group-unit-name">${mon.emoji || ''} ${mon.name || mon.nome} <small>Nv ${mon.level}</small>
@@ -143,6 +170,8 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
                 <div class="battle-bar"><div class="battle-bar-fill ene" style="width:${enePct}%"></div></div>
             </div>
             ${classPassiveHtml}
+            ${buffBadgesContainerHtml}
+            ${posHtml}
             ${teamHintHtml}
             ${itemHtml}
         </div>`;
@@ -178,6 +207,20 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
                 ${isCurrent ? '<span class="group-unit-active-badge">▶ Atacando</span>' : ''}
             </div>
             <div class="group-unit-stats">ATK ${e.atk} · DEF ${e.def} · SPD ${e.spd}</div>
+            ${(() => {
+                let enemyBuffsHtml = '';
+                if (Array.isArray(e.buffs) && e.buffs.length > 0) {
+                    for (const buff of e.buffs) {
+                        const t = (buff.type || '').toLowerCase();
+                        const dur = buff.duration > 0 ? `, ${buff.duration}r` : '';
+                        if (t === 'atk') enemyBuffsHtml += `<span class="buff-badge buff-atk">🔺ATK(+${buff.power}${dur})</span>`;
+                        else if (t === 'def') enemyBuffsHtml += `<span class="buff-badge buff-def">🛡️DEF(+${buff.power}${dur})</span>`;
+                        else if (t === 'spd' && buff.power < 0) enemyBuffsHtml += `<span class="buff-badge buff-debuff">🐢AGI(${buff.power}${dur})</span>`;
+                    }
+                }
+                if (encounter.markedEnemyIndex === i) enemyBuffsHtml += `<span class="buff-badge buff-mark">🎯MARCADO</span>`;
+                return enemyBuffsHtml ? `<div class="buff-badges">${enemyBuffsHtml}</div>` : '';
+            })()}
             <div class="battle-bar-row">
                 <div class="battle-bar-label"><span>❤️ HP</span><span>${hp}/${hpMax}</span></div>
                 <div class="battle-bar"><div class="battle-bar-fill hp" style="width:${hpPct}%"></div></div>
