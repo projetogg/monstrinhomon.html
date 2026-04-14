@@ -4178,7 +4178,7 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.88);
-    z-index: 10400;
+    z-index: 10700;
     display: flex;
     align-items: center;
     justify-content: center;
