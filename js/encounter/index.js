@@ -28,3 +28,12 @@ export {
     locationIdFromSpotId,
     buildSpotModifiers
 } from './worldMap.js';
+
+export {
+    ENCOUNTER_TYPES,
+    getEncounterPoolForNode,
+    getEncountersByType,
+    pickRandomEncounterId,
+    hasEncounterPool,
+    resolveEncounterFromPool
+} from './encounterPool.js';

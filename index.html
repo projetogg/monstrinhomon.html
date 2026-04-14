@@ -734,6 +734,10 @@
         import * as EncounterEngine from './js/encounter/encounterEngine.js';
         window.EncounterEngine = EncounterEngine;
 
+        // Encounter Pool — Pool de encontros por nó do mapa (FASE I)
+        import * as EncounterPool from './js/encounter/encounterPool.js';
+        window.EncounterPool = EncounterPool;
+
         // Species Bridge — Fase 3: ponte runtime → espécie canônica + aplicação de offsets
         import * as SpeciesBridge from './js/canon/speciesBridge.js';
         window.SpeciesBridge = SpeciesBridge;
@@ -756,7 +760,13 @@
 
         // Fase 20: Funções puras de categorização de troca em batalha
         import * as BattleSwap from './js/combat/battleSwap.js';
+
+        // Therapy Rewards — Recompensas de medalhas terapêuticas (FASE H)
+        import * as TherapyRewards from './js/therapy/therapyRewards.js';
         window.BattleSwap = BattleSwap;
+
+        // FASE H: Therapy Rewards disponível globalmente
+        window.TherapyRewards = TherapyRewards;
 
         // Inicia o carregamento canônico imediatamente após o parse do módulo,
         // antes de qualquer chamada a init(). Isso garante que o fetch já estará
@@ -1798,6 +1808,21 @@
             
             // Fallback: hardcoded MONSTER_CATALOG
             return MONSTER_CATALOG.find(m => m.id === templateId) || null;
+        }
+
+        /**
+         * Retorna todos os templates de monstros como array.
+         * Tenta JSON primeiro (fonte canônica), fallback para MONSTER_CATALOG inline.
+         * @returns {Object[]} Array de templates de monstros
+         */
+        function getMonstersArray() {
+            if (window.Data && window.Data.getMonstersMapSync) {
+                const monstersMap = window.Data.getMonstersMapSync();
+                if (monstersMap && monstersMap.size > 0) {
+                    return Array.from(monstersMap.values());
+                }
+            }
+            return MONSTER_CATALOG;
         }
 
         /**
@@ -3038,8 +3063,9 @@
 
                 // Fallback: primeira criatura comum da mesma classe
                 if (!templateId) {
-                    const classMonster = MONSTER_CATALOG.find(m => m?.class === player?.class && m?.rarity === 'Comum')
-                        || MONSTER_CATALOG.find(m => m?.rarity === 'Comum');
+                    const allMonsters = getMonstersArray();
+                    const classMonster = allMonsters.find(m => m?.class === player?.class && m?.rarity === 'Comum')
+                        || allMonsters.find(m => m?.rarity === 'Comum');
                     templateId = classMonster?.id;
                 }
 
@@ -3116,7 +3142,7 @@
         function createMonsterInstanceFromTemplate(templateId, level = 1, rarity = null, overrides = {}) {
             try {
                 // 1. Buscar template no catálogo
-                const catalog = MONSTER_CATALOG || [];
+                const catalog = getMonstersArray();
                 const template = catalog.find(m => m && m.id === templateId);
                 
                 if (!template) {
@@ -4240,9 +4266,32 @@
                         }
                     }
 
-                    // Fallback: seleção aleatória (sem área selecionada ou encounterEngine indisponível)
+                    // Fallback 1: usar encounterPool do nó selecionado (FASE I)
+                    if (!wildTemplateId && _wm.selectedLocationId && window.EncounterPool && _wm.worldMapNodes && _wm.locationsData) {
+                        const poolResult = window.EncounterPool.resolveEncounterFromPool(
+                            _wm.selectedLocationId,
+                            _wm.worldMapNodes,
+                            _wm.locationsData
+                        );
+                        if (poolResult) {
+                            wildTemplateId = poolResult.templateId;
+                            const player2 = GameState.players.find(p => p.id === encounter.selectedPlayerId);
+                            const playerMaxLevel = (player2?.team?.length > 0)
+                                ? Math.max(...player2.team.map(m => m.level || 1))
+                                : 5;
+                            const difficultyOffset = GameState.config?.difficulty === 'hard' ? 2
+                                : GameState.config?.difficulty === 'easy' ? -1 : 0;
+                            const rangeMid = Math.floor((poolResult.levelMin + poolResult.levelMax) / 2);
+                            wildLevel = Math.max(poolResult.levelMin, Math.min(poolResult.levelMax,
+                                rangeMid + difficultyOffset + Math.floor(Math.random() * 3) - 1
+                            ));
+                        }
+                    }
+
+                    // Fallback 2: seleção aleatória (sem área selecionada ou encounterEngine indisponível)
                     if (!wildTemplateId) {
-                        const randomMonster = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
+                        const allMonsters = getMonstersArray();
+                        const randomMonster = allMonsters[Math.floor(Math.random() * allMonsters.length)];
                         wildTemplateId = randomMonster.id;
                         // Nível escalado pelo nível máximo do time do jogador (±1)
                         const player2 = GameState.players.find(p => p.id === encounter.selectedPlayerId);
@@ -4330,14 +4379,15 @@
                 // Fallback: monstro aleatório do catálogo
                 let selectedMonsterTemplate;
                 if (options.monsterTemplateId) {
-                    selectedMonsterTemplate = MONSTER_CATALOG.find(m => m.id === options.monsterTemplateId);
+                    selectedMonsterTemplate = getMonsterTemplate(options.monsterTemplateId);
                 }
                 if (!selectedMonsterTemplate) {
-                    if (!MONSTER_CATALOG || MONSTER_CATALOG.length === 0) {
+                    const allMonsters = getMonstersArray();
+                    if (!allMonsters || allMonsters.length === 0) {
                         alert('❌ Catálogo de monstros vazio. Recarregue a página.');
                         return;
                     }
-                    selectedMonsterTemplate = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
+                    selectedMonsterTemplate = allMonsters[Math.floor(Math.random() * allMonsters.length)];
                 }
                 const enemy = createMonsterInstanceFromTemplate(
                     selectedMonsterTemplate.id,  // Template ID from catalog
@@ -5171,7 +5221,7 @@
          */
         function showEvolutionModal(oldName, newName) {
             // Busca emojis nas templates do catálogo para tornar mais visual
-            const catalog = (typeof MONSTER_CATALOG !== 'undefined' ? MONSTER_CATALOG : []);
+            const catalog = getMonstersArray();
             const oldTmpl = catalog.find(m => m.name === oldName || m.nome === oldName);
             const newTmpl = catalog.find(m => m.name === newName || m.nome === newName);
             const oldEmoji = (oldTmpl?.emoji) || '✨';
@@ -5807,10 +5857,9 @@
             
             ensureMonsterProgressFields(mon);
             
-            // Buscar template base do catálogo (com múltiplos fallbacks)
-            const catalog = MONSTER_CATALOG || (window.DB?.MONSTERS) || (window.DB?.MONSTER_CATALOG) || [];
+            // Buscar template base do catálogo
             const templateId = mon.monsterId || mon.idBase || mon.templateId;
-            const template = catalog.find(m => String(m.id) === String(templateId));
+            const template = getMonsterTemplate(templateId);
             
             if (!template) return; // Não quebra se não encontrar
             
@@ -5850,11 +5899,8 @@
         function getMonsterTemplateFromInstance(mon) {
             if (!mon) return null;
             
-            const catalog = MONSTER_CATALOG || (window.DB?.MONSTERS) || (window.DB?.MONSTER_CATALOG) || [];
             const templateId = mon.monsterId || mon.idBase || mon.templateId;
-            const template = catalog.find(m => String(m.id) === String(templateId));
-            
-            return template || null;
+            return getMonsterTemplate(String(templateId)) || null;
         }
         
         /**
@@ -5885,9 +5931,8 @@
             const evo = getEvolutionData(currentTemplate);
             if (!evo) return null;
 
-            // Busca o template alvo no catálogo (usa MONSTER_CATALOG como fonte primária)
-            const catalog = MONSTER_CATALOG || (window.DB?.MONSTERS) || (window.DB?.MONSTER_CATALOG) || [];
-            const nextTemplate = catalog.find(m => String(m.id) === String(evo.toId));
+            // Busca o template alvo no catálogo via getMonsterTemplate (JSON-first)
+            const nextTemplate = getMonsterTemplate(String(evo.toId));
             
             if (nextTemplate) return { nextTemplate, evolvesAt: evo.atLv };
             return null;
@@ -8263,16 +8308,48 @@
                 if (!therapy) return;
                 
                 const pm = therapy.pm || 0;
-                const tiers = GameState.config?.medalTiers || { bronze: 10, silver: 25, gold: 50 };
+                const tiers = GameState.config?.medalTiers || { bronze: 5, silver: 12, gold: 25 };
                 
                 therapy.medals = therapy.medals || [];
                 
+                // Detectar nova medalha conquistada (em ordem: ouro tem prioridade)
+                let newMedal = null;
                 if (pm >= tiers.gold && !therapy.medals.includes('gold')) {
                     therapy.medals.push('gold');
+                    newMedal = 'gold';
                 } else if (pm >= tiers.silver && !therapy.medals.includes('silver')) {
                     therapy.medals.push('silver');
+                    newMedal = 'silver';
                 } else if (pm >= tiers.bronze && !therapy.medals.includes('bronze')) {
                     therapy.medals.push('bronze');
+                    newMedal = 'bronze';
+                }
+
+                // FASE H: Aplicar recompensas da nova medalha (XP + moeda)
+                if (newMedal) {
+                    const player = GameState.players?.find(p => p.id === playerId);
+                    if (player && window.TherapyRewards) {
+                        const deps = {
+                            giveXP: (mon, xp) => {
+                                levelUpMonster(mon, []); // garantir campos
+                                const progressionDeps = createProgressionDeps();
+                                window.Progression.Actions.giveXP(progressionDeps, mon, xp, []);
+                            }
+                        };
+                        const result = window.TherapyRewards.applyTherapyMedalRewards(player, newMedal, deps, []);
+
+                        // Toast de medalha com emoji e recompensas
+                        const medalEmoji = { bronze: '🥉', silver: '🥈', gold: '🥇' }[newMedal] || '🏅';
+                        const medalName  = { bronze: 'Bronze', silver: 'Prata', gold: 'Ouro' }[newMedal] || newMedal;
+                        let toastMsg = `${medalEmoji} ${player.name || ''} conquistou Medalha ${medalName}!`;
+                        if (result.xpAwarded > 0 && result.monsterName) {
+                            toastMsg += ` (+${result.xpAwarded} XP para ${result.monsterName})`;
+                        }
+                        if (result.moedaAwarded > 0) {
+                            toastMsg += ` +${result.moedaAwarded} 💰`;
+                        }
+                        showToast(toastMsg, 'success');
+                    }
                 }
             } catch (error) {
                 console.error('Failed to update medals:', error);
@@ -8344,9 +8421,8 @@
                         }
                     }
                     
-                    // Fallback: Use hardcoded MONSTER_CATALOG only if JSON not available
-                    console.log('[PartyDex] Using fallback MONSTER_CATALOG (JSON not loaded)');
-                    return MONSTER_CATALOG || [];
+                    // Fallback: Use getMonstersArray() (JSON-first, inline fallback)
+                    return getMonstersArray();
                 }
                 
                 // Render the PartyDex UI (idempotent DOM update)
@@ -10803,7 +10879,7 @@
                 if (!container) return;
                 
                 const monstrodex = GameState.monstrodex || { seen: [], captured: [] };
-                const totalMonsters = MONSTER_CATALOG.length;
+                const totalMonsters = getMonstersArray().length;
                 const seenCount = monstrodex.seen.length;
                 const capturedCount = monstrodex.captured.length;
                 
@@ -12015,7 +12091,7 @@
             `;
 
             // Opções de monstro
-            const monOptions = MONSTER_CATALOG.map(m => 
+            const monOptions = getMonstersArray().map(m => 
                 `<option value="${m.id}">${escapeHtml(m.name)} [${escapeHtml(m.class)}] (${escapeHtml(m.rarity)})</option>`
             ).join("");
 
@@ -13306,7 +13382,7 @@
 
         function createTutorialEnemy(level) {
             // Tenta pegar um template real do catálogo
-            const cat = MONSTER_CATALOG || [];
+            const cat = getMonstersArray();
             const t = cat[0];
             if (typeof createMonsterInstanceFromTemplate === "function" && t) {
                 // Wave B (continuation): Use factory for tutorial enemy
@@ -13492,7 +13568,7 @@
 
                 const classCards = MM_CLASSES.map(cls => {
                     const info = STARTER_BY_CLASS[cls];
-                    const tmpl = info ? MONSTER_CATALOG.find(m => m.id === info.monsterId) : null;
+                    const tmpl = info ? getMonsterTemplate(info.monsterId) : null;
                     const selected = player.class === cls;
                     return `<div class="starter-class-card ${selected ? 'starter-class-card-sel' : ''}"
                                 onclick="mmStarterSelectClass('${escapeHtml(cls)}')">
@@ -13512,7 +13588,7 @@
 
             } else if (MM_STARTER.phase === 'egg') {
                 const info = STARTER_BY_CLASS[player.class] || STARTER_BY_CLASS['Guerreiro'];
-                const tmpl = MONSTER_CATALOG.find(m => m.id === info.monsterId);
+                const tmpl = getMonsterTemplate(info.monsterId);
                 if (title) title.textContent = `${info.eggEmoji} ${player.name} recebeu um ovo!`;
 
                 body.innerHTML = `
@@ -13529,7 +13605,7 @@
 
             } else if (MM_STARTER.phase === 'hatched') {
                 const info = STARTER_BY_CLASS[player.class] || STARTER_BY_CLASS['Guerreiro'];
-                const tmpl = MONSTER_CATALOG.find(m => m.id === info.monsterId);
+                const tmpl = getMonsterTemplate(info.monsterId);
                 const isLast = MM_STARTER.playerIndex >= GameState.players.filter(p => !p.starterGranted || p === player).length - 1;
                 const btnLabel = (MM_STARTER.playerIndex >= GameState.players.length - 1) ? '🚀 Começar Aventura!' : `➡️ Próximo Jogador`;
                 if (title) title.textContent = `🎉 Nasceu!`;
