@@ -10719,18 +10719,20 @@
 
             const anyNeedsHeal = allMonsters.some(e => e.needsHeal);
 
-            // NPC aleatório de acordo com o local
+            // NPC selecionado com base em hash estável da sessão ativa (não muda durante o jogo)
             const npcs = [
                 { emoji: '👵', name: 'Vovó Orba', msg: '"Descansem! Seus Monstrinhos estão em boas mãos."' },
                 { emoji: '🧙', name: 'Mago Curador', msg: '"A magia da cura flui por aqui. Fiquem à vontade!"' },
                 { emoji: '🌿', name: 'Druida', msg: '"A natureza cuida de todos. Seus Monstrinhos vão se recuperar."' },
             ];
-            const npc = npcs[Math.floor(Date.now() / 1000) % npcs.length];
+            // Hash estável: usa sessionId ou sessionCount, não Date.now()
+            const sessionSeed = (GameState.data?.activeSessionId ?? '').charCodeAt(0) || 0;
+            const npc = npcs[sessionSeed % npcs.length];
 
-            // Gerar linhas de monstrinhos
+            // Gerar linhas de monstrinhos — usar índice para IDs únicos sem risco de colisão
             const monsterRows = allMonsters.length === 0
                 ? '<p style="color:rgba(255,255,255,0.5);text-align:center;">Nenhum Monstrinho no time.</p>'
-                : allMonsters.map(({ mi, player, hpBefore, hpMax, needsHeal }) => {
+                : allMonsters.map(({ mi, player, hpBefore, hpMax, needsHeal }, idx) => {
                     const pct = Math.round((hpBefore / hpMax) * 100);
                     const fainted = mi.status === 'fainted' || hpBefore <= 0;
                     return `
@@ -10740,7 +10742,7 @@
                                 <span class="heal-modal-monster__hp-text">${fainted ? 'Nocauteado' : `${hpBefore}/${hpMax} HP`}</span>
                             </div>
                             <div class="heal-modal-hp-bar">
-                                <div class="heal-modal-hp-fill" id="hmhp_${mi.instanceId ?? mi.id}"
+                                <div class="heal-modal-hp-fill" id="hmhp_${idx}"
                                      style="width:${fainted ? 0 : pct}%"></div>
                             </div>
                         </div>`;
@@ -10783,17 +10785,19 @@
 
         /** Executa a cura de todos e anima as barras de HP. */
         function doHealAll() {
+            let globalIdx = 0;
             (GameState.players ?? []).forEach(player => {
                 (player.team ?? []).forEach(mi => {
                     if (mi && mi.hpMax) {
                         mi.hp = mi.hpMax;
                         if (mi.status === 'fainted') mi.status = 'healthy';
-                        // Animar barra de HP para 100%
-                        const bar = document.getElementById(`hmhp_${mi.instanceId ?? mi.id}`);
+                        // Animar barra de HP para 100% usando índice global (igual ao de showHealModal)
+                        const bar = document.getElementById(`hmhp_${globalIdx}`);
                         if (bar) {
                             bar.classList.add('full');
                             bar.style.width = '100%';
                         }
+                        globalIdx++;
                     }
                 });
                 if (Array.isArray(player.team)) {
@@ -12158,18 +12162,24 @@
         /** Inicializa partículas flutuantes na tela de intro. */
         function _mmInitIntroParticles() {
             const container = document.getElementById('mmIntroParticles');
-            if (!container) return;
+            if (!container || container.children.length > 0) return; // não re-inicializar
             const particles = ['🌟','⚡','🎮','🐣','✨','🌙','💫','🎯','🔮','🌸'];
-            container.innerHTML = '';
+            // Posições pré-definidas para consistência entre renders
+            const positions = [
+                [8,5], [22,18], [38,8], [54,22], [68,5], [82,15],
+                [15,25], [32,12], [48,28], [64,8], [76,20], [90,14]
+            ];
             for (let i = 0; i < 12; i++) {
                 const el = document.createElement('span');
                 el.className = 'mm-intro-particle';
                 el.textContent = particles[i % particles.length];
+                const [left, bottom] = positions[i];
+                // Usar Math.random apenas para durações/delays (não afeta layout)
                 el.style.cssText = `
-                    left: ${Math.random() * 90}%;
-                    bottom: ${Math.random() * 30}%;
-                    animation-duration: ${3 + Math.random() * 4}s;
-                    animation-delay: ${Math.random() * 3}s;
+                    left: ${left}%;
+                    bottom: ${bottom}%;
+                    animation-duration: ${3 + (i % 4)}s;
+                    animation-delay: ${(i * 0.4) % 3}s;
                 `;
                 container.appendChild(el);
             }
