@@ -35,14 +35,13 @@ export function suggestPosition(monClass) {
 /**
  * Verifica se atacante pode atingir a posição do alvo.
  *
- * Regras:
- * - Alcance 1 (curto): só pode atingir frente de QUALQUER posição,
- *   mas apenas se o próprio atacante está na frente
+ * Regras simplificadas para o jogo:
+ * - Alcance 1 (curto): só pode atingir frente do lado inimigo
  * - Alcance 2 (médio): pode atingir frente e meio
  * - Alcance 3 (longo): pode atingir qualquer posição
  *
- * Simplificado para o jogo: um atacante na frente/meio/trás com alcance N
- * pode atingir as N posições "mais à frente" do lado inimigo.
+ * A posição do atacante (`attackerPos`) está disponível para extensões futuras
+ * (ex.: restrição de que corpo-a-corpo exige estar na frente).
  *
  * Mapeamento de posição para índice: front=0, mid=1, back=2
  */

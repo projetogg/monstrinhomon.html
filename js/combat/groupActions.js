@@ -24,7 +24,7 @@ const CLASS_COMBAT_PASSIVES = {
     'Bárbaro':    { defenseBonus: 0.10 },  // resistência passiva: -10% dano recebido
     'Curandeiro': { defenseBonus: 0.10 },  // resistência passiva: -10% dano recebido
     'Ladino':     { attackBonus:  0.10 },  // precisão: +10% dano causado
-    'Mago':       { skillDmgBonus: 0.10, skillDmgCondition: 'ene_gt_50pct' },  // +10% dano skill quando ENE > 50%
+    'Mago':       { skillDmgBonus: 0.10 },           // +10% dano skill quando ENE > 50%
     'Bardo':      { allyCountAtkBonus: true },   // +1 ACC por aliado vivo
     'Caçador':    { weakTargetAtkBonus: 2 },     // +2 ATK vs alvo com HP < 50%
     'Animalista': { firstAttackHits: true },     // 1º ataque do combate sempre acerta
@@ -463,10 +463,11 @@ export function executeEnemyTurnGroup(enc, deps) {
     if (enemyAction === 'heal') {
         const weakestAlly = (enc.enemies || [])
             .filter(e => e !== enemy && (Number(e.hp) || 0) > 0)
-            .sort((a, b) =>
-                (Number(a.hp) || 0) / Math.max(1, Number(a.hpMax) || 1) -
-                (Number(b.hp) || 0) / Math.max(1, Number(b.hpMax) || 1)
-            )[0];
+            .reduce((weakest, e) => {
+                const pct = (Number(e.hp) || 0) / Math.max(1, Number(e.hpMax) || 1);
+                const weakPct = weakest ? (Number(weakest.hp) || 0) / Math.max(1, Number(weakest.hpMax) || 1) : 1;
+                return pct < weakPct ? e : weakest;
+            }, null);
         if (weakestAlly) {
             const allyHpMax = Number(weakestAlly.hpMax) || 1;
             const healAmt = Math.round(allyHpMax * 0.25);
@@ -506,10 +507,11 @@ export function executeEnemyTurnGroup(enc, deps) {
     // Ladino: alvo com menor HP% em vez do maior DEF
     let finalTargetPid = targetPid;
     if (enemyClass === 'Ladino' && eligibleTargets.length > 0) {
-        const weakest = [...eligibleTargets].sort((a, b) =>
-            (Number(a.monster.hp) || 0) / Math.max(1, Number(a.monster.hpMax) || 1) -
-            (Number(b.monster.hp) || 0) / Math.max(1, Number(b.monster.hpMax) || 1)
-        )[0];
+        const weakest = eligibleTargets.reduce((w, t) => {
+            const pct = (Number(t.monster.hp) || 0) / Math.max(1, Number(t.monster.hpMax) || 1);
+            const wPct = w ? (Number(w.monster.hp) || 0) / Math.max(1, Number(w.monster.hpMax) || 1) : 1;
+            return pct < wPct ? t : w;
+        }, null);
         if (weakest) finalTargetPid = weakest.playerId;
     }
 
@@ -995,12 +997,17 @@ function executeNonOffensiveSkillGroup(skill, context) {
     // MARK: marca inimigo (pega o primeiro vivo)
     if (skill.effect === 'mark') {
         let markIdx = 0;
-        while (markIdx < (enc.enemies?.length || 0) &&
-               (Number(enc.enemies[markIdx]?.hp) || 0) <= 0) markIdx++;
-        enc.markedEnemyIndex = markIdx;
-        const markedEnemy = enc.enemies?.[markIdx];
-        const markedName = markedEnemy?.name || markedEnemy?.nome || 'Inimigo';
-        helpers.log(enc, `🎯 ${monName} usou ${skillName}! ${markedName} foi MARCADO!`);
+        const enemies = enc.enemies || [];
+        while (markIdx < enemies.length &&
+               (Number(enemies[markIdx]?.hp) || 0) <= 0) markIdx++;
+        if (markIdx < enemies.length) {
+            enc.markedEnemyIndex = markIdx;
+            const markedEnemy = enemies[markIdx];
+            const markedName = markedEnemy?.name || markedEnemy?.nome || 'Inimigo';
+            helpers.log(enc, `🎯 ${monName} usou ${skillName}! ${markedName} foi MARCADO!`);
+        } else {
+            helpers.log(enc, `🎯 ${monName} usou ${skillName}! Nenhum inimigo vivo para marcar.`);
+        }
         return;
     }
 
