@@ -108,6 +108,11 @@ export const NODE_POSITIONS = {
     'LOC_008':            { x: 1510, y: 352 }, // hub final — confluência das rotas
     'BOSS_FOREST_01':     { x: 1545, y: 435 }, // boss principal — descida dramática
     'LOC_009':            { x: 1585, y: 492 }, // recompensa final — canto inferior direito
+
+    // ── Nós de serviço (healing / shop) ─────────────────────────────────────────
+    'HEAL_001':           { x: 505,  y: 330 }, // cura inicial — abaixo de LOC_001B
+    'SHOP_MID_01':        { x: 1220, y: 360 }, // loja mid — branch de LOC_004
+    'HEAL_FINAL_01':      { x: 1430, y: 265 }, // cura final — branch de LOC_008
 };
 
 // ── Cor de preenchimento base por bioma ───────────────────────────────────────
@@ -121,6 +126,8 @@ const BIOME_FILL = {
     noturno:   '#28185a',
     arena:     '#7a5c10',
     cidade:    '#2a4a8a',
+    healing:   '#1a6b3a', // verde escuro — serviço de cura
+    shop:      '#6b5a10', // dourado escuro — loja
 };
 
 // ── Emojis por bioma ──────────────────────────────────────────────────────────
@@ -134,6 +141,8 @@ export const BIOME_EMOJI = {
     noturno:   '🌑',
     arena:     '⚔️',
     cidade:    '🏙️',
+    healing:   '💚',
+    shop:      '🛒',
 };
 
 // Raio base do nó — maior (36) porque o mundo tem o dobro da separação horizontal
@@ -240,6 +249,8 @@ export function buildMapSVG(enrichedNodes, viewBoxX = 0) {
         const state    = node._state;
         const locked   = state === 'locked';
         const isBoss   = node.type === 'boss';
+        const isHealing = node.type === 'healing';
+        const isShop   = node.type === 'shop';
         const biome    = node.biome ?? 'campos';
         const fill     = locked ? '#222' : (BIOME_FILL[biome] ?? '#444');
         const emoji    = locked ? '❓' : (isBoss ? '👑' : (BIOME_EMOJI[biome] ?? '🗺️'));
@@ -262,6 +273,8 @@ export function buildMapSVG(enrichedNodes, viewBoxX = 0) {
         if      (state === 'current')       { strokeColor = '#20ddcc'; strokeWidth = 3.5; }
         else if (state === 'boss')          { strokeColor = bossRingColor; strokeWidth = 3; }
         else if (state === 'boss-defeated') { strokeColor = '#40cc60'; strokeWidth = 2.5; }
+        else if (state === 'available' && isHealing) { strokeColor = '#4adf88'; strokeWidth = 2.5; }
+        else if (state === 'available' && isShop)    { strokeColor = '#ffd740'; strokeWidth = 2.5; }
         else if (state === 'available')     { strokeColor = 'rgba(255,255,255,0.52)'; strokeWidth = 2; }
         else if (state === 'visited')       { strokeColor = 'rgba(255,255,255,0.14)'; strokeWidth = 1; }
 
@@ -283,28 +296,42 @@ export function buildMapSVG(enrichedNodes, viewBoxX = 0) {
                        opacity="0.55" class="ow-boss-ring"/>`
             : '';
 
+        // Anel especial para nós de serviço disponíveis
+        const serviceRingColor = isHealing ? '#4adf88' : isShop ? '#ffd740' : null;
+        const serviceRing = (serviceRingColor && !locked && state === 'available')
+            ? `<circle cx="${pos.x}" cy="${pos.y}" r="${NODE_R + 5}"
+                       fill="none" stroke="${serviceRingColor}"
+                       stroke-width="1" stroke-dasharray="3 3"
+                       opacity="0.5" class="ow-service-ring"/>`
+            : '';
+
         // Badge de boss derrotado
         const defeatedBadge = (state === 'boss-defeated')
             ? `<text x="${pos.x + NODE_R - 4}" y="${pos.y - NODE_R + 4}"
                      text-anchor="middle" font-size="11">⚔️</text>`
             : '';
 
+        // Nó menor para serviços (healing/shop) — 28 em vez de 36
+        const nodeR = (isHealing || isShop) ? NODE_R - 8 : NODE_R;
+
         const stateClass = `ow-node--${state}`;
+        const typeClass  = isHealing ? ' ow-node--service-heal' : isShop ? ' ow-node--service-shop' : '';
         const onclick    = clickable ? `onclick="owSelectNode('${node.nodeId}')"` : '';
 
         // Hierarquia visual dos labels: atual e boss se destacam; visitados e bloqueados ficam discretos
         const { opacity: labelOpacity, fontSize: labelSize } = LABEL_STYLES[state] ?? LABEL_STYLES.locked;
 
         return `
-        <g class="ow-node ${stateClass}" data-node="${node.nodeId}"
+        <g class="ow-node ${stateClass}${typeClass}" data-node="${node.nodeId}"
            style="cursor:${clickable ? 'pointer' : 'default'}" ${onclick}
            role="${clickable ? 'button' : 'img'}" aria-label="${label || 'Local bloqueado'}">
             ${bossRing}
-            <circle cx="${pos.x}" cy="${pos.y}" r="${NODE_R}"
+            ${serviceRing}
+            <circle cx="${pos.x}" cy="${pos.y}" r="${nodeR}"
                     fill="${fill}" fill-opacity="${fillOpacity}" stroke="${strokeColor}" stroke-width="${strokeWidth}"
                     class="ow-node__circle"/>
             <text x="${pos.x}" y="${pos.y - 5}" text-anchor="middle"
-                  font-size="16" class="ow-node__emoji">${emoji}</text>
+                  font-size="${(isHealing || isShop) ? '13' : '16'}" class="ow-node__emoji">${emoji}</text>
             <text x="${pos.x}" y="${pos.y + 15}" text-anchor="middle"
                   font-size="${labelSize}" class="ow-node__label"
                   fill="${locked ? '#444' : '#ddd'}" opacity="${labelOpacity}">${shortLbl}</text>
@@ -334,6 +361,7 @@ export function buildMapSVG(enrichedNodes, viewBoxX = 0) {
             animation: owCurrentPulse 3s ease-in-out infinite;
         }
         .ow-boss-ring { animation: owBossRing 2.5s ease-in-out infinite; }
+        .ow-service-ring { animation: owServiceRing 2s ease-in-out infinite; }
         .ow-party-marker { animation: owBounce 2s ease-in-out infinite; }
         @keyframes owCurrentPulse {
             0%,100% { stroke-width: 3.5; stroke-opacity: 1; }
@@ -342,6 +370,10 @@ export function buildMapSVG(enrichedNodes, viewBoxX = 0) {
         @keyframes owBossRing {
             0%,100% { opacity: 0.35; }
             50%      { opacity: 0.75; }
+        }
+        @keyframes owServiceRing {
+            0%,100% { opacity: 0.35; stroke-dashoffset: 0; }
+            50%      { opacity: 0.70; stroke-dashoffset: 6; }
         }
         @keyframes owBounce {
             0%,100% { transform: translateY(0); }
