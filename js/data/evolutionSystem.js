@@ -50,20 +50,30 @@ export function checkEvolution(monster, template) {
  * Executa a evolução de forma pura: atualiza os campos da instância in-place
  * com os dados do novo template, preservando o HP% atual.
  *
- * Não recalcula ATK/DEF/SPD (depende de raridade externa); apenas atualiza
- * identidade, campos visuais e hpMax/hp.
- *
- * @param {Object} monster - Instância de monstro (mutado in-place)
+ * @param {Object} monster     - Instância de monstro (mutado in-place)
  * @param {Object} newTemplate - Template da forma evoluída
- * @returns {Object} O mesmo objeto monster, atualizado
+ * @param {Object} [opts]      - Opções opcionais:
+ *   @param {number}   [opts.rarityMult=1.0] - Multiplicador de raridade para hpMax
+ *   @param {number|null} [opts.hpPct]       - HP% a preservar; se omitido, usa HP% atual
+ * @returns {{ oldName: string, newName: string }} Nomes antes e depois (para log externo)
  */
-export function executeEvolution(monster, newTemplate) {
-    if (!monster || !newTemplate) return monster;
+export function executeEvolution(monster, newTemplate, opts = {}) {
+    if (!monster || !newTemplate) return { oldName: null, newName: null };
 
-    // Preservar HP% antes da evolução
-    const oldHp    = Math.max(0, Number(monster.hp)    || 0);
-    const oldHpMax = Math.max(1, Number(monster.hpMax) || 1);
-    const hpPct    = oldHp / oldHpMax;
+    const rarityMult = Number.isFinite(Number(opts.rarityMult)) ? Number(opts.rarityMult) : 1.0;
+
+    // Preservar HP% (usa override se fornecido, senão calcula do estado atual)
+    let hpPct;
+    if (opts.hpPct != null && Number.isFinite(opts.hpPct)) {
+        hpPct = opts.hpPct;
+    } else {
+        const oldHp    = Math.max(0, Number(monster.hp)    || 0);
+        const oldHpMax = Math.max(1, Number(monster.hpMax) || 1);
+        hpPct = oldHp / oldHpMax;
+    }
+
+    const oldName = monster.nickname || monster.name || monster.nome || 'Monstrinho';
+    const newName = newTemplate.name || newTemplate.nome || oldName;
 
     // Atualizar identidade (compatível com múltiplos campos de ID)
     if (monster.monsterId  != null) monster.monsterId  = String(newTemplate.id);
@@ -71,18 +81,18 @@ export function executeEvolution(monster, newTemplate) {
     else monster.monsterId = String(newTemplate.id);
 
     // Atualizar campos visuais e de gameplay
-    if (newTemplate.name   || newTemplate.nome)  monster.name  = newTemplate.name  || newTemplate.nome;
-    if (newTemplate.emoji)                        monster.emoji = newTemplate.emoji;
-    if (newTemplate.class  || newTemplate.classe) monster.class = newTemplate.class || newTemplate.classe;
-    if (newTemplate.rarity || newTemplate.raridade) monster.rarity = newTemplate.rarity || newTemplate.raridade;
+    if (newTemplate.name   || newTemplate.nome)       monster.name   = newTemplate.name   || newTemplate.nome;
+    if (newTemplate.emoji)                             monster.emoji  = newTemplate.emoji;
+    if (newTemplate.class  || newTemplate.classe)      monster.class  = newTemplate.class  || newTemplate.classe;
+    if (newTemplate.rarity || newTemplate.raridade)    monster.rarity = newTemplate.rarity || newTemplate.raridade;
 
     // Recalcular hpMax com base no baseHp do novo template
-    const baseHp = Number(newTemplate.baseHp ?? newTemplate.hpBase ?? newTemplate.hp) || oldHpMax;
+    const baseHp = Number(newTemplate.baseHp ?? newTemplate.hpBase ?? newTemplate.hp) || Math.max(1, Number(monster.hpMax) || 1);
     const level  = Math.max(1, Number(monster.level) || 1);
     const lvMult = 1 + (level - 1) * 0.1;
 
-    monster.hpMax = Math.floor(baseHp * lvMult);
+    monster.hpMax = Math.floor(baseHp * lvMult * rarityMult);
     monster.hp    = Math.max(1, Math.floor(monster.hpMax * hpPct));
 
-    return monster;
+    return { oldName, newName };
 }

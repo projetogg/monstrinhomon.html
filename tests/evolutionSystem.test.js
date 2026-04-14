@@ -123,11 +123,13 @@ describe('checkEvolution', () => {
 // ─── executeEvolution ────────────────────────────────────────────────────────
 
 describe('executeEvolution', () => {
-    it('retorna monster sem alterar se newTemplate for null', () => {
+    it('retorna { oldName: null, newName: null } se newTemplate for null', () => {
         const mon = { monsterId: 'MON_001', name: 'Cantapau', level: 12, hp: 20, hpMax: 28 };
         const result = executeEvolution(mon, null);
-        expect(result.monsterId).toBe('MON_001');
-        expect(result.name).toBe('Cantapau');
+        expect(result).toEqual({ oldName: null, newName: null });
+        // monstro não deve ser alterado
+        expect(mon.monsterId).toBe('MON_001');
+        expect(mon.name).toBe('Cantapau');
     });
 
     it('atualiza identidade do monstro (monsterId)', () => {
@@ -168,9 +170,76 @@ describe('executeEvolution', () => {
         expect(mon.templateId).toBe('MON_001B');
     });
 
-    it('retorna a instância mutada', () => {
-        const mon = { monsterId: 'MON_001', level: 12, hp: 20, hpMax: 28 };
+    it('retorna { oldName, newName } com os nomes corretos', () => {
+        const mon = { monsterId: 'MON_001', name: 'Cantapau', level: 12, hp: 20, hpMax: 28 };
         const result = executeEvolution(mon, nextTemplate);
-        expect(result).toBe(mon);
+        expect(result).toEqual({ oldName: 'Cantapau', newName: 'Cantapimon' });
+    });
+});
+
+// ─── executeEvolution — opts (rarityMult, hpPct) ────────────────────────────
+
+describe('executeEvolution — opts.rarityMult', () => {
+    it('aplica rarityMult=1.08 no cálculo do hpMax', () => {
+        const mon = { monsterId: 'MON_001', level: 1, hp: 28, hpMax: 28 };
+        executeEvolution(mon, nextTemplate, { rarityMult: 1.08 });
+        // hpMax = floor(40 * (1 + 0*0.1) * 1.08) = floor(40 * 1.08) = floor(43.2) = 43
+        expect(mon.hpMax).toBe(43);
+    });
+
+    it('rarityMult padrão = 1.0 se não fornecido', () => {
+        const mon = { monsterId: 'MON_001', level: 1, hp: 28, hpMax: 28 };
+        executeEvolution(mon, nextTemplate);
+        // hpMax = floor(40 * 1.0 * 1.0) = 40
+        expect(mon.hpMax).toBe(40);
+    });
+
+    it('ignora rarityMult inválido e usa 1.0', () => {
+        const mon = { monsterId: 'MON_001', level: 1, hp: 28, hpMax: 28 };
+        executeEvolution(mon, nextTemplate, { rarityMult: NaN });
+        expect(mon.hpMax).toBe(40);
+    });
+});
+
+describe('executeEvolution — opts.hpPct', () => {
+    it('usa opts.hpPct em vez do HP% atual', () => {
+        // HP atual = 50% mas queremos preservar 80%
+        const mon = { monsterId: 'MON_001', level: 1, hp: 14, hpMax: 28 };
+        executeEvolution(mon, nextTemplate, { hpPct: 0.8 });
+        const expectedHpMax = 40;
+        expect(mon.hpMax).toBe(expectedHpMax);
+        expect(mon.hp).toBe(Math.floor(expectedHpMax * 0.8)); // 32
+    });
+
+    it('usa HP% atual se opts.hpPct for null', () => {
+        const mon = { monsterId: 'MON_001', level: 1, hp: 14, hpMax: 28 }; // 50%
+        executeEvolution(mon, nextTemplate, { hpPct: null });
+        expect(mon.hp).toBe(Math.floor(40 * 0.5)); // 20
+    });
+
+    it('usa HP% atual se opts.hpPct não for fornecido', () => {
+        const mon = { monsterId: 'MON_001', level: 1, hp: 14, hpMax: 28 }; // 50%
+        executeEvolution(mon, nextTemplate);
+        expect(mon.hp).toBe(Math.floor(40 * 0.5)); // 20
+    });
+});
+
+describe('executeEvolution — oldName com nickname', () => {
+    it('usa nickname como oldName se existir', () => {
+        const mon = { monsterId: 'MON_001', name: 'Cantapau', nickname: 'Meu Pet', level: 1, hp: 28, hpMax: 28 };
+        const { oldName } = executeEvolution(mon, nextTemplate);
+        expect(oldName).toBe('Meu Pet');
+    });
+
+    it('usa name como oldName se não tiver nickname', () => {
+        const mon = { monsterId: 'MON_001', name: 'Cantapau', level: 1, hp: 28, hpMax: 28 };
+        const { oldName } = executeEvolution(mon, nextTemplate);
+        expect(oldName).toBe('Cantapau');
+    });
+
+    it('newName retorna nome do novo template', () => {
+        const mon = { monsterId: 'MON_001', name: 'Cantapau', level: 1, hp: 28, hpMax: 28 };
+        const { newName } = executeEvolution(mon, nextTemplate);
+        expect(newName).toBe('Cantapimon');
     });
 });
