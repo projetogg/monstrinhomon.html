@@ -750,6 +750,10 @@
         // Fase Q: Import Player Panel UI module
         import * as PlayerPanelUI from './js/ui/playerPanelUI.js';
 
+        // Fase AB: Import Monster Card UI module
+        import * as MonsterCardUI from './js/ui/monsterCardUI.js';
+        window.MonsterCardUI = MonsterCardUI;
+
         // Fase U: Import Box System module
         import * as BoxSystem from './js/data/boxSystem.js';
         window.BoxSystem = BoxSystem;
@@ -11588,8 +11592,8 @@
                                 },
                                 isReadyForKitSwap: (monster) => window.SpeciesDisplay?.isReadyForKitSwap?.(monster) || false,
                                 isEligibleForBattle: (monster, owner) => window.ClassEligibility?.isEligibleForBattle?.(monster, owner) ?? true,
-                                renderEligibilityBadgeForTeam,
-                                renderTeamReadinessIndicator,
+                                renderEligibilityBadgeForTeam: (m, p) => MonsterCardUI.renderEligibilityBadgeForTeam(m, p, window.ClassEligibility),
+                                renderTeamReadinessIndicator: (m) => MonsterCardUI.renderTeamReadinessIndicator(m, window.SpeciesDisplay),
                                 actionNames: {
                                     moveUp: 'moveTeamMemberUp',
                                     moveDown: 'moveTeamMemberDown',
@@ -11609,93 +11613,9 @@
         }
 
         /**
-         * Renderiza o bloco de identidade canônica de espécie para o card do monstrinho.
-         * Fase 15: visibilidade persistente fora do combate.
-         *
-         * Retorna string HTML vazia se o monstrinho não tiver espécie canônica mapeada.
-         *
-         * @param {object} monster - Instância de monstrinho.
-         * @returns {string} HTML do bloco de identidade.
+         * Renderiza o card de um monstrinho (wrapper de delegação para PlayerPanelUI).
+         * Passa MonsterCardUI.renderSpeciesIdentityBlock com window.SpeciesDisplay injetado.
          */
-        function renderSpeciesIdentityBlock(monster) {
-            if (!window.SpeciesDisplay) return '';
-            const info = window.SpeciesDisplay.getSpeciesDisplayInfo(monster);
-            if (!info.hasSpecies) return '';
-
-            const promotionBadge = info.isPromoted ? '⭐' : '🌟';
-            const promotionSuffix = info.isPromoted ? ' (Promoção)' : '';
-            const kitCssClass = info.isPromoted
-                ? 'species-identity__kit species-identity__kit--promoted'
-                : 'species-identity__kit';
-            const kitHtml = info.hasKitSwap
-                ? `<div class="${kitCssClass}">${promotionBadge} ${info.kitSwapName}${promotionSuffix}</div>`
-                : '';
-
-            const milestoneHtml = info.nextMilestone
-                ? `<div class="species-identity__milestone">⏳ ${info.nextMilestone}</div>`
-                : '';
-
-            return `
-                <div class="species-identity">
-                    <div class="species-identity__header">🧬 ${info.speciesLabel} · ${info.archetype}</div>
-                    <div class="species-identity__passive">✨ ${info.passiveName} — ${info.passiveDesc}</div>
-                    ${kitHtml}
-                    ${milestoneHtml}
-                </div>
-            `;
-        }
-
-        /**
-         * Fase 17 — Indicador leve de prontidão canônica para a visão de equipe.
-         *
-         * Renderiza um badge compacto informando o estado de progressão canônica
-         * do monstrinho sem duplicar a ficha completa de identidade.
-         *
-         * Estados:
-         *  - 'complete'     → ✅ Completo (identidade totalmente ativa)
-         *  - 'near_promo'   → ⚡ Nv.X (perto da promoção do kit_swap)
-         *  - 'near_unlock'  → ⚡ Nv.X (perto do desbloqueio do kit_swap)
-         *  - null           → string vazia (silencioso — sem poluição visual)
-         *
-         * @param {object} monster - Instância de monstrinho.
-         * @returns {string} HTML do badge ou string vazia.
-         */
-        function renderTeamReadinessIndicator(monster) {
-            if (!window.SpeciesDisplay?.getTeamReadinessIndicator) return '';
-            const readiness = window.SpeciesDisplay.getTeamReadinessIndicator(monster);
-            if (!readiness) return '';
-
-            switch (readiness.state) {
-                case 'complete':
-                    return '<span class="readiness-badge readiness-badge--complete" title="Identidade canônica completa">✅ Completo</span>';
-                case 'near_promo':
-                    return `<span class="readiness-badge readiness-badge--near" title="Promoção no Nv. ${readiness.targetLevel}">⚡ Nv.${readiness.targetLevel}</span>`;
-                case 'near_unlock':
-                    return `<span class="readiness-badge readiness-badge--near" title="Habilidade especial no Nv. ${readiness.targetLevel}">⚡ Nv.${readiness.targetLevel}</span>`;
-                default:
-                    return '';
-            }
-        }
-
-        /**
-         * Fase 19 — Badge de elegibilidade por classe para a visão de equipe.
-         *
-         * Mostra "✔ Elegível" ou "✖ Fora da classe" de forma compacta,
-         * permitindo ao jogador identificar rapidamente quais monstrinhos
-         * podem ser usados em batalha com este treinador.
-         *
-         * Retorna string vazia se ClassEligibility não estiver disponível
-         * (graceful degradation).
-         *
-         * @param {object} monster - Instância de monstrinho
-         * @param {object} player  - Jogador dono do time
-         * @returns {string} HTML do badge
-         */
-        function renderEligibilityBadgeForTeam(monster, player) {
-            if (!window.ClassEligibility?.renderEligibilityBadge) return '';
-            return window.ClassEligibility.renderEligibilityBadge(monster, player);
-        }
-
         function renderMonsterCard(monster) {
             if (!window.PlayerPanelUI?.renderMonsterCard) return '';
             return window.PlayerPanelUI.renderMonsterCard(monster, {
@@ -11704,7 +11624,7 @@
                 getFriendshipLevel,
                 getFriendshipBonuses,
                 formatFriendshipBonusPercent,
-                renderSpeciesIdentityBlock
+                renderSpeciesIdentityBlock: (m) => MonsterCardUI.renderSpeciesIdentityBlock(m, window.SpeciesDisplay)
             });
         }
 
@@ -11719,8 +11639,8 @@
                 },
                 isReadyForKitSwap: (monster) => window.SpeciesDisplay?.isReadyForKitSwap?.(monster) || false,
                 isEligibleForBattle: (monster, owner) => window.ClassEligibility?.isEligibleForBattle?.(monster, owner) ?? true,
-                renderEligibilityBadgeForTeam,
-                renderTeamReadinessIndicator,
+                renderEligibilityBadgeForTeam: (m, p) => MonsterCardUI.renderEligibilityBadgeForTeam(m, p, window.ClassEligibility),
+                renderTeamReadinessIndicator: (m) => MonsterCardUI.renderTeamReadinessIndicator(m, window.SpeciesDisplay),
                 actionNames: {
                     moveUp: 'moveTeamMemberUp',
                     moveDown: 'moveTeamMemberDown',
