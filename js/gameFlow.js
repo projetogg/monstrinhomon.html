@@ -249,20 +249,16 @@ export function processQuestProgress(player, enc, capturedMonsterId, log) {
 // ═══════════════════════════════════════════════════
 
 /**
- * Conclui uma quest, aplica recompensas ao jogador e ativa a próxima
+ * Conclui uma quest, marca recompensa como pendente e ativa a próxima
  * quest da cadeia se disponível.
+ *
+ * Recompensas NÃO são aplicadas automaticamente — use claimQuestReward()
+ * para que o jogador as colete manualmente na aba Missões.
  *
  * @param {Object} player    - jogador
  * @param {string} questId   - ID da quest a concluir
- * @param {Object} deps      - dependências injetadas (ver abaixo)
+ * @param {*}      _deps     - ignorado (mantido por compatibilidade de assinatura)
  * @param {Array}  [logArr]  - array de log
- *
- * deps esperado:
- * {
- *   addItemToInventory(player, itemId, qty),   // adicionar item ao inventário
- *   addMoneyToPlayer(player, amount),          // adicionar dinheiro
- *   addQuestXP(player, xp)                    // adicionar XP global de quest (opcional)
- * }
  *
  * @returns {boolean} true se concluída com sucesso
  */
