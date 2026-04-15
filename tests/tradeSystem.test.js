@@ -179,6 +179,8 @@ describe('executeTrade', () => {
         expect(pA.activeIndex).toBeGreaterThanOrEqual(0);
         const newActive = pA.team[pA.activeIndex];
         expect(newActive).toBeDefined();
+        // Monstro ativo deve estar vivo (hp > 0)
+        expect(Number(newActive.hp)).toBeGreaterThan(0);
     });
 });
 
