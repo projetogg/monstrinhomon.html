@@ -50,6 +50,9 @@
                 <button class="tab-button nav-btn" data-tab="partyDex" onclick="switchTab('partyDex')" aria-label="Monstrodex">
                     <span class="nav-icon">📘</span><span class="nav-label">Monstrodex</span>
                 </button>
+                <button class="tab-button nav-btn" data-tab="missoes" onclick="switchTab('missoes')" aria-label="Missões">
+                    <span class="nav-icon">📜</span><span class="nav-label">Missões</span>
+                </button>
                 <button class="tab-button nav-btn" data-tab="trade" onclick="switchTab('trade')" aria-label="Trocas">
                     <span class="nav-icon">🔄</span><span class="nav-label">Trocas</span>
                 </button>
@@ -504,6 +507,14 @@
             <h2>🔄 Trocas</h2>
             <div id="tradeTabContainer" class="card">
                 <p class="text-muted">Selecione os jogadores para propor uma troca.</p>
+            </div>
+        </div>
+
+        <!-- XVII-B: Aba Missões — lista quests ativas e concluídas por jogador -->
+        <div id="tabMissoes" class="tab-content">
+            <h2>📜 Missões</h2>
+            <div id="missoesTabContent">
+                <p class="text-muted">Carregando missões...</p>
             </div>
         </div>
 
@@ -2620,6 +2631,11 @@
 
                 if (tabName === 'trade' && typeof window.renderTradeTab === 'function') {
                     window.renderTradeTab();
+                }
+
+                // XVII-B: Renderizar painel de missões ao abrir aba
+                if (tabName === 'missoes') {
+                    renderMissoesTab();
                 }
 
                 // Mapa de nós: ao abrir a aba Batalha, mostrar o mapa selvagem por padrão
@@ -11410,6 +11426,87 @@
             }
             container.innerHTML = html;
         }
+
+        /**
+         * XVII-B — Renderiza o painel completo de Missões.
+         *
+         * Exibido na aba "📜 Missões". Para cada jogador, mostra:
+         *  - Quests ativas com barra de progresso e recompensas
+         *  - Quests concluídas (lista colapsada)
+         *
+         * Usa GameFlow.getActiveQuestsSummary() (sem mutação).
+         */
+        function renderMissoesTab() {
+            const container = document.getElementById('missoesTabContent');
+            if (!container) return;
+
+            if (!window.GameFlow) {
+                container.innerHTML = '<p class="text-muted">Sistema de quests não carregado.</p>';
+                return;
+            }
+
+            const players = GameState.players || [];
+            if (players.length === 0) {
+                container.innerHTML = '<p class="text-muted">Adicione jogadores para ver missões.</p>';
+                return;
+            }
+
+            let html = '';
+            for (const player of players) {
+                if (!player) continue;
+                const playerName = player.name || player.nome || player.id;
+                const activeQuestsSummary = window.GameFlow.getActiveQuestsSummary(player);
+                const completedIds = player.questState?.completedQuestIds ?? [];
+
+                html += `<div class="card" style="margin-bottom:12px;">`;
+                html += `<h3 style="margin-bottom:10px;">👤 ${playerName}</h3>`;
+
+                // — Quests Ativas —
+                if (activeQuestsSummary.length > 0) {
+                    html += `<div style="margin-bottom:10px;"><strong style="font-size:13px;color:#555;">🗺️ Ativas (${activeQuestsSummary.length})</strong></div>`;
+                    for (const { quest, progress, needed } of activeQuestsSummary) {
+                        const pct = needed > 0 ? Math.min(100, Math.round((progress / needed) * 100)) : 0;
+                        const localLabel = quest.localId ? ` · 📍 ${quest.localId}` : '';
+                        html += `<div class="quest-tracker-entry" style="margin-bottom:10px;">`;
+                        html += `  <div class="quest-header">`;
+                        html += `    <strong>${quest.nome}</strong>`;
+                        html += `    <span class="text-small text-muted">${localLabel}</span>`;
+                        html += `  </div>`;
+                        html += `  <div class="text-small" style="color:#666;margin:3px 0;">${quest.descricao || ''}</div>`;
+                        html += `  <div class="quest-progress-bar"><div class="quest-progress-fill" style="width:${pct}%"></div></div>`;
+                        html += `  <div class="text-small" style="margin-top:3px;">`;
+                        html += `    Progresso: ${progress}/${needed}`;
+                        if (quest.rewardXp)   html += ` · ⭐ ${quest.rewardXp} XP`;
+                        if (quest.rewardGold) html += ` · 💰 ${quest.rewardGold}`;
+                        if (quest.rewardItemId) html += ` · 🎁 ${quest.rewardItemId}`;
+                        html += `  </div>`;
+                        html += `</div>`;
+                    }
+                } else {
+                    html += `<p class="text-muted text-small">Nenhuma missão ativa.</p>`;
+                }
+
+                // — Quests Concluídas —
+                if (completedIds.length > 0) {
+                    html += `<details style="margin-top:8px;">`;
+                    html += `<summary style="cursor:pointer;font-size:13px;color:#27ae60;font-weight:600;">`;
+                    html += `✅ Concluídas (${completedIds.length})</summary>`;
+                    html += `<ul style="margin:6px 0 0 16px;padding:0;">`;
+                    for (const qid of completedIds) {
+                        const q = window.GameFlow && typeof window.GameFlow.getActiveQuestsSummary === 'function'
+                            ? null : null; // getQuest não é exportado, usamos o nome cru
+                        html += `<li style="font-size:12px;color:#555;margin:2px 0;">${qid}</li>`;
+                    }
+                    html += `</ul></details>`;
+                }
+
+                html += `</div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        window.renderMissoesTab = renderMissoesTab;
 
         /**
          * FASE UX: Renderiza dica de objetivo da quest ativa no painel Encounter.
