@@ -1,33 +1,25 @@
 /**
- * THERAPY PROGRESS BAR TESTS (FASE M)
+ * THERAPY PROGRESS BAR TESTS (FASE M + FASE W)
  *
  * Testa a lógica de cálculo de progresso de PM para exibição na barra de
  * progresso do painel de terapia.
- * Cobertura: getMedalRewards, cálculo de próxima medalha, % de progresso.
+ * Cobertura: getMedalRewards, computeMedalProgress, checkNewMedal.
+ *
+ * FASE W: computeMedalProgress e checkNewMedal movidos para
+ *         js/therapy/medalProgress.js (módulo puro).
  */
 
 import { describe, it, expect } from 'vitest';
 import { getMedalRewards, MEDAL_REWARDS } from '../js/therapy/therapyRewards.js';
+import {
+    computeMedalProgress,
+    checkNewMedal,
+    DEFAULT_MEDAL_TIERS,
+} from '../js/therapy/medalProgress.js';
 
 // ─── Constantes canônicas (espelham GameState.config.medalTiers) ──────────────
 
-const MEDAL_TIERS = { bronze: 5, silver: 12, gold: 25 };
-
-// ─── Helper: lógica pura de progresso (extraída de updateTherapyView) ─────────
-
-function computeMedalProgress(pm, medals = [], tiers = MEDAL_TIERS) {
-    const TIER_ORDER = [
-        { key: 'bronze', label: 'Bronze', threshold: tiers.bronze },
-        { key: 'silver', label: 'Prata',  threshold: tiers.silver },
-        { key: 'gold',   label: 'Ouro',   threshold: tiers.gold   },
-    ];
-    const nextTier = TIER_ORDER.find(t => !medals.includes(t.key));
-    if (!nextTier) {
-        return { pct: 100, label: 'Todas conquistadas', nextTier: null };
-    }
-    const pct = Math.min(100, Math.round((pm / nextTier.threshold) * 100));
-    return { pct, label: `${pm} / ${nextTier.threshold} PM → ${nextTier.label}`, nextTier };
-}
+const MEDAL_TIERS = DEFAULT_MEDAL_TIERS;
 
 // ─── getMedalRewards ─────────────────────────────────────────────────────────
 
@@ -128,5 +120,73 @@ describe('computeMedalProgress — tiers customizados', () => {
         const { pct, nextTier } = computeMedalProgress(5, [], customTiers);
         expect(nextTier.key).toBe('bronze');
         expect(pct).toBe(50); // 5/10
+    });
+});
+
+// ─── checkNewMedal (FASE W) ───────────────────────────────────────────────────
+
+describe('checkNewMedal — sem medalhas', () => {
+    it('retorna null quando PM < bronze', () => {
+        expect(checkNewMedal(0, [])).toBeNull();
+        expect(checkNewMedal(4, [])).toBeNull();
+    });
+
+    it('retorna bronze quando PM >= 5', () => {
+        expect(checkNewMedal(5, [])).toBe('bronze');
+        expect(checkNewMedal(10, [])).toBe('bronze');
+    });
+});
+
+describe('checkNewMedal — bronze já conquistado', () => {
+    it('retorna null quando PM < prata', () => {
+        expect(checkNewMedal(5, ['bronze'])).toBeNull();
+        expect(checkNewMedal(11, ['bronze'])).toBeNull();
+    });
+
+    it('retorna silver quando PM >= 12', () => {
+        expect(checkNewMedal(12, ['bronze'])).toBe('silver');
+        expect(checkNewMedal(20, ['bronze'])).toBe('silver');
+    });
+});
+
+describe('checkNewMedal — bronze e prata conquistados', () => {
+    it('retorna null quando PM < ouro', () => {
+        expect(checkNewMedal(12, ['bronze', 'silver'])).toBeNull();
+        expect(checkNewMedal(24, ['bronze', 'silver'])).toBeNull();
+    });
+
+    it('retorna gold quando PM >= 25', () => {
+        expect(checkNewMedal(25, ['bronze', 'silver'])).toBe('gold');
+        expect(checkNewMedal(99, ['bronze', 'silver'])).toBe('gold');
+    });
+});
+
+describe('checkNewMedal — todas conquistadas', () => {
+    it('retorna null quando todas as medalhas já foram conquistadas', () => {
+        expect(checkNewMedal(99, ['bronze', 'silver', 'gold'])).toBeNull();
+    });
+});
+
+describe('checkNewMedal — ouro tem prioridade sobre prata', () => {
+    it('retorna gold quando PM >= ouro e prata ainda não conquistada', () => {
+        // Caso incomum: prata não conquistada mas PM já passou do ouro
+        expect(checkNewMedal(30, ['bronze'])).toBe('gold');
+    });
+});
+
+describe('checkNewMedal — tiers customizados', () => {
+    it('respeita tiers personalizados', () => {
+        const customTiers = { bronze: 10, silver: 20, gold: 50 };
+        expect(checkNewMedal(9, [], customTiers)).toBeNull();
+        expect(checkNewMedal(10, [], customTiers)).toBe('bronze');
+        expect(checkNewMedal(50, ['bronze', 'silver'], customTiers)).toBe('gold');
+    });
+});
+
+describe('DEFAULT_MEDAL_TIERS (FASE W)', () => {
+    it('tem os três tiers canônicos', () => {
+        expect(DEFAULT_MEDAL_TIERS.bronze).toBe(5);
+        expect(DEFAULT_MEDAL_TIERS.silver).toBe(12);
+        expect(DEFAULT_MEDAL_TIERS.gold).toBe(25);
     });
 });

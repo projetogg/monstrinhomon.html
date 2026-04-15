@@ -782,6 +782,8 @@
         // Trade System — Troca de Monstrinhos entre jogadores (FASE O)
         import * as TradeSystem from './js/trade/tradeSystem.js';
         import * as CaptureSystem from './js/data/captureSystem.js';
+        // Fase W: Import Medal Progress module
+        import * as MedalProgress from './js/therapy/medalProgress.js';
         window.BattleSwap = BattleSwap;
 
         // FASE H: Therapy Rewards disponível globalmente
@@ -795,6 +797,9 @@
 
         // FASE V: CaptureSystem disponível globalmente
         window.CaptureSystem = CaptureSystem;
+
+        // FASE W: MedalProgress disponível globalmente
+        window.MedalProgress = MedalProgress;
 
         // FASE R: Friendship System disponível globalmente
         window.FriendshipSystem = FriendshipSystem;
@@ -8219,17 +8224,12 @@
                 
                 therapy.medals = therapy.medals || [];
                 
-                // Detectar nova medalha conquistada (em ordem: ouro tem prioridade)
-                let newMedal = null;
-                if (pm >= tiers.gold && !therapy.medals.includes('gold')) {
-                    therapy.medals.push('gold');
-                    newMedal = 'gold';
-                } else if (pm >= tiers.silver && !therapy.medals.includes('silver')) {
-                    therapy.medals.push('silver');
-                    newMedal = 'silver';
-                } else if (pm >= tiers.bronze && !therapy.medals.includes('bronze')) {
-                    therapy.medals.push('bronze');
-                    newMedal = 'bronze';
+                // FASE W: Detectar nova medalha via MedalProgress.checkNewMedal (módulo puro)
+                const newMedal = window.MedalProgress
+                    ? window.MedalProgress.checkNewMedal(pm, therapy.medals, tiers)
+                    : null;
+                if (newMedal && !therapy.medals.includes(newMedal)) {
+                    therapy.medals.push(newMedal);
                 }
 
                 // FASE H: Aplicar recompensas da nova medalha (XP + moeda)
@@ -11809,15 +11809,13 @@
                     const pm      = therapy.pm || 0;
                     const medals  = therapy.medals || [];
 
-                    // Calcular próxima medalha
-                    const nextTier = TIER_ORDER.find(t => !medals.includes(t.key));
-                    const maxTier  = TIER_ORDER[TIER_ORDER.length - 1];
-                    const progressTarget = nextTier ? nextTier.threshold : maxTier.threshold;
-                    const progressPct    = nextTier
-                        ? Math.min(100, Math.round((pm / progressTarget) * 100))
-                        : 100;
-                    const progressLabel = nextTier
-                        ? `${pm} / ${progressTarget} PM → ${nextTier.label}`
+                    // FASE W: Calcular progresso via MedalProgress.computeMedalProgress (módulo puro)
+                    const progress = window.MedalProgress
+                        ? window.MedalProgress.computeMedalProgress(pm, medals, tiers)
+                        : { pct: 0, label: `${pm} PM`, nextTier: null };
+                    const progressPct   = progress.pct;
+                    const progressLabel = progress.nextTier
+                        ? progress.label
                         : `${pm} PM — Todas as medalhas conquistadas! 🎉`;
 
                     // Badges de medalhas conquistadas
