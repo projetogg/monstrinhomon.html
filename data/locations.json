@@ -916,11 +916,11 @@
         22
       ],
       "rarityWeights": {
-        "Comum": 36,
+        "Comum": 35,
         "Incomum": 35,
         "Raro": 21,
         "Místico": 8,
-        "Lendário": 0
+        "Lendário": 1
       },
       "speciesPoolsByRarity": {
         "Comum": [
@@ -944,7 +944,10 @@
         "Místico": [
           "MON_010D"
         ],
-        "Lendário": []
+        "Lendário": [
+          "MON_102",
+          "MON_108"
+        ]
       },
       "encounterTypeWeights": {
         "Selvagem": 52,
@@ -1164,11 +1167,11 @@
         22
       ],
       "rarityWeights": {
-        "Comum": 38,
+        "Comum": 37,
         "Incomum": 34,
         "Raro": 20,
         "Místico": 8,
-        "Lendário": 0
+        "Lendário": 1
       },
       "speciesPoolsByRarity": {
         "Comum": [
@@ -1194,7 +1197,9 @@
           "MON_011D",
           "MON_014D"
         ],
-        "Lendário": []
+        "Lendário": [
+          "MON_102"
+        ]
       },
       "encounterTypeWeights": {
         "Selvagem": 48,
@@ -1518,11 +1523,11 @@
         26
       ],
       "rarityWeights": {
-        "Comum": 34,
+        "Comum": 33,
         "Incomum": 36,
         "Raro": 22,
         "Místico": 8,
-        "Lendário": 0
+        "Lendário": 1
       },
       "speciesPoolsByRarity": {
         "Comum": [
@@ -1544,7 +1549,10 @@
           "MON_028C"
         ],
         "Místico": [],
-        "Lendário": []
+        "Lendário": [
+          "MON_103",
+          "MON_106"
+        ]
       },
       "encounterTypeWeights": {
         "Selvagem": 52,
@@ -1755,11 +1763,11 @@
         28
       ],
       "rarityWeights": {
-        "Comum": 32,
+        "Comum": 31,
         "Incomum": 36,
         "Raro": 24,
         "Místico": 8,
-        "Lendário": 0
+        "Lendário": 1
       },
       "speciesPoolsByRarity": {
         "Comum": [
@@ -1781,7 +1789,10 @@
         "Místico": [
           "MON_014D"
         ],
-        "Lendário": []
+        "Lendário": [
+          "MON_101",
+          "MON_104"
+        ]
       },
       "encounterTypeWeights": {
         "Selvagem": 55,
@@ -1996,11 +2007,11 @@
         26
       ],
       "rarityWeights": {
-        "Comum": 34,
+        "Comum": 33,
         "Incomum": 35,
         "Raro": 23,
         "Místico": 8,
-        "Lendário": 0
+        "Lendário": 1
       },
       "speciesPoolsByRarity": {
         "Comum": [
@@ -2021,7 +2032,11 @@
         "Místico": [
           "MON_013D"
         ],
-        "Lendário": []
+        "Lendário": [
+          "MON_105",
+          "MON_106",
+          "MON_107"
+        ]
       },
       "encounterTypeWeights": {
         "Selvagem": 50,
@@ -2114,11 +2129,11 @@
         30
       ],
       "rarityWeights": {
-        "Comum": 30,
+        "Comum": 29,
         "Incomum": 38,
         "Raro": 24,
         "Místico": 8,
-        "Lendário": 0
+        "Lendário": 1
       },
       "speciesPoolsByRarity": {
         "Comum": [
@@ -2149,7 +2164,10 @@
           "MON_010D",
           "MON_012D"
         ],
-        "Lendário": []
+        "Lendário": [
+          "MON_101",
+          "MON_104"
+        ]
       },
       "encounterTypeWeights": {
         "Selvagem": 52,
@@ -2278,7 +2296,16 @@
           "MON_012D",
           "MON_013D"
         ],
-        "Lendário": []
+        "Lendário": [
+          "MON_101",
+          "MON_102",
+          "MON_103",
+          "MON_104",
+          "MON_105",
+          "MON_106",
+          "MON_107",
+          "MON_108"
+        ]
       },
       "encounterTypeWeights": {
         "Selvagem": 44,
@@ -2472,11 +2499,11 @@
         20
       ],
       "rarityWeights": {
-        "Comum": 40,
+        "Comum": 39,
         "Incomum": 35,
         "Raro": 20,
         "Místico": 5,
-        "Lendário": 0
+        "Lendário": 1
       },
       "speciesPoolsByRarity": {
         "Comum": [
@@ -2494,7 +2521,11 @@
           "MON_027C"
         ],
         "Místico": [],
-        "Lendário": []
+        "Lendário": [
+          "MON_103",
+          "MON_107",
+          "MON_108"
+        ]
       },
       "encounterTypeWeights": {
         "Selvagem": 60,
@@ -2572,7 +2603,9 @@
       "encounterTypeWeights": {},
       "allowedEvolutionStages": [],
       "unlockRules": [],
-      "specialRules": ["service_only"],
+      "specialRules": [
+        "service_only"
+      ],
       "rareSpotBonus": 0,
       "bossRule": null,
       "notes": "Centro de cura regional — restaura HP/ENE de todos os Monstrinhos.",
@@ -2602,7 +2635,9 @@
       "encounterTypeWeights": {},
       "allowedEvolutionStages": [],
       "unlockRules": [],
-      "specialRules": ["service_only"],
+      "specialRules": [
+        "service_only"
+      ],
       "rareSpotBonus": 0,
       "bossRule": null,
       "notes": "Loja regional — itens de nível médio/alto.",
@@ -2632,7 +2667,9 @@
       "encounterTypeWeights": {},
       "allowedEvolutionStages": [],
       "unlockRules": [],
-      "specialRules": ["service_only"],
+      "specialRules": [
+        "service_only"
+      ],
       "rareSpotBonus": 0,
       "bossRule": null,
       "notes": "Centro de cura avançado — antes dos bosses finais.",
