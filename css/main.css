@@ -1239,6 +1239,19 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     min-width: auto;
 }
 
+/* FASE P: Botão de troca no card de time */
+.btn-trade {
+    padding: 2px 6px;
+    font-size: 13px;
+    min-height: 24px;
+    min-width: auto;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+}
+.btn-trade:hover {
+    opacity: 1;
+}
+
 /* Modal Overlay */
 .modal-overlay-fixed {
     position: fixed;

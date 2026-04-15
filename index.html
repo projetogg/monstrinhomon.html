@@ -696,9 +696,15 @@
         
         // Import progression modules (PR8A)
         import Progression from './js/progression/index.js';
+
+        // Import friendship system module (FASE R)
+        import * as FriendshipSystem from './js/progression/friendshipSystem.js';
         
         // Import data modules (PR9B)
         import * as Data from './js/data/index.js';
+
+        // Import shiny system module (FASE T)
+        import * as ShinySystem from './js/data/shinySystem.js';
 
         // Import Game Flow module (Quest progression runtime)
         import * as GameFlow from './js/gameFlow.js';
@@ -777,6 +783,12 @@
 
         // FASE O: Trade System disponível globalmente
         window.TradeSystem = TradeSystem;
+
+        // FASE R: Friendship System disponível globalmente
+        window.FriendshipSystem = FriendshipSystem;
+
+        // FASE T: Shiny System disponível globalmente
+        window.ShinySystem = ShinySystem;
 
         // Inicia o carregamento canônico imediatamente após o parse do módulo,
         // antes de qualquer chamada a init(). Isso garante que o fetch já estará
@@ -2166,6 +2178,8 @@
          * @returns {number} - Nível de 1 a 5
          */
         function getFriendshipLevel(friendship) {
+            // FASE R: delega ao módulo canônico
+            if (window.FriendshipSystem) return window.FriendshipSystem.getFriendshipLevel(friendship);
             if (friendship >= 100) return 5;
             if (friendship >= 75) return 4;
             if (friendship >= 50) return 3;
@@ -2179,6 +2193,8 @@
          * @returns {string} - Emoji de coração
          */
         function getFriendshipIcon(friendship) {
+            // FASE R: delega ao módulo canônico
+            if (window.FriendshipSystem) return window.FriendshipSystem.getFriendshipIcon(friendship);
             const level = getFriendshipLevel(friendship);
             const icons = ['🖤', '🤍', '💛', '💚', '❤️'];
             return icons[level - 1];
@@ -2190,6 +2206,8 @@
          * @returns {Object} - Objeto com bônus aplicáveis
          */
         function getFriendshipBonuses(friendship) {
+            // FASE R: delega ao módulo canônico
+            if (window.FriendshipSystem) return window.FriendshipSystem.getFriendshipBonuses(friendship);
             const level = getFriendshipLevel(friendship);
             const bonuses = {
                 xpMultiplier: 1.0,
@@ -2197,25 +2215,9 @@
                 statBonus: 0,
                 surviveChance: 0
             };
-            
-            // Progressão gradual de bônus por nível
-            if (level >= 2) {
-                bonuses.xpMultiplier = 1.05; // +5% XP
-            }
-            if (level >= 3) {
-                bonuses.critChance = 0.05;   // +5% crítico
-            }
-            if (level >= 4) {
-                bonuses.xpMultiplier = 1.10; // +10% XP (upgrade do nível 2)
-                bonuses.statBonus = 1;       // +1 stats
-            }
-            if (level >= 5) {
-                // Nota: Mecânica de sobrevivência não implementada ainda.
-                // Quando implementar, verificar surviveChance no momento do faint
-                // e dar 10% de chance de sobreviver com 1 HP.
-                bonuses.surviveChance = 0; // Desabilitado até implementação
-            }
-            
+            if (level >= 2) bonuses.xpMultiplier = 1.05;
+            if (level >= 3) bonuses.critChance = 0.05;
+            if (level >= 4) { bonuses.xpMultiplier = 1.10; bonuses.statBonus = 1; }
             return bonuses;
         }
 
@@ -2225,6 +2227,8 @@
          * @returns {number} - Percentual arredondado (ex: 5)
          */
         function formatFriendshipBonusPercent(multiplier) {
+            // FASE R: delega ao módulo canônico
+            if (window.FriendshipSystem) return window.FriendshipSystem.formatFriendshipBonusPercent(multiplier);
             return Math.round((multiplier - 1) * 100);
         }
 
@@ -2943,9 +2947,10 @@
          * FASE 1.4: Shiny - Gera chance de monstrinho shiny
          * @returns {boolean} - true se deve ser shiny (1% chance)
          */
-        function generateShinyChance() {
-            const SHINY_CHANCE_RATE = 0.01; // 1% chance
-            return Math.random() < SHINY_CHANCE_RATE;
+        function generateShinyChance(rarity) {
+            // FASE T: delega ao módulo canônico com chance por raridade
+            if (window.ShinySystem) return window.ShinySystem.rollShiny(rarity);
+            return Math.random() < 0.01; // fallback: 1% chance fixa
         }
 
         // PLAYER MANAGEMENT
@@ -4255,8 +4260,8 @@
                         { id: 'wild_' + Date.now() }
                     );
                     
-                    // FASE 1 POKEMON: Gerar shiny (1% chance)
-                    encounter.wildMonster.isShiny = generateShinyChance();
+                    // FASE 1 POKEMON: Gerar shiny com chance por raridade (FASE T)
+                    encounter.wildMonster.isShiny = generateShinyChance(encounter.wildMonster.rarity);
                     
                     // Inicializar estado de captura multi-eixo
                     encounter.wildMonster.aggression = 100; // começa totalmente agressivo
@@ -11242,6 +11247,7 @@
                             <div class="team-member-buttons">
                                 ${index > 0 ? `<button class="btn btn-sm-arrow" onclick="moveTeamMemberUp('${player.id}', ${index})">▲</button>` : '<span style="height:20px;display:block;"></span>'}
                                 ${index < player.team.length - 1 ? `<button class="btn btn-sm-arrow" onclick="moveTeamMemberDown('${player.id}', ${index})">▼</button>` : ''}
+                                ${isAlive && !isActive ? `<button class="btn btn-xs btn-trade" title="Trocar com outro jogador" onclick="openTradeModal('${player.id}', '${monster.instanceId || monster.id}')">🔄</button>` : ''}
                             </div>
                         </div>
                     `;
@@ -11373,6 +11379,141 @@
         window.moveTeamMemberUp = moveTeamMemberUp;
         window.moveTeamMemberDown = moveTeamMemberDown;
         window.movePlayerTeamMember = movePlayerTeamMember;
+
+        // ============================================================================
+        // SISTEMA DE TROCA (FASE P) — Trade UI
+        // ============================================================================
+
+        /**
+         * Abre o modal de troca de Monstrinho entre jogadores.
+         * @param {string} fromPlayerId  - ID do jogador cedente
+         * @param {string} instanceId    - ID da instância do Monstrinho a trocar
+         */
+        function openTradeModal(fromPlayerId, instanceId) {
+            try {
+                if (!window.TradeSystem) {
+                    showToast('Sistema de troca não disponível', 'error');
+                    return;
+                }
+
+                const fromPlayer = GameState.players?.find(p => p?.id === fromPlayerId);
+                if (!fromPlayer) {
+                    showToast('Jogador não encontrado', 'error');
+                    return;
+                }
+
+                const team = Array.isArray(fromPlayer.team) ? fromPlayer.team : [];
+                const mon = team.find(m => m && (m.instanceId === instanceId || m.id === instanceId));
+                if (!mon) {
+                    showToast('Monstrinho não encontrado', 'error');
+                    return;
+                }
+
+                // Destinatários válidos: jogadores ativos exceto o próprio
+                const recipients = (GameState.players || []).filter(p => p && p.id !== fromPlayerId);
+                if (recipients.length === 0) {
+                    showToast('Nenhum outro jogador disponível para troca', 'warning');
+                    return;
+                }
+
+                const options = recipients.map(p =>
+                    `<option value="${p.id}">${p.name}</option>`
+                ).join('');
+
+                const overlay = document.createElement('div');
+                overlay.className = 'mm-alert-overlay';
+                overlay.id = 'tradeModalOverlay';
+                overlay.innerHTML = `
+                    <div class="mm-alert-card">
+                        <span class="mm-alert-icon">🔄</span>
+                        <p class="mm-alert-msg"><strong>Trocar ${mon.nickname || mon.name}</strong><br>
+                        De: <strong>${fromPlayer.name}</strong><br>
+                        Para:</p>
+                        <select id="tradeRecipientSelect" class="form-control mt-5" style="width:100%;padding:6px;border-radius:6px;">
+                            ${options}
+                        </select>
+                        <div style="display:flex;gap:8px;margin-top:12px;justify-content:center;">
+                            <button class="mm-alert-btn mm-alert-btn--success"
+                                onclick="executeTradeFromModal('${fromPlayerId}', '${instanceId}')">
+                                ✅ Confirmar Troca
+                            </button>
+                            <button class="mm-alert-btn mm-alert-btn--error"
+                                onclick="document.getElementById('tradeModalOverlay')?.remove()">
+                                ✖ Cancelar
+                            </button>
+                        </div>
+                    </div>`;
+
+                document.body.appendChild(overlay);
+                overlay.addEventListener('click', e => {
+                    if (e.target === overlay) overlay.remove();
+                });
+            } catch (error) {
+                console.error('[Trade] Falha ao abrir modal:', error);
+                showToast('Erro ao abrir troca', 'error');
+            }
+        }
+
+        /**
+         * Executa a troca confirmada pelo modal.
+         * @param {string} fromPlayerId - ID do jogador cedente
+         * @param {string} instanceId   - ID da instância a trocar
+         */
+        function executeTradeFromModal(fromPlayerId, instanceId) {
+            try {
+                const toPlayerId = document.getElementById('tradeRecipientSelect')?.value;
+                document.getElementById('tradeModalOverlay')?.remove();
+
+                if (!toPlayerId) {
+                    showToast('Selecione o destinatário', 'warning');
+                    return;
+                }
+
+                const fromPlayer = GameState.players?.find(p => p?.id === fromPlayerId);
+                const toPlayer   = GameState.players?.find(p => p?.id === toPlayerId);
+
+                if (!fromPlayer || !toPlayer) {
+                    showToast('Jogador não encontrado', 'error');
+                    return;
+                }
+
+                // Construir proposta e aceitar
+                const proposal = window.TradeSystem.proposeTradeAction(fromPlayer, toPlayer, instanceId);
+                if (!proposal.ok) {
+                    const msgs = {
+                        MONSTER_NOT_FOUND:  'Monstrinho não encontrado',
+                        MONSTER_IN_BATTLE:  'Não é possível trocar monstro em batalha',
+                        MONSTER_KO:         'Não é possível trocar monstro desmaiado',
+                        SAME_PLAYER:        'Não pode trocar consigo mesmo',
+                        INVALID_PLAYER:     'Jogador inválido',
+                        INVALID_INSTANCE:   'Instância inválida',
+                    };
+                    showToast(msgs[proposal.error] || `Troca inválida: ${proposal.error}`, 'error');
+                    return;
+                }
+
+                const result = window.TradeSystem.acceptTrade(proposal.trade, fromPlayer, toPlayer);
+                if (!result.ok) {
+                    const msgs = {
+                        MONSTER_NOT_FOUND:  'Monstrinho não encontrado',
+                        MONSTER_IN_BATTLE:  'Monstro entrou em batalha — troca cancelada',
+                        MONSTER_KO:         'Monstro desmaiou — troca cancelada',
+                    };
+                    showToast(msgs[result.error] || `Falha na troca: ${result.error}`, 'error');
+                    return;
+                }
+
+                saveGame();
+                updatePlayersList();
+                showToast(`🔄 ${result.monsterName} foi para ${toPlayer.name}!`, 'success');
+            } catch (error) {
+                console.error('[Trade] Falha ao executar troca:', error);
+                showToast('Erro inesperado na troca', 'error');
+            }
+        }
+
+        window.openTradeModal        = openTradeModal;
+        window.executeTradeFromModal = executeTradeFromModal;
 
         // PR12A: Equipment UI Functions
         function renderEquipableItems(player) {
