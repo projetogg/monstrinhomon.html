@@ -210,6 +210,8 @@
 .ow-node-card--state-done::before     { background: #40cc60; }
 .ow-node-card--state-available::before { background: rgba(255,255,255,0.20); }
 .ow-node-card--state-locked::before   { background: rgba(255,255,255,0.06); }
+.ow-node-card--state-healing::before  { background: linear-gradient(90deg, #27ae60 0%, #4adf88 100%); box-shadow: 0 0 10px rgba(74,223,136,0.45); }
+.ow-node-card--state-shop::before     { background: linear-gradient(90deg, #f0b800 0%, #ffd740 100%); box-shadow: 0 0 10px rgba(255,215,64,0.40); }
 
 .ow-node-card--visible {
     opacity: 1;
@@ -346,6 +348,30 @@
     background: rgba(80,130,255,0.11);
     border-color: rgba(80,130,255,0.32);
     color: #c0d2ff;
+}
+
+.ow-spot-chip--heal {
+    background: rgba(39,174,96,0.07);
+    border-color: rgba(74,223,136,0.28);
+    color: #6ee8a8;
+}
+
+.ow-spot-chip--heal:hover {
+    background: rgba(39,174,96,0.16);
+    border-color: rgba(74,223,136,0.50);
+    color: #8ff5be;
+}
+
+.ow-spot-chip--shop {
+    background: rgba(200,160,0,0.07);
+    border-color: rgba(255,215,64,0.28);
+    color: #ffd740;
+}
+
+.ow-spot-chip--shop:hover {
+    background: rgba(200,160,0,0.16);
+    border-color: rgba(255,215,64,0.50);
+    color: #ffe580;
 }
 
 .ow-spot-chip--more {

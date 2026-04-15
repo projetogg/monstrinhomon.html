@@ -9745,7 +9745,11 @@
                     const onclick   = isService
                         ? `onclick="selectCityService('${spot.serviceAction}')"`
                         : `onclick="owGoToSpot('${spot.id}')"`;
-                    const cls = isService ? 'ow-spot-chip--service' : '';
+                    // Chip com cor temática por tipo de serviço
+                    const cls = !isService ? '' :
+                                spot.serviceAction === 'heal'  ? 'ow-spot-chip--heal' :
+                                spot.serviceAction === 'shop'  ? 'ow-spot-chip--shop' :
+                                'ow-spot-chip--service';
                     return `<button class="ow-spot-chip ${cls}" ${onclick}>${spot.icon} ${spot.name}</button>`;
                 }).join('');
                 if (extra > 0) {
@@ -10690,18 +10694,22 @@
 
             // Gerar linhas de monstrinhos — usar índice para IDs únicos sem risco de colisão
             const monsterRows = allMonsters.length === 0
-                ? '<p style="color:rgba(255,255,255,0.5);text-align:center;">Nenhum Monstrinho no time.</p>'
+                ? '<p style="color:rgba(255,255,255,0.4);text-align:center;padding:12px 0;">Nenhum Monstrinho no time.</p>'
                 : allMonsters.map(({ mi, player, hpBefore, hpMax, needsHeal }, idx) => {
                     const pct = Math.round((hpBefore / hpMax) * 100);
                     const fainted = mi.status === 'fainted' || hpBefore <= 0;
+                    // Classe de cor da barra: vermelho <30%, amarelo 30-69%, verde ≥70%
+                    const barClass = fainted ? '' :
+                                     pct >= 70 ? ' heal-modal-hp-fill--good' :
+                                     pct >= 30 ? ' heal-modal-hp-fill--ok' : '';
                     return `
                         <div class="heal-modal-monster${fainted ? ' heal-modal-monster--fainted' : ''}">
                             <div class="heal-modal-monster__header">
-                                <span class="heal-modal-monster__name">${escapeHtml(mi.name ?? mi.id)} <span style="opacity:0.5;font-size:10px;">(${escapeHtml(player.name)})</span></span>
-                                <span class="heal-modal-monster__hp-text">${fainted ? 'Nocauteado' : `${hpBefore}/${hpMax} HP`}</span>
+                                <span class="heal-modal-monster__name">${escapeHtml(mi.name ?? mi.id)} <span style="opacity:0.45;font-size:10px;">(${escapeHtml(player.name)})</span></span>
+                                <span class="heal-modal-monster__hp-text">${fainted ? '💀 Nocauteado' : `${hpBefore}/${hpMax} HP`}</span>
                             </div>
                             <div class="heal-modal-hp-bar">
-                                <div class="heal-modal-hp-fill" id="hmhp_${idx}"
+                                <div class="heal-modal-hp-fill${barClass}" id="hmhp_${idx}"
                                      style="width:${fainted ? 0 : pct}%"></div>
                             </div>
                         </div>`;
@@ -10727,11 +10735,11 @@
                     <div class="heal-modal-list" id="healModalList">
                         ${monsterRows}
                     </div>
-                    <div id="healModalFeedback"></div>
+                    <div id="healModalFeedback" class="heal-modal-feedback"></div>
                     <div class="heal-modal-footer">
                         ${anyNeedsHeal
                             ? `<button class="heal-modal-btn heal-modal-btn--primary" onclick="doHealAll()">💚 Curar Todos</button>`
-                            : `<div style="flex:1;text-align:center;color:#4adf88;font-weight:700;">✅ Todos já estão com HP cheio!</div>`
+                            : `<div style="flex:1;text-align:center;color:#4adf88;font-weight:700;font-size:13px;">✅ Todos já estão com HP cheio!</div>`
                         }
                         <button class="heal-modal-btn heal-modal-btn--secondary" onclick="closeHealModal()">Fechar</button>
                     </div>
@@ -10750,11 +10758,20 @@
                     if (mi && mi.hpMax) {
                         mi.hp = mi.hpMax;
                         if (mi.status === 'fainted') mi.status = 'healthy';
-                        // Animar barra de HP para 100% usando índice global (igual ao de showHealModal)
+                        // Animar barra de HP para 100% e marcar card como curado
                         const bar = document.getElementById(`hmhp_${globalIdx}`);
                         if (bar) {
-                            bar.classList.add('full');
+                            bar.className = 'heal-modal-hp-fill full';
                             bar.style.width = '100%';
+                            // Marcar card pai como curado para highlight verde
+                            const card = bar.closest('.heal-modal-monster');
+                            if (card) {
+                                card.classList.remove('heal-modal-monster--fainted');
+                                card.classList.add('heal-modal-monster--healed');
+                                // Atualizar texto de HP
+                                const hpText = card.querySelector('.heal-modal-monster__hp-text');
+                                if (hpText) hpText.textContent = `${mi.hpMax}/${mi.hpMax} HP`;
+                            }
                         }
                         globalIdx++;
                     }
@@ -10771,14 +10788,14 @@
             if (feedback) {
                 feedback.innerHTML = '<div class="heal-all-success">✨ Todos os Monstrinhos curados com sucesso!</div>';
             }
-            // Atualizar textos HP e ocultar botão "Curar Todos"
+            // Atualizar botão "Curar Todos"
             const footer = document.querySelector('.heal-modal-footer');
             if (footer) {
                 const healBtn = footer.querySelector('.heal-modal-btn--primary');
                 if (healBtn) {
                     healBtn.textContent = '✅ Curado!';
                     healBtn.disabled = true;
-                    healBtn.style.opacity = '0.6';
+                    healBtn.style.opacity = '0.55';
                 }
             }
         }
