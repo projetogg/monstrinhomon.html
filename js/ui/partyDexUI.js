@@ -230,7 +230,7 @@ export function renderPartyDex(container, deps) {
         // Render cards
         const cardsHTML = sortedTemplates.map(template => {
             const status = getDexEntryStatus(deps.state, template.id);
-            return renderMonsterCard(template, status);
+            return renderMonsterCard(template, status, deps);
         }).join('');
         
         // Combine and set innerHTML
@@ -251,9 +251,10 @@ export function renderPartyDex(container, deps) {
  * Render a single monster card based on status
  * @param {Object} template - Monster template
  * @param {string} status - 'captured' | 'seen' | 'unknown'
+ * @param {Object} [deps] - Optional dependencies (getMonsterById for evo chain)
  * @returns {string} HTML string
  */
-function renderMonsterCard(template, status) {
+function renderMonsterCard(template, status, deps) {
     const safeId = (template.id || 'unknown').replace(/[^a-zA-Z0-9_-]/g, '_');
     
     if (status === 'unknown') {
@@ -280,7 +281,30 @@ function renderMonsterCard(template, status) {
     
     // Captured: Full card
     const rarityClass = (template.rarity || 'Comum').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    
+
+    // Linha evolutiva: busca próxima forma pelo catálogo via getMonsterById/getMonsterTemplates
+    let evoHtml = '';
+    try {
+        const evolvesTo = template.evolvesTo ?? template.evolve_to ?? template.evoluiPara ?? null;
+        const evolvesAt = template.evolvesAt ?? template.evolve_at ?? template.evoluiNoNivel ?? null;
+        if (evolvesTo != null && evolvesAt != null) {
+            const atLv = Number(evolvesAt);
+            if (Number.isFinite(atLv) && atLv > 0) {
+                // Tenta resolver o nome da próxima forma
+                let nextName = null;
+                const getById = deps?.getMonsterById;
+                if (typeof getById === 'function') {
+                    const nextTmpl = getById(String(evolvesTo));
+                    nextName = nextTmpl?.name || null;
+                }
+                const nextLabel = nextName ? `${nextName} (Nv.${atLv})` : `Nv.${atLv}`;
+                evoHtml = `<div class="dex-evo-line">🔮 → ${nextLabel}</div>`;
+            }
+        } else if (!evolvesTo) {
+            evoHtml = `<div class="dex-evo-line dex-evo-final">🏆 Forma final</div>`;
+        }
+    } catch (_e) { /* fallback silencioso */ }
+
     return `
         <div class="dex-card dex-captured" data-status="captured" data-id="${safeId}">
             <div class="dex-art">
@@ -297,6 +321,7 @@ function renderMonsterCard(template, status) {
                     <span class="dex-stat-mini">ATK: ${template.baseAtk || '?'}</span>
                     <span class="dex-stat-mini">DEF: ${template.baseDef || '?'}</span>
                 </div>
+                ${evoHtml}
             </div>
         </div>
     `;

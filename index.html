@@ -7065,7 +7065,10 @@
                             const label = formatSkillButtonLabel(skill, playerMonster);
                             const canUse = canUseSkillNow(skill, playerMonster) && playerMonster.hp > 0;
                             const tutAllows = tutorialAllows("skill");
-                            const tooltip = !tutAllows ? 'Tutorial: ainda não liberado' : (canUse ? (skill.desc || '') : `ENE insuficiente (${Number(playerMonster.ene) || 0}/${Number(skill.cost ?? skill.energy_cost ?? 0) || 0})`);
+                            const skillDesc = skill.desc || '';
+                            const skillMeta = [skill.category, skill.status ? `→ ${skill.status}` : null].filter(Boolean).join(' · ');
+                            const skillTooltipText = skillMeta ? `${skillDesc}\n${skillMeta}` : skillDesc;
+                            const tooltip = !tutAllows ? 'Tutorial: ainda não liberado' : (canUse ? skillTooltipText : `ENE insuficiente (${Number(playerMonster.ene) || 0}/${Number(skill.cost ?? skill.energy_cost ?? 0) || 0})`);
                             return `<button class="btn btn-primary" onclick="useSkillWild(${idx})"
                                     ${!canUse || !tutAllows ? 'disabled' : ''} title="${tooltip}">${label}</button>`;
                         }).join('')}
@@ -8612,7 +8615,15 @@
                 // Render the PartyDex UI (idempotent DOM update)
                 window.PartyDexUI.renderPartyDex(root, {
                     state: GameState,
-                    getMonsterTemplates: getMonsterTemplates
+                    getMonsterTemplates: getMonsterTemplates,
+                    getMonsterById: (id) => {
+                        // Tenta resolver template por ID para linha evolutiva
+                        if (window.Data?.getMonstersMapSync) {
+                            const map = window.Data.getMonstersMapSync();
+                            if (map) return map.get(String(id)) || null;
+                        }
+                        return getMonstersArray().find(t => t && String(t.id) === String(id)) || null;
+                    }
                 });
                 
             } catch (error) {
@@ -11661,6 +11672,14 @@
          * @returns {string} HTML do badge ou string vazia.
          */
         function renderTeamReadinessIndicator(monster) {
+            // E2: Badge de "pronto para evoluir" (⬆️) quando monstrinho atingiu nível de evolução
+            const evoTarget = (typeof getEvolutionTargetTemplate === 'function')
+                ? getEvolutionTargetTemplate(monster)
+                : null;
+            if (evoTarget && monster.level >= evoTarget.evolvesAt) {
+                return `<span class="readiness-badge readiness-badge--evo" title="Pronto para evoluir em ${evoTarget.nextTemplate?.name || '?'}!">⬆️ Evoluir!</span>`;
+            }
+
             if (!window.SpeciesDisplay?.getTeamReadinessIndicator) return '';
             const readiness = window.SpeciesDisplay.getTeamReadinessIndicator(monster);
             if (!readiness) return '';

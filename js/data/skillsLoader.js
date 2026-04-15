@@ -285,6 +285,12 @@ export function buildRuntimeSkillDefs(skillsData) {
         if (skill.debuffType !== undefined) runtimeSkill.debuffType = skill.debuffType;
         if (skill.debuffPower !== undefined) runtimeSkill.debuffPower = skill.debuffPower;
 
+        // Efeito de status (Provocado, Enfraquecido, Lento, etc.)
+        if (skill.status !== undefined) runtimeSkill.status = skill.status;
+
+        // Categoria semântica (Ataque, Controle, Cura, Suporte)
+        if (skill.category !== undefined) runtimeSkill.category = skill.category;
+
         defs[cls][grp][idx] = runtimeSkill;
     }
 
