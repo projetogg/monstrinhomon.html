@@ -759,6 +759,7 @@
 
         // Shop UI (Fase Z)
         import * as ShopUI from './js/ui/shopUI.js';
+        import * as SavesUI from './js/ui/savesUI.js';
 
         // Map Unlock System (FASE XIV)
         import * as MapUnlockSystem from './js/encounter/mapUnlockSystem.js';
@@ -13644,37 +13645,10 @@
             if (!host) return;
 
             const selectedSlot = SaveLayer.getActiveSlot();
-
-            const slotHtml = [1, 2, 3].map(slot => {
-                const env = mmReadSlot(slot);
-                const empty = !env || !env.state;
-                const date = env?.timestamp ? new Date(env.timestamp).toLocaleString('pt-BR') : "";
-                const isSelected = selectedSlot === slot;
-                // "Selecionado" = este é o slot manual associado (destino de próximos snapshots).
-                // NÃO significa que a sessão atual vem deste slot.
-                const selectedBadge = isSelected ? `<span style="color:#4ade80;font-weight:bold;margin-left:8px;" title="Slot manual selecionado para próximos snapshots">● Selecionado</span>` : "";
-                
-                const meta = empty
-                    ? `<div class="mm-slot-meta">Nenhum snapshot salvo</div>`
-                    : `<div class="mm-slot-meta">
-                         <div><b>Sessão:</b> ${escapeHtml(env.sessionName || "Sessão")}</div>
-                         <div><b>Jogadores:</b> ${env.playersCount ?? "?"}</div>
-                         <div><b>Snapshot de:</b> ${date}</div>
-                       </div>`;
-
-                return `
-                    <div class="mm-slot${isSelected ? ' mm-slot-active' : ''}">
-                        <h3>Slot ${slot}${selectedBadge}</h3>
-                        ${meta}
-                        <div class="mm-slot-actions">
-                            <button class="mm-btn w-auto" ${empty ? "disabled" : ""} onclick="mmLoadFromSlot(${slot})">📂 Restaurar</button>
-                            <button class="mm-btn w-auto" onclick="mmSaveToSlot(${slot})">💾 Salvar aqui</button>
-                            <button class="mm-btn w-auto" ${empty ? "disabled" : ""} onclick="mmExportSlot(${slot})">⬇️ Exportar</button>
-                            <button class="mm-btn w-auto" ${empty ? "disabled" : ""} onclick="mmDeleteSlot(${slot})">🗑️ Apagar</button>
-                        </div>
-                    </div>
-                `;
-            }).join("");
+            // Delega geração de HTML ao módulo puro SavesUI (sem efeitos colaterais).
+            const slotHtml = [1, 2, 3].map(slot =>
+                SavesUI.renderSaveSlotCardHtml(slot, mmReadSlot(slot), selectedSlot === slot)
+            ).join("");
 
             host.innerHTML = slotHtml;
         }
@@ -13703,31 +13677,10 @@
             if (!host) return;
 
             const last = mmGetLastSlot();
-            const cards = [1, 2, 3].map(slot => {
-                const env = mmReadSlot(slot);
-                const empty = !env || !env.state;
-                const date = env?.timestamp ? new Date(env.timestamp).toLocaleString('pt-BR') : "";
-                const meta = empty
-                    ? `<div class="mm-slot-meta">Vazio</div>`
-                    : `<div class="mm-slot-meta">
-                         <div><b>Sessão:</b> ${escapeHtml(env.sessionName || "Sessão")}</div>
-                         <div><b>Jogadores:</b> ${env.playersCount ?? "?"}</div>
-                         <div><b>Data:</b> ${date}</div>
-                       </div>`;
-
-                return `
-                    <div class="mm-slot ${slot === last ? "slot-outline" : ""}">
-                        <h3 class="my-0 mb-6">Slot ${slot} ${slot === last ? "⭐" : ""}</h3>
-                        ${meta}
-                        <div class="mm-slot-actions">
-                            <button class="mm-btn w-auto"
-                                onclick="mmChooseSlotAndStartNewGame(${slot})">
-                                ${empty ? "✅ Usar este slot" : "✅ Usar (sobrescrever)"}
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join("");
+            // Delega geração de HTML ao módulo puro SavesUI (sem efeitos colaterais).
+            const cards = [1, 2, 3].map(slot =>
+                SavesUI.renderSlotPickerCardHtml(slot, mmReadSlot(slot), slot === last)
+            ).join("");
 
             host.innerHTML = cards;
         }
