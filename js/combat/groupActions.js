@@ -11,7 +11,7 @@ import * as GroupCore from './groupCore.js';
 import { initializeBattleParticipation, markAsParticipated, processBattleItemBreakage } from './itemBreakage.js';
 import { isOffensiveSkill } from './skillResolver.js';
 import { fireCombatEvent, ON_ATTACK, ON_HIT, ON_KO, ON_TURN_START, ON_HEAL_ITEM, ON_SKILL_USED } from './combatEvents.js';
-import { checkFleeCanonical } from './wildCore.js';
+import { checkFleeCanonical, calculateCaptureScore } from './wildCore.js';
 import { checkBossPhaseTransition, bossAoeAttack, bossPhase2HealAlly } from './bossSystem.js';
 import { resolveConfrontation, computeGroupDamage, RC_CATEGORY, applyBuff } from './groupCombatFormula.js';
 import {
@@ -1546,7 +1546,7 @@ export function executePlayerSkillGroup(skillOrId, enemyIndex, deps) {
  * @param {object} deps   - Dependências injetadas (mesmo padrão de executePlayerAttackGroup)
  * @returns {boolean} true se o item foi usado com sucesso
  */
-export function executeGroupUseItem(itemId, deps) {
+export function executeUseItemGroup(itemId, target, deps) {
     const { state, core, ui, audio, storage, helpers } = deps;
 
     const enc = state.currentEncounter;
@@ -1556,21 +1556,23 @@ export function executeGroupUseItem(itemId, deps) {
     if (!actor || actor.side !== 'player') return false;
 
     const player = helpers.getPlayerById(actor.id);
-    const mon = helpers.getActiveMonsterOfPlayer(player);
-    if (!player || !mon) return false;
+    if (!player) return false;
+
+    const targetPlayerId = target?.playerId || actor.id;
+    const targetPlayer = helpers.getPlayerById(targetPlayerId) || player;
+    let mon = null;
+    if (Number.isInteger(target?.index)) {
+        mon = targetPlayer.team?.[target.index] || null;
+    }
+    if (!mon) {
+        mon = helpers.getActiveMonsterOfPlayer(targetPlayer);
+    }
+    if (!mon) return false;
 
     const hp = Number(mon.hp) || 0;
     const hpMax = Number(mon.hpMax) || 1;
-
     if (hp <= 0) {
         helpers.log(enc, "⚠️ Monstrinho está desmaiado. Não pode usar itens.");
-        storage.save();
-        ui.render();
-        return false;
-    }
-
-    if (hp >= hpMax) {
-        helpers.log(enc, "ℹ️ HP já está cheio. Item não é necessário.");
         storage.save();
         ui.render();
         return false;
@@ -1587,47 +1589,118 @@ export function executeGroupUseItem(itemId, deps) {
 
     // Buscar definição do item (suporta items.json via getItemDef)
     const itemDef = helpers.getItemDef(itemId);
+    const itemType = String(itemDef?.type || '');
     const healPct = Number(itemDef?.heal_pct ?? 0.30);
     const healMin = Number(itemDef?.heal_min ?? 30);
     const itemName = itemDef?.name ?? itemId;
     const itemEmoji = itemDef?.emoji ?? '💊';
 
+    if ((itemType === 'heal' || itemType === 'cura' || itemType === '') && hp >= hpMax) {
+        helpers.log(enc, "ℹ️ HP já está cheio. Item não é necessário.");
+        storage.save();
+        ui.render();
+        return false;
+    }
+
     // Consumir item do inventário
     player.inventory[itemId] = Math.max(0, itemCount - 1);
 
-    // Calcular e aplicar cura
-    const healAmount = Math.max(healMin, Math.floor(hpMax * healPct));
-    const newHp = Math.min(hpMax, hp + healAmount);
-    const healed = newHp - hp;
-    mon.hp = newHp;
-
-    // PR-02: on_heal_item — passiva de espécie ao usar item de cura (floracura)
-    const passiveStateHeal = enc.passiveState || (enc.passiveState = {});
-    const healSpeciesPassive = fireCombatEvent(mon, ON_HEAL_ITEM, {
-        hpPct: hpMax > 0 ? hp / hpMax : 0,
-        isFirstHeal: !passiveStateHeal.floracuraHealUsed,
-    });
-    if (healSpeciesPassive?.healBonus) {
-        const bonus = Math.min(healSpeciesPassive.healBonus, hpMax - mon.hp);
-        if (bonus > 0) {
-            mon.hp += bonus;
-        const monNameForLog = mon.nickname || mon.name || mon.nome || "Monstrinho";
-            helpers.log(enc, `✨ Passiva ${monNameForLog}: +${bonus} HP (primeira cura)`);
-        }
-        passiveStateHeal.floracuraHealUsed = true;
-    }
-
     const playerName = player.name || player.nome || "Jogador";
     const monName = mon.nickname || mon.name || mon.nome || "Monstrinho";
-    const remaining = player.inventory[itemId];
 
-    helpers.log(enc, `${itemEmoji} ${playerName} usou ${itemName}! (Restam: ${remaining})`);
-    helpers.log(enc, `✨ ${monName} recuperou ${healed} HP! (${mon.hp}/${hpMax})`);
+    if (itemType === 'tatico') {
+        const buffPower = Number(itemDef?.shield ?? 2) || 2;
+        const buffDuration = Number(itemDef?.duration ?? 2) || 2;
+        mon.buffs = Array.isArray(mon.buffs) ? mon.buffs : [];
+        mon.buffs.push({ type: 'def', power: buffPower, duration: buffDuration });
+        helpers.log(enc, `${itemEmoji} ${playerName} usou ${itemName} em ${monName}. DEF +${buffPower} por ${buffDuration} turno(s).`);
+    } else {
+        // Calcular e aplicar cura
+        const healAmount = Math.max(healMin, Math.floor(hpMax * healPct));
+        const newHp = Math.min(hpMax, hp + healAmount);
+        const healed = newHp - hp;
+        mon.hp = newHp;
+
+        // PR-02: on_heal_item — passiva de espécie ao usar item de cura (floracura)
+        const passiveStateHeal = enc.passiveState || (enc.passiveState = {});
+        const healSpeciesPassive = fireCombatEvent(mon, ON_HEAL_ITEM, {
+            hpPct: hpMax > 0 ? hp / hpMax : 0,
+            isFirstHeal: !passiveStateHeal.floracuraHealUsed,
+        });
+        if (healSpeciesPassive?.healBonus) {
+            const bonus = Math.min(healSpeciesPassive.healBonus, hpMax - mon.hp);
+            if (bonus > 0) {
+                mon.hp += bonus;
+                const monNameForLog = mon.nickname || mon.name || mon.nome || "Monstrinho";
+                helpers.log(enc, `✨ Passiva ${monNameForLog}: +${bonus} HP (primeira cura)`);
+            }
+            passiveStateHeal.floracuraHealUsed = true;
+        }
+        helpers.log(enc, `${itemEmoji} ${playerName} usou ${itemName} em ${monName}! (+${healed} HP)`);
+    }
 
     // Som de cura
     audio.playSfx("heal");
 
     advanceGroupTurn(enc, deps);
+    storage.save();
+    ui.render();
+    return true;
+}
+
+export function executeGroupUseItem(itemId, deps) {
+    return executeUseItemGroup(itemId, null, deps);
+}
+
+/**
+ * Tentativa de captura em contexto de batalha de grupo (pós-vitória).
+ * Reaproveita score canônico de captura do combate selvagem.
+ *
+ * @param {string} itemId
+ * @param {object} deps
+ * @returns {boolean}
+ */
+export function executeGroupCapture(itemId, deps) {
+    const { state, ui, storage, helpers } = deps;
+    const enc = state.currentEncounter;
+    if (!enc || enc.finished !== true || enc.result !== 'victory') return false;
+
+    const player = (state.players || [])[0];
+    if (!player) return false;
+
+    const orbId = itemId || 'CLASTERORB_COMUM';
+    const invCount = Number(player.inventory?.[orbId]) || 0;
+    if (invCount <= 0) {
+        helpers.log(enc, '⚠️ Sem orbe de captura disponível.');
+        ui.render();
+        return false;
+    }
+
+    const enemy = (enc.enemies || []).find(e => e && (Number(e.hp) || 0) <= 0);
+    if (!enemy) {
+        helpers.log(enc, '⚠️ Nenhum inimigo apto para captura.');
+        ui.render();
+        return false;
+    }
+
+    const itemDef = helpers.getItemDef ? helpers.getItemDef(orbId) : null;
+    const orbBonus = Number(itemDef?.capture_bonus_pp ?? itemDef?.bonus ?? 0) || 0;
+    const score = calculateCaptureScore(enemy, orbBonus);
+    const needed = state.config?.captureScoreThreshold?.[enemy.rarity] ?? 45;
+
+    player.inventory[orbId] = Math.max(0, invCount - 1);
+    if (score < needed) {
+        helpers.log(enc, `🎯 Captura falhou (${score}/${needed}).`);
+        storage.save();
+        ui.render();
+        return false;
+    }
+
+    if (!Array.isArray(player.team)) player.team = [];
+    const cloned = JSON.parse(JSON.stringify(enemy));
+    cloned.ownerId = player.id;
+    player.team.push(cloned);
+    helpers.log(enc, `🎉 ${player.name || 'Jogador'} capturou ${enemy.name || 'Monstrinho'}!`);
     storage.save();
     ui.render();
     return true;

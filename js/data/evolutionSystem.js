@@ -16,8 +16,16 @@
 export function getEvolutionData(template) {
     if (!template) return null;
 
-    const evolvesTo = template.evolvesTo ?? template.evolve_to ?? template.evoluiPara ?? null;
-    const evolvesAt = template.evolvesAt ?? template.evolve_at ?? template.evoluiNoNivel ?? null;
+    const evolvesTo = template.evolvesTo
+        ?? template.evolution?.evolvesTo
+        ?? template.evolve_to
+        ?? template.evoluiPara
+        ?? null;
+    const evolvesAt = template.evolvesAt
+        ?? template.evolution?.method?.level
+        ?? template.evolve_at
+        ?? template.evoluiNoNivel
+        ?? null;
 
     const toId = evolvesTo != null ? String(evolvesTo) : '';
     const atLv = evolvesAt != null ? Number(evolvesAt) : NaN;
@@ -93,6 +101,18 @@ export function executeEvolution(monster, newTemplate, opts = {}) {
 
     monster.hpMax = Math.floor(baseHp * lvMult * rarityMult);
     monster.hp    = Math.max(1, Math.floor(monster.hpMax * hpPct));
+
+    // Atualizar próxima etapa de evolução (dados canônicos + bootstrap)
+    const nextEvolvesTo = newTemplate.evolvesTo
+        ?? newTemplate.evolution?.evolvesTo
+        ?? newTemplate.evolve_to
+        ?? null;
+    const nextEvolvesAt = newTemplate.evolvesAt
+        ?? newTemplate.evolution?.method?.level
+        ?? newTemplate.evolve_at
+        ?? null;
+    monster.evolvesTo = nextEvolvesTo || null;
+    monster.evolvesAt = Number.isFinite(Number(nextEvolvesAt)) ? Number(nextEvolvesAt) : null;
 
     return { oldName, newName };
 }

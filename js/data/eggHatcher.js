@@ -97,12 +97,10 @@ function createMonsterInstance(template, level = 1) {
     };
     
     // Campos de evolução (opcionais)
-    if (template.evolvesTo) {
-        instance.evolvesTo = template.evolvesTo;
-    }
-    if (template.evolvesAt) {
-        instance.evolvesAt = template.evolvesAt;
-    }
+    const evolvesTo = template.evolvesTo ?? template.evolution?.evolvesTo ?? null;
+    const evolvesAt = template.evolvesAt ?? template.evolution?.method?.level ?? null;
+    if (evolvesTo) instance.evolvesTo = evolvesTo;
+    if (evolvesAt) instance.evolvesAt = evolvesAt;
     
     return instance;
 }

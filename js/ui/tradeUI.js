@@ -26,7 +26,7 @@ const RARITY_COLOR = {
  * @param {string} role      - 'A' ou 'B'
  * @returns {string} HTML
  */
-function renderMonCard(mon, playerId, role) {
+function renderMonCard(mon, playerId, role, ownerClass) {
     const name = mon.nickname || mon.name || mon.nome || '?';
     const cls = mon.class || '?';
     const rarity = mon.rarity || 'Comum';
@@ -36,6 +36,10 @@ function renderMonCard(mon, playerId, role) {
     const color = RARITY_COLOR[rarity] || '#555';
     const emoji = mon.emoji || '🐾';
 
+    const classBadge = cls === ownerClass
+        ? `<div style="font-size:10px;text-align:center;color:#2e7d32;font-weight:700;">✔ Na sua classe</div>`
+        : `<div style="font-size:10px;text-align:center;color:#b71c1c;font-weight:700;">🔄 Trocar!</div>`;
+
     return `
 <div class="trade-mon-card" data-mon-id="${mon.id}" data-player-id="${playerId}" data-role="${role}"
      style="cursor:pointer;padding:10px;border:2px solid #ddd;border-radius:8px;margin:4px;background:#fff;
@@ -44,6 +48,7 @@ function renderMonCard(mon, playerId, role) {
   <div style="font-size:22px;text-align:center;">${emoji}</div>
   <div style="font-weight:bold;font-size:13px;text-align:center;">${name}</div>
   <div style="font-size:11px;text-align:center;color:${color};">${rarity} • ${cls}</div>
+  ${classBadge}
   <div style="font-size:10px;text-align:center;color:#888;">HP ${hp}/${hpMax} (${hpPct}%)</div>
 </div>`;
 }
@@ -70,7 +75,7 @@ function renderPlayerSide(player, role, selectedMonId) {
         for (const mon of tradeable) {
             const isSelected = mon.id === selectedMonId;
             const borderStyle = isSelected ? '2px solid #3498db' : '2px solid #ddd';
-            html += renderMonCard(mon, player.id, role).replace('border:2px solid #ddd', `border:${borderStyle}`);
+            html += renderMonCard(mon, player.id, role, player.class).replace('border:2px solid #ddd', `border:${borderStyle}`);
         }
         html += `</div>`;
     }
@@ -96,7 +101,7 @@ export function renderTradePanel(state, tradeState = {}) {
         </div>`;
     }
 
-    const { selectedA = null, selectedB = null, playerAId, playerBId } = tradeState;
+    const { selectedA = null, selectedB = null, playerAId, playerBId, pendingProposal = null } = tradeState;
 
     const playerA = players.find(p => p.id === playerAId) || players[0];
     const playerB = players.find(p => p.id === playerBId) || players[1];
@@ -122,8 +127,8 @@ export function renderTradePanel(state, tradeState = {}) {
     const selA = selectedA ? (playerA.team || []).find(m => m && m.id === selectedA) : null;
     const selB = selectedB ? (playerB.team || []).find(m => m && m.id === selectedB) : null;
 
-    const btnLabel = selA && selB ? '🔄 Confirmar Troca' : '🔄 Selecione um Monstrinho de cada lado';
-    const btnDisabled = (!selA || !selB) ? 'disabled' : '';
+    const btnLabel = selA && selB ? '📨 Propor Troca' : '🔄 Selecione um Monstrinho de cada lado';
+    const btnDisabled = (!selA || !selB || pendingProposal) ? 'disabled' : '';
 
     let html = `<div class="trade-panel" style="padding:16px;">`;
     html += `<h3 style="font-size:16px;margin-bottom:12px;">🔄 Troca de Monstrinhos</h3>`;
@@ -159,6 +164,16 @@ export function renderTradePanel(state, tradeState = {}) {
         html += `<div style="text-align:center;font-size:13px;margin-bottom:8px;color:#555;">
             <strong>${playerA.name || 'A'}</strong> dá <strong>${nameA}</strong>
             → <strong>${playerB.name || 'B'}</strong> por <strong>${nameB}</strong>
+        </div>`;
+    }
+
+    if (pendingProposal) {
+        const proposer = players.find(p => p.id === pendingProposal.playerAId);
+        const receiver = players.find(p => p.id === pendingProposal.playerBId);
+        html += `<div style="background:rgba(241,196,15,0.12);border:1px solid rgba(241,196,15,0.45);border-radius:8px;padding:10px;margin:12px 0;text-align:center;">
+            <div style="font-size:13px;margin-bottom:8px;">📨 <strong>${proposer?.name || 'Jogador A'}</strong> propôs troca para <strong>${receiver?.name || 'Jogador B'}</strong>.</div>
+            <button class="btn btn-success" onclick="window.tradeAccept && window.tradeAccept()" style="margin-right:8px;">✅ Aceitar</button>
+            <button class="btn btn-secondary" onclick="window.tradeReject && window.tradeReject()">❌ Recusar</button>
         </div>`;
     }
 

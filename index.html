@@ -50,6 +50,12 @@
                 <button class="tab-button nav-btn" data-tab="partyDex" onclick="switchTab('partyDex')" aria-label="Monstrodex">
                     <span class="nav-icon">📘</span><span class="nav-label">Monstrodex</span>
                 </button>
+                <button class="tab-button nav-btn" data-tab="missoes" onclick="switchTab('missoes')" aria-label="Missões">
+                    <span class="nav-icon">📜</span><span class="nav-label">Missões</span>
+                </button>
+                <button class="tab-button nav-btn" data-tab="trade" onclick="switchTab('trade')" aria-label="Trocas">
+                    <span class="nav-icon">🔄</span><span class="nav-label">Trocas</span>
+                </button>
                 <button id="headerMestreBtn" class="tab-button nav-btn nav-btn--mestre" onclick="mmOpenMestre()" aria-label="Painel Mestre">
                     <span class="nav-icon">🧑‍🏫</span><span class="nav-label">Mestre</span>
                 </button>
@@ -178,6 +184,7 @@
                 <div id="turnOrderList"></div>
                 
                 <button class="btn btn-warning" onclick="nextTurn()">Next Turn ▶</button>
+                <button class="btn btn-primary" onclick="openTradePanel()">🔄 Trocas</button>
                 <button class="btn btn-danger" onclick="endSession()">End Session</button>
             </div>
         </div>
@@ -496,6 +503,21 @@
             </div>
         </div>
 
+        <div id="tabTrade" class="tab-content">
+            <h2>🔄 Trocas</h2>
+            <div id="tradeTabContainer" class="card">
+                <p class="text-muted">Selecione os jogadores para propor uma troca.</p>
+            </div>
+        </div>
+
+        <!-- XVII-B: Aba Missões — lista quests ativas e concluídas por jogador -->
+        <div id="tabMissoes" class="tab-content">
+            <h2>📜 Missões</h2>
+            <div id="missoesTabContent">
+                <p class="text-muted">Carregando missões...</p>
+            </div>
+        </div>
+
         <div id="tabSettings" class="tab-content">
             <h2>Settings ⚙️</h2>
             
@@ -725,6 +747,12 @@
         // PR16B: Import PartyDex UI module
         import * as PartyDexUI from './js/ui/partyDexUI.js';
 
+        // Trade UI (FASE XIII)
+        import * as TradeUI from './js/ui/tradeUI.js';
+
+        // Map Unlock System (FASE XIV)
+        import * as MapUnlockSystem from './js/encounter/mapUnlockSystem.js';
+
         // Canon Loader — Fases 1 e 2: carrega dados canônicos (classes, matchups, skills MVP, species, evolution, progression)
         import * as CanonLoader from './js/canon/canonLoader.js';
         window.CanonLoader = CanonLoader;
@@ -732,6 +760,7 @@
         // World Map — Sistema de navegação por nós (mapa do mundo + spots)
         import * as WorldMap from './js/encounter/worldMap.js';
         window.WorldMap = WorldMap;
+        window.MapUnlockSystem = MapUnlockSystem;
 
         // Overworld Map — Mapa visual interativo SVG
         import * as OverworldMap from './js/encounter/overworldMap.js';
@@ -784,6 +813,7 @@
 
         // FASE O: Trade System disponível globalmente
         window.TradeSystem = TradeSystem;
+        window.TradeUI = TradeUI;
 
         // FASE R: Friendship System disponível globalmente
         window.FriendshipSystem = FriendshipSystem;
@@ -2599,6 +2629,15 @@
                     window.renderPartyDexTab();
                 }
 
+                if (tabName === 'trade' && typeof window.renderTradeTab === 'function') {
+                    window.renderTradeTab();
+                }
+
+                // XVII-B: Renderizar painel de missões ao abrir aba
+                if (tabName === 'missoes') {
+                    renderMissoesTab();
+                }
+
                 // Mapa de nós: ao abrir a aba Batalha, mostrar o mapa selvagem por padrão
                 if (tabName === 'encounter' && typeof showWorldMap === 'function') {
                     showWorldMap();
@@ -3239,6 +3278,20 @@
                     
                     // Evolução
                     stage: 0,           // Sempre começa em stage 0
+                    evolvesTo: (
+                        template.evolvesTo ??
+                        template.evolution?.evolvesTo ??
+                        template.evolve_to ??
+                        template.evolutionTo ??
+                        null
+                    ),
+                    evolvesAt: (
+                        template.evolvesAt ??
+                        template.evolution?.method?.level ??
+                        template.evolve_at ??
+                        template.evolutionAt ??
+                        null
+                    ),
                     
                     // Sistema de Amizade
                     friendship: DEFAULT_FRIENDSHIP,     // Padrão: neutro (0-100)
@@ -5000,13 +5053,82 @@
          * PR5B: Usa item de cura em combate de grupo
          * Delega para Combat.Group.Actions.executeGroupUseItem()
          */
-        function groupUseItem(itemId) {
+        function groupUseItem(itemId, targetIndex = null) {
             try {
                 if (!itemId) itemId = 'IT_HEAL_01';
                 const deps = createGroupCombatDeps();
-                Combat.Group.Actions.executeGroupUseItem(itemId, deps);
+                const target = Number.isInteger(targetIndex) ? { index: targetIndex } : null;
+                if (Combat.Group.Actions.executeUseItemGroup) {
+                    Combat.Group.Actions.executeUseItemGroup(itemId, target, deps);
+                } else {
+                    Combat.Group.Actions.executeGroupUseItem(itemId, deps);
+                }
             } catch (error) {
                 showError('Failed to use item', error.stack);
+            }
+        }
+
+        function groupOpenItemModal() {
+            try {
+                const enc = _getGroupEncounter();
+                if (!enc || enc.finished) return;
+                const actor = getCurrentActor(enc);
+                if (!actor || actor.side !== 'player') return;
+                const player = _getPlayerById(actor.id);
+                if (!player) return;
+
+                const items = Object.entries(player.inventory || {})
+                    .filter(([, qty]) => (Number(qty) || 0) > 0)
+                    .map(([itemId, qty]) => ({ itemId, qty: Number(qty) || 0, def: getItemDef(itemId) }))
+                    .filter(({ itemId, def }) => {
+                        const t = String(def?.type || '');
+                        return t === 'heal' || t === 'cura' || t === 'tatico' || itemId.startsWith('IT_HEAL_');
+                    });
+                if (items.length === 0) {
+                    showToast('Nenhum item de combate disponível.', 'warning');
+                    return;
+                }
+
+                const targets = (player.team || [])
+                    .map((m, idx) => ({ m, idx }))
+                    .filter(({ m }) => m && (Number(m.hp) || 0) > 0);
+
+                const overlay = document.createElement('div');
+                overlay.className = 'mm-alert-overlay';
+                overlay.id = 'groupItemModalOverlay';
+                const targetOptions = targets.map(({ m, idx }) => `<option value="${idx}">${m.name || m.nome} (${m.hp}/${m.hpMax})</option>`).join('');
+                const itemButtons = items.map(({ itemId, qty, def }) => `
+                    <button class="btn btn-success" style="margin:4px;" onclick="window.groupUseItem('${itemId}', Number(document.getElementById('groupItemTargetSelect')?.value || 0)); document.getElementById('groupItemModalOverlay')?.remove();">
+                        ${(def?.emoji || '🎒')} ${(def?.name || itemId)} (${qty}x)
+                    </button>
+                `).join('');
+                overlay.innerHTML = `
+                    <div class="mm-alert-card" style="max-width:520px;">
+                        <span class="mm-alert-icon">🎒</span>
+                        <p class="mm-alert-msg"><strong>Itens de Combate</strong><br>Escolha item e alvo.</p>
+                        <select id="groupItemTargetSelect" class="form-control mt-5" style="width:100%;padding:6px;border-radius:6px;">${targetOptions}</select>
+                        <div style="display:flex;gap:8px;margin-top:12px;justify-content:center;flex-wrap:wrap;">${itemButtons}</div>
+                        <div style="margin-top:10px;text-align:center;">
+                            <button class="mm-alert-btn mm-alert-btn--error" onclick="document.getElementById('groupItemModalOverlay')?.remove()">✖ Fechar</button>
+                        </div>
+                    </div>`;
+                document.body.appendChild(overlay);
+                overlay.addEventListener('click', e => {
+                    if (e.target === overlay) overlay.remove();
+                });
+            } catch (error) {
+                showError('Falha ao abrir inventário de combate', error.stack);
+            }
+        }
+
+        function groupCapture(itemId = 'CLASTERORB_COMUM') {
+            try {
+                const deps = createGroupCombatDeps();
+                if (Combat.Group.Actions.executeGroupCapture) {
+                    Combat.Group.Actions.executeGroupCapture(itemId, deps);
+                }
+            } catch (error) {
+                showError('Falha ao capturar no combate de grupo', error.stack);
             }
         }
 
@@ -5901,8 +6023,18 @@
         function getEvolutionData(template) {
             if (!template) return null;
 
-            const evolvesTo = template.evolvesTo ?? template.evolve_to ?? template.evoluiPara ?? template.evolutionTo ?? null;
-            const evolvesAt = template.evolvesAt ?? template.evolve_at ?? template.evoluiNoNivel ?? template.evolutionAt ?? null;
+            const evolvesTo = template.evolvesTo
+                ?? template.evolution?.evolvesTo
+                ?? template.evolve_to
+                ?? template.evoluiPara
+                ?? template.evolutionTo
+                ?? null;
+            const evolvesAt = template.evolvesAt
+                ?? template.evolution?.method?.level
+                ?? template.evolve_at
+                ?? template.evoluiNoNivel
+                ?? template.evolutionAt
+                ?? null;
 
             const toId = evolvesTo != null ? String(evolvesTo) : "";
             const atLv = evolvesAt != null ? Number(evolvesAt) : NaN;
@@ -5921,11 +6053,22 @@
             const evo = getEvolutionData(currentTemplate);
             if (!evo) return null;
 
-            // Busca o template alvo no catálogo via getMonsterTemplate (JSON-first)
-            const nextTemplate = getMonsterTemplate(String(evo.toId));
+            // Busca o template alvo no catálogo atual (JSON-first), incluindo bootstrap normalizado
+            const nextTemplate = getEvolutionTarget(String(evo.toId), getMonstersArray());
             
             if (nextTemplate) return { nextTemplate, evolvesAt: evo.atLv };
             return null;
+        }
+
+        /**
+         * Busca template de evolução por ID dentro de um catálogo de monstros.
+         * @param {string} targetId
+         * @param {Array} catalog
+         * @returns {Object|null}
+         */
+        function getEvolutionTarget(targetId, catalog) {
+            if (!targetId || !Array.isArray(catalog)) return null;
+            return catalog.find(t => t && String(t.id) === String(targetId)) || null;
         }
 
         /**
@@ -5956,6 +6099,18 @@
 
             // Recalcula ATK/DEF/SPD/ENE baseados no novo template (game-specific, fora do módulo puro)
             recalculateStatsFromTemplate(mon);
+            const nextEvoTo = nextTemplate.evolvesTo
+                ?? nextTemplate.evolution?.evolvesTo
+                ?? nextTemplate.evolve_to
+                ?? nextTemplate.evolutionTo
+                ?? null;
+            const nextEvoAt = nextTemplate.evolvesAt
+                ?? nextTemplate.evolution?.method?.level
+                ?? nextTemplate.evolve_at
+                ?? nextTemplate.evolutionAt
+                ?? null;
+            mon.evolvesTo = nextEvoTo;
+            mon.evolvesAt = Number.isFinite(Number(nextEvoAt)) ? Number(nextEvoAt) : null;
 
             if (Array.isArray(logArr)) {
                 logArr.push(`🌟 ${oldName} evoluiu para ${newName}!`);
@@ -6713,6 +6868,11 @@
             if (!GameState.data) GameState.data = {};
 
             if (enc.result === 'victory' && locationId) {
+                // FASE XIV: registrar nó concluído para motor de desbloqueio progressivo
+                if (window.MapUnlockSystem?.unlockNode) {
+                    window.MapUnlockSystem.unlockNode(locationId, GameState);
+                }
+
                 // PR-09: Boss node — persistir bossDefeated, NÃO adicionar a completedLocations
                 if (bossNode) {
                     if (!GameState.data.nodeFlags) GameState.data.nodeFlags = {};
@@ -6768,6 +6928,26 @@
                     }
                     GameState.data.nodeFlags[locationId].wildWins =
                         (GameState.data.nodeFlags[locationId].wildWins ?? 0) + 1;
+                }
+
+                // FASE XIV: avaliar conexões desbloqueadas após vitória no nó atual
+                try {
+                    const completedNodes = new Set(GameState.data?.completedNodes ?? []);
+                    const currentNode = (_wm.worldMapNodes ?? []).find(n => n.nodeId === locationId);
+                    const connectedIds = currentNode?.connections ?? [];
+                    for (const nextId of connectedIds) {
+                        const nextNode = (_wm.worldMapNodes ?? []).find(n => n.nodeId === nextId);
+                        if (!nextNode || completedNodes.has(nextId)) continue;
+                        const unlocked = window.MapUnlockSystem?.checkUnlock
+                            ? window.MapUnlockSystem.checkUnlock(nextNode, completedNodes)
+                            : false;
+                        if (!unlocked) continue;
+                        const loc = (_wm.locationsData ?? []).find(l => l.id === nextId);
+                        const nextName = loc?.name || nextId;
+                        showToast(`🗺️ Novo caminho desbloqueado: ${nextName}!`, 'success');
+                    }
+                } catch (unlockErr) {
+                    console.warn('[MapUnlock] Falha ao processar desbloqueios:', unlockErr);
                 }
             } else if (enc.result !== 'victory' && locationId && bossNode) {
                 // Derrota/fuga em boss: registrar tentativa mas NÃO marcar como derrotado
@@ -8345,6 +8525,7 @@
                 updateEncounterUI();
                 renderEncounter();
                 renderBoxTab(); // PR15A: Box system
+                if (typeof renderTradeTab === 'function') renderTradeTab();
             } catch (error) {
                 console.error('Failed to update views:', error);
             }
@@ -8413,6 +8594,160 @@
                     root.innerHTML = '<p class="error">Erro ao renderizar Monstrodex</p>';
                 }
             }
+        }
+
+        // ===== TRADE TAB (FASE XIII) =====
+        const tradeUIState = {
+            selectedA: null,
+            selectedB: null,
+            playerAId: null,
+            playerBId: null,
+            pendingProposal: null,
+        };
+
+        function _getSessionTherapyLog() {
+            if (!GameState.currentSession) return null;
+            if (!Array.isArray(GameState.currentSession.therapyLog)) {
+                GameState.currentSession.therapyLog = [];
+            }
+            return GameState.currentSession.therapyLog;
+        }
+
+        function renderTradeTab() {
+            try {
+                const root = document.getElementById('tradeTabContainer');
+                if (!root || !window.TradeUI?.renderTradePanel) return;
+                if (!tradeUIState.playerAId && GameState.players?.[0]?.id) {
+                    tradeUIState.playerAId = GameState.players[0].id;
+                }
+                if (!tradeUIState.playerBId && GameState.players?.[1]?.id) {
+                    tradeUIState.playerBId = GameState.players[1].id;
+                }
+                root.innerHTML = window.TradeUI.renderTradePanel(
+                    { players: GameState.players || [], currentSession: GameState.currentSession || null },
+                    tradeUIState
+                );
+            } catch (error) {
+                console.error('[TradeTab] render falhou:', error);
+            }
+        }
+
+        function openTradePanel() {
+            switchTab('trade');
+        }
+
+        function tradeSetPlayerA(playerId) {
+            tradeUIState.playerAId = playerId || null;
+            tradeUIState.selectedA = null;
+            tradeUIState.pendingProposal = null;
+            renderTradeTab();
+        }
+
+        function tradeSetPlayerB(playerId) {
+            tradeUIState.playerBId = playerId || null;
+            tradeUIState.selectedB = null;
+            tradeUIState.pendingProposal = null;
+            renderTradeTab();
+        }
+
+        function tradeSelectMon(role, monId, playerId) {
+            if (role === 'A') {
+                tradeUIState.playerAId = playerId;
+                tradeUIState.selectedA = monId;
+            } else {
+                tradeUIState.playerBId = playerId;
+                tradeUIState.selectedB = monId;
+            }
+            tradeUIState.pendingProposal = null;
+            renderTradeTab();
+        }
+
+        function tradeApplySuggestion(monAId, monBId) {
+            tradeUIState.selectedA = monAId || null;
+            tradeUIState.selectedB = monBId || null;
+            tradeUIState.pendingProposal = null;
+            renderTradeTab();
+        }
+
+        function confirmTrade() {
+            return tradeConfirm();
+        }
+
+        function tradeConfirm() {
+            try {
+                const playerA = (GameState.players || []).find(p => p?.id === tradeUIState.playerAId);
+                const playerB = (GameState.players || []).find(p => p?.id === tradeUIState.playerBId);
+                if (!playerA || !playerB || !tradeUIState.selectedA || !tradeUIState.selectedB) {
+                    showToast('Selecione dois jogadores e um monstrinho de cada lado.', 'warning');
+                    return;
+                }
+                const monA = (playerA.team || []).find(m => m && (m.id === tradeUIState.selectedA || m.instanceId === tradeUIState.selectedA));
+                const monB = (playerB.team || []).find(m => m && (m.id === tradeUIState.selectedB || m.instanceId === tradeUIState.selectedB));
+                if (!monA || !monB) {
+                    showToast('Seleção de troca inválida.', 'error');
+                    return;
+                }
+
+                tradeUIState.pendingProposal = {
+                    playerAId: playerA.id,
+                    playerBId: playerB.id,
+                    monAId: monA.id || monA.instanceId,
+                    monBId: monB.id || monB.instanceId,
+                };
+                showToast(`📨 ${playerA.name || 'Jogador A'} propôs troca. ${playerB.name || 'Jogador B'} precisa confirmar.`, 'warning');
+                renderTradeTab();
+            } catch (error) {
+                console.error('[TradeTab] proposta falhou:', error);
+                showToast('Erro ao propor troca.', 'error');
+            }
+        }
+
+        function tradeAccept() {
+            try {
+                const proposal = tradeUIState.pendingProposal;
+                if (!proposal) return;
+
+                const playerA = (GameState.players || []).find(p => p?.id === proposal.playerAId);
+                const playerB = (GameState.players || []).find(p => p?.id === proposal.playerBId);
+                const monA = (playerA?.team || []).find(m => m && (m.id === proposal.monAId || m.instanceId === proposal.monAId));
+                const monB = (playerB?.team || []).find(m => m && (m.id === proposal.monBId || m.instanceId === proposal.monBId));
+                if (!playerA || !playerB || !monA || !monB) {
+                    showToast('A proposta expirou ou ficou inválida.', 'error');
+                    tradeUIState.pendingProposal = null;
+                    renderTradeTab();
+                    return;
+                }
+
+                const therapyLog = _getSessionTherapyLog();
+                const result = window.TradeUI.executeTrade(playerA, monA, playerB, monB, therapyLog);
+                if (!result.success) {
+                    showToast(result.log?.[0] || 'Troca não concluída.', 'error');
+                    return;
+                }
+
+                if (Array.isArray(GameState.currentSession?.therapyLog)) {
+                    GameState.currentSession.therapyLog.push(`🔄 Troca confirmada: ${(playerA.name || 'A')} ↔ ${(playerB.name || 'B')}`);
+                }
+
+                tradeUIState.pendingProposal = null;
+                tradeUIState.selectedA = null;
+                tradeUIState.selectedB = null;
+                saveGame();
+                updatePlayersList();
+                renderTradeTab();
+                showToast(result.log?.[0] || 'Troca concluída!', 'success');
+            } catch (error) {
+                console.error('[TradeTab] aceite falhou:', error);
+                showToast('Erro ao confirmar troca.', 'error');
+            }
+        }
+
+        function tradeReject() {
+            tradeUIState.pendingProposal = null;
+            tradeUIState.selectedA = null;
+            tradeUIState.selectedB = null;
+            renderTradeTab();
+            showToast('❌ Proposta de troca recusada.', 'warning');
         }
 
         // ===== SHOP SYSTEM (PR13A) =====
@@ -11110,6 +11445,87 @@
         }
 
         /**
+         * XVII-B — Renderiza o painel completo de Missões.
+         *
+         * Exibido na aba "📜 Missões". Para cada jogador, mostra:
+         *  - Quests ativas com barra de progresso e recompensas
+         *  - Quests concluídas (lista colapsada)
+         *
+         * Usa GameFlow.getActiveQuestsSummary() (sem mutação).
+         */
+        function renderMissoesTab() {
+            const container = document.getElementById('missoesTabContent');
+            if (!container) return;
+
+            if (!window.GameFlow) {
+                container.innerHTML = '<p class="text-muted">Sistema de quests não carregado.</p>';
+                return;
+            }
+
+            const players = GameState.players || [];
+            if (players.length === 0) {
+                container.innerHTML = '<p class="text-muted">Adicione jogadores para ver missões.</p>';
+                return;
+            }
+
+            let html = '';
+            for (const player of players) {
+                if (!player) continue;
+                const playerName = player.name || player.nome || player.id;
+                const activeQuestsSummary = window.GameFlow.getActiveQuestsSummary(player);
+                const completedIds = player.questState?.completedQuestIds ?? [];
+
+                html += `<div class="card" style="margin-bottom:12px;">`;
+                html += `<h3 style="margin-bottom:10px;">👤 ${playerName}</h3>`;
+
+                // — Quests Ativas —
+                if (activeQuestsSummary.length > 0) {
+                    html += `<div style="margin-bottom:10px;"><strong style="font-size:13px;color:#555;">🗺️ Ativas (${activeQuestsSummary.length})</strong></div>`;
+                    for (const { quest, progress, needed } of activeQuestsSummary) {
+                        const pct = needed > 0 ? Math.min(100, Math.round((progress / needed) * 100)) : 0;
+                        const localLabel = quest.localId ? ` · 📍 ${quest.localId}` : '';
+                        html += `<div class="quest-tracker-entry" style="margin-bottom:10px;">`;
+                        html += `  <div class="quest-header">`;
+                        html += `    <strong>${quest.nome}</strong>`;
+                        html += `    <span class="text-small text-muted">${localLabel}</span>`;
+                        html += `  </div>`;
+                        html += `  <div class="text-small" style="color:#666;margin:3px 0;">${quest.descricao || ''}</div>`;
+                        html += `  <div class="quest-progress-bar"><div class="quest-progress-fill" style="width:${pct}%"></div></div>`;
+                        html += `  <div class="text-small" style="margin-top:3px;">`;
+                        html += `    Progresso: ${progress}/${needed}`;
+                        if (quest.rewardXp)   html += ` · ⭐ ${quest.rewardXp} XP`;
+                        if (quest.rewardGold) html += ` · 💰 ${quest.rewardGold}`;
+                        if (quest.rewardItemId) html += ` · 🎁 ${quest.rewardItemId}`;
+                        html += `  </div>`;
+                        html += `</div>`;
+                    }
+                } else {
+                    html += `<p class="text-muted text-small">Nenhuma missão ativa.</p>`;
+                }
+
+                // — Quests Concluídas —
+                if (completedIds.length > 0) {
+                    html += `<details style="margin-top:8px;">`;
+                    html += `<summary style="cursor:pointer;font-size:13px;color:#27ae60;font-weight:600;">`;
+                    html += `✅ Concluídas (${completedIds.length})</summary>`;
+                    html += `<ul style="margin:6px 0 0 16px;padding:0;">`;
+                    for (const qid of completedIds) {
+                        const q = typeof window.GameFlow?.getQuest === 'function' ? window.GameFlow.getQuest(qid) : null;
+                        const label = q ? `${q.nome} <span style="color:#aaa;font-size:11px;">(${qid})</span>` : qid;
+                        html += `<li style="font-size:12px;color:#555;margin:2px 0;">${label}</li>`;
+                    }
+                    html += `</ul></details>`;
+                }
+
+                html += `</div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        window.renderMissoesTab = renderMissoesTab;
+
+        /**
          * FASE UX: Renderiza dica de objetivo da quest ativa no painel Encounter.
          * Mostra a quest do jogador selecionado no dropdown de encontros individuais.
          * @param {string} playerId
@@ -11761,6 +12177,16 @@
 
         window.openTradeModal        = openTradeModal;
         window.executeTradeFromModal = executeTradeFromModal;
+        window.openTradePanel        = openTradePanel;
+        window.confirmTrade          = confirmTrade;
+        window.tradeConfirm          = tradeConfirm;
+        window.tradeAccept           = tradeAccept;
+        window.tradeReject           = tradeReject;
+        window.tradeSetPlayerA       = tradeSetPlayerA;
+        window.tradeSetPlayerB       = tradeSetPlayerB;
+        window.tradeSelectMon        = tradeSelectMon;
+        window.tradeApplySuggestion  = tradeApplySuggestion;
+        window.renderTradeTab        = renderTradeTab;
 
         // PR12A: Equipment UI Functions
         function renderEquipableItems(player) {
@@ -14301,6 +14727,8 @@
         window.groupPassTurn = groupPassTurn;
         window.groupFlee = groupFlee;
         window.groupUseItem = groupUseItem;
+        window.groupOpenItemModal = groupOpenItemModal;
+        window.groupCapture = groupCapture;
         window.groupMovePosition = groupMovePosition;
         window.cancelTargetSelection = cancelTargetSelection;
 

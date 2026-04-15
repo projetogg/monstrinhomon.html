@@ -124,8 +124,12 @@ export function applyEvolution(monster, newTemplate, log = null) {
     monster.ene    = monster.eneMax;
 
     // ── Herdar cadeia de evolução do novo template ────────────────────────
-    monster.evolvesTo = newTemplate.evolvesTo ?? null;
-    monster.evolvesAt = newTemplate.evolvesAt ?? null;
+    monster.evolvesTo = newTemplate.evolvesTo
+        ?? newTemplate.evolution?.evolvesTo
+        ?? null;
+    monster.evolvesAt = newTemplate.evolvesAt
+        ?? newTemplate.evolution?.method?.level
+        ?? null;
 
     // ── Limpar buffs (não transferidos para a nova forma) ─────────────────
     monster.buffs = [];
