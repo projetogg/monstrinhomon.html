@@ -8450,6 +8450,8 @@
                 console.error('Failed to render Box tab:', error);
                 showError('Erro ao renderizar Box', error.stack);
             }
+            // U1: Manter badge da aba atualizado sempre que a Box é renderizada
+            updateBoxTabBadge();
         }
 
         /** D4: Navega entre páginas da Box */
@@ -8473,12 +8475,19 @@
                     return;
                 }
 
+                const monster = activePlayer.team?.[teamIndex];
+                const monName = monster?.name || 'Monstrinho';
+                if (!confirm(`Enviar ${monName} para a Box? Ele sairá da equipe.`)) {
+                    return;
+                }
+
                 const result = moveTeamToBox(activePlayer.id, teamIndex);
                 
                 if (result.success) {
                     saveToLocalStorage();
                     renderBoxTab();
                     updateAllViews();
+                    updateBoxTabBadge();
                 } else {
                     mmAlert(result.message || 'Erro ao enviar para Box', 'error');
                 }
@@ -8504,6 +8513,7 @@
                     saveToLocalStorage();
                     renderBoxTab();
                     updateAllViews();
+                    updateBoxTabBadge();
                 } else {
                     mmAlert(result.message || 'Erro ao retirar da Box', 'error');
                 }
@@ -8515,6 +8525,22 @@
         // ========================================================================
         // END PR15A: BOX SYSTEM
         // ========================================================================
+
+        /**
+         * U1 (Fase XX-A): Atualiza o badge counter na aba Caixa.
+         * Mostra o total de monstrinhos na Box do jogador em perspectiva, ou o total geral.
+         * Chamado após sendToBox, withdrawFromBox e tradeAccept.
+         */
+        function updateBoxTabBadge() {
+            try {
+                const tabBtn = document.querySelector('[data-tab="box"] .nav-label');
+                if (!tabBtn) return;
+                const totalInBox = (GameState.sharedBox || []).length;
+                tabBtn.textContent = totalInBox > 0 ? `Caixa (${totalInBox})` : 'Caixa';
+            } catch (_e) { /* silencioso */ }
+        }
+
+        window.updateBoxTabBadge = updateBoxTabBadge;
 
         // Make Box functions globally available
         window.sendToBox = sendToBox;
@@ -8754,7 +8780,7 @@
                     tradeUIState.playerBId = GameState.players[1].id;
                 }
                 root.innerHTML = window.TradeUI.renderTradePanel(
-                    { players: GameState.players || [], currentSession: GameState.currentSession || null },
+                    { players: GameState.players || [], currentSession: GameState.currentSession || null, sharedBox: GameState.sharedBox || [] },
                     tradeUIState
                 );
             } catch (error) {
@@ -8811,8 +8837,11 @@
                     showToast('Selecione dois jogadores e um monstrinho de cada lado.', 'warning');
                     return;
                 }
-                const monA = (playerA.team || []).find(m => m && (m.id === tradeUIState.selectedA || m.instanceId === tradeUIState.selectedA));
-                const monB = (playerB.team || []).find(m => m && (m.id === tradeUIState.selectedB || m.instanceId === tradeUIState.selectedB));
+                const box = GameState.sharedBox || [];
+                const monA = (playerA.team || []).find(m => m && (m.id === tradeUIState.selectedA || m.instanceId === tradeUIState.selectedA))
+                    || (box.find(s => s.ownerPlayerId === playerA.id && (s.monster?.id === tradeUIState.selectedA || s.monster?.instanceId === tradeUIState.selectedA))?.monster);
+                const monB = (playerB.team || []).find(m => m && (m.id === tradeUIState.selectedB || m.instanceId === tradeUIState.selectedB))
+                    || (box.find(s => s.ownerPlayerId === playerB.id && (s.monster?.id === tradeUIState.selectedB || s.monster?.instanceId === tradeUIState.selectedB))?.monster);
                 if (!monA || !monB) {
                     showToast('Seleção de troca inválida.', 'error');
                     return;
@@ -8839,8 +8868,11 @@
 
                 const playerA = (GameState.players || []).find(p => p?.id === proposal.playerAId);
                 const playerB = (GameState.players || []).find(p => p?.id === proposal.playerBId);
-                const monA = (playerA?.team || []).find(m => m && (m.id === proposal.monAId || m.instanceId === proposal.monAId));
-                const monB = (playerB?.team || []).find(m => m && (m.id === proposal.monBId || m.instanceId === proposal.monBId));
+                const box = GameState.sharedBox || [];
+                const monA = (playerA?.team || []).find(m => m && (m.id === proposal.monAId || m.instanceId === proposal.monAId))
+                    || (box.find(s => s.ownerPlayerId === playerA?.id && s.monster?.id === proposal.monAId)?.monster);
+                const monB = (playerB?.team || []).find(m => m && (m.id === proposal.monBId || m.instanceId === proposal.monBId))
+                    || (box.find(s => s.ownerPlayerId === playerB?.id && s.monster?.id === proposal.monBId)?.monster);
                 if (!playerA || !playerB || !monA || !monB) {
                     showToast('A proposta expirou ou ficou inválida.', 'error');
                     tradeUIState.pendingProposal = null;
@@ -8849,7 +8881,7 @@
                 }
 
                 const therapyLog = _getSessionTherapyLog();
-                const result = window.TradeUI.executeTrade(playerA, monA, playerB, monB, therapyLog);
+                const result = window.TradeUI.executeTrade(playerA, monA, playerB, monB, therapyLog, box);
                 if (!result.success) {
                     showToast(result.log?.[0] || 'Troca não concluída.', 'error');
                     return;
@@ -8865,6 +8897,7 @@
                 saveGame();
                 updatePlayersList();
                 renderTradeTab();
+                updateBoxTabBadge();
                 showToast(result.log?.[0] || 'Troca concluída!', 'success');
             } catch (error) {
                 console.error('[TradeTab] aceite falhou:', error);
