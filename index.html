@@ -757,6 +757,9 @@
         // Trade UI (FASE XIII)
         import * as TradeUI from './js/ui/tradeUI.js';
 
+        // Shop UI (Fase Z)
+        import * as ShopUI from './js/ui/shopUI.js';
+
         // Map Unlock System (FASE XIV)
         import * as MapUnlockSystem from './js/encounter/mapUnlockSystem.js';
 
@@ -8738,127 +8741,14 @@
         
         /**
          * PR13B: Render player inventory for selling
+         * Delegates HTML generation to ShopUI.renderPlayerInventory (pure function).
          * @param {object} player - Player object
          * @param {HTMLElement} container - Container element to render inventory into
          */
         function renderPlayerInventory(player, container) {
             try {
-                // Get player inventory
-                const inventory = player.inventory || {};
-                const inventoryItems = Object.entries(inventory).filter(([itemId, qty]) => qty > 0);
-                
-                if (inventoryItems.length === 0) {
-                    container.innerHTML = '<p>Seu inventário está vazio.</p>';
-                    return;
-                }
-                
-                // Get all items from the global itemsData
                 const allItems = window.itemsData || [];
-                
-                // Sort by item name
-                inventoryItems.sort((a, b) => {
-                    const itemA = allItems.find(i => i.id === a[0]);
-                    const itemB = allItems.find(i => i.id === b[0]);
-                    return (itemA?.name || '').localeCompare(itemB?.name || '');
-                });
-                
-                // Check which items are equipped
-                const equippedItems = new Set();
-                if (player.team && Array.isArray(player.team)) {
-                    player.team.forEach(monster => {
-                        if (monster?.heldItemId) {
-                            equippedItems.add(monster.heldItemId);
-                        }
-                    });
-                }
-                
-                // Render inventory items
-                let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">';
-                
-                for (const [itemId, qty] of inventoryItems) {
-                    const item = allItems.find(i => i.id === itemId);
-                    
-                    if (!item) {
-                        // Item not found in catalog (maybe old/invalid item)
-                        html += `
-                            <div class="card" style="margin: 0; padding: 1rem; background: #f8f8f8;">
-                                <h4 style="margin-top: 0; color: #999;">Item desconhecido (${itemId})</h4>
-                                <p style="font-size: 0.85em; color: #555;">
-                                    <strong>Quantidade:</strong> ${qty}x
-                                </p>
-                                <p style="font-size: 0.85em; color: #999;">
-                                    Este item não está mais no catálogo.
-                                </p>
-                            </div>
-                        `;
-                        continue;
-                    }
-                    
-                    // Calculate sell price
-                    const sellPrice = getSellPrice(item);
-                    const isEquipped = equippedItems.has(itemId);
-                    const canSell = sellPrice !== null && !isEquipped;
-                    
-                    // PR14A: Check if item is an egg
-                    const isEgg = item.category === 'egg';
-                    
-                    // Tier badge color
-                    const tierColors = {
-                        'comum': '#999',
-                        'incomum': '#2ecc71',
-                        'raro': '#3498db',
-                        'mistico': '#9b59b6',
-                        'lendario': '#f39c12'
-                    };
-                    const tierColor = tierColors[item.tier] || '#999';
-                    
-                    html += `
-                        <div class="card" style="margin: 0; padding: 1rem; border-left: 4px solid ${tierColor};">
-                            <h4 style="margin-top: 0;">${item.name}</h4>
-                            ${item.category === 'egg' ? `<p style="font-size: 0.9em; color: ${tierColor}; font-weight: bold;">🥚 OVO</p>` : `
-                            <p style="font-size: 0.9em; color: #666;">
-                                <span style="color: ${tierColor}; font-weight: bold; text-transform: uppercase;">
-                                    ${item.tier}
-                                </span>
-                            </p>`}
-                            <p style="font-size: 0.9em;">${item.description}</p>
-                            ${!isEgg && item.stats ? `<p style="font-size: 0.85em; color: #555;">
-                                <strong>Stats:</strong> 
-                                ${item.stats.atk > 0 ? `⚔️ ATK +${item.stats.atk}` : ''}${item.stats.atk > 0 && item.stats.def > 0 ? ' ' : ''}${item.stats.def > 0 ? `🛡️ DEF +${item.stats.def}` : ''}
-                            </p>` : ''}
-                            <p style="font-size: 0.85em; color: #555;">
-                                <strong>Você tem:</strong> ${qty}x
-                            </p>
-                            ${isEquipped ? `<p style="font-size: 0.85em; color: #e74c3c;">⚠️ Item equipado em um monstro</p>` : ''}
-                            ${isEgg ? `
-                            <button 
-                                class="btn btn-success" 
-                                onclick="hatchEggFromInventory('${player.id}', '${itemId}')"
-                                style="width: 100%; margin-top: 0.5rem;"
-                            >
-                                🐣 Chocar Ovo
-                            </button>
-                            ` : `
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
-                                ${sellPrice !== null ? `<strong style="font-size: 1.1em;">💰 Vender por ${sellPrice}</strong>` : `<span style="font-size: 0.9em; color: #999;">Não vendável</span>`}
-                                <button 
-                                    class="btn ${canSell ? 'btn-warning' : 'btn-secondary'}" 
-                                    onclick="sellItem('${player.id}', '${itemId}', 1)"
-                                    ${!canSell ? 'disabled' : ''}
-                                    style="${!canSell ? 'opacity: 0.5; cursor: not-allowed;' : ''}"
-                                    title="${isEquipped ? 'Não é possível vender item equipado' : (sellPrice === null ? 'Este item não pode ser vendido' : 'Vender 1x')}"
-                                >
-                                    ${canSell ? `💵 Vender (${sellPrice})` : (isEquipped ? '🔒 Equipado' : '✗ Não vendável')}
-                                </button>
-                            </div>
-                            `}
-                        </div>
-                    `;
-                }
-                
-                html += '</div>';
-                container.innerHTML = html;
-                
+                container.innerHTML = ShopUI.renderPlayerInventory(player, allItems);
             } catch (error) {
                 console.error('Failed to render player inventory:', error);
                 container.innerHTML = '<p style="color: red;">Erro ao carregar inventário.</p>';
@@ -8867,86 +8757,19 @@
         
         /**
          * Render shop items list
+         * Delegates HTML generation to ShopUI.renderShopItems (pure function).
          * @param {object} player - Player object
          * @param {HTMLElement} container - Container element to render items into
          */
         function renderShopItems(player, container) {
             try {
-                // Get all items from the global itemsData (loaded at init)
                 const allItems = window.itemsData || [];
-                
-                if (allItems.length === 0) {
-                    container.innerHTML = '<p>Nenhum item disponível.</p>';
-                    return;
-                }
-                
-                // Filter items that can be bought (have price.buy > 0)
-                const buyableItems = allItems.filter(item => item.price && item.price.buy > 0);
-                
-                if (buyableItems.length === 0) {
-                    container.innerHTML = '<p>Nenhum item disponível para compra.</p>';
-                    return;
-                }
-                
-                // Sort by price
-                buyableItems.sort((a, b) => a.price.buy - b.price.buy);
-                
-                // Render items
-                let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">';
-                
-                for (const item of buyableItems) {
-                    const price = item.price.buy;
-                    const canAfford = (player.money || 0) >= price;
-                    const owned = player.inventory?.[item.id] || 0;
-                    
-                    // Tier badge color
-                    const tierColors = {
-                        'comum': '#999',
-                        'incomum': '#2ecc71',
-                        'raro': '#3498db',
-                        'mistico': '#9b59b6',
-                        'lendario': '#f39c12'
-                    };
-                    const tierColor = tierColors[item.tier] || '#999';
-                    
-                    // Check if it's an egg
-                    const isEgg = item.category === 'egg';
-                    
-                    html += `
-                        <div class="card" style="margin: 0; padding: 1rem; border-left: 4px solid ${tierColor};">
-                            <h4 style="margin-top: 0;">${item.name}</h4>
-                            ${isEgg ? '<p style="font-size: 0.9em; color: #666; font-weight: bold;">🥚 OVO</p>' : item.tier ? `<p style="font-size: 0.9em; color: #666;">
-                                <span style="color: ${tierColor}; font-weight: bold; text-transform: uppercase;">
-                                    ${item.tier}
-                                </span>
-                            </p>` : ''}
-                            <p style="font-size: 0.9em;">${item.description}</p>
-                            ${item.stats ? `<p style="font-size: 0.85em; color: #555;">
-                                <strong>Stats:</strong> 
-                                ${item.stats.atk > 0 ? `⚔️ ATK +${item.stats.atk}` : ''}${item.stats.atk > 0 && item.stats.def > 0 ? ' ' : ''}${item.stats.def > 0 ? `🛡️ DEF +${item.stats.def}` : ''}
-                            </p>` : ''}
-                            ${item.break?.enabled ? `<p style="font-size: 0.85em; color: #e74c3c;">⚠️ Pode quebrar (${Math.round(item.break.chance * 100)}%)</p>` : ''}
-                            <p style="font-size: 0.85em; color: #555;">
-                                <strong>Você tem:</strong> ${owned}x
-                            </p>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
-                                <strong style="font-size: 1.1em;">💰 ${price}</strong>
-                                <button 
-                                    class="btn ${canAfford ? 'btn-success' : 'btn-secondary'}" 
-                                    onclick="buyItem('${player.id}', '${item.id}')"
-                                    ${!canAfford ? 'disabled' : ''}
-                                    style="${!canAfford ? 'opacity: 0.5; cursor: not-allowed;' : ''}"
-                                >
-                                    ${canAfford ? '✓ Comprar' : '✗ Sem dinheiro'}
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                html += '</div>';
-                container.innerHTML = html;
-                
+                const config = {
+                    money: player.money || 0,
+                    inventory: player.inventory || {},
+                    playerId: player.id
+                };
+                container.innerHTML = ShopUI.renderShopItems(allItems, config);
             } catch (error) {
                 console.error('Failed to render shop items:', error);
                 container.innerHTML = '<p style="color: red;">Erro ao carregar itens.</p>';
