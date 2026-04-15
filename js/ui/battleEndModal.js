@@ -188,10 +188,11 @@ function createModalButton(result) {
  * @param {Array<Object>} params.participants - Array de participantes com recompensas
  * @param {Object} params.rewards - Objeto de recompensas (opcional, para compatibilidade)
  * @param {string[]} [params.log] - Linhas do log do encontro (drops, quests, etc.)
+ * @param {string[]} [params.therapyHighlights] - Destaques terapêuticos da sessão
  * @returns {Promise<void>} Promise que resolve quando modal é fechado
  */
 export function showBattleEndModal(params) {
-    const { result, participants = [], rewards = {}, log = [] } = params;
+    const { result, participants = [], rewards = {}, log = [], therapyHighlights = [] } = params;
     
     return new Promise((resolve) => {
         // Guardar resolve para ser chamado quando fechar
@@ -208,6 +209,16 @@ export function showBattleEndModal(params) {
             content += renderDefeatContent();
         } else if (result === 'retreat') {
             content += renderRetreatContent();
+        }
+
+        // FASE VII-C: Seção "Destaques do Grupo" (terapia)
+        if (result === 'victory' && Array.isArray(therapyHighlights) && therapyHighlights.length > 0) {
+            content += '<div class="battle-therapy-highlights" style="margin-top:14px;padding:12px;background:rgba(39,174,96,0.12);border-radius:8px;border-left:3px solid #27ae60;">';
+            content += '<h3 style="color:#27ae60;font-size:15px;margin-bottom:8px;">🌟 Destaques do Grupo</h3>';
+            for (const hl of therapyHighlights) {
+                content += `<div style="font-size:13px;color:#2c3e50;padding:3px 0;">${hl}</div>`;
+            }
+            content += '</div>';
         }
         
         content += createModalButton(result);

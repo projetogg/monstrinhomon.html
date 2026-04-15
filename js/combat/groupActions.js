@@ -12,7 +12,7 @@ import { initializeBattleParticipation, markAsParticipated, processBattleItemBre
 import { isOffensiveSkill } from './skillResolver.js';
 import { fireCombatEvent, ON_ATTACK, ON_HIT, ON_KO, ON_TURN_START, ON_HEAL_ITEM, ON_SKILL_USED } from './combatEvents.js';
 import { checkFleeCanonical } from './wildCore.js';
-import { checkBossPhaseTransition } from './bossSystem.js';
+import { checkBossPhaseTransition, bossAoeAttack, bossPhase2HealAlly } from './bossSystem.js';
 import { resolveConfrontation, computeGroupDamage, RC_CATEGORY, applyBuff } from './groupCombatFormula.js';
 import {
     getDefensiveBonus, lineHasAlive, filterReachableTargets,
@@ -24,6 +24,66 @@ import {
  * defenseBonus: redução percentual de dano recebido (ex.: 0.15 = -15%)
  * attackBonus: aumento percentual de dano causado (ex.: 0.10 = +10%)
  */
+
+/**
+ * FASE VII-D — Kit de skills de inimigos por classe (espelho de data/enemySkills.json)
+ * Inimigos nível >= minLevel podem usar estas skills.
+ * Mantido em sincronia com data/enemySkills.json (IDs imutáveis).
+ */
+const ENEMY_SKILL_KIT = {
+    'Guerreiro':  [
+        { id: 'esk_guard_stance', name: 'Postura Defensiva', type: 'BUFF',   target: 'self',  cost: 1, power: 0, effect: 'def_up', minLevel: 1 },
+        { id: 'esk_shield_bash',  name: 'Golpe de Escudo',   type: 'DAMAGE', target: 'enemy', cost: 2, power: 5, minLevel: 10 },
+    ],
+    'Mago': [
+        { id: 'esk_arcane_bolt',  name: 'Raio Arcano', type: 'DAMAGE', target: 'enemy', cost: 2, power: 8,  minLevel: 1 },
+        { id: 'esk_arcane_surge', name: 'Surto Arcano', type: 'DAMAGE', target: 'enemy', cost: 4, power: 14, minLevel: 10 },
+    ],
+    'Curandeiro': [
+        { id: 'esk_ally_heal',   name: 'Cura Aliado',    type: 'HEAL',   target: 'ally',  cost: 2, power: 0, minLevel: 1 },
+        { id: 'esk_group_heal',  name: 'Cura em Área',   type: 'HEAL',   target: 'area',  cost: 4, power: 0, minLevel: 10 },
+    ],
+    'Bárbaro': [
+        { id: 'esk_rage_strike', name: 'Golpe Furioso', type: 'DAMAGE', target: 'enemy', cost: 2, power: 7, minLevel: 1 },
+        { id: 'esk_berserk',     name: 'Berserk',       type: 'BUFF',   target: 'self',  cost: 3, power: 0, effect: 'atk_up', minLevel: 10 },
+    ],
+    'Ladino': [
+        { id: 'esk_backstab',    name: 'Golpe Pelas Costas', type: 'DAMAGE', target: 'enemy', cost: 2, power: 6, minLevel: 1 },
+        { id: 'esk_shadow_step', name: 'Passo das Sombras',  type: 'BUFF',   target: 'self',  cost: 2, power: 0, effect: 'evasion_up', minLevel: 10 },
+    ],
+    'Bardo': [
+        { id: 'esk_battle_song', name: 'Canção de Batalha', type: 'BUFF',   target: 'ally',  cost: 2, power: 0, effect: 'atk_up', minLevel: 1 },
+        { id: 'esk_dissonance',  name: 'Dissonância',       type: 'DAMAGE', target: 'enemy', cost: 3, power: 5, minLevel: 10 },
+    ],
+    'Caçador': [
+        { id: 'esk_aimed_shot', name: 'Tiro Preciso', type: 'DAMAGE', target: 'enemy', cost: 2, power: 7, minLevel: 1 },
+        { id: 'esk_trap',       name: 'Armadilha',    type: 'BUFF',   target: 'enemy', cost: 3, power: 0, effect: 'def_down', minLevel: 10 },
+    ],
+    'Animalista': [
+        { id: 'esk_wild_strike', name: 'Golpe Selvagem',    type: 'DAMAGE', target: 'enemy', cost: 2, power: 6, minLevel: 1 },
+        { id: 'esk_pack_howl',   name: 'Uivo de Alcateia', type: 'BUFF',   target: 'ally',  cost: 3, power: 0, effect: 'atk_up', minLevel: 10 },
+    ],
+};
+
+/**
+ * Retorna a melhor skill disponível para um inimigo dado seu nível e ENE atual.
+ * Prefere skills de maior poder que o inimigo possa pagar.
+ *
+ * @param {string} enemyClass - Classe do inimigo
+ * @param {number} level      - Nível do inimigo
+ * @param {number} ene        - ENE atual do inimigo
+ * @returns {{ skill: object, canUse: boolean }}
+ */
+function getBestEnemySkill(enemyClass, level, ene) {
+    const kit = ENEMY_SKILL_KIT[enemyClass] || [];
+    // Filtrar por nível mínimo e ENE disponível
+    const available = kit.filter(s => level >= s.minLevel && ene >= s.cost);
+    if (available.length === 0) return { skill: null, canUse: false };
+    // Preferir skill de maior poder (ou buff se não houver damage)
+    const sorted = [...available].sort((a, b) => (b.power || 0) - (a.power || 0));
+    return { skill: sorted[0], canUse: true };
+}
+
 const CLASS_COMBAT_PASSIVES = {
     'Guerreiro':  { defenseBonus: 0.15 },  // resistência passiva: -15% dano recebido
     'Bárbaro':    { defenseBonus: 0.10 },  // resistência passiva: -10% dano recebido
@@ -462,11 +522,12 @@ function findPlayerNeedingSwitch(enc, deps) {
  * - Mago: usa skill ofensiva se ENE ≥ custo
  * - Ladino: ataca o jogador com menor HP% (não o de maior DEF)
  * - Guerreiro: Postura Defensiva se HP < 40%
+ * - Outros (nível ≥ 10): usa melhor skill do kit se ENE suficiente
  * - Outros: ataque básico
  *
  * @param {object} enemy - Monstrinho inimigo
  * @param {object} enc   - Encounter atual
- * @returns {string} 'attack'|'skill'|'heal'|'pass'
+ * @returns {{ action: string, skill?: object }} action = 'attack'|'skill'|'heal'|'pass'
  */
 function selectEnemyAction(enemy, enc) {
     const enemyClass = enemy.class || '';
@@ -474,6 +535,7 @@ function selectEnemyAction(enemy, enc) {
     const enemyHpMax = Number(enemy.hpMax) || 1;
     const enemyHpPct = enemyHp / enemyHpMax;
     const enemyEne = Number(enemy.ene) || 0;
+    const enemyLevel = Number(enemy.level) || 1;
 
     if (enemyClass === 'Curandeiro') {
         // Verifica se algum aliado inimigo tem HP < 40%
@@ -482,7 +544,7 @@ function selectEnemyAction(enemy, enc) {
             (Number(e.hp) || 0) > 0 &&
             (Number(e.hp) || 0) / Math.max(1, Number(e.hpMax) || 1) < 0.40
         );
-        if (weakAlly) return 'heal';
+        if (weakAlly) return { action: 'heal' };
     }
 
     if (enemyClass === 'Bardo') {
@@ -491,21 +553,34 @@ function selectEnemyAction(enemy, enc) {
             e !== enemy && (Number(e.hp) || 0) > 0
         );
         if (aliveAllies.length >= 1 && enemyEne >= 2 && Math.random() < 0.30) {
-            return 'skill';
+            return { action: 'skill' };
         }
     }
 
     if (enemyClass === 'Mago') {
-        // Usa skill ofensiva se tiver ENE suficiente (custo mínimo = 2)
-        if (enemyEne >= 2) return 'skill';
+        // FASE VII-D: usar kit se nível ≥ 10; fallback para skill genérica
+        const { skill, canUse } = getBestEnemySkill(enemyClass, enemyLevel, enemyEne);
+        if (canUse && skill) return { action: 'skill', skill };
+        if (enemyEne >= 2) return { action: 'skill' };
     }
 
     if (enemyClass === 'Guerreiro') {
         // Postura Defensiva se HP < 40%
-        if (enemyHpPct < 0.40 && enemyEne >= 1) return 'skill';
+        if (enemyHpPct < 0.40 && enemyEne >= 1) {
+            const { skill } = getBestEnemySkill(enemyClass, enemyLevel, enemyEne);
+            return { action: 'skill', skill: skill || null };
+        }
     }
 
-    return 'attack';
+    // FASE VII-D: Outros inimigos nível ≥ 10 podem usar skills do kit (40% chance)
+    if (enemyLevel >= 10) {
+        const { skill, canUse } = getBestEnemySkill(enemyClass, enemyLevel, enemyEne);
+        if (canUse && skill && Math.random() < 0.40) {
+            return { action: 'skill', skill };
+        }
+    }
+
+    return { action: 'attack' };
 }
 
 export function executeEnemyTurnGroup(enc, deps) {
@@ -546,7 +621,21 @@ export function executeEnemyTurnGroup(enc, deps) {
     }
     
     const eligibleTargets = buildEligibleTargets(enc, deps);
-    const targetPid = GroupCore.pickEnemyTargetByDEF(eligibleTargets, enc.recentTargets);
+
+    // FASE VII-A: filtrar alvos acessíveis pelo alcance da classe do inimigo
+    const enemyPos = enc.positions?.[`enemy_${actor.id}`] || POSITION.FRONT;
+    const reachableFormatted = eligibleTargets.map(t => ({
+        id: t.playerId,
+        position: enc.positions?.[t.playerId] || POSITION.FRONT,
+        hp: Number(t.monster?.hp) || 0,
+        _orig: t,
+    }));
+    const reachableFiltered = filterReachableTargets(reachableFormatted, enemy.class, enemyPos);
+    // Fallback: se nenhum alvo acessível (todos atrás de proteção), usar todos
+    const reachableIds = new Set((reachableFiltered.length > 0 ? reachableFiltered : reachableFormatted).map(t => t.id));
+    const reachableTargets = eligibleTargets.filter(t => reachableIds.has(t.playerId));
+
+    const targetPid = GroupCore.pickEnemyTargetByDEF(reachableTargets, enc.recentTargets);
     
     if (!targetPid) {
         // BUG FIX: Se um jogador tem o monstro ativo morto mas possui substituto vivo,
@@ -567,9 +656,29 @@ export function executeEnemyTurnGroup(enc, deps) {
     }
 
     // IA por classe: selecionar ação e resolver alvos especiais
-    const enemyAction = selectEnemyAction(enemy, enc);
+    const { action: enemyAction, skill: enemySelectedSkill = null } = selectEnemyAction(enemy, enc);
     const enemyClass = enemy.class || '';
     const enemyName = enemy.name || actor.name || "Inimigo";
+
+    // FASE VII-E: Boss Fase 2 — chance de AoE ou cura de aliado antes do ataque normal
+    if (enemy.isBoss && enemy._phase === 2) {
+        // 35% chance de atacar todos na linha da frente
+        if (Math.random() < 0.35 && eligibleTargets.length > 0) {
+            const { hitTargets } = bossAoeAttack(enemy, eligibleTargets, deps, enc);
+            if (hitTargets.length > 0) {
+                ui.render();
+                advanceGroupTurn(enc, deps);
+                storage.save();
+                ui.render();
+                return true;
+            }
+        }
+        // 40% chance de curar aliado
+        const bossAllies = (enc.enemies || []).filter(e => e && e !== enemy && (Number(e.hp) || 0) > 0);
+        if (bossAllies.length > 0) {
+            bossPhase2HealAlly(enemy, bossAllies, deps, enc);
+        }
+    }
 
     // Curandeiro: curar aliado mais fraco antes de atacar
     if (enemyAction === 'heal') {
@@ -593,10 +702,42 @@ export function executeEnemyTurnGroup(enc, deps) {
         }
     }
 
+    // FASE VII-D: Skill do kit (BUFF/DAMAGE não-Guerreiro/Mago) — aplicar antes do ataque
+    if (enemyAction === 'skill' && enemySelectedSkill &&
+        enemyClass !== 'Guerreiro' && enemyClass !== 'Mago') {
+        const sk = enemySelectedSkill;
+        const skCost = Number(sk.cost) || 0;
+        if ((Number(enemy.ene) || 0) >= skCost) {
+            enemy.ene = Math.max(0, (Number(enemy.ene) || 0) - skCost);
+            if (sk.type === 'BUFF' && sk.target === 'self') {
+                applyBuff(enemy, { type: sk.effect || 'atk', power: 1, duration: 2, source: sk.name });
+                helpers.log(enc, `✨ ${enemyName} usou ${sk.name}! (+1 ${sk.effect || 'buff'} por 2 turnos)`);
+                advanceGroupTurn(enc, deps);
+                storage.save();
+                ui.render();
+                return true;
+            }
+            if (sk.type === 'BUFF' && sk.target === 'ally') {
+                const ally = (enc.enemies || []).find(e => e !== enemy && (Number(e.hp) || 0) > 0);
+                if (ally) {
+                    applyBuff(ally, { type: sk.effect || 'atk', power: 1, duration: 2, source: sk.name });
+                    helpers.log(enc, `🎵 ${enemyName} usou ${sk.name} em ${ally.name || 'Aliado'}! (+1 ${sk.effect || 'buff'} por 2 turnos)`);
+                    advanceGroupTurn(enc, deps);
+                    storage.save();
+                    ui.render();
+                    return true;
+                }
+            }
+            // DAMAGE skill: aplica power adicional no próximo ataque (via flag)
+            // O poder extra é processado abaixo como bônus de dano
+        }
+    }
+
     // Guerreiro: Postura Defensiva quando HP baixo
     if (enemyAction === 'skill' && enemyClass === 'Guerreiro') {
-        if ((Number(enemy.ene) || 0) >= 1) {
-            enemy.ene = Math.max(0, (Number(enemy.ene) || 0) - 1);
+        const skCost = enemySelectedSkill?.cost || 1;
+        if ((Number(enemy.ene) || 0) >= skCost) {
+            enemy.ene = Math.max(0, (Number(enemy.ene) || 0) - skCost);
             applyBuff(enemy, { type: 'def', power: 2, duration: 1, source: 'Postura Defensiva' });
             helpers.log(enc, `🛡️ ${enemyName} (Guerreiro) assumiu Postura Defensiva! DEF +2 por 1 turno.`);
             advanceGroupTurn(enc, deps);
@@ -609,7 +750,8 @@ export function executeEnemyTurnGroup(enc, deps) {
     // Mago: marcar que deve aplicar bônus de dano neste ataque (usando estado do encounter, não mutando o inimigo)
     let magoDmgBonus = false;
     if (enemyAction === 'skill' && enemyClass === 'Mago') {
-        const magoCost = 2;
+        // FASE VII-D: usar custo da skill selecionada se disponível
+        const magoCost = enemySelectedSkill?.cost || 2;
         if ((Number(enemy.ene) || 0) >= magoCost) {
             enemy.ene = Math.max(0, (Number(enemy.ene) || 0) - magoCost);
             magoDmgBonus = true;
@@ -618,8 +760,8 @@ export function executeEnemyTurnGroup(enc, deps) {
 
     // Ladino: alvo com menor HP% em vez do maior DEF
     let finalTargetPid = targetPid;
-    if (enemyClass === 'Ladino' && eligibleTargets.length > 0) {
-        const weakest = eligibleTargets.reduce((w, t) => {
+    if (enemyClass === 'Ladino' && reachableTargets.length > 0) {
+        const weakest = reachableTargets.reduce((w, t) => {
             const pct = (Number(t.monster.hp) || 0) / Math.max(1, Number(t.monster.hpMax) || 1);
             const wPct = w ? (Number(w.monster.hp) || 0) / Math.max(1, Number(w.monster.hpMax) || 1) : 1;
             return pct < wPct ? t : w;
@@ -1484,6 +1626,52 @@ export function executeGroupUseItem(itemId, deps) {
 
     // Som de cura
     audio.playSfx("heal");
+
+    advanceGroupTurn(enc, deps);
+    storage.save();
+    ui.render();
+    return true;
+}
+
+/**
+ * FASE VII-B — Ação de Mover Posição
+ *
+ * Permite ao jogador ativo ciclar sua posição de batalha:
+ * front → mid → back → front
+ *
+ * Consome o turno do jogador. Não consome ENE.
+ *
+ * @param {object} deps - Dependências injetadas
+ * @returns {boolean} true se a ação foi executada
+ */
+export function executeGroupMove(deps) {
+    const { state, core, ui, storage, helpers } = deps;
+    const enc = state.currentEncounter;
+
+    if (!enc || enc.finished) return false;
+
+    const actor = core.getCurrentActor(enc);
+    if (!actor || actor.side !== 'player') return false;
+
+    const player = helpers.getPlayerById(actor.id);
+    if (!player) return false;
+
+    const mon = helpers.getActiveMonsterOfPlayer(player);
+    if (!mon || !core.isAlive(mon)) return false;
+
+    // Garantir posições inicializadas
+    ensurePositions(enc, deps);
+
+    // Ciclar posição: front → mid → back → front
+    const cycle = { front: POSITION.MID, mid: POSITION.BACK, back: POSITION.FRONT };
+    const currentPos = enc.positions[actor.id] || POSITION.FRONT;
+    const newPos = cycle[currentPos] || POSITION.FRONT;
+    enc.positions[actor.id] = newPos;
+
+    const posLabels = { front: 'Linha da Frente', mid: 'Meio', back: 'Retaguarda' };
+    const playerName = player.name || player.nome || 'Jogador';
+    const monName = mon.nickname || mon.name || mon.nome || 'Monstrinho';
+    helpers.log(enc, `📍 ${playerName} (${monName}) moveu para ${posLabels[newPos] || newPos}!`);
 
     advanceGroupTurn(enc, deps);
     storage.save();

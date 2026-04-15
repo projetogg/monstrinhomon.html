@@ -5038,6 +5038,18 @@
                 showError('Failed to use item', error.stack);
             }
         }
+
+        /**
+         * FASE VII-B: Delega para Combat.Group.Actions.executeGroupMove()
+         */
+        function groupMovePosition() {
+            try {
+                const deps = createGroupCombatDeps();
+                Combat.Group.Actions.executeGroupMove(deps);
+            } catch (error) {
+                showError('Failed to move position', error.stack);
+            }
+        }
         
         // ═════════════════════════════════════════════════════════════
         // FEATURE 3.3 - SISTEMA DE XP E LEVEL UP (com idempotência)
@@ -6619,12 +6631,19 @@
                     encounter,
                     createGroupRewardsDeps()
                 );
-                
+
+                // FASE VII-C: Processar recompensas terapêuticas e obter destaques
+                const { highlights: therapyHighlights } = Combat.Group.Rewards.processTherapyRewards(
+                    encounter,
+                    createGroupRewardsDeps()
+                );
+
                 // Mostrar modal (com log do encontro para drops + progresso de quests)
                 await BattleEndModal.showBattleEndModal({
                     result: encounter.result,
                     participants: participants,
-                    log: encounter.log || []
+                    log: encounter.log || [],
+                    therapyHighlights: therapyHighlights || []
                 });
                 
                 // Após fechar modal, limpar encounter
@@ -13790,6 +13809,7 @@
         window.groupPassTurn = groupPassTurn;
         window.groupFlee = groupFlee;
         window.groupUseItem = groupUseItem;
+        window.groupMovePosition = groupMovePosition;
         window.cancelTargetSelection = cancelTargetSelection;
 
         // Initialize on load
