@@ -1,15 +1,16 @@
 /**
- * FRIENDSHIP SYSTEM MODULE (FASE R)
+ * FRIENDSHIP SYSTEM MODULE (FASE R / FASE X)
  *
  * Módulo puro: sem acesso a GameState, sem DOM, sem save().
  * Contém a lógica canônica de amizade entre jogador e monstrinho.
  *
  * Funções exportadas:
- *   getFriendshipLevel(friendship)           → número de 1 a 5
- *   getFriendshipIcon(friendship)            → emoji de coração
- *   getFriendshipBonuses(friendship)         → objeto com bônus
- *   formatFriendshipBonusPercent(multiplier) → número inteiro (%)
- *   applyFriendshipDelta(friendship, delta)  → número clamped [0,100]
+ *   getFriendshipLevel(friendship)                         → número de 1 a 5
+ *   getFriendshipIcon(friendship)                          → emoji de coração
+ *   getFriendshipBonuses(friendship)                       → objeto com bônus
+ *   formatFriendshipBonusPercent(multiplier)               → número inteiro (%)
+ *   applyFriendshipDelta(friendship, delta)                → número clamped [0,100]
+ *   applyFriendshipEvent(monster, eventKey, config, log)   → void (muta monster.friendship)
  */
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -101,4 +102,53 @@ export function applyFriendshipDelta(current, delta) {
     const base = Number(current);
     if (!isFinite(base)) return DEFAULT_FRIENDSHIP;
     return Math.max(0, Math.min(100, base + (Number(delta) || 0)));
+}
+
+/**
+ * Aplica um evento de amizade a um monstro, atualizando monster.friendship e
+ * empurrando mensagens de marco ao array de log fornecido.
+ *
+ * Substitui a lógica interna de updateFriendship() em index.html.
+ * Os efeitos colaterais (GameState, save) ficam a cargo do chamador.
+ *
+ * @param {Object}        monster   - Instância do monstrinho (mutado em .friendship)
+ * @param {string}        eventKey  - Chave do evento (ex: 'win', 'faint')
+ * @param {Object|null}   config    - GameState.config.friendshipConfig (mapa evento→delta)
+ * @param {Array|null}    log       - Array de log do encontro atual (recebe mensagens de marco)
+ */
+export function applyFriendshipEvent(monster, eventKey, config, log = null) {
+    if (!monster || typeof monster !== 'object') return;
+
+    // Inicializa friendship se ausente
+    if (typeof monster.friendship !== 'number') {
+        monster.friendship = DEFAULT_FRIENDSHIP;
+    }
+
+    if (!config) return; // sem config → sem mudança
+
+    const change = config[eventKey] || 0;
+    const oldFriendship = monster.friendship;
+
+    monster.friendship = Math.max(0, Math.min(100, monster.friendship + change));
+
+    // Mensagens de marco (empurradas ao log do encontro se fornecido)
+    if (Array.isArray(log)) {
+        const label = monster.nickname || monster.name || 'Monstrinho';
+        if (monster.friendship === 100 && oldFriendship < 100) {
+            log.push(`💖 ${label} atingiu amizade máxima!`);
+        } else if (monster.friendship >= 75 && oldFriendship < 75) {
+            log.push(`💚 ${label} está muito feliz!`);
+        } else if (monster.friendship >= 50 && oldFriendship < 50) {
+            log.push(`💛 ${label} está se aproximando de você!`);
+        }
+    }
+}
+
+// ─── Exposição global (compatibilidade com código não-module) ─────────────────
+if (typeof window !== 'undefined') {
+    window.FriendshipSystem = {
+        DEFAULT_FRIENDSHIP, FRIENDSHIP_ICONS, FRIENDSHIP_THRESHOLDS,
+        getFriendshipLevel, getFriendshipIcon, getFriendshipBonuses,
+        formatFriendshipBonusPercent, applyFriendshipDelta, applyFriendshipEvent,
+    };
 }

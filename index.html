@@ -747,6 +747,13 @@
         // PR16B: Import PartyDex UI module
         import * as PartyDexUI from './js/ui/partyDexUI.js';
 
+        // Fase Q: Import Player Panel UI module
+        import * as PlayerPanelUI from './js/ui/playerPanelUI.js';
+
+        // Fase U: Import Box System module
+        import * as BoxSystem from './js/data/boxSystem.js';
+        window.BoxSystem = BoxSystem;
+
         // Trade UI (FASE XIII)
         import * as TradeUI from './js/ui/tradeUI.js';
 
@@ -803,6 +810,11 @@
         import * as EvolutionSystem from './js/data/evolutionSystem.js';
         // Trade System — Troca de Monstrinhos entre jogadores (FASE O)
         import * as TradeSystem from './js/trade/tradeSystem.js';
+        import * as CaptureSystem from './js/data/captureSystem.js';
+        // Fase W: Import Medal Progress module
+        import * as MedalProgress from './js/therapy/medalProgress.js';
+        // Fase Y: Import Tutorial System module
+        import * as TutorialSystem from './js/tutorial/tutorialSystem.js';
         window.BattleSwap = BattleSwap;
 
         // FASE H: Therapy Rewards disponível globalmente
@@ -814,6 +826,15 @@
         // FASE O: Trade System disponível globalmente
         window.TradeSystem = TradeSystem;
         window.TradeUI = TradeUI;
+
+        // FASE V: CaptureSystem disponível globalmente
+        window.CaptureSystem = CaptureSystem;
+
+        // FASE W: MedalProgress disponível globalmente
+        window.MedalProgress = MedalProgress;
+
+        // FASE Y: TutorialSystem disponível globalmente
+        window.TutorialSystem = TutorialSystem;
 
         // FASE R: Friendship System disponível globalmente
         window.FriendshipSystem = FriendshipSystem;
@@ -1492,11 +1513,8 @@
 
         // CLASTERORB TIERS (Sistema de captura em tiers)
         // Valores maiores = melhor item de captura = mais útil
-        const CLASTERORBS = {
-            'CLASTERORB_COMUM': { id: 'CLASTERORB_COMUM', name: 'ClasterOrb Comum', type: 'CAPTURE', capture_bonus_pp: 0, emoji: '⚪' },
-            'CLASTERORB_INCOMUM': { id: 'CLASTERORB_INCOMUM', name: 'ClasterOrb Incomum', type: 'CAPTURE', capture_bonus_pp: 10, emoji: '🔵' },
-            'CLASTERORB_RARA': { id: 'CLASTERORB_RARA', name: 'ClasterOrb Rara', type: 'CAPTURE', capture_bonus_pp: 20, emoji: '🟣' }
-        };
+        // FASE V: CLASTERORBS delegado ao módulo captureSystem.js (fonte única de verdade)
+        const CLASTERORBS = CaptureSystem.CLASTERORBS;
 
         // ============================================================================
         // Commit 12 (Wave C12.3): Centralized Auxiliary Tables - Single Source of Truth
@@ -2145,46 +2163,15 @@
          * @param {boolean} autoSave - Se deve salvar automaticamente (default: true)
          */
         function updateFriendship(monster, event, autoSave = true) {
-            if (!monster || typeof monster !== 'object') return;
-            
-            // Inicializar friendship se não existir
-            if (typeof monster.friendship !== 'number') {
-                monster.friendship = DEFAULT_FRIENDSHIP;
-            }
-            
+            // FASE X: delega lógica pura ao módulo canônico
             const config = GameState.config?.friendshipConfig;
             if (!config) {
                 console.warn('[Friendship] Config não encontrado');
                 return;
             }
-            
-            const change = config[event] || 0;
-            const oldFriendship = monster.friendship;
-            
-            // Aplicar mudança (clamped entre 0-100)
-            monster.friendship = Math.max(0, Math.min(100, monster.friendship + change));
-            
-            // Log de mensagens especiais ao atingir marcos importantes
-            const encounter = GameState.currentEncounter;
-            const log = encounter?.log || [];
-            
-            if (monster.friendship === 100 && oldFriendship < 100) {
-                if (Array.isArray(log)) {
-                    log.push(`💖 ${monster.nickname || monster.name} atingiu amizade máxima!`);
-                }
-            } else if (monster.friendship >= 75 && oldFriendship < 75) {
-                if (Array.isArray(log)) {
-                    log.push(`💚 ${monster.nickname || monster.name} está muito feliz!`);
-                }
-            } else if (monster.friendship >= 50 && oldFriendship < 50) {
-                if (Array.isArray(log)) {
-                    log.push(`💛 ${monster.nickname || monster.name} está se aproximando de você!`);
-                }
-            }
-            
-            if (autoSave) {
-                saveToLocalStorage();
-            }
+            const log = GameState.currentEncounter?.log ?? [];
+            FriendshipSystem.applyFriendshipEvent(monster, event, config, log);
+            if (autoSave) saveToLocalStorage();
         }
 
         /**
@@ -2195,73 +2182,18 @@
          */
         function updateMultipleFriendshipEvents(monster, events) {
             if (!monster || !Array.isArray(events)) return;
-            
-            // Aplicar todos os eventos sem salvar
-            events.forEach(event => updateFriendship(monster, event, false));
-            
-            // Salvar apenas uma vez no final
+            // FASE X: delega lógica pura ao módulo canônico (batch, sem save intermediário)
+            const config = GameState.config?.friendshipConfig;
+            const log = GameState.currentEncounter?.log ?? [];
+            events.forEach(evt => FriendshipSystem.applyFriendshipEvent(monster, evt, config, log));
             saveToLocalStorage();
         }
 
-        /**
-         * Retorna o nível de amizade (1-5)
-         * @param {number} friendship - Valor de amizade (0-100)
-         * @returns {number} - Nível de 1 a 5
-         */
-        function getFriendshipLevel(friendship) {
-            // FASE R: delega ao módulo canônico
-            if (window.FriendshipSystem) return window.FriendshipSystem.getFriendshipLevel(friendship);
-            if (friendship >= 100) return 5;
-            if (friendship >= 75) return 4;
-            if (friendship >= 50) return 3;
-            if (friendship >= 25) return 2;
-            return 1;
-        }
-
-        /**
-         * Retorna emoji representando nível de amizade
-         * @param {number} friendship - Valor de amizade (0-100)
-         * @returns {string} - Emoji de coração
-         */
-        function getFriendshipIcon(friendship) {
-            // FASE R: delega ao módulo canônico
-            if (window.FriendshipSystem) return window.FriendshipSystem.getFriendshipIcon(friendship);
-            const level = getFriendshipLevel(friendship);
-            const icons = ['🖤', '🤍', '💛', '💚', '❤️'];
-            return icons[level - 1];
-        }
-
-        /**
-         * Calcula bônus baseados no nível de amizade
-         * @param {number} friendship - Valor de amizade (0-100)
-         * @returns {Object} - Objeto com bônus aplicáveis
-         */
-        function getFriendshipBonuses(friendship) {
-            // FASE R: delega ao módulo canônico
-            if (window.FriendshipSystem) return window.FriendshipSystem.getFriendshipBonuses(friendship);
-            const level = getFriendshipLevel(friendship);
-            const bonuses = {
-                xpMultiplier: 1.0,
-                critChance: 0,
-                statBonus: 0,
-                surviveChance: 0
-            };
-            if (level >= 2) bonuses.xpMultiplier = 1.05;
-            if (level >= 3) bonuses.critChance = 0.05;
-            if (level >= 4) { bonuses.xpMultiplier = 1.10; bonuses.statBonus = 1; }
-            return bonuses;
-        }
-
-        /**
-         * Helper: Formata percentual de bônus de amizade para exibição
-         * @param {number} multiplier - Multiplicador de XP (ex: 1.05)
-         * @returns {number} - Percentual arredondado (ex: 5)
-         */
-        function formatFriendshipBonusPercent(multiplier) {
-            // FASE R: delega ao módulo canônico
-            if (window.FriendshipSystem) return window.FriendshipSystem.formatFriendshipBonusPercent(multiplier);
-            return Math.round((multiplier - 1) * 100);
-        }
+        // FASE X: delegates diretos ao módulo FriendshipSystem (sem fallback — módulo sempre presente)
+        function getFriendshipLevel(f)          { return FriendshipSystem.getFriendshipLevel(f); }
+        function getFriendshipIcon(f)           { return FriendshipSystem.getFriendshipIcon(f); }
+        function getFriendshipBonuses(f)        { return FriendshipSystem.getFriendshipBonuses(f); }
+        function formatFriendshipBonusPercent(m){ return FriendshipSystem.formatFriendshipBonusPercent(m); }
 
         // COMMIT 6: normalizeGameState()
         /**
@@ -7287,11 +7219,18 @@
                 const orbInfo = CLASTERORBS[selectedOrbId];
                 if (!orbInfo) return;
                 
-                // Calcular captureScore multi-eixo
+                // Calcular captureScore multi-eixo (wildCore — Trilha HP + Agressividade)
                 const score = calculateCaptureScore(monster, orbInfo.capture_bonus_pp);
                 const needed = GameState.config?.captureScoreThreshold?.[monster.rarity] ?? 45;
                 const readiness = getCaptureReadinessLabel(score);
                 const success = score >= needed;
+
+                // Threshold HP-based via CaptureSystem (modelo determinístico canônico)
+                const hpPct = monster.hp / Math.max(1, monster.hpMax);
+                const hpThreshold = CaptureSystem.calculateCaptureThreshold(
+                    monster.rarity, hpPct, orbInfo.capture_bonus_pp
+                );
+                const hpSuccess = hpPct <= hpThreshold;
                 
                 display.innerHTML = `
                     <div class="battle-capture-status-label" style="color:${success ? '#2e7d32' : '#c62828'}">
@@ -7299,6 +7238,9 @@
                     </div>
                     <div class="battle-capture-breakdown">
                         HP ${Math.round((1-monster.hp/monster.hpMax)*50)} · Calma ${Math.round((1-(monster.aggression??100)/100)*50)} · Orb +${orbInfo.capture_bonus_pp}
+                    </div>
+                    <div class="battle-capture-breakdown" style="opacity:0.7">
+                        📊 HP ${Math.round(hpPct*100)}% / limiar ${Math.round(hpThreshold*100)}% ${hpSuccess ? '✅' : '❌'}
                     </div>
                 `;
             } catch (error) {
@@ -7382,9 +7324,13 @@
                     return;
                 }
 
-                // Validação: HP > 0 obrigatório (capturar desmaiado é proibido)
-                if (monster.hp <= 0) {
-                    mmAlert('❌ Não pode capturar um monstrinho desmaiado! HP deve ser > 0.', 'error');
+                // Validação de pré-condições via CaptureSystem (puro, sem DOM)
+                const captureCheck = CaptureSystem.canCapture(monster);
+                if (!captureCheck.ok) {
+                    const msg = captureCheck.reason === 'MONSTER_KO'
+                        ? '❌ Não pode capturar um monstrinho desmaiado! HP deve ser > 0.'
+                        : `❌ Captura não permitida (${captureCheck.reason}).`;
+                    mmAlert(msg, 'error');
                     return;
                 }
 
@@ -8124,104 +8070,43 @@
 
         /**
          * Returns the number of monsters a player has in the sharedBox.
+         * Delega para BoxSystem.getBoxUsage (Fase U).
          */
         function getPlayerBoxSize(playerId) {
-            return (GameState.sharedBox || []).filter(s => s.ownerPlayerId === playerId).length;
+            return window.BoxSystem.getBoxUsage(GameState.sharedBox || [], playerId);
         }
 
         /**
-         * Add a monster to the shared box
+         * Add a monster to the shared box.
+         * Delega para BoxSystem.addMonsterToBox (Fase U).
          */
         function addToSharedBox(ownerPlayerId, monster) {
             if (!GameState.sharedBox) GameState.sharedBox = [];
-            
-            const BOX_MAX_TOTAL = 100;
-            if (GameState.sharedBox.length >= BOX_MAX_TOTAL) {
-                return { success: false, message: 'Box está cheia (100/100)' };
-            }
-
-            const slotId = 'BX_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            GameState.sharedBox.push({
-                slotId,
-                ownerPlayerId,
-                monster
-            });
-
-            return { success: true, slotId };
+            return window.BoxSystem.addMonsterToBox(GameState.sharedBox, ownerPlayerId, monster);
         }
 
         /**
-         * Move monster from team to box
+         * Move monster from team to box.
+         * Delega para BoxSystem.moveTeamToBox (Fase U).
          */
         function moveTeamToBox(activePlayerId, teamIndex) {
+            if (!GameState.sharedBox) GameState.sharedBox = [];
             const player = GameState.players.find(p => p.id === activePlayerId);
-            if (!player) {
-                return { success: false, message: 'Jogador não encontrado' };
-            }
-
-            if (!player.team || teamIndex < 0 || teamIndex >= player.team.length) {
-                return { success: false, message: 'Índice de equipe inválido' };
-            }
-
-            const monster = player.team[teamIndex];
-            if (!monster) {
-                return { success: false, message: 'Monstrinho não encontrado' };
-            }
-
-            const result = addToSharedBox(activePlayerId, monster);
-            if (!result.success) {
-                return result;
-            }
-
-            // Remove from team
-            player.team.splice(teamIndex, 1);
-
-            // Adjust activeIndex so it stays valid after the splice
-            if (typeof player.activeIndex === 'number') {
-                if (player.activeIndex === teamIndex) {
-                    // Removed the active monster: point to first alive remaining
-                    player.activeIndex = firstAliveIndex(player.team);
-                    if (player.activeIndex < 0) player.activeIndex = 0;
-                } else if (player.activeIndex > teamIndex) {
-                    player.activeIndex--;
-                }
-            }
-
-            return { success: true, message: `${monster.name} enviado para Box` };
+            return window.BoxSystem.moveTeamToBox(player, GameState.sharedBox, teamIndex, {
+                firstAliveIndex
+            });
         }
 
         /**
-         * Move monster from box to team
+         * Move monster from box to team.
+         * Delega para BoxSystem.moveBoxToTeam (Fase U).
          */
         function moveBoxToTeam(activePlayerId, slotId) {
+            if (!GameState.sharedBox) GameState.sharedBox = [];
             const player = GameState.players.find(p => p.id === activePlayerId);
-            if (!player) {
-                return { success: false, message: 'Jogador não encontrado' };
-            }
-
-            const TEAM_MAX = GameState.config?.maxTeamSize || 6;
-            if (player.team && player.team.length >= TEAM_MAX) {
-                return { success: false, message: `Equipe cheia (${TEAM_MAX}/${TEAM_MAX})` };
-            }
-
-            const slotIndex = GameState.sharedBox.findIndex(slot => slot.slotId === slotId);
-            if (slotIndex === -1) {
-                return { success: false, message: 'Slot não encontrado' };
-            }
-
-            const slot = GameState.sharedBox[slotIndex];
-            if (slot.ownerPlayerId !== activePlayerId) {
-                return { success: false, message: 'Este monstrinho não é seu' };
-            }
-
-            // Add to team
-            if (!player.team) player.team = [];
-            player.team.push(slot.monster);
-
-            // Remove from box
-            GameState.sharedBox.splice(slotIndex, 1);
-
-            return { success: true, message: `${slot.monster.name} retirado da Box` };
+            return window.BoxSystem.moveBoxToTeam(player, GameState.sharedBox, slotId, {
+                maxTeamSize: GameState.config?.maxTeamSize || 6
+            });
         }
 
         /**
@@ -8255,8 +8140,8 @@
                 const teamCount = viewedPlayer.team?.length || 0;
                 const TEAM_MAX = GameState.config?.maxTeamSize || 6;
                 
-                const viewedPlayerBoxCount = GameState.sharedBox?.filter(slot => slot.ownerPlayerId === viewedPlayerId).length || 0;
-                const BOX_MAX_TOTAL = 100;
+                const viewedPlayerBoxCount = window.BoxSystem.getBoxUsage(GameState.sharedBox || [], viewedPlayerId);
+                const BOX_MAX_TOTAL = window.BoxSystem.BOX_MAX_TOTAL;
 
                 const boxActivePlayer = document.getElementById('boxActivePlayer');
                 const boxTeamCount = document.getElementById('boxTeamCount');
@@ -8476,17 +8361,12 @@
                 
                 therapy.medals = therapy.medals || [];
                 
-                // Detectar nova medalha conquistada (em ordem: ouro tem prioridade)
-                let newMedal = null;
-                if (pm >= tiers.gold && !therapy.medals.includes('gold')) {
-                    therapy.medals.push('gold');
-                    newMedal = 'gold';
-                } else if (pm >= tiers.silver && !therapy.medals.includes('silver')) {
-                    therapy.medals.push('silver');
-                    newMedal = 'silver';
-                } else if (pm >= tiers.bronze && !therapy.medals.includes('bronze')) {
-                    therapy.medals.push('bronze');
-                    newMedal = 'bronze';
+                // FASE W: Detectar nova medalha via MedalProgress.checkNewMedal (módulo puro)
+                const newMedal = window.MedalProgress
+                    ? window.MedalProgress.checkNewMedal(pm, therapy.medals, tiers)
+                    : null;
+                if (newMedal && !therapy.medals.includes(newMedal)) {
+                    therapy.medals.push(newMedal);
                 }
 
                 // FASE H: Aplicar recompensas da nova medalha (XP + moeda)
@@ -11711,52 +11591,38 @@
                 let html = '';
                 GameState.players.forEach(player => {
                     if (!player) return;
-                    
-                    const teamCount = player.team?.length || 0;
-                    const boxCount = getPlayerBoxSize(player.id);
-                    // Fix #4: usar player.class como fallback quando playerClassId não existe (saves do wizard)
-                    const playerClass = player.class || player.playerClassId || '';
 
-                    // Fix #5: Quest progress tracker
-                    let questHtml = '';
-                    if (window.GameFlow && typeof GameFlow.getActiveQuestsSummary === 'function') {
-                        const quests = GameFlow.getActiveQuestsSummary(player);
-                        if (quests.length > 0) {
-                            const questItems = quests.map(q => {
-                                const pct = Math.min(100, Math.floor((q.progress / q.needed) * 100));
-                                return `<div class="mb-5">
-                                    <strong>${q.quest.nome}</strong>: ${q.progress}/${q.needed}
-                                    <div class="progress-bar h-10 mt-3">
-                                        <div class="progress-fill xp" style="width: ${pct}%"></div>
-                                    </div>
-                                </div>`;
-                            }).join('');
-                            questHtml = `<div class="mt-10"><h4 class="m-0 mb-6">📋 Quests Ativas:</h4>${questItems}</div>`;
-                        } else {
-                            questHtml = `<div class="mt-8 opacity-70 text-small">📋 Nenhuma quest ativa.</div>`;
-                        }
+                    if (window.PlayerPanelUI?.renderPlayerTeamSection) {
+                        html += window.PlayerPanelUI.renderPlayerTeamSection(player, {
+                            maxTeamSize: GameState.config?.maxTeamSize || 6,
+                            getPlayerBoxSize,
+                            getActiveQuestsSummary: (targetPlayer) => {
+                                if (window.GameFlow && typeof GameFlow.getActiveQuestsSummary === 'function') {
+                                    return GameFlow.getActiveQuestsSummary(targetPlayer);
+                                }
+                                return [];
+                            },
+                            teamReorderDeps: {
+                                isAlive: _isAlive,
+                                renderEquipableItems,
+                                getItemById: (itemId) => {
+                                    if (window.Data && window.Data.getItemById) return window.Data.getItemById(itemId);
+                                    return null;
+                                },
+                                isReadyForKitSwap: (monster) => window.SpeciesDisplay?.isReadyForKitSwap?.(monster) || false,
+                                isEligibleForBattle: (monster, owner) => window.ClassEligibility?.isEligibleForBattle?.(monster, owner) ?? true,
+                                renderEligibilityBadgeForTeam,
+                                renderTeamReadinessIndicator,
+                                actionNames: {
+                                    moveUp: 'moveTeamMemberUp',
+                                    moveDown: 'moveTeamMemberDown',
+                                    openTrade: 'openTradeModal',
+                                    applyKitSwap: 'applyKitSwapRetroactive',
+                                    unequipItem: 'unequipItem'
+                                }
+                            }
+                        });
                     }
-                    
-                    html += `
-                        <div class="card group-player-card" data-class="${playerClass}">
-                            <div class="group-player-header">
-                                <span class="group-player-name">${player.name}</span>
-                                <div class="badge badge-${playerClass}" data-class="${playerClass}">${playerClass}</div>
-                            </div>
-                            <div class="group-player-stats">
-                                <span class="group-stat-pill">💰 ${player.money || 0}</span>
-                                <span class="group-stat-pill">⭐ ${player.afterlifeCurrency || 0}</span>
-                                <span class="group-stat-pill">🐾 Time: ${teamCount}/${GameState.config?.maxTeamSize || 6}</span>
-                                <span class="group-stat-pill">📦 Box: ${boxCount}</span>
-                            </div>
-                            ${questHtml}
-                            <details class="team-reorder-section">
-                                <summary style="cursor:pointer;font-weight:700;padding:6px 0;list-style:none;">⚔️ Time (${teamCount})</summary>
-                                <p class="text-small text-muted mb-10">O primeiro monstrinho vivo começa na batalha. Use as setas para reordenar.</p>
-                                ${renderTeamReorderList(player)}
-                            </details>
-                        </div>
-                    `;
                 });
                 
                 container.innerHTML = html;
@@ -11854,153 +11720,38 @@
         }
 
         function renderMonsterCard(monster) {
-            try {
-                if (!monster) return '';
-                
-                const hpPercent = ((monster.hp || 0) / (monster.hpMax || 1)) * 100;
-                const xpNeeded = (monster.level || 1) * 100;
-                const xpPercent = ((monster.xp || 0) / xpNeeded) * 100;
-                
-                // SISTEMA DE AMIZADE
-                const friendship = monster.friendship || DEFAULT_FRIENDSHIP;
-                const friendshipIcon = getFriendshipIcon(friendship);
-                const friendshipLevel = getFriendshipLevel(friendship);
-                const friendshipBonuses = getFriendshipBonuses(friendship);
-                
-                // Tooltip com informações completas de amizade
-                let friendshipTooltip = `Nível de Amizade: ${friendshipLevel}/5`;
-                if (friendshipBonuses.xpMultiplier > 1.0) {
-                    friendshipTooltip += `\nBônus XP: +${formatFriendshipBonusPercent(friendshipBonuses.xpMultiplier)}%`;
-                }
-                if (friendshipBonuses.critChance > 0) {
-                    friendshipTooltip += `\nChance Crítico: +${friendshipBonuses.critChance * 100}%`;
-                }
-                if (friendshipBonuses.statBonus > 0) {
-                    friendshipTooltip += `\nBônus Stats: +${friendshipBonuses.statBonus}`;
-                }
-                // Nota: surviveChance removido do tooltip até implementação
-                // if (friendshipBonuses.surviveChance > 0) {
-                //     friendshipTooltip += `\n[EM BREVE] Chance Sobreviver: ${friendshipBonuses.surviveChance * 100}%`;
-                // }
-                
-                return `
-                    <div class="monster-card ${monster.class || 'common'}">
-                        <div class="font-size-36">${monster.emoji || '🔮'}</div>
-                        <strong>${monster.name || 'Unknown'}</strong>
-                        ${monster.isShiny ? '<div class="badge badge-shiny">⭐ SHINY ⭐</div>' : ''}
-                        <div class="badge badge-${monster.rarity || 'common'}">${monster.rarity || 'common'}</div>
-                        <div>Lv ${monster.level || 1}</div>
-                        <div class="progress-bar h-30">
-                            <div class="progress-fill hp" style="width: ${hpPercent}%"></div>
-                        </div>
-                        <small>${monster.hp || 0}/${monster.hpMax || 0} HP</small>
-                        <div class="progress-bar h-15">
-                            <div class="progress-fill xp" style="width: ${xpPercent}%"></div>
-                        </div>
-                        <small>${monster.xp || 0}/${xpNeeded} XP</small>
-                        
-                        <div class="friendship-indicator" title="${friendshipTooltip}">
-                            ${friendshipIcon} <span class="friendship-text">${friendship}/100</span>
-                            <div class="friendship-bar">
-                                <div class="friendship-fill" style="width: ${friendship}%"></div>
-                            </div>
-                        </div>
-                        ${renderSpeciesIdentityBlock(monster)}
-                    </div>
-                `;
-            } catch (error) {
-                console.error('Failed to render monster card:', error);
-                return '<div class="monster-card">Error</div>';
-            }
+            if (!window.PlayerPanelUI?.renderMonsterCard) return '';
+            return window.PlayerPanelUI.renderMonsterCard(monster, {
+                defaultFriendship: DEFAULT_FRIENDSHIP,
+                getFriendshipIcon,
+                getFriendshipLevel,
+                getFriendshipBonuses,
+                formatFriendshipBonusPercent,
+                renderSpeciesIdentityBlock
+            });
         }
 
         function renderTeamReorderList(player) {
-            try {
-                if (!player || !player.team || player.team.length === 0) {
-                    return '<p class="text-muted">No monsters in team.</p>';
+            if (!window.PlayerPanelUI?.renderTeamReorderList) return '<p class="text-muted">No monsters in team.</p>';
+            return window.PlayerPanelUI.renderTeamReorderList(player, {
+                isAlive: _isAlive,
+                renderEquipableItems,
+                getItemById: (itemId) => {
+                    if (window.Data && window.Data.getItemById) return window.Data.getItemById(itemId);
+                    return null;
+                },
+                isReadyForKitSwap: (monster) => window.SpeciesDisplay?.isReadyForKitSwap?.(monster) || false,
+                isEligibleForBattle: (monster, owner) => window.ClassEligibility?.isEligibleForBattle?.(monster, owner) ?? true,
+                renderEligibilityBadgeForTeam,
+                renderTeamReadinessIndicator,
+                actionNames: {
+                    moveUp: 'moveTeamMemberUp',
+                    moveDown: 'moveTeamMemberDown',
+                    openTrade: 'openTradeModal',
+                    applyKitSwap: 'applyKitSwapRetroactive',
+                    unequipItem: 'unequipItem'
                 }
-
-                let html = '<div class="team-reorder-container">';
-                
-                player.team.forEach((monster, index) => {
-                    if (!monster) return;
-                    
-                    const isActive = index === (player.activeIndex ?? 0);
-                    const isAlive = _isAlive(monster);
-                    const hpPercent = ((monster.hp || 0) / (monster.hpMax || 1)) * 100;
-                    
-                    // PR12A: Get equipped item info
-                    let equippedItemHtml = '';
-                    if (monster.heldItemId && window.Data && window.Data.getItemById) {
-                        const itemDef = window.Data.getItemById(monster.heldItemId);
-                        if (itemDef) {
-                            const atkBonus = itemDef.stats?.atk || 0;
-                            const defBonus = itemDef.stats?.def || 0;
-                            let statsText = '';
-                            if (atkBonus > 0) statsText += `+${atkBonus} ATK `;
-                            if (defBonus > 0) statsText += `+${defBonus} DEF`;
-                            equippedItemHtml = `
-                                <div class="text-small mt-5">
-                                    🎒 <strong>${itemDef.name}</strong> (${statsText})
-                                    <button class="btn btn-xs" onclick="unequipItem('${player.id}', ${index})">Remover</button>
-                                </div>
-                            `;
-                        }
-                    } else {
-                        equippedItemHtml = `
-                            <div class="text-small mt-5">
-                                🎒 <em>Nenhum item equipado</em>
-                            </div>
-                        `;
-                    }
-                    
-                    // Fase 18: Indicador de "pronto para aplicar" kit_swap
-                    const isReadyForSwap = window.SpeciesDisplay?.isReadyForKitSwap?.(monster) || false;
-                    const kitApplyHtml = isReadyForSwap
-                        ? `<div class="mt-5"><button class="kit-apply-cta" onclick="applyKitSwapRetroactive('${monster.instanceId}')">🌟 Aplicar habilidade especial</button></div>`
-                        : '';
-
-                    // Fase 19: Badge de elegibilidade por classe para combate
-                    const isEligible = window.ClassEligibility?.isEligibleForBattle?.(monster, player) ?? true;
-                    const eligibilityHtml = renderEligibilityBadgeForTeam(monster, player);
-                    const ineligibleClass = isEligible ? '' : ' team-member-card--ineligible';
-
-                    html += `
-                        <div class="team-member-card ${isActive ? 'team-member-card-active' : 'team-member-card-inactive'}${ineligibleClass}">
-                            <span class="team-member-index">${index + 1}.</span>
-                            <div class="team-member-info">
-                                <strong>${monster.name || 'Unknown'}</strong>
-                                <span class="badge badge-${monster.rarity || 'common'}">${monster.rarity || 'Comum'}</span>
-                                Lv${monster.level || 1}
-                                ${eligibilityHtml}
-                                ${renderTeamReadinessIndicator(monster)}
-                                ${!isAlive ? '<span class="color-error text-bold"> (Desmaiado)</span>' : ''}
-                                <div class="progress-bar h-15 mt-5">
-                                    <div class="progress-fill hp" style="width: ${hpPercent}%"></div>
-                                </div>
-                                <small>${monster.hp || 0}/${monster.hpMax || 0} HP</small>
-                                ${kitApplyHtml}
-                                ${equippedItemHtml}
-                            </div>
-                            <div class="team-member-buttons">
-                                ${index > 0 ? `<button class="btn btn-sm-arrow" onclick="moveTeamMemberUp('${player.id}', ${index})">▲</button>` : '<span style="height:20px;display:block;"></span>'}
-                                ${index < player.team.length - 1 ? `<button class="btn btn-sm-arrow" onclick="moveTeamMemberDown('${player.id}', ${index})">▼</button>` : ''}
-                                ${isAlive && !isActive ? `<button class="btn btn-xs btn-trade" title="Trocar com outro jogador" onclick="openTradeModal('${player.id}', '${monster.instanceId || monster.id}')">🔄</button>` : ''}
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                html += '</div>';
-                
-                // PR12A: Add equipable items section
-                html += renderEquipableItems(player);
-                
-                return html;
-            } catch (error) {
-                console.error('Failed to render team reorder list:', error);
-                return '<p class="color-error">Error rendering team list</p>';
-            }
+            });
         }
 
         /**
@@ -12524,15 +12275,13 @@
                     const pm      = therapy.pm || 0;
                     const medals  = therapy.medals || [];
 
-                    // Calcular próxima medalha
-                    const nextTier = TIER_ORDER.find(t => !medals.includes(t.key));
-                    const maxTier  = TIER_ORDER[TIER_ORDER.length - 1];
-                    const progressTarget = nextTier ? nextTier.threshold : maxTier.threshold;
-                    const progressPct    = nextTier
-                        ? Math.min(100, Math.round((pm / progressTarget) * 100))
-                        : 100;
-                    const progressLabel = nextTier
-                        ? `${pm} / ${progressTarget} PM → ${nextTier.label}`
+                    // FASE W: Calcular progresso via MedalProgress.computeMedalProgress (módulo puro)
+                    const progress = window.MedalProgress
+                        ? window.MedalProgress.computeMedalProgress(pm, medals, tiers)
+                        : { pct: 0, label: `${pm} PM`, nextTier: null };
+                    const progressPct   = progress.pct;
+                    const progressLabel = progress.nextTier
+                        ? progress.label
                         : `${pm} PM — Todas as medalhas conquistadas! 🎉`;
 
                     // Badges de medalhas conquistadas
@@ -14318,45 +14067,30 @@
         }
 
         function tutorialAllows(actionKey) {
-            const step = getTutorialStep();
-            if (!step) return true;
-            const lock = step.lock || {};
-            // Se não definido, permite
-            if (typeof lock[actionKey] === "undefined") return true;
-            return !!lock[actionKey];
+            // FASE Y: delega ao módulo puro
+            return TutorialSystem.tutorialAllows(ensureTutorialState(), TUTORIAL_STEPS, actionKey);
         }
 
         function tutorialOnAction(type) {
-            const step = getTutorialStep();
-            if (!step) return;
+            // FASE Y: delega lógica pura ao módulo; side-effects (toast, save) ficam aqui
+            const result = TutorialSystem.advanceTutorial(ensureTutorialState(), TUTORIAL_STEPS, type);
+            if (!result.changed) return;
 
-            const tut = ensureTutorialState();
-            tut.done[type] = (tut.done[type] || 0) + 1;
+            // Persiste novo estado canônico em GameState
+            GameState.tutorial = result.tutState;
 
-            // Checa se completou
-            const req = step.required || {};
-            const ok = Object.keys(req).every(k => (tut.done[k] || 0) >= req[k]);
-
-            if (ok) {
+            if (result.completed) {
                 showToast("🎉 Passo concluído!");
-                
-                // Se é o último step
-                if (tut.stepIndex === TUTORIAL_STEPS.length - 1) {
-                    tut.active = false;
+                if (result.finished) {
                     showToast("🏁 Tutorial completo!");
                     if (typeof saveToLocalStorage === "function") saveToLocalStorage();
                     return;
                 }
-                
-                // Avança para próximo step
-                tut.stepIndex = Math.min(TUTORIAL_STEPS.length - 1, tut.stepIndex + 1);
-                tut.done = {}; // Reseta contadores do próximo step
 
+                // Inicia próximo step com pequeno delay
                 const next = getTutorialStep();
                 if (next) {
-                    setTimeout(() => {
-                        next.start();
-                    }, 1500); // Pequeno delay para o usuário ver a mensagem
+                    setTimeout(() => { next.start(); }, 1500);
                 }
             }
 
@@ -14364,36 +14098,19 @@
         }
 
         function createTutorialEnemy(level) {
-            // Tenta pegar um template real do catálogo
+            // FASE Y: fallback via módulo puro; template real via factory quando disponível
             const cat = getMonstersArray();
             const t = cat[0];
             if (typeof createMonsterInstanceFromTemplate === "function" && t) {
-                // Wave B (continuation): Use factory for tutorial enemy
                 const m = createMonsterInstanceFromTemplate(t.id, level, null, {
                     id: 'tutorial_' + Date.now()
                 });
-                // Deixa mais fácil
                 m.hpMax = Math.max(20, Math.floor(m.hpMax * 0.6));
                 m.hp = m.hpMax;
                 return m;
             }
-            // Fallback mínimo
-            return { 
-                id: Date.now() + Math.random(),
-                name:"Treinomon", 
-                level, 
-                hpMax: 25+level*5, 
-                hp: 25+level*5, 
-                atk: 4+level, 
-                def: 3+level, 
-                spd: 5, 
-                ene: 0, 
-                eneMax: 0,
-                class: "Guerreiro",
-                rarity: "Comum",
-                emoji: "🐾",
-                poder: 6
-            };
+            // Fallback canônico via módulo
+            return { id: Date.now() + Math.random(), ...TutorialSystem.buildTutorialEnemyData(level) };
         }
 
         function startTutorialEncounter_Attack() {
