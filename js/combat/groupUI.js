@@ -466,15 +466,18 @@ function renderActionBar(encounter, actor, isPlayerTurn, state, helpers) {
         }
     }
 
-    // Item de cura disponível
-    const availableHealItems = HEAL_ITEM_IDS.filter(id => (player.inventory?.[id] || 0) > 0);
-    const canHeal = availableHealItems.length > 0 && hp > 0 && hp < hpMax;
+    // Inventário de combate (cura/tático)
+    const combatItems = Object.entries(player.inventory || {})
+        .filter(([, qty]) => (Number(qty) || 0) > 0)
+        .map(([itemId, qty]) => ({ itemId, qty: Number(qty) || 0, def: helpers.getItemDef ? helpers.getItemDef(itemId) : null }))
+        .filter(({ itemId, def }) => {
+            const t = String(def?.type || '');
+            return t === 'heal' || t === 'cura' || t === 'tatico' || HEAL_ITEM_IDS.includes(itemId);
+        });
+    const hasCombatItems = combatItems.length > 0;
     let itemButtonHtml = '';
-    if (canHeal) {
-        const firstId = availableHealItems[0];
-        const def = helpers.getItemDef ? helpers.getItemDef(firstId) : null;
-        const qty = player.inventory?.[firstId] || 0;
-        itemButtonHtml = `<button class="btn btn-success" onclick="groupUseItem('${firstId}')" title="${def?.name ?? firstId} (${qty}x)">${def?.emoji || '🧪'} ${def?.name || 'Item'}</button>`;
+    if (hasCombatItems) {
+        itemButtonHtml = `<button class="btn btn-success" onclick="window.groupOpenItemModal && window.groupOpenItemModal()" title="Abrir inventário de combate">🎒 Item</button>`;
     }
 
     // Fuga: desabilitada em batalhas boss
