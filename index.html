@@ -5279,6 +5279,16 @@
 
             document.body.appendChild(overlay);
 
+            // FASE XI: aplicar animação de brilho nos cards da arena visíveis
+            const evoArena = document.querySelector('.battle-arena');
+            if (evoArena) {
+                const evoUnits = evoArena.querySelectorAll('.group-unit');
+                evoUnits.forEach(u => {
+                    u.classList.add('evolution-animation');
+                    setTimeout(() => u.classList.remove('evolution-animation'), 3200);
+                });
+            }
+
             // Sequência de fases
             // Fase 1: 2s de suspense
             setTimeout(() => {
@@ -11760,38 +11770,66 @@
                 if (!container) return;
                 
                 if (!GameState.currentSession) {
-                    container.innerHTML = '<div class="card"><p>No active session</p></div>';
+                    container.innerHTML = '<div class="card"><p>Nenhuma sessão ativa</p></div>';
                     return;
                 }
                 
                 const session = GameState.currentSession;
-                
-                let html = `
-                    <div class="card">
-                        <h3>Session: ${session.name}</h3>
-                        <p>Started: ${new Date(session.createdAt).toLocaleString()}</p>
-                        ${session.completedAt ? `<p>Ended: ${new Date(session.completedAt).toLocaleString()}</p>` : '<p>Status: Active</p>'}
-                    </div>
-                    
-                    <div class="card">
-                        <h3>Player Summary</h3>
-                        ${(GameState.players || []).map(player => {
-                            if (!player) return '';
-                            const therapy = session.therapy?.perPlayer?.[player.id];
-                            if (!therapy) return '';
-                            
-                            return `
-                                <div class="my-15 p-15 bg-white border-radius-12">
-                                    <h4>${player.name}</h4>
-                                    <p>PM Earned: ${therapy.pm || 0}</p>
-                                    <p>Medals: ${(therapy.medals || []).join(', ') || 'None yet'}</p>
-                                    <p>Objectives Completed: ${therapy.completedObjectives?.length || 0}/${GameState.objectives?.length || 0}</p>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                `;
-                
+                const medalLabels = { bronze: '🥉 Bronze', silver: '🥈 Prata', gold: '🥇 Ouro' };
+
+                // ── Cabeçalho da sessão ─────────────────────────────────────
+                let html = `<div class="card">
+                    <h3>📋 Sessão: ${session.name || session.id}</h3>
+                    <p style="font-size:13px;color:#555;">Início: ${new Date(session.createdAt).toLocaleString('pt-BR')}</p>
+                    ${session.completedAt
+                        ? `<p style="font-size:13px;color:#27ae60;">Encerrada: ${new Date(session.completedAt).toLocaleString('pt-BR')}</p>`
+                        : '<p style="font-size:13px;color:#e67e22;">🟡 Em andamento</p>'}
+                </div>`;
+
+                // ── Resumo por jogador ───────────────────────────────────────
+                html += `<div class="card"><h3>👥 Resumo dos Jogadores</h3>`;
+                for (const player of (GameState.players || [])) {
+                    if (!player) continue;
+                    const therapy = session.therapy?.perPlayer?.[player.id];
+                    if (!therapy) continue;
+
+                    const pm = therapy.pm || 0;
+                    const medals = (therapy.medals || []).map(m => medalLabels[m] || m).join(', ') || 'Nenhuma ainda';
+                    const objectives = therapy.completedObjectives || [];
+                    const totalObj = (GameState.objectives || []).length;
+                    const logs = therapy.logs || [];
+
+                    html += `<div style="padding:12px;margin-bottom:10px;border:1px solid #eee;border-radius:10px;background:#fafafa;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <h4 style="margin:0;font-size:15px;">👤 ${player.name || player.id}</h4>
+                            <span style="font-size:13px;color:#2980b9;">Classe: ${player.class || '?'}</span>
+                        </div>
+                        <div style="margin-top:8px;font-size:13px;display:flex;gap:16px;flex-wrap:wrap;">
+                            <span>🏆 PM: <strong>${pm}</strong></span>
+                            <span>🎖️ Medalhas: <strong>${medals}</strong></span>
+                            <span>✅ Objetivos: <strong>${objectives.length}/${totalObj}</strong></span>
+                        </div>
+                        ${logs.length > 0 ? `
+                        <div style="margin-top:8px;">
+                            <details>
+                                <summary style="font-size:12px;cursor:pointer;color:#555;">📝 Eventos (${logs.length})</summary>
+                                <ul style="margin:6px 0 0 12px;padding:0;font-size:12px;color:#444;">
+                                    ${logs.map(l => `<li>${l}</li>`).join('')}
+                                </ul>
+            </details>
+                        </div>` : ''}
+                    </div>`;
+                }
+                html += `</div>`;
+
+                // ── Botão exportar ───────────────────────────────────────────
+                html += `<div class="card" style="text-align:center;">
+                    <button class="btn btn-secondary" onclick="window.exportTherapyReport && window.exportTherapyReport()"
+                            style="padding:10px 20px;font-size:14px;">
+                        📤 Exportar Relatório da Sessão
+                    </button>
+                </div>`;
+
                 container.innerHTML = html;
             } catch (error) {
                 console.error('Failed to update report view:', error);
@@ -11813,6 +11851,62 @@
                 showError('Export failed', error.stack);
             }
         }
+
+        /**
+         * FASE X: Exporta relatório terapêutico da sessão atual em formato texto.
+         */
+        function exportTherapyReport() {
+            try {
+                const session = GameState.currentSession;
+                if (!session) { showToast('Nenhuma sessão ativa para exportar.', 'warning'); return; }
+
+                const lines = [];
+                lines.push('=== RELATÓRIO DE SESSÃO — MONSTRINHOMON ===');
+                lines.push(`Sessão: ${session.name || session.id}`);
+                lines.push(`Data: ${new Date(session.createdAt).toLocaleString('pt-BR')}`);
+                if (session.completedAt) lines.push(`Encerrada: ${new Date(session.completedAt).toLocaleString('pt-BR')}`);
+                lines.push('');
+                lines.push('--- PARTICIPANTES ---');
+
+                for (const player of (GameState.players || [])) {
+                    if (!player) continue;
+                    const therapy = session.therapy?.perPlayer?.[player.id];
+                    lines.push(`\nJogador: ${player.name || player.id} (${player.class || '?'})`);
+                    if (therapy) {
+                        lines.push(`  PM ganhos: ${therapy.pm || 0}`);
+                        lines.push(`  Medalhas: ${(therapy.medals || []).join(', ') || 'Nenhuma'}`);
+                        lines.push(`  Objetivos concluídos: ${(therapy.completedObjectives || []).length}`);
+                        if ((therapy.logs || []).length > 0) {
+                            lines.push(`  Eventos:`);
+                            for (const l of therapy.logs) lines.push(`    - ${l}`);
+                        }
+                    }
+                    // XP total dos monstrinhos
+                    const totalXp = (player.team || []).reduce((sum, m) => sum + (Number(m?.xp) || 0), 0);
+                    lines.push(`  XP total dos Monstrinhos: ${totalXp}`);
+                }
+
+                lines.push('\n--- BATALHAS ---');
+                const encounters = (GameState.data?.encounters || []).filter(e => e?.sessionId === session.id);
+                for (const enc of encounters) {
+                    lines.push(`  Batalha ${enc.id || '?'}: ${enc.result || '?'}`);
+                }
+
+                lines.push('\n=== FIM DO RELATÓRIO ===');
+                const text = lines.join('\n');
+                const blob = new Blob([text], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `relatorio_sessao_${session.id || Date.now()}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+                showToast('📤 Relatório exportado!', 'success');
+            } catch (error) {
+                showError('Export report failed', error.stack);
+            }
+        }
+        window.exportTherapyReport = exportTherapyReport;
 
         function importData() {
             try {

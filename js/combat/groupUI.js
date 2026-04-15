@@ -156,7 +156,7 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
         const posHtml = posLabel ? `<span class="position-badge">${posLabel}</span>` : '';
 
         playersHtml += `
-        <div id="grpP_${pid}" class="${unitClass}">
+        <div id="grpP_${pid}" class="${unitClass}"${pos ? ` data-pos="${pos}"` : ''}>
             <div class="group-unit-name">${mon.emoji || ''} ${mon.name || mon.nome} <small>Nv ${mon.level}</small>
                 ${isKO ? '<span class="group-unit-ko-badge">💀 KO</span>' : ''}
                 ${isCurrent ? '<span class="group-unit-active-badge">▶ Em batalha</span>' : ''}
