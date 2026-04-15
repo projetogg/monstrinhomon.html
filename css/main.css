@@ -1239,6 +1239,19 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     min-width: auto;
 }
 
+/* FASE P: Botão de troca no card de time */
+.btn-trade {
+    padding: 2px 6px;
+    font-size: 13px;
+    min-height: 24px;
+    min-width: auto;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+}
+.btn-trade:hover {
+    opacity: 1;
+}
+
 /* Modal Overlay */
 .modal-overlay-fixed {
     position: fixed;
@@ -4620,6 +4633,48 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
 .mm-evo-btn:hover  { transform: translateY(-2px); }
 .mm-evo-btn:active { transform: scale(0.96); }
 
+/* ── Therapy Progress Bar (FASE M) ─────────────────────────────────────────── */
+.therapy-medals-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.medal-badge {
+    font-size: 24px;
+    opacity: 0.25;
+    filter: grayscale(1);
+    transition: opacity 0.3s, filter 0.3s, transform 0.3s;
+}
+.medal-badge--earned {
+    opacity: 1;
+    filter: none;
+    animation: medal-pop 0.4s ease-out;
+}
+@keyframes medal-pop {
+    0%   { transform: scale(0.5); opacity: 0; }
+    70%  { transform: scale(1.25); }
+    100% { transform: scale(1); opacity: 1; }
+}
+.therapy-progress-wrap {
+    width: 100%;
+    height: 10px;
+    background: #e0e0e0;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+.therapy-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #27ae60, #f1c40f, #e67e22);
+    border-radius: 6px;
+    transition: width 0.5s ease;
+    min-width: 4px;
+}
+.therapy-progress-label {
+    font-size: 12px;
+    color: #666;
+    margin: 0 0 10px;
+}
 /* ═══════════════════════════════════════════════════════════════════════════
    MELHORIAS DE GAMEPLAY E UX — PR-Improvements
    ═══════════════════════════════════════════════════════════════════════════ */

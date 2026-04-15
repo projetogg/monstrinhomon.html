@@ -6,20 +6,43 @@
       "nodeId": "CITY_001",
       "type": "city",
       "unlockDefault": true,
-      "connections": ["LOC_001"]
+      "connections": [
+        "LOC_001"
+      ],
+      "encounterPool": []
     },
     {
       "nodeId": "LOC_001",
       "type": "exploration",
       "unlockDefault": true,
-      "connections": ["LOC_001B", "LOC_002", "CITY_001"]
+      "connections": [
+        "LOC_001B",
+        "LOC_002",
+        "CITY_001"
+      ],
+      "encounterPool": [
+        "ENC_001",
+        "ENC_002",
+        "ENC_003",
+        "ENC_004"
+      ]
     },
     {
       "nodeId": "LOC_001B",
       "type": "exploration",
       "unlockDefault": false,
-      "unlockRule": { "type": "win_n_battles_in_node", "nodeId": "LOC_001", "n": 1 },
-      "connections": ["LOC_001", "LOC_002", "LOC_003", "HEAL_001"]
+      "unlockRule": {
+        "type": "win_n_battles_in_node",
+        "nodeId": "LOC_001",
+        "n": 1
+      },
+      "connections": [
+        "LOC_001",
+        "LOC_002",
+        "LOC_003",
+        "HEAL_001"
+      ],
+      "encounterPool": []
     },
     {
       "nodeId": "HEAL_001",
@@ -32,50 +55,121 @@
       "nodeId": "LOC_002",
       "type": "exploration",
       "unlockDefault": false,
-      "unlockRule": { "type": "complete_node", "nodeId": "LOC_001" },
-      "connections": ["LOC_001B", "LOC_002B", "LOC_005"]
+      "unlockRule": {
+        "type": "complete_node",
+        "nodeId": "LOC_001"
+      },
+      "connections": [
+        "LOC_001B",
+        "LOC_002B",
+        "LOC_005"
+      ],
+      "encounterPool": [
+        "ENC_005",
+        "ENC_006",
+        "ENC_007",
+        "ENC_008",
+        "ENC_009"
+      ]
     },
     {
       "nodeId": "LOC_002B",
       "type": "exploration",
       "unlockDefault": false,
-      "unlockRule": { "type": "complete_node", "nodeId": "LOC_002" },
-      "connections": ["LOC_002", "LOC_002C", "LOC_004"]
+      "unlockRule": {
+        "type": "complete_node",
+        "nodeId": "LOC_002"
+      },
+      "connections": [
+        "LOC_002",
+        "LOC_002C",
+        "LOC_004"
+      ],
+      "encounterPool": []
     },
     {
       "nodeId": "LOC_002C",
       "type": "exploration",
       "unlockDefault": false,
-      "unlockRule": { "type": "complete_node", "nodeId": "LOC_002B" },
-      "connections": ["LOC_002B", "LOC_007"]
+      "unlockRule": {
+        "type": "complete_node",
+        "nodeId": "LOC_002B"
+      },
+      "connections": [
+        "LOC_002B",
+        "LOC_007"
+      ],
+      "encounterPool": []
     },
     {
       "nodeId": "LOC_003",
       "type": "exploration",
       "unlockDefault": false,
-      "unlockRule": { "type": "complete_node", "nodeId": "LOC_001B" },
-      "connections": ["LOC_001B", "LOC_003B"]
+      "unlockRule": {
+        "type": "complete_node",
+        "nodeId": "LOC_001B"
+      },
+      "connections": [
+        "LOC_001B",
+        "LOC_003B"
+      ],
+      "encounterPool": [
+        "ENC_010",
+        "ENC_011",
+        "ENC_012",
+        "ENC_013",
+        "ENC_014"
+      ]
     },
     {
       "nodeId": "LOC_003B",
       "type": "exploration",
       "unlockDefault": false,
-      "unlockRule": { "type": "complete_node", "nodeId": "LOC_003" },
-      "connections": ["LOC_003", "LOC_003C"]
+      "unlockRule": {
+        "type": "complete_node",
+        "nodeId": "LOC_003"
+      },
+      "connections": [
+        "LOC_003",
+        "LOC_003C"
+      ],
+      "encounterPool": []
     },
     {
       "nodeId": "LOC_003C",
       "type": "exploration",
       "unlockDefault": false,
-      "unlockRule": { "type": "complete_node", "nodeId": "LOC_003B" },
-      "connections": ["LOC_003B", "LOC_006"]
+      "unlockRule": {
+        "type": "complete_node",
+        "nodeId": "LOC_003B"
+      },
+      "connections": [
+        "LOC_003B",
+        "LOC_006"
+      ],
+      "encounterPool": []
     },
     {
       "nodeId": "LOC_004",
       "type": "exploration",
       "unlockDefault": false,
-      "unlockRule": { "type": "complete_node", "nodeId": "LOC_002B" },
-      "connections": ["LOC_002B", "LOC_004B", "SHOP_MID_01"]
+      "unlockRule": {
+        "type": "complete_node",
+        "nodeId": "LOC_002B"
+      },
+      "connections": [
+        "LOC_002B",
+        "LOC_004B",
+        "SHOP_MID_01"
+      ],
+      "encounterPool": [
+        "ENC_015",
+        "ENC_016",
+        "ENC_017",
+        "ENC_018",
+        "ENC_019",
+        "ENC_020"
+      ]
     },
     {
       "nodeId": "SHOP_MID_01",
@@ -88,64 +182,154 @@
       "nodeId": "LOC_004B",
       "type": "exploration",
       "unlockDefault": false,
-      "unlockRule": { "type": "complete_node", "nodeId": "LOC_004" },
-      "connections": ["LOC_004", "LOC_008"]
+      "unlockRule": {
+        "type": "complete_node",
+        "nodeId": "LOC_004"
+      },
+      "connections": [
+        "LOC_004",
+        "LOC_008"
+      ],
+      "encounterPool": []
     },
     {
       "nodeId": "LOC_005",
       "type": "exploration",
       "unlockDefault": false,
-      "unlockRule": { "type": "complete_node", "nodeId": "LOC_002" },
-      "connections": ["LOC_002", "LOC_005B"]
+      "unlockRule": {
+        "type": "complete_node",
+        "nodeId": "LOC_002"
+      },
+      "connections": [
+        "LOC_002",
+        "LOC_005B"
+      ],
+      "encounterPool": [
+        "ENC_021",
+        "ENC_022",
+        "ENC_023",
+        "ENC_024",
+        "ENC_025"
+      ]
     },
     {
       "nodeId": "LOC_005B",
       "type": "exploration",
       "unlockDefault": false,
-      "unlockRule": { "type": "complete_node", "nodeId": "LOC_005" },
-      "connections": ["LOC_005", "LOC_005C"]
+      "unlockRule": {
+        "type": "complete_node",
+        "nodeId": "LOC_005"
+      },
+      "connections": [
+        "LOC_005",
+        "LOC_005C"
+      ],
+      "encounterPool": []
     },
     {
       "nodeId": "LOC_005C",
       "type": "exploration",
       "unlockDefault": false,
-      "unlockRule": { "type": "complete_node", "nodeId": "LOC_005B" },
-      "connections": ["LOC_005B"]
+      "unlockRule": {
+        "type": "complete_node",
+        "nodeId": "LOC_005B"
+      },
+      "connections": [
+        "LOC_005B"
+      ],
+      "encounterPool": []
     },
     {
       "nodeId": "LOC_006",
       "type": "exploration",
       "unlockDefault": false,
-      "unlockRule": { "type": "complete_node", "nodeId": "LOC_003C" },
-      "connections": ["LOC_003C", "LOC_006B"]
+      "unlockRule": {
+        "type": "complete_node",
+        "nodeId": "LOC_003C"
+      },
+      "connections": [
+        "LOC_003C",
+        "LOC_006B"
+      ],
+      "encounterPool": [
+        "ENC_026",
+        "ENC_027",
+        "ENC_028",
+        "ENC_029",
+        "ENC_030"
+      ]
     },
     {
       "nodeId": "LOC_006B",
       "type": "exploration",
       "unlockDefault": false,
-      "unlockRule": { "type": "complete_node", "nodeId": "LOC_006" },
-      "connections": ["LOC_006", "LOC_008"]
+      "unlockRule": {
+        "type": "complete_node",
+        "nodeId": "LOC_006"
+      },
+      "connections": [
+        "LOC_006",
+        "LOC_008"
+      ],
+      "encounterPool": []
     },
     {
       "nodeId": "LOC_007",
       "type": "exploration",
       "unlockDefault": false,
-      "unlockRule": { "type": "complete_node", "nodeId": "LOC_002C" },
-      "connections": ["LOC_002C", "LOC_007B"]
+      "unlockRule": {
+        "type": "complete_node",
+        "nodeId": "LOC_002C"
+      },
+      "connections": [
+        "LOC_002C",
+        "LOC_007B"
+      ],
+      "encounterPool": [
+        "ENC_031",
+        "ENC_032",
+        "ENC_033",
+        "ENC_034",
+        "ENC_035"
+      ]
     },
     {
       "nodeId": "LOC_007B",
       "type": "exploration",
       "unlockDefault": false,
-      "unlockRule": { "type": "complete_node", "nodeId": "LOC_007" },
-      "connections": ["LOC_007", "LOC_008"]
+      "unlockRule": {
+        "type": "complete_node",
+        "nodeId": "LOC_007"
+      },
+      "connections": [
+        "LOC_007",
+        "LOC_008"
+      ],
+      "encounterPool": []
     },
     {
       "nodeId": "LOC_008",
       "type": "exploration",
       "unlockDefault": false,
-      "unlockRule": { "type": "complete_node", "nodeId": "LOC_004B" },
-      "connections": ["LOC_004B", "LOC_006B", "LOC_007B", "LOC_008B", "BOSS_FOREST_01", "HEAL_FINAL_01"]
+      "unlockRule": {
+        "type": "complete_node",
+        "nodeId": "LOC_004B"
+      },
+      "connections": [
+        "LOC_004B",
+        "LOC_006B",
+        "LOC_007B",
+        "LOC_008B",
+        "BOSS_FOREST_01",
+        "HEAL_FINAL_01"
+      ],
+      "encounterPool": [
+        "ENC_036",
+        "ENC_037",
+        "ENC_038",
+        "ENC_039",
+        "ENC_040"
+      ]
     },
     {
       "nodeId": "HEAL_FINAL_01",
@@ -158,41 +342,72 @@
       "nodeId": "LOC_008B",
       "type": "exploration",
       "unlockDefault": false,
-      "unlockRule": { "type": "win_n_battles_in_node", "nodeId": "LOC_008", "n": 3 },
-      "connections": ["LOC_008"]
+      "unlockRule": {
+        "type": "win_n_battles_in_node",
+        "nodeId": "LOC_008",
+        "n": 3
+      },
+      "connections": [
+        "LOC_008"
+      ],
+      "encounterPool": []
     },
     {
       "nodeId": "BOSS_FOREST_01",
       "type": "boss",
       "unlockDefault": false,
-      "unlockRule": { "type": "complete_node", "nodeId": "LOC_008" },
-      "connections": ["LOC_008", "LOC_009"],
+      "unlockRule": {
+        "type": "complete_node",
+        "nodeId": "LOC_008"
+      },
+      "connections": [
+        "LOC_008",
+        "LOC_009"
+      ],
       "bossMeta": {
         "bossLevel": 10,
         "regionId": "forest_arc_1",
         "regionLabel": "Floresta Antiga",
         "regionType": "main",
-        "unlocksNodes": ["LOC_009"],
+        "unlocksNodes": [
+          "LOC_009"
+        ],
         "defeatMarksRegionComplete": true,
         "bossLabel": "Guardião da Floresta",
         "bossFlavor": "Uma presença ancestral protege esta mata. Dizem que nenhum caçador voltou são de seu território.",
         "bossEncounterMode": "fixed_pool",
-        "bossPool": ["MON_023C", "MON_022B"]
-      }
+        "bossPool": [
+          "MON_023C",
+          "MON_022B"
+        ]
+      },
+      "encounterPool": []
     },
     {
       "nodeId": "LOC_009",
       "type": "exploration",
       "unlockDefault": false,
-      "unlockRule": { "type": "defeat_boss", "nodeId": "BOSS_FOREST_01" },
-      "connections": ["BOSS_FOREST_01"]
+      "unlockRule": {
+        "type": "defeat_boss",
+        "nodeId": "BOSS_FOREST_01"
+      },
+      "connections": [
+        "BOSS_FOREST_01"
+      ],
+      "encounterPool": []
     },
     {
       "nodeId": "BOSS_CAVES_OPT_01",
       "type": "boss",
       "unlockDefault": false,
-      "unlockRule": { "type": "complete_node", "nodeId": "LOC_005C" },
-      "connections": ["LOC_005C", "LOC_010"],
+      "unlockRule": {
+        "type": "complete_node",
+        "nodeId": "LOC_005C"
+      },
+      "connections": [
+        "LOC_005C",
+        "LOC_010"
+      ],
       "bossMeta": {
         "bossLevel": 8,
         "regionId": "caves_optional_1",
@@ -203,22 +418,38 @@
         "bossLabel": "Golem de Cristal",
         "bossFlavor": "Uma entidade formada por cristais vivos protege as cavernas há séculos.",
         "bossEncounterMode": "fixed_pool",
-        "bossPool": ["MON_027B", "MON_023B"]
-      }
+        "bossPool": [
+          "MON_027B",
+          "MON_023B"
+        ]
+      },
+      "encounterPool": []
     },
     {
       "nodeId": "LOC_010",
       "type": "exploration",
       "unlockDefault": false,
-      "unlockRule": { "type": "defeat_boss", "nodeId": "BOSS_CAVES_OPT_01" },
-      "connections": ["BOSS_CAVES_OPT_01"]
+      "unlockRule": {
+        "type": "defeat_boss",
+        "nodeId": "BOSS_CAVES_OPT_01"
+      },
+      "connections": [
+        "BOSS_CAVES_OPT_01"
+      ],
+      "encounterPool": []
     },
     {
       "nodeId": "BOSS_RUINS_SIDE_01",
       "type": "boss",
       "unlockDefault": false,
-      "unlockRule": { "type": "complete_node", "nodeId": "LOC_003B" },
-      "connections": ["LOC_003B", "LOC_011"],
+      "unlockRule": {
+        "type": "complete_node",
+        "nodeId": "LOC_003B"
+      },
+      "connections": [
+        "LOC_003B",
+        "LOC_011"
+      ],
       "bossMeta": {
         "bossLevel": 5,
         "regionId": "ruins_side_1",
@@ -229,15 +460,25 @@
         "bossLabel": "Guardião das Ruínas",
         "bossFlavor": "Uma construção de pedra animada pelos ecos do passado. Parece não gostar de visitas.",
         "bossEncounterMode": "fixed_pool",
-        "bossPool": ["MON_022B", "MON_027B"]
-      }
+        "bossPool": [
+          "MON_022B",
+          "MON_027B"
+        ]
+      },
+      "encounterPool": []
     },
     {
       "nodeId": "LOC_011",
       "type": "exploration",
       "unlockDefault": false,
-      "unlockRule": { "type": "defeat_boss", "nodeId": "BOSS_RUINS_SIDE_01" },
-      "connections": ["BOSS_RUINS_SIDE_01"]
+      "unlockRule": {
+        "type": "defeat_boss",
+        "nodeId": "BOSS_RUINS_SIDE_01"
+      },
+      "connections": [
+        "BOSS_RUINS_SIDE_01"
+      ],
+      "encounterPool": []
     }
   ]
 }

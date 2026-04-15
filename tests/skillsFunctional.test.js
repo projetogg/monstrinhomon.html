@@ -40,8 +40,8 @@ describe('Skills JSON — Cobertura de Classes', () => {
     const data = loadSkillsJsonRaw();
     const skills = data.skills;
 
-    it('deve ter versão 2 (expansão unificada)', () => {
-        expect(data.version).toBe(2);
+    it('deve ter versão 2.0.0 (FASE A — skills canônicas unificadas)', () => {
+        expect(data.version).toBe('2.0.0');
     });
 
     it('deve ter pelo menos 50 skills no catálogo', () => {
@@ -115,37 +115,49 @@ describe('Skills JSON — Cobertura de Classes', () => {
     });
 });
 
-describe('Skills JSON — IDs Legados Preservados', () => {
+describe('Skills JSON — IDs Canônicos FASE A', () => {
 
     const data = loadSkillsJsonRaw();
     const skillMap = new Map(data.skills.map(s => [s.id, s]));
 
-    const legacyIds = [
-        'SK_WAR_01', 'SK_WAR_02',
-        'SK_MAG_01', 'SK_MAG_02',
-        'SK_HEA_01', 'SK_HEA_02',
-        'SK_HUN_01',
-        'SK_BRD_01',
-        'GOLPE_ESPADA_I', 'GOLPE_ESPADA_II', 'GOLPE_ESPADA_III',
-        'ESCUDO_I', 'ESCUDO_II', 'ESCUDO_III',
-        'BOLA_FOGO_I', 'BOLA_FOGO_II', 'BOLA_FOGO_III'
+    // IDs canônicos FASE A (formato GROUPKEY_STAGE: _0, _1, _2)
+    const canonicalIds = [
+        'GOLPE_DE_ESPADA_0', 'GOLPE_DE_ESPADA_1', 'GOLPE_DE_ESPADA_2',
+        'ESCUDO_0', 'ESCUDO_1', 'ESCUDO_2',
+        'PROVOCAR_1', 'PROVOCAR_2',
+        'CURA_0', 'CURA_1', 'CURA_2',
+        'BENCAO_0', 'BENCAO_1', 'BENCAO_2',
+        'MAGIA_ELEMENTAL_0', 'MAGIA_ELEMENTAL_1', 'MAGIA_ELEMENTAL_2',
+        'EXPLOSAO_ELEMENTAL_0', 'EXPLOSAO_ELEMENTAL_1', 'EXPLOSAO_ELEMENTAL_2',
+        'ESCUDO_ARCANO_0', 'ESCUDO_ARCANO_1', 'ESCUDO_ARCANO_2',
+        'FURIA_0', 'FURIA_1', 'FURIA_2',
+        'GOLPE_BRUTAL_0', 'GOLPE_BRUTAL_1', 'GOLPE_BRUTAL_2',
+        'ATAQUE_PRECISO_0', 'ATAQUE_PRECISO_1', 'ATAQUE_PRECISO_2',
+        'ENFRAQUECER_1', 'ENFRAQUECER_2',
+        'CANCAO_CORAGEM_0', 'CANCAO_CORAGEM_1', 'CANCAO_CORAGEM_2',
+        'CANCAO_CALMANTE_0', 'CANCAO_CALMANTE_1', 'CANCAO_CALMANTE_2',
+        'NOTA_DISCORDANTE_0', 'NOTA_DISCORDANTE_1', 'NOTA_DISCORDANTE_2',
+        'FLECHA_PODEROSA_0', 'FLECHA_PODEROSA_1', 'FLECHA_PODEROSA_2',
+        'ARMADILHA_1', 'ARMADILHA_2',
+        'INVESTIDA_BESTIAL_0', 'INVESTIDA_BESTIAL_1', 'INVESTIDA_BESTIAL_2',
+        'INSTINTO_SELVAGEM_0', 'INSTINTO_SELVAGEM_1', 'INSTINTO_SELVAGEM_2',
     ];
 
-    it('todos os IDs legados devem estar preservados', () => {
-        for (const id of legacyIds) {
+    it('todos os IDs canônicos FASE A devem existir', () => {
+        for (const id of canonicalIds) {
             expect(
                 skillMap.has(id),
-                `ID legado "${id}" deveria existir no JSON`
+                `ID canônico "${id}" deveria existir no JSON`
             ).toBe(true);
         }
     });
 
-    it('IDs legados devem manter classe original', () => {
-        expect(skillMap.get('SK_WAR_01').class).toBe('Guerreiro');
-        expect(skillMap.get('SK_MAG_01').class).toBe('Mago');
-        expect(skillMap.get('SK_HEA_01').class).toBe('Curandeiro');
-        expect(skillMap.get('SK_HUN_01').class).toBe('Caçador');
-        expect(skillMap.get('SK_BRD_01').class).toBe('Bardo');
+    it('IDs canônicos devem manter classe correta', () => {
+        expect(skillMap.get('ESCUDO_0').class).toBe('Guerreiro');
+        expect(skillMap.get('MAGIA_ELEMENTAL_0').class).toBe('Mago');
+        expect(skillMap.get('CURA_0').class).toBe('Curandeiro');
+        expect(skillMap.get('FLECHA_PODEROSA_0').class).toBe('Caçador');
+        expect(skillMap.get('CANCAO_CORAGEM_0').class).toBe('Bardo');
     });
 });
 
@@ -154,36 +166,36 @@ describe('Skills JSON — Skills SKILL_DEFS Representadas', () => {
     const data = loadSkillsJsonRaw();
     const skillMap = new Map(data.skills.map(s => [s.id, s]));
 
-    // SKILL_DEFS tiered skills que devem estar no JSON
+    // SKILL_DEFS tiered skills que devem estar no JSON (FASE A — sufixo _stageIndex)
     const skillDefsEntries = [
         // Guerreiro
-        { id: 'GOLPE_DE_ESPADA_I', name: 'Golpe de Espada I', class: 'Guerreiro' },
-        { id: 'GOLPE_DE_ESPADA_II', name: 'Golpe de Espada II', class: 'Guerreiro' },
-        { id: 'GOLPE_DE_ESPADA_III', name: 'Golpe de Espada III', class: 'Guerreiro' },
-        { id: 'PROVOCAR_I', name: 'Provocar I', class: 'Guerreiro' },
-        { id: 'PROVOCAR_II', name: 'Provocar II', class: 'Guerreiro' },
+        { id: 'GOLPE_DE_ESPADA_0', name: 'Golpe de Espada I', class: 'Guerreiro' },
+        { id: 'GOLPE_DE_ESPADA_1', name: 'Golpe de Espada II', class: 'Guerreiro' },
+        { id: 'GOLPE_DE_ESPADA_2', name: 'Golpe de Espada III', class: 'Guerreiro' },
+        { id: 'PROVOCAR_1', name: 'Provocar I', class: 'Guerreiro' },
+        { id: 'PROVOCAR_2', name: 'Provocar II', class: 'Guerreiro' },
         // Curandeiro
-        { id: 'CURA_I', name: 'Cura I', class: 'Curandeiro' },
-        { id: 'CURA_III', name: 'Cura III', class: 'Curandeiro' },
-        { id: 'BENCAO_I', name: 'Bênção I', class: 'Curandeiro' },
+        { id: 'CURA_0', name: 'Cura I', class: 'Curandeiro' },
+        { id: 'CURA_2', name: 'Cura III', class: 'Curandeiro' },
+        { id: 'BENCAO_0', name: 'Bênção I', class: 'Curandeiro' },
         // Mago
-        { id: 'MAGIA_ELEMENTAL_I', name: 'Magia Elemental I', class: 'Mago' },
-        { id: 'EXPLOSAO_ELEMENTAL_III', name: 'Explosão Elemental III', class: 'Mago' },
+        { id: 'MAGIA_ELEMENTAL_0', name: 'Magia Elemental I', class: 'Mago' },
+        { id: 'EXPLOSAO_ELEMENTAL_2', name: 'Explosão Elemental III', class: 'Mago' },
         // Bárbaro
-        { id: 'FURIA_I', name: 'Fúria I', class: 'Bárbaro' },
-        { id: 'GOLPE_BRUTAL_I', name: 'Golpe Brutal I', class: 'Bárbaro' },
+        { id: 'FURIA_0', name: 'Fúria I', class: 'Bárbaro' },
+        { id: 'GOLPE_BRUTAL_0', name: 'Golpe Brutal I', class: 'Bárbaro' },
         // Ladino
-        { id: 'ATAQUE_PRECISO_I', name: 'Ataque Preciso I', class: 'Ladino' },
-        { id: 'ENFRAQUECER_I', name: 'Enfraquecer I', class: 'Ladino' },
+        { id: 'ATAQUE_PRECISO_0', name: 'Ataque Preciso I', class: 'Ladino' },
+        { id: 'ENFRAQUECER_1', name: 'Enfraquecer I', class: 'Ladino' },
         // Bardo
-        { id: 'CANCAO_DE_CORAGEM_I', name: 'Canção de Coragem I', class: 'Bardo' },
-        { id: 'CANCAO_CALMANTE_I', name: 'Canção Calmante I', class: 'Bardo' },
+        { id: 'CANCAO_CORAGEM_0', name: 'Canção de Coragem I', class: 'Bardo' },
+        { id: 'CANCAO_CALMANTE_0', name: 'Canção Calmante I', class: 'Bardo' },
         // Caçador
-        { id: 'FLECHA_PODEROSA_I', name: 'Flecha Poderosa I', class: 'Caçador' },
-        { id: 'ARMADILHA_I', name: 'Armadilha I', class: 'Caçador' },
+        { id: 'FLECHA_PODEROSA_0', name: 'Flecha Poderosa I', class: 'Caçador' },
+        { id: 'ARMADILHA_1', name: 'Armadilha I', class: 'Caçador' },
         // Animalista
-        { id: 'INVESTIDA_BESTIAL_I', name: 'Investida Bestial I', class: 'Animalista' },
-        { id: 'INSTINTO_SELVAGEM_I', name: 'Instinto Selvagem I', class: 'Animalista' },
+        { id: 'INVESTIDA_BESTIAL_0', name: 'Investida Bestial I', class: 'Animalista' },
+        { id: 'INSTINTO_SELVAGEM_0', name: 'Instinto Selvagem I', class: 'Animalista' },
     ];
 
     for (const entry of skillDefsEntries) {
@@ -244,20 +256,20 @@ describe('Skills JSON — Carregamento via SkillsLoader', () => {
         const map = getSkillsMapSync();
 
         // Bárbaro
-        expect(map.has('FURIA_I')).toBe(true);
-        expect(map.get('FURIA_I').class).toBe('Bárbaro');
+        expect(map.has('FURIA_0')).toBe(true);
+        expect(map.get('FURIA_0').class).toBe('Bárbaro');
 
         // Ladino
-        expect(map.has('ATAQUE_PRECISO_I')).toBe(true);
-        expect(map.get('ATAQUE_PRECISO_I').class).toBe('Ladino');
+        expect(map.has('ATAQUE_PRECISO_0')).toBe(true);
+        expect(map.get('ATAQUE_PRECISO_0').class).toBe('Ladino');
 
         // Animalista
-        expect(map.has('INVESTIDA_BESTIAL_I')).toBe(true);
-        expect(map.get('INVESTIDA_BESTIAL_I').class).toBe('Animalista');
+        expect(map.has('INVESTIDA_BESTIAL_0')).toBe(true);
+        expect(map.get('INVESTIDA_BESTIAL_0').class).toBe('Animalista');
     });
 
     it('normalizeSkillData deve preservar tier e status', () => {
-        const skill = rawData.skills.find(s => s.id === 'FURIA_I');
+        const skill = rawData.skills.find(s => s.id === 'FURIA_0');
         const normalized = normalizeSkillData(skill);
 
         expect(normalized.tier).toBe(1);
@@ -266,65 +278,65 @@ describe('Skills JSON — Carregamento via SkillsLoader', () => {
     });
 });
 
-describe('Skills JSON — Deprecation e Alinhamento com SKILL_DEFS', () => {
+describe('Skills JSON — Alinhamento com SKILL_DEFS (FASE A)', () => {
 
     const data = loadSkillsJsonRaw();
     const skillMap = new Map(data.skills.map(s => [s.id, s]));
 
-    // Skills piloto que foram substituídas por versões canônicas do SKILL_DEFS
-    const deprecatedPairs = [
-        { old: 'GOLPE_ESPADA_I', canonical: 'GOLPE_DE_ESPADA_I' },
-        { old: 'GOLPE_ESPADA_II', canonical: 'GOLPE_DE_ESPADA_II' },
-        { old: 'GOLPE_ESPADA_III', canonical: 'GOLPE_DE_ESPADA_III' },
-        { old: 'BOLA_FOGO_I', canonical: 'MAGIA_ELEMENTAL_I' },
-        { old: 'BOLA_FOGO_II', canonical: 'MAGIA_ELEMENTAL_II' },
-        { old: 'BOLA_FOGO_III', canonical: 'MAGIA_ELEMENTAL_III' },
-    ];
-
-    for (const { old, canonical } of deprecatedPairs) {
-        it(`${old} deve estar marcada como deprecated com replacedBy=${canonical}`, () => {
-            const skill = skillMap.get(old);
-            expect(skill, `${old} deveria existir`).toBeDefined();
-            expect(skill.deprecated).toBe(true);
-            expect(skill.replacedBy).toBe(canonical);
-        });
-
-        it(`versão canônica ${canonical} deve existir e NÃO ser deprecated`, () => {
-            const skill = skillMap.get(canonical);
-            expect(skill, `${canonical} deveria existir`).toBeDefined();
-            expect(skill.deprecated).toBeFalsy();
-        });
-    }
-
-    it('ESCUDO_I/II/III energy_cost devem alinhar com SKILL_DEFS (4/6/8)', () => {
-        expect(skillMap.get('ESCUDO_I').energy_cost).toBe(4);
-        expect(skillMap.get('ESCUDO_II').energy_cost).toBe(6);
-        expect(skillMap.get('ESCUDO_III').energy_cost).toBe(8);
+    it('ESCUDO_0/1/2 energy_cost devem alinhar com SKILL_DEFS (4/6/8)', () => {
+        expect(skillMap.get('ESCUDO_0').energy_cost).toBe(4);
+        expect(skillMap.get('ESCUDO_1').energy_cost).toBe(6);
+        expect(skillMap.get('ESCUDO_2').energy_cost).toBe(8);
     });
 
     it('skills canônicas de Guerreiro devem ter power alinhado com SKILL_DEFS', () => {
-        // SKILL_DEFS: Golpe de Espada I/II/III → power 18/24/30
-        expect(skillMap.get('GOLPE_DE_ESPADA_I').power).toBe(18);
-        expect(skillMap.get('GOLPE_DE_ESPADA_II').power).toBe(24);
-        expect(skillMap.get('GOLPE_DE_ESPADA_III').power).toBe(30);
+        // SKILL_DEFS: Golpe de Espada stages 0/1/2 → power 14/20/28
+        expect(skillMap.get('GOLPE_DE_ESPADA_0').power).toBe(14);
+        expect(skillMap.get('GOLPE_DE_ESPADA_1').power).toBe(20);
+        expect(skillMap.get('GOLPE_DE_ESPADA_2').power).toBe(28);
     });
 
     it('skills canônicas de Mago devem ter power alinhado com SKILL_DEFS', () => {
-        // SKILL_DEFS: Magia Elemental I/II/III → power 20/26/32
-        expect(skillMap.get('MAGIA_ELEMENTAL_I').power).toBe(20);
-        expect(skillMap.get('MAGIA_ELEMENTAL_II').power).toBe(26);
-        expect(skillMap.get('MAGIA_ELEMENTAL_III').power).toBe(32);
-        // SKILL_DEFS: Explosão Elemental I/II/III → power 24/32/38
-        expect(skillMap.get('EXPLOSAO_ELEMENTAL_I').power).toBe(24);
-        expect(skillMap.get('EXPLOSAO_ELEMENTAL_II').power).toBe(32);
-        expect(skillMap.get('EXPLOSAO_ELEMENTAL_III').power).toBe(38);
+        // SKILL_DEFS: Magia Elemental stages 0/1/2 → power 15/20/28
+        expect(skillMap.get('MAGIA_ELEMENTAL_0').power).toBe(15);
+        expect(skillMap.get('MAGIA_ELEMENTAL_1').power).toBe(20);
+        expect(skillMap.get('MAGIA_ELEMENTAL_2').power).toBe(28);
+        // SKILL_DEFS: Explosão Elemental stages 0/1/2 → power 18/26/34
+        expect(skillMap.get('EXPLOSAO_ELEMENTAL_0').power).toBe(18);
+        expect(skillMap.get('EXPLOSAO_ELEMENTAL_1').power).toBe(26);
+        expect(skillMap.get('EXPLOSAO_ELEMENTAL_2').power).toBe(34);
     });
 
     it('skills canônicas de Bárbaro devem ter power alinhado com SKILL_DEFS', () => {
-        // SKILL_DEFS: Golpe Brutal I/II/III → power 24/32/38
-        expect(skillMap.get('GOLPE_BRUTAL_I').power).toBe(24);
-        expect(skillMap.get('GOLPE_BRUTAL_II').power).toBe(32);
-        expect(skillMap.get('GOLPE_BRUTAL_III').power).toBe(38);
+        // SKILL_DEFS: Golpe Brutal stages 0/1/2 → power 18/26/34
+        expect(skillMap.get('GOLPE_BRUTAL_0').power).toBe(18);
+        expect(skillMap.get('GOLPE_BRUTAL_1').power).toBe(26);
+        expect(skillMap.get('GOLPE_BRUTAL_2').power).toBe(34);
+    });
+
+    it('FURIA_0/1/2 devem ter debuffType e debuffPower (Fúria tem self-debuff)', () => {
+        expect(skillMap.get('FURIA_0').debuffType).toBe('DEF');
+        expect(skillMap.get('FURIA_0').debuffPower).toBe(-1);
+        expect(skillMap.get('FURIA_1').debuffPower).toBe(-2);
+        expect(skillMap.get('FURIA_2').debuffPower).toBe(-2);
+    });
+
+    it('ENFRAQUECER_1/2 devem ter power negativo (debuff)', () => {
+        expect(skillMap.get('ENFRAQUECER_1').power).toBe(-2);
+        expect(skillMap.get('ENFRAQUECER_2').power).toBe(-3);
+    });
+
+    it('ARMADILHA_1/2 devem ter power negativo (debuff SPD)', () => {
+        expect(skillMap.get('ARMADILHA_1').power).toBe(-2);
+        expect(skillMap.get('ARMADILHA_2').power).toBe(-3);
+    });
+
+    it('skills devem ter campos FASE A (groupKey e stageIndex)', () => {
+        expect(skillMap.get('ESCUDO_0').groupKey).toBe('Escudo');
+        expect(skillMap.get('ESCUDO_0').stageIndex).toBe(0);
+        expect(skillMap.get('ESCUDO_1').stageIndex).toBe(1);
+        expect(skillMap.get('ESCUDO_2').stageIndex).toBe(2);
+        expect(skillMap.get('PROVOCAR_1').stageIndex).toBe(1);
     });
 });
 
