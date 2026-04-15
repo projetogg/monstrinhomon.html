@@ -192,18 +192,18 @@ describe('validateSkillSchema - Validação de Schema', () => {
         expect(validateSkillSchema(skill2)).toBe(false);
     });
     
-    it('deve retornar false se power é negativo', () => {
+    it('deve aceitar power negativo (debuff skills como Enfraquecer e Armadilha)', () => {
         const skill = {
             id: 'SK_001',
-            name: 'Test',
-            class: 'Guerreiro',
-            category: 'Ataque',
+            name: 'Enfraquecer',
+            class: 'Ladino',
+            category: 'Suporte',
             power: -5,
             accuracy: 0.85,
             energy_cost: 4,
             target: 'Inimigo'
         };
-        expect(validateSkillSchema(skill)).toBe(false);
+        expect(validateSkillSchema(skill)).toBe(true);
     });
     
     it('deve aceitar power 0 (para skills de cura/suporte)', () => {

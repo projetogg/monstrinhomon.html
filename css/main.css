@@ -1239,6 +1239,19 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     min-width: auto;
 }
 
+/* FASE P: Botão de troca no card de time */
+.btn-trade {
+    padding: 2px 6px;
+    font-size: 13px;
+    min-height: 24px;
+    min-width: auto;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+}
+.btn-trade:hover {
+    opacity: 1;
+}
+
 /* Modal Overlay */
 .modal-overlay-fixed {
     position: fixed;
@@ -4695,4 +4708,375 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
 .trade-mon-card.selected {
     border-color: #3498db !important;
     background: rgba(52,152,219,0.08) !important;
+/* ── Therapy Progress Bar (FASE M) ─────────────────────────────────────────── */
+.therapy-medals-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
 }
+.medal-badge {
+    font-size: 24px;
+    opacity: 0.25;
+    filter: grayscale(1);
+    transition: opacity 0.3s, filter 0.3s, transform 0.3s;
+}
+.medal-badge--earned {
+    opacity: 1;
+    filter: none;
+    animation: medal-pop 0.4s ease-out;
+}
+@keyframes medal-pop {
+    0%   { transform: scale(0.5); opacity: 0; }
+    70%  { transform: scale(1.25); }
+    100% { transform: scale(1); opacity: 1; }
+}
+.therapy-progress-wrap {
+    width: 100%;
+    height: 10px;
+    background: #e0e0e0;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+.therapy-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #27ae60, #f1c40f, #e67e22);
+    border-radius: 6px;
+    transition: width 0.5s ease;
+    min-width: 4px;
+}
+.therapy-progress-label {
+    font-size: 12px;
+    color: #666;
+    margin: 0 0 10px;
+}
+/* ═══════════════════════════════════════════════════════════════════════════
+   MELHORIAS DE GAMEPLAY E UX — PR-Improvements
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Intro Screen — animação de fundo com partículas flutuantes ─────────── */
+#mmIntro .mm-card {
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    padding: 32px 24px;
+}
+#mmIntro .mm-title {
+    font-size: 38px;
+    background: linear-gradient(135deg, #20ddcc, #a060ff, #ffd740);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+}
+#mmIntro .mm-sub {
+    font-size: 15px;
+    opacity: 0.8;
+}
+.mm-intro-particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+.mm-intro-particle {
+    position: absolute;
+    font-size: 20px;
+    opacity: 0;
+    animation: mm-particle-float linear infinite;
+}
+@keyframes mm-particle-float {
+    0%   { opacity: 0;   transform: translateY(0) rotate(0deg);   }
+    10%  { opacity: 0.6; }
+    90%  { opacity: 0.4; }
+    100% { opacity: 0;   transform: translateY(-200px) rotate(20deg); }
+}
+#mmIntro .mm-btn {
+    background: linear-gradient(135deg, #20ddcc 0%, #a060ff 100%);
+    color: #fff;
+    font-size: 18px;
+    font-weight: 900;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 16px;
+    margin-top: 12px;
+    box-shadow: 0 4px 24px rgba(32,221,204,0.35);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+#mmIntro .mm-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(32,221,204,0.5); }
+
+/* ── Wizard: Class Preview ──────────────────────────────────────────────── */
+.mm-class-preview {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin: 10px 0;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    transition: border-color 0.2s;
+}
+.mm-class-preview__icon {
+    font-size: 32px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.mm-class-preview__info {
+    flex: 1;
+    min-width: 0;
+}
+.mm-class-preview__name {
+    font-size: 16px;
+    font-weight: 800;
+    margin: 0 0 4px;
+}
+.mm-class-preview__desc {
+    font-size: 12px;
+    opacity: 0.75;
+    margin: 0 0 6px;
+    line-height: 1.4;
+}
+.mm-class-preview__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.mm-class-preview__tag {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.85);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ── Auto-save Indicator ────────────────────────────────────────────────── */
+#autosaveIndicator {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.75);
+    background: rgba(20,20,28,0.85);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 4px 10px;
+    z-index: 8000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+#autosaveIndicator.visible {
+    opacity: 1;
+}
+
+/* ── Healing Modal ──────────────────────────────────────────────────────── */
+#healModal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.72);
+    z-index: 9990;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+#healModal.hidden { display: none; }
+.heal-modal-card {
+    background: linear-gradient(180deg, #112a1a 0%, #0d1f14 100%);
+    border: 1.5px solid rgba(74,223,136,0.3);
+    border-radius: 20px;
+    padding: 20px;
+    width: min(480px, 100%);
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,180,80,0.2);
+}
+.heal-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.heal-modal-npc {
+    font-size: 40px;
+    flex-shrink: 0;
+}
+.heal-modal-title {
+    font-size: 18px;
+    font-weight: 900;
+    color: #4adf88;
+    margin: 0 0 2px;
+}
+.heal-modal-flavor {
+    font-size: 12px;
+    color: rgba(255,255,255,0.65);
+    margin: 0;
+    font-style: italic;
+}
+.heal-modal-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.heal-modal-monster {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+.heal-modal-monster__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+.heal-modal-monster__name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+}
+.heal-modal-monster__hp-text {
+    font-size: 11px;
+    color: rgba(255,255,255,0.65);
+}
+.heal-modal-hp-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.heal-modal-hp-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #e74c3c, #e67e22);
+    transition: width 0.6s ease, background 0.6s ease;
+}
+.heal-modal-hp-fill.full {
+    background: linear-gradient(90deg, #27ae60, #4adf88);
+}
+.heal-modal-monster--fainted .heal-modal-monster__name {
+    color: rgba(255,255,255,0.45);
+}
+.heal-modal-footer {
+    display: flex;
+    gap: 10px;
+}
+.heal-modal-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: none;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.heal-modal-btn--primary {
+    background: linear-gradient(135deg, #27ae60 0%, #4adf88 100%);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(39,174,96,0.4);
+}
+.heal-modal-btn--primary:hover { transform: translateY(-1px); }
+.heal-modal-btn--secondary {
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.8);
+    border: 1px solid rgba(255,255,255,0.12);
+}
+.heal-all-success {
+    text-align: center;
+    padding: 12px;
+    color: #4adf88;
+    font-size: 15px;
+    font-weight: 700;
+    animation: fadeIn 0.3s ease;
+}
+
+/* ── HP Bar Impact Animation (batalha) ─────────────────────────────────── */
+@keyframes hpBarShake {
+    0%,100% { transform: translateX(0); }
+    20%     { transform: translateX(-4px); }
+    40%     { transform: translateX(4px); }
+    60%     { transform: translateX(-3px); }
+    80%     { transform: translateX(2px); }
+}
+@keyframes hpBarFlash {
+    0%,100% { opacity: 1; }
+    50%     { opacity: 0.35; }
+}
+.hp-bar-wrap--damage {
+    animation: hpBarShake 0.35s ease;
+}
+.hp-bar-fill--damage {
+    animation: hpBarFlash 0.35s ease;
+}
+
+/* ── Damage Preview Tooltip ─────────────────────────────────────────────── */
+.dmg-preview-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20,20,28,0.92);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #ffd740;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+.dmg-preview-btn {
+    position: relative;
+}
+.dmg-preview-btn:hover .dmg-preview-tooltip { opacity: 1; }
+
+/* ── Node Card: Healing/Shop Services ───────────────────────────────────── */
+.ow-node-card--state-healing {
+    border-color: rgba(74,223,136,0.4);
+}
+.ow-node-card--state-healing .ow-node-card__name {
+    color: #4adf88;
+}
+.ow-node-card--state-shop {
+    border-color: rgba(255,215,64,0.4);
+}
+.ow-node-card--state-shop .ow-node-card__name {
+    color: #ffd740;
+}
+.ow-sidebar__service-btn {
+    display: block;
+    width: 100%;
+    padding: 11px 16px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(74,223,136,0.4);
+    background: rgba(39,174,96,0.12);
+    color: #4adf88;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+.ow-sidebar__service-btn:hover {
+    background: rgba(39,174,96,0.22);
+    border-color: rgba(74,223,136,0.7);
+    transform: translateY(-1px);
+}
+.ow-sidebar__service-btn--shop {
+    border-color: rgba(255,215,64,0.4);
+    background: rgba(120,100,10,0.15);
+    color: #ffd740;
+}
+.ow-sidebar__service-btn--shop:hover {
+    background: rgba(120,100,10,0.28);
+    border-color: rgba(255,215,64,0.7);}

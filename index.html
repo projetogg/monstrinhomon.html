@@ -550,10 +550,11 @@
     <!-- ===== Feature 4.0 Overlays ===== -->
     <div id="mmIntro" class="mm-overlay">
         <div class="mm-card">
+            <div class="mm-intro-particles" id="mmIntroParticles"></div>
             <div class="mm-title">🎮 Monstrinhomon</div>
-            <p class="mm-sub">RPG terapêutico infantil (Pokémon + RPG).<br/>Clique para começar.</p>
+            <p class="mm-sub">RPG terapêutico de monstros capturáveis.<br/>Capture, batalhe, evolua!</p>
             <button class="mm-btn" onclick="mmShowMainMenu()">✨ Iniciar</button>
-            <p class="mm-hint">Dica: o jogo salva automaticamente em seu navegador.</p>
+            <p class="mm-hint">💾 O jogo salva automaticamente no navegador.</p>
         </div>
     </div>
 
@@ -696,9 +697,15 @@
         
         // Import progression modules (PR8A)
         import Progression from './js/progression/index.js';
+
+        // Import friendship system module (FASE R)
+        import * as FriendshipSystem from './js/progression/friendshipSystem.js';
         
         // Import data modules (PR9B)
         import * as Data from './js/data/index.js';
+
+        // Import shiny system module (FASE T)
+        import * as ShinySystem from './js/data/shinySystem.js';
 
         // Import Game Flow module (Quest progression runtime)
         import * as GameFlow from './js/gameFlow.js';
@@ -734,6 +741,10 @@
         import * as EncounterEngine from './js/encounter/encounterEngine.js';
         window.EncounterEngine = EncounterEngine;
 
+        // Encounter Pool — Pool de encontros por nó do mapa (FASE I)
+        import * as EncounterPool from './js/encounter/encounterPool.js';
+        window.EncounterPool = EncounterPool;
+
         // Species Bridge — Fase 3: ponte runtime → espécie canônica + aplicação de offsets
         import * as SpeciesBridge from './js/canon/speciesBridge.js';
         window.SpeciesBridge = SpeciesBridge;
@@ -756,7 +767,29 @@
 
         // Fase 20: Funções puras de categorização de troca em batalha
         import * as BattleSwap from './js/combat/battleSwap.js';
+
+        // Therapy Rewards — Recompensas de medalhas terapêuticas (FASE H)
+        import * as TherapyRewards from './js/therapy/therapyRewards.js';
+        // Evolution System — Funções puras de evolução (FASE L)
+        import * as EvolutionSystem from './js/data/evolutionSystem.js';
+        // Trade System — Troca de Monstrinhos entre jogadores (FASE O)
+        import * as TradeSystem from './js/trade/tradeSystem.js';
         window.BattleSwap = BattleSwap;
+
+        // FASE H: Therapy Rewards disponível globalmente
+        window.TherapyRewards = TherapyRewards;
+
+        // FASE L: Evolution System disponível globalmente
+        window.EvolutionSystem = EvolutionSystem;
+
+        // FASE O: Trade System disponível globalmente
+        window.TradeSystem = TradeSystem;
+
+        // FASE R: Friendship System disponível globalmente
+        window.FriendshipSystem = FriendshipSystem;
+
+        // FASE T: Shiny System disponível globalmente
+        window.ShinySystem = ShinySystem;
 
         // Inicia o carregamento canônico imediatamente após o parse do módulo,
         // antes de qualquer chamada a init(). Isso garante que o fetch já estará
@@ -1256,76 +1289,11 @@
         // para todas as funções que o utilizam
         const DEFAULT_FRIENDSHIP = 50;
 
-        // MONSTER CATALOG (baseado em MONSTROS.csv)
-        const MONSTER_CATALOG = [
-            { id: 'MON_001', name: 'Cantapau', class: 'Bardo', rarity: 'Comum', baseHp: 28, baseAtk: 6, baseDef: 4, baseSpd: 6, baseEne: 8, emoji: '🎵' },
-            { id: 'MON_002', name: 'Pedrino', class: 'Guerreiro', rarity: 'Comum', baseHp: 32, baseAtk: 7, baseDef: 6, baseSpd: 5, baseEne: 6, emoji: '⚔️', evolvesTo: 'MON_002B', evolvesAt: 12 },
-            { id: 'MON_002B', name: 'Pedronar', class: 'Guerreiro', rarity: 'Incomum', baseHp: 42, baseAtk: 10, baseDef: 8, baseSpd: 6, baseEne: 6, emoji: '⚔️', evolvesTo: 'MON_002C', evolvesAt: 25 },
-            { id: 'MON_002C', name: 'Pedragon', class: 'Guerreiro', rarity: 'Raro', baseHp: 56, baseAtk: 14, baseDef: 11, baseSpd: 8, baseEne: 6, emoji: '🗡️' },
-            { id: 'MON_003', name: 'Faíscari', class: 'Mago', rarity: 'Comum', baseHp: 26, baseAtk: 8, baseDef: 3, baseSpd: 7, baseEne: 10, emoji: '🔮' },
-            { id: 'MON_004', name: 'Ninfolha', class: 'Curandeiro', rarity: 'Comum', baseHp: 30, baseAtk: 4, baseDef: 4, baseSpd: 5, baseEne: 12, emoji: '💚' },
-            { id: 'MON_005', name: 'Garruncho', class: 'Caçador', rarity: 'Comum', baseHp: 29, baseAtk: 7, baseDef: 3, baseSpd: 8, baseEne: 8, emoji: '🏹' },
-            { id: 'MON_006', name: 'Lobinho', class: 'Animalista', rarity: 'Comum', baseHp: 31, baseAtk: 6, baseDef: 5, baseSpd: 5, baseEne: 7, emoji: '🐺' },
-            { id: 'MON_007', name: 'Trovão', class: 'Bárbaro', rarity: 'Comum', baseHp: 33, baseAtk: 8, baseDef: 4, baseSpd: 4, baseEne: 6, emoji: '⚡' },
-            { id: 'MON_008', name: 'Sombrio', class: 'Ladino', rarity: 'Comum', baseHp: 27, baseAtk: 7, baseDef: 4, baseSpd: 8, baseEne: 6, emoji: '🌑' },
-            { id: 'MON_010', name: 'Ferrozimon', class: 'Guerreiro', rarity: 'Comum', baseHp: 29, baseAtk: 7, baseDef: 9, baseSpd: 4, baseEne: 4, emoji: '⚔️', evolvesTo: 'MON_010B', evolvesAt: 12 },
-            { id: 'MON_010B', name: 'Cavalheiromon', class: 'Guerreiro', rarity: 'Incomum', baseHp: 39, baseAtk: 10, baseDef: 12, baseSpd: 5, baseEne: 5, emoji: '🗡️', evolvesTo: 'MON_010C', evolvesAt: 25 },
-            { id: 'MON_010C', name: 'Kinguespinhomon', class: 'Guerreiro', rarity: 'Raro', baseHp: 50, baseAtk: 14, baseDef: 16, baseSpd: 6, baseEne: 6, emoji: '🛡️', evolvesTo: 'MON_010D', evolvesAt: 45 },
-            { id: 'MON_010D', name: 'Arconouricomon', class: 'Guerreiro', rarity: 'Místico', baseHp: 63, baseAtk: 17, baseDef: 17, baseSpd: 8, baseEne: 9, emoji: '👑' },
-            { id: 'MON_011', name: 'Dinomon', class: 'Bardo', rarity: 'Comum', baseHp: 27, baseAtk: 6, baseDef: 5, baseSpd: 8, baseEne: 6, emoji: '🎵', evolvesTo: 'MON_011B', evolvesAt: 12 },
-            { id: 'MON_011B', name: 'Guitarapitormon', class: 'Bardo', rarity: 'Incomum', baseHp: 35, baseAtk: 8, baseDef: 6, baseSpd: 10, baseEne: 8, emoji: '🎸', evolvesTo: 'MON_011C', evolvesAt: 25 },
-            { id: 'MON_011C', name: 'TRockmon', class: 'Bardo', rarity: 'Raro', baseHp: 46, baseAtk: 11, baseDef: 9, baseSpd: 12, baseEne: 10, emoji: '🎹', evolvesTo: 'MON_011D', evolvesAt: 45 },
-            { id: 'MON_011D', name: 'Giganotometalmon', class: 'Bardo', rarity: 'Místico', baseHp: 60, baseAtk: 16, baseDef: 12, baseSpd: 11, baseEne: 12, emoji: '🎻' },
-            { id: 'MON_012', name: 'Luvursomon', class: 'Animalista', rarity: 'Comum', baseHp: 31, baseAtk: 6, baseDef: 6, baseSpd: 4, baseEne: 5, emoji: '🐻', evolvesTo: 'MON_012B', evolvesAt: 12 },
-            { id: 'MON_012B', name: 'Manoplamon', class: 'Animalista', rarity: 'Incomum', baseHp: 41, baseAtk: 10, baseDef: 8, baseSpd: 6, baseEne: 6, emoji: '🐾', evolvesTo: 'MON_012C', evolvesAt: 25 },
-            { id: 'MON_012C', name: 'BestBearmon', class: 'Animalista', rarity: 'Raro', baseHp: 54, baseAtk: 14, baseDef: 12, baseSpd: 6, baseEne: 7, emoji: '🦁', evolvesTo: 'MON_012D', evolvesAt: 45 },
-            { id: 'MON_012D', name: 'Ursauramon', class: 'Animalista', rarity: 'Místico', baseHp: 68, baseAtk: 18, baseDef: 14, baseSpd: 8, baseEne: 8, emoji: '🔱' },
-            { id: 'MON_013', name: 'Miaumon', class: 'Caçador', rarity: 'Comum', baseHp: 25, baseAtk: 8, baseDef: 4, baseSpd: 9, baseEne: 4, emoji: '🐱', evolvesTo: 'MON_013B', evolvesAt: 12 },
-            { id: 'MON_013B', name: 'Gatunamon', class: 'Caçador', rarity: 'Incomum', baseHp: 32, baseAtk: 10, baseDef: 6, baseSpd: 12, baseEne: 6, emoji: '🐈', evolvesTo: 'MON_013C', evolvesAt: 25 },
-            { id: 'MON_013C', name: 'Felinomon', class: 'Caçador', rarity: 'Raro', baseHp: 42, baseAtk: 14, baseDef: 7, baseSpd: 15, baseEne: 6, emoji: '🐆', evolvesTo: 'MON_013D', evolvesAt: 45 },
-            { id: 'MON_013D', name: 'Panterezamon', class: 'Caçador', rarity: 'Místico', baseHp: 54, baseAtk: 18, baseDef: 9, baseSpd: 18, baseEne: 8, emoji: '🐅' },
-            { id: 'MON_014', name: 'Lagartomon', class: 'Mago', rarity: 'Comum', baseHp: 24, baseAtk: 6, baseDef: 4, baseSpd: 6, baseEne: 8, emoji: '🦎', evolvesTo: 'MON_014B', evolvesAt: 12 },
-            { id: 'MON_014B', name: 'Salamandromon', class: 'Mago', rarity: 'Incomum', baseHp: 30, baseAtk: 8, baseDef: 6, baseSpd: 8, baseEne: 11, emoji: '🔥', evolvesTo: 'MON_014C', evolvesAt: 25 },
-            { id: 'MON_014C', name: 'Dracoflamemon', class: 'Mago', rarity: 'Raro', baseHp: 39, baseAtk: 12, baseDef: 8, baseSpd: 9, baseEne: 14, emoji: '🐉', evolvesTo: 'MON_014D', evolvesAt: 45 },
-            { id: 'MON_014D', name: 'Wizardragomon', class: 'Mago', rarity: 'Místico', baseHp: 48, baseAtk: 15, baseDef: 10, baseSpd: 10, baseEne: 18, emoji: '✨' },
-            { id: 'MON_020', name: 'Gotimon', class: 'Curandeiro', rarity: 'Comum', baseHp: 26, baseAtk: 4, baseDef: 5, baseSpd: 5, baseEne: 9, emoji: '💧', evolvesTo: 'MON_020B', evolvesAt: 15 },
-            { id: 'MON_020B', name: 'Lirialmon', class: 'Curandeiro', rarity: 'Incomum', baseHp: 33, baseAtk: 6, baseDef: 6, baseSpd: 6, baseEne: 12, emoji: '🌸', evolvesTo: 'MON_020C', evolvesAt: 30 },
-            { id: 'MON_020C', name: 'Serafloramon', class: 'Curandeiro', rarity: 'Raro', baseHp: 43, baseAtk: 7, baseDef: 9, baseSpd: 8, baseEne: 16, emoji: '🌟' },
-            { id: 'MON_021', name: 'Tamborilhomon', class: 'Bárbaro', rarity: 'Comum', baseHp: 32, baseAtk: 8, baseDef: 6, baseSpd: 4, baseEne: 4, emoji: '🥁', evolvesTo: 'MON_021B', evolvesAt: 15 },
-            { id: 'MON_021B', name: 'Rufamon', class: 'Bárbaro', rarity: 'Incomum', baseHp: 43, baseAtk: 11, baseDef: 8, baseSpd: 5, baseEne: 5, emoji: '💪', evolvesTo: 'MON_021C', evolvesAt: 30 },
-            { id: 'MON_021C', name: 'Trovatambormon', class: 'Bárbaro', rarity: 'Raro', baseHp: 56, baseAtk: 14, baseDef: 10, baseSpd: 6, baseEne: 7, emoji: '⚡' },
-            { id: 'MON_022', name: 'Corvimon', class: 'Ladino', rarity: 'Comum', baseHp: 23, baseAtk: 7, baseDef: 4, baseSpd: 10, baseEne: 6, emoji: '🐦', evolvesTo: 'MON_022B', evolvesAt: 15 },
-            { id: 'MON_022B', name: 'Noxcorvomon', class: 'Ladino', rarity: 'Incomum', baseHp: 30, baseAtk: 10, baseDef: 5, baseSpd: 12, baseEne: 8, emoji: '🌑', evolvesTo: 'MON_022C', evolvesAt: 30 },
-            { id: 'MON_022C', name: 'Umbraquimonom', class: 'Ladino', rarity: 'Raro', baseHp: 37, baseAtk: 14, baseDef: 7, baseSpd: 16, baseEne: 10, emoji: '👤' },
-            { id: 'MON_023', name: 'Cervimon', class: 'Animalista', rarity: 'Comum', baseHp: 28, baseAtk: 6, baseDef: 6, baseSpd: 7, baseEne: 6, emoji: '🦌', evolvesTo: 'MON_023B', evolvesAt: 15 },
-            { id: 'MON_023B', name: 'Galhantemon', class: 'Animalista', rarity: 'Incomum', baseHp: 36, baseAtk: 8, baseDef: 8, baseSpd: 10, baseEne: 8, emoji: '🌿', evolvesTo: 'MON_023C', evolvesAt: 30 },
-            { id: 'MON_023C', name: 'Bosquidalmon', class: 'Animalista', rarity: 'Raro', baseHp: 46, baseAtk: 10, baseDef: 10, baseSpd: 11, baseEne: 10, emoji: '🌳' },
-            { id: 'MON_024', name: 'Coralimon', class: 'Mago', rarity: 'Comum', baseHp: 24, baseAtk: 5, baseDef: 6, baseSpd: 6, baseEne: 8, emoji: '🐚', evolvesTo: 'MON_024B', evolvesAt: 15 },
-            { id: 'MON_024B', name: 'Recifalmon', class: 'Mago', rarity: 'Incomum', baseHp: 32, baseAtk: 8, baseDef: 7, baseSpd: 7, baseEne: 12, emoji: '🌊', evolvesTo: 'MON_024C', evolvesAt: 30 },
-            { id: 'MON_024C', name: 'Abissalquimon', class: 'Mago', rarity: 'Raro', baseHp: 41, baseAtk: 10, baseDef: 9, baseSpd: 8, baseEne: 15, emoji: '🔮' },
-            { id: 'MON_025', name: 'Pulimbon', class: 'Caçador', rarity: 'Comum', baseHp: 24, baseAtk: 6, baseDef: 4, baseSpd: 10, baseEne: 5, emoji: '🐰', evolvesTo: 'MON_025B', evolvesAt: 15 },
-            { id: 'MON_025B', name: 'Flecharelmon', class: 'Caçador', rarity: 'Incomum', baseHp: 30, baseAtk: 10, baseDef: 5, baseSpd: 14, baseEne: 6, emoji: '🏹', evolvesTo: 'MON_025C', evolvesAt: 30 },
-            { id: 'MON_025C', name: 'Relampejomon', class: 'Caçador', rarity: 'Raro', baseHp: 38, baseAtk: 12, baseDef: 6, baseSpd: 17, baseEne: 8, emoji: '⚡' },
-            { id: 'MON_026', name: 'Cascalhimon', class: 'Guerreiro', rarity: 'Comum', baseHp: 30, baseAtk: 6, baseDef: 8, baseSpd: 3, baseEne: 4, emoji: '🪨', evolvesTo: 'MON_026B', evolvesAt: 15 },
-            { id: 'MON_026B', name: 'Muralhimon', class: 'Guerreiro', rarity: 'Incomum', baseHp: 41, baseAtk: 9, baseDef: 12, baseSpd: 4, baseEne: 5, emoji: '🏰', evolvesTo: 'MON_026C', evolvesAt: 30 },
-            { id: 'MON_026C', name: 'Bastiaomon', class: 'Guerreiro', rarity: 'Raro', baseHp: 54, baseAtk: 11, baseDef: 16, baseSpd: 4, baseEne: 8, emoji: '🏔️' },
-            { id: 'MON_027', name: 'Zunzumon', class: 'Bardo', rarity: 'Comum', baseHp: 22, baseAtk: 4, baseDef: 4, baseSpd: 11, baseEne: 8, emoji: '🐝', evolvesTo: 'MON_027B', evolvesAt: 15 },
-            { id: 'MON_027B', name: 'Melodimon', class: 'Bardo', rarity: 'Incomum', baseHp: 28, baseAtk: 6, baseDef: 4, baseSpd: 14, baseEne: 10, emoji: '🎶', evolvesTo: 'MON_027C', evolvesAt: 30 },
-            { id: 'MON_027C', name: 'Rainhassommon', class: 'Bardo', rarity: 'Raro', baseHp: 36, baseAtk: 8, baseDef: 6, baseSpd: 15, baseEne: 12, emoji: '🎭' },
-            { id: 'MON_100', name: 'Rato-de-Lama', class: 'Guerreiro', rarity: 'Comum', baseHp: 20, baseAtk: 5, baseDef: 3, baseSpd: 4, baseEne: 4, emoji: '🐀' },
-            // Linha Curandeiro oficial: Nutrilo → Silvelio → Auravelo
-            { id: 'MON_028',  name: 'Nutrilo',  class: 'Curandeiro', rarity: 'Comum',   baseHp: 28, baseAtk: 3, baseDef: 5, baseSpd: 5, baseEne: 11, emoji: '🌿', evolvesTo: 'MON_028B', evolvesAt: 12 },
-            { id: 'MON_028B', name: 'Silvelio', class: 'Curandeiro', rarity: 'Incomum',  baseHp: 37, baseAtk: 5, baseDef: 7, baseSpd: 6, baseEne: 14, emoji: '🌸', evolvesTo: 'MON_028C', evolvesAt: 25 },
-            { id: 'MON_028C', name: 'Auravelo', class: 'Curandeiro', rarity: 'Raro',     baseHp: 48, baseAtk: 7, baseDef: 10, baseSpd: 8, baseEne: 17, emoji: '✨' },
-            // Linha Bárbaro oficial: Tigrumo → Rugigron → Bestigrar
-            { id: 'MON_029',  name: 'Tigrumo',  class: 'Bárbaro',   rarity: 'Comum',   baseHp: 34, baseAtk: 9, baseDef: 4, baseSpd: 5, baseEne: 5, emoji: '🐯', evolvesTo: 'MON_029B', evolvesAt: 12 },
-            { id: 'MON_029B', name: 'Rugigron', class: 'Bárbaro',   rarity: 'Incomum',  baseHp: 46, baseAtk: 13, baseDef: 6, baseSpd: 6, baseEne: 6, emoji: '🦁', evolvesTo: 'MON_029C', evolvesAt: 25 },
-            { id: 'MON_029C', name: 'Bestigrar', class: 'Bárbaro',  rarity: 'Raro',     baseHp: 60, baseAtk: 17, baseDef: 9, baseSpd: 7, baseEne: 7, emoji: '🐻' },
-            // Linha Ladino oficial: Furtilhon → Velurino → Sombrifur
-            { id: 'MON_030',  name: 'Furtilhon', class: 'Ladino',   rarity: 'Comum',   baseHp: 24, baseAtk: 8, baseDef: 3, baseSpd: 10, baseEne: 6, emoji: '🦊', evolvesTo: 'MON_030B', evolvesAt: 12 },
-            { id: 'MON_030B', name: 'Velurino',  class: 'Ladino',   rarity: 'Incomum',  baseHp: 31, baseAtk: 11, baseDef: 5, baseSpd: 13, baseEne: 8, emoji: '🌑', evolvesTo: 'MON_030C', evolvesAt: 25 },
-            { id: 'MON_030C', name: 'Sombrifur', class: 'Ladino',   rarity: 'Raro',     baseHp: 40, baseAtk: 15, baseDef: 7, baseSpd: 16, baseEne: 10, emoji: '👤' }
-        ];
+        // MONSTER CATALOG — LEGADO
+        // Dados canônicos estão em data/monsters.json (carregados via window.Data).
+        // Usar getMonstersArray() / getMonsterTemplate() em vez de acessar este array diretamente.
+        // Este array permanece como fallback de última instância caso o JSON não esteja disponível.
+        const MONSTER_CATALOG = [];
 
         // ENE REGEN CONSTANTS por classe (valores canônicos v2.2 — PATCH_CANONICO_COMBATE_V2.2.md BLOCO 4)
         const ENE_REGEN_BY_CLASS = {
@@ -1351,8 +1319,13 @@
             'Animalista': 7
         };
 
-        // SKILL DEFINITIONS (inline - por classe e estágio)
-        const SKILL_DEFS = {
+        // SKILL_DEFS — construído dinamicamente a partir de data/skills.json via skillsLoader.
+        // Populado em initSkillDefs() após o carregamento assíncrono dos dados.
+        // Fallback estático mantido em SKILL_DEFS_FALLBACK para compatibilidade.
+        let SKILL_DEFS = null;  // será populado por initSkillDefs()
+
+        // LEGADO - remover após validação
+        const SKILL_DEFS_FALLBACK = {
             // GUERREIRO
             'Guerreiro': {
                 'Golpe de Espada': [
@@ -1473,6 +1446,19 @@
                 ]
             }
         };
+
+        /**
+         * Inicializa SKILL_DEFS a partir do cache de skills.json (sem fetch).
+         * Se o cache ainda não foi carregado, usa SKILL_DEFS_FALLBACK.
+         */
+        function initSkillDefs() {
+            const built = window.Data?.getSkillDefsSync?.();
+            if (built && Object.keys(built).length > 0) {
+                SKILL_DEFS = built;
+            } else {
+                SKILL_DEFS = SKILL_DEFS_FALLBACK;
+            }
+        }
 
         // CLASTERORB TIERS (Sistema de captura em tiers)
         // Valores maiores = melhor item de captura = mais útil
@@ -1783,6 +1769,21 @@
         }
 
         /**
+         * Retorna todos os templates de monstros como array.
+         * Tenta JSON primeiro (fonte canônica), fallback para MONSTER_CATALOG inline.
+         * @returns {Object[]} Array de templates de monstros
+         */
+        function getMonstersArray() {
+            if (window.Data && window.Data.getMonstersMapSync) {
+                const monstersMap = window.Data.getMonstersMapSync();
+                if (monstersMap && monstersMap.size > 0) {
+                    return Array.from(monstersMap.values());
+                }
+            }
+            return MONSTER_CATALOG;
+        }
+
+        /**
          * Require monster template from catalog with validation and logging
          * @param {string} templateId - Monster template ID
          * @param {string} context - Context string for logging (e.g., 'awardMonster', 'encounterSpawn')
@@ -1880,10 +1881,16 @@
                 
                 // PR10B: Preload skills from JSON in background (non-blocking)
                 if (window.Data && window.Data.loadSkills) {
-                    window.Data.loadSkills().catch(() => {
+                    window.Data.loadSkills().then(() => {
+                        // Atualiza SKILL_DEFS com dados do JSON após carregamento
+                        initSkillDefs();
+                    }).catch(() => {
                         // Errors already logged by SkillsLoader, silently continue with hardcoded fallback
                     });
                 }
+                
+                // Inicializa SKILL_DEFS com fallback até loadSkills() completar
+                initSkillDefs();
                 
                 // PR12A: Preload items from JSON in background (non-blocking)
                 if (window.Data && window.Data.loadItems) {
@@ -2172,6 +2179,8 @@
          * @returns {number} - Nível de 1 a 5
          */
         function getFriendshipLevel(friendship) {
+            // FASE R: delega ao módulo canônico
+            if (window.FriendshipSystem) return window.FriendshipSystem.getFriendshipLevel(friendship);
             if (friendship >= 100) return 5;
             if (friendship >= 75) return 4;
             if (friendship >= 50) return 3;
@@ -2185,6 +2194,8 @@
          * @returns {string} - Emoji de coração
          */
         function getFriendshipIcon(friendship) {
+            // FASE R: delega ao módulo canônico
+            if (window.FriendshipSystem) return window.FriendshipSystem.getFriendshipIcon(friendship);
             const level = getFriendshipLevel(friendship);
             const icons = ['🖤', '🤍', '💛', '💚', '❤️'];
             return icons[level - 1];
@@ -2196,6 +2207,8 @@
          * @returns {Object} - Objeto com bônus aplicáveis
          */
         function getFriendshipBonuses(friendship) {
+            // FASE R: delega ao módulo canônico
+            if (window.FriendshipSystem) return window.FriendshipSystem.getFriendshipBonuses(friendship);
             const level = getFriendshipLevel(friendship);
             const bonuses = {
                 xpMultiplier: 1.0,
@@ -2203,25 +2216,9 @@
                 statBonus: 0,
                 surviveChance: 0
             };
-            
-            // Progressão gradual de bônus por nível
-            if (level >= 2) {
-                bonuses.xpMultiplier = 1.05; // +5% XP
-            }
-            if (level >= 3) {
-                bonuses.critChance = 0.05;   // +5% crítico
-            }
-            if (level >= 4) {
-                bonuses.xpMultiplier = 1.10; // +10% XP (upgrade do nível 2)
-                bonuses.statBonus = 1;       // +1 stats
-            }
-            if (level >= 5) {
-                // Nota: Mecânica de sobrevivência não implementada ainda.
-                // Quando implementar, verificar surviveChance no momento do faint
-                // e dar 10% de chance de sobreviver com 1 HP.
-                bonuses.surviveChance = 0; // Desabilitado até implementação
-            }
-            
+            if (level >= 2) bonuses.xpMultiplier = 1.05;
+            if (level >= 3) bonuses.critChance = 0.05;
+            if (level >= 4) { bonuses.xpMultiplier = 1.10; bonuses.statBonus = 1; }
             return bonuses;
         }
 
@@ -2231,6 +2228,8 @@
          * @returns {number} - Percentual arredondado (ex: 5)
          */
         function formatFriendshipBonusPercent(multiplier) {
+            // FASE R: delega ao módulo canônico
+            if (window.FriendshipSystem) return window.FriendshipSystem.formatFriendshipBonusPercent(multiplier);
             return Math.round((multiplier - 1) * 100);
         }
 
@@ -2547,6 +2546,23 @@
         // Legacy wrapper for backward compatibility (Commit 3)
         function saveToLocalStorage() {
             saveGame();
+            // Mostrar indicador visual de auto-save
+            _showAutosaveIndicator();
+        }
+
+        /** Indicador visual discreto de auto-save (💾 piscando). */
+        let _autosaveTimer = null;
+        function _showAutosaveIndicator() {
+            let el = document.getElementById('autosaveIndicator');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'autosaveIndicator';
+                el.textContent = '💾 Salvo';
+                document.body.appendChild(el);
+            }
+            el.classList.add('visible');
+            clearTimeout(_autosaveTimer);
+            _autosaveTimer = setTimeout(() => el.classList.remove('visible'), 1800);
         }
 
         function loadFromLocalStorage() {
@@ -2949,9 +2965,10 @@
          * FASE 1.4: Shiny - Gera chance de monstrinho shiny
          * @returns {boolean} - true se deve ser shiny (1% chance)
          */
-        function generateShinyChance() {
-            const SHINY_CHANCE_RATE = 0.01; // 1% chance
-            return Math.random() < SHINY_CHANCE_RATE;
+        function generateShinyChance(rarity) {
+            // FASE T: delega ao módulo canônico com chance por raridade
+            if (window.ShinySystem) return window.ShinySystem.rollShiny(rarity);
+            return Math.random() < 0.01; // fallback: 1% chance fixa
         }
 
         // PLAYER MANAGEMENT
@@ -3014,8 +3031,9 @@
 
                 // Fallback: primeira criatura comum da mesma classe
                 if (!templateId) {
-                    const classMonster = MONSTER_CATALOG.find(m => m?.class === player?.class && m?.rarity === 'Comum')
-                        || MONSTER_CATALOG.find(m => m?.rarity === 'Comum');
+                    const allMonsters = getMonstersArray();
+                    const classMonster = allMonsters.find(m => m?.class === player?.class && m?.rarity === 'Comum')
+                        || allMonsters.find(m => m?.rarity === 'Comum');
                     templateId = classMonster?.id;
                 }
 
@@ -3040,79 +3058,8 @@
             }
         }
 
-        /**
-         * @deprecated Função legada — use createMonsterInstanceFromTemplate() para novas criações.
-         *
-         * Riscos de divergência desta função:
-         *  - NÃO aplica offsets de espécie canônica (speciesBridge).
-         *  - NÃO registra canonSpeciesId / canonAppliedOffsets na instância.
-         *  - NÃO normaliza o schema via normalizeMonster().
-         *  - Usa campo "monsterId" em vez de "templateId" (legado).
-         *  - Usa "id" em vez de "instanceId" (legado).
-         *
-         * Mantida para compatibilidade com código legado que ainda a chama.
-         * Não remover sem auditar todos os callers; não adicionar novos callers.
-         *
-         * Único chamador conhecido (2026-04): nenhum chamador direto identificado.
-         * Pode ser removida com segurança após confirmar que todos os fluxos
-         * usam createMonsterInstanceFromTemplate() ou awardMonster().
-         */
-        function createMonsterInstance(template, ownerId, level = 1) {
-            try {
-                if (!template) return null;
-                
-                // Calcular stats baseados no nível
-                const rarityMult = GameState.config?.rarityPower?.[template.rarity] || 1.0;
-                const levelMult = (1 + (level - 1) * 0.1);
-                
-                const hpMax = Math.floor((template.baseHp || 30) * levelMult);
-                const atk = Math.floor((template.baseAtk || 5) * levelMult * rarityMult);
-                const def = Math.floor((template.baseDef || 3) * levelMult * rarityMult);
-                const spd = Math.floor((template.baseSpd || 5) * levelMult * rarityMult); // SPD adicionado
-                const poder = Math.floor(atk * 0.5); // PODER é derivado de ATK
-                
-                // Calcular ENE (Sistema ENE)
-                const baseEne = template.baseEne || 10; // Fallback se não tiver no template
-                const eneGrowth = 2; // growth_ene padrão
-                const eneMax = Math.floor(baseEne + eneGrowth * (level - 1));
-                
-                // Determinar stage baseado no nível (simplificado)
-                // S0: nível 1-9, S1: 10-24, S2: 25-44, S3: 45+
-                let stage = 0;
-                if (level >= 45) stage = 3;
-                else if (level >= 25) stage = 2;
-                else if (level >= 10) stage = 1;
-                
-                return {
-                    id: Date.now() + Math.random(),
-                    ownerId: ownerId,
-                    monsterId: template.id,
-                    name: template.name,
-                    nickname: template.name, // Nickname padrão
-                    class: template.class,
-                    rarity: template.rarity,
-                    emoji: template.emoji,
-                    level: level,
-                    xp: 0,
-                    xpNeeded: calculateXPNeeded(level), // Feature 3.3
-                    hp: hpMax,
-                    hpMax: hpMax,
-                    atk: atk,
-                    def: def,
-                    spd: spd,           // SPD adicionado
-                    poder: poder,
-                    ene: eneMax,      // ENE atual (começa cheio)
-                    eneMax: eneMax,   // ENE máximo
-                    stage: stage,     // Estágio de evolução (0-3)
-                    status: 'healthy',
-                    buffs: [],        // Array para buffs temporários
-                    friendship: DEFAULT_FRIENDSHIP    // Sistema de Amizade (0-100, padrão neutro)
-                };
-            } catch (error) {
-                console.error('Failed to create monster instance:', error);
-                return null;
-            }
-        }
+        // FASE E: createMonsterInstance() removida — sem chamadores diretos confirmados.
+        // Use createMonsterInstanceFromTemplate() ou awardMonster() para todas as criações.
 
         // COMMIT 7: Factory Pattern - createMonsterInstanceFromTemplate()
         /**
@@ -3163,7 +3110,7 @@
         function createMonsterInstanceFromTemplate(templateId, level = 1, rarity = null, overrides = {}) {
             try {
                 // 1. Buscar template no catálogo
-                const catalog = MONSTER_CATALOG || [];
+                const catalog = getMonstersArray();
                 const template = catalog.find(m => m && m.id === templateId);
                 
                 if (!template) {
@@ -3336,7 +3283,7 @@
             }
         }
 
-        // TODO (Commit 8): Substituir chamadas de createMonsterInstance() por createMonsterInstanceFromTemplate()
+        // FASE E: Migração para createMonsterInstanceFromTemplate() concluída.
         // A função antiga ainda funciona para compatibilidade, mas a nova garante schema canônico.
 
         // ============================================================================
@@ -3740,7 +3687,7 @@
             try {
                 if (!monster || !monster.class) return [];
                 
-                const classSkills = SKILL_DEFS[monster.class];
+                const classSkills = (SKILL_DEFS || SKILL_DEFS_FALLBACK)[monster.class];
                 if (!classSkills) return [];
                 
                 const stage = monster.stage || 0;
@@ -4287,9 +4234,32 @@
                         }
                     }
 
-                    // Fallback: seleção aleatória (sem área selecionada ou encounterEngine indisponível)
+                    // Fallback 1: usar encounterPool do nó selecionado (FASE I)
+                    if (!wildTemplateId && _wm.selectedLocationId && window.EncounterPool && _wm.worldMapNodes && _wm.locationsData) {
+                        const poolResult = window.EncounterPool.resolveEncounterFromPool(
+                            _wm.selectedLocationId,
+                            _wm.worldMapNodes,
+                            _wm.locationsData
+                        );
+                        if (poolResult) {
+                            wildTemplateId = poolResult.templateId;
+                            const player2 = GameState.players.find(p => p.id === encounter.selectedPlayerId);
+                            const playerMaxLevel = (player2?.team?.length > 0)
+                                ? Math.max(...player2.team.map(m => m.level || 1))
+                                : 5;
+                            const difficultyOffset = GameState.config?.difficulty === 'hard' ? 2
+                                : GameState.config?.difficulty === 'easy' ? -1 : 0;
+                            const rangeMid = Math.floor((poolResult.levelMin + poolResult.levelMax) / 2);
+                            wildLevel = Math.max(poolResult.levelMin, Math.min(poolResult.levelMax,
+                                rangeMid + difficultyOffset + Math.floor(Math.random() * 3) - 1
+                            ));
+                        }
+                    }
+
+                    // Fallback 2: seleção aleatória (sem área selecionada ou encounterEngine indisponível)
                     if (!wildTemplateId) {
-                        const randomMonster = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
+                        const allMonsters = getMonstersArray();
+                        const randomMonster = allMonsters[Math.floor(Math.random() * allMonsters.length)];
                         wildTemplateId = randomMonster.id;
                         // Nível escalado pelo nível máximo do time do jogador (±1)
                         const player2 = GameState.players.find(p => p.id === encounter.selectedPlayerId);
@@ -4308,8 +4278,8 @@
                         { id: 'wild_' + Date.now() }
                     );
                     
-                    // FASE 1 POKEMON: Gerar shiny (1% chance)
-                    encounter.wildMonster.isShiny = generateShinyChance();
+                    // FASE 1 POKEMON: Gerar shiny com chance por raridade (FASE T)
+                    encounter.wildMonster.isShiny = generateShinyChance(encounter.wildMonster.rarity);
                     
                     // Inicializar estado de captura multi-eixo
                     encounter.wildMonster.aggression = 100; // começa totalmente agressivo
@@ -4377,14 +4347,15 @@
                 // Fallback: monstro aleatório do catálogo
                 let selectedMonsterTemplate;
                 if (options.monsterTemplateId) {
-                    selectedMonsterTemplate = MONSTER_CATALOG.find(m => m.id === options.monsterTemplateId);
+                    selectedMonsterTemplate = getMonsterTemplate(options.monsterTemplateId);
                 }
                 if (!selectedMonsterTemplate) {
-                    if (!MONSTER_CATALOG || MONSTER_CATALOG.length === 0) {
+                    const allMonsters = getMonstersArray();
+                    if (!allMonsters || allMonsters.length === 0) {
                         alert('❌ Catálogo de monstros vazio. Recarregue a página.');
                         return;
                     }
-                    selectedMonsterTemplate = MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)];
+                    selectedMonsterTemplate = allMonsters[Math.floor(Math.random() * allMonsters.length)];
                 }
                 const enemy = createMonsterInstanceFromTemplate(
                     selectedMonsterTemplate.id,  // Template ID from catalog
@@ -5230,7 +5201,7 @@
          */
         function showEvolutionModal(oldName, newName) {
             // Busca emojis nas templates do catálogo para tornar mais visual
-            const catalog = (typeof MONSTER_CATALOG !== 'undefined' ? MONSTER_CATALOG : []);
+            const catalog = getMonstersArray();
             const oldTmpl = catalog.find(m => m.name === oldName || m.nome === oldName);
             const newTmpl = catalog.find(m => m.name === newName || m.nome === newName);
             const oldEmoji = (oldTmpl?.emoji) || '✨';
@@ -5876,10 +5847,9 @@
             
             ensureMonsterProgressFields(mon);
             
-            // Buscar template base do catálogo (com múltiplos fallbacks)
-            const catalog = MONSTER_CATALOG || (window.DB?.MONSTERS) || (window.DB?.MONSTER_CATALOG) || [];
+            // Buscar template base do catálogo
             const templateId = mon.monsterId || mon.idBase || mon.templateId;
-            const template = catalog.find(m => String(m.id) === String(templateId));
+            const template = getMonsterTemplate(templateId);
             
             if (!template) return; // Não quebra se não encontrar
             
@@ -5919,11 +5889,8 @@
         function getMonsterTemplateFromInstance(mon) {
             if (!mon) return null;
             
-            const catalog = MONSTER_CATALOG || (window.DB?.MONSTERS) || (window.DB?.MONSTER_CATALOG) || [];
             const templateId = mon.monsterId || mon.idBase || mon.templateId;
-            const template = catalog.find(m => String(m.id) === String(templateId));
-            
-            return template || null;
+            return getMonsterTemplate(String(templateId)) || null;
         }
         
         /**
@@ -5954,9 +5921,8 @@
             const evo = getEvolutionData(currentTemplate);
             if (!evo) return null;
 
-            // Busca o template alvo no catálogo (usa MONSTER_CATALOG como fonte primária)
-            const catalog = MONSTER_CATALOG || (window.DB?.MONSTERS) || (window.DB?.MONSTER_CATALOG) || [];
-            const nextTemplate = catalog.find(m => String(m.id) === String(evo.toId));
+            // Busca o template alvo no catálogo via getMonsterTemplate (JSON-first)
+            const nextTemplate = getMonsterTemplate(String(evo.toId));
             
             if (nextTemplate) return { nextTemplate, evolvesAt: evo.atLv };
             return null;
@@ -5972,78 +5938,29 @@
         function applyEvolution(mon, nextTemplate, logArr, hpPctOverride) {
             if (!mon || !nextTemplate) return;
 
-            // preserva % de HP (usa override se fornecido, senão usa o atual)
-            let hpPct;
-            if (hpPctOverride != null && Number.isFinite(hpPctOverride)) {
-                hpPct = hpPctOverride;
-            } else {
-                const oldHp = Math.max(0, Number(mon.hp) || 0);
-                const oldHpMax = Math.max(1, Number(mon.hpMax) || 1);
-                hpPct = oldHp / oldHpMax;
-            }
-
-            const oldName = mon.nickname || mon.name || mon.nome || "Monstrinho";
-            const newName = nextTemplate.name || nextTemplate.nome || oldName;
-
-            // Atualiza o ID base do monstro (tenta manter compatibilidade)
-            if (mon.monsterId != null) mon.monsterId = String(nextTemplate.id);
-            else if (mon.templateId != null) mon.templateId = String(nextTemplate.id);
-            else mon.monsterId = String(nextTemplate.id);
-
             // ── DECISÃO ARQUITETURAL (Fase 7.3) ─────────────────────────────
             // canonSpeciesId NÃO é recalculado aqui e NÃO deve ser.
-            //
-            // A identidade canônica de espécie (canonSpeciesId) foi resolvida
-            // uma única vez em createMonsterInstanceFromTemplate() via
-            // speciesBridge.resolveAndApply(templateId, ...). Ela fica gravada
-            // diretamente na instância e sobrevive a todas as evoluções.
-            //
-            // Por quê?
-            //   - Templates evoluídos (ex: MON_010B, MON_010C) não têm entrada
-            //     em RUNTIME_TO_CANON_SPECIES — apenas os estágios base são
-            //     mapeados explicitamente por decisão de design (Fase 3.2).
-            //   - Rederivar canonSpeciesId usando nextTemplate.id aqui
-            //     retornaria null para templates evoluídos, quebrando
-            //     silenciosamente passivas, kit swap e promoção.
-            //
-            // O que NÃO fazer:
-            //   ❌ mon.canonSpeciesId = window.SpeciesBridge?.resolveCanonSpeciesId(nextTemplate.id)
-            //   ❌ mon.canonSpeciesId = null
-            //   ❌ delete mon.canonSpeciesId
-            //
-            // Para mudar isso no futuro: adicione o template evoluído em
-            // RUNTIME_TO_CANON_SPECIES com justificativa, e ajuste apenas a
-            // tabela de mapeamento — nunca recalcule inline no fluxo de evolução.
+            // Ver comentário completo em evolutionSystem.js:executeEvolution.
             // ────────────────────────────────────────────────────────────────
 
-            // Atualiza campos visuais e de gameplay se existirem no template
-            if (nextTemplate.name || nextTemplate.nome) mon.name = (nextTemplate.name || nextTemplate.nome);
-            if (nextTemplate.emoji) mon.emoji = nextTemplate.emoji;
-            if (nextTemplate.class || nextTemplate.classe) mon.class = (nextTemplate.class || nextTemplate.classe);
-            if (nextTemplate.rarity || nextTemplate.raridade) mon.rarity = (nextTemplate.rarity || nextTemplate.raridade);
-
-            // Recalcula stats com a nova forma
-            recalculateStatsFromTemplate(mon);
-            
-            // Recalcula hpMax baseado no novo baseHp do template
-            const baseHp = Number(nextTemplate.baseHp ?? nextTemplate.hpBase ?? nextTemplate.hp) || mon.hpMax || 1;
-            const level = Math.max(1, mon.level);
+            // Calcula rarityMult com dados de GameState para o hpMax completo
             const rarity = nextTemplate.rarity || nextTemplate.raridade || mon.rarity;
             const rarityPowerMap = GameState.config.rarityPower || (window.DB?.RARITY_POWER) || {};
             const rarityMult = Number(rarityPowerMap[rarity]) || 1.0;
-            const levelMult = 1 + (level - 1) * 0.1;
-            
-            // Nova hpMax baseada no template da evolução
-            mon.hpMax = Math.floor(baseHp * levelMult * rarityMult);
 
-            // Ajuste final de HP mantendo percentual
-            const newHpMax = Math.max(1, Number(mon.hpMax) || 1);
-            mon.hp = Math.max(1, Math.floor(newHpMax * hpPct)); // mínimo 1 para não "morrer" ao evoluir
+            // FASE L: delega core da evolução ao módulo puro (identidade, visual, hpMax, hp)
+            const { oldName, newName } = window.EvolutionSystem.executeEvolution(mon, nextTemplate, {
+                rarityMult,
+                hpPct: (hpPctOverride != null && Number.isFinite(hpPctOverride)) ? hpPctOverride : null
+            });
+
+            // Recalcula ATK/DEF/SPD/ENE baseados no novo template (game-specific, fora do módulo puro)
+            recalculateStatsFromTemplate(mon);
 
             if (Array.isArray(logArr)) {
                 logArr.push(`🌟 ${oldName} evoluiu para ${newName}!`);
             }
-            
+
             // Verificar e aplicar upgrade de skills após evolução (Feature 3.6)
             maybeUpgradeSkillsModelB(mon, logArr);
         }
@@ -6318,6 +6235,29 @@
                 setTimeout(() => element.classList.remove(className), 400);
             } catch (error) {
                 console.error('flashTarget error:', error);
+            }
+        }
+
+        /**
+         * Anima a barra de HP de batalha com shake + flash quando recebe dano.
+         * @param {string} wrapId - ID do elemento wrapper da barra
+         * @param {string} fillId - ID do elemento fill da barra
+         */
+        function _flashBattleHpBar(wrapId, fillId) {
+            const wrap = document.getElementById(wrapId);
+            const fill = document.getElementById(fillId);
+            if (!wrap && !fill) return;
+            if (wrap) {
+                wrap.classList.remove('hp-bar-wrap--damage');
+                void wrap.offsetWidth; // reflow para reiniciar animação
+                wrap.classList.add('hp-bar-wrap--damage');
+                setTimeout(() => wrap.classList.remove('hp-bar-wrap--damage'), 400);
+            }
+            if (fill) {
+                fill.classList.remove('hp-bar-fill--damage');
+                void fill.offsetWidth;
+                fill.classList.add('hp-bar-fill--damage');
+                setTimeout(() => fill.classList.remove('hp-bar-fill--damage'), 400);
             }
         }
         
@@ -7023,9 +6963,9 @@
                                 <div class="battle-stat-row">
                                     <span>ATK ${monster.atk}</span><span>DEF ${monster.def}</span><span>PWR ${monster.poder}</span>
                                 </div>
-                                <div class="battle-bar-row">
+                                <div class="battle-bar-row" id="wildEnemyHpRow">
                                     <div class="battle-bar-label"><span>❤️ HP</span><span>${monster.hp}/${monster.hpMax} (${Math.floor(hpPercent*100)}%)</span></div>
-                                    <div class="battle-bar"><div class="battle-bar-fill hp" style="width:${hpPercent*100}%"></div></div>
+                                    <div class="battle-bar"><div class="battle-bar-fill hp" id="wildEnemyHpFill" style="width:${hpPercent*100}%"></div></div>
                                 </div>
                                 ${(monster.eneMax > 0) ? `
                                 <div class="battle-bar-row">
@@ -7505,6 +7445,10 @@
                 // 7. Atualizar UI (1 vez só ao final)
                 saveToLocalStorage();
                 renderEncounter();
+                // Animar HP bar se o inimigo tomou dano
+                if (result.damageDealt > 0) {
+                    _flashBattleHpBar('wildEnemyHpRow', 'wildEnemyHpFill');
+                }
                 
             } catch (error) {
                 showError('Attack failed', error.stack);
@@ -8339,16 +8283,48 @@
                 if (!therapy) return;
                 
                 const pm = therapy.pm || 0;
-                const tiers = GameState.config?.medalTiers || { bronze: 10, silver: 25, gold: 50 };
+                const tiers = GameState.config?.medalTiers || { bronze: 5, silver: 12, gold: 25 };
                 
                 therapy.medals = therapy.medals || [];
                 
+                // Detectar nova medalha conquistada (em ordem: ouro tem prioridade)
+                let newMedal = null;
                 if (pm >= tiers.gold && !therapy.medals.includes('gold')) {
                     therapy.medals.push('gold');
+                    newMedal = 'gold';
                 } else if (pm >= tiers.silver && !therapy.medals.includes('silver')) {
                     therapy.medals.push('silver');
+                    newMedal = 'silver';
                 } else if (pm >= tiers.bronze && !therapy.medals.includes('bronze')) {
                     therapy.medals.push('bronze');
+                    newMedal = 'bronze';
+                }
+
+                // FASE H: Aplicar recompensas da nova medalha (XP + moeda)
+                if (newMedal) {
+                    const player = GameState.players?.find(p => p.id === playerId);
+                    if (player && window.TherapyRewards) {
+                        const deps = {
+                            giveXP: (mon, xp) => {
+                                levelUpMonster(mon, []); // garantir campos
+                                const progressionDeps = createProgressionDeps();
+                                window.Progression.Actions.giveXP(progressionDeps, mon, xp, []);
+                            }
+                        };
+                        const result = window.TherapyRewards.applyTherapyMedalRewards(player, newMedal, deps, []);
+
+                        // Toast de medalha com emoji e recompensas
+                        const medalEmoji = { bronze: '🥉', silver: '🥈', gold: '🥇' }[newMedal] || '🏅';
+                        const medalName  = { bronze: 'Bronze', silver: 'Prata', gold: 'Ouro' }[newMedal] || newMedal;
+                        let toastMsg = `${medalEmoji} ${player.name || ''} conquistou Medalha ${medalName}!`;
+                        if (result.xpAwarded > 0 && result.monsterName) {
+                            toastMsg += ` (+${result.xpAwarded} XP para ${result.monsterName})`;
+                        }
+                        if (result.moedaAwarded > 0) {
+                            toastMsg += ` +${result.moedaAwarded} 💰`;
+                        }
+                        showToast(toastMsg, 'success');
+                    }
                 }
             } catch (error) {
                 console.error('Failed to update medals:', error);
@@ -8420,9 +8396,8 @@
                         }
                     }
                     
-                    // Fallback: Use hardcoded MONSTER_CATALOG only if JSON not available
-                    console.log('[PartyDex] Using fallback MONSTER_CATALOG (JSON not loaded)');
-                    return MONSTER_CATALOG || [];
+                    // Fallback: Use getMonstersArray() (JSON-first, inline fallback)
+                    return getMonstersArray();
                 }
                 
                 // Render the PartyDex UI (idempotent DOM update)
@@ -9258,6 +9233,11 @@
             'LOC_008B':           'final_area',
             'BOSS_FOREST_01':     'final_area',
             'LOC_009':            'final_area',
+
+            // ── Nós de serviço ────────────────────────────────────────────────────
+            'HEAL_001':           'opening',
+            'SHOP_MID_01':        'mid_exploration',
+            'HEAL_FINAL_01':      'final_area',
         };
 
         /** Carrega os dados de localização e do mapa (com cache). */
@@ -9637,6 +9617,8 @@
             const lvRange  = loc?.levelRange ? `Lv ${loc.levelRange[0]}–${loc.levelRange[1]}` : '';
             const isBoss   = node.type === 'boss';
             const isCity   = node.type === 'city';
+            const isHeal   = node.type === 'healing';
+            const isShop   = node.type === 'shop';
             const bossMeta = node.bossMeta ?? {};
             const regionType = bossMeta.regionType ?? 'main';
             const defeated = progress.nodeFlags[nodeId]?.bossDefeated === true;
@@ -9645,6 +9627,8 @@
 
             // Classe de estado visual para accent border
             const stateClass = isBoss    ? 'state-boss'
+                             : isHeal    ? 'state-healing'
+                             : isShop    ? 'state-shop'
                              : isCurrent ? 'state-current'
                              : isDone    ? 'state-done'
                              : 'state-available';
@@ -9680,6 +9664,10 @@
                 }
             } else if (isCity) {
                 badgesHtml += `<span class="ow-sidebar__badge ow-sidebar__badge--city">🏙️ Cidade</span>`;
+            } else if (isHeal) {
+                badgesHtml += `<span class="ow-sidebar__badge" style="background:rgba(39,174,96,0.25);color:#4adf88;">💚 Cura Gratuita</span>`;
+            } else if (isShop) {
+                badgesHtml += `<span class="ow-sidebar__badge" style="background:rgba(180,140,0,0.25);color:#ffd740;">🛒 Loja</span>`;
             } else {
                 if (isCurrent) badgesHtml += `<span class="ow-sidebar__badge ow-sidebar__badge--current">📍 Atual</span>`;
                 if (isDone)    badgesHtml += `<span class="ow-sidebar__badge ow-sidebar__badge--done">✅ Concluído</span>`;
@@ -9772,9 +9760,17 @@
                 spotsHtml = `<div class="ow-node-card__spots">${spotsHtml}</div>`;
             }
 
-            const ctaHtml = isCurrent
-                ? '<p class="ow-sidebar__here">📍 Você está aqui</p>'
-                : `<button class="ow-sidebar__travel-btn" onclick="owTravelToNode('${nodeId}')">🚶 Viajar para cá</button>`;
+            const ctaHtml = isCurrent && (isHeal || isShop)
+                ? (isHeal
+                    ? `<button class="ow-sidebar__service-btn" onclick="showHealModal(null)">💚 Curar Todos os Monstrinhos</button>`
+                    : `<button class="ow-sidebar__service-btn ow-sidebar__service-btn--shop" onclick="switchTab('shop')">🛒 Abrir Loja</button>`)
+                : isCurrent
+                    ? '<p class="ow-sidebar__here">📍 Você está aqui</p>'
+                    : (isHeal
+                        ? `<button class="ow-sidebar__service-btn" onclick="owTravelToNode('${nodeId}')">🚶 Ir para Centro de Cura</button>`
+                        : isShop
+                            ? `<button class="ow-sidebar__service-btn ow-sidebar__service-btn--shop" onclick="owTravelToNode('${nodeId}')">🚶 Ir para Loja</button>`
+                            : `<button class="ow-sidebar__travel-btn" onclick="owTravelToNode('${nodeId}')">🚶 Viajar para cá</button>`);
 
             card.innerHTML = `
                 <div class="ow-node-card__main">
@@ -9993,6 +9989,37 @@
             const bossNode = (_wm.worldMapNodes ?? []).find(n => n.nodeId === locationId && n.type === 'boss');
             if (bossNode) {
                 openBossPanel(locationId, bossNode);
+                return;
+            }
+
+            // Nós de serviço de cura — acionar cura imediata e voltar ao mapa
+            const healNode = (_wm.worldMapNodes ?? []).find(n => n.nodeId === locationId && n.type === 'healing');
+            if (healNode) {
+                // Registrar visita e mostrar modal de cura
+                if (!GameState.data) GameState.data = {};
+                const visited = GameState.data.visitedLocations ?? [];
+                if (!visited.includes(locationId)) visited.push(locationId);
+                GameState.data.visitedLocations = visited;
+                GameState.data.currentNodeId = locationId;
+                saveToLocalStorage();
+                // Mostrar modal de cura
+                showHealModal(() => {
+                    if (overworldEl) { overworldEl.style.display = ''; renderOverworldPanel(); }
+                });
+                return;
+            }
+
+            // Nós de serviço de loja — abrir loja diretamente
+            const shopNode = (_wm.worldMapNodes ?? []).find(n => n.nodeId === locationId && n.type === 'shop');
+            if (shopNode) {
+                if (!GameState.data) GameState.data = {};
+                const visited = GameState.data.visitedLocations ?? [];
+                if (!visited.includes(locationId)) visited.push(locationId);
+                GameState.data.visitedLocations = visited;
+                GameState.data.currentNodeId = locationId;
+                saveToLocalStorage();
+                if (overworldEl) overworldEl.style.display = '';
+                switchTab('shop');
                 return;
             }
 
@@ -10619,8 +10646,8 @@
                 // Abre a aba de loja
                 switchTab('shop');
             } else if (action === 'heal') {
-                // Cura todos os Monstrinhos dos jogadores ativos
-                _cityHealAllMonsters();
+                // Mostra modal de cura com lista de Monstrinhos e HP bars
+                showHealModal(null);
             } else if (action === 'quests') {
                 // Vai para a aba de sessão onde ficam as quests
                 switchTab('home');
@@ -10628,20 +10655,110 @@
         }
         window.selectCityService = selectCityService;
 
-        /** Cura todos os Monstrinhos de todos os jogadores (serviço de cidade). */
-        function _cityHealAllMonsters() {
-            let healed = 0;
+        /**
+         * Exibe o modal de cura com NPC flavor text e barras de HP antes/depois.
+         * @param {Function|null} onClose - Callback chamado ao fechar o modal (opcional)
+         */
+        function showHealModal(onClose) {
+            // Construir lista de monstrinhos de todos os jogadores
+            const allMonsters = [];
             (GameState.players ?? []).forEach(player => {
                 (player.team ?? []).forEach(mi => {
-                    if (mi && mi.hpMax && mi.hp < mi.hpMax) {
-                        mi.hp = mi.hpMax;
-                        // Limpar status 'fainted' ao curar — garante que o monstrinho
-                        // seja reconhecido como elegível na próxima batalha selvagem.
-                        if (mi.status === 'fainted') mi.status = 'healthy';
-                        healed++;
+                    if (mi && mi.hpMax) {
+                        allMonsters.push({
+                            mi,
+                            player,
+                            hpBefore: mi.hp,
+                            hpMax: mi.hpMax,
+                            needsHeal: mi.hp < mi.hpMax || mi.status === 'fainted'
+                        });
                     }
                 });
-                // Recalcular activeIndex para o primeiro monstrinho vivo após a cura
+            });
+
+            const anyNeedsHeal = allMonsters.some(e => e.needsHeal);
+
+            // NPC selecionado com base em hash estável da sessão ativa (não muda durante o jogo)
+            const npcs = [
+                { emoji: '👵', name: 'Vovó Orba', msg: '"Descansem! Seus Monstrinhos estão em boas mãos."' },
+                { emoji: '🧙', name: 'Mago Curador', msg: '"A magia da cura flui por aqui. Fiquem à vontade!"' },
+                { emoji: '🌿', name: 'Druida', msg: '"A natureza cuida de todos. Seus Monstrinhos vão se recuperar."' },
+            ];
+            // Hash estável: usa sessionId ou sessionCount, não Date.now()
+            const sessionSeed = (GameState.data?.activeSessionId ?? '').charCodeAt(0) || 0;
+            const npc = npcs[sessionSeed % npcs.length];
+
+            // Gerar linhas de monstrinhos — usar índice para IDs únicos sem risco de colisão
+            const monsterRows = allMonsters.length === 0
+                ? '<p style="color:rgba(255,255,255,0.5);text-align:center;">Nenhum Monstrinho no time.</p>'
+                : allMonsters.map(({ mi, player, hpBefore, hpMax, needsHeal }, idx) => {
+                    const pct = Math.round((hpBefore / hpMax) * 100);
+                    const fainted = mi.status === 'fainted' || hpBefore <= 0;
+                    return `
+                        <div class="heal-modal-monster${fainted ? ' heal-modal-monster--fainted' : ''}">
+                            <div class="heal-modal-monster__header">
+                                <span class="heal-modal-monster__name">${escapeHtml(mi.name ?? mi.id)} <span style="opacity:0.5;font-size:10px;">(${escapeHtml(player.name)})</span></span>
+                                <span class="heal-modal-monster__hp-text">${fainted ? 'Nocauteado' : `${hpBefore}/${hpMax} HP`}</span>
+                            </div>
+                            <div class="heal-modal-hp-bar">
+                                <div class="heal-modal-hp-fill" id="hmhp_${idx}"
+                                     style="width:${fainted ? 0 : pct}%"></div>
+                            </div>
+                        </div>`;
+                }).join('');
+
+            // Criar e injetar modal no DOM
+            let modal = document.getElementById('healModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'healModal';
+                document.body.appendChild(modal);
+            }
+            modal.className = '';
+            modal.innerHTML = `
+                <div class="heal-modal-card">
+                    <div class="heal-modal-header">
+                        <span class="heal-modal-npc">${npc.emoji}</span>
+                        <div>
+                            <p class="heal-modal-title">💚 Centro de Cura</p>
+                            <p class="heal-modal-flavor">${npc.name}: ${npc.msg}</p>
+                        </div>
+                    </div>
+                    <div class="heal-modal-list" id="healModalList">
+                        ${monsterRows}
+                    </div>
+                    <div id="healModalFeedback"></div>
+                    <div class="heal-modal-footer">
+                        ${anyNeedsHeal
+                            ? `<button class="heal-modal-btn heal-modal-btn--primary" onclick="doHealAll()">💚 Curar Todos</button>`
+                            : `<div style="flex:1;text-align:center;color:#4adf88;font-weight:700;">✅ Todos já estão com HP cheio!</div>`
+                        }
+                        <button class="heal-modal-btn heal-modal-btn--secondary" onclick="closeHealModal()">Fechar</button>
+                    </div>
+                </div>`;
+
+            // Guardar callback de fechamento
+            modal._onClose = onClose;
+        }
+        window.showHealModal = showHealModal;
+
+        /** Executa a cura de todos e anima as barras de HP. */
+        function doHealAll() {
+            let globalIdx = 0;
+            (GameState.players ?? []).forEach(player => {
+                (player.team ?? []).forEach(mi => {
+                    if (mi && mi.hpMax) {
+                        mi.hp = mi.hpMax;
+                        if (mi.status === 'fainted') mi.status = 'healthy';
+                        // Animar barra de HP para 100% usando índice global (igual ao de showHealModal)
+                        const bar = document.getElementById(`hmhp_${globalIdx}`);
+                        if (bar) {
+                            bar.classList.add('full');
+                            bar.style.width = '100%';
+                        }
+                        globalIdx++;
+                    }
+                });
                 if (Array.isArray(player.team)) {
                     const idx = firstAliveIndex(player.team);
                     if (idx >= 0) player.activeIndex = idx;
@@ -10649,19 +10766,33 @@
             });
             saveToLocalStorage();
             updateAllViews();
-            const msg = healed > 0
-                ? `✅ ${healed} Monstrinho(s) curado(s) com sucesso!`
-                : 'Todos os Monstrinhos já estão com HP cheio.';
-            // Exibir feedback inline no painel de spots
-            const list = document.getElementById('spotsList');
-            if (list) {
-                const feedback = document.createElement('div');
-                feedback.className = 'wm-heal-feedback';
-                feedback.textContent = msg;
-                list.prepend(feedback);
-                setTimeout(() => feedback.remove(), 3000);
+
+            const feedback = document.getElementById('healModalFeedback');
+            if (feedback) {
+                feedback.innerHTML = '<div class="heal-all-success">✨ Todos os Monstrinhos curados com sucesso!</div>';
+            }
+            // Atualizar textos HP e ocultar botão "Curar Todos"
+            const footer = document.querySelector('.heal-modal-footer');
+            if (footer) {
+                const healBtn = footer.querySelector('.heal-modal-btn--primary');
+                if (healBtn) {
+                    healBtn.textContent = '✅ Curado!';
+                    healBtn.disabled = true;
+                    healBtn.style.opacity = '0.6';
+                }
             }
         }
+        window.doHealAll = doHealAll;
+
+        /** Fecha o modal de cura. */
+        function closeHealModal() {
+            const modal = document.getElementById('healModal');
+            if (!modal) return;
+            const cb = modal._onClose;
+            modal.className = 'hidden';
+            if (typeof cb === 'function') cb();
+        }
+        window.closeHealModal = closeHealModal;
 
         /** Atualiza o dropdown de jogadores no painel de setup selvagem. */
         function _wmUpdatePlayerDropdown() {
@@ -10879,7 +11010,7 @@
                 if (!container) return;
                 
                 const monstrodex = GameState.monstrodex || { seen: [], captured: [] };
-                const totalMonsters = MONSTER_CATALOG.length;
+                const totalMonsters = getMonstersArray().length;
                 const seenCount = monstrodex.seen.length;
                 const capturedCount = monstrodex.captured.length;
                 
@@ -11346,6 +11477,7 @@
                             <div class="team-member-buttons">
                                 ${index > 0 ? `<button class="btn btn-sm-arrow" onclick="moveTeamMemberUp('${player.id}', ${index})">▲</button>` : '<span style="height:20px;display:block;"></span>'}
                                 ${index < player.team.length - 1 ? `<button class="btn btn-sm-arrow" onclick="moveTeamMemberDown('${player.id}', ${index})">▼</button>` : ''}
+                                ${isAlive && !isActive ? `<button class="btn btn-xs btn-trade" title="Trocar com outro jogador" onclick="openTradeModal('${player.id}', '${monster.instanceId || monster.id}')">🔄</button>` : ''}
                             </div>
                         </div>
                     `;
@@ -11477,6 +11609,141 @@
         window.moveTeamMemberUp = moveTeamMemberUp;
         window.moveTeamMemberDown = moveTeamMemberDown;
         window.movePlayerTeamMember = movePlayerTeamMember;
+
+        // ============================================================================
+        // SISTEMA DE TROCA (FASE P) — Trade UI
+        // ============================================================================
+
+        /**
+         * Abre o modal de troca de Monstrinho entre jogadores.
+         * @param {string} fromPlayerId  - ID do jogador cedente
+         * @param {string} instanceId    - ID da instância do Monstrinho a trocar
+         */
+        function openTradeModal(fromPlayerId, instanceId) {
+            try {
+                if (!window.TradeSystem) {
+                    showToast('Sistema de troca não disponível', 'error');
+                    return;
+                }
+
+                const fromPlayer = GameState.players?.find(p => p?.id === fromPlayerId);
+                if (!fromPlayer) {
+                    showToast('Jogador não encontrado', 'error');
+                    return;
+                }
+
+                const team = Array.isArray(fromPlayer.team) ? fromPlayer.team : [];
+                const mon = team.find(m => m && (m.instanceId === instanceId || m.id === instanceId));
+                if (!mon) {
+                    showToast('Monstrinho não encontrado', 'error');
+                    return;
+                }
+
+                // Destinatários válidos: jogadores ativos exceto o próprio
+                const recipients = (GameState.players || []).filter(p => p && p.id !== fromPlayerId);
+                if (recipients.length === 0) {
+                    showToast('Nenhum outro jogador disponível para troca', 'warning');
+                    return;
+                }
+
+                const options = recipients.map(p =>
+                    `<option value="${p.id}">${p.name}</option>`
+                ).join('');
+
+                const overlay = document.createElement('div');
+                overlay.className = 'mm-alert-overlay';
+                overlay.id = 'tradeModalOverlay';
+                overlay.innerHTML = `
+                    <div class="mm-alert-card">
+                        <span class="mm-alert-icon">🔄</span>
+                        <p class="mm-alert-msg"><strong>Trocar ${mon.nickname || mon.name}</strong><br>
+                        De: <strong>${fromPlayer.name}</strong><br>
+                        Para:</p>
+                        <select id="tradeRecipientSelect" class="form-control mt-5" style="width:100%;padding:6px;border-radius:6px;">
+                            ${options}
+                        </select>
+                        <div style="display:flex;gap:8px;margin-top:12px;justify-content:center;">
+                            <button class="mm-alert-btn mm-alert-btn--success"
+                                onclick="executeTradeFromModal('${fromPlayerId}', '${instanceId}')">
+                                ✅ Confirmar Troca
+                            </button>
+                            <button class="mm-alert-btn mm-alert-btn--error"
+                                onclick="document.getElementById('tradeModalOverlay')?.remove()">
+                                ✖ Cancelar
+                            </button>
+                        </div>
+                    </div>`;
+
+                document.body.appendChild(overlay);
+                overlay.addEventListener('click', e => {
+                    if (e.target === overlay) overlay.remove();
+                });
+            } catch (error) {
+                console.error('[Trade] Falha ao abrir modal:', error);
+                showToast('Erro ao abrir troca', 'error');
+            }
+        }
+
+        /**
+         * Executa a troca confirmada pelo modal.
+         * @param {string} fromPlayerId - ID do jogador cedente
+         * @param {string} instanceId   - ID da instância a trocar
+         */
+        function executeTradeFromModal(fromPlayerId, instanceId) {
+            try {
+                const toPlayerId = document.getElementById('tradeRecipientSelect')?.value;
+                document.getElementById('tradeModalOverlay')?.remove();
+
+                if (!toPlayerId) {
+                    showToast('Selecione o destinatário', 'warning');
+                    return;
+                }
+
+                const fromPlayer = GameState.players?.find(p => p?.id === fromPlayerId);
+                const toPlayer   = GameState.players?.find(p => p?.id === toPlayerId);
+
+                if (!fromPlayer || !toPlayer) {
+                    showToast('Jogador não encontrado', 'error');
+                    return;
+                }
+
+                // Construir proposta e aceitar
+                const proposal = window.TradeSystem.proposeTradeAction(fromPlayer, toPlayer, instanceId);
+                if (!proposal.ok) {
+                    const msgs = {
+                        MONSTER_NOT_FOUND:  'Monstrinho não encontrado',
+                        MONSTER_IN_BATTLE:  'Não é possível trocar monstro em batalha',
+                        MONSTER_KO:         'Não é possível trocar monstro desmaiado',
+                        SAME_PLAYER:        'Não pode trocar consigo mesmo',
+                        INVALID_PLAYER:     'Jogador inválido',
+                        INVALID_INSTANCE:   'Instância inválida',
+                    };
+                    showToast(msgs[proposal.error] || `Troca inválida: ${proposal.error}`, 'error');
+                    return;
+                }
+
+                const result = window.TradeSystem.acceptTrade(proposal.trade, fromPlayer, toPlayer);
+                if (!result.ok) {
+                    const msgs = {
+                        MONSTER_NOT_FOUND:  'Monstrinho não encontrado',
+                        MONSTER_IN_BATTLE:  'Monstro entrou em batalha — troca cancelada',
+                        MONSTER_KO:         'Monstro desmaiou — troca cancelada',
+                    };
+                    showToast(msgs[result.error] || `Falha na troca: ${result.error}`, 'error');
+                    return;
+                }
+
+                saveGame();
+                updatePlayersList();
+                showToast(`🔄 ${result.monsterName} foi para ${toPlayer.name}!`, 'success');
+            } catch (error) {
+                console.error('[Trade] Falha ao executar troca:', error);
+                showToast('Erro inesperado na troca', 'error');
+            }
+        }
+
+        window.openTradeModal        = openTradeModal;
+        window.executeTradeFromModal = executeTradeFromModal;
 
         // PR12A: Equipment UI Functions
         function renderEquipableItems(player) {
@@ -11723,24 +11990,53 @@
                 }
                 
                 let html = '';
+                const tiers = GameState.config?.medalTiers || { bronze: 5, silver: 12, gold: 25 };
+                const TIER_ORDER = [
+                    { key: 'bronze', label: 'Bronze', emoji: '🥉', threshold: tiers.bronze },
+                    { key: 'silver', label: 'Prata',  emoji: '🥈', threshold: tiers.silver },
+                    { key: 'gold',   label: 'Ouro',   emoji: '🥇', threshold: tiers.gold   },
+                ];
+
                 (GameState.players || []).forEach(player => {
                     if (!player) return;
                     
                     const therapy = GameState.currentSession.therapy?.perPlayer?.[player.id];
                     if (!therapy) return;
-                    
+
+                    const pm      = therapy.pm || 0;
+                    const medals  = therapy.medals || [];
+
+                    // Calcular próxima medalha
+                    const nextTier = TIER_ORDER.find(t => !medals.includes(t.key));
+                    const maxTier  = TIER_ORDER[TIER_ORDER.length - 1];
+                    const progressTarget = nextTier ? nextTier.threshold : maxTier.threshold;
+                    const progressPct    = nextTier
+                        ? Math.min(100, Math.round((pm / progressTarget) * 100))
+                        : 100;
+                    const progressLabel = nextTier
+                        ? `${pm} / ${progressTarget} PM → ${nextTier.label}`
+                        : `${pm} PM — Todas as medalhas conquistadas! 🎉`;
+
+                    // Badges de medalhas conquistadas
+                    const medalBadges = TIER_ORDER.map(t => {
+                        const earned = medals.includes(t.key);
+                        return `<span class="medal-badge${earned ? ' medal-badge--earned' : ''}" title="${t.label}">${t.emoji}</span>`;
+                    }).join('');
+
                     html += `
                         <div class="card">
                             <h3>${player.name}</h3>
-                            <p><strong>PM (Merit Points):</strong> ${therapy.pm || 0}</p>
-                            <p><strong>Medals:</strong> 
-                                ${(therapy.medals || []).map(m => {
-                                    const emoji = { bronze: '🥉', silver: '🥈', gold: '🥇' }[m] || '🏅';
-                                    return `<span class="medal">${emoji}</span>`;
-                                }).join('')}
-                            </p>
+
+                            <div class="therapy-medals-row">
+                                ${medalBadges}
+                            </div>
+
+                            <div class="therapy-progress-wrap">
+                                <div class="therapy-progress-bar" style="width:${progressPct}%" aria-valuenow="${progressPct}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <p class="therapy-progress-label">${progressLabel}</p>
                             
-                            <h4>Objectives:</h4>
+                            <h4>Objetivos:</h4>
                             ${(GameState.objectives || []).map(obj => {
                                 if (!obj) return '';
                                 const completed = therapy.completedObjectives?.includes(obj.id);
@@ -12067,7 +12363,36 @@
         function mmBoot(){
             // Show intro on boot
             mmShow("mmIntro");
+            // Iniciar animação de partículas na tela de intro
+            _mmInitIntroParticles();
         }
+
+        /** Inicializa partículas flutuantes na tela de intro. */
+        function _mmInitIntroParticles() {
+            const container = document.getElementById('mmIntroParticles');
+            if (!container || container.children.length > 0) return; // não re-inicializar
+            const particles = ['🌟','⚡','🎮','🐣','✨','🌙','💫','🎯','🔮','🌸'];
+            // Posições pré-definidas para consistência entre renders
+            const positions = [
+                [8,5], [22,18], [38,8], [54,22], [68,5], [82,15],
+                [15,25], [32,12], [48,28], [64,8], [76,20], [90,14]
+            ];
+            for (let i = 0; i < 12; i++) {
+                const el = document.createElement('span');
+                el.className = 'mm-intro-particle';
+                el.textContent = particles[i % particles.length];
+                const [left, bottom] = positions[i];
+                // Usar Math.random apenas para durações/delays (não afeta layout)
+                el.style.cssText = `
+                    left: ${left}%;
+                    bottom: ${bottom}%;
+                    animation-duration: ${3 + (i % 4)}s;
+                    animation-delay: ${(i * 0.4) % 3}s;
+                `;
+                container.appendChild(el);
+            }
+        }
+        window._mmInitIntroParticles = _mmInitIntroParticles;
 
         function mmShowMainMenu(){
             mmShow("mmMenu");
@@ -12175,7 +12500,7 @@
             `;
 
             // Opções de monstro
-            const monOptions = MONSTER_CATALOG.map(m => 
+            const monOptions = getMonstersArray().map(m => 
                 `<option value="${m.id}">${escapeHtml(m.name)} [${escapeHtml(m.class)}] (${escapeHtml(m.rarity)})</option>`
             ).join("");
 
@@ -12783,7 +13108,21 @@
                     MM_NEW.players.pop();
                 }
 
-                const rows = MM_NEW.players.map((p, i) => `
+                // Dados de preview de classe
+                const CLASS_PREVIEW = {
+                    'Guerreiro':  { icon: '⚔️', desc: 'Alto HP e defesa. Absorve dano pelo time. Vantagem contra Ladino.', tags: ['Tanque','Durável'] },
+                    'Mago':       { icon: '🔮', desc: 'Alto poder mágico e energia. Fraco em defesa. Vantagem contra Bárbaro.', tags: ['Ataque','Magia'] },
+                    'Curandeiro': { icon: '💚', desc: 'Cura aliados e suporta o time. Regeneração extra de energia. Vantagem contra Guerreiro.', tags: ['Suporte','Cura'] },
+                    'Bárbaro':    { icon: '🪓', desc: 'Dano alto com ataques brutos. Bônus de ATK em combate. Vantagem contra Caçador.', tags: ['Dano','Físico'] },
+                    'Ladino':     { icon: '🗡️', desc: 'Ágil e furtivo. Aplica penalidade de DEF no primeiro ataque. Vantagem contra Mago.', tags: ['Agilidade','Controle'] },
+                    'Bardo':      { icon: '🎵', desc: 'Buffs e debuffs no time. Versatilidade tática. Vantagem contra Curandeiro.', tags: ['Buff','Versátil'] },
+                    'Caçador':    { icon: '🏹', desc: 'Especialista em captura. Bônus ao capturar criaturas. Vantagem contra Bardo.', tags: ['Captura','Ranged'] },
+                    'Animalista': { icon: '🐾', desc: 'Conexão especial com Monstrinhos. Bônus de amizade e XP. Versátil em todas as situações.', tags: ['Amizade','XP'] },
+                };
+
+                const rows = MM_NEW.players.map((p, i) => {
+                    const preview = CLASS_PREVIEW[p.class] ?? { icon: '🎮', desc: '', tags: [] };
+                    return `
                     <div class="border-pale border-radius-14 p-10-12 my-10">
                         <div class="text-900 mb-8">Jogador ${i+1}</div>
                         <div class="mm-field">
@@ -12792,17 +13131,27 @@
                         </div>
                         <div class="mm-field">
                             <label>Classe</label>
-                            <select id="mmPClass_${i}">
+                            <select id="mmPClass_${i}" onchange="mmUpdateClassPreview(${i})">
                                 ${MM_CLASSES.map(c => `<option value="${escapeHtml(c)}" ${p.class===c?"selected":""}>${escapeHtml(c)}</option>`).join("")}
                             </select>
                         </div>
-                    </div>
-                `).join("");
+                        <div class="mm-class-preview" id="mmClassPreview_${i}">
+                            <span class="mm-class-preview__icon">${preview.icon}</span>
+                            <div class="mm-class-preview__info">
+                                <p class="mm-class-preview__name">${p.class}</p>
+                                <p class="mm-class-preview__desc">${preview.desc}</p>
+                                <div class="mm-class-preview__tags">
+                                    ${preview.tags.map(t => `<span class="mm-class-preview__tag">${t}</span>`).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join("");
 
                 host.innerHTML = `
                     <p class="mm-sub">Crie os jogadores</p>
                     ${rows}
-                    <p class="mm-hint">O monstrinho inicial deve seguir a classe do jogador (MVP).</p>
+                    <p class="mm-hint">Cada jogador batalha com Monstrinhos da sua classe — mas pode capturar qualquer um!</p>
                 `;
                 return;
             }
@@ -12850,6 +13199,38 @@
             MM_NEW.step = Math.min(3, MM_NEW.step + 1);
             mmRenderNewGameStep();
         }
+
+        /**
+         * Atualiza o preview de classe ao mudar o select no wizard.
+         * @param {number} playerIndex - índice do jogador no wizard
+         */
+        function mmUpdateClassPreview(playerIndex) {
+            const selectEl = mmEl(`mmPClass_${playerIndex}`);
+            const previewEl = document.getElementById(`mmClassPreview_${playerIndex}`);
+            if (!selectEl || !previewEl) return;
+            const cls = selectEl.value;
+            const CLASS_PREVIEW = {
+                'Guerreiro':  { icon: '⚔️', desc: 'Alto HP e defesa. Absorve dano pelo time. Vantagem contra Ladino.', tags: ['Tanque','Durável'] },
+                'Mago':       { icon: '🔮', desc: 'Alto poder mágico e energia. Fraco em defesa. Vantagem contra Bárbaro.', tags: ['Ataque','Magia'] },
+                'Curandeiro': { icon: '💚', desc: 'Cura aliados e suporta o time. Regeneração extra de energia. Vantagem contra Guerreiro.', tags: ['Suporte','Cura'] },
+                'Bárbaro':    { icon: '🪓', desc: 'Dano alto com ataques brutos. Bônus de ATK em combate. Vantagem contra Caçador.', tags: ['Dano','Físico'] },
+                'Ladino':     { icon: '🗡️', desc: 'Ágil e furtivo. Aplica penalidade de DEF no primeiro ataque. Vantagem contra Mago.', tags: ['Agilidade','Controle'] },
+                'Bardo':      { icon: '🎵', desc: 'Buffs e debuffs no time. Versatilidade tática. Vantagem contra Curandeiro.', tags: ['Buff','Versátil'] },
+                'Caçador':    { icon: '🏹', desc: 'Especialista em captura. Bônus ao capturar criaturas. Vantagem contra Bardo.', tags: ['Captura','Ranged'] },
+                'Animalista': { icon: '🐾', desc: 'Conexão especial com Monstrinhos. Bônus de amizade e XP. Versátil em todas as situações.', tags: ['Amizade','XP'] },
+            };
+            const p = CLASS_PREVIEW[cls] ?? { icon: '🎮', desc: '', tags: [] };
+            previewEl.innerHTML = `
+                <span class="mm-class-preview__icon">${p.icon}</span>
+                <div class="mm-class-preview__info">
+                    <p class="mm-class-preview__name">${escapeHtml(cls)}</p>
+                    <p class="mm-class-preview__desc">${p.desc}</p>
+                    <div class="mm-class-preview__tags">
+                        ${p.tags.map(t => `<span class="mm-class-preview__tag">${t}</span>`).join('')}
+                    </div>
+                </div>`;
+        }
+        window.mmUpdateClassPreview = mmUpdateClassPreview;
 
         function mmFinishNewGame(){
             try {
@@ -13466,7 +13847,7 @@
 
         function createTutorialEnemy(level) {
             // Tenta pegar um template real do catálogo
-            const cat = MONSTER_CATALOG || [];
+            const cat = getMonstersArray();
             const t = cat[0];
             if (typeof createMonsterInstanceFromTemplate === "function" && t) {
                 // Wave B (continuation): Use factory for tutorial enemy
@@ -13652,7 +14033,7 @@
 
                 const classCards = MM_CLASSES.map(cls => {
                     const info = STARTER_BY_CLASS[cls];
-                    const tmpl = info ? MONSTER_CATALOG.find(m => m.id === info.monsterId) : null;
+                    const tmpl = info ? getMonsterTemplate(info.monsterId) : null;
                     const selected = player.class === cls;
                     return `<div class="starter-class-card ${selected ? 'starter-class-card-sel' : ''}"
                                 onclick="mmStarterSelectClass('${escapeHtml(cls)}')">
@@ -13672,7 +14053,7 @@
 
             } else if (MM_STARTER.phase === 'egg') {
                 const info = STARTER_BY_CLASS[player.class] || STARTER_BY_CLASS['Guerreiro'];
-                const tmpl = MONSTER_CATALOG.find(m => m.id === info.monsterId);
+                const tmpl = getMonsterTemplate(info.monsterId);
                 if (title) title.textContent = `${info.eggEmoji} ${player.name} recebeu um ovo!`;
 
                 body.innerHTML = `
@@ -13689,7 +14070,7 @@
 
             } else if (MM_STARTER.phase === 'hatched') {
                 const info = STARTER_BY_CLASS[player.class] || STARTER_BY_CLASS['Guerreiro'];
-                const tmpl = MONSTER_CATALOG.find(m => m.id === info.monsterId);
+                const tmpl = getMonsterTemplate(info.monsterId);
                 const isLast = MM_STARTER.playerIndex >= GameState.players.filter(p => !p.starterGranted || p === player).length - 1;
                 const btnLabel = (MM_STARTER.playerIndex >= GameState.players.length - 1) ? '🚀 Começar Aventura!' : `➡️ Próximo Jogador`;
                 if (title) title.textContent = `🎉 Nasceu!`;
