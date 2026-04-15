@@ -728,6 +728,10 @@
         // Fase Q: Import Player Panel UI module
         import * as PlayerPanelUI from './js/ui/playerPanelUI.js';
 
+        // Fase U: Import Box System module
+        import * as BoxSystem from './js/data/boxSystem.js';
+        window.BoxSystem = BoxSystem;
+
         // Canon Loader — Fases 1 e 2: carrega dados canônicos (classes, matchups, skills MVP, species, evolution, progression)
         import * as CanonLoader from './js/canon/canonLoader.js';
         window.CanonLoader = CanonLoader;
@@ -7909,104 +7913,43 @@
 
         /**
          * Returns the number of monsters a player has in the sharedBox.
+         * Delega para BoxSystem.getBoxUsage (Fase U).
          */
         function getPlayerBoxSize(playerId) {
-            return (GameState.sharedBox || []).filter(s => s.ownerPlayerId === playerId).length;
+            return window.BoxSystem.getBoxUsage(GameState.sharedBox || [], playerId);
         }
 
         /**
-         * Add a monster to the shared box
+         * Add a monster to the shared box.
+         * Delega para BoxSystem.addMonsterToBox (Fase U).
          */
         function addToSharedBox(ownerPlayerId, monster) {
             if (!GameState.sharedBox) GameState.sharedBox = [];
-            
-            const BOX_MAX_TOTAL = 100;
-            if (GameState.sharedBox.length >= BOX_MAX_TOTAL) {
-                return { success: false, message: 'Box está cheia (100/100)' };
-            }
-
-            const slotId = 'BX_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            GameState.sharedBox.push({
-                slotId,
-                ownerPlayerId,
-                monster
-            });
-
-            return { success: true, slotId };
+            return window.BoxSystem.addMonsterToBox(GameState.sharedBox, ownerPlayerId, monster);
         }
 
         /**
-         * Move monster from team to box
+         * Move monster from team to box.
+         * Delega para BoxSystem.moveTeamToBox (Fase U).
          */
         function moveTeamToBox(activePlayerId, teamIndex) {
+            if (!GameState.sharedBox) GameState.sharedBox = [];
             const player = GameState.players.find(p => p.id === activePlayerId);
-            if (!player) {
-                return { success: false, message: 'Jogador não encontrado' };
-            }
-
-            if (!player.team || teamIndex < 0 || teamIndex >= player.team.length) {
-                return { success: false, message: 'Índice de equipe inválido' };
-            }
-
-            const monster = player.team[teamIndex];
-            if (!monster) {
-                return { success: false, message: 'Monstrinho não encontrado' };
-            }
-
-            const result = addToSharedBox(activePlayerId, monster);
-            if (!result.success) {
-                return result;
-            }
-
-            // Remove from team
-            player.team.splice(teamIndex, 1);
-
-            // Adjust activeIndex so it stays valid after the splice
-            if (typeof player.activeIndex === 'number') {
-                if (player.activeIndex === teamIndex) {
-                    // Removed the active monster: point to first alive remaining
-                    player.activeIndex = firstAliveIndex(player.team);
-                    if (player.activeIndex < 0) player.activeIndex = 0;
-                } else if (player.activeIndex > teamIndex) {
-                    player.activeIndex--;
-                }
-            }
-
-            return { success: true, message: `${monster.name} enviado para Box` };
+            return window.BoxSystem.moveTeamToBox(player, GameState.sharedBox, teamIndex, {
+                firstAliveIndex
+            });
         }
 
         /**
-         * Move monster from box to team
+         * Move monster from box to team.
+         * Delega para BoxSystem.moveBoxToTeam (Fase U).
          */
         function moveBoxToTeam(activePlayerId, slotId) {
+            if (!GameState.sharedBox) GameState.sharedBox = [];
             const player = GameState.players.find(p => p.id === activePlayerId);
-            if (!player) {
-                return { success: false, message: 'Jogador não encontrado' };
-            }
-
-            const TEAM_MAX = GameState.config?.maxTeamSize || 6;
-            if (player.team && player.team.length >= TEAM_MAX) {
-                return { success: false, message: `Equipe cheia (${TEAM_MAX}/${TEAM_MAX})` };
-            }
-
-            const slotIndex = GameState.sharedBox.findIndex(slot => slot.slotId === slotId);
-            if (slotIndex === -1) {
-                return { success: false, message: 'Slot não encontrado' };
-            }
-
-            const slot = GameState.sharedBox[slotIndex];
-            if (slot.ownerPlayerId !== activePlayerId) {
-                return { success: false, message: 'Este monstrinho não é seu' };
-            }
-
-            // Add to team
-            if (!player.team) player.team = [];
-            player.team.push(slot.monster);
-
-            // Remove from box
-            GameState.sharedBox.splice(slotIndex, 1);
-
-            return { success: true, message: `${slot.monster.name} retirado da Box` };
+            return window.BoxSystem.moveBoxToTeam(player, GameState.sharedBox, slotId, {
+                maxTeamSize: GameState.config?.maxTeamSize || 6
+            });
         }
 
         /**
@@ -8040,8 +7983,8 @@
                 const teamCount = viewedPlayer.team?.length || 0;
                 const TEAM_MAX = GameState.config?.maxTeamSize || 6;
                 
-                const viewedPlayerBoxCount = GameState.sharedBox?.filter(slot => slot.ownerPlayerId === viewedPlayerId).length || 0;
-                const BOX_MAX_TOTAL = 100;
+                const viewedPlayerBoxCount = window.BoxSystem.getBoxUsage(GameState.sharedBox || [], viewedPlayerId);
+                const BOX_MAX_TOTAL = window.BoxSystem.BOX_MAX_TOTAL;
 
                 const boxActivePlayer = document.getElementById('boxActivePlayer');
                 const boxTeamCount = document.getElementById('boxTeamCount');
