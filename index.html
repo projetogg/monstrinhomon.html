@@ -725,6 +725,9 @@
         // PR16B: Import PartyDex UI module
         import * as PartyDexUI from './js/ui/partyDexUI.js';
 
+        // Fase Q: Import Player Panel UI module
+        import * as PlayerPanelUI from './js/ui/playerPanelUI.js';
+
         // Canon Loader — Fases 1 e 2: carrega dados canônicos (classes, matchups, skills MVP, species, evolution, progression)
         import * as CanonLoader from './js/canon/canonLoader.js';
         window.CanonLoader = CanonLoader;
@@ -11174,52 +11177,38 @@
                 let html = '';
                 GameState.players.forEach(player => {
                     if (!player) return;
-                    
-                    const teamCount = player.team?.length || 0;
-                    const boxCount = getPlayerBoxSize(player.id);
-                    // Fix #4: usar player.class como fallback quando playerClassId não existe (saves do wizard)
-                    const playerClass = player.class || player.playerClassId || '';
 
-                    // Fix #5: Quest progress tracker
-                    let questHtml = '';
-                    if (window.GameFlow && typeof GameFlow.getActiveQuestsSummary === 'function') {
-                        const quests = GameFlow.getActiveQuestsSummary(player);
-                        if (quests.length > 0) {
-                            const questItems = quests.map(q => {
-                                const pct = Math.min(100, Math.floor((q.progress / q.needed) * 100));
-                                return `<div class="mb-5">
-                                    <strong>${q.quest.nome}</strong>: ${q.progress}/${q.needed}
-                                    <div class="progress-bar h-10 mt-3">
-                                        <div class="progress-fill xp" style="width: ${pct}%"></div>
-                                    </div>
-                                </div>`;
-                            }).join('');
-                            questHtml = `<div class="mt-10"><h4 class="m-0 mb-6">📋 Quests Ativas:</h4>${questItems}</div>`;
-                        } else {
-                            questHtml = `<div class="mt-8 opacity-70 text-small">📋 Nenhuma quest ativa.</div>`;
-                        }
+                    if (window.PlayerPanelUI?.renderPlayerTeamSection) {
+                        html += window.PlayerPanelUI.renderPlayerTeamSection(player, {
+                            maxTeamSize: GameState.config?.maxTeamSize || 6,
+                            getPlayerBoxSize,
+                            getActiveQuestsSummary: (targetPlayer) => {
+                                if (window.GameFlow && typeof GameFlow.getActiveQuestsSummary === 'function') {
+                                    return GameFlow.getActiveQuestsSummary(targetPlayer);
+                                }
+                                return [];
+                            },
+                            teamReorderDeps: {
+                                isAlive: _isAlive,
+                                renderEquipableItems,
+                                getItemById: (itemId) => {
+                                    if (window.Data && window.Data.getItemById) return window.Data.getItemById(itemId);
+                                    return null;
+                                },
+                                isReadyForKitSwap: (monster) => window.SpeciesDisplay?.isReadyForKitSwap?.(monster) || false,
+                                isEligibleForBattle: (monster, owner) => window.ClassEligibility?.isEligibleForBattle?.(monster, owner) ?? true,
+                                renderEligibilityBadgeForTeam,
+                                renderTeamReadinessIndicator,
+                                actionNames: {
+                                    moveUp: 'moveTeamMemberUp',
+                                    moveDown: 'moveTeamMemberDown',
+                                    openTrade: 'openTradeModal',
+                                    applyKitSwap: 'applyKitSwapRetroactive',
+                                    unequipItem: 'unequipItem'
+                                }
+                            }
+                        });
                     }
-                    
-                    html += `
-                        <div class="card group-player-card" data-class="${playerClass}">
-                            <div class="group-player-header">
-                                <span class="group-player-name">${player.name}</span>
-                                <div class="badge badge-${playerClass}" data-class="${playerClass}">${playerClass}</div>
-                            </div>
-                            <div class="group-player-stats">
-                                <span class="group-stat-pill">💰 ${player.money || 0}</span>
-                                <span class="group-stat-pill">⭐ ${player.afterlifeCurrency || 0}</span>
-                                <span class="group-stat-pill">🐾 Time: ${teamCount}/${GameState.config?.maxTeamSize || 6}</span>
-                                <span class="group-stat-pill">📦 Box: ${boxCount}</span>
-                            </div>
-                            ${questHtml}
-                            <details class="team-reorder-section">
-                                <summary style="cursor:pointer;font-weight:700;padding:6px 0;list-style:none;">⚔️ Time (${teamCount})</summary>
-                                <p class="text-small text-muted mb-10">O primeiro monstrinho vivo começa na batalha. Use as setas para reordenar.</p>
-                                ${renderTeamReorderList(player)}
-                            </details>
-                        </div>
-                    `;
                 });
                 
                 container.innerHTML = html;
@@ -11317,153 +11306,38 @@
         }
 
         function renderMonsterCard(monster) {
-            try {
-                if (!monster) return '';
-                
-                const hpPercent = ((monster.hp || 0) / (monster.hpMax || 1)) * 100;
-                const xpNeeded = (monster.level || 1) * 100;
-                const xpPercent = ((monster.xp || 0) / xpNeeded) * 100;
-                
-                // SISTEMA DE AMIZADE
-                const friendship = monster.friendship || DEFAULT_FRIENDSHIP;
-                const friendshipIcon = getFriendshipIcon(friendship);
-                const friendshipLevel = getFriendshipLevel(friendship);
-                const friendshipBonuses = getFriendshipBonuses(friendship);
-                
-                // Tooltip com informações completas de amizade
-                let friendshipTooltip = `Nível de Amizade: ${friendshipLevel}/5`;
-                if (friendshipBonuses.xpMultiplier > 1.0) {
-                    friendshipTooltip += `\nBônus XP: +${formatFriendshipBonusPercent(friendshipBonuses.xpMultiplier)}%`;
-                }
-                if (friendshipBonuses.critChance > 0) {
-                    friendshipTooltip += `\nChance Crítico: +${friendshipBonuses.critChance * 100}%`;
-                }
-                if (friendshipBonuses.statBonus > 0) {
-                    friendshipTooltip += `\nBônus Stats: +${friendshipBonuses.statBonus}`;
-                }
-                // Nota: surviveChance removido do tooltip até implementação
-                // if (friendshipBonuses.surviveChance > 0) {
-                //     friendshipTooltip += `\n[EM BREVE] Chance Sobreviver: ${friendshipBonuses.surviveChance * 100}%`;
-                // }
-                
-                return `
-                    <div class="monster-card ${monster.class || 'common'}">
-                        <div class="font-size-36">${monster.emoji || '🔮'}</div>
-                        <strong>${monster.name || 'Unknown'}</strong>
-                        ${monster.isShiny ? '<div class="badge badge-shiny">⭐ SHINY ⭐</div>' : ''}
-                        <div class="badge badge-${monster.rarity || 'common'}">${monster.rarity || 'common'}</div>
-                        <div>Lv ${monster.level || 1}</div>
-                        <div class="progress-bar h-30">
-                            <div class="progress-fill hp" style="width: ${hpPercent}%"></div>
-                        </div>
-                        <small>${monster.hp || 0}/${monster.hpMax || 0} HP</small>
-                        <div class="progress-bar h-15">
-                            <div class="progress-fill xp" style="width: ${xpPercent}%"></div>
-                        </div>
-                        <small>${monster.xp || 0}/${xpNeeded} XP</small>
-                        
-                        <div class="friendship-indicator" title="${friendshipTooltip}">
-                            ${friendshipIcon} <span class="friendship-text">${friendship}/100</span>
-                            <div class="friendship-bar">
-                                <div class="friendship-fill" style="width: ${friendship}%"></div>
-                            </div>
-                        </div>
-                        ${renderSpeciesIdentityBlock(monster)}
-                    </div>
-                `;
-            } catch (error) {
-                console.error('Failed to render monster card:', error);
-                return '<div class="monster-card">Error</div>';
-            }
+            if (!window.PlayerPanelUI?.renderMonsterCard) return '';
+            return window.PlayerPanelUI.renderMonsterCard(monster, {
+                defaultFriendship: DEFAULT_FRIENDSHIP,
+                getFriendshipIcon,
+                getFriendshipLevel,
+                getFriendshipBonuses,
+                formatFriendshipBonusPercent,
+                renderSpeciesIdentityBlock
+            });
         }
 
         function renderTeamReorderList(player) {
-            try {
-                if (!player || !player.team || player.team.length === 0) {
-                    return '<p class="text-muted">No monsters in team.</p>';
+            if (!window.PlayerPanelUI?.renderTeamReorderList) return '<p class="text-muted">No monsters in team.</p>';
+            return window.PlayerPanelUI.renderTeamReorderList(player, {
+                isAlive: _isAlive,
+                renderEquipableItems,
+                getItemById: (itemId) => {
+                    if (window.Data && window.Data.getItemById) return window.Data.getItemById(itemId);
+                    return null;
+                },
+                isReadyForKitSwap: (monster) => window.SpeciesDisplay?.isReadyForKitSwap?.(monster) || false,
+                isEligibleForBattle: (monster, owner) => window.ClassEligibility?.isEligibleForBattle?.(monster, owner) ?? true,
+                renderEligibilityBadgeForTeam,
+                renderTeamReadinessIndicator,
+                actionNames: {
+                    moveUp: 'moveTeamMemberUp',
+                    moveDown: 'moveTeamMemberDown',
+                    openTrade: 'openTradeModal',
+                    applyKitSwap: 'applyKitSwapRetroactive',
+                    unequipItem: 'unequipItem'
                 }
-
-                let html = '<div class="team-reorder-container">';
-                
-                player.team.forEach((monster, index) => {
-                    if (!monster) return;
-                    
-                    const isActive = index === (player.activeIndex ?? 0);
-                    const isAlive = _isAlive(monster);
-                    const hpPercent = ((monster.hp || 0) / (monster.hpMax || 1)) * 100;
-                    
-                    // PR12A: Get equipped item info
-                    let equippedItemHtml = '';
-                    if (monster.heldItemId && window.Data && window.Data.getItemById) {
-                        const itemDef = window.Data.getItemById(monster.heldItemId);
-                        if (itemDef) {
-                            const atkBonus = itemDef.stats?.atk || 0;
-                            const defBonus = itemDef.stats?.def || 0;
-                            let statsText = '';
-                            if (atkBonus > 0) statsText += `+${atkBonus} ATK `;
-                            if (defBonus > 0) statsText += `+${defBonus} DEF`;
-                            equippedItemHtml = `
-                                <div class="text-small mt-5">
-                                    🎒 <strong>${itemDef.name}</strong> (${statsText})
-                                    <button class="btn btn-xs" onclick="unequipItem('${player.id}', ${index})">Remover</button>
-                                </div>
-                            `;
-                        }
-                    } else {
-                        equippedItemHtml = `
-                            <div class="text-small mt-5">
-                                🎒 <em>Nenhum item equipado</em>
-                            </div>
-                        `;
-                    }
-                    
-                    // Fase 18: Indicador de "pronto para aplicar" kit_swap
-                    const isReadyForSwap = window.SpeciesDisplay?.isReadyForKitSwap?.(monster) || false;
-                    const kitApplyHtml = isReadyForSwap
-                        ? `<div class="mt-5"><button class="kit-apply-cta" onclick="applyKitSwapRetroactive('${monster.instanceId}')">🌟 Aplicar habilidade especial</button></div>`
-                        : '';
-
-                    // Fase 19: Badge de elegibilidade por classe para combate
-                    const isEligible = window.ClassEligibility?.isEligibleForBattle?.(monster, player) ?? true;
-                    const eligibilityHtml = renderEligibilityBadgeForTeam(monster, player);
-                    const ineligibleClass = isEligible ? '' : ' team-member-card--ineligible';
-
-                    html += `
-                        <div class="team-member-card ${isActive ? 'team-member-card-active' : 'team-member-card-inactive'}${ineligibleClass}">
-                            <span class="team-member-index">${index + 1}.</span>
-                            <div class="team-member-info">
-                                <strong>${monster.name || 'Unknown'}</strong>
-                                <span class="badge badge-${monster.rarity || 'common'}">${monster.rarity || 'Comum'}</span>
-                                Lv${monster.level || 1}
-                                ${eligibilityHtml}
-                                ${renderTeamReadinessIndicator(monster)}
-                                ${!isAlive ? '<span class="color-error text-bold"> (Desmaiado)</span>' : ''}
-                                <div class="progress-bar h-15 mt-5">
-                                    <div class="progress-fill hp" style="width: ${hpPercent}%"></div>
-                                </div>
-                                <small>${monster.hp || 0}/${monster.hpMax || 0} HP</small>
-                                ${kitApplyHtml}
-                                ${equippedItemHtml}
-                            </div>
-                            <div class="team-member-buttons">
-                                ${index > 0 ? `<button class="btn btn-sm-arrow" onclick="moveTeamMemberUp('${player.id}', ${index})">▲</button>` : '<span style="height:20px;display:block;"></span>'}
-                                ${index < player.team.length - 1 ? `<button class="btn btn-sm-arrow" onclick="moveTeamMemberDown('${player.id}', ${index})">▼</button>` : ''}
-                                ${isAlive && !isActive ? `<button class="btn btn-xs btn-trade" title="Trocar com outro jogador" onclick="openTradeModal('${player.id}', '${monster.instanceId || monster.id}')">🔄</button>` : ''}
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                html += '</div>';
-                
-                // PR12A: Add equipable items section
-                html += renderEquipableItems(player);
-                
-                return html;
-            } catch (error) {
-                console.error('Failed to render team reorder list:', error);
-                return '<p class="color-error">Error rendering team list</p>';
-            }
+            });
         }
 
         /**
