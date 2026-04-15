@@ -1,9 +1,10 @@
 /**
- * FRIENDSHIP SYSTEM TESTS (FASE R)
+ * FRIENDSHIP SYSTEM TESTS (FASE R / FASE X)
  *
  * Testa as funções puras do módulo friendshipSystem.js.
  * Cobertura: getFriendshipLevel, getFriendshipIcon, getFriendshipBonuses,
- *            formatFriendshipBonusPercent, applyFriendshipDelta
+ *            formatFriendshipBonusPercent, applyFriendshipDelta,
+ *            applyFriendshipEvent
  */
 
 import { describe, it, expect } from 'vitest';
@@ -15,6 +16,7 @@ import {
     getFriendshipBonuses,
     formatFriendshipBonusPercent,
     applyFriendshipDelta,
+    applyFriendshipEvent,
 } from '../js/progression/friendshipSystem.js';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -185,5 +187,103 @@ describe('applyFriendshipDelta', () => {
 
     it('retorna DEFAULT_FRIENDSHIP para undefined', () => {
         expect(applyFriendshipDelta(undefined, 5)).toBe(DEFAULT_FRIENDSHIP);
+    });
+});
+
+// ─── applyFriendshipEvent ─────────────────────────────────────────────────────
+
+describe('applyFriendshipEvent', () => {
+    const makeMonster = (friendship = 50) => ({ name: 'Luma', friendship });
+    const config = { win: 5, faint: -10, capture: 15 };
+
+    it('aplica delta positivo corretamente', () => {
+        const mon = makeMonster(50);
+        applyFriendshipEvent(mon, 'win', config, null);
+        expect(mon.friendship).toBe(55);
+    });
+
+    it('aplica delta negativo corretamente', () => {
+        const mon = makeMonster(50);
+        applyFriendshipEvent(mon, 'faint', config, null);
+        expect(mon.friendship).toBe(40);
+    });
+
+    it('clampea em 0 para resultado negativo', () => {
+        const mon = makeMonster(5);
+        applyFriendshipEvent(mon, 'faint', config, null);
+        expect(mon.friendship).toBe(0);
+    });
+
+    it('clampea em 100 para resultado que ultrapassa máximo', () => {
+        const mon = makeMonster(90);
+        applyFriendshipEvent(mon, 'capture', config, null);
+        expect(mon.friendship).toBe(100);
+    });
+
+    it('evento desconhecido não muda friendship', () => {
+        const mon = makeMonster(50);
+        applyFriendshipEvent(mon, 'evento_inexistente', config, null);
+        expect(mon.friendship).toBe(50);
+    });
+
+    it('inicializa friendship se ausente', () => {
+        const mon = { name: 'Trok' };
+        applyFriendshipEvent(mon, 'win', config, null);
+        expect(mon.friendship).toBe(DEFAULT_FRIENDSHIP + 5);
+    });
+
+    it('retorna silenciosamente para monster inválido', () => {
+        expect(() => applyFriendshipEvent(null, 'win', config, null)).not.toThrow();
+        expect(() => applyFriendshipEvent(undefined, 'win', config, null)).not.toThrow();
+    });
+
+    it('retorna silenciosamente sem config', () => {
+        const mon = makeMonster(50);
+        applyFriendshipEvent(mon, 'win', null, null);
+        expect(mon.friendship).toBe(50); // não mudou
+    });
+
+    it('empurra mensagem de marco ao atingir 50', () => {
+        const mon = makeMonster(45);
+        const log = [];
+        applyFriendshipEvent(mon, 'win', config, log);
+        expect(log.length).toBe(1);
+        expect(log[0]).toContain('💛');
+        expect(log[0]).toContain('Luma');
+    });
+
+    it('empurra mensagem de marco ao atingir 75', () => {
+        const mon = makeMonster(70);
+        const log = [];
+        applyFriendshipEvent(mon, 'capture', config, log);
+        expect(log.length).toBe(1);
+        expect(log[0]).toContain('💚');
+    });
+
+    it('empurra mensagem de marco ao atingir 100', () => {
+        const mon = makeMonster(85);
+        const log = [];
+        applyFriendshipEvent(mon, 'capture', config, log);
+        expect(log.length).toBe(1);
+        expect(log[0]).toContain('💖');
+    });
+
+    it('não empurra mensagem se já estava no marco', () => {
+        const mon = makeMonster(75);
+        const log = [];
+        applyFriendshipEvent(mon, 'win', config, log);
+        expect(log.length).toBe(0); // já estava em >= 75
+    });
+
+    it('não empurra mensagem se log for null', () => {
+        const mon = makeMonster(45);
+        expect(() => applyFriendshipEvent(mon, 'win', config, null)).not.toThrow();
+    });
+
+    it('usa nickname em mensagens de marco quando disponível', () => {
+        const mon = { name: 'Luma', nickname: 'LuminoZão', friendship: 45 };
+        const log = [];
+        applyFriendshipEvent(mon, 'win', config, log);
+        expect(log[0]).toContain('LuminoZão');
     });
 });

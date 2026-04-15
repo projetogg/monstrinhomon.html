@@ -2128,46 +2128,15 @@
          * @param {boolean} autoSave - Se deve salvar automaticamente (default: true)
          */
         function updateFriendship(monster, event, autoSave = true) {
-            if (!monster || typeof monster !== 'object') return;
-            
-            // Inicializar friendship se não existir
-            if (typeof monster.friendship !== 'number') {
-                monster.friendship = DEFAULT_FRIENDSHIP;
-            }
-            
+            // FASE X: delega lógica pura ao módulo canônico
             const config = GameState.config?.friendshipConfig;
             if (!config) {
                 console.warn('[Friendship] Config não encontrado');
                 return;
             }
-            
-            const change = config[event] || 0;
-            const oldFriendship = monster.friendship;
-            
-            // Aplicar mudança (clamped entre 0-100)
-            monster.friendship = Math.max(0, Math.min(100, monster.friendship + change));
-            
-            // Log de mensagens especiais ao atingir marcos importantes
-            const encounter = GameState.currentEncounter;
-            const log = encounter?.log || [];
-            
-            if (monster.friendship === 100 && oldFriendship < 100) {
-                if (Array.isArray(log)) {
-                    log.push(`💖 ${monster.nickname || monster.name} atingiu amizade máxima!`);
-                }
-            } else if (monster.friendship >= 75 && oldFriendship < 75) {
-                if (Array.isArray(log)) {
-                    log.push(`💚 ${monster.nickname || monster.name} está muito feliz!`);
-                }
-            } else if (monster.friendship >= 50 && oldFriendship < 50) {
-                if (Array.isArray(log)) {
-                    log.push(`💛 ${monster.nickname || monster.name} está se aproximando de você!`);
-                }
-            }
-            
-            if (autoSave) {
-                saveToLocalStorage();
-            }
+            const log = GameState.currentEncounter?.log ?? [];
+            FriendshipSystem.applyFriendshipEvent(monster, event, config, log);
+            if (autoSave) saveToLocalStorage();
         }
 
         /**
@@ -2178,73 +2147,18 @@
          */
         function updateMultipleFriendshipEvents(monster, events) {
             if (!monster || !Array.isArray(events)) return;
-            
-            // Aplicar todos os eventos sem salvar
-            events.forEach(event => updateFriendship(monster, event, false));
-            
-            // Salvar apenas uma vez no final
+            // FASE X: delega lógica pura ao módulo canônico (batch, sem save intermediário)
+            const config = GameState.config?.friendshipConfig;
+            const log = GameState.currentEncounter?.log ?? [];
+            events.forEach(evt => FriendshipSystem.applyFriendshipEvent(monster, evt, config, log));
             saveToLocalStorage();
         }
 
-        /**
-         * Retorna o nível de amizade (1-5)
-         * @param {number} friendship - Valor de amizade (0-100)
-         * @returns {number} - Nível de 1 a 5
-         */
-        function getFriendshipLevel(friendship) {
-            // FASE R: delega ao módulo canônico
-            if (window.FriendshipSystem) return window.FriendshipSystem.getFriendshipLevel(friendship);
-            if (friendship >= 100) return 5;
-            if (friendship >= 75) return 4;
-            if (friendship >= 50) return 3;
-            if (friendship >= 25) return 2;
-            return 1;
-        }
-
-        /**
-         * Retorna emoji representando nível de amizade
-         * @param {number} friendship - Valor de amizade (0-100)
-         * @returns {string} - Emoji de coração
-         */
-        function getFriendshipIcon(friendship) {
-            // FASE R: delega ao módulo canônico
-            if (window.FriendshipSystem) return window.FriendshipSystem.getFriendshipIcon(friendship);
-            const level = getFriendshipLevel(friendship);
-            const icons = ['🖤', '🤍', '💛', '💚', '❤️'];
-            return icons[level - 1];
-        }
-
-        /**
-         * Calcula bônus baseados no nível de amizade
-         * @param {number} friendship - Valor de amizade (0-100)
-         * @returns {Object} - Objeto com bônus aplicáveis
-         */
-        function getFriendshipBonuses(friendship) {
-            // FASE R: delega ao módulo canônico
-            if (window.FriendshipSystem) return window.FriendshipSystem.getFriendshipBonuses(friendship);
-            const level = getFriendshipLevel(friendship);
-            const bonuses = {
-                xpMultiplier: 1.0,
-                critChance: 0,
-                statBonus: 0,
-                surviveChance: 0
-            };
-            if (level >= 2) bonuses.xpMultiplier = 1.05;
-            if (level >= 3) bonuses.critChance = 0.05;
-            if (level >= 4) { bonuses.xpMultiplier = 1.10; bonuses.statBonus = 1; }
-            return bonuses;
-        }
-
-        /**
-         * Helper: Formata percentual de bônus de amizade para exibição
-         * @param {number} multiplier - Multiplicador de XP (ex: 1.05)
-         * @returns {number} - Percentual arredondado (ex: 5)
-         */
-        function formatFriendshipBonusPercent(multiplier) {
-            // FASE R: delega ao módulo canônico
-            if (window.FriendshipSystem) return window.FriendshipSystem.formatFriendshipBonusPercent(multiplier);
-            return Math.round((multiplier - 1) * 100);
-        }
+        // FASE X: delegates diretos ao módulo FriendshipSystem (sem fallback — módulo sempre presente)
+        function getFriendshipLevel(f)          { return FriendshipSystem.getFriendshipLevel(f); }
+        function getFriendshipIcon(f)           { return FriendshipSystem.getFriendshipIcon(f); }
+        function getFriendshipBonuses(f)        { return FriendshipSystem.getFriendshipBonuses(f); }
+        function formatFriendshipBonusPercent(m){ return FriendshipSystem.formatFriendshipBonusPercent(m); }
 
         // COMMIT 6: normalizeGameState()
         /**
