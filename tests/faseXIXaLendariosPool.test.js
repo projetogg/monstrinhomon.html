@@ -97,12 +97,16 @@ describe('Fase XIX-A — Lendários nos pools de encontro', () => {
         });
 
         it('cada lendário deve ter uma classe diferente (cobertura de todas as 8 classes)', () => {
+            const EXPECTED_CLASSES = new Set(['Guerreiro', 'Mago', 'Curandeiro', 'Bárbaro', 'Ladino', 'Bardo', 'Caçador', 'Animalista']);
             const classes = LEGENDARIOS.map(id => {
                 const m = monsters.find(m => m.id === id);
                 return m?.class;
             });
             const uniqueClasses = new Set(classes);
             expect(uniqueClasses.size).toBe(8);
+            for (const cls of EXPECTED_CLASSES) {
+                expect(uniqueClasses, `Classe '${cls}' não está representada nos lendários`).toContain(cls);
+            }
         });
     });
 });

@@ -45,7 +45,7 @@ function makeAddToSharedBox(GameState) {
         if (GameState.sharedBox.length >= BOX_MAX_TOTAL) {
             return { success: false, message: 'Box está cheia (100/100)' };
         }
-        const slotId = 'BX_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        const slotId = 'BX_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
         GameState.sharedBox.push({ slotId, ownerPlayerId, monster });
         return { success: true, slotId };
     };

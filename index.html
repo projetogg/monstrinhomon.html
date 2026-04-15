@@ -5337,7 +5337,7 @@
             let evoLineHtml = '';
             try {
                 const line = CanonLoader.getEvolutionLineByName
-                    ? (CanonLoader.getEvolutionLineByName(newName) || CanonLoader.getEvolutionLineByName(oldName))
+                    ? (CanonLoader.getEvolutionLineByName(newName) ?? CanonLoader.getEvolutionLineByName(oldName) ?? null)
                     : null;
                 if (line) {
                     const stages = line.stages || [];
@@ -8185,7 +8185,7 @@
                 return { success: false, message: 'Box está cheia (100/100)' };
             }
 
-            const slotId = 'BX_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            const slotId = 'BX_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
             GameState.sharedBox.push({
                 slotId,
                 ownerPlayerId,
@@ -8439,8 +8439,12 @@
                     `;
                     grid.appendChild(slotDiv);
                 });
-                boxList.appendChild(grid);
-                if (totalPages > 1) boxList.appendChild(Object.assign(document.createElement('div'), { innerHTML: paginationHtml, className: 'box-pagination-bottom' }));
+                if (boxList.appendChild(grid), totalPages > 1) {
+                    const bottomPagination = document.createElement('div');
+                    bottomPagination.className = 'box-pagination-bottom';
+                    bottomPagination.innerHTML = paginationHtml;
+                    boxList.appendChild(bottomPagination);
+                }
 
             } catch (error) {
                 console.error('Failed to render Box tab:', error);
@@ -8453,6 +8457,7 @@
             const playerSlots = (GameState.sharedBox || []).filter(s => s.ownerPlayerId === GameState.ui.boxViewedPlayerId);
             const totalPages = Math.max(1, Math.ceil(playerSlots.length / BOX_PAGE_SIZE));
             GameState.ui.boxPageIndex = Math.max(0, Math.min((GameState.ui.boxPageIndex || 0) + delta, totalPages - 1));
+            saveToLocalStorage();
             renderBoxTab();
         }
         window.boxPageNav = boxPageNav;
