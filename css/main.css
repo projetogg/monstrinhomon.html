@@ -4708,6 +4708,7 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
 .trade-mon-card.selected {
     border-color: #3498db !important;
     background: rgba(52,152,219,0.08) !important;
+}
 /* ── Therapy Progress Bar (FASE M) ─────────────────────────────────────────── */
 .therapy-medals-row {
     display: flex;
@@ -4875,6 +4876,15 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
 }
 
 /* ── Healing Modal ──────────────────────────────────────────────────────── */
+@keyframes healModalIn {
+    from { opacity: 0; transform: scale(0.93) translateY(12px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes healSuccessPop {
+    0%   { opacity: 0; transform: translateY(4px) scale(0.97); }
+    60%  { opacity: 1; transform: translateY(-2px) scale(1.01); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
 #healModal {
     position: fixed;
     inset: 0;
@@ -4886,49 +4896,88 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
     padding: 16px;
 }
 #healModal.hidden { display: none; }
+#healModal:not(.hidden) .heal-modal-card {
+    animation: healModalIn 0.28s cubic-bezier(0.22,1,0.36,1) both;
+}
 .heal-modal-card {
-    background: linear-gradient(180deg, #112a1a 0%, #0d1f14 100%);
-    border: 1.5px solid rgba(74,223,136,0.3);
+    background: linear-gradient(180deg, #0f2419 0%, #0b1b10 100%);
+    border: 1.5px solid rgba(74,223,136,0.30);
     border-radius: 20px;
-    padding: 20px;
-    width: min(480px, 100%);
-    max-height: 80vh;
-    overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0,180,80,0.2);
+    padding: 0;
+    width: min(500px, 100%);
+    max-height: 82vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow:
+        0 24px 64px rgba(0,0,0,0.65),
+        0 0 0 1px rgba(74,223,136,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+}
+/* ── Topo decorativo do card ── */
+.heal-modal-card::before {
+    content: '';
+    display: block;
+    height: 3px;
+    background: linear-gradient(90deg, #27ae60 0%, #4adf88 60%, transparent 100%);
+    border-radius: 20px 20px 0 0;
+    flex-shrink: 0;
 }
 .heal-modal-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
+    gap: 14px;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
 }
 .heal-modal-npc {
-    font-size: 40px;
+    font-size: 42px;
     flex-shrink: 0;
+    width: 56px;
+    height: 56px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(39,174,96,0.12);
+    border: 1px solid rgba(74,223,136,0.20);
+    border-radius: 14px;
+    line-height: 1;
 }
 .heal-modal-title {
     font-size: 18px;
     font-weight: 900;
     color: #4adf88;
-    margin: 0 0 2px;
+    margin: 0 0 3px;
+    letter-spacing: 0.2px;
 }
 .heal-modal-flavor {
     font-size: 12px;
-    color: rgba(255,255,255,0.65);
+    color: rgba(255,255,255,0.55);
     margin: 0;
     font-style: italic;
+    line-height: 1.5;
 }
 .heal-modal-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin-bottom: 16px;
+    gap: 6px;
+    padding: 14px 20px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(74,223,136,0.25) transparent;
 }
+.heal-modal-list::-webkit-scrollbar { width: 4px; }
+.heal-modal-list::-webkit-scrollbar-track { background: transparent; }
+.heal-modal-list::-webkit-scrollbar-thumb { background: rgba(74,223,136,0.25); border-radius: 2px; }
 .heal-modal-monster {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.035);
+    border: 1px solid rgba(255,255,255,0.07);
     border-radius: 10px;
     padding: 10px 12px;
+    transition: border-color 0.2s;
 }
 .heal-modal-monster__header {
     display: flex;
@@ -4939,62 +4988,121 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
 .heal-modal-monster__name {
     font-size: 13px;
     font-weight: 700;
-    color: #fff;
+    color: #f0f0f0;
 }
 .heal-modal-monster__hp-text {
     font-size: 11px;
-    color: rgba(255,255,255,0.65);
+    color: rgba(255,255,255,0.55);
+    font-variant-numeric: tabular-nums;
 }
 .heal-modal-hp-bar {
-    height: 6px;
-    background: rgba(255,255,255,0.1);
+    height: 5px;
+    background: rgba(255,255,255,0.08);
     border-radius: 3px;
     overflow: hidden;
 }
 .heal-modal-hp-fill {
     height: 100%;
     border-radius: 3px;
-    background: linear-gradient(90deg, #e74c3c, #e67e22);
-    transition: width 0.6s ease, background 0.6s ease;
+    background: linear-gradient(90deg, #c0392b, #e74c3c);
+    transition: width 0.65s cubic-bezier(0.4,0,0.2,1), background 0.65s ease;
+}
+.heal-modal-hp-fill--ok {
+    background: linear-gradient(90deg, #d4a017, #f0c040);
+}
+.heal-modal-hp-fill--good {
+    background: linear-gradient(90deg, #27ae60, #4adf88);
 }
 .heal-modal-hp-fill.full {
     background: linear-gradient(90deg, #27ae60, #4adf88);
 }
+/* Monstrinho nocauteado — visual subdued + faixa vermelha sutil */
+.heal-modal-monster--fainted {
+    background: rgba(180,40,40,0.07);
+    border-color: rgba(180,40,40,0.20);
+}
 .heal-modal-monster--fainted .heal-modal-monster__name {
-    color: rgba(255,255,255,0.45);
+    color: rgba(255,255,255,0.38);
+    text-decoration: line-through;
+    text-decoration-color: rgba(255,80,80,0.45);
+}
+.heal-modal-monster--fainted .heal-modal-monster__hp-text {
+    color: rgba(255,100,100,0.65);
+}
+/* Após cura: destaque verde */
+.heal-modal-monster--healed {
+    border-color: rgba(74,223,136,0.30);
+    background: rgba(39,174,96,0.06);
+}
+.heal-modal-feedback {
+    padding: 0 20px;
+    flex-shrink: 0;
+}
+.heal-all-success {
+    text-align: center;
+    padding: 10px 16px;
+    margin-bottom: 4px;
+    color: #4adf88;
+    font-size: 14px;
+    font-weight: 700;
+    background: rgba(39,174,96,0.10);
+    border: 1px solid rgba(74,223,136,0.22);
+    border-radius: 10px;
+    animation: healSuccessPop 0.4s ease both;
 }
 .heal-modal-footer {
     display: flex;
     gap: 10px;
+    padding: 14px 20px 18px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
 }
 .heal-modal-btn {
     flex: 1;
     padding: 12px 16px;
     border-radius: 12px;
     border: none;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 800;
     cursor: pointer;
-    transition: transform 0.15s, box-shadow 0.15s;
+    transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+    font-family: inherit;
 }
 .heal-modal-btn--primary {
     background: linear-gradient(135deg, #27ae60 0%, #4adf88 100%);
     color: #fff;
-    box-shadow: 0 4px 16px rgba(39,174,96,0.4);
+    box-shadow: 0 4px 18px rgba(39,174,96,0.40);
 }
-.heal-modal-btn--primary:hover { transform: translateY(-1px); }
+.heal-modal-btn--primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(39,174,96,0.55);
+}
+.heal-modal-btn--primary:active:not(:disabled) { transform: translateY(0); }
 .heal-modal-btn--secondary {
-    background: rgba(255,255,255,0.08);
-    color: rgba(255,255,255,0.8);
-    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.07);
+    color: rgba(255,255,255,0.75);
+    border: 1px solid rgba(255,255,255,0.11);
 }
-.heal-all-success {
-    text-align: center;
-    padding: 12px;
-    color: #4adf88;
-    font-size: 15px;
-    font-weight: 700;
-    animation: fadeIn 0.3s ease;
+.heal-modal-btn--secondary:hover {
+    background: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.92);
+    border-color: rgba(255,255,255,0.20);
+}
+.heal-modal-btn--secondary:active {
+    background: rgba(255,255,255,0.17);
+}
+/* Responsividade do modal */
+@media (max-width: 520px) {
+    .heal-modal-card {
+        border-radius: 16px;
+        max-height: 88vh;
+    }
+    .heal-modal-header { padding: 14px 16px 12px; }
+    .heal-modal-npc { font-size: 34px; width: 46px; height: 46px; }
+    .heal-modal-title { font-size: 16px; }
+    .heal-modal-list { padding: 12px 16px; gap: 5px; }
+    .heal-modal-footer { padding: 12px 16px 16px; }
+    .heal-modal-btn { font-size: 13px; padding: 11px 12px; }
 }
 
 /* ── HP Bar Impact Animation (batalha) ─────────────────────────────────── */
