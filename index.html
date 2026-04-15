@@ -781,6 +781,7 @@
         import * as EvolutionSystem from './js/data/evolutionSystem.js';
         // Trade System — Troca de Monstrinhos entre jogadores (FASE O)
         import * as TradeSystem from './js/trade/tradeSystem.js';
+        import * as CaptureSystem from './js/data/captureSystem.js';
         window.BattleSwap = BattleSwap;
 
         // FASE H: Therapy Rewards disponível globalmente
@@ -791,6 +792,9 @@
 
         // FASE O: Trade System disponível globalmente
         window.TradeSystem = TradeSystem;
+
+        // FASE V: CaptureSystem disponível globalmente
+        window.CaptureSystem = CaptureSystem;
 
         // FASE R: Friendship System disponível globalmente
         window.FriendshipSystem = FriendshipSystem;
@@ -1469,11 +1473,8 @@
 
         // CLASTERORB TIERS (Sistema de captura em tiers)
         // Valores maiores = melhor item de captura = mais útil
-        const CLASTERORBS = {
-            'CLASTERORB_COMUM': { id: 'CLASTERORB_COMUM', name: 'ClasterOrb Comum', type: 'CAPTURE', capture_bonus_pp: 0, emoji: '⚪' },
-            'CLASTERORB_INCOMUM': { id: 'CLASTERORB_INCOMUM', name: 'ClasterOrb Incomum', type: 'CAPTURE', capture_bonus_pp: 10, emoji: '🔵' },
-            'CLASTERORB_RARA': { id: 'CLASTERORB_RARA', name: 'ClasterOrb Rara', type: 'CAPTURE', capture_bonus_pp: 20, emoji: '🟣' }
-        };
+        // FASE V: CLASTERORBS delegado ao módulo captureSystem.js (fonte única de verdade)
+        const CLASTERORBS = CaptureSystem.CLASTERORBS;
 
         // ============================================================================
         // Commit 12 (Wave C12.3): Centralized Auxiliary Tables - Single Source of Truth
@@ -7076,11 +7077,18 @@
                 const orbInfo = CLASTERORBS[selectedOrbId];
                 if (!orbInfo) return;
                 
-                // Calcular captureScore multi-eixo
+                // Calcular captureScore multi-eixo (wildCore — Trilha HP + Agressividade)
                 const score = calculateCaptureScore(monster, orbInfo.capture_bonus_pp);
                 const needed = GameState.config?.captureScoreThreshold?.[monster.rarity] ?? 45;
                 const readiness = getCaptureReadinessLabel(score);
                 const success = score >= needed;
+
+                // Threshold HP-based via CaptureSystem (modelo determinístico canônico)
+                const hpPct = monster.hp / Math.max(1, monster.hpMax);
+                const hpThreshold = CaptureSystem.calculateCaptureThreshold(
+                    monster.rarity, hpPct, orbInfo.capture_bonus_pp
+                );
+                const hpSuccess = hpPct <= hpThreshold;
                 
                 display.innerHTML = `
                     <div class="battle-capture-status-label" style="color:${success ? '#2e7d32' : '#c62828'}">
@@ -7088,6 +7096,9 @@
                     </div>
                     <div class="battle-capture-breakdown">
                         HP ${Math.round((1-monster.hp/monster.hpMax)*50)} · Calma ${Math.round((1-(monster.aggression??100)/100)*50)} · Orb +${orbInfo.capture_bonus_pp}
+                    </div>
+                    <div class="battle-capture-breakdown" style="opacity:0.7">
+                        📊 HP ${Math.round(hpPct*100)}% / limiar ${Math.round(hpThreshold*100)}% ${hpSuccess ? '✅' : '❌'}
                     </div>
                 `;
             } catch (error) {
@@ -7171,9 +7182,13 @@
                     return;
                 }
 
-                // Validação: HP > 0 obrigatório (capturar desmaiado é proibido)
-                if (monster.hp <= 0) {
-                    mmAlert('❌ Não pode capturar um monstrinho desmaiado! HP deve ser > 0.', 'error');
+                // Validação de pré-condições via CaptureSystem (puro, sem DOM)
+                const captureCheck = CaptureSystem.canCapture(monster);
+                if (!captureCheck.ok) {
+                    const msg = captureCheck.reason === 'MONSTER_KO'
+                        ? '❌ Não pode capturar um monstrinho desmaiado! HP deve ser > 0.'
+                        : `❌ Captura não permitida (${captureCheck.reason}).`;
+                    mmAlert(msg, 'error');
                     return;
                 }
 
