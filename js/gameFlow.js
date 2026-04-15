@@ -394,3 +394,6 @@ export function hasCompletedQuest(player, questId) {
     ensureQuestState(player);
     return player.questState.completedQuestIds.includes(questId);
 }
+
+// Re-exporta utilitários do questSystem para acesso via window.GameFlow
+export { getQuest, QUESTS_DATA } from './data/questSystem.js';
