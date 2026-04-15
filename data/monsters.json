@@ -846,6 +846,15 @@
       "baseSpd": 16,
       "baseEne": 10,
       "emoji": "👤"
-    }
+    },
+
+    { "id": "MON_101", "name": "Omegardmon",   "class": "Guerreiro",  "rarity": "Lendário", "baseHp": 90, "baseAtk": 20, "baseDef": 20, "baseSpd": 9,  "baseEne": 8,  "emoji": "👑" },
+    { "id": "MON_102", "name": "Arcanumon",     "class": "Mago",       "rarity": "Lendário", "baseHp": 72, "baseAtk": 18, "baseDef": 10, "baseSpd": 12, "baseEne": 22, "emoji": "✨" },
+    { "id": "MON_103", "name": "Divinaflora",   "class": "Curandeiro", "rarity": "Lendário", "baseHp": 88, "baseAtk": 10, "baseDef": 14, "baseSpd": 10, "baseEne": 22, "emoji": "🌿" },
+    { "id": "MON_104", "name": "Titanormon",    "class": "Bárbaro",    "rarity": "Lendário", "baseHp": 100,"baseAtk": 22, "baseDef": 12, "baseSpd": 8,  "baseEne": 8,  "emoji": "⚡" },
+    { "id": "MON_105", "name": "Fantasmamon",   "class": "Ladino",     "rarity": "Lendário", "baseHp": 75, "baseAtk": 20, "baseDef": 9,  "baseSpd": 22, "baseEne": 12, "emoji": "🌑" },
+    { "id": "MON_106", "name": "Sinfonmon",     "class": "Bardo",      "rarity": "Lendário", "baseHp": 78, "baseAtk": 14, "baseDef": 11, "baseSpd": 20, "baseEne": 20, "emoji": "🎻" },
+    { "id": "MON_107", "name": "Aguiamon",      "class": "Caçador",    "rarity": "Lendário", "baseHp": 80, "baseAtk": 22, "baseDef": 10, "baseSpd": 24, "baseEne": 10, "emoji": "🦅" },
+    { "id": "MON_108", "name": "Primordius",    "class": "Animalista", "rarity": "Lendário", "baseHp": 95, "baseAtk": 18, "baseDef": 16, "baseSpd": 11, "baseEne": 12, "emoji": "🌳" }
   ]
 }
