@@ -262,7 +262,7 @@ export function processQuestProgress(player, enc, capturedMonsterId, log) {
  *
  * @returns {boolean} true se concluída com sucesso
  */
-export function completeQuest(player, questId, _deps, logArr) {
+export function completeQuest(player, questId, deps, logArr) {
     if (!player || !questId) return false;
     ensureQuestState(player);
 
