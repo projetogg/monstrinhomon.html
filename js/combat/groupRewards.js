@@ -140,3 +140,52 @@ export function processGroupVictoryRewards(enc, deps) {
 
     return { participants };
 }
+
+/**
+ * Processa recompensas terapêuticas de fim de batalha.
+ *
+ * Regras:
+ * - Se nenhum participante fugiu: +20% XP para todos (bônus de cooperação)
+ * - Se algum jogador curou aliado (therapyLog): registra "Amizade +5"
+ *
+ * Idempotente: protegida por enc._therapyRewardsProcessed.
+ *
+ * @param {object} enc  - Encounter com enc.result === 'victory'
+ * @param {object} deps - { state, helpers }
+ * @returns {{ highlights: string[] }}
+ */
+export function processTherapyRewards(enc, deps) {
+    const highlights = [];
+    if (!enc || enc.result !== 'victory') return { highlights };
+    if (enc._therapyRewardsProcessed) return { highlights };
+    enc._therapyRewardsProcessed = true;
+
+    const { state, helpers } = deps;
+    const therapyLog = enc.therapyLog || [];
+
+    // Bônus de cooperação: nenhum participante fugiu
+    const anyFled = therapyLog.some(e => e.event === 'flee');
+    if (!anyFled) {
+        enc.therapyNobodyFled = true;
+        highlights.push('🤝 Ninguém fugiu! +20% XP de bônus para todos.');
+        const eligibleIds = enc.participants || [];
+        for (const pid of eligibleIds) {
+            const player = state.players.find(p => p.id === pid);
+            if (!player) continue;
+            const activeMon = player.team?.[player.activeIndex ?? 0];
+            if (!activeMon) continue;
+            const xpBonus = Math.round((Number(activeMon.xp) || 0) * 0.20);
+            if (xpBonus > 0 && helpers?.addXP) {
+                helpers.addXP(activeMon, xpBonus);
+            }
+        }
+    }
+
+    // Bônus de amizade: algum jogador curou aliado
+    const anyAllyHeal = therapyLog.some(e => e.event === 'ally_heal');
+    if (anyAllyHeal) {
+        highlights.push('💚 Amizade +5: alguém curou um aliado!');
+    }
+
+    return { highlights };
+}

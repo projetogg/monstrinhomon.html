@@ -1,0 +1,37 @@
+{
+  "_comment": "Kits de habilidades para inimigos por classe (nível >= 10)",
+  "byClass": {
+    "Guerreiro": [
+      { "id": "esk_guard_stance", "name": "Postura Defensiva", "type": "BUFF", "target": "self", "cost": 1, "power": 0, "effect": "def_up", "minLevel": 1 },
+      { "id": "esk_shield_bash", "name": "Golpe de Escudo", "type": "DAMAGE", "target": "enemy", "cost": 2, "power": 5, "minLevel": 10 }
+    ],
+    "Mago": [
+      { "id": "esk_arcane_bolt", "name": "Raio Arcano", "type": "DAMAGE", "target": "enemy", "cost": 2, "power": 8, "minLevel": 1 },
+      { "id": "esk_arcane_surge", "name": "Surto Arcano", "type": "DAMAGE", "target": "enemy", "cost": 4, "power": 14, "minLevel": 10 }
+    ],
+    "Curandeiro": [
+      { "id": "esk_ally_heal", "name": "Cura Aliado", "type": "HEAL", "target": "ally", "cost": 2, "power": 0, "minLevel": 1 },
+      { "id": "esk_group_heal", "name": "Cura em Área", "type": "HEAL", "target": "area", "cost": 4, "power": 0, "minLevel": 10 }
+    ],
+    "Bárbaro": [
+      { "id": "esk_rage_strike", "name": "Golpe Furioso", "type": "DAMAGE", "target": "enemy", "cost": 2, "power": 7, "minLevel": 1 },
+      { "id": "esk_berserk", "name": "Berserk", "type": "BUFF", "target": "self", "cost": 3, "power": 0, "effect": "atk_up", "minLevel": 10 }
+    ],
+    "Ladino": [
+      { "id": "esk_backstab", "name": "Golpe Pelas Costas", "type": "DAMAGE", "target": "enemy", "cost": 2, "power": 6, "minLevel": 1 },
+      { "id": "esk_shadow_step", "name": "Passo das Sombras", "type": "BUFF", "target": "self", "cost": 2, "power": 0, "effect": "evasion_up", "minLevel": 10 }
+    ],
+    "Bardo": [
+      { "id": "esk_battle_song", "name": "Canção de Batalha", "type": "BUFF", "target": "ally", "cost": 2, "power": 0, "effect": "atk_up", "minLevel": 1 },
+      { "id": "esk_dissonance", "name": "Dissonância", "type": "DAMAGE", "target": "enemy", "cost": 3, "power": 5, "minLevel": 10 }
+    ],
+    "Caçador": [
+      { "id": "esk_aimed_shot", "name": "Tiro Preciso", "type": "DAMAGE", "target": "enemy", "cost": 2, "power": 7, "minLevel": 1 },
+      { "id": "esk_trap", "name": "Armadilha", "type": "BUFF", "target": "enemy", "cost": 3, "power": 0, "effect": "def_down", "minLevel": 10 }
+    ],
+    "Animalista": [
+      { "id": "esk_wild_strike", "name": "Golpe Selvagem", "type": "DAMAGE", "target": "enemy", "cost": 2, "power": 6, "minLevel": 1 },
+      { "id": "esk_pack_howl", "name": "Uivo de Alcateia", "type": "BUFF", "target": "ally", "cost": 3, "power": 0, "effect": "atk_up", "minLevel": 10 }
+    ]
+  }
+}

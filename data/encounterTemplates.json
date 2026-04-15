@@ -1,0 +1,35 @@
+{
+  "_comment": "Templates de encontro multi-inimigo para batalhas em grupo",
+  "templates": [
+    {
+      "id": "enc_duo_guerreiro",
+      "name": "Patrulha Dupla",
+      "type": "group_trainer",
+      "enemies": [
+        { "class": "Guerreiro", "level": 3, "rarity": "Comum" },
+        { "class": "Bárbaro", "level": 2, "rarity": "Comum" }
+      ],
+      "fleeType": "normal"
+    },
+    {
+      "id": "enc_trio_mixed",
+      "name": "Trio Misto",
+      "type": "group_trainer",
+      "enemies": [
+        { "class": "Mago", "level": 5, "rarity": "Incomum" },
+        { "class": "Curandeiro", "level": 4, "rarity": "Comum" },
+        { "class": "Ladino", "level": 4, "rarity": "Comum" }
+      ],
+      "fleeType": "intimidating"
+    },
+    {
+      "id": "enc_boss_dragon",
+      "name": "Dragão Ancião",
+      "type": "boss",
+      "enemies": [
+        { "class": "Bárbaro", "level": 10, "rarity": "Lendário" }
+      ],
+      "fleeType": "elite"
+    }
+  ]
+}
