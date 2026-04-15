@@ -1,0 +1,37 @@
+{
+  "version": "phase1-remap",
+  "status": "draft-not-live",
+  "rules": [
+    "Remap por funcao equivalente (classe + estagio + papel), nunca por numero puro.",
+    "Aplicar primeiro em locations e encounters antes de substituir o runtime vivo.",
+    "Familias reais movidas para ids baixos devem ser reconciliadas com speciesBridge e testes."
+  ],
+  "semanticRemap": {
+    "MON_001": "MON_005",
+    "MON_002": "MON_001",
+    "MON_002B": "MON_002",
+    "MON_002C": "MON_003",
+    "MON_003": "MON_014",
+    "MON_004": "MON_020",
+    "MON_005": "MON_013",
+    "MON_006": "MON_023",
+    "MON_007": "MON_021",
+    "MON_008": "MON_022"
+  },
+  "familyRebase": {
+    "MON_010": "MON_001",
+    "MON_010B": "MON_002",
+    "MON_010C": "MON_003",
+    "MON_010D": "MON_004",
+    "MON_011": "MON_005",
+    "MON_011B": "MON_006",
+    "MON_011C": "MON_007",
+    "MON_011D": "MON_008"
+  },
+  "notes": {
+    "MON_010D": "Classe secundaria planejada nao entra no runtime atual.",
+    "MON_011D": "Classe secundaria planejada nao entra no runtime atual.",
+    "MON_020_family": "Familia curandeiro atual nao pode ser perdida sem reconciliacao posterior.",
+    "activationRule": "Nao ativar este remapeamento diretamente em monsters.json sem ajustar locations, bridge e testes no mesmo patch."
+  }
+}
