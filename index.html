@@ -784,6 +784,8 @@
         import * as CaptureSystem from './js/data/captureSystem.js';
         // Fase W: Import Medal Progress module
         import * as MedalProgress from './js/therapy/medalProgress.js';
+        // Fase Y: Import Tutorial System module
+        import * as TutorialSystem from './js/tutorial/tutorialSystem.js';
         window.BattleSwap = BattleSwap;
 
         // FASE H: Therapy Rewards disponível globalmente
@@ -800,6 +802,9 @@
 
         // FASE W: MedalProgress disponível globalmente
         window.MedalProgress = MedalProgress;
+
+        // FASE Y: TutorialSystem disponível globalmente
+        window.TutorialSystem = TutorialSystem;
 
         // FASE R: Friendship System disponível globalmente
         window.FriendshipSystem = FriendshipSystem;
@@ -13431,45 +13436,30 @@
         }
 
         function tutorialAllows(actionKey) {
-            const step = getTutorialStep();
-            if (!step) return true;
-            const lock = step.lock || {};
-            // Se não definido, permite
-            if (typeof lock[actionKey] === "undefined") return true;
-            return !!lock[actionKey];
+            // FASE Y: delega ao módulo puro
+            return TutorialSystem.tutorialAllows(ensureTutorialState(), TUTORIAL_STEPS, actionKey);
         }
 
         function tutorialOnAction(type) {
-            const step = getTutorialStep();
-            if (!step) return;
+            // FASE Y: delega lógica pura ao módulo; side-effects (toast, save) ficam aqui
+            const result = TutorialSystem.advanceTutorial(ensureTutorialState(), TUTORIAL_STEPS, type);
+            if (!result.changed) return;
 
-            const tut = ensureTutorialState();
-            tut.done[type] = (tut.done[type] || 0) + 1;
+            // Persiste novo estado canônico em GameState
+            GameState.tutorial = result.tutState;
 
-            // Checa se completou
-            const req = step.required || {};
-            const ok = Object.keys(req).every(k => (tut.done[k] || 0) >= req[k]);
-
-            if (ok) {
+            if (result.completed) {
                 showToast("🎉 Passo concluído!");
-                
-                // Se é o último step
-                if (tut.stepIndex === TUTORIAL_STEPS.length - 1) {
-                    tut.active = false;
+                if (result.finished) {
                     showToast("🏁 Tutorial completo!");
                     if (typeof saveToLocalStorage === "function") saveToLocalStorage();
                     return;
                 }
-                
-                // Avança para próximo step
-                tut.stepIndex = Math.min(TUTORIAL_STEPS.length - 1, tut.stepIndex + 1);
-                tut.done = {}; // Reseta contadores do próximo step
 
+                // Inicia próximo step com pequeno delay
                 const next = getTutorialStep();
                 if (next) {
-                    setTimeout(() => {
-                        next.start();
-                    }, 1500); // Pequeno delay para o usuário ver a mensagem
+                    setTimeout(() => { next.start(); }, 1500);
                 }
             }
 
@@ -13477,36 +13467,19 @@
         }
 
         function createTutorialEnemy(level) {
-            // Tenta pegar um template real do catálogo
+            // FASE Y: fallback via módulo puro; template real via factory quando disponível
             const cat = getMonstersArray();
             const t = cat[0];
             if (typeof createMonsterInstanceFromTemplate === "function" && t) {
-                // Wave B (continuation): Use factory for tutorial enemy
                 const m = createMonsterInstanceFromTemplate(t.id, level, null, {
                     id: 'tutorial_' + Date.now()
                 });
-                // Deixa mais fácil
                 m.hpMax = Math.max(20, Math.floor(m.hpMax * 0.6));
                 m.hp = m.hpMax;
                 return m;
             }
-            // Fallback mínimo
-            return { 
-                id: Date.now() + Math.random(),
-                name:"Treinomon", 
-                level, 
-                hpMax: 25+level*5, 
-                hp: 25+level*5, 
-                atk: 4+level, 
-                def: 3+level, 
-                spd: 5, 
-                ene: 0, 
-                eneMax: 0,
-                class: "Guerreiro",
-                rarity: "Comum",
-                emoji: "🐾",
-                poder: 6
-            };
+            // Fallback canônico via módulo
+            return { id: Date.now() + Math.random(), ...TutorialSystem.buildTutorialEnemyData(level) };
         }
 
         function startTutorialEncounter_Attack() {
