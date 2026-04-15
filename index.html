@@ -550,10 +550,11 @@
     <!-- ===== Feature 4.0 Overlays ===== -->
     <div id="mmIntro" class="mm-overlay">
         <div class="mm-card">
+            <div class="mm-intro-particles" id="mmIntroParticles"></div>
             <div class="mm-title">🎮 Monstrinhomon</div>
-            <p class="mm-sub">RPG terapêutico infantil (Pokémon + RPG).<br/>Clique para começar.</p>
+            <p class="mm-sub">RPG terapêutico de monstros capturáveis.<br/>Capture, batalhe, evolua!</p>
             <button class="mm-btn" onclick="mmShowMainMenu()">✨ Iniciar</button>
-            <p class="mm-hint">Dica: o jogo salva automaticamente em seu navegador.</p>
+            <p class="mm-hint">💾 O jogo salva automaticamente no navegador.</p>
         </div>
     </div>
 
@@ -2545,6 +2546,23 @@
         // Legacy wrapper for backward compatibility (Commit 3)
         function saveToLocalStorage() {
             saveGame();
+            // Mostrar indicador visual de auto-save
+            _showAutosaveIndicator();
+        }
+
+        /** Indicador visual discreto de auto-save (💾 piscando). */
+        let _autosaveTimer = null;
+        function _showAutosaveIndicator() {
+            let el = document.getElementById('autosaveIndicator');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'autosaveIndicator';
+                el.textContent = '💾 Salvo';
+                document.body.appendChild(el);
+            }
+            el.classList.add('visible');
+            clearTimeout(_autosaveTimer);
+            _autosaveTimer = setTimeout(() => el.classList.remove('visible'), 1800);
         }
 
         function loadFromLocalStorage() {
@@ -6197,6 +6215,29 @@
                 console.error('flashTarget error:', error);
             }
         }
+
+        /**
+         * Anima a barra de HP de batalha com shake + flash quando recebe dano.
+         * @param {string} wrapId - ID do elemento wrapper da barra
+         * @param {string} fillId - ID do elemento fill da barra
+         */
+        function _flashBattleHpBar(wrapId, fillId) {
+            const wrap = document.getElementById(wrapId);
+            const fill = document.getElementById(fillId);
+            if (!wrap && !fill) return;
+            if (wrap) {
+                wrap.classList.remove('hp-bar-wrap--damage');
+                void wrap.offsetWidth; // reflow para reiniciar animação
+                wrap.classList.add('hp-bar-wrap--damage');
+                setTimeout(() => wrap.classList.remove('hp-bar-wrap--damage'), 400);
+            }
+            if (fill) {
+                fill.classList.remove('hp-bar-fill--damage');
+                void fill.offsetWidth;
+                fill.classList.add('hp-bar-fill--damage');
+                setTimeout(() => fill.classList.remove('hp-bar-fill--damage'), 400);
+            }
+        }
         
         /**
          * Armazena o último roll de d20 no encounter
@@ -6893,9 +6934,9 @@
                                 <div class="battle-stat-row">
                                     <span>ATK ${monster.atk}</span><span>DEF ${monster.def}</span><span>PWR ${monster.poder}</span>
                                 </div>
-                                <div class="battle-bar-row">
+                                <div class="battle-bar-row" id="wildEnemyHpRow">
                                     <div class="battle-bar-label"><span>❤️ HP</span><span>${monster.hp}/${monster.hpMax} (${Math.floor(hpPercent*100)}%)</span></div>
-                                    <div class="battle-bar"><div class="battle-bar-fill hp" style="width:${hpPercent*100}%"></div></div>
+                                    <div class="battle-bar"><div class="battle-bar-fill hp" id="wildEnemyHpFill" style="width:${hpPercent*100}%"></div></div>
                                 </div>
                                 ${(monster.eneMax > 0) ? `
                                 <div class="battle-bar-row">
@@ -7375,6 +7416,10 @@
                 // 7. Atualizar UI (1 vez só ao final)
                 saveToLocalStorage();
                 renderEncounter();
+                // Animar HP bar se o inimigo tomou dano
+                if (result.damageDealt > 0) {
+                    _flashBattleHpBar('wildEnemyHpRow', 'wildEnemyHpFill');
+                }
                 
             } catch (error) {
                 showError('Attack failed', error.stack);
@@ -9159,6 +9204,11 @@
             'LOC_008B':           'final_area',
             'BOSS_FOREST_01':     'final_area',
             'LOC_009':            'final_area',
+
+            // ── Nós de serviço ────────────────────────────────────────────────────
+            'HEAL_001':           'opening',
+            'SHOP_MID_01':        'mid_exploration',
+            'HEAL_FINAL_01':      'final_area',
         };
 
         /** Carrega os dados de localização e do mapa (com cache). */
@@ -9538,6 +9588,8 @@
             const lvRange  = loc?.levelRange ? `Lv ${loc.levelRange[0]}–${loc.levelRange[1]}` : '';
             const isBoss   = node.type === 'boss';
             const isCity   = node.type === 'city';
+            const isHeal   = node.type === 'healing';
+            const isShop   = node.type === 'shop';
             const bossMeta = node.bossMeta ?? {};
             const regionType = bossMeta.regionType ?? 'main';
             const defeated = progress.nodeFlags[nodeId]?.bossDefeated === true;
@@ -9546,6 +9598,8 @@
 
             // Classe de estado visual para accent border
             const stateClass = isBoss    ? 'state-boss'
+                             : isHeal    ? 'state-healing'
+                             : isShop    ? 'state-shop'
                              : isCurrent ? 'state-current'
                              : isDone    ? 'state-done'
                              : 'state-available';
@@ -9581,6 +9635,10 @@
                 }
             } else if (isCity) {
                 badgesHtml += `<span class="ow-sidebar__badge ow-sidebar__badge--city">🏙️ Cidade</span>`;
+            } else if (isHeal) {
+                badgesHtml += `<span class="ow-sidebar__badge" style="background:rgba(39,174,96,0.25);color:#4adf88;">💚 Cura Gratuita</span>`;
+            } else if (isShop) {
+                badgesHtml += `<span class="ow-sidebar__badge" style="background:rgba(180,140,0,0.25);color:#ffd740;">🛒 Loja</span>`;
             } else {
                 if (isCurrent) badgesHtml += `<span class="ow-sidebar__badge ow-sidebar__badge--current">📍 Atual</span>`;
                 if (isDone)    badgesHtml += `<span class="ow-sidebar__badge ow-sidebar__badge--done">✅ Concluído</span>`;
@@ -9673,9 +9731,17 @@
                 spotsHtml = `<div class="ow-node-card__spots">${spotsHtml}</div>`;
             }
 
-            const ctaHtml = isCurrent
-                ? '<p class="ow-sidebar__here">📍 Você está aqui</p>'
-                : `<button class="ow-sidebar__travel-btn" onclick="owTravelToNode('${nodeId}')">🚶 Viajar para cá</button>`;
+            const ctaHtml = isCurrent && (isHeal || isShop)
+                ? (isHeal
+                    ? `<button class="ow-sidebar__service-btn" onclick="showHealModal(null)">💚 Curar Todos os Monstrinhos</button>`
+                    : `<button class="ow-sidebar__service-btn ow-sidebar__service-btn--shop" onclick="switchTab('shop')">🛒 Abrir Loja</button>`)
+                : isCurrent
+                    ? '<p class="ow-sidebar__here">📍 Você está aqui</p>'
+                    : (isHeal
+                        ? `<button class="ow-sidebar__service-btn" onclick="owTravelToNode('${nodeId}')">🚶 Ir para Centro de Cura</button>`
+                        : isShop
+                            ? `<button class="ow-sidebar__service-btn ow-sidebar__service-btn--shop" onclick="owTravelToNode('${nodeId}')">🚶 Ir para Loja</button>`
+                            : `<button class="ow-sidebar__travel-btn" onclick="owTravelToNode('${nodeId}')">🚶 Viajar para cá</button>`);
 
             card.innerHTML = `
                 <div class="ow-node-card__main">
@@ -9894,6 +9960,37 @@
             const bossNode = (_wm.worldMapNodes ?? []).find(n => n.nodeId === locationId && n.type === 'boss');
             if (bossNode) {
                 openBossPanel(locationId, bossNode);
+                return;
+            }
+
+            // Nós de serviço de cura — acionar cura imediata e voltar ao mapa
+            const healNode = (_wm.worldMapNodes ?? []).find(n => n.nodeId === locationId && n.type === 'healing');
+            if (healNode) {
+                // Registrar visita e mostrar modal de cura
+                if (!GameState.data) GameState.data = {};
+                const visited = GameState.data.visitedLocations ?? [];
+                if (!visited.includes(locationId)) visited.push(locationId);
+                GameState.data.visitedLocations = visited;
+                GameState.data.currentNodeId = locationId;
+                saveToLocalStorage();
+                // Mostrar modal de cura
+                showHealModal(() => {
+                    if (overworldEl) { overworldEl.style.display = ''; renderOverworldPanel(); }
+                });
+                return;
+            }
+
+            // Nós de serviço de loja — abrir loja diretamente
+            const shopNode = (_wm.worldMapNodes ?? []).find(n => n.nodeId === locationId && n.type === 'shop');
+            if (shopNode) {
+                if (!GameState.data) GameState.data = {};
+                const visited = GameState.data.visitedLocations ?? [];
+                if (!visited.includes(locationId)) visited.push(locationId);
+                GameState.data.visitedLocations = visited;
+                GameState.data.currentNodeId = locationId;
+                saveToLocalStorage();
+                if (overworldEl) overworldEl.style.display = '';
+                switchTab('shop');
                 return;
             }
 
@@ -10520,8 +10617,8 @@
                 // Abre a aba de loja
                 switchTab('shop');
             } else if (action === 'heal') {
-                // Cura todos os Monstrinhos dos jogadores ativos
-                _cityHealAllMonsters();
+                // Mostra modal de cura com lista de Monstrinhos e HP bars
+                showHealModal(null);
             } else if (action === 'quests') {
                 // Vai para a aba de sessão onde ficam as quests
                 switchTab('home');
@@ -10529,20 +10626,110 @@
         }
         window.selectCityService = selectCityService;
 
-        /** Cura todos os Monstrinhos de todos os jogadores (serviço de cidade). */
-        function _cityHealAllMonsters() {
-            let healed = 0;
+        /**
+         * Exibe o modal de cura com NPC flavor text e barras de HP antes/depois.
+         * @param {Function|null} onClose - Callback chamado ao fechar o modal (opcional)
+         */
+        function showHealModal(onClose) {
+            // Construir lista de monstrinhos de todos os jogadores
+            const allMonsters = [];
             (GameState.players ?? []).forEach(player => {
                 (player.team ?? []).forEach(mi => {
-                    if (mi && mi.hpMax && mi.hp < mi.hpMax) {
-                        mi.hp = mi.hpMax;
-                        // Limpar status 'fainted' ao curar — garante que o monstrinho
-                        // seja reconhecido como elegível na próxima batalha selvagem.
-                        if (mi.status === 'fainted') mi.status = 'healthy';
-                        healed++;
+                    if (mi && mi.hpMax) {
+                        allMonsters.push({
+                            mi,
+                            player,
+                            hpBefore: mi.hp,
+                            hpMax: mi.hpMax,
+                            needsHeal: mi.hp < mi.hpMax || mi.status === 'fainted'
+                        });
                     }
                 });
-                // Recalcular activeIndex para o primeiro monstrinho vivo após a cura
+            });
+
+            const anyNeedsHeal = allMonsters.some(e => e.needsHeal);
+
+            // NPC selecionado com base em hash estável da sessão ativa (não muda durante o jogo)
+            const npcs = [
+                { emoji: '👵', name: 'Vovó Orba', msg: '"Descansem! Seus Monstrinhos estão em boas mãos."' },
+                { emoji: '🧙', name: 'Mago Curador', msg: '"A magia da cura flui por aqui. Fiquem à vontade!"' },
+                { emoji: '🌿', name: 'Druida', msg: '"A natureza cuida de todos. Seus Monstrinhos vão se recuperar."' },
+            ];
+            // Hash estável: usa sessionId ou sessionCount, não Date.now()
+            const sessionSeed = (GameState.data?.activeSessionId ?? '').charCodeAt(0) || 0;
+            const npc = npcs[sessionSeed % npcs.length];
+
+            // Gerar linhas de monstrinhos — usar índice para IDs únicos sem risco de colisão
+            const monsterRows = allMonsters.length === 0
+                ? '<p style="color:rgba(255,255,255,0.5);text-align:center;">Nenhum Monstrinho no time.</p>'
+                : allMonsters.map(({ mi, player, hpBefore, hpMax, needsHeal }, idx) => {
+                    const pct = Math.round((hpBefore / hpMax) * 100);
+                    const fainted = mi.status === 'fainted' || hpBefore <= 0;
+                    return `
+                        <div class="heal-modal-monster${fainted ? ' heal-modal-monster--fainted' : ''}">
+                            <div class="heal-modal-monster__header">
+                                <span class="heal-modal-monster__name">${escapeHtml(mi.name ?? mi.id)} <span style="opacity:0.5;font-size:10px;">(${escapeHtml(player.name)})</span></span>
+                                <span class="heal-modal-monster__hp-text">${fainted ? 'Nocauteado' : `${hpBefore}/${hpMax} HP`}</span>
+                            </div>
+                            <div class="heal-modal-hp-bar">
+                                <div class="heal-modal-hp-fill" id="hmhp_${idx}"
+                                     style="width:${fainted ? 0 : pct}%"></div>
+                            </div>
+                        </div>`;
+                }).join('');
+
+            // Criar e injetar modal no DOM
+            let modal = document.getElementById('healModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'healModal';
+                document.body.appendChild(modal);
+            }
+            modal.className = '';
+            modal.innerHTML = `
+                <div class="heal-modal-card">
+                    <div class="heal-modal-header">
+                        <span class="heal-modal-npc">${npc.emoji}</span>
+                        <div>
+                            <p class="heal-modal-title">💚 Centro de Cura</p>
+                            <p class="heal-modal-flavor">${npc.name}: ${npc.msg}</p>
+                        </div>
+                    </div>
+                    <div class="heal-modal-list" id="healModalList">
+                        ${monsterRows}
+                    </div>
+                    <div id="healModalFeedback"></div>
+                    <div class="heal-modal-footer">
+                        ${anyNeedsHeal
+                            ? `<button class="heal-modal-btn heal-modal-btn--primary" onclick="doHealAll()">💚 Curar Todos</button>`
+                            : `<div style="flex:1;text-align:center;color:#4adf88;font-weight:700;">✅ Todos já estão com HP cheio!</div>`
+                        }
+                        <button class="heal-modal-btn heal-modal-btn--secondary" onclick="closeHealModal()">Fechar</button>
+                    </div>
+                </div>`;
+
+            // Guardar callback de fechamento
+            modal._onClose = onClose;
+        }
+        window.showHealModal = showHealModal;
+
+        /** Executa a cura de todos e anima as barras de HP. */
+        function doHealAll() {
+            let globalIdx = 0;
+            (GameState.players ?? []).forEach(player => {
+                (player.team ?? []).forEach(mi => {
+                    if (mi && mi.hpMax) {
+                        mi.hp = mi.hpMax;
+                        if (mi.status === 'fainted') mi.status = 'healthy';
+                        // Animar barra de HP para 100% usando índice global (igual ao de showHealModal)
+                        const bar = document.getElementById(`hmhp_${globalIdx}`);
+                        if (bar) {
+                            bar.classList.add('full');
+                            bar.style.width = '100%';
+                        }
+                        globalIdx++;
+                    }
+                });
                 if (Array.isArray(player.team)) {
                     const idx = firstAliveIndex(player.team);
                     if (idx >= 0) player.activeIndex = idx;
@@ -10550,19 +10737,33 @@
             });
             saveToLocalStorage();
             updateAllViews();
-            const msg = healed > 0
-                ? `✅ ${healed} Monstrinho(s) curado(s) com sucesso!`
-                : 'Todos os Monstrinhos já estão com HP cheio.';
-            // Exibir feedback inline no painel de spots
-            const list = document.getElementById('spotsList');
-            if (list) {
-                const feedback = document.createElement('div');
-                feedback.className = 'wm-heal-feedback';
-                feedback.textContent = msg;
-                list.prepend(feedback);
-                setTimeout(() => feedback.remove(), 3000);
+
+            const feedback = document.getElementById('healModalFeedback');
+            if (feedback) {
+                feedback.innerHTML = '<div class="heal-all-success">✨ Todos os Monstrinhos curados com sucesso!</div>';
+            }
+            // Atualizar textos HP e ocultar botão "Curar Todos"
+            const footer = document.querySelector('.heal-modal-footer');
+            if (footer) {
+                const healBtn = footer.querySelector('.heal-modal-btn--primary');
+                if (healBtn) {
+                    healBtn.textContent = '✅ Curado!';
+                    healBtn.disabled = true;
+                    healBtn.style.opacity = '0.6';
+                }
             }
         }
+        window.doHealAll = doHealAll;
+
+        /** Fecha o modal de cura. */
+        function closeHealModal() {
+            const modal = document.getElementById('healModal');
+            if (!modal) return;
+            const cb = modal._onClose;
+            modal.className = 'hidden';
+            if (typeof cb === 'function') cb();
+        }
+        window.closeHealModal = closeHealModal;
 
         /** Atualiza o dropdown de jogadores no painel de setup selvagem. */
         function _wmUpdatePlayerDropdown() {
@@ -12049,7 +12250,36 @@
         function mmBoot(){
             // Show intro on boot
             mmShow("mmIntro");
+            // Iniciar animação de partículas na tela de intro
+            _mmInitIntroParticles();
         }
+
+        /** Inicializa partículas flutuantes na tela de intro. */
+        function _mmInitIntroParticles() {
+            const container = document.getElementById('mmIntroParticles');
+            if (!container || container.children.length > 0) return; // não re-inicializar
+            const particles = ['🌟','⚡','🎮','🐣','✨','🌙','💫','🎯','🔮','🌸'];
+            // Posições pré-definidas para consistência entre renders
+            const positions = [
+                [8,5], [22,18], [38,8], [54,22], [68,5], [82,15],
+                [15,25], [32,12], [48,28], [64,8], [76,20], [90,14]
+            ];
+            for (let i = 0; i < 12; i++) {
+                const el = document.createElement('span');
+                el.className = 'mm-intro-particle';
+                el.textContent = particles[i % particles.length];
+                const [left, bottom] = positions[i];
+                // Usar Math.random apenas para durações/delays (não afeta layout)
+                el.style.cssText = `
+                    left: ${left}%;
+                    bottom: ${bottom}%;
+                    animation-duration: ${3 + (i % 4)}s;
+                    animation-delay: ${(i * 0.4) % 3}s;
+                `;
+                container.appendChild(el);
+            }
+        }
+        window._mmInitIntroParticles = _mmInitIntroParticles;
 
         function mmShowMainMenu(){
             mmShow("mmMenu");
@@ -12765,7 +12995,21 @@
                     MM_NEW.players.pop();
                 }
 
-                const rows = MM_NEW.players.map((p, i) => `
+                // Dados de preview de classe
+                const CLASS_PREVIEW = {
+                    'Guerreiro':  { icon: '⚔️', desc: 'Alto HP e defesa. Absorve dano pelo time. Vantagem contra Ladino.', tags: ['Tanque','Durável'] },
+                    'Mago':       { icon: '🔮', desc: 'Alto poder mágico e energia. Fraco em defesa. Vantagem contra Bárbaro.', tags: ['Ataque','Magia'] },
+                    'Curandeiro': { icon: '💚', desc: 'Cura aliados e suporta o time. Regeneração extra de energia. Vantagem contra Guerreiro.', tags: ['Suporte','Cura'] },
+                    'Bárbaro':    { icon: '🪓', desc: 'Dano alto com ataques brutos. Bônus de ATK em combate. Vantagem contra Caçador.', tags: ['Dano','Físico'] },
+                    'Ladino':     { icon: '🗡️', desc: 'Ágil e furtivo. Aplica penalidade de DEF no primeiro ataque. Vantagem contra Mago.', tags: ['Agilidade','Controle'] },
+                    'Bardo':      { icon: '🎵', desc: 'Buffs e debuffs no time. Versatilidade tática. Vantagem contra Curandeiro.', tags: ['Buff','Versátil'] },
+                    'Caçador':    { icon: '🏹', desc: 'Especialista em captura. Bônus ao capturar criaturas. Vantagem contra Bardo.', tags: ['Captura','Ranged'] },
+                    'Animalista': { icon: '🐾', desc: 'Conexão especial com Monstrinhos. Bônus de amizade e XP. Versátil em todas as situações.', tags: ['Amizade','XP'] },
+                };
+
+                const rows = MM_NEW.players.map((p, i) => {
+                    const preview = CLASS_PREVIEW[p.class] ?? { icon: '🎮', desc: '', tags: [] };
+                    return `
                     <div class="border-pale border-radius-14 p-10-12 my-10">
                         <div class="text-900 mb-8">Jogador ${i+1}</div>
                         <div class="mm-field">
@@ -12774,17 +13018,27 @@
                         </div>
                         <div class="mm-field">
                             <label>Classe</label>
-                            <select id="mmPClass_${i}">
+                            <select id="mmPClass_${i}" onchange="mmUpdateClassPreview(${i})">
                                 ${MM_CLASSES.map(c => `<option value="${escapeHtml(c)}" ${p.class===c?"selected":""}>${escapeHtml(c)}</option>`).join("")}
                             </select>
                         </div>
-                    </div>
-                `).join("");
+                        <div class="mm-class-preview" id="mmClassPreview_${i}">
+                            <span class="mm-class-preview__icon">${preview.icon}</span>
+                            <div class="mm-class-preview__info">
+                                <p class="mm-class-preview__name">${p.class}</p>
+                                <p class="mm-class-preview__desc">${preview.desc}</p>
+                                <div class="mm-class-preview__tags">
+                                    ${preview.tags.map(t => `<span class="mm-class-preview__tag">${t}</span>`).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join("");
 
                 host.innerHTML = `
                     <p class="mm-sub">Crie os jogadores</p>
                     ${rows}
-                    <p class="mm-hint">O monstrinho inicial deve seguir a classe do jogador (MVP).</p>
+                    <p class="mm-hint">Cada jogador batalha com Monstrinhos da sua classe — mas pode capturar qualquer um!</p>
                 `;
                 return;
             }
@@ -12832,6 +13086,38 @@
             MM_NEW.step = Math.min(3, MM_NEW.step + 1);
             mmRenderNewGameStep();
         }
+
+        /**
+         * Atualiza o preview de classe ao mudar o select no wizard.
+         * @param {number} playerIndex - índice do jogador no wizard
+         */
+        function mmUpdateClassPreview(playerIndex) {
+            const selectEl = mmEl(`mmPClass_${playerIndex}`);
+            const previewEl = document.getElementById(`mmClassPreview_${playerIndex}`);
+            if (!selectEl || !previewEl) return;
+            const cls = selectEl.value;
+            const CLASS_PREVIEW = {
+                'Guerreiro':  { icon: '⚔️', desc: 'Alto HP e defesa. Absorve dano pelo time. Vantagem contra Ladino.', tags: ['Tanque','Durável'] },
+                'Mago':       { icon: '🔮', desc: 'Alto poder mágico e energia. Fraco em defesa. Vantagem contra Bárbaro.', tags: ['Ataque','Magia'] },
+                'Curandeiro': { icon: '💚', desc: 'Cura aliados e suporta o time. Regeneração extra de energia. Vantagem contra Guerreiro.', tags: ['Suporte','Cura'] },
+                'Bárbaro':    { icon: '🪓', desc: 'Dano alto com ataques brutos. Bônus de ATK em combate. Vantagem contra Caçador.', tags: ['Dano','Físico'] },
+                'Ladino':     { icon: '🗡️', desc: 'Ágil e furtivo. Aplica penalidade de DEF no primeiro ataque. Vantagem contra Mago.', tags: ['Agilidade','Controle'] },
+                'Bardo':      { icon: '🎵', desc: 'Buffs e debuffs no time. Versatilidade tática. Vantagem contra Curandeiro.', tags: ['Buff','Versátil'] },
+                'Caçador':    { icon: '🏹', desc: 'Especialista em captura. Bônus ao capturar criaturas. Vantagem contra Bardo.', tags: ['Captura','Ranged'] },
+                'Animalista': { icon: '🐾', desc: 'Conexão especial com Monstrinhos. Bônus de amizade e XP. Versátil em todas as situações.', tags: ['Amizade','XP'] },
+            };
+            const p = CLASS_PREVIEW[cls] ?? { icon: '🎮', desc: '', tags: [] };
+            previewEl.innerHTML = `
+                <span class="mm-class-preview__icon">${p.icon}</span>
+                <div class="mm-class-preview__info">
+                    <p class="mm-class-preview__name">${escapeHtml(cls)}</p>
+                    <p class="mm-class-preview__desc">${p.desc}</p>
+                    <div class="mm-class-preview__tags">
+                        ${p.tags.map(t => `<span class="mm-class-preview__tag">${t}</span>`).join('')}
+                    </div>
+                </div>`;
+        }
+        window.mmUpdateClassPreview = mmUpdateClassPreview;
 
         function mmFinishNewGame(){
             try {
