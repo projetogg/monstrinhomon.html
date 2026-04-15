@@ -51,16 +51,20 @@ export function ensureQuestState(player) {
     if (!player) return;
     if (!player.questState || typeof player.questState !== 'object') {
         player.questState = {
-            activeQuestIds:    [],
-            completedQuestIds: [],
-            progress:          {}
+            activeQuestIds:       [],
+            completedQuestIds:    [],
+            progress:             {},
+            pendingRewardQuestIds: [],
+            claimedRewardQuestIds: []
         };
     }
-    if (!Array.isArray(player.questState.activeQuestIds))    player.questState.activeQuestIds    = [];
-    if (!Array.isArray(player.questState.completedQuestIds)) player.questState.completedQuestIds = [];
+    if (!Array.isArray(player.questState.activeQuestIds))       player.questState.activeQuestIds       = [];
+    if (!Array.isArray(player.questState.completedQuestIds))    player.questState.completedQuestIds    = [];
     if (!player.questState.progress || typeof player.questState.progress !== 'object') {
         player.questState.progress = {};
     }
+    if (!Array.isArray(player.questState.pendingRewardQuestIds)) player.questState.pendingRewardQuestIds = [];
+    if (!Array.isArray(player.questState.claimedRewardQuestIds)) player.questState.claimedRewardQuestIds = [];
 }
 
 // ═══════════════════════════════════════════════════
@@ -245,20 +249,16 @@ export function processQuestProgress(player, enc, capturedMonsterId, log) {
 // ═══════════════════════════════════════════════════
 
 /**
- * Conclui uma quest, aplica recompensas ao jogador e ativa a próxima
+ * Conclui uma quest, marca recompensa como pendente e ativa a próxima
  * quest da cadeia se disponível.
+ *
+ * Recompensas NÃO são aplicadas automaticamente — use claimQuestReward()
+ * para que o jogador as colete manualmente na aba Missões.
  *
  * @param {Object} player    - jogador
  * @param {string} questId   - ID da quest a concluir
- * @param {Object} deps      - dependências injetadas (ver abaixo)
+ * @param {*}      _deps     - ignorado (mantido por compatibilidade de assinatura)
  * @param {Array}  [logArr]  - array de log
- *
- * deps esperado:
- * {
- *   addItemToInventory(player, itemId, qty),   // adicionar item ao inventário
- *   addMoneyToPlayer(player, amount),          // adicionar dinheiro
- *   addQuestXP(player, xp)                    // adicionar XP global de quest (opcional)
- * }
  *
  * @returns {boolean} true se concluída com sucesso
  */
@@ -285,22 +285,11 @@ export function completeQuest(player, questId, deps, logArr) {
 
     log.push(`🏆 Quest concluída: "${quest.nome}"!`);
 
-    // Aplicar recompensas via DI
-    if (deps) {
-        if (typeof deps.addMoneyToPlayer === 'function' && quest.rewardGold > 0) {
-            deps.addMoneyToPlayer(player, quest.rewardGold);
-            log.push(`💰 +${quest.rewardGold} moedas!`);
-        }
-
-        if (typeof deps.addItemToInventory === 'function' && quest.rewardItemId) {
-            deps.addItemToInventory(player, quest.rewardItemId, 1);
-            log.push(`🎁 Item: ${quest.rewardItemId}!`);
-        }
-
-        if (typeof deps.addQuestXP === 'function' && quest.rewardXp > 0) {
-            deps.addQuestXP(player, quest.rewardXp);
-            log.push(`⭐ +${quest.rewardXp} XP de quest!`);
-        }
+    // Marcar recompensa como pendente (coleta manual na aba Missões)
+    if (!qs.pendingRewardQuestIds.includes(questId) &&
+        !qs.claimedRewardQuestIds.includes(questId)) {
+        qs.pendingRewardQuestIds.push(questId);
+        log.push(`🎁 Recompensa disponível! Colete na aba Missões.`);
     }
 
     // Ativar próxima quest da cadeia
@@ -316,8 +305,83 @@ export function completeQuest(player, questId, deps, logArr) {
 }
 
 // ═══════════════════════════════════════════════════
-// ORQUESTRADOR PRINCIPAL: after-encounter
+// RESGATE MANUAL DE RECOMPENSAS
 // ═══════════════════════════════════════════════════
+
+/**
+ * Resgata a recompensa de uma quest concluída e ainda não coletada.
+ * Idempotente: chamadas repetidas para a mesma quest não duplicam recompensas.
+ *
+ * @param {Object} player    - jogador
+ * @param {string} questId   - ID da quest a resgatar
+ * @param {Object} deps      - dependências injetadas:
+ *   {
+ *     addItemToInventory(player, itemId, qty),
+ *     addMoneyToPlayer(player, amount),
+ *     addQuestXP(player, xp)
+ *   }
+ * @param {Array}  [logArr]  - array de log
+ * @returns {boolean} true se recompensa coletada com sucesso
+ */
+export function claimQuestReward(player, questId, deps, logArr) {
+    if (!player || !questId) return false;
+    ensureQuestState(player);
+
+    const qs = player.questState;
+
+    // Quest deve estar concluída
+    if (!qs.completedQuestIds.includes(questId)) return false;
+
+    // Proteção contra dupla coleta
+    if (qs.claimedRewardQuestIds.includes(questId)) return false;
+
+    const quest = getQuest(questId);
+    if (!quest) return false;
+
+    const log = Array.isArray(logArr) ? logArr : [];
+
+    // Aplicar recompensas via DI
+    if (deps) {
+        if (typeof deps.addMoneyToPlayer === 'function' && quest.rewardGold > 0) {
+            deps.addMoneyToPlayer(player, quest.rewardGold);
+            log.push(`💰 +${quest.rewardGold} moedas!`);
+        }
+
+        if (typeof deps.addItemToInventory === 'function' && quest.rewardItemId) {
+            deps.addItemToInventory(player, quest.rewardItemId, 1);
+            log.push(`🎁 Item recebido: ${quest.rewardItemId}!`);
+        }
+
+        if (typeof deps.addQuestXP === 'function' && quest.rewardXp > 0) {
+            deps.addQuestXP(player, quest.rewardXp);
+            log.push(`⭐ +${quest.rewardXp} XP de quest!`);
+        }
+    }
+
+    // Marcar como coletada e remover de pendentes
+    qs.claimedRewardQuestIds.push(questId);
+    const pendingIdx = qs.pendingRewardQuestIds.indexOf(questId);
+    if (pendingIdx !== -1) qs.pendingRewardQuestIds.splice(pendingIdx, 1);
+
+    log.push(`✅ Recompensa de "${quest.nome}" coletada!`);
+    return true;
+}
+
+/**
+ * Retorna a lista de quests cujas recompensas ainda não foram coletadas.
+ * @param {Object} player
+ * @returns {Array<{quest: Object, questId: string}>}
+ */
+export function getPendingRewardQuests(player) {
+    if (!player) return [];
+    ensureQuestState(player);
+    return player.questState.pendingRewardQuestIds.map(qid => {
+        const quest = getQuest(qid);
+        return quest ? { questId: qid, quest } : null;
+    }).filter(Boolean);
+}
+
+
 
 /**
  * Ponto central de pós-encontro.
@@ -394,3 +458,6 @@ export function hasCompletedQuest(player, questId) {
     ensureQuestState(player);
     return player.questState.completedQuestIds.includes(questId);
 }
+
+// Re-exporta utilitários do questSystem para acesso via window.GameFlow
+export { getQuest, QUESTS_DATA } from './data/questSystem.js';

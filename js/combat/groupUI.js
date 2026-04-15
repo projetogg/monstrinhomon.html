@@ -4,6 +4,10 @@ const CLASS_PASSIVE_LABELS = {
     'Bárbaro':    { icon: '🪓', label: '-10% dano recebido' },
     'Curandeiro': { icon: '🌿', label: '-10% dano recebido' },
     'Ladino':     { icon: '🗡️', label: '+10% dano causado' },
+    'Mago':       { icon: '🔮', label: '+10% dano skill (ENE>50%)' },
+    'Bardo':      { icon: '🎵', label: '+1 ACC por aliado vivo' },
+    'Caçador':    { icon: '🏹', label: '+2 ATK vs alvo fraco' },
+    'Animalista': { icon: '🐾', label: '1º ataque sempre acerta' },
 };
 
 /**
@@ -127,8 +131,32 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
             ? `<div class="group-unit-class-passive">${classPassive.icon} ${classPassive.label}</div>`
             : '';
 
+        // Badges de buff/debuff ativos
+        let buffBadgesHtml = '';
+        if (Array.isArray(mon.buffs) && mon.buffs.length > 0) {
+            for (const buff of mon.buffs) {
+                const t = (buff.type || '').toLowerCase();
+                const dur = buff.duration > 0 ? `, ${buff.duration}r` : '';
+                if (t === 'atk') buffBadgesHtml += `<span class="buff-badge buff-atk">🔺ATK(+${buff.power}${dur})</span>`;
+                else if (t === 'def') buffBadgesHtml += `<span class="buff-badge buff-def">🛡️DEF(+${buff.power}${dur})</span>`;
+                else if (t === 'spd' && buff.power < 0) buffBadgesHtml += `<span class="buff-badge buff-debuff">🐢AGI(${buff.power}${dur})</span>`;
+            }
+        }
+        // TAUNT badge: usa mon.id para comparação consistente
+        if (encounter.tauntActiveId != null && encounter.tauntActiveId === mon.id) {
+            buffBadgesHtml += `<span class="buff-badge buff-taunt">🎯TAUNT</span>`;
+        }
+        const buffBadgesContainerHtml = buffBadgesHtml
+            ? `<div class="buff-badges">${buffBadgesHtml}</div>`
+            : '';
+
+        // Indicador de posição
+        const pos = encounter.positions?.[pid];
+        const posLabel = pos === 'front' ? '🗡️Frente' : pos === 'mid' ? '⚔️Meio' : pos === 'back' ? '🛡️Trás' : '';
+        const posHtml = posLabel ? `<span class="position-badge">${posLabel}</span>` : '';
+
         playersHtml += `
-        <div id="grpP_${pid}" class="${unitClass}">
+        <div id="grpP_${pid}" class="${unitClass}"${pos ? ` data-pos="${pos}"` : ''}>
             <div class="group-unit-name">${mon.emoji || ''} ${mon.name || mon.nome} <small>Nv ${mon.level}</small>
                 ${isKO ? '<span class="group-unit-ko-badge">💀 KO</span>' : ''}
                 ${isCurrent ? '<span class="group-unit-active-badge">▶ Em batalha</span>' : ''}
@@ -143,6 +171,8 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
                 <div class="battle-bar"><div class="battle-bar-fill ene" style="width:${enePct}%"></div></div>
             </div>
             ${classPassiveHtml}
+            ${buffBadgesContainerHtml}
+            ${posHtml}
             ${teamHintHtml}
             ${itemHtml}
         </div>`;
@@ -176,8 +206,23 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
             <div class="group-unit-name">${e.emoji || ''} ${e.name || e.nome} <small>Nv ${e.level}</small>
                 ${isDead ? '<span class="group-unit-ko-badge">💀 KO</span>' : ''}
                 ${isCurrent ? '<span class="group-unit-active-badge">▶ Atacando</span>' : ''}
+                ${encounter.positions ? `<span class="badge bg-secondary ms-1" style="font-size:0.7em">${encounter.positions['enemy_'+i] === 'front' ? '⚔️Frente' : encounter.positions['enemy_'+i] === 'mid' ? '🛡️Meio' : '🎯Trás'}</span>` : ''}
             </div>
             <div class="group-unit-stats">ATK ${e.atk} · DEF ${e.def} · SPD ${e.spd}</div>
+            ${(() => {
+                let enemyBuffsHtml = '';
+                if (Array.isArray(e.buffs) && e.buffs.length > 0) {
+                    for (const buff of e.buffs) {
+                        const t = (buff.type || '').toLowerCase();
+                        const dur = buff.duration > 0 ? `, ${buff.duration}r` : '';
+                        if (t === 'atk') enemyBuffsHtml += `<span class="buff-badge buff-atk">🔺ATK(+${buff.power}${dur})</span>`;
+                        else if (t === 'def') enemyBuffsHtml += `<span class="buff-badge buff-def">🛡️DEF(+${buff.power}${dur})</span>`;
+                        else if (t === 'spd' && buff.power < 0) enemyBuffsHtml += `<span class="buff-badge buff-debuff">🐢AGI(${buff.power}${dur})</span>`;
+                    }
+                }
+                if (encounter.markedEnemyIndex === i) enemyBuffsHtml += `<span class="buff-badge buff-mark">🎯MARCADO</span>`;
+                return enemyBuffsHtml ? `<div class="buff-badges">${enemyBuffsHtml}</div>` : '';
+            })()}
             <div class="battle-bar-row">
                 <div class="battle-bar-label"><span>❤️ HP</span><span>${hp}/${hpMax}</span></div>
                 <div class="battle-bar"><div class="battle-bar-fill hp" style="width:${hpPct}%"></div></div>
@@ -421,15 +466,18 @@ function renderActionBar(encounter, actor, isPlayerTurn, state, helpers) {
         }
     }
 
-    // Item de cura disponível
-    const availableHealItems = HEAL_ITEM_IDS.filter(id => (player.inventory?.[id] || 0) > 0);
-    const canHeal = availableHealItems.length > 0 && hp > 0 && hp < hpMax;
+    // Inventário de combate (cura/tático)
+    const combatItems = Object.entries(player.inventory || {})
+        .filter(([, qty]) => (Number(qty) || 0) > 0)
+        .map(([itemId, qty]) => ({ itemId, qty: Number(qty) || 0, def: helpers.getItemDef ? helpers.getItemDef(itemId) : null }))
+        .filter(({ itemId, def }) => {
+            const t = String(def?.type || '');
+            return t === 'heal' || t === 'cura' || t === 'tatico' || HEAL_ITEM_IDS.includes(itemId);
+        });
+    const hasCombatItems = combatItems.length > 0;
     let itemButtonHtml = '';
-    if (canHeal) {
-        const firstId = availableHealItems[0];
-        const def = helpers.getItemDef ? helpers.getItemDef(firstId) : null;
-        const qty = player.inventory?.[firstId] || 0;
-        itemButtonHtml = `<button class="btn btn-success" onclick="groupUseItem('${firstId}')" title="${def?.name ?? firstId} (${qty}x)">${def?.emoji || '🧪'} ${def?.name || 'Item'}</button>`;
+    if (hasCombatItems) {
+        itemButtonHtml = `<button class="btn btn-success" onclick="window.groupOpenItemModal && window.groupOpenItemModal()" title="Abrir inventário de combate">🎒 Item</button>`;
     }
 
     // Fuga: desabilitada em batalhas boss
@@ -455,6 +503,7 @@ function renderActionBar(encounter, actor, isPlayerTurn, state, helpers) {
             ${itemButtonHtml}
             ${swapButtonHtml}
             ${fleeButtonHtml}
+            <button class="btn btn-outline-secondary btn-sm" onclick="window.groupMovePosition && window.groupMovePosition()">📍 Mover</button>
             <button class="btn btn-secondary" onclick="groupPassTurn()">⏭️ Passar</button>
         </div>
     </div>`;

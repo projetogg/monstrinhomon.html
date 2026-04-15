@@ -110,3 +110,82 @@ export function isBossImmuneToStatus(target, statusName) {
     if (!target?.isBoss) return false;
     return BOSS_IMMUNE_STATUS.includes(String(statusName).toLowerCase());
 }
+
+/**
+ * FASE VII-E — Ataque em área do Boss (atinge todos na linha da frente).
+ *
+ * Critério de alvo: alvos com position === 'front' (ou posição padrão se sem posições).
+ * Dano = max(1, boss.atk - target.def + 3) por alvo.
+ *
+ * @param {object} boss    - Objeto boss (precisa de atk, name)
+ * @param {Array}  targets - Array de { playerId, monster, position }
+ * @param {object} deps    - { helpers }
+ * @param {object} enc     - Encounter (para log e posições)
+ * @returns {{ hitTargets: string[], totalDamage: number }}
+ */
+export function bossAoeAttack(boss, targets, deps, enc) {
+    const { helpers } = deps;
+    const bossName = boss.name || 'Boss';
+    const bossAtk = Number(boss.atk) || 1;
+
+    // Alvos na linha da frente (ou todos se sem posições)
+    const frontTargets = targets.filter(t => {
+        const pos = enc?.positions?.[t.playerId] || 'front';
+        return pos === 'front';
+    });
+    const aoeTargets = frontTargets.length > 0 ? frontTargets : targets;
+
+    const hitTargets = [];
+    let totalDamage = 0;
+
+    for (const t of aoeTargets) {
+        const mon = t.monster;
+        if (!mon || (Number(mon.hp) || 0) <= 0) continue;
+
+        const monDef = Number(mon.def) || 0;
+        const dmg = Math.max(1, bossAtk - monDef + 3);
+        mon.hp = Math.max(0, (Number(mon.hp) || 0) - dmg);
+        totalDamage += dmg;
+        hitTargets.push(t.playerId);
+
+        const monName = mon.nickname || mon.name || mon.nome || 'Monstrinho';
+        if (helpers?.log) {
+            helpers.log(enc, `💥 ${bossName} (AoE Fase 2) acertou ${monName} por ${dmg} de dano!`);
+        }
+    }
+
+    return { hitTargets, totalDamage };
+}
+
+/**
+ * FASE VII-E — Boss Curandeiro Fase 2: 40% de chance de curar aliado com HP < 40%.
+ *
+ * @param {object} boss    - Objeto boss
+ * @param {Array}  allies  - Array de inimigos aliados do boss (exc. o próprio boss)
+ * @param {object} deps    - { helpers }
+ * @param {object} enc     - Encounter (para log)
+ * @returns {{ healed: boolean, allyName?: string, healAmt?: number }}
+ */
+export function bossPhase2HealAlly(boss, allies, deps, enc) {
+    const { helpers } = deps;
+    const bossName = boss.name || 'Boss';
+
+    const weakAlly = (allies || []).find(e =>
+        e && (Number(e.hp) || 0) > 0 &&
+        (Number(e.hp) || 0) / Math.max(1, Number(e.hpMax) || 1) < 0.40
+    );
+
+    if (!weakAlly) return { healed: false };
+    if (Math.random() >= 0.40) return { healed: false };
+
+    const allyHpMax = Number(weakAlly.hpMax) || 1;
+    const healAmt = Math.round(allyHpMax * 0.30);
+    weakAlly.hp = Math.min(allyHpMax, (Number(weakAlly.hp) || 0) + healAmt);
+
+    const allyName = weakAlly.name || weakAlly.nome || 'Aliado';
+    if (helpers?.log) {
+        helpers.log(enc, `💚 ${bossName} (Boss Fase 2) curou ${allyName} em ${healAmt} HP!`);
+    }
+
+    return { healed: true, allyName, healAmt };
+}

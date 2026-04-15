@@ -58,8 +58,8 @@ describe('Catálogo de Monstros - Integridade Geral', () => {
         expect(Array.isArray(data.monsters)).toBe(true);
     });
 
-    it('deve conter 64 monstros no catálogo', () => {
-        expect(monsters.length).toBe(64);
+    it('deve conter 72 monstros no catálogo', () => {
+        expect(monsters.length).toBe(72);
     });
 
     it('não deve ter IDs duplicados', () => {

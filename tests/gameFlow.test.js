@@ -20,7 +20,9 @@ import {
     completeQuest,
     handlePostEncounterFlow,
     getActiveQuestsSummary,
-    hasCompletedQuest
+    hasCompletedQuest,
+    claimQuestReward,
+    getPendingRewardQuests
 } from '../js/gameFlow.js';
 
 // ═══════════════════════════════════════════════════
@@ -100,6 +102,8 @@ describe('ensureQuestState', () => {
         expect(Array.isArray(p.questState.activeQuestIds)).toBe(true);
         expect(Array.isArray(p.questState.completedQuestIds)).toBe(true);
         expect(typeof p.questState.progress).toBe('object');
+        expect(Array.isArray(p.questState.pendingRewardQuestIds)).toBe(true);
+        expect(Array.isArray(p.questState.claimedRewardQuestIds)).toBe(true);
     });
 
     it('deve ser idempotente (não sobrescrever estado existente)', () => {
@@ -415,29 +419,15 @@ describe('completeQuest - recompensas e cadeia', () => {
         expect(p.questState.activeQuestIds).not.toContain('QST_001');
     });
 
-    it('deve aplicar recompensa em moeda', () => {
-        const p = makePlayer();
-        activateQuest(p, 'QST_001');
-        const deps = makeDeps();
-        completeQuest(p, 'QST_001', deps);
-        // QST_001 reward_gold=60
-        expect(p.money).toBe(60);
-    });
-
-    it('deve aplicar recompensa em item', () => {
+    it('deve adicionar quest a pendingRewardQuestIds (recompensa manual)', () => {
         const p = makePlayer();
         activateQuest(p, 'QST_001');
         completeQuest(p, 'QST_001', makeDeps());
-        // QST_001 reward_item_id = CLASTERORB_COMUM
-        expect(p.inventory['CLASTERORB_COMUM']).toBe(1);
-    });
-
-    it('deve aplicar XP de quest via deps', () => {
-        const p = makePlayer();
-        activateQuest(p, 'QST_001');
-        completeQuest(p, 'QST_001', makeDeps());
-        // QST_001 reward_xp=80
-        expect(p._questXpGained).toBe(80);
+        // Recompensa fica pendente — NÃO aplicada diretamente
+        expect(p.questState.pendingRewardQuestIds).toContain('QST_001');
+        expect(p.money).toBe(0);
+        expect(p.inventory['CLASTERORB_COMUM']).toBeUndefined();
+        expect(p._questXpGained).toBeUndefined();
     });
 
     it('deve ativar próxima quest da cadeia (QST_002 após QST_001)', () => {
@@ -459,17 +449,139 @@ describe('completeQuest - recompensas e cadeia', () => {
         expect(result).toBe(false);
     });
 
-    it('deve funcionar sem deps (sem recompensas)', () => {
+    it('deve funcionar sem deps e adicionar recompensa pendente', () => {
         const p = makePlayer();
         activateQuest(p, 'QST_001');
         expect(() => completeQuest(p, 'QST_001', null)).not.toThrow();
         expect(p.questState.completedQuestIds).toContain('QST_001');
+        expect(p.questState.pendingRewardQuestIds).toContain('QST_001');
+    });
+
+    it('não deve duplicar entrada em pendingRewardQuestIds', () => {
+        const p = makePlayer();
+        activateQuest(p, 'QST_001');
+        completeQuest(p, 'QST_001', makeDeps());
+        // Segunda chamada deve ser ignorada (quest não está mais ativa)
+        completeQuest(p, 'QST_001', makeDeps());
+        const count = p.questState.pendingRewardQuestIds.filter(id => id === 'QST_001').length;
+        expect(count).toBe(1);
     });
 });
 
 // ═══════════════════════════════════════════════════
-// handlePostEncounterFlow — orquestrador completo
+// claimQuestReward
 // ═══════════════════════════════════════════════════
+
+describe('claimQuestReward - resgate manual de recompensas', () => {
+
+    it('deve aplicar recompensa em moeda ao resgatar', () => {
+        const p = makePlayer();
+        activateQuest(p, 'QST_001');
+        const deps = makeDeps();
+        completeQuest(p, 'QST_001', deps);
+        claimQuestReward(p, 'QST_001', deps);
+        // QST_001 reward_gold=60
+        expect(p.money).toBe(60);
+    });
+
+    it('deve aplicar recompensa em item ao resgatar', () => {
+        const p = makePlayer();
+        activateQuest(p, 'QST_001');
+        const deps = makeDeps();
+        completeQuest(p, 'QST_001', deps);
+        claimQuestReward(p, 'QST_001', deps);
+        // QST_001 reward_item_id = CLASTERORB_COMUM
+        expect(p.inventory['CLASTERORB_COMUM']).toBe(1);
+    });
+
+    it('deve aplicar XP de quest ao resgatar', () => {
+        const p = makePlayer();
+        activateQuest(p, 'QST_001');
+        const deps = makeDeps();
+        completeQuest(p, 'QST_001', deps);
+        claimQuestReward(p, 'QST_001', deps);
+        // QST_001 reward_xp=80
+        expect(p._questXpGained).toBe(80);
+    });
+
+    it('deve mover quest de pendente para claimedRewardQuestIds', () => {
+        const p = makePlayer();
+        activateQuest(p, 'QST_001');
+        const deps = makeDeps();
+        completeQuest(p, 'QST_001', deps);
+        claimQuestReward(p, 'QST_001', deps);
+        expect(p.questState.claimedRewardQuestIds).toContain('QST_001');
+        expect(p.questState.pendingRewardQuestIds).not.toContain('QST_001');
+    });
+
+    it('deve proteger contra dupla coleta (idempotência)', () => {
+        const p = makePlayer();
+        activateQuest(p, 'QST_001');
+        const deps = makeDeps();
+        completeQuest(p, 'QST_001', deps);
+        claimQuestReward(p, 'QST_001', deps); // 1ª coleta
+        claimQuestReward(p, 'QST_001', deps); // 2ª tentativa
+        // Moeda não deve ser duplicada
+        expect(p.money).toBe(60);
+        expect(p.inventory['CLASTERORB_COMUM']).toBe(1);
+    });
+
+    it('deve retornar false para quest não concluída', () => {
+        const p = makePlayer();
+        activateQuest(p, 'QST_001');
+        const deps = makeDeps();
+        const result = claimQuestReward(p, 'QST_001', deps);
+        expect(result).toBe(false);
+    });
+
+    it('deve retornar false para player null', () => {
+        expect(claimQuestReward(null, 'QST_001', {})).toBe(false);
+    });
+
+    it('deve funcionar sem deps sem lançar erro', () => {
+        const p = makePlayer();
+        activateQuest(p, 'QST_001');
+        completeQuest(p, 'QST_001', null);
+        expect(() => claimQuestReward(p, 'QST_001', null)).not.toThrow();
+    });
+});
+
+// ═══════════════════════════════════════════════════
+// getPendingRewardQuests
+// ═══════════════════════════════════════════════════
+
+describe('getPendingRewardQuests', () => {
+
+    it('deve retornar quests com recompensa pendente', () => {
+        const p = makePlayer();
+        activateQuest(p, 'QST_001');
+        completeQuest(p, 'QST_001', makeDeps());
+        const pending = getPendingRewardQuests(p);
+        expect(pending.length).toBe(1);
+        expect(pending[0].questId).toBe('QST_001');
+        expect(pending[0].quest.id).toBe('QST_001');
+    });
+
+    it('deve retornar array vazio após coleta', () => {
+        const p = makePlayer();
+        activateQuest(p, 'QST_001');
+        const deps = makeDeps();
+        completeQuest(p, 'QST_001', deps);
+        claimQuestReward(p, 'QST_001', deps);
+        expect(getPendingRewardQuests(p)).toEqual([]);
+    });
+
+    it('deve retornar array vazio para jogador sem quests concluídas', () => {
+        const p = makePlayer();
+        expect(getPendingRewardQuests(p)).toEqual([]);
+    });
+
+    it('deve retornar array vazio para player null', () => {
+        expect(getPendingRewardQuests(null)).toEqual([]);
+    });
+});
+
+
 
 describe('handlePostEncounterFlow - loop completo', () => {
 

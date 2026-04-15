@@ -50,6 +50,12 @@
                 <button class="tab-button nav-btn" data-tab="partyDex" onclick="switchTab('partyDex')" aria-label="Monstrodex">
                     <span class="nav-icon">📘</span><span class="nav-label">Monstrodex</span>
                 </button>
+                <button class="tab-button nav-btn" data-tab="missoes" onclick="switchTab('missoes')" aria-label="Missões">
+                    <span class="nav-icon">📜</span><span class="nav-label">Missões</span>
+                </button>
+                <button class="tab-button nav-btn" data-tab="trade" onclick="switchTab('trade')" aria-label="Trocas">
+                    <span class="nav-icon">🔄</span><span class="nav-label">Trocas</span>
+                </button>
                 <button id="headerMestreBtn" class="tab-button nav-btn nav-btn--mestre" onclick="mmOpenMestre()" aria-label="Painel Mestre">
                     <span class="nav-icon">🧑‍🏫</span><span class="nav-label">Mestre</span>
                 </button>
@@ -178,6 +184,7 @@
                 <div id="turnOrderList"></div>
                 
                 <button class="btn btn-warning" onclick="nextTurn()">Next Turn ▶</button>
+                <button class="btn btn-primary" onclick="openTradePanel()">🔄 Trocas</button>
                 <button class="btn btn-danger" onclick="endSession()">End Session</button>
             </div>
         </div>
@@ -496,6 +503,21 @@
             </div>
         </div>
 
+        <div id="tabTrade" class="tab-content">
+            <h2>🔄 Trocas</h2>
+            <div id="tradeTabContainer" class="card">
+                <p class="text-muted">Selecione os jogadores para propor uma troca.</p>
+            </div>
+        </div>
+
+        <!-- XVII-B: Aba Missões — lista quests ativas e concluídas por jogador -->
+        <div id="tabMissoes" class="tab-content">
+            <h2>📜 Missões</h2>
+            <div id="missoesTabContent">
+                <p class="text-muted">Carregando missões...</p>
+            </div>
+        </div>
+
         <div id="tabSettings" class="tab-content">
             <h2>Settings ⚙️</h2>
             
@@ -732,6 +754,12 @@
         import * as BoxSystem from './js/data/boxSystem.js';
         window.BoxSystem = BoxSystem;
 
+        // Trade UI (FASE XIII)
+        import * as TradeUI from './js/ui/tradeUI.js';
+
+        // Map Unlock System (FASE XIV)
+        import * as MapUnlockSystem from './js/encounter/mapUnlockSystem.js';
+
         // Canon Loader — Fases 1 e 2: carrega dados canônicos (classes, matchups, skills MVP, species, evolution, progression)
         import * as CanonLoader from './js/canon/canonLoader.js';
         window.CanonLoader = CanonLoader;
@@ -739,6 +767,7 @@
         // World Map — Sistema de navegação por nós (mapa do mundo + spots)
         import * as WorldMap from './js/encounter/worldMap.js';
         window.WorldMap = WorldMap;
+        window.MapUnlockSystem = MapUnlockSystem;
 
         // Overworld Map — Mapa visual interativo SVG
         import * as OverworldMap from './js/encounter/overworldMap.js';
@@ -796,6 +825,7 @@
 
         // FASE O: Trade System disponível globalmente
         window.TradeSystem = TradeSystem;
+        window.TradeUI = TradeUI;
 
         // FASE V: CaptureSystem disponível globalmente
         window.CaptureSystem = CaptureSystem;
@@ -2531,6 +2561,15 @@
                     window.renderPartyDexTab();
                 }
 
+                if (tabName === 'trade' && typeof window.renderTradeTab === 'function') {
+                    window.renderTradeTab();
+                }
+
+                // XVII-B: Renderizar painel de missões ao abrir aba
+                if (tabName === 'missoes') {
+                    renderMissoesTab();
+                }
+
                 // Mapa de nós: ao abrir a aba Batalha, mostrar o mapa selvagem por padrão
                 if (tabName === 'encounter' && typeof showWorldMap === 'function') {
                     showWorldMap();
@@ -3171,6 +3210,20 @@
                     
                     // Evolução
                     stage: 0,           // Sempre começa em stage 0
+                    evolvesTo: (
+                        template.evolvesTo ??
+                        template.evolution?.evolvesTo ??
+                        template.evolve_to ??
+                        template.evolutionTo ??
+                        null
+                    ),
+                    evolvesAt: (
+                        template.evolvesAt ??
+                        template.evolution?.method?.level ??
+                        template.evolve_at ??
+                        template.evolutionAt ??
+                        null
+                    ),
                     
                     // Sistema de Amizade
                     friendship: DEFAULT_FRIENDSHIP,     // Padrão: neutro (0-100)
@@ -4932,13 +4985,94 @@
          * PR5B: Usa item de cura em combate de grupo
          * Delega para Combat.Group.Actions.executeGroupUseItem()
          */
-        function groupUseItem(itemId) {
+        function groupUseItem(itemId, targetIndex = null) {
             try {
                 if (!itemId) itemId = 'IT_HEAL_01';
                 const deps = createGroupCombatDeps();
-                Combat.Group.Actions.executeGroupUseItem(itemId, deps);
+                const target = Number.isInteger(targetIndex) ? { index: targetIndex } : null;
+                if (Combat.Group.Actions.executeUseItemGroup) {
+                    Combat.Group.Actions.executeUseItemGroup(itemId, target, deps);
+                } else {
+                    Combat.Group.Actions.executeGroupUseItem(itemId, deps);
+                }
             } catch (error) {
                 showError('Failed to use item', error.stack);
+            }
+        }
+
+        function groupOpenItemModal() {
+            try {
+                const enc = _getGroupEncounter();
+                if (!enc || enc.finished) return;
+                const actor = getCurrentActor(enc);
+                if (!actor || actor.side !== 'player') return;
+                const player = _getPlayerById(actor.id);
+                if (!player) return;
+
+                const items = Object.entries(player.inventory || {})
+                    .filter(([, qty]) => (Number(qty) || 0) > 0)
+                    .map(([itemId, qty]) => ({ itemId, qty: Number(qty) || 0, def: getItemDef(itemId) }))
+                    .filter(({ itemId, def }) => {
+                        const t = String(def?.type || '');
+                        return t === 'heal' || t === 'cura' || t === 'tatico' || itemId.startsWith('IT_HEAL_');
+                    });
+                if (items.length === 0) {
+                    showToast('Nenhum item de combate disponível.', 'warning');
+                    return;
+                }
+
+                const targets = (player.team || [])
+                    .map((m, idx) => ({ m, idx }))
+                    .filter(({ m }) => m && (Number(m.hp) || 0) > 0);
+
+                const overlay = document.createElement('div');
+                overlay.className = 'mm-alert-overlay';
+                overlay.id = 'groupItemModalOverlay';
+                const targetOptions = targets.map(({ m, idx }) => `<option value="${idx}">${m.name || m.nome} (${m.hp}/${m.hpMax})</option>`).join('');
+                const itemButtons = items.map(({ itemId, qty, def }) => `
+                    <button class="btn btn-success" style="margin:4px;" onclick="window.groupUseItem('${itemId}', Number(document.getElementById('groupItemTargetSelect')?.value || 0)); document.getElementById('groupItemModalOverlay')?.remove();">
+                        ${(def?.emoji || '🎒')} ${(def?.name || itemId)} (${qty}x)
+                    </button>
+                `).join('');
+                overlay.innerHTML = `
+                    <div class="mm-alert-card" style="max-width:520px;">
+                        <span class="mm-alert-icon">🎒</span>
+                        <p class="mm-alert-msg"><strong>Itens de Combate</strong><br>Escolha item e alvo.</p>
+                        <select id="groupItemTargetSelect" class="form-control mt-5" style="width:100%;padding:6px;border-radius:6px;">${targetOptions}</select>
+                        <div style="display:flex;gap:8px;margin-top:12px;justify-content:center;flex-wrap:wrap;">${itemButtons}</div>
+                        <div style="margin-top:10px;text-align:center;">
+                            <button class="mm-alert-btn mm-alert-btn--error" onclick="document.getElementById('groupItemModalOverlay')?.remove()">✖ Fechar</button>
+                        </div>
+                    </div>`;
+                document.body.appendChild(overlay);
+                overlay.addEventListener('click', e => {
+                    if (e.target === overlay) overlay.remove();
+                });
+            } catch (error) {
+                showError('Falha ao abrir inventário de combate', error.stack);
+            }
+        }
+
+        function groupCapture(itemId = 'CLASTERORB_COMUM') {
+            try {
+                const deps = createGroupCombatDeps();
+                if (Combat.Group.Actions.executeGroupCapture) {
+                    Combat.Group.Actions.executeGroupCapture(itemId, deps);
+                }
+            } catch (error) {
+                showError('Falha ao capturar no combate de grupo', error.stack);
+            }
+        }
+
+        /**
+         * FASE VII-B: Delega para Combat.Group.Actions.executeGroupMove()
+         */
+        function groupMovePosition() {
+            try {
+                const deps = createGroupCombatDeps();
+                Combat.Group.Actions.executeGroupMove(deps);
+            } catch (error) {
+                showError('Failed to move position', error.stack);
             }
         }
         
@@ -5169,6 +5303,16 @@
                 </div>`;
 
             document.body.appendChild(overlay);
+
+            // FASE XI: aplicar animação de brilho nos cards da arena visíveis
+            const evoArena = document.querySelector('.battle-arena');
+            if (evoArena) {
+                const evoUnits = evoArena.querySelectorAll('.group-unit');
+                evoUnits.forEach(u => {
+                    u.classList.add('evolution-animation');
+                    setTimeout(() => u.classList.remove('evolution-animation'), 3200);
+                });
+            }
 
             // Sequência de fases
             // Fase 1: 2s de suspense
@@ -5565,6 +5709,9 @@
 
                 // Detectar nova quest desbloqueada
                 if (line.startsWith("🗺️ Nova quest:")) showToast(line, 'success');
+
+                // Detectar recompensa pendente de coleta
+                if (line.startsWith("🎁 Recompensa disponível")) showToast(line, 'info');
             }
             enc._toastCursor = enc.log.length;
         }
@@ -5811,8 +5958,18 @@
         function getEvolutionData(template) {
             if (!template) return null;
 
-            const evolvesTo = template.evolvesTo ?? template.evolve_to ?? template.evoluiPara ?? template.evolutionTo ?? null;
-            const evolvesAt = template.evolvesAt ?? template.evolve_at ?? template.evoluiNoNivel ?? template.evolutionAt ?? null;
+            const evolvesTo = template.evolvesTo
+                ?? template.evolution?.evolvesTo
+                ?? template.evolve_to
+                ?? template.evoluiPara
+                ?? template.evolutionTo
+                ?? null;
+            const evolvesAt = template.evolvesAt
+                ?? template.evolution?.method?.level
+                ?? template.evolve_at
+                ?? template.evoluiNoNivel
+                ?? template.evolutionAt
+                ?? null;
 
             const toId = evolvesTo != null ? String(evolvesTo) : "";
             const atLv = evolvesAt != null ? Number(evolvesAt) : NaN;
@@ -5831,11 +5988,22 @@
             const evo = getEvolutionData(currentTemplate);
             if (!evo) return null;
 
-            // Busca o template alvo no catálogo via getMonsterTemplate (JSON-first)
-            const nextTemplate = getMonsterTemplate(String(evo.toId));
+            // Busca o template alvo no catálogo atual (JSON-first), incluindo bootstrap normalizado
+            const nextTemplate = getEvolutionTarget(String(evo.toId), getMonstersArray());
             
             if (nextTemplate) return { nextTemplate, evolvesAt: evo.atLv };
             return null;
+        }
+
+        /**
+         * Busca template de evolução por ID dentro de um catálogo de monstros.
+         * @param {string} targetId
+         * @param {Array} catalog
+         * @returns {Object|null}
+         */
+        function getEvolutionTarget(targetId, catalog) {
+            if (!targetId || !Array.isArray(catalog)) return null;
+            return catalog.find(t => t && String(t.id) === String(targetId)) || null;
         }
 
         /**
@@ -5866,9 +6034,27 @@
 
             // Recalcula ATK/DEF/SPD/ENE baseados no novo template (game-specific, fora do módulo puro)
             recalculateStatsFromTemplate(mon);
+            const nextEvoTo = nextTemplate.evolvesTo
+                ?? nextTemplate.evolution?.evolvesTo
+                ?? nextTemplate.evolve_to
+                ?? nextTemplate.evolutionTo
+                ?? null;
+            const nextEvoAt = nextTemplate.evolvesAt
+                ?? nextTemplate.evolution?.method?.level
+                ?? nextTemplate.evolve_at
+                ?? nextTemplate.evolutionAt
+                ?? null;
+            mon.evolvesTo = nextEvoTo;
+            mon.evolvesAt = Number.isFinite(Number(nextEvoAt)) ? Number(nextEvoAt) : null;
 
             if (Array.isArray(logArr)) {
-                logArr.push(`🌟 ${oldName} evoluiu para ${newName}!`);
+                // Enriquecer com classe e raridade do novo template para contexto
+                const newRarity = nextTemplate.rarity || '';
+                const newClass  = nextTemplate.class  || '';
+                let evoSuffix = '';
+                if (newRarity && newClass) evoSuffix = ` (${newClass} · ${newRarity})`;
+                else if (newRarity || newClass) evoSuffix = ` (${newRarity || newClass})`;
+                logArr.push(`🌟 ${oldName} evoluiu para ${newName}!${evoSuffix}`);
             }
 
             // Verificar e aplicar upgrade de skills após evolução (Feature 3.6)
@@ -6491,12 +6677,19 @@
                     encounter,
                     createGroupRewardsDeps()
                 );
-                
+
+                // FASE VII-C: Processar recompensas terapêuticas e obter destaques
+                const { highlights: therapyHighlights } = Combat.Group.Rewards.processTherapyRewards(
+                    encounter,
+                    createGroupRewardsDeps()
+                );
+
                 // Mostrar modal (com log do encontro para drops + progresso de quests)
                 await BattleEndModal.showBattleEndModal({
                     result: encounter.result,
                     participants: participants,
-                    log: encounter.log || []
+                    log: encounter.log || [],
+                    therapyHighlights: therapyHighlights || []
                 });
                 
                 // Após fechar modal, limpar encounter
@@ -6616,6 +6809,11 @@
             if (!GameState.data) GameState.data = {};
 
             if (enc.result === 'victory' && locationId) {
+                // FASE XIV: registrar nó concluído para motor de desbloqueio progressivo
+                if (window.MapUnlockSystem?.unlockNode) {
+                    window.MapUnlockSystem.unlockNode(locationId, GameState);
+                }
+
                 // PR-09: Boss node — persistir bossDefeated, NÃO adicionar a completedLocations
                 if (bossNode) {
                     if (!GameState.data.nodeFlags) GameState.data.nodeFlags = {};
@@ -6671,6 +6869,26 @@
                     }
                     GameState.data.nodeFlags[locationId].wildWins =
                         (GameState.data.nodeFlags[locationId].wildWins ?? 0) + 1;
+                }
+
+                // FASE XIV: avaliar conexões desbloqueadas após vitória no nó atual
+                try {
+                    const completedNodes = new Set(GameState.data?.completedNodes ?? []);
+                    const currentNode = (_wm.worldMapNodes ?? []).find(n => n.nodeId === locationId);
+                    const connectedIds = currentNode?.connections ?? [];
+                    for (const nextId of connectedIds) {
+                        const nextNode = (_wm.worldMapNodes ?? []).find(n => n.nodeId === nextId);
+                        if (!nextNode || completedNodes.has(nextId)) continue;
+                        const unlocked = window.MapUnlockSystem?.checkUnlock
+                            ? window.MapUnlockSystem.checkUnlock(nextNode, completedNodes, GameState.data?.nodeFlags ?? {})
+                            : false;
+                        if (!unlocked) continue;
+                        const loc = (_wm.locationsData ?? []).find(l => l.id === nextId);
+                        const nextName = loc?.name || nextId;
+                        showToast(`🗺️ Novo caminho desbloqueado: ${nextName}!`, 'success');
+                    }
+                } catch (unlockErr) {
+                    console.warn('[MapUnlock] Falha ao processar desbloqueios:', unlockErr);
                 }
             } else if (enc.result !== 'victory' && locationId && bossNode) {
                 // Derrota/fuga em boss: registrar tentativa mas NÃO marcar como derrotado
@@ -8196,6 +8414,7 @@
                 updateEncounterUI();
                 renderEncounter();
                 renderBoxTab(); // PR15A: Box system
+                if (typeof renderTradeTab === 'function') renderTradeTab();
             } catch (error) {
                 console.error('Failed to update views:', error);
             }
@@ -8264,6 +8483,160 @@
                     root.innerHTML = '<p class="error">Erro ao renderizar Monstrodex</p>';
                 }
             }
+        }
+
+        // ===== TRADE TAB (FASE XIII) =====
+        const tradeUIState = {
+            selectedA: null,
+            selectedB: null,
+            playerAId: null,
+            playerBId: null,
+            pendingProposal: null,
+        };
+
+        function _getSessionTherapyLog() {
+            if (!GameState.currentSession) return null;
+            if (!Array.isArray(GameState.currentSession.therapyLog)) {
+                GameState.currentSession.therapyLog = [];
+            }
+            return GameState.currentSession.therapyLog;
+        }
+
+        function renderTradeTab() {
+            try {
+                const root = document.getElementById('tradeTabContainer');
+                if (!root || !window.TradeUI?.renderTradePanel) return;
+                if (!tradeUIState.playerAId && GameState.players?.[0]?.id) {
+                    tradeUIState.playerAId = GameState.players[0].id;
+                }
+                if (!tradeUIState.playerBId && GameState.players?.[1]?.id) {
+                    tradeUIState.playerBId = GameState.players[1].id;
+                }
+                root.innerHTML = window.TradeUI.renderTradePanel(
+                    { players: GameState.players || [], currentSession: GameState.currentSession || null },
+                    tradeUIState
+                );
+            } catch (error) {
+                console.error('[TradeTab] render falhou:', error);
+            }
+        }
+
+        function openTradePanel() {
+            switchTab('trade');
+        }
+
+        function tradeSetPlayerA(playerId) {
+            tradeUIState.playerAId = playerId || null;
+            tradeUIState.selectedA = null;
+            tradeUIState.pendingProposal = null;
+            renderTradeTab();
+        }
+
+        function tradeSetPlayerB(playerId) {
+            tradeUIState.playerBId = playerId || null;
+            tradeUIState.selectedB = null;
+            tradeUIState.pendingProposal = null;
+            renderTradeTab();
+        }
+
+        function tradeSelectMon(role, monId, playerId) {
+            if (role === 'A') {
+                tradeUIState.playerAId = playerId;
+                tradeUIState.selectedA = monId;
+            } else {
+                tradeUIState.playerBId = playerId;
+                tradeUIState.selectedB = monId;
+            }
+            tradeUIState.pendingProposal = null;
+            renderTradeTab();
+        }
+
+        function tradeApplySuggestion(monAId, monBId) {
+            tradeUIState.selectedA = monAId || null;
+            tradeUIState.selectedB = monBId || null;
+            tradeUIState.pendingProposal = null;
+            renderTradeTab();
+        }
+
+        function confirmTrade() {
+            return tradeConfirm();
+        }
+
+        function tradeConfirm() {
+            try {
+                const playerA = (GameState.players || []).find(p => p?.id === tradeUIState.playerAId);
+                const playerB = (GameState.players || []).find(p => p?.id === tradeUIState.playerBId);
+                if (!playerA || !playerB || !tradeUIState.selectedA || !tradeUIState.selectedB) {
+                    showToast('Selecione dois jogadores e um monstrinho de cada lado.', 'warning');
+                    return;
+                }
+                const monA = (playerA.team || []).find(m => m && (m.id === tradeUIState.selectedA || m.instanceId === tradeUIState.selectedA));
+                const monB = (playerB.team || []).find(m => m && (m.id === tradeUIState.selectedB || m.instanceId === tradeUIState.selectedB));
+                if (!monA || !monB) {
+                    showToast('Seleção de troca inválida.', 'error');
+                    return;
+                }
+
+                tradeUIState.pendingProposal = {
+                    playerAId: playerA.id,
+                    playerBId: playerB.id,
+                    monAId: monA.id || monA.instanceId,
+                    monBId: monB.id || monB.instanceId,
+                };
+                showToast(`📨 ${playerA.name || 'Jogador A'} propôs troca. ${playerB.name || 'Jogador B'} precisa confirmar.`, 'warning');
+                renderTradeTab();
+            } catch (error) {
+                console.error('[TradeTab] proposta falhou:', error);
+                showToast('Erro ao propor troca.', 'error');
+            }
+        }
+
+        function tradeAccept() {
+            try {
+                const proposal = tradeUIState.pendingProposal;
+                if (!proposal) return;
+
+                const playerA = (GameState.players || []).find(p => p?.id === proposal.playerAId);
+                const playerB = (GameState.players || []).find(p => p?.id === proposal.playerBId);
+                const monA = (playerA?.team || []).find(m => m && (m.id === proposal.monAId || m.instanceId === proposal.monAId));
+                const monB = (playerB?.team || []).find(m => m && (m.id === proposal.monBId || m.instanceId === proposal.monBId));
+                if (!playerA || !playerB || !monA || !monB) {
+                    showToast('A proposta expirou ou ficou inválida.', 'error');
+                    tradeUIState.pendingProposal = null;
+                    renderTradeTab();
+                    return;
+                }
+
+                const therapyLog = _getSessionTherapyLog();
+                const result = window.TradeUI.executeTrade(playerA, monA, playerB, monB, therapyLog);
+                if (!result.success) {
+                    showToast(result.log?.[0] || 'Troca não concluída.', 'error');
+                    return;
+                }
+
+                if (Array.isArray(GameState.currentSession?.therapyLog)) {
+                    GameState.currentSession.therapyLog.push(`🔄 Troca confirmada: ${(playerA.name || 'A')} ↔ ${(playerB.name || 'B')}`);
+                }
+
+                tradeUIState.pendingProposal = null;
+                tradeUIState.selectedA = null;
+                tradeUIState.selectedB = null;
+                saveGame();
+                updatePlayersList();
+                renderTradeTab();
+                showToast(result.log?.[0] || 'Troca concluída!', 'success');
+            } catch (error) {
+                console.error('[TradeTab] aceite falhou:', error);
+                showToast('Erro ao confirmar troca.', 'error');
+            }
+        }
+
+        function tradeReject() {
+            tradeUIState.pendingProposal = null;
+            tradeUIState.selectedA = null;
+            tradeUIState.selectedB = null;
+            renderTradeTab();
+            showToast('❌ Proposta de troca recusada.', 'warning');
         }
 
         // ===== SHOP SYSTEM (PR13A) =====
@@ -9596,7 +9969,11 @@
                     const onclick   = isService
                         ? `onclick="selectCityService('${spot.serviceAction}')"`
                         : `onclick="owGoToSpot('${spot.id}')"`;
-                    const cls = isService ? 'ow-spot-chip--service' : '';
+                    // Chip com cor temática por tipo de serviço
+                    const cls = !isService ? '' :
+                                spot.serviceAction === 'heal'  ? 'ow-spot-chip--heal' :
+                                spot.serviceAction === 'shop'  ? 'ow-spot-chip--shop' :
+                                'ow-spot-chip--service';
                     return `<button class="ow-spot-chip ${cls}" ${onclick}>${spot.icon} ${spot.name}</button>`;
                 }).join('');
                 if (extra > 0) {
@@ -10541,18 +10918,22 @@
 
             // Gerar linhas de monstrinhos — usar índice para IDs únicos sem risco de colisão
             const monsterRows = allMonsters.length === 0
-                ? '<p style="color:rgba(255,255,255,0.5);text-align:center;">Nenhum Monstrinho no time.</p>'
+                ? '<p style="color:rgba(255,255,255,0.4);text-align:center;padding:12px 0;">Nenhum Monstrinho no time.</p>'
                 : allMonsters.map(({ mi, player, hpBefore, hpMax, needsHeal }, idx) => {
                     const pct = Math.round((hpBefore / hpMax) * 100);
                     const fainted = mi.status === 'fainted' || hpBefore <= 0;
+                    // Classe de cor da barra: vermelho <30%, amarelo 30-69%, verde ≥70%
+                    const barClass = fainted ? '' :
+                                     pct >= 70 ? ' heal-modal-hp-fill--good' :
+                                     pct >= 30 ? ' heal-modal-hp-fill--ok' : '';
                     return `
                         <div class="heal-modal-monster${fainted ? ' heal-modal-monster--fainted' : ''}">
                             <div class="heal-modal-monster__header">
-                                <span class="heal-modal-monster__name">${escapeHtml(mi.name ?? mi.id)} <span style="opacity:0.5;font-size:10px;">(${escapeHtml(player.name)})</span></span>
-                                <span class="heal-modal-monster__hp-text">${fainted ? 'Nocauteado' : `${hpBefore}/${hpMax} HP`}</span>
+                                <span class="heal-modal-monster__name">${escapeHtml(mi.name ?? mi.id)} <span style="opacity:0.45;font-size:10px;">(${escapeHtml(player.name)})</span></span>
+                                <span class="heal-modal-monster__hp-text">${fainted ? '💀 Nocauteado' : `${hpBefore}/${hpMax} HP`}</span>
                             </div>
                             <div class="heal-modal-hp-bar">
-                                <div class="heal-modal-hp-fill" id="hmhp_${idx}"
+                                <div class="heal-modal-hp-fill${barClass}" id="hmhp_${idx}"
                                      style="width:${fainted ? 0 : pct}%"></div>
                             </div>
                         </div>`;
@@ -10578,11 +10959,11 @@
                     <div class="heal-modal-list" id="healModalList">
                         ${monsterRows}
                     </div>
-                    <div id="healModalFeedback"></div>
+                    <div id="healModalFeedback" class="heal-modal-feedback"></div>
                     <div class="heal-modal-footer">
                         ${anyNeedsHeal
                             ? `<button class="heal-modal-btn heal-modal-btn--primary" onclick="doHealAll()">💚 Curar Todos</button>`
-                            : `<div style="flex:1;text-align:center;color:#4adf88;font-weight:700;">✅ Todos já estão com HP cheio!</div>`
+                            : `<div style="flex:1;text-align:center;color:#4adf88;font-weight:700;font-size:13px;">✅ Todos já estão com HP cheio!</div>`
                         }
                         <button class="heal-modal-btn heal-modal-btn--secondary" onclick="closeHealModal()">Fechar</button>
                     </div>
@@ -10601,11 +10982,20 @@
                     if (mi && mi.hpMax) {
                         mi.hp = mi.hpMax;
                         if (mi.status === 'fainted') mi.status = 'healthy';
-                        // Animar barra de HP para 100% usando índice global (igual ao de showHealModal)
+                        // Animar barra de HP para 100% e marcar card como curado
                         const bar = document.getElementById(`hmhp_${globalIdx}`);
                         if (bar) {
-                            bar.classList.add('full');
+                            bar.className = 'heal-modal-hp-fill full';
                             bar.style.width = '100%';
+                            // Marcar card pai como curado para highlight verde
+                            const card = bar.closest('.heal-modal-monster');
+                            if (card) {
+                                card.classList.remove('heal-modal-monster--fainted');
+                                card.classList.add('heal-modal-monster--healed');
+                                // Atualizar texto de HP
+                                const hpText = card.querySelector('.heal-modal-monster__hp-text');
+                                if (hpText) hpText.textContent = `${mi.hpMax}/${mi.hpMax} HP`;
+                            }
                         }
                         globalIdx++;
                     }
@@ -10622,14 +11012,14 @@
             if (feedback) {
                 feedback.innerHTML = '<div class="heal-all-success">✨ Todos os Monstrinhos curados com sucesso!</div>';
             }
-            // Atualizar textos HP e ocultar botão "Curar Todos"
+            // Atualizar botão "Curar Todos"
             const footer = document.querySelector('.heal-modal-footer');
             if (footer) {
                 const healBtn = footer.querySelector('.heal-modal-btn--primary');
                 if (healBtn) {
                     healBtn.textContent = '✅ Curado!';
                     healBtn.disabled = true;
-                    healBtn.style.opacity = '0.6';
+                    healBtn.style.opacity = '0.55';
                 }
             }
         }
@@ -10942,6 +11332,153 @@
             }
             container.innerHTML = html;
         }
+
+        /**
+         * XVII-B — Renderiza o painel completo de Missões.
+         *
+         * Exibido na aba "📜 Missões". Para cada jogador, mostra:
+         *  - Quests ativas com barra de progresso e recompensas
+         *  - Quests concluídas aguardando resgate (botão "Coletar")
+         *  - Quests concluídas já resgatadas (lista colapsada)
+         *
+         * Usa GameFlow.getActiveQuestsSummary() e GameFlow.getPendingRewardQuests() (sem mutação).
+         */
+        function renderMissoesTab() {
+            const container = document.getElementById('missoesTabContent');
+            if (!container) return;
+
+            if (!window.GameFlow) {
+                container.innerHTML = '<p class="text-muted">Sistema de quests não carregado.</p>';
+                return;
+            }
+
+            const players = GameState.players || [];
+            if (players.length === 0) {
+                container.innerHTML = '<p class="text-muted">Adicione jogadores para ver missões.</p>';
+                return;
+            }
+
+            let html = '';
+            for (const player of players) {
+                if (!player) continue;
+                const playerName = player.name || player.nome || player.id;
+                const activeQuestsSummary = window.GameFlow.getActiveQuestsSummary(player);
+                const completedIds = player.questState?.completedQuestIds ?? [];
+                const pendingRewardIds = player.questState?.pendingRewardQuestIds ?? [];
+                const claimedIds = player.questState?.claimedRewardQuestIds ?? [];
+
+                html += `<div class="card" style="margin-bottom:12px;">`;
+                html += `<h3 style="margin-bottom:10px;">👤 ${playerName}</h3>`;
+
+                // — Quests Ativas —
+                if (activeQuestsSummary.length > 0) {
+                    html += `<div style="margin-bottom:10px;"><strong style="font-size:13px;color:#555;">🗺️ Ativas (${activeQuestsSummary.length})</strong></div>`;
+                    for (const { quest, progress, needed } of activeQuestsSummary) {
+                        const pct = needed > 0 ? Math.min(100, Math.round((progress / needed) * 100)) : 0;
+                        const localLabel = quest.localId ? ` · 📍 ${quest.localId}` : '';
+                        html += `<div class="quest-tracker-entry" style="margin-bottom:10px;">`;
+                        html += `  <div class="quest-header">`;
+                        html += `    <strong>${quest.nome}</strong>`;
+                        html += `    <span class="text-small text-muted">${localLabel}</span>`;
+                        html += `  </div>`;
+                        html += `  <div class="text-small" style="color:#666;margin:3px 0;">${quest.descricao || ''}</div>`;
+                        html += `  <div class="quest-progress-bar"><div class="quest-progress-fill" style="width:${pct}%"></div></div>`;
+                        html += `  <div class="text-small" style="margin-top:3px;">`;
+                        html += `    Progresso: ${progress}/${needed}`;
+                        if (quest.rewardXp)   html += ` · ⭐ ${quest.rewardXp} XP`;
+                        if (quest.rewardGold) html += ` · 💰 ${quest.rewardGold}`;
+                        if (quest.rewardItemId) html += ` · 🎁 ${quest.rewardItemId}`;
+                        html += `  </div>`;
+                        html += `</div>`;
+                    }
+                } else {
+                    html += `<p class="text-muted text-small">Nenhuma missão ativa.</p>`;
+                }
+
+                // — Recompensas Pendentes de Coleta —
+                if (pendingRewardIds.length > 0) {
+                    html += `<div style="margin-top:10px;margin-bottom:6px;">`;
+                    html += `<strong style="font-size:13px;color:#e67e22;">🎁 Recompensas disponíveis (${pendingRewardIds.length})</strong>`;
+                    html += `</div>`;
+                    for (const qid of pendingRewardIds) {
+                        const q = typeof window.GameFlow?.getQuest === 'function' ? window.GameFlow.getQuest(qid) : null;
+                        if (!q) continue;
+                        html += `<div class="quest-tracker-entry" style="margin-bottom:8px;border-left:3px solid #e67e22;padding-left:8px;">`;
+                        html += `  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">`;
+                        html += `    <strong style="font-size:13px;">✅ ${q.nome}</strong>`;
+                        html += `    <button class="btn btn-warning btn-sm" onclick="claimQuestRewardUI('${player.id}', '${qid}')" style="font-size:12px;padding:4px 10px;">`;
+                        html += `      🎁 Coletar Recompensa`;
+                        html += `    </button>`;
+                        html += `  </div>`;
+                        html += `  <div class="text-small" style="color:#888;margin-top:3px;">`;
+                        if (q.rewardXp)   html += `⭐ +${q.rewardXp} XP `;
+                        if (q.rewardGold) html += `💰 +${q.rewardGold} `;
+                        if (q.rewardItemId) html += `🎁 ${q.rewardItemId}`;
+                        html += `  </div>`;
+                        html += `</div>`;
+                    }
+                }
+
+                // — Quests Concluídas (recompensas já coletadas) —
+                const claimedCompletedIds = completedIds.filter(qid => claimedIds.includes(qid));
+                if (claimedCompletedIds.length > 0) {
+                    html += `<details style="margin-top:8px;">`;
+                    html += `<summary style="cursor:pointer;font-size:13px;color:#27ae60;font-weight:600;">`;
+                    html += `✅ Concluídas (${claimedCompletedIds.length})</summary>`;
+                    html += `<ul style="margin:6px 0 0 16px;padding:0;">`;
+                    for (const qid of claimedCompletedIds) {
+                        const q = typeof window.GameFlow?.getQuest === 'function' ? window.GameFlow.getQuest(qid) : null;
+                        const label = q ? `${q.nome} <span style="color:#aaa;font-size:11px;">(${qid})</span>` : qid;
+                        html += `<li style="font-size:12px;color:#555;margin:2px 0;">${label}</li>`;
+                    }
+                    html += `</ul></details>`;
+                }
+
+                html += `</div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        /**
+         * Coleta a recompensa de uma quest concluída (chamado pelo botão na aba Missões).
+         * @param {string} playerId - ID do jogador
+         * @param {string} questId  - ID da quest a resgatar
+         */
+        function claimQuestRewardUI(playerId, questId) {
+            try {
+                const player = (GameState.players || []).find(p => p?.id === playerId);
+                if (!player) {
+                    showToast('Jogador não encontrado.', 'error');
+                    return;
+                }
+
+                if (!window.GameFlow?.claimQuestReward) {
+                    showToast('Sistema de quests não disponível.', 'error');
+                    return;
+                }
+
+                const deps = createQuestDeps();
+                const logArr = [];
+                const success = window.GameFlow.claimQuestReward(player, questId, deps, logArr);
+
+                if (success) {
+                    saveToLocalStorage();
+                    const q = window.GameFlow.getQuest?.(questId);
+                    const qName = q?.nome || questId;
+                    showToast(`🎁 Recompensa de "${qName}" coletada!`, 'success');
+                    renderMissoesTab();
+                } else {
+                    showToast('Não foi possível coletar esta recompensa.', 'error');
+                }
+            } catch (err) {
+                console.error('[claimQuestRewardUI] Erro:', err);
+                showToast('Erro ao coletar recompensa.', 'error');
+            }
+        }
+
+        window.claimQuestRewardUI = claimQuestRewardUI;
+        window.renderMissoesTab = renderMissoesTab;
 
         /**
          * FASE UX: Renderiza dica de objetivo da quest ativa no painel Encounter.
@@ -11466,6 +12003,16 @@
 
         window.openTradeModal        = openTradeModal;
         window.executeTradeFromModal = executeTradeFromModal;
+        window.openTradePanel        = openTradePanel;
+        window.confirmTrade          = confirmTrade;
+        window.tradeConfirm          = tradeConfirm;
+        window.tradeAccept           = tradeAccept;
+        window.tradeReject           = tradeReject;
+        window.tradeSetPlayerA       = tradeSetPlayerA;
+        window.tradeSetPlayerB       = tradeSetPlayerB;
+        window.tradeSelectMon        = tradeSelectMon;
+        window.tradeApplySuggestion  = tradeApplySuggestion;
+        window.renderTradeTab        = renderTradeTab;
 
         // PR12A: Equipment UI Functions
         function renderEquipableItems(player) {
@@ -11786,38 +12333,66 @@
                 if (!container) return;
                 
                 if (!GameState.currentSession) {
-                    container.innerHTML = '<div class="card"><p>No active session</p></div>';
+                    container.innerHTML = '<div class="card"><p>Nenhuma sessão ativa</p></div>';
                     return;
                 }
                 
                 const session = GameState.currentSession;
-                
-                let html = `
-                    <div class="card">
-                        <h3>Session: ${session.name}</h3>
-                        <p>Started: ${new Date(session.createdAt).toLocaleString()}</p>
-                        ${session.completedAt ? `<p>Ended: ${new Date(session.completedAt).toLocaleString()}</p>` : '<p>Status: Active</p>'}
-                    </div>
-                    
-                    <div class="card">
-                        <h3>Player Summary</h3>
-                        ${(GameState.players || []).map(player => {
-                            if (!player) return '';
-                            const therapy = session.therapy?.perPlayer?.[player.id];
-                            if (!therapy) return '';
-                            
-                            return `
-                                <div class="my-15 p-15 bg-white border-radius-12">
-                                    <h4>${player.name}</h4>
-                                    <p>PM Earned: ${therapy.pm || 0}</p>
-                                    <p>Medals: ${(therapy.medals || []).join(', ') || 'None yet'}</p>
-                                    <p>Objectives Completed: ${therapy.completedObjectives?.length || 0}/${GameState.objectives?.length || 0}</p>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                `;
-                
+                const medalLabels = { bronze: '🥉 Bronze', silver: '🥈 Prata', gold: '🥇 Ouro' };
+
+                // ── Cabeçalho da sessão ─────────────────────────────────────
+                let html = `<div class="card">
+                    <h3>📋 Sessão: ${session.name || session.id}</h3>
+                    <p style="font-size:13px;color:#555;">Início: ${new Date(session.createdAt).toLocaleString('pt-BR')}</p>
+                    ${session.completedAt
+                        ? `<p style="font-size:13px;color:#27ae60;">Encerrada: ${new Date(session.completedAt).toLocaleString('pt-BR')}</p>`
+                        : '<p style="font-size:13px;color:#e67e22;">🟡 Em andamento</p>'}
+                </div>`;
+
+                // ── Resumo por jogador ───────────────────────────────────────
+                html += `<div class="card"><h3>👥 Resumo dos Jogadores</h3>`;
+                for (const player of (GameState.players || [])) {
+                    if (!player) continue;
+                    const therapy = session.therapy?.perPlayer?.[player.id];
+                    if (!therapy) continue;
+
+                    const pm = therapy.pm || 0;
+                    const medals = (therapy.medals || []).map(m => medalLabels[m] || m).join(', ') || 'Nenhuma ainda';
+                    const objectives = therapy.completedObjectives || [];
+                    const totalObj = (GameState.objectives || []).length;
+                    const logs = therapy.logs || [];
+
+                    html += `<div style="padding:12px;margin-bottom:10px;border:1px solid #eee;border-radius:10px;background:#fafafa;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <h4 style="margin:0;font-size:15px;">👤 ${player.name || player.id}</h4>
+                            <span style="font-size:13px;color:#2980b9;">Classe: ${player.class || '?'}</span>
+                        </div>
+                        <div style="margin-top:8px;font-size:13px;display:flex;gap:16px;flex-wrap:wrap;">
+                            <span>🏆 PM: <strong>${pm}</strong></span>
+                            <span>🎖️ Medalhas: <strong>${medals}</strong></span>
+                            <span>✅ Objetivos: <strong>${objectives.length}/${totalObj}</strong></span>
+                        </div>
+                        ${logs.length > 0 ? `
+                        <div style="margin-top:8px;">
+                            <details>
+                                <summary style="font-size:12px;cursor:pointer;color:#555;">📝 Eventos (${logs.length})</summary>
+                                <ul style="margin:6px 0 0 12px;padding:0;font-size:12px;color:#444;">
+                                    ${logs.map(l => `<li>${l}</li>`).join('')}
+                                </ul>
+            </details>
+                        </div>` : ''}
+                    </div>`;
+                }
+                html += `</div>`;
+
+                // ── Botão exportar ───────────────────────────────────────────
+                html += `<div class="card" style="text-align:center;">
+                    <button class="btn btn-secondary" onclick="window.exportTherapyReport && window.exportTherapyReport()"
+                            style="padding:10px 20px;font-size:14px;">
+                        📤 Exportar Relatório da Sessão
+                    </button>
+                </div>`;
+
                 container.innerHTML = html;
             } catch (error) {
                 console.error('Failed to update report view:', error);
@@ -11839,6 +12414,62 @@
                 showError('Export failed', error.stack);
             }
         }
+
+        /**
+         * FASE X: Exporta relatório terapêutico da sessão atual em formato texto.
+         */
+        function exportTherapyReport() {
+            try {
+                const session = GameState.currentSession;
+                if (!session) { showToast('Nenhuma sessão ativa para exportar.', 'warning'); return; }
+
+                const lines = [];
+                lines.push('=== RELATÓRIO DE SESSÃO — MONSTRINHOMON ===');
+                lines.push(`Sessão: ${session.name || session.id}`);
+                lines.push(`Data: ${new Date(session.createdAt).toLocaleString('pt-BR')}`);
+                if (session.completedAt) lines.push(`Encerrada: ${new Date(session.completedAt).toLocaleString('pt-BR')}`);
+                lines.push('');
+                lines.push('--- PARTICIPANTES ---');
+
+                for (const player of (GameState.players || [])) {
+                    if (!player) continue;
+                    const therapy = session.therapy?.perPlayer?.[player.id];
+                    lines.push(`\nJogador: ${player.name || player.id} (${player.class || '?'})`);
+                    if (therapy) {
+                        lines.push(`  PM ganhos: ${therapy.pm || 0}`);
+                        lines.push(`  Medalhas: ${(therapy.medals || []).join(', ') || 'Nenhuma'}`);
+                        lines.push(`  Objetivos concluídos: ${(therapy.completedObjectives || []).length}`);
+                        if ((therapy.logs || []).length > 0) {
+                            lines.push(`  Eventos:`);
+                            for (const l of therapy.logs) lines.push(`    - ${l}`);
+                        }
+                    }
+                    // XP total dos monstrinhos
+                    const totalXp = (player.team || []).reduce((sum, m) => sum + (Number(m?.xp) || 0), 0);
+                    lines.push(`  XP total dos Monstrinhos: ${totalXp}`);
+                }
+
+                lines.push('\n--- BATALHAS ---');
+                const encounters = (GameState.data?.encounters || []).filter(e => e?.sessionId === session.id);
+                for (const enc of encounters) {
+                    lines.push(`  Batalha ${enc.id || '?'}: ${enc.result || '?'}`);
+                }
+
+                lines.push('\n=== FIM DO RELATÓRIO ===');
+                const text = lines.join('\n');
+                const blob = new Blob([text], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `relatorio_sessao_${session.id || Date.now()}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+                showToast('📤 Relatório exportado!', 'success');
+            } catch (error) {
+                showError('Export report failed', error.stack);
+            }
+        }
+        window.exportTherapyReport = exportTherapyReport;
 
         function importData() {
             try {
@@ -13888,6 +14519,9 @@
         window.groupPassTurn = groupPassTurn;
         window.groupFlee = groupFlee;
         window.groupUseItem = groupUseItem;
+        window.groupOpenItemModal = groupOpenItemModal;
+        window.groupCapture = groupCapture;
+        window.groupMovePosition = groupMovePosition;
         window.cancelTargetSelection = cancelTargetSelection;
 
         // Initialize on load
