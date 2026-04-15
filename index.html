@@ -5777,6 +5777,9 @@
 
                 // Detectar nova quest desbloqueada
                 if (line.startsWith("🗺️ Nova quest:")) showToast(line, 'success');
+
+                // Detectar recompensa pendente de coleta
+                if (line.startsWith("🎁 Recompensa disponível")) showToast(line, 'info');
             }
             enc._toastCursor = enc.log.length;
         }
@@ -6113,7 +6116,13 @@
             mon.evolvesAt = Number.isFinite(Number(nextEvoAt)) ? Number(nextEvoAt) : null;
 
             if (Array.isArray(logArr)) {
-                logArr.push(`🌟 ${oldName} evoluiu para ${newName}!`);
+                // Enriquecer com classe e raridade do novo template para contexto
+                const newRarity = nextTemplate.rarity || '';
+                const newClass  = nextTemplate.class  || '';
+                let evoSuffix = '';
+                if (newRarity && newClass) evoSuffix = ` (${newClass} · ${newRarity})`;
+                else if (newRarity || newClass) evoSuffix = ` (${newRarity || newClass})`;
+                logArr.push(`🌟 ${oldName} evoluiu para ${newName}!${evoSuffix}`);
             }
 
             // Verificar e aplicar upgrade de skills após evolução (Feature 3.6)
@@ -6939,7 +6948,7 @@
                         const nextNode = (_wm.worldMapNodes ?? []).find(n => n.nodeId === nextId);
                         if (!nextNode || completedNodes.has(nextId)) continue;
                         const unlocked = window.MapUnlockSystem?.checkUnlock
-                            ? window.MapUnlockSystem.checkUnlock(nextNode, completedNodes)
+                            ? window.MapUnlockSystem.checkUnlock(nextNode, completedNodes, GameState.data?.nodeFlags ?? {})
                             : false;
                         if (!unlocked) continue;
                         const loc = (_wm.locationsData ?? []).find(l => l.id === nextId);
@@ -11449,9 +11458,10 @@
          *
          * Exibido na aba "📜 Missões". Para cada jogador, mostra:
          *  - Quests ativas com barra de progresso e recompensas
-         *  - Quests concluídas (lista colapsada)
+         *  - Quests concluídas aguardando resgate (botão "Coletar")
+         *  - Quests concluídas já resgatadas (lista colapsada)
          *
-         * Usa GameFlow.getActiveQuestsSummary() (sem mutação).
+         * Usa GameFlow.getActiveQuestsSummary() e GameFlow.getPendingRewardQuests() (sem mutação).
          */
         function renderMissoesTab() {
             const container = document.getElementById('missoesTabContent');
@@ -11474,6 +11484,8 @@
                 const playerName = player.name || player.nome || player.id;
                 const activeQuestsSummary = window.GameFlow.getActiveQuestsSummary(player);
                 const completedIds = player.questState?.completedQuestIds ?? [];
+                const pendingRewardIds = player.questState?.pendingRewardQuestIds ?? [];
+                const claimedIds = player.questState?.claimedRewardQuestIds ?? [];
 
                 html += `<div class="card" style="margin-bottom:12px;">`;
                 html += `<h3 style="margin-bottom:10px;">👤 ${playerName}</h3>`;
@@ -11503,13 +11515,38 @@
                     html += `<p class="text-muted text-small">Nenhuma missão ativa.</p>`;
                 }
 
-                // — Quests Concluídas —
-                if (completedIds.length > 0) {
+                // — Recompensas Pendentes de Coleta —
+                if (pendingRewardIds.length > 0) {
+                    html += `<div style="margin-top:10px;margin-bottom:6px;">`;
+                    html += `<strong style="font-size:13px;color:#e67e22;">🎁 Recompensas disponíveis (${pendingRewardIds.length})</strong>`;
+                    html += `</div>`;
+                    for (const qid of pendingRewardIds) {
+                        const q = typeof window.GameFlow?.getQuest === 'function' ? window.GameFlow.getQuest(qid) : null;
+                        if (!q) continue;
+                        html += `<div class="quest-tracker-entry" style="margin-bottom:8px;border-left:3px solid #e67e22;padding-left:8px;">`;
+                        html += `  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">`;
+                        html += `    <strong style="font-size:13px;">✅ ${q.nome}</strong>`;
+                        html += `    <button class="btn btn-warning btn-sm" onclick="claimQuestRewardUI('${player.id}', '${qid}')" style="font-size:12px;padding:4px 10px;">`;
+                        html += `      🎁 Coletar Recompensa`;
+                        html += `    </button>`;
+                        html += `  </div>`;
+                        html += `  <div class="text-small" style="color:#888;margin-top:3px;">`;
+                        if (q.rewardXp)   html += `⭐ +${q.rewardXp} XP `;
+                        if (q.rewardGold) html += `💰 +${q.rewardGold} `;
+                        if (q.rewardItemId) html += `🎁 ${q.rewardItemId}`;
+                        html += `  </div>`;
+                        html += `</div>`;
+                    }
+                }
+
+                // — Quests Concluídas (recompensas já coletadas) —
+                const claimedCompletedIds = completedIds.filter(qid => claimedIds.includes(qid));
+                if (claimedCompletedIds.length > 0) {
                     html += `<details style="margin-top:8px;">`;
                     html += `<summary style="cursor:pointer;font-size:13px;color:#27ae60;font-weight:600;">`;
-                    html += `✅ Concluídas (${completedIds.length})</summary>`;
+                    html += `✅ Concluídas (${claimedCompletedIds.length})</summary>`;
                     html += `<ul style="margin:6px 0 0 16px;padding:0;">`;
-                    for (const qid of completedIds) {
+                    for (const qid of claimedCompletedIds) {
                         const q = typeof window.GameFlow?.getQuest === 'function' ? window.GameFlow.getQuest(qid) : null;
                         const label = q ? `${q.nome} <span style="color:#aaa;font-size:11px;">(${qid})</span>` : qid;
                         html += `<li style="font-size:12px;color:#555;margin:2px 0;">${label}</li>`;
@@ -11523,6 +11560,44 @@
             container.innerHTML = html;
         }
 
+        /**
+         * Coleta a recompensa de uma quest concluída (chamado pelo botão na aba Missões).
+         * @param {string} playerId - ID do jogador
+         * @param {string} questId  - ID da quest a resgatar
+         */
+        function claimQuestRewardUI(playerId, questId) {
+            try {
+                const player = (GameState.players || []).find(p => p?.id === playerId);
+                if (!player) {
+                    showToast('Jogador não encontrado.', 'error');
+                    return;
+                }
+
+                if (!window.GameFlow?.claimQuestReward) {
+                    showToast('Sistema de quests não disponível.', 'error');
+                    return;
+                }
+
+                const deps = createQuestDeps();
+                const logArr = [];
+                const success = window.GameFlow.claimQuestReward(player, questId, deps, logArr);
+
+                if (success) {
+                    saveToLocalStorage();
+                    const q = window.GameFlow.getQuest?.(questId);
+                    const qName = q?.nome || questId;
+                    showToast(`🎁 Recompensa de "${qName}" coletada!`, 'success');
+                    renderMissoesTab();
+                } else {
+                    showToast('Não foi possível coletar esta recompensa.', 'error');
+                }
+            } catch (err) {
+                console.error('[claimQuestRewardUI] Erro:', err);
+                showToast('Erro ao coletar recompensa.', 'error');
+            }
+        }
+
+        window.claimQuestRewardUI = claimQuestRewardUI;
         window.renderMissoesTab = renderMissoesTab;
 
         /**
