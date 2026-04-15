@@ -244,7 +244,9 @@ describe('buildTutorialEnemyData', () => {
         expect(e5.atk).toBeGreaterThan(e1.atk);
     });
 
-    it('formula do HP: 25 + level*5', () => {
+    it('formula do HP: 25 + level*5 (canônica do inimigo de treino)', () => {
+        // Fórmula canônica definida em buildTutorialEnemyData: hpMax = 25 + level*5
+        // nível 1 → 25+5=30, nível 3 → 25+15=40, nível 10 → 25+50=75
         expect(buildTutorialEnemyData(1).hpMax).toBe(30);
         expect(buildTutorialEnemyData(3).hpMax).toBe(40);
         expect(buildTutorialEnemyData(10).hpMax).toBe(75);
@@ -255,9 +257,9 @@ describe('buildTutorialEnemyData', () => {
         expect(e.level).toBe(1);
     });
 
-    it('aceita nível alto sem erro', () => {
+    it('aceita nível alto sem erro (nível 100 → hpMax=25+100*5=525)', () => {
         const e = buildTutorialEnemyData(100);
         expect(e.level).toBe(100);
-        expect(e.hpMax).toBe(525);
+        expect(e.hpMax).toBe(525); // 25 + 100*5
     });
 });
