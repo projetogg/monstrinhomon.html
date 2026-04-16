@@ -14160,6 +14160,9 @@
             saveToLocalStorage(); // Persiste no auto-save (fonte de verdade)
             // Grava snapshot no slot manual associado (se houver) via camada canônica
             SaveLayer.syncMainStateAndSlot(GameState, mmBuildSaveEnvelope);
+            // Fechar overlay de starter antes de avançar para evitar que ele fique
+            // sobreposto ao próximo overlay (mmStartChoice ou tela de tutorial).
+            mmCloseAllOverlays();
             mmPostGameStartFlow();
         }
 
@@ -14288,6 +14291,7 @@
         window.groupCapture = groupCapture;
         window.groupMovePosition = groupMovePosition;
         window.cancelTargetSelection = cancelTargetSelection;
+        window.onDiceRollInput = onDiceRollInput;
 
         // Initialize on load
         // PR-BOOT-FIX: Usa readyState para evitar race condition caso o evento
