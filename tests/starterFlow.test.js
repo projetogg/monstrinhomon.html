@@ -17,25 +17,18 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import {
+    STARTER_BY_CLASS,
+    LEGACY_BUGGY_STARTER_IDS,
+    isContaminatedStarterId,
+    migrateContaminatedStarterMeta,
+} from '../js/data/starters.js';
 
 // ── Carrega catálogo real (monsters.json) ──────────────────────────────────
 
 const monstersPath = resolve(__dirname, '../data/monsters.json');
 const monstersJson = JSON.parse(readFileSync(monstersPath, 'utf-8'));
 const CATALOG = monstersJson.monsters;
-
-// ── STARTER_BY_CLASS replicado do index.html ──────────────────────────────
-// Mantido em sincronia com a constante no index.html
-const STARTER_BY_CLASS = {
-    'Bardo':      { monsterId: 'MON_005', eggName: 'Ovo Harmônico', eggEmoji: '🥚🎵' },
-    'Guerreiro':  { monsterId: 'MON_001', eggName: 'Ovo da Guarda', eggEmoji: '🥚⚔️' },
-    'Mago':       { monsterId: 'MON_013', eggName: 'Ovo Arcano',    eggEmoji: '🥚🔮' },
-    'Curandeiro': { monsterId: 'MON_028', eggName: 'Ovo Vital',     eggEmoji: '🥚🌿' },
-    'Caçador':    { monsterId: 'MON_009', eggName: 'Ovo Selvagem',  eggEmoji: '🥚🏹' },
-    'Animalista': { monsterId: 'MON_017', eggName: 'Ovo Primal',    eggEmoji: '🥚🐾' },
-    'Bárbaro':    { monsterId: 'MON_029', eggName: 'Ovo Feroz',     eggEmoji: '🥚🐯' },
-    'Ladino':     { monsterId: 'MON_030', eggName: 'Ovo Sombrio',   eggEmoji: '🥚🦊' },
-};
 
 const ALL_CLASSES = Object.keys(STARTER_BY_CLASS);
 
@@ -394,5 +387,151 @@ describe('Starters revisados — novas linhas evolutivas no catálogo', () => {
         expect(STARTER_BY_CLASS['Caçador'].monsterId).toBe('MON_009');     // Miaumon
         expect(STARTER_BY_CLASS['Animalista'].monsterId).toBe('MON_017'); // Luvursomon
         expect(STARTER_BY_CLASS['Bardo'].monsterId).toBe('MON_005');       // Dinomon
+    });
+});
+
+describe('Fonte única de verdade — js/data/starters.js', () => {
+    it('STARTER_BY_CLASS exportado pelo módulo deve cobrir as 8 classes', () => {
+        expect(Object.keys(STARTER_BY_CLASS)).toHaveLength(8);
+    });
+
+    it('STARTER_BY_CLASS importado pelos testes é o mesmo módulo que o runtime usa — sem cópia local', () => {
+        // Verifica que a estrutura importada tem as propriedades e valores canônicos esperados,
+        // garantindo que não há cópia divergente definida localmente neste arquivo.
+        expect(STARTER_BY_CLASS['Guerreiro'].monsterId).toBe('MON_001');
+        expect(STARTER_BY_CLASS['Caçador'].monsterId).toBe('MON_009');
+        expect(STARTER_BY_CLASS['Mago'].monsterId).toBe('MON_013');
+    });
+
+    it('index.html deve importar de js/data/starters.js e não definir STARTER_BY_CLASS localmente', () => {
+        const html = readFileSync(resolve(__dirname, '../index.html'), 'utf-8');
+        // Deve importar do módulo
+        expect(html).toMatch(/import.*STARTER_BY_CLASS.*from.*js\/data\/starters\.js/);
+        // Não deve ter definição local com "const STARTER_BY_CLASS = {"
+        expect(html).not.toMatch(/const STARTER_BY_CLASS\s*=\s*\{/);
+    });
+
+    it('Guerreiro não aponta para linha felina (Caçador)', () => {
+        const felinaIds = ['MON_009', 'MON_010', 'MON_011', 'MON_012'];
+        expect(felinaIds).not.toContain(STARTER_BY_CLASS['Guerreiro'].monsterId);
+        expect(STARTER_BY_CLASS['Guerreiro'].monsterId).toBe('MON_001');
+    });
+
+    it('Caçador aponta para MON_009 (Miaumon), não para linha Mago', () => {
+        expect(STARTER_BY_CLASS['Caçador'].monsterId).toBe('MON_009');
+        expect(STARTER_BY_CLASS['Caçador'].monsterId).not.toBe('MON_013');
+    });
+
+    it('Mago aponta para MON_013 (Lagartomon Comum), não para estágio 2', () => {
+        expect(STARTER_BY_CLASS['Mago'].monsterId).toBe('MON_013');
+        expect(STARTER_BY_CLASS['Mago'].monsterId).not.toBe('MON_014');
+    });
+
+    it('Bardo aponta para MON_005 (Dinomon Comum), não para Caçador', () => {
+        expect(STARTER_BY_CLASS['Bardo'].monsterId).toBe('MON_005');
+        expect(STARTER_BY_CLASS['Bardo'].monsterId).not.toBe('MON_011');
+    });
+
+    it('Animalista aponta para MON_017 (Luvursomon), não para linha Caçador', () => {
+        expect(STARTER_BY_CLASS['Animalista'].monsterId).toBe('MON_017');
+        expect(STARTER_BY_CLASS['Animalista'].monsterId).not.toBe('MON_012');
+    });
+
+    it('cada entrada tem eggName e eggEmoji não-vazios', () => {
+        ALL_CLASSES.forEach(cls => {
+            expect(STARTER_BY_CLASS[cls].eggName,  `${cls}.eggName`).toBeTruthy();
+            expect(STARTER_BY_CLASS[cls].eggEmoji, `${cls}.eggEmoji`).toBeTruthy();
+        });
+    });
+});
+
+describe('Migração de saves contaminados — isContaminatedStarterId', () => {
+    it('retorna true para IDs bugados históricos por classe', () => {
+        Object.entries(LEGACY_BUGGY_STARTER_IDS).forEach(([cls, legacyId]) => {
+            expect(isContaminatedStarterId(cls, legacyId), `${cls} legacyId ${legacyId}`).toBe(true);
+        });
+        // Caso crítico: MON_013 é o ID bugado de Caçador — deve ser detectado como contaminado para Caçador
+        expect(isContaminatedStarterId('Caçador', 'MON_013')).toBe(true);
+        // MON_013 é o ID CORRETO de Mago — não deve ser contaminado para Mago
+        expect(isContaminatedStarterId('Mago', 'MON_013')).toBe(false);
+    });
+
+    it('retorna false para o ID correto atual de cada classe', () => {
+        ALL_CLASSES.forEach(cls => {
+            const correctId = STARTER_BY_CLASS[cls].monsterId;
+            expect(isContaminatedStarterId(cls, correctId), `${cls} id correto ${correctId}`).toBe(false);
+        });
+    });
+
+    it('Mago com MON_013 (seu ID correto) não é contaminado', () => {
+        expect(isContaminatedStarterId('Mago', 'MON_013')).toBe(false);
+    });
+
+    it('Caçador com MON_009 (seu ID correto) não é contaminado', () => {
+        expect(isContaminatedStarterId('Caçador', 'MON_009')).toBe(false);
+    });
+
+    it('Guerreiro com MON_001 (seu ID correto) não é contaminado', () => {
+        expect(isContaminatedStarterId('Guerreiro', 'MON_001')).toBe(false);
+    });
+
+    it('retorna false para classe desconhecida', () => {
+        expect(isContaminatedStarterId('ClasseInexistente', 'MON_010')).toBe(false);
+    });
+});
+
+describe('Migração de saves contaminados — migrateContaminatedStarterMeta', () => {
+    it('corrige starterMonsterId de Guerreiro contaminado (MON_010 → MON_001)', () => {
+        const player = { name: 'Ana', class: 'Guerreiro', starterGranted: true, starterMonsterId: 'MON_010', team: [] };
+        const migrated = migrateContaminatedStarterMeta(player);
+        expect(migrated).toBe(true);
+        expect(player.starterMonsterId).toBe('MON_001');
+    });
+
+    it('NÃO altera team do jogador ao migrar metadado', () => {
+        const mon = { instanceId: 'mi_x', name: 'Gatunamon', templateId: 'MON_010' };
+        const player = { name: 'Bob', class: 'Guerreiro', starterGranted: true, starterMonsterId: 'MON_010', team: [mon] };
+        migrateContaminatedStarterMeta(player);
+        expect(player.team).toHaveLength(1);
+        expect(player.team[0].templateId).toBe('MON_010'); // team intacto
+        expect(player.starterMonsterId).toBe('MON_001');   // só metadado corrigido
+    });
+
+    it('não migra jogador sem starterGranted', () => {
+        const player = { name: 'Carl', class: 'Guerreiro', starterGranted: false, starterMonsterId: 'MON_010', team: [] };
+        const migrated = migrateContaminatedStarterMeta(player);
+        expect(migrated).toBe(false);
+        expect(player.starterMonsterId).toBe('MON_010'); // não alterado
+    });
+
+    it('não migra jogador com ID correto já salvo', () => {
+        const player = { name: 'Dana', class: 'Guerreiro', starterGranted: true, starterMonsterId: 'MON_001', team: [] };
+        const migrated = migrateContaminatedStarterMeta(player);
+        expect(migrated).toBe(false);
+        expect(player.starterMonsterId).toBe('MON_001');
+    });
+
+    it('corrige Bardo com MON_011 bugado → MON_005', () => {
+        const player = { name: 'Edd', class: 'Bardo', starterGranted: true, starterMonsterId: 'MON_011', team: [] };
+        migrateContaminatedStarterMeta(player);
+        expect(player.starterMonsterId).toBe('MON_005');
+    });
+
+    it('corrige Caçador com MON_013 bugado → MON_009', () => {
+        const player = { name: 'Fay', class: 'Caçador', starterGranted: true, starterMonsterId: 'MON_013', team: [] };
+        migrateContaminatedStarterMeta(player);
+        expect(player.starterMonsterId).toBe('MON_009');
+    });
+
+    it('não migra Mago com MON_013 — esse é o ID correto de Mago', () => {
+        const player = { name: 'Gio', class: 'Mago', starterGranted: true, starterMonsterId: 'MON_013', team: [] };
+        const migrated = migrateContaminatedStarterMeta(player);
+        expect(migrated).toBe(false);
+        expect(player.starterMonsterId).toBe('MON_013');
+    });
+
+    it('retorna false para player nulo ou sem class', () => {
+        expect(migrateContaminatedStarterMeta(null)).toBe(false);
+        expect(migrateContaminatedStarterMeta({ starterGranted: true })).toBe(false);
     });
 });

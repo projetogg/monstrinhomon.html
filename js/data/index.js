@@ -76,3 +76,11 @@ export {
     getNextQuest,
     getQuestChain
 } from './questSystem.js';
+
+// Starters (fonte única de verdade para starter por classe)
+export {
+    STARTER_BY_CLASS,
+    LEGACY_BUGGY_STARTER_IDS,
+    isContaminatedStarterId,
+    migrateContaminatedStarterMeta
+} from './starters.js';
