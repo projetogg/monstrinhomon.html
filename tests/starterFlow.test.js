@@ -19,13 +19,31 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 // ── Extrai STARTER_BY_CLASS do runtime (index.html) ───────────────────────
+// Parsing seguro via regex por linha — sem eval/new Function.
+// A constante em index.html tem formato fixo de uma entrada por linha; se a
+// estrutura mudar, os padrões abaixo precisarão ser atualizados.
+// Cada linha esperada: 'ClassName': { monsterId: 'MON_XXX', eggName: '...', eggEmoji: '...' },
 function extractRuntimeStarterByClass() {
     const html = readFileSync(resolve(__dirname, '../index.html'), 'utf-8');
-    // Extrai o bloco literal da constante STARTER_BY_CLASS
-    const match = html.match(/const STARTER_BY_CLASS\s*=\s*(\{[\s\S]*?\});/);
-    if (!match) throw new Error('STARTER_BY_CLASS não encontrada no index.html');
-    // eslint-disable-next-line no-new-func
-    return new Function(`return ${match[1]}`)();
+
+    // Delimita o bloco da constante para limitar o escopo do parsing
+    const blockMatch = html.match(/const STARTER_BY_CLASS\s*=\s*\{([\s\S]*?)\};/);
+    if (!blockMatch) throw new Error('STARTER_BY_CLASS não encontrada no index.html');
+
+    const block = blockMatch[1];
+    const result = {};
+
+    // Extrai cada entrada: 'Classe': { monsterId: 'MON_XXX', eggName: '...', eggEmoji: '...' }
+    const entryRe = /'([^']+)'\s*:\s*\{\s*monsterId:\s*'([^']+)',\s*eggName:\s*'([^']+)',\s*eggEmoji:\s*'([^']+)'/g;
+    let m;
+    while ((m = entryRe.exec(block)) !== null) {
+        result[m[1]] = { monsterId: m[2], eggName: m[3], eggEmoji: m[4] };
+    }
+
+    if (Object.keys(result).length === 0) {
+        throw new Error('Nenhuma entrada encontrada em STARTER_BY_CLASS no index.html');
+    }
+    return result;
 }
 
 const RUNTIME_STARTER_BY_CLASS = extractRuntimeStarterByClass();
@@ -428,8 +446,7 @@ describe('Consistência runtime (index.html) vs. mapeamento canônico dos testes
         const guerreiroId = RUNTIME_STARTER_BY_CLASS['Guerreiro']?.monsterId;
         // Linha felina de Caçador: MON_009, MON_010, MON_011, MON_012
         const felinaIds = ['MON_009', 'MON_010', 'MON_011', 'MON_012'];
-        expect(felinaIds, `Guerreiro runtime (${guerreiroId}) não deve ser Caçador`)
-            .not.toContain(guerreiroId);
+        expect(felinaIds).not.toContain(guerreiroId);
         expect(guerreiroId).toBe('MON_001'); // Ferrozimon
     });
 
