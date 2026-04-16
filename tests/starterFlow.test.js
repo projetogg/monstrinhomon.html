@@ -395,12 +395,12 @@ describe('Fonte única de verdade — js/data/starters.js', () => {
         expect(Object.keys(STARTER_BY_CLASS)).toHaveLength(8);
     });
 
-    it('STARTER_BY_CLASS importado pelos testes é o mesmo objeto do módulo — sem cópia divergente', () => {
-        // Este teste serve como documentação de que não existe cópia local aqui.
-        // Se este arquivo definir STARTER_BY_CLASS localmente em vez de importá-lo,
-        // quaisquer divergências futuras passariam despercebidas.
-        expect(typeof STARTER_BY_CLASS).toBe('object');
-        expect(STARTER_BY_CLASS).not.toBeNull();
+    it('STARTER_BY_CLASS importado pelos testes é o mesmo módulo que o runtime usa — sem cópia local', () => {
+        // Verifica que a estrutura importada tem as propriedades e valores canônicos esperados,
+        // garantindo que não há cópia divergente definida localmente neste arquivo.
+        expect(STARTER_BY_CLASS['Guerreiro'].monsterId).toBe('MON_001');
+        expect(STARTER_BY_CLASS['Caçador'].monsterId).toBe('MON_009');
+        expect(STARTER_BY_CLASS['Mago'].monsterId).toBe('MON_013');
     });
 
     it('index.html deve importar de js/data/starters.js e não definir STARTER_BY_CLASS localmente', () => {
@@ -448,12 +448,12 @@ describe('Fonte única de verdade — js/data/starters.js', () => {
 describe('Migração de saves contaminados — isContaminatedStarterId', () => {
     it('retorna true para IDs bugados históricos por classe', () => {
         Object.entries(LEGACY_BUGGY_STARTER_IDS).forEach(([cls, legacyId]) => {
-            // O ID bugado de Caçador (MON_013) é agora o ID correto de Mago —
-            // isContaminatedStarterId deve tratar esse caso sem falso positivo para Mago.
-            const result = isContaminatedStarterId(cls, legacyId);
-            // MON_013 bug de Caçador: isContaminatedStarterId('Caçador', 'MON_013') deve ser true
-            expect(result, `${cls} legacyId ${legacyId}`).toBe(true);
+            expect(isContaminatedStarterId(cls, legacyId), `${cls} legacyId ${legacyId}`).toBe(true);
         });
+        // Caso crítico: MON_013 é o ID bugado de Caçador — deve ser detectado como contaminado para Caçador
+        expect(isContaminatedStarterId('Caçador', 'MON_013')).toBe(true);
+        // MON_013 é o ID CORRETO de Mago — não deve ser contaminado para Mago
+        expect(isContaminatedStarterId('Mago', 'MON_013')).toBe(false);
     });
 
     it('retorna false para o ID correto atual de cada classe', () => {

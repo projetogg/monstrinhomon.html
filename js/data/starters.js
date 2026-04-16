@@ -65,10 +65,7 @@ export const LEGACY_BUGGY_STARTER_IDS = {
  */
 export function isContaminatedStarterId(cls, starterMonsterId) {
     const legacyId = LEGACY_BUGGY_STARTER_IDS[cls];
-    // Só marca como contaminado se o ID bugado NÃO é o ID correto de nenhuma
-    // classe — para evitar falso positivo em Mago (MON_013 era o ID bugado de
-    // Caçador, mas MON_013 é o ID CORRETO de Mago).
-    if (!legacyId || legacyId === STARTER_BY_CLASS[cls]?.monsterId) return false;
+    if (!legacyId) return false;
     return starterMonsterId === legacyId;
 }
 
