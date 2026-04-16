@@ -18,6 +18,18 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
+// ── Extrai STARTER_BY_CLASS do runtime (index.html) ───────────────────────
+function extractRuntimeStarterByClass() {
+    const html = readFileSync(resolve(__dirname, '../index.html'), 'utf-8');
+    // Extrai o bloco literal da constante STARTER_BY_CLASS
+    const match = html.match(/const STARTER_BY_CLASS\s*=\s*(\{[\s\S]*?\});/);
+    if (!match) throw new Error('STARTER_BY_CLASS não encontrada no index.html');
+    // eslint-disable-next-line no-new-func
+    return new Function(`return ${match[1]}`)();
+}
+
+const RUNTIME_STARTER_BY_CLASS = extractRuntimeStarterByClass();
+
 // ── Carrega catálogo real (monsters.json) ──────────────────────────────────
 
 const monstersPath = resolve(__dirname, '../data/monsters.json');
@@ -394,5 +406,62 @@ describe('Starters revisados — novas linhas evolutivas no catálogo', () => {
         expect(STARTER_BY_CLASS['Caçador'].monsterId).toBe('MON_009');     // Miaumon
         expect(STARTER_BY_CLASS['Animalista'].monsterId).toBe('MON_017'); // Luvursomon
         expect(STARTER_BY_CLASS['Bardo'].monsterId).toBe('MON_005');       // Dinomon
+    });
+});
+
+describe('Consistência runtime (index.html) vs. mapeamento canônico dos testes', () => {
+    it('runtime deve definir exatamente as mesmas 8 classes', () => {
+        expect(Object.keys(RUNTIME_STARTER_BY_CLASS).sort())
+            .toEqual(Object.keys(STARTER_BY_CLASS).sort());
+    });
+
+    it('cada classe do runtime deve ter monsterId idêntico ao canônico', () => {
+        Object.keys(STARTER_BY_CLASS).forEach(cls => {
+            expect(
+                RUNTIME_STARTER_BY_CLASS[cls]?.monsterId,
+                `Runtime classe ${cls} monsterId`
+            ).toBe(STARTER_BY_CLASS[cls].monsterId);
+        });
+    });
+
+    it('Guerreiro runtime não deve apontar para linha felina (Caçador)', () => {
+        const guerreiroId = RUNTIME_STARTER_BY_CLASS['Guerreiro']?.monsterId;
+        // Linha felina de Caçador: MON_009, MON_010, MON_011, MON_012
+        const felinaIds = ['MON_009', 'MON_010', 'MON_011', 'MON_012'];
+        expect(felinaIds, `Guerreiro runtime (${guerreiroId}) não deve ser Caçador`)
+            .not.toContain(guerreiroId);
+        expect(guerreiroId).toBe('MON_001'); // Ferrozimon
+    });
+
+    it('Caçador runtime deve apontar para MON_009 (Miaumon), não para linha Mago', () => {
+        const cacadorId = RUNTIME_STARTER_BY_CLASS['Caçador']?.monsterId;
+        expect(cacadorId).toBe('MON_009');
+        expect(cacadorId).not.toBe('MON_013'); // Lagartomon é Mago
+    });
+
+    it('Mago runtime deve apontar para MON_013 (Lagartomon Comum), não para evolução', () => {
+        const magoId = RUNTIME_STARTER_BY_CLASS['Mago']?.monsterId;
+        expect(magoId).toBe('MON_013');
+        expect(magoId).not.toBe('MON_014'); // Salamandromon é Mago Incomum (evo)
+    });
+
+    it('Bardo runtime deve apontar para MON_005 (Dinomon Comum), não para Caçador', () => {
+        const bardoId = RUNTIME_STARTER_BY_CLASS['Bardo']?.monsterId;
+        expect(bardoId).toBe('MON_005');
+        expect(bardoId).not.toBe('MON_011'); // Felinomon é Caçador Raro
+    });
+
+    it('Animalista runtime deve apontar para MON_017 (Luvursomon), não para Caçador', () => {
+        const animalistaId = RUNTIME_STARTER_BY_CLASS['Animalista']?.monsterId;
+        expect(animalistaId).toBe('MON_017');
+        expect(animalistaId).not.toBe('MON_012'); // Panterezamon é Caçador Místico
+    });
+
+    it('runtime deve ter eggName e eggEmoji para cada classe', () => {
+        Object.keys(STARTER_BY_CLASS).forEach(cls => {
+            const entry = RUNTIME_STARTER_BY_CLASS[cls];
+            expect(entry?.eggName,  `runtime ${cls}.eggName`).toBeTruthy();
+            expect(entry?.eggEmoji, `runtime ${cls}.eggEmoji`).toBeTruthy();
+        });
     });
 });
