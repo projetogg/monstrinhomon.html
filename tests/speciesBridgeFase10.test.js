@@ -126,8 +126,8 @@ describe('Fase 10 — Ladino → shadowsting (bridge)', () => {
     });
 
     describe('Integridade da tabela pós-Fase 10', () => {
-        it('deve conter exatamente 51 mapeamentos (39 Fase 9 + 3 shadowsting + 3 bellwave Fase 11 + 3 wildpace Fase 12 + 3 bellwave Fase 13.2)', () => {
-            expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(51);
+        it('deve conter exatamente 42 mapeamentos após migração Phase 1 hard-replace', () => {
+            expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(42);
         });
 
         it('todos os 3 mapeamentos shadowsting estão presentes', () => {
@@ -138,12 +138,12 @@ describe('Fase 10 — Ladino → shadowsting (bridge)', () => {
         });
 
         it('mapeamentos anteriores (swiftclaw, MVP) permanecem intactos', () => {
-            expect(RUNTIME_TO_CANON_SPECIES['MON_013']).toBe('swiftclaw');
-            expect(RUNTIME_TO_CANON_SPECIES['MON_013D']).toBe('swiftclaw');
-            expect(RUNTIME_TO_CANON_SPECIES['MON_010']).toBe('shieldhorn');
-            expect(RUNTIME_TO_CANON_SPECIES['MON_007']).toBe('emberfang');
-            expect(RUNTIME_TO_CANON_SPECIES['MON_003']).toBe('moonquill');
-            expect(RUNTIME_TO_CANON_SPECIES['MON_004']).toBe('floracura');
+            expect(RUNTIME_TO_CANON_SPECIES['MON_009']).toBe('swiftclaw');
+            expect(RUNTIME_TO_CANON_SPECIES['MON_012']).toBe('swiftclaw');
+            expect(RUNTIME_TO_CANON_SPECIES['MON_001']).toBe('shieldhorn');
+            expect(RUNTIME_TO_CANON_SPECIES['MON_021']).toBe('emberfang');
+            expect(RUNTIME_TO_CANON_SPECIES['MON_013']).toBe('moonquill');
+            expect(RUNTIME_TO_CANON_SPECIES['MON_028']).toBe('floracura');
         });
     });
 });

@@ -23,11 +23,11 @@
       "speciesPoolsByRarity": {
         "Comum": [
           "MON_100",
-          "MON_001",
-          "MON_004"
+          "MON_005",
+          "MON_028"
         ],
         "Incomum": [
-          "MON_002B"
+          "MON_002"
         ],
         "Raro": [],
         "Místico": [],
@@ -99,16 +99,16 @@
       },
       "speciesPoolsByRarity": {
         "Comum": [
+          "MON_005",
           "MON_001",
-          "MON_002",
-          "MON_004",
-          "MON_006",
+          "MON_028",
+          "MON_017",
           "MON_100"
         ],
         "Incomum": [
-          "MON_011B",
+          "MON_006",
           "MON_023B",
-          "MON_002B"
+          "MON_002"
         ],
         "Raro": [
           "MON_023C"
@@ -210,19 +210,18 @@
       },
       "speciesPoolsByRarity": {
         "Comum": [
+          "MON_005",
           "MON_001",
-          "MON_002",
-          "MON_004",
-          "MON_006",
-          "MON_007",
-          "MON_011",
+          "MON_028",
+          "MON_017",
+          "MON_021",
           "MON_027"
         ],
         "Incomum": [
-          "MON_011B",
+          "MON_006",
           "MON_023B",
           "MON_027B",
-          "MON_002B"
+          "MON_002"
         ],
         "Raro": [
           "MON_023C",
@@ -325,23 +324,21 @@
       },
       "speciesPoolsByRarity": {
         "Comum": [
-          "MON_006",
+          "MON_017",
           "MON_023",
-          "MON_004",
-          "MON_020",
-          "MON_005",
-          "MON_001",
-          "MON_011"
+          "MON_028",
+          "MON_009",
+          "MON_005"
         ],
         "Incomum": [
           "MON_023B",
-          "MON_020B",
-          "MON_012B",
-          "MON_011B"
+          "MON_028B",
+          "MON_018",
+          "MON_006"
         ],
         "Raro": [
           "MON_023C",
-          "MON_020C"
+          "MON_028C"
         ],
         "Místico": [],
         "Lendário": []
@@ -440,25 +437,22 @@
       },
       "speciesPoolsByRarity": {
         "Comum": [
-          "MON_006",
-          "MON_004",
-          "MON_005",
-          "MON_023",
-          "MON_020",
-          "MON_012",
-          "MON_013"
+          "MON_017",
+          "MON_028",
+          "MON_009",
+          "MON_023"
         ],
         "Incomum": [
           "MON_023B",
-          "MON_020B",
-          "MON_012B",
-          "MON_013B"
+          "MON_028B",
+          "MON_018",
+          "MON_010"
         ],
         "Raro": [
           "MON_023C",
-          "MON_020C",
-          "MON_012C",
-          "MON_013C"
+          "MON_028C",
+          "MON_019",
+          "MON_011"
         ],
         "Místico": [],
         "Lendário": []
@@ -560,30 +554,29 @@
       },
       "speciesPoolsByRarity": {
         "Comum": [
-          "MON_006",
-          "MON_012",
-          "MON_013",
+          "MON_017",
+          "MON_009",
           "MON_022",
           "MON_028",
           "MON_030"
         ],
         "Incomum": [
-          "MON_012B",
-          "MON_013B",
+          "MON_018",
+          "MON_010",
           "MON_022B",
           "MON_028B",
           "MON_030B"
         ],
         "Raro": [
-          "MON_012C",
-          "MON_013C",
+          "MON_019",
+          "MON_011",
           "MON_022C",
           "MON_028C",
           "MON_030C"
         ],
         "Místico": [
-          "MON_012D",
-          "MON_013D"
+          "MON_020",
+          "MON_012"
         ],
         "Lendário": []
       },
@@ -685,21 +678,18 @@
       },
       "speciesPoolsByRarity": {
         "Comum": [
-          "MON_002",
-          "MON_010",
+          "MON_001",
           "MON_026",
-          "MON_007",
           "MON_021",
           "MON_100"
         ],
         "Incomum": [
-          "MON_010B",
+          "MON_002",
           "MON_026B",
-          "MON_021B",
-          "MON_002B"
+          "MON_021B"
         ],
         "Raro": [
-          "MON_010C",
+          "MON_003",
           "MON_026C",
           "MON_021C"
         ],
@@ -802,27 +792,25 @@
       },
       "speciesPoolsByRarity": {
         "Comum": [
-          "MON_002",
-          "MON_010",
+          "MON_001",
           "MON_026",
           "MON_021",
           "MON_029"
         ],
         "Incomum": [
-          "MON_010B",
+          "MON_002",
           "MON_026B",
           "MON_021B",
-          "MON_002B",
           "MON_029B"
         ],
         "Raro": [
-          "MON_010C",
+          "MON_003",
           "MON_026C",
           "MON_021C",
           "MON_029C"
         ],
         "Místico": [
-          "MON_010D"
+          "MON_004"
         ],
         "Lendário": []
       },
@@ -924,25 +912,25 @@
       },
       "speciesPoolsByRarity": {
         "Comum": [
-          "MON_010",
+          "MON_001",
           "MON_026",
           "MON_021",
           "MON_029"
         ],
         "Incomum": [
-          "MON_010B",
+          "MON_002",
           "MON_026B",
           "MON_021B",
           "MON_029B"
         ],
         "Raro": [
-          "MON_010C",
+          "MON_003",
           "MON_026C",
           "MON_021C",
           "MON_029C"
         ],
         "Místico": [
-          "MON_010D"
+          "MON_004"
         ],
         "Lendário": []
       },
@@ -1046,28 +1034,26 @@
       "speciesPoolsByRarity": {
         "Comum": [
           "MON_022",
-          "MON_008",
-          "MON_003",
-          "MON_011",
-          "MON_030",
-          "MON_014"
+          "MON_013",
+          "MON_005",
+          "MON_030"
         ],
         "Incomum": [
           "MON_022B",
-          "MON_011B",
+          "MON_006",
           "MON_030B",
-          "MON_014B",
+          "MON_014",
           "MON_024B"
         ],
         "Raro": [
           "MON_022C",
-          "MON_011C",
+          "MON_007",
           "MON_030C",
-          "MON_014C"
+          "MON_015"
         ],
         "Místico": [
-          "MON_011D",
-          "MON_014D"
+          "MON_008",
+          "MON_016"
         ],
         "Lendário": []
       },
@@ -1173,26 +1159,24 @@
       "speciesPoolsByRarity": {
         "Comum": [
           "MON_022",
-          "MON_008",
-          "MON_003",
-          "MON_030",
-          "MON_014"
+          "MON_013",
+          "MON_030"
         ],
         "Incomum": [
           "MON_022B",
           "MON_030B",
-          "MON_014B",
-          "MON_011B"
+          "MON_014",
+          "MON_006"
         ],
         "Raro": [
           "MON_022C",
           "MON_030C",
-          "MON_014C",
-          "MON_011C"
+          "MON_015",
+          "MON_007"
         ],
         "Místico": [
-          "MON_011D",
-          "MON_014D"
+          "MON_008",
+          "MON_016"
         ],
         "Lendário": []
       },
@@ -1296,19 +1280,18 @@
       "speciesPoolsByRarity": {
         "Comum": [
           "MON_024",
-          "MON_020",
+          "MON_028",
           "MON_025",
-          "MON_004",
-          "MON_005"
+          "MON_009"
         ],
         "Incomum": [
           "MON_024B",
-          "MON_020B",
+          "MON_028B",
           "MON_025B"
         ],
         "Raro": [
           "MON_024C",
-          "MON_020C",
+          "MON_028C",
           "MON_025C"
         ],
         "Místico": [],
@@ -1410,21 +1393,18 @@
       "speciesPoolsByRarity": {
         "Comum": [
           "MON_024",
-          "MON_020",
-          "MON_025",
-          "MON_028"
+          "MON_028",
+          "MON_025"
         ],
         "Incomum": [
           "MON_024B",
-          "MON_020B",
-          "MON_025B",
-          "MON_028B"
+          "MON_028B",
+          "MON_025B"
         ],
         "Raro": [
           "MON_024C",
-          "MON_020C",
-          "MON_025C",
-          "MON_028C"
+          "MON_028C",
+          "MON_025C"
         ],
         "Místico": [],
         "Lendário": []
@@ -1527,21 +1507,18 @@
       "speciesPoolsByRarity": {
         "Comum": [
           "MON_024",
-          "MON_020",
-          "MON_025",
-          "MON_028"
+          "MON_028",
+          "MON_025"
         ],
         "Incomum": [
           "MON_024B",
-          "MON_020B",
-          "MON_025B",
-          "MON_028B"
+          "MON_028B",
+          "MON_025B"
         ],
         "Raro": [
           "MON_024C",
-          "MON_020C",
-          "MON_025C",
-          "MON_028C"
+          "MON_028C",
+          "MON_025C"
         ],
         "Místico": [],
         "Lendário": []
@@ -1642,23 +1619,22 @@
       },
       "speciesPoolsByRarity": {
         "Comum": [
-          "MON_007",
-          "MON_014",
           "MON_021",
+          "MON_013",
           "MON_029"
         ],
         "Incomum": [
-          "MON_014B",
+          "MON_014",
           "MON_021B",
           "MON_029B"
         ],
         "Raro": [
-          "MON_014C",
+          "MON_015",
           "MON_021C",
           "MON_029C"
         ],
         "Místico": [
-          "MON_014D"
+          "MON_016"
         ],
         "Lendário": []
       },
@@ -1763,23 +1739,22 @@
       },
       "speciesPoolsByRarity": {
         "Comum": [
-          "MON_007",
-          "MON_014",
           "MON_021",
+          "MON_013",
           "MON_029"
         ],
         "Incomum": [
-          "MON_014B",
+          "MON_014",
           "MON_021B",
           "MON_029B"
         ],
         "Raro": [
-          "MON_014C",
+          "MON_015",
           "MON_021C",
           "MON_029C"
         ],
         "Místico": [
-          "MON_014D"
+          "MON_016"
         ],
         "Lendário": []
       },
@@ -1882,25 +1857,24 @@
       "speciesPoolsByRarity": {
         "Comum": [
           "MON_022",
-          "MON_008",
-          "MON_013",
+          "MON_009",
           "MON_030",
           "MON_025"
         ],
         "Incomum": [
           "MON_022B",
-          "MON_013B",
+          "MON_010",
           "MON_030B",
           "MON_025B"
         ],
         "Raro": [
           "MON_022C",
-          "MON_013C",
+          "MON_011",
           "MON_030C",
           "MON_025C"
         ],
         "Místico": [
-          "MON_013D"
+          "MON_012"
         ],
         "Lendário": []
       },
@@ -2005,21 +1979,21 @@
       "speciesPoolsByRarity": {
         "Comum": [
           "MON_022",
-          "MON_013",
+          "MON_009",
           "MON_030"
         ],
         "Incomum": [
           "MON_022B",
-          "MON_013B",
+          "MON_010",
           "MON_030B"
         ],
         "Raro": [
           "MON_022C",
-          "MON_013C",
+          "MON_011",
           "MON_030C"
         ],
         "Místico": [
-          "MON_013D"
+          "MON_012"
         ],
         "Lendário": []
       },
@@ -2122,32 +2096,32 @@
       },
       "speciesPoolsByRarity": {
         "Comum": [
-          "MON_010",
-          "MON_012",
+          "MON_001",
+          "MON_017",
           "MON_021",
           "MON_025",
           "MON_026",
           "MON_027"
         ],
         "Incomum": [
-          "MON_010B",
-          "MON_012B",
+          "MON_002",
+          "MON_018",
           "MON_021B",
           "MON_025B",
           "MON_026B",
           "MON_027B"
         ],
         "Raro": [
-          "MON_010C",
-          "MON_012C",
+          "MON_003",
+          "MON_019",
           "MON_021C",
           "MON_025C",
           "MON_026C",
           "MON_027C"
         ],
         "Místico": [
-          "MON_010D",
-          "MON_012D"
+          "MON_004",
+          "MON_020"
         ],
         "Lendário": []
       },
@@ -2250,33 +2224,33 @@
       },
       "speciesPoolsByRarity": {
         "Comum": [
-          "MON_010",
-          "MON_012",
-          "MON_013",
+          "MON_001",
+          "MON_017",
+          "MON_009",
           "MON_021",
           "MON_025",
           "MON_027"
         ],
         "Incomum": [
-          "MON_010B",
-          "MON_012B",
-          "MON_013B",
+          "MON_002",
+          "MON_018",
+          "MON_010",
           "MON_021B",
           "MON_025B",
           "MON_027B"
         ],
         "Raro": [
-          "MON_010C",
-          "MON_012C",
-          "MON_013C",
+          "MON_003",
+          "MON_019",
+          "MON_011",
           "MON_021C",
           "MON_025C",
           "MON_027C"
         ],
         "Místico": [
-          "MON_010D",
-          "MON_012D",
-          "MON_013D"
+          "MON_004",
+          "MON_020",
+          "MON_012"
         ],
         "Lendário": []
       },
@@ -2480,12 +2454,12 @@
       },
       "speciesPoolsByRarity": {
         "Comum": [
-          "MON_004",
-          "MON_006",
-          "MON_007"
+          "MON_028",
+          "MON_017",
+          "MON_021"
         ],
         "Incomum": [
-          "MON_011B",
+          "MON_006",
           "MON_023B",
           "MON_027B"
         ],
@@ -2572,7 +2546,9 @@
       "encounterTypeWeights": {},
       "allowedEvolutionStages": [],
       "unlockRules": [],
-      "specialRules": ["service_only"],
+      "specialRules": [
+        "service_only"
+      ],
       "rareSpotBonus": 0,
       "bossRule": null,
       "notes": "Centro de cura regional — restaura HP/ENE de todos os Monstrinhos.",
@@ -2602,7 +2578,9 @@
       "encounterTypeWeights": {},
       "allowedEvolutionStages": [],
       "unlockRules": [],
-      "specialRules": ["service_only"],
+      "specialRules": [
+        "service_only"
+      ],
       "rareSpotBonus": 0,
       "bossRule": null,
       "notes": "Loja regional — itens de nível médio/alto.",
@@ -2632,7 +2610,9 @@
       "encounterTypeWeights": {},
       "allowedEvolutionStages": [],
       "unlockRules": [],
-      "specialRules": ["service_only"],
+      "specialRules": [
+        "service_only"
+      ],
       "rareSpotBonus": 0,
       "bossRule": null,
       "notes": "Centro de cura avançado — antes dos bosses finais.",

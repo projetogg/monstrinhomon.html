@@ -60,27 +60,17 @@ vi.mock('../js/canon/canonLoader.js', () => ({
 
 describe('Fase 8 — Guerreiro → shieldhorn (evoluções)', () => {
 
-    describe('Linha Pedrino (MON_002)', () => {
-        it('MON_002B (Pedronar) mapeia para shieldhorn — ATK 10, DEF 8', () => {
-            expect(resolveCanonSpeciesId('MON_002B')).toBe('shieldhorn');
+    describe('Linha Ferrozimon (MON_001)', () => {
+        it('MON_002 (Cavalheiromon) mapeia para shieldhorn — DEF 12 dominante', () => {
+            expect(resolveCanonSpeciesId('MON_002')).toBe('shieldhorn');
         });
 
-        it('MON_002C (Pedragon) mapeia para shieldhorn — ATK 14, DEF 11', () => {
-            expect(resolveCanonSpeciesId('MON_002C')).toBe('shieldhorn');
-        });
-    });
-
-    describe('Linha Ferrozimon (MON_010)', () => {
-        it('MON_010B (Cavalheiromon) mapeia para shieldhorn — DEF 12 dominante', () => {
-            expect(resolveCanonSpeciesId('MON_010B')).toBe('shieldhorn');
+        it('MON_003 (Kinguespinhomon) mapeia para shieldhorn — DEF 16 dominante', () => {
+            expect(resolveCanonSpeciesId('MON_003')).toBe('shieldhorn');
         });
 
-        it('MON_010C (Kinguespinhomon) mapeia para shieldhorn — DEF 16 dominante', () => {
-            expect(resolveCanonSpeciesId('MON_010C')).toBe('shieldhorn');
-        });
-
-        it('MON_010D (Arconouricomon) mapeia para shieldhorn — DEF não fica atrás de ATK', () => {
-            expect(resolveCanonSpeciesId('MON_010D')).toBe('shieldhorn');
+        it('MON_004 (Arconouricomon) mapeia para shieldhorn — DEF não fica atrás de ATK', () => {
+            expect(resolveCanonSpeciesId('MON_004')).toBe('shieldhorn');
         });
     });
 
@@ -128,17 +118,17 @@ describe('Fase 8 — Bárbaro → emberfang (evoluções)', () => {
 
 describe('Fase 8 — Mago → moonquill (evoluções)', () => {
 
-    describe('Linha Lagartomon (MON_014)', () => {
-        it('MON_014B (Salamandromon) mapeia para moonquill — ENE 11 dominante', () => {
-            expect(resolveCanonSpeciesId('MON_014B')).toBe('moonquill');
+    describe('Linha Lagartomon (MON_013)', () => {
+        it('MON_014 (Salamandromon) mapeia para moonquill — ENE 11 dominante', () => {
+            expect(resolveCanonSpeciesId('MON_014')).toBe('moonquill');
         });
 
-        it('MON_014C (Dracoflamemon) mapeia para moonquill — ENE 14 dominante', () => {
-            expect(resolveCanonSpeciesId('MON_014C')).toBe('moonquill');
+        it('MON_015 (Dracoflamemon) mapeia para moonquill — ENE 14 dominante', () => {
+            expect(resolveCanonSpeciesId('MON_015')).toBe('moonquill');
         });
 
-        it('MON_014D (Wizardragomon) mapeia para moonquill — ENE 18, forma mais pura do arquétipo', () => {
-            expect(resolveCanonSpeciesId('MON_014D')).toBe('moonquill');
+        it('MON_016 (Wizardragomon) mapeia para moonquill — ENE 18, forma mais pura do arquétipo', () => {
+            expect(resolveCanonSpeciesId('MON_016')).toBe('moonquill');
         });
     });
 
@@ -159,16 +149,6 @@ describe('Fase 8 — Mago → moonquill (evoluções)', () => {
 
 describe('Fase 8 — Curandeiro → floracura (evoluções)', () => {
 
-    describe('Linha Gotimon (MON_020)', () => {
-        it('MON_020B (Lirialmon) mapeia para floracura — ENE 12 alto, healer estável', () => {
-            expect(resolveCanonSpeciesId('MON_020B')).toBe('floracura');
-        });
-
-        it('MON_020C (Serafloramon) mapeia para floracura — ENE 16 dominante, suporte defensivo', () => {
-            expect(resolveCanonSpeciesId('MON_020C')).toBe('floracura');
-        });
-    });
-
     describe('Linha Nutrilo (MON_028)', () => {
         it('MON_028B (Silvelio) mapeia para floracura — ATK 5 mínimo, ENE 14 alto', () => {
             expect(resolveCanonSpeciesId('MON_028B')).toBe('floracura');
@@ -186,17 +166,18 @@ describe('Fase 8 — Curandeiro → floracura (evoluções)', () => {
 
 describe('Fase 8 — templates sem mapeamento (decisão de design)', () => {
 
-    describe('Bardo — sem espécie canônica', () => {
-        it('MON_001 (Cantapau) permanece sem mapeamento', () => {
-            expect(resolveCanonSpeciesId('MON_001')).toBeNull();
+    describe('Bardo — mapeamento parcial (linha Dinomon)', () => {
+        it('MON_005 (Dinomon) mapeia para bellwave — SPD/ATK 1.50, ENE/ATK 1.17', () => {
+            expect(resolveCanonSpeciesId('MON_005')).toBe('bellwave');
         });
-        it('MON_011 (Dinomon) permanece sem mapeamento', () => {
-            // Atualizado em Fase 13.2: MON_011 agora é bellwave (mapeamento parcial)
-            expect(resolveCanonSpeciesId('MON_011')).toBe('bellwave');
+        it('MON_006 (Guitarapitormon) mapeia para bellwave — SPD e ENE superam ATK', () => {
+            expect(resolveCanonSpeciesId('MON_006')).toBe('bellwave');
         });
-        it('MON_011B (Guitarapitormon) permanece sem mapeamento', () => {
-            // Atualizado em Fase 13.2: MON_011B agora é bellwave (mapeamento parcial)
-            expect(resolveCanonSpeciesId('MON_011B')).toBe('bellwave');
+        it('MON_007 (TRockmon) mapeia para bellwave — arquétipo ainda sustentado', () => {
+            expect(resolveCanonSpeciesId('MON_007')).toBe('bellwave');
+        });
+        it('MON_008 (Giganotometalmon) permanece sem mapeamento — drift bruiser (ATK > SPD)', () => {
+            expect(resolveCanonSpeciesId('MON_008')).toBeNull();
         });
         it('MON_027 (Zunzumon) mapeado para bellwave na Fase 11 — não permanece sem mapeamento', () => {
             expect(resolveCanonSpeciesId('MON_027')).toBe('bellwave');
@@ -204,11 +185,8 @@ describe('Fase 8 — templates sem mapeamento (decisão de design)', () => {
     });
 
     describe('Caçador — espécie canônica swiftclaw (Fase 9)', () => {
-        it('MON_005 (Garruncho) permanece sem mapeamento — sem linha evolutiva', () => {
-            expect(resolveCanonSpeciesId('MON_005')).toBeNull();
-        });
-        it('MON_013 (Miaumon) mapeia para swiftclaw — ATK 8, DEF 4, SPD 9', () => {
-            expect(resolveCanonSpeciesId('MON_013')).toBe('swiftclaw');
+        it('MON_009 (Miaumon) mapeia para swiftclaw — ATK 8, DEF 4, SPD 9', () => {
+            expect(resolveCanonSpeciesId('MON_009')).toBe('swiftclaw');
         });
         it('MON_025 (Pulimbon) mapeia para swiftclaw — ATK 6, DEF 4, SPD 10', () => {
             expect(resolveCanonSpeciesId('MON_025')).toBe('swiftclaw');
@@ -219,20 +197,14 @@ describe('Fase 8 — templates sem mapeamento (decisão de design)', () => {
         it('MON_022 (Corvimon) agora mapeado para shadowsting (Fase 10)', () => {
             expect(resolveCanonSpeciesId('MON_022')).toBe('shadowsting');
         });
-        it('MON_008 (Sombrio) permanece sem mapeamento — sem linha evolutiva', () => {
-            expect(resolveCanonSpeciesId('MON_008')).toBeNull();
-        });
         it('MON_030 (Furtilhon) permanece sem mapeamento — DEF floor marginal / perfil ambíguo', () => {
             expect(resolveCanonSpeciesId('MON_030')).toBeNull();
         });
     });
 
     describe('Animalista — sem espécie canônica (exceto wildpace — Fase 12)', () => {
-        it('MON_006 (Lobinho) permanece sem mapeamento — estágio único, sem linha evolutiva', () => {
-            expect(resolveCanonSpeciesId('MON_006')).toBeNull();
-        });
-        it('MON_012 (Luvursomon) permanece sem mapeamento — drift burst/ATK, risco de colisão', () => {
-            expect(resolveCanonSpeciesId('MON_012')).toBeNull();
+        it('MON_017 (Luvursomon) permanece sem mapeamento — drift burst/ATK, risco de colisão', () => {
+            expect(resolveCanonSpeciesId('MON_017')).toBeNull();
         });
         it('MON_023 (Cervimon) agora mapeado para wildpace (Fase 12)', () => {
             expect(resolveCanonSpeciesId('MON_023')).toBe('wildpace');
@@ -248,41 +220,34 @@ describe('Fase 8 — templates sem mapeamento (decisão de design)', () => {
 // Cobertura do bridge pós-Fase 8 — catálogo completo simulado
 // ===========================================================================
 
-// Catálogo completo do runtime (64 templates)
+// Catálogo completo do runtime pós-Phase 1 (51 templates)
 const FULL_CATALOG = [
-    { id: 'MON_001',  class: 'Bardo' },
+    // Phase 1 — Guerreiro (Ferrozimon line)
+    { id: 'MON_001',  class: 'Guerreiro' },
     { id: 'MON_002',  class: 'Guerreiro' },
-    { id: 'MON_002B', class: 'Guerreiro' },
-    { id: 'MON_002C', class: 'Guerreiro' },
-    { id: 'MON_003',  class: 'Mago' },
-    { id: 'MON_004',  class: 'Curandeiro' },
-    { id: 'MON_005',  class: 'Caçador' },
-    { id: 'MON_006',  class: 'Animalista' },
-    { id: 'MON_007',  class: 'Bárbaro' },
-    { id: 'MON_008',  class: 'Ladino' },
-    { id: 'MON_010',  class: 'Guerreiro' },
-    { id: 'MON_010B', class: 'Guerreiro' },
-    { id: 'MON_010C', class: 'Guerreiro' },
-    { id: 'MON_010D', class: 'Guerreiro' },
-    { id: 'MON_011',  class: 'Bardo' },
-    { id: 'MON_011B', class: 'Bardo' },
-    { id: 'MON_011C', class: 'Bardo' },
-    { id: 'MON_011D', class: 'Bardo' },
-    { id: 'MON_012',  class: 'Animalista' },
-    { id: 'MON_012B', class: 'Animalista' },
-    { id: 'MON_012C', class: 'Animalista' },
-    { id: 'MON_012D', class: 'Animalista' },
-    { id: 'MON_013',  class: 'Caçador' },
-    { id: 'MON_013B', class: 'Caçador' },
-    { id: 'MON_013C', class: 'Caçador' },
-    { id: 'MON_013D', class: 'Caçador' },
+    { id: 'MON_003',  class: 'Guerreiro' },
+    { id: 'MON_004',  class: 'Guerreiro' },
+    // Phase 1 — Bardo (Dinomon line)
+    { id: 'MON_005',  class: 'Bardo' },
+    { id: 'MON_006',  class: 'Bardo' },
+    { id: 'MON_007',  class: 'Bardo' },
+    { id: 'MON_008',  class: 'Bardo' },
+    // Phase 1 — Caçador (Miaumon line)
+    { id: 'MON_009',  class: 'Caçador' },
+    { id: 'MON_010',  class: 'Caçador' },
+    { id: 'MON_011',  class: 'Caçador' },
+    { id: 'MON_012',  class: 'Caçador' },
+    // Phase 1 — Mago (Lagartomon line)
+    { id: 'MON_013',  class: 'Mago' },
     { id: 'MON_014',  class: 'Mago' },
-    { id: 'MON_014B', class: 'Mago' },
-    { id: 'MON_014C', class: 'Mago' },
-    { id: 'MON_014D', class: 'Mago' },
-    { id: 'MON_020',  class: 'Curandeiro' },
-    { id: 'MON_020B', class: 'Curandeiro' },
-    { id: 'MON_020C', class: 'Curandeiro' },
+    { id: 'MON_015',  class: 'Mago' },
+    { id: 'MON_016',  class: 'Mago' },
+    // Phase 1 — Animalista (Luvursomon line)
+    { id: 'MON_017',  class: 'Animalista' },
+    { id: 'MON_018',  class: 'Animalista' },
+    { id: 'MON_019',  class: 'Animalista' },
+    { id: 'MON_020',  class: 'Animalista' },
+    // MON_021-030 canonical families
     { id: 'MON_021',  class: 'Bárbaro' },
     { id: 'MON_021B', class: 'Bárbaro' },
     { id: 'MON_021C', class: 'Bárbaro' },
@@ -318,28 +283,26 @@ const FULL_CATALOG = [
 
 describe('Fase 8 — cobertura do bridge com catálogo completo', () => {
 
-    it('catálogo completo deve ter 64 templates', () => {
-        expect(FULL_CATALOG).toHaveLength(64);
+    it('catálogo completo deve ter 51 templates', () => {
+        expect(FULL_CATALOG).toHaveLength(51);
     });
 
-    it('deve reportar 51 templates mapeados após Fase 13.2 (32 Fase 8 + 7 Caçador + 3 Ladino + 6 Bardo + 3 Animalista)', () => {
+    it('deve reportar 42 templates mapeados após Phase 1 (7 Guerreiro + 6 Bárbaro + 7 Mago + 3 Curandeiro + 7 Caçador + 3 Ladino + 6 Bardo + 3 Animalista)', () => {
         const report = getBridgeCoverageReport(FULL_CATALOG);
-        expect(report.mapped).toBe(51);
+        expect(report.mapped).toBe(42);
     });
 
-    it('deve reportar 13 templates não mapeados (Bardo parcial, Ladino parcial, Animalista parcial, MON_005, MON_100)', () => {
-        // Após Fase 13.2: MON_011/B/C mapeados como bellwave. Bardo ainda tem:
-        // MON_001 (sem linha) e MON_011D (drift bruiser) — 2 não mapeados de Bardo.
+    it('deve reportar 9 templates não mapeados (MON_008, MON_017-020, MON_030/B/C, MON_100)', () => {
         const report = getBridgeCoverageReport(FULL_CATALOG);
-        expect(report.unmapped).toBe(13);
+        expect(report.unmapped).toBe(9);
     });
 
-    it('deve reportar total correto de 64', () => {
+    it('deve reportar total correto de 51', () => {
         const report = getBridgeCoverageReport(FULL_CATALOG);
-        expect(report.total).toBe(64);
+        expect(report.total).toBe(51);
     });
 
-    it('todos os 51 mapeamentos da tabela devem resolver para valor válido no catálogo completo', () => {
+    it('todos os 42 mapeamentos da tabela devem resolver para valor válido no catálogo completo', () => {
         const mappedIds = new Set(Object.keys(RUNTIME_TO_CANON_SPECIES));
         const catalogIds = new Set(FULL_CATALOG.map(t => t.id));
         for (const id of mappedIds) {
@@ -347,71 +310,72 @@ describe('Fase 8 — cobertura do bridge com catálogo completo', () => {
         }
     });
 
-    it('getEligibleUnmappedTemplateIds deve retornar MON_001, MON_005, MON_006, MON_008, MON_012, MON_030, MON_100 no catálogo completo (após Fase 13.2)', () => {
-        // Após Fase 13.2: MON_011/B/C mapeados como bellwave → saem dos elegíveis.
+    it('getEligibleUnmappedTemplateIds deve retornar MON_008, MON_017, MON_018, MON_019, MON_020, MON_030, MON_100 no catálogo completo', () => {
         // Elegíveis = base templates não mapeados com classe que tem canonical species:
-        //   MON_001 (Bardo, sem linha evolutiva — não mapeado intencionalmente)
-        //   MON_005 (Caçador, sem linha evolutiva — não mapeado intencionalmente)
-        //   MON_006 (Animalista, sem linha evolutiva — não mapeado intencionalmente)
-        //   MON_008 (Ladino, sem linha evolutiva — não mapeado intencionalmente)
-        //   MON_012 (Animalista, drift burst/ATK — não mapeado intencionalmente)
-        //   MON_030 (Ladino, perfil ambíguo / DEF floor — não mapeado intencionalmente)
-        //   MON_100 (Guerreiro, sem perfil tank claro — não mapeado intencionalmente)
+        //   MON_008 (Bardo, drift bruiser — excluído intencionalmente)
+        //   MON_017 (Animalista, drift burst/ATK — excluído intencionalmente)
+        //   MON_018 (Animalista, idem)
+        //   MON_019 (Animalista, idem)
+        //   MON_020 (Animalista, idem)
+        //   MON_030 (Ladino, perfil ambíguo / DEF floor — excluído intencionalmente)
+        //   MON_100 (Guerreiro, sem perfil tank claro — excluído intencionalmente)
         const eligible = getEligibleUnmappedTemplateIds(FULL_CATALOG);
         const eligibleIds = eligible.map(e => e.id);
         expect(eligibleIds).toHaveLength(7);
-        expect(eligibleIds).toContain('MON_001');
-        expect(eligibleIds).toContain('MON_005');
-        expect(eligibleIds).toContain('MON_006');
         expect(eligibleIds).toContain('MON_008');
-        expect(eligibleIds).not.toContain('MON_011'); // agora mapeado como bellwave
-        expect(eligibleIds).toContain('MON_012');
+        expect(eligibleIds).toContain('MON_017');
+        expect(eligibleIds).toContain('MON_018');
+        expect(eligibleIds).toContain('MON_019');
+        expect(eligibleIds).toContain('MON_020');
         expect(eligibleIds).toContain('MON_030');
         expect(eligibleIds).toContain('MON_100');
+        expect(eligibleIds).not.toContain('MON_005'); // agora mapeado como bellwave
+        expect(eligibleIds).not.toContain('MON_009'); // agora mapeado como swiftclaw
     });
 
     it('unmapped do catálogo completo não deve conter nenhum template MVP de base ou evolução', () => {
         const unmapped = getUnmappedTemplateIds(FULL_CATALOG);
-        // Todos estes devem estar mapeados após Fase 10
         const expectedMapped = [
-            'MON_002', 'MON_002B', 'MON_002C',
-            'MON_010', 'MON_010B', 'MON_010C', 'MON_010D',
+            // Guerreiro — linha Ferrozimon
+            'MON_001', 'MON_002', 'MON_003', 'MON_004',
             'MON_026', 'MON_026B', 'MON_026C',
-            'MON_007',
+            // Bárbaro
             'MON_021', 'MON_021B', 'MON_021C',
             'MON_029', 'MON_029B', 'MON_029C',
-            'MON_003',
-            'MON_014', 'MON_014B', 'MON_014C', 'MON_014D',
+            // Mago — linha Lagartomon
+            'MON_013', 'MON_014', 'MON_015', 'MON_016',
             'MON_024', 'MON_024B', 'MON_024C',
-            'MON_004',
-            'MON_020', 'MON_020B', 'MON_020C',
+            // Curandeiro — linha Nutrilo
             'MON_028', 'MON_028B', 'MON_028C',
-            // Caçador — Fase 9
-            'MON_013', 'MON_013B', 'MON_013C', 'MON_013D',
+            // Caçador — linha Miaumon e Pulimbon
+            'MON_009', 'MON_010', 'MON_011', 'MON_012',
             'MON_025', 'MON_025B', 'MON_025C',
+            // Ladino
+            'MON_022', 'MON_022B', 'MON_022C',
+            // Bardo — linha Dinomon e Zunzumon
+            'MON_005', 'MON_006', 'MON_007',
+            'MON_027', 'MON_027B', 'MON_027C',
+            // Animalista — linha Cervimon
+            'MON_023', 'MON_023B', 'MON_023C',
         ];
         for (const id of expectedMapped) {
             expect(unmapped, `${id} deveria estar mapeado`).not.toContain(id);
         }
     });
 
-    it('unmapped do catálogo completo deve conter apenas classes sem species e exclusões explícitas', () => {
+    it('unmapped do catálogo completo deve conter apenas exclusões explícitas', () => {
         const unmapped = getUnmappedTemplateIds(FULL_CATALOG);
         const expectedUnmapped = [
-            // Bardo — linha Zunzumon e linha Dinomon (parcial) mapeadas; Cantapau e Giganotometalmon excluídos
-            'MON_001',                                   // sem linha evolutiva
-            'MON_011D',                                  // drift bruiser (excluído em Fase 13.2)
-            // Caçador — apenas MON_005 (sem linha evolutiva); linhas Miaumon e Pulimbon mapeadas
-            'MON_005',
-            // Ladino — linha Corvimon mapeada na Fase 10; Sombrio e Furtilhon excluídos
+            // Bardo — Giganotometalmon excluído por drift bruiser
             'MON_008',
+            // Animalista — linha Luvursomon excluída por drift burst/ATK
+            'MON_017', 'MON_018', 'MON_019', 'MON_020',
+            // Ladino — linha Furtilhon excluída por DEF floor / perfil ambíguo
             'MON_030', 'MON_030B', 'MON_030C',
-            // Animalista — linha Cervimon mapeada na Fase 12 (wildpace); restantes excluídos
-            'MON_006', 'MON_012', 'MON_012B', 'MON_012C', 'MON_012D',
-            // Guerreiro sem perfil
+            // Guerreiro sem perfil tank
             'MON_100',
         ];
-        expect(unmapped).toHaveLength(13);
+        expect(unmapped).toHaveLength(9);
         for (const id of expectedUnmapped) {
             expect(unmapped, `${id} deveria estar unmapped`).toContain(id);
         }
@@ -422,24 +386,21 @@ describe('Fase 8 — cobertura do bridge com catálogo completo', () => {
 // Regressão — mapeamentos base da Fase 3.2 permanecem intactos
 // ===========================================================================
 
-describe('Fase 8 — regressão: mapeamentos base da Fase 3.2', () => {
+describe('Fase 8 — regressão: mapeamentos base da Fase 3.2 (atualizados para Phase 1)', () => {
 
-    it('todos os 12 mapeamentos originais da Fase 3.2 permanecem corretos', () => {
+    it('todos os mapeamentos base canônicos permanecem corretos após Phase 1', () => {
         // Guerreiro
-        expect(resolveCanonSpeciesId('MON_010')).toBe('shieldhorn');
+        expect(resolveCanonSpeciesId('MON_001')).toBe('shieldhorn');
         expect(resolveCanonSpeciesId('MON_002')).toBe('shieldhorn');
         expect(resolveCanonSpeciesId('MON_026')).toBe('shieldhorn');
         // Bárbaro
-        expect(resolveCanonSpeciesId('MON_007')).toBe('emberfang');
         expect(resolveCanonSpeciesId('MON_021')).toBe('emberfang');
         expect(resolveCanonSpeciesId('MON_029')).toBe('emberfang');
         // Mago
-        expect(resolveCanonSpeciesId('MON_003')).toBe('moonquill');
+        expect(resolveCanonSpeciesId('MON_013')).toBe('moonquill');
         expect(resolveCanonSpeciesId('MON_014')).toBe('moonquill');
         expect(resolveCanonSpeciesId('MON_024')).toBe('moonquill');
         // Curandeiro
-        expect(resolveCanonSpeciesId('MON_004')).toBe('floracura');
-        expect(resolveCanonSpeciesId('MON_020')).toBe('floracura');
         expect(resolveCanonSpeciesId('MON_028')).toBe('floracura');
     });
 });
@@ -481,7 +442,7 @@ describe('Fase 8 — regressão: applyStatOffsets sem alteração nos offsets ca
         expect(stats.spd).toBe(4);
     });
 
-    it('evoluções recebem mesmos offsets do arquétipo — shieldhorn em MON_010D', () => {
+    it('evoluções recebem mesmos offsets do arquétipo — shieldhorn em MON_004 (Arconouricomon)', () => {
         // Arconouricomon tem stats altos: ATK 17, DEF 17
         const highStats = { hpMax: 63, atk: 17, def: 17, spd: 8, eneMax: 9 };
         const { stats } = applyStatOffsets(highStats, { hp: 1, atk: -1, def: 1, ene: 0, agi: 0 });
@@ -505,10 +466,10 @@ describe('Fase 8 — regressão: applyStatOffsets sem alteração nos offsets ca
 // Integridade da tabela pós-Fase 8
 // ===========================================================================
 
-describe('Fase 8 — integridade da tabela RUNTIME_TO_CANON_SPECIES', () => {
+describe('Fase 8 — integridade da tabela RUNTIME_TO_CANON_SPECIES (pós-Phase 1)', () => {
 
-    it('deve conter exatamente 51 mapeamentos (32 Fase 8 + 7 Caçador Fase 9 + 3 Ladino Fase 10 + 6 Bardo Fases 11+13.2 + 3 Animalista Fase 12)', () => {
-        expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(51);
+    it('deve conter exatamente 42 mapeamentos (7 Guerreiro + 6 Bárbaro + 7 Mago + 3 Curandeiro + 7 Caçador + 3 Ladino + 6 Bardo + 3 Animalista)', () => {
+        expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(42);
     });
 
     it('todos os valores devem ser strings não-vazias', () => {
@@ -525,31 +486,45 @@ describe('Fase 8 — integridade da tabela RUNTIME_TO_CANON_SPECIES', () => {
         }
     });
 
-    it('deve ter 10 mapeamentos de Guerreiro (shieldhorn) após Fase 8', () => {
+    it('deve ter 7 mapeamentos de Guerreiro (shieldhorn) após Phase 1', () => {
         const guerreiroMappings = Object.entries(RUNTIME_TO_CANON_SPECIES)
             .filter(([, v]) => v === 'shieldhorn');
-        // MON_002, MON_002B, MON_002C, MON_010, MON_010B, MON_010C, MON_010D, MON_026, MON_026B, MON_026C = 10
-        expect(guerreiroMappings).toHaveLength(10);
+        // MON_001, MON_002, MON_003, MON_004, MON_026, MON_026B, MON_026C = 7
+        expect(guerreiroMappings).toHaveLength(7);
     });
 
-    it('deve ter 7 mapeamentos de Bárbaro (emberfang) após Fase 8', () => {
+    it('deve ter 6 mapeamentos de Bárbaro (emberfang) após Phase 1', () => {
         const barbaroMappings = Object.entries(RUNTIME_TO_CANON_SPECIES)
             .filter(([, v]) => v === 'emberfang');
-        // MON_007, MON_021, MON_021B, MON_021C, MON_029, MON_029B, MON_029C = 7
-        expect(barbaroMappings).toHaveLength(7);
+        // MON_021, MON_021B, MON_021C, MON_029, MON_029B, MON_029C = 6
+        expect(barbaroMappings).toHaveLength(6);
     });
 
-    it('deve ter 8 mapeamentos de Mago (moonquill) após Fase 8', () => {
+    it('deve ter 7 mapeamentos de Mago (moonquill) após Phase 1', () => {
         const magoMappings = Object.entries(RUNTIME_TO_CANON_SPECIES)
             .filter(([, v]) => v === 'moonquill');
-        // MON_003, MON_014, MON_014B, MON_014C, MON_014D, MON_024, MON_024B, MON_024C = 8
-        expect(magoMappings).toHaveLength(8);
+        // MON_013, MON_014, MON_015, MON_016, MON_024, MON_024B, MON_024C = 7
+        expect(magoMappings).toHaveLength(7);
     });
 
-    it('deve ter 7 mapeamentos de Curandeiro (floracura) após Fase 8', () => {
+    it('deve ter 3 mapeamentos de Curandeiro (floracura) após Phase 1', () => {
         const curandeiroMappings = Object.entries(RUNTIME_TO_CANON_SPECIES)
             .filter(([, v]) => v === 'floracura');
-        // MON_004, MON_020, MON_020B, MON_020C, MON_028, MON_028B, MON_028C = 7
-        expect(curandeiroMappings).toHaveLength(7);
+        // MON_028, MON_028B, MON_028C = 3
+        expect(curandeiroMappings).toHaveLength(3);
+    });
+
+    it('deve ter 7 mapeamentos de Caçador (swiftclaw) após Phase 1', () => {
+        const swiftclawMappings = Object.entries(RUNTIME_TO_CANON_SPECIES)
+            .filter(([, v]) => v === 'swiftclaw');
+        // MON_009, MON_010, MON_011, MON_012, MON_025, MON_025B, MON_025C = 7
+        expect(swiftclawMappings).toHaveLength(7);
+    });
+
+    it('deve ter 6 mapeamentos de Bardo (bellwave) após Phase 1', () => {
+        const bellwaveMappings = Object.entries(RUNTIME_TO_CANON_SPECIES)
+            .filter(([, v]) => v === 'bellwave');
+        // MON_005, MON_006, MON_007, MON_027, MON_027B, MON_027C = 6
+        expect(bellwaveMappings).toHaveLength(6);
     });
 });
