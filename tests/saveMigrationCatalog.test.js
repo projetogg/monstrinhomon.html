@@ -1080,6 +1080,10 @@ describe('postMigrationCanonicalRebuild — Phase 2 canônica', () => {
         expect(mon.ownerId).toBe('player_01');
         expect(mon.createdAt).toBe('2026-01-01T00:00:00Z');
 
+        // xpNeeded NÃO é preservado — vem da factory (reconstruído)
+        // level 5 → round(40 + 30 + 15) = 85
+        expect(mon.xpNeeded).toBe(Math.round(40 + 6 * 5 + 0.6 * 25));
+
         // HP por percentual do hpMax canônico
         // Phase 1 hpMax=40, hp=21 (round(40 * 18/35))
         // Phase 2 hpMax=40 (mesmo valor na factory mock), hp = round(40 * oldHpPct)
@@ -1290,5 +1294,208 @@ describe('migração canônica — linha correta garantida por classe', () => {
         expect(mon.templateId).toBe('MON_011');
         expect(mon.class).toBe('Caçador');
         expect(mon.name).toBe('Felinomon');
+    });
+});
+
+// ─── R. Thresholds exatos — limites de evolução ───────────────────────────────
+//
+// Linha Ferrozimon (Guerreiro): evolvesAt S1=12, S2=25, S3=45
+// Linha Miaumon   (Caçador):   evolvesAt S1=12, S2=25, S3=45
+// Linha Lagartomon(Mago):      evolvesAt S1=12, S2=25, S3=45
+//
+// Para cada threshold T: nível T-1 fica no estágio anterior, nível T avança.
+
+describe('migrateMonsterInstance — thresholds exatos de evolução', () => {
+    // ── Linha Ferrozimon (Guerreiro) ──────────────────────────────────────────
+
+    it('Guerreiro nível 11 (< 12) permanece em MON_001 (Ferrozimon)', () => {
+        const mon = makeInstance('MON_010', { class: 'Guerreiro', level: 11 });
+        migrateMonsterInstance(mon);
+        expect(mon.templateId).toBe('MON_001');
+        expect(mon.name).toBe('Ferrozimon');
+        expect(mon.class).toBe('Guerreiro');
+        expect(mon.evolvesTo).toBe('MON_002');
+        expect(mon.evolvesAt).toBe(12);
+    });
+
+    it('Guerreiro nível 12 (= threshold) avança para MON_002 (Cavalheiromon)', () => {
+        const mon = makeInstance('MON_010', { class: 'Guerreiro', level: 12 });
+        migrateMonsterInstance(mon);
+        expect(mon.templateId).toBe('MON_002');
+        expect(mon.name).toBe('Cavalheiromon');
+        expect(mon.class).toBe('Guerreiro');
+    });
+
+    it('Guerreiro nível 13 avança para MON_002', () => {
+        const mon = makeInstance('MON_010', { class: 'Guerreiro', level: 13 });
+        migrateMonsterInstance(mon);
+        expect(mon.templateId).toBe('MON_002');
+        expect(mon.class).toBe('Guerreiro');
+    });
+
+    it('Guerreiro nível 24 (< 25) permanece em MON_002 (Cavalheiromon)', () => {
+        const mon = makeInstance('MON_010', { class: 'Guerreiro', level: 24 });
+        migrateMonsterInstance(mon);
+        expect(mon.templateId).toBe('MON_002');
+        expect(mon.name).toBe('Cavalheiromon');
+    });
+
+    it('Guerreiro nível 25 (= threshold) avança para MON_003 (Kinguespinhomon)', () => {
+        const mon = makeInstance('MON_010', { class: 'Guerreiro', level: 25 });
+        migrateMonsterInstance(mon);
+        expect(mon.templateId).toBe('MON_003');
+        expect(mon.name).toBe('Kinguespinhomon');
+        expect(mon.class).toBe('Guerreiro');
+    });
+
+    it('Guerreiro nível 26 avança para MON_003', () => {
+        const mon = makeInstance('MON_010', { class: 'Guerreiro', level: 26 });
+        migrateMonsterInstance(mon);
+        expect(mon.templateId).toBe('MON_003');
+    });
+
+    it('Guerreiro nível 44 (< 45) permanece em MON_003 (Kinguespinhomon)', () => {
+        const mon = makeInstance('MON_010', { class: 'Guerreiro', level: 44 });
+        migrateMonsterInstance(mon);
+        expect(mon.templateId).toBe('MON_003');
+        expect(mon.name).toBe('Kinguespinhomon');
+    });
+
+    it('Guerreiro nível 45 (= threshold) avança para MON_004 (Arconouricomon)', () => {
+        const mon = makeInstance('MON_010', { class: 'Guerreiro', level: 45 });
+        migrateMonsterInstance(mon);
+        expect(mon.templateId).toBe('MON_004');
+        expect(mon.name).toBe('Arconouricomon');
+        expect(mon.class).toBe('Guerreiro');
+        expect(mon.evolvesTo).toBeNull();
+    });
+
+    it('Guerreiro nível 46 permanece em MON_004 (sem evolução)', () => {
+        const mon = makeInstance('MON_010', { class: 'Guerreiro', level: 46 });
+        migrateMonsterInstance(mon);
+        expect(mon.templateId).toBe('MON_004');
+        expect(mon.evolvesTo).toBeNull();
+    });
+
+    // ── Linha Miaumon (Caçador) ───────────────────────────────────────────────
+
+    it('Caçador nível 11 (< 12) permanece em MON_009 (Miaumon)', () => {
+        const mon = makeInstance('MON_013', { class: 'Caçador', level: 11 });
+        migrateMonsterInstance(mon);
+        expect(mon.templateId).toBe('MON_009');
+        expect(mon.name).toBe('Miaumon');
+        expect(mon.class).toBe('Caçador');
+        expect(mon.evolvesTo).toBe('MON_010');
+        expect(mon.evolvesAt).toBe(12);
+    });
+
+    it('Caçador nível 12 avança para MON_010 (Gatunamon)', () => {
+        const mon = makeInstance('MON_013', { class: 'Caçador', level: 12 });
+        migrateMonsterInstance(mon);
+        expect(mon.templateId).toBe('MON_010');
+        expect(mon.name).toBe('Gatunamon');
+        expect(mon.class).toBe('Caçador');
+    });
+
+    it('Caçador nível 25 avança para MON_011 (Felinomon)', () => {
+        const mon = makeInstance('MON_013', { class: 'Caçador', level: 25 });
+        migrateMonsterInstance(mon);
+        expect(mon.templateId).toBe('MON_011');
+        expect(mon.name).toBe('Felinomon');
+        expect(mon.class).toBe('Caçador');
+    });
+
+    it('Caçador nível 45 avança para MON_012 (Panterezamon)', () => {
+        const mon = makeInstance('MON_013', { class: 'Caçador', level: 45 });
+        migrateMonsterInstance(mon);
+        expect(mon.templateId).toBe('MON_012');
+        expect(mon.name).toBe('Panterezamon');
+        expect(mon.class).toBe('Caçador');
+        expect(mon.evolvesTo).toBeNull();
+    });
+
+    // ── Linha Lagartomon (Mago) ───────────────────────────────────────────────
+
+    it('Mago nível 11 (< 12) permanece em MON_013 (Lagartomon)', () => {
+        // MON_014 legado com rarity=Comum → Mago base → MON_013 canônico
+        const mon = makeInstance('MON_014', { class: 'Mago', rarity: 'Comum', level: 11 });
+        migrateMonsterInstance(mon);
+        expect(mon.templateId).toBe('MON_013');
+        expect(mon.name).toBe('Lagartomon');
+        expect(mon.class).toBe('Mago');
+    });
+
+    it('Mago nível 12 avança para MON_014 (Salamandromon)', () => {
+        const mon = makeInstance('MON_014', { class: 'Mago', rarity: 'Comum', level: 12 });
+        migrateMonsterInstance(mon);
+        expect(mon.templateId).toBe('MON_014');
+        expect(mon.name).toBe('Salamandromon');
+        expect(mon.class).toBe('Mago');
+    });
+
+    it('Mago nível 25 avança para MON_015 (Dracoflamemon)', () => {
+        const mon = makeInstance('MON_014', { class: 'Mago', rarity: 'Comum', level: 25 });
+        migrateMonsterInstance(mon);
+        expect(mon.templateId).toBe('MON_015');
+        expect(mon.name).toBe('Dracoflamemon');
+        expect(mon.class).toBe('Mago');
+    });
+
+    it('Mago nível 45 avança para MON_016 (Wizardragomon)', () => {
+        const mon = makeInstance('MON_014', { class: 'Mago', rarity: 'Comum', level: 45 });
+        migrateMonsterInstance(mon);
+        expect(mon.templateId).toBe('MON_016');
+        expect(mon.name).toBe('Wizardragomon');
+        expect(mon.class).toBe('Mago');
+        expect(mon.evolvesTo).toBeNull();
+    });
+
+    // ── Guerreiro nunca cai em linha felina (Caçador) em nenhum threshold ─────
+
+    it('Guerreiro nunca recebe class=Caçador em nenhum nível (1..50)', () => {
+        for (let level = 1; level <= 50; level++) {
+            const mon = makeInstance('MON_010', { class: 'Guerreiro', level });
+            migrateMonsterInstance(mon);
+            expect(mon.class).toBe('Guerreiro');
+            // Nunca deve ser Gatunamon, Felinomon, Panterezamon ou Miaumon
+            expect(['Gatunamon','Felinomon','Panterezamon','Miaumon']).not.toContain(mon.name);
+        }
+    });
+
+    it('Caçador nunca recebe class=Guerreiro em nenhum nível (1..50)', () => {
+        for (let level = 1; level <= 50; level++) {
+            const mon = makeInstance('MON_013', { class: 'Caçador', level });
+            migrateMonsterInstance(mon);
+            expect(mon.class).toBe('Caçador');
+            expect(['Ferrozimon','Cavalheiromon','Kinguespinhomon','Arconouricomon']).not.toContain(mon.name);
+        }
+    });
+});
+
+// ─── S. xpNeeded é sempre reconstruído (função pura do nível) ─────────────────
+
+describe('xpNeeded — reconstruído, não preservado', () => {
+    it('Phase 1 reconstrói xpNeeded ignorando valor legado do save', () => {
+        // Save antigo com xpNeeded errado/stale
+        const mon = makeInstance('MON_010', { level: 10, xpNeeded: 9999 });
+        migrateMonsterInstance(mon);
+
+        // xpNeeded deve ser round(40 + 6*10 + 0.6*100) = round(40+60+60) = 160
+        expect(mon.xpNeeded).toBe(160);
+        expect(mon.xpNeeded).not.toBe(9999);
+    });
+
+    it('xpNeeded calculado corresponde à fórmula canônica para vários níveis', () => {
+        const cases = [
+            { level: 1,  expected: Math.round(40 + 6 + 0.6) },      // 47
+            { level: 12, expected: Math.round(40 + 72 + 86.4) },     // 198
+            { level: 25, expected: Math.round(40 + 150 + 375) },     // 565
+            { level: 45, expected: Math.round(40 + 270 + 1215) },    // 1525
+        ];
+        for (const { level, expected } of cases) {
+            const mon = makeInstance('MON_010', { class: 'Guerreiro', level, xpNeeded: 0 });
+            migrateMonsterInstance(mon);
+            expect(mon.xpNeeded).toBe(expected);
+        }
     });
 });

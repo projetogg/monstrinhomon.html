@@ -1952,6 +1952,10 @@
                                 );
                                 if (p2.rebuilt > 0) {
                                     console.log(`[Migration Phase2] ${p2.rebuilt} instância(s) reconstruída(s) canonicamente.`);
+                                    // Autosave: persiste imediatamente a canonicalização para
+                                    // eliminar a janela de inconsistência residual entre Phase 2
+                                    // e o próximo save manual do usuário.
+                                    try { saveGame(); } catch (_) { /* saveGame pode não estar pronta em todos os contextos */ }
                                 }
                                 for (const err of p2.errors) {
                                     console.warn('[Migration Phase2]', err);

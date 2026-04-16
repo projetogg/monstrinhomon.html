@@ -663,16 +663,17 @@ export function rebuildDexFromPossession(state) {
  *
  * Preserva apenas os campos de progresso legítimo:
  *   - id, instanceId, ownerId, createdAt  (identidade estável)
- *   - level, xp, xpNeeded                (progressão)
+ *   - level, xp                           (progressão — xpNeeded vem da factory)
  *   - friendship                          (vínculo)
  *   - status, isShiny, equippedItem       (estado persistente)
  *   - hp   = clamp(round(newHpMax * hpPercent), 1, newHpMax)  [vivo]
  *            0  [fainted]
  *   - ene  = min(oldEne, newEneMax)
  *
- * NÃO preserva:
+ * NÃO preserva (todos reconstruídos pela factory):
  *   - name, class, rarity, emoji, evolvesTo, evolvesAt  → vêm do template
  *   - hpMax, atk, def, spd, eneMax, poder               → vêm da factory
+ *   - xpNeeded                                          → reconstruído (f(level))
  *   - unlockedSkillSlots, canonSpeciesId, stage         → vêm da factory
  *   - canonAppliedOffsets, appliedKitSwaps              → vêm da factory
  *
@@ -726,10 +727,10 @@ export function postMigrationCanonicalRebuild(state, instanceFactoryFn) {
                 instanceId:  mon.instanceId,
                 ownerId:     mon.ownerId,
                 createdAt:   mon.createdAt,
-                // Progressão
+                // Progressão (xpNeeded NÃO está aqui — é reconstruído pela factory,
+                // pois é função pura do nível: round(40 + 6L + 0.6L²))
                 level:       mon.level,
                 xp:          mon.xp,
-                xpNeeded:    mon.xpNeeded  ?? canonical.xpNeeded,
                 // Vínculo
                 friendship:  mon.friendship ?? canonical.friendship ?? 0,
                 // Estado persistente
