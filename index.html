@@ -4274,7 +4274,12 @@
                         null, // Usar raridade padrão do template
                         { id: 'wild_' + Date.now() }
                     );
-                    
+
+                    // Guarda: se o template não existir, lança erro claro antes de acessar propriedades
+                    if (!encounter.wildMonster) {
+                        throw new Error(`Encounter template not found: ${wildTemplateId}`);
+                    }
+
                     // FASE 1 POKEMON: Gerar shiny com chance por raridade (FASE T)
                     encounter.wildMonster.isShiny = generateShinyChance(encounter.wildMonster.rarity);
                     
