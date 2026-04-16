@@ -311,7 +311,7 @@ function applyEneRegen(monster, encounter, eneRegenData) {
 /**
  * Atualiza buffs (reduz duração e remove expirados)
  */
-function updateBuffs(monster) {
+export function updateBuffs(monster) {
     try {
         if (!monster || !monster.buffs) return;
         

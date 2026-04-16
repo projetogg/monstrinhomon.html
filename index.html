@@ -1348,12 +1348,6 @@
         // para todas as funções que o utilizam
         const DEFAULT_FRIENDSHIP = 50;
 
-        // MONSTER CATALOG — LEGADO
-        // Dados canônicos estão em data/monsters.json (carregados via window.Data).
-        // Usar getMonstersArray() / getMonsterTemplate() em vez de acessar este array diretamente.
-        // Este array permanece como fallback de última instância caso o JSON não esteja disponível.
-        const MONSTER_CATALOG = [];
-
         // ENE REGEN CONSTANTS por classe (valores canônicos v2.2 — PATCH_CANONICO_COMBATE_V2.2.md BLOCO 4)
         const ENE_REGEN_BY_CLASS = {
             'Mago': { pct: 0.18, min: 3 },
@@ -1515,6 +1509,10 @@
             if (built && Object.keys(built).length > 0) {
                 SKILL_DEFS = built;
             } else {
+                // LEGADO: fallback em uso — se este warn aparecer no console, o JSON de skills
+                // ainda não carregou quando initSkillDefs() foi chamado.
+                // Remover SKILL_DEFS_FALLBACK somente após confirmar que este warn nunca aparece.
+                console.warn('[initSkillDefs] SKILL_DEFS_FALLBACK em uso — JSON de skills não disponível ainda.');
                 SKILL_DEFS = SKILL_DEFS_FALLBACK;
             }
         }
@@ -1802,15 +1800,13 @@
         // ============================================================================
 
         /**
-         * Get monster template from JSON (if available) or MONSTER_CATALOG (fallback)
-         * PR9B: Tries JSON first (sync lookup), falls back to hardcoded if not found
-         * @param {string} templateId - Monster template ID (e.g., 'MON_001')
-         * @returns {Object|null} Monster template or null if not found
+         * Retorna o template de um Monstrinho do JSON canônico.
+         * @param {string} templateId - Monster template ID (ex: 'MON_001')
+         * @returns {Object|null} Monster template ou null se não encontrado
          */
         function getMonsterTemplate(templateId) {
             if (!templateId) return null;
             
-            // PR9B: Try JSON first (synchronous lookup, no blocking)
             if (window.Data && window.Data.getMonstersMapSync) {
                 const monstersMap = window.Data.getMonstersMapSync();
                 if (monstersMap && monstersMap.has(templateId)) {
@@ -1820,13 +1816,12 @@
                 }
             }
             
-            // Fallback: hardcoded MONSTER_CATALOG
-            return MONSTER_CATALOG.find(m => m.id === templateId) || null;
+            return null;
         }
 
         /**
          * Retorna todos os templates de monstros como array.
-         * Tenta JSON primeiro (fonte canônica), fallback para MONSTER_CATALOG inline.
+         * Fonte canônica: data/monsters.json (via window.Data).
          * @returns {Object[]} Array de templates de monstros
          */
         function getMonstersArray() {
@@ -1836,7 +1831,7 @@
                     return Array.from(monstersMap.values());
                 }
             }
-            return MONSTER_CATALOG;
+            return [];
         }
 
         /**
@@ -1853,7 +1848,7 @@
                 mmDebugLog("CATALOG_ID_INVALID", {
                     context,
                     templateId,
-                    catalogType: 'MONSTER_CATALOG'
+                    catalogType: 'JSON'
                 }, "warn");
             }
             
@@ -3047,7 +3042,7 @@
          * Esta é a função OFICIAL para criar novos monstros a partir do catálogo.
          * Garante que todos os monstros nascam com estrutura canônica consistente.
          * 
-         * @param {string} templateId - ID do template no MONSTER_CATALOG (ex: 'MON_001')
+         * @param {string} templateId - ID do template do Monstrinho (ex: 'MON_001')
          * @param {number} level - Nível do monstrinho (padrão: 1)
          * @param {string|null} rarity - Raridade (se null, usa do template)
          * @param {object} overrides - Campos opcionais para sobrescrever (ex: {nickname: 'Fofinho'})
@@ -3856,10 +3851,10 @@
                 switch (skill.type) {
                     case 'DAMAGE':
                         // Calcular dano da habilidade com nova fórmula
-                        const atkMods = getBuffModifiers(attacker);
+                        const atkMods = Combat.Wild.Core.getBuffModifiers(attacker);
                         const effectiveAtk = Math.max(1, attacker.atk + atkMods.atk);
                         
-                        const defMods = getBuffModifiers(defender);
+                        const defMods = Combat.Wild.Core.getBuffModifiers(defender);
                         const effectiveDef = Math.max(1, defender.def + defMods.def);
                         
                         // Vantagem de classe
@@ -3930,41 +3925,6 @@
             } catch (error) {
                 console.error('Failed to use skill:', error);
                 return false;
-            }
-        }
-
-        // Atualizar buffs (reduzir duração, remover expirados)
-        function updateBuffs(monster) {
-            try {
-                if (!monster || !monster.buffs) return;
-                
-                monster.buffs = monster.buffs.filter(buff => {
-                    buff.duration--;
-                    return buff.duration > 0;
-                });
-            } catch (error) {
-                console.error('Failed to update buffs:', error);
-            }
-        }
-
-        // Calcular modificadores de buffs
-        function getBuffModifiers(monster) {
-            try {
-                if (!monster || !monster.buffs) return { atk: 0, def: 0, spd: 0 };
-                
-                const mods = { atk: 0, def: 0, spd: 0 };
-                
-                monster.buffs.forEach(buff => {
-                    const type = buff.type.toLowerCase();
-                    if (type === 'atk') mods.atk += buff.power;
-                    else if (type === 'def') mods.def += buff.power;
-                    else if (type === 'spd') mods.spd += buff.power;
-                });
-                
-                return mods;
-            } catch (error) {
-                console.error('Failed to get buff modifiers:', error);
-                return { atk: 0, def: 0, spd: 0 };
             }
         }
 
@@ -4750,7 +4710,7 @@
                     getEnemyByIndex: _getEnemyByIndex,
                     log: _log,
                     applyEneRegen: applyEneRegen,
-                    updateBuffs: updateBuffs,
+                    updateBuffs: Combat.Wild.Actions.updateBuffs,
                     rollD20: rollD20,
                     recordD20Roll: recordD20Roll,
                     getBasicAttackPower: (cls) => MM_TABLES.getBasicAttackPower(cls),
@@ -7840,10 +7800,10 @@
                 const basicPower = MM_TABLES.getBasicAttackPower(attacker.class);
                 
                 // Aplicar modificadores de buff
-                const atkMods = getBuffModifiers(attacker);
+                const atkMods = Combat.Wild.Core.getBuffModifiers(attacker);
                 const effectiveAtk = Math.max(1, atkValue + atkMods.atk);
                 
-                const defMods = getBuffModifiers(defender);
+                const defMods = Combat.Wild.Core.getBuffModifiers(defender);
                 const effectiveDef = Math.max(1, defValue + defMods.def);
                 
                 // Vantagem de classe: +10% dano se forte, -10% dano se fraco
@@ -8569,23 +8529,18 @@
                 }
                 
                 /**
-                 * Get all monster templates (canonical source)
-                 * Priority:
-                 * 1. Data.getMonstersMapSync() - JSON-loaded monsters (PR9B)
-                 *    Returns Map, so we convert to Array via Array.from(map.values())
-                 * 2. MONSTER_CATALOG - Hardcoded fallback (only if JSON not available)
+                 * Retorna todos os templates de monstros (fonte canônica: data/monsters.json).
                  */
                 function getMonsterTemplates() {
                     // Try JSON-loaded monsters first (canonical source from PR9B)
                     if (window.Data && window.Data.getMonstersMapSync) {
                         const monstersMap = window.Data.getMonstersMapSync();
-                        // getMonstersMapSync() returns a Map, convert to Array
                         if (monstersMap && monstersMap.size > 0) {
                             return Array.from(monstersMap.values());
                         }
                     }
                     
-                    // Fallback: Use getMonstersArray() (JSON-first, inline fallback)
+                    // Fallback: Use getMonstersArray() (JSON-first)
                     return getMonstersArray();
                 }
                 
@@ -10227,6 +10182,22 @@
         }
 
         /**
+         * Encontra a primeira quest ativa de qualquer jogador que tenha localId === id.
+         * @param {string} id - locationId ou nodeId
+         * @returns {{ player, quest, progress, needed } | null}
+         */
+        function _findActiveQuestInfo(id) {
+            if (!window.GameFlow) return null;
+            for (const player of (GameState.players ?? [])) {
+                if (!player) continue;
+                const summary = window.GameFlow.getActiveQuestsSummary(player);
+                const match   = summary.find(({ quest }) => quest?.localId === id);
+                if (match) return { player, ...match };
+            }
+            return null;
+        }
+
+        /**
          * PR-07: Exibe/esconde o hint de quest ativa no painel de spots de um local.
          * Verifica todos os jogadores por quests com localId === locationId.
          */
@@ -10237,17 +10208,7 @@
                 return;
             }
 
-            // Encontrar primeira quest ativa com localId correspondente
-            let activeQuestInfo = null;
-            for (const player of (GameState.players ?? [])) {
-                if (!player) continue;
-                const summary = window.GameFlow.getActiveQuestsSummary(player);
-                const match   = summary.find(({ quest }) => quest?.localId === locationId);
-                if (match) {
-                    activeQuestInfo = { player, ...match };
-                    break;
-                }
-            }
+            const activeQuestInfo = _findActiveQuestInfo(locationId);
 
             if (!activeQuestInfo) {
                 hideEl(hintEl);
@@ -10706,16 +10667,7 @@
                 return;
             }
 
-            let activeQuestInfo = null;
-            for (const player of (GameState.players ?? [])) {
-                if (!player) continue;
-                const summary = window.GameFlow.getActiveQuestsSummary(player);
-                const match   = summary.find(({ quest }) => quest?.localId === nodeId);
-                if (match) {
-                    activeQuestInfo = { player, ...match };
-                    break;
-                }
-            }
+            const activeQuestInfo = _findActiveQuestInfo(nodeId);
 
             if (!activeQuestInfo) {
                 hideEl(hintEl);
