@@ -754,6 +754,9 @@
         import * as MonsterCardUI from './js/ui/monsterCardUI.js';
         window.MonsterCardUI = MonsterCardUI;
 
+        // Quest UI (Fase AC) — funções puras de renderização de quests
+        import * as QuestUI from './js/ui/questUI.js';
+
         // Fase U: Import Box System module
         import * as BoxSystem from './js/data/boxSystem.js';
         window.BoxSystem = BoxSystem;
@@ -7142,7 +7145,10 @@
                             const label = formatSkillButtonLabel(skill, playerMonster);
                             const canUse = canUseSkillNow(skill, playerMonster) && playerMonster.hp > 0;
                             const tutAllows = tutorialAllows("skill");
-                            const tooltip = !tutAllows ? 'Tutorial: ainda não liberado' : (canUse ? (skill.desc || '') : `ENE insuficiente (${Number(playerMonster.ene) || 0}/${Number(skill.cost ?? skill.energy_cost ?? 0) || 0})`);
+                            const skillDesc = skill.desc || '';
+                            const skillMeta = [skill.category, skill.status ? `→ ${skill.status}` : null].filter(Boolean).join(' · ');
+                            const skillTooltipText = skillMeta ? `${skillDesc}\n${skillMeta}` : skillDesc;
+                            const tooltip = !tutAllows ? 'Tutorial: ainda não liberado' : (canUse ? skillTooltipText : `ENE insuficiente (${Number(playerMonster.ene) || 0}/${Number(skill.cost ?? skill.energy_cost ?? 0) || 0})`);
                             return `<button class="btn btn-primary" onclick="useSkillWild(${idx})"
                                     ${!canUse || !tutAllows ? 'disabled' : ''} title="${tooltip}">${label}</button>`;
                         }).join('')}
@@ -8689,7 +8695,15 @@
                 // Render the PartyDex UI (idempotent DOM update)
                 window.PartyDexUI.renderPartyDex(root, {
                     state: GameState,
-                    getMonsterTemplates: getMonsterTemplates
+                    getMonsterTemplates: getMonsterTemplates,
+                    getMonsterById: (id) => {
+                        // Tenta resolver template por ID para linha evolutiva
+                        if (window.Data?.getMonstersMapSync) {
+                            const map = window.Data.getMonstersMapSync();
+                            if (map) return map.get(String(id)) || null;
+                        }
+                        return getMonstersArray().find(t => t && String(t.id) === String(id)) || null;
+                    }
                 });
                 
             } catch (error) {
@@ -11353,22 +11367,9 @@
             const entries = [];
             for (const player of players) {
                 const summary = window.GameFlow.getActiveQuestsSummary(player);
+                const playerName = player.name || player.nome || player.id;
                 for (const { quest, progress, needed } of summary) {
-                    const pct = needed > 0 ? Math.min(100, Math.round((progress / needed) * 100)) : 0;
-                    const playerName = player.name || player.nome || player.id;
-                    const progressText = `Progresso: ${progress}/${needed} · 💰${quest.rewardGold} · ⭐${quest.rewardXp}XP`;
-                    entries.push(`
-                        <div class="quest-tracker-entry">
-                            <div class="quest-header">
-                                <strong title="${quest.nome}">${quest.nome}</strong>
-                                <span class="text-small text-muted" title="${playerName}">(${playerName})</span>
-                            </div>
-                            <div class="quest-progress-bar">
-                                <div class="quest-progress-fill" style="width:${pct}%"></div>
-                            </div>
-                            <div class="text-small" title="${progressText}">${progressText}</div>
-                        </div>
-                    `);
+                    entries.push({ quest, progress, needed, playerName });
                 }
             }
 
@@ -11378,13 +11379,7 @@
             }
 
             const MAX_VISIBLE = 2;
-            const visible = entries.slice(0, MAX_VISIBLE);
-            const extra = entries.length - MAX_VISIBLE;
-            let html = visible.join('');
-            if (extra > 0) {
-                html += `<div class="quest-more-hint">+${extra} quest${extra > 1 ? 's' : ''} — veja o Grupo</div>`;
-            }
-            container.innerHTML = html;
+            container.innerHTML = QuestUI.renderQuestTrackerEntries(entries, MAX_VISIBLE);
         }
 
         /**
@@ -11415,80 +11410,14 @@
             let html = '';
             for (const player of players) {
                 if (!player) continue;
-                const playerName = player.name || player.nome || player.id;
                 const activeQuestsSummary = window.GameFlow.getActiveQuestsSummary(player);
                 const completedIds = player.questState?.completedQuestIds ?? [];
                 const pendingRewardIds = player.questState?.pendingRewardQuestIds ?? [];
                 const claimedIds = player.questState?.claimedRewardQuestIds ?? [];
-
-                html += `<div class="card" style="margin-bottom:12px;">`;
-                html += `<h3 style="margin-bottom:10px;">👤 ${playerName}</h3>`;
-
-                // — Quests Ativas —
-                if (activeQuestsSummary.length > 0) {
-                    html += `<div style="margin-bottom:10px;"><strong style="font-size:13px;color:#555;">🗺️ Ativas (${activeQuestsSummary.length})</strong></div>`;
-                    for (const { quest, progress, needed } of activeQuestsSummary) {
-                        const pct = needed > 0 ? Math.min(100, Math.round((progress / needed) * 100)) : 0;
-                        const localLabel = quest.localId ? ` · 📍 ${quest.localId}` : '';
-                        html += `<div class="quest-tracker-entry" style="margin-bottom:10px;">`;
-                        html += `  <div class="quest-header">`;
-                        html += `    <strong>${quest.nome}</strong>`;
-                        html += `    <span class="text-small text-muted">${localLabel}</span>`;
-                        html += `  </div>`;
-                        html += `  <div class="text-small" style="color:#666;margin:3px 0;">${quest.descricao || ''}</div>`;
-                        html += `  <div class="quest-progress-bar"><div class="quest-progress-fill" style="width:${pct}%"></div></div>`;
-                        html += `  <div class="text-small" style="margin-top:3px;">`;
-                        html += `    Progresso: ${progress}/${needed}`;
-                        if (quest.rewardXp)   html += ` · ⭐ ${quest.rewardXp} XP`;
-                        if (quest.rewardGold) html += ` · 💰 ${quest.rewardGold}`;
-                        if (quest.rewardItemId) html += ` · 🎁 ${quest.rewardItemId}`;
-                        html += `  </div>`;
-                        html += `</div>`;
-                    }
-                } else {
-                    html += `<p class="text-muted text-small">Nenhuma missão ativa.</p>`;
-                }
-
-                // — Recompensas Pendentes de Coleta —
-                if (pendingRewardIds.length > 0) {
-                    html += `<div style="margin-top:10px;margin-bottom:6px;">`;
-                    html += `<strong style="font-size:13px;color:#e67e22;">🎁 Recompensas disponíveis (${pendingRewardIds.length})</strong>`;
-                    html += `</div>`;
-                    for (const qid of pendingRewardIds) {
-                        const q = typeof window.GameFlow?.getQuest === 'function' ? window.GameFlow.getQuest(qid) : null;
-                        if (!q) continue;
-                        html += `<div class="quest-tracker-entry" style="margin-bottom:8px;border-left:3px solid #e67e22;padding-left:8px;">`;
-                        html += `  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">`;
-                        html += `    <strong style="font-size:13px;">✅ ${q.nome}</strong>`;
-                        html += `    <button class="btn btn-warning btn-sm" onclick="claimQuestRewardUI('${player.id}', '${qid}')" style="font-size:12px;padding:4px 10px;">`;
-                        html += `      🎁 Coletar Recompensa`;
-                        html += `    </button>`;
-                        html += `  </div>`;
-                        html += `  <div class="text-small" style="color:#888;margin-top:3px;">`;
-                        if (q.rewardXp)   html += `⭐ +${q.rewardXp} XP `;
-                        if (q.rewardGold) html += `💰 +${q.rewardGold} `;
-                        if (q.rewardItemId) html += `🎁 ${q.rewardItemId}`;
-                        html += `  </div>`;
-                        html += `</div>`;
-                    }
-                }
-
-                // — Quests Concluídas (recompensas já coletadas) —
                 const claimedCompletedIds = completedIds.filter(qid => claimedIds.includes(qid));
-                if (claimedCompletedIds.length > 0) {
-                    html += `<details style="margin-top:8px;">`;
-                    html += `<summary style="cursor:pointer;font-size:13px;color:#27ae60;font-weight:600;">`;
-                    html += `✅ Concluídas (${claimedCompletedIds.length})</summary>`;
-                    html += `<ul style="margin:6px 0 0 16px;padding:0;">`;
-                    for (const qid of claimedCompletedIds) {
-                        const q = typeof window.GameFlow?.getQuest === 'function' ? window.GameFlow.getQuest(qid) : null;
-                        const label = q ? `${q.nome} <span style="color:#aaa;font-size:11px;">(${qid})</span>` : qid;
-                        html += `<li style="font-size:12px;color:#555;margin:2px 0;">${label}</li>`;
-                    }
-                    html += `</ul></details>`;
-                }
+                const getQuest = (qid) => typeof window.GameFlow?.getQuest === 'function' ? window.GameFlow.getQuest(qid) : null;
 
-                html += `</div>`;
+                html += QuestUI.renderPlayerQuestSectionHtml(player, activeQuestsSummary, pendingRewardIds, claimedCompletedIds, getQuest);
             }
 
             container.innerHTML = html;
@@ -11666,7 +11595,7 @@
                                 isReadyForKitSwap: (monster) => window.SpeciesDisplay?.isReadyForKitSwap?.(monster) || false,
                                 isEligibleForBattle: (monster, owner) => window.ClassEligibility?.isEligibleForBattle?.(monster, owner) ?? true,
                                 renderEligibilityBadgeForTeam: (m, p) => MonsterCardUI.renderEligibilityBadgeForTeam(m, p, window.ClassEligibility),
-                                renderTeamReadinessIndicator: (m) => MonsterCardUI.renderTeamReadinessIndicator(m, window.SpeciesDisplay),
+                                renderTeamReadinessIndicator: (m) => MonsterCardUI.renderTeamReadinessIndicator(m, window.SpeciesDisplay, getEvolutionTargetTemplate),
                                 actionNames: {
                                     moveUp: 'moveTeamMemberUp',
                                     moveDown: 'moveTeamMemberDown',
@@ -11713,7 +11642,7 @@
                 isReadyForKitSwap: (monster) => window.SpeciesDisplay?.isReadyForKitSwap?.(monster) || false,
                 isEligibleForBattle: (monster, owner) => window.ClassEligibility?.isEligibleForBattle?.(monster, owner) ?? true,
                 renderEligibilityBadgeForTeam: (m, p) => MonsterCardUI.renderEligibilityBadgeForTeam(m, p, window.ClassEligibility),
-                renderTeamReadinessIndicator: (m) => MonsterCardUI.renderTeamReadinessIndicator(m, window.SpeciesDisplay),
+                renderTeamReadinessIndicator: (m) => MonsterCardUI.renderTeamReadinessIndicator(m, window.SpeciesDisplay, getEvolutionTargetTemplate),
                 actionNames: {
                     moveUp: 'moveTeamMemberUp',
                     moveDown: 'moveTeamMemberDown',
