@@ -765,6 +765,9 @@
         import * as CatalogMigration from './js/data/catalogMigration.js';
         window.CatalogMigration = CatalogMigration;
 
+        // Starters — fonte única de verdade para starter por classe
+        import { STARTER_BY_CLASS, migrateContaminatedStarterMeta } from './js/data/starters.js';
+
         // Trade UI (FASE XIII)
         import * as TradeUI from './js/ui/tradeUI.js';
 
@@ -2481,6 +2484,12 @@
                 const hasMonsters = Array.isArray(state.players) &&
                     state.players.some(p => (p.team && p.team.length > 0) || (p.box && p.box.length > 0));
                 state.starterFlowCompleted = hasMonsters;
+            }
+
+            // Migração de saves contaminados: corrige player.starterMonsterId se corresponde
+            // ao mapeamento bugado histórico. Não altera team nem box — apenas o metadado.
+            if (Array.isArray(state.players)) {
+                state.players.forEach(p => migrateContaminatedStarterMeta(p));
             }
 
             return state;
@@ -14028,18 +14037,7 @@
         }
 
         // ===== FLUXO INICIAL: Escolha de Classe + Ovo Starter =====
-
-        // Mapeamento classe → monstrinho inicial do catálogo oficial
-        const STARTER_BY_CLASS = {
-            'Bardo':      { monsterId: 'MON_005', eggName: 'Ovo Harmônico', eggEmoji: '🥚🎵' },
-            'Guerreiro':  { monsterId: 'MON_001', eggName: 'Ovo da Guarda', eggEmoji: '🥚⚔️' },
-            'Mago':       { monsterId: 'MON_013', eggName: 'Ovo Arcano',    eggEmoji: '🥚🔮' },
-            'Curandeiro': { monsterId: 'MON_028', eggName: 'Ovo Vital',     eggEmoji: '🥚🌿' },
-            'Caçador':    { monsterId: 'MON_009', eggName: 'Ovo Selvagem',  eggEmoji: '🥚🏹' },
-            'Animalista': { monsterId: 'MON_017', eggName: 'Ovo Primal',    eggEmoji: '🥚🐾' },
-            'Bárbaro':    { monsterId: 'MON_029', eggName: 'Ovo Feroz',     eggEmoji: '🥚🐯' },
-            'Ladino':     { monsterId: 'MON_030', eggName: 'Ovo Sombrio',   eggEmoji: '🥚🦊' },
-        };
+        // STARTER_BY_CLASS importado de js/data/starters.js — não definir aqui.
 
         // Estado interno do fluxo de starter
         const MM_STARTER = { playerIndex: 0, phase: 'choose' };
