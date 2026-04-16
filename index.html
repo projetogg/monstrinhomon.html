@@ -1937,6 +1937,29 @@
                         // Encounter com templateId inválido (migração de catálogo, save antigo) é descartado aqui,
                         // antes de chegar ao runtime de batalha.
                         _sanitizeEncounterAgainstCatalog();
+
+                        // Phase 2 da migração de catálogo: rebuild canônico pós-migração.
+                        // Instâncias marcadas com _pendingCanonicalRebuild recebem SpeciesBridge,
+                        // KitSwap e demais transformações canônicas via factory real do jogo.
+                        // Phase 1 (fingerprint + templateId remap + stats baseline) já foi executada
+                        // em migrateSaveIfNeeded. Phase 2 somente refina esses campos com a factory.
+                        const cm = window.CatalogMigration;
+                        if (cm && typeof cm.postMigrationCanonicalRebuild === 'function') {
+                            try {
+                                const p2 = cm.postMigrationCanonicalRebuild(
+                                    GameState,
+                                    (tid, lvl) => createMonsterInstanceFromTemplate(tid, lvl)
+                                );
+                                if (p2.rebuilt > 0) {
+                                    console.log(`[Migration Phase2] ${p2.rebuilt} instância(s) reconstruída(s) canonicamente.`);
+                                }
+                                for (const err of p2.errors) {
+                                    console.warn('[Migration Phase2]', err);
+                                }
+                            } catch (e) {
+                                console.error('[Migration Phase2] Erro durante rebuild canônico:', e);
+                            }
+                        }
                     }).catch(() => {
                         // Errors already logged by DataLoader, silently continue with hardcoded fallback
                     });

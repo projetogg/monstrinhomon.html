@@ -180,6 +180,33 @@ const MIGRATION_CATALOG = {
     'MON_020': { name: 'Ursauramon',  class: 'Animalista', rarity: 'Místico', emoji: '🔱', evolvesTo: null,      evolvesAt: null, baseHp: 68, baseAtk: 18, baseDef: 14, baseSpd: 8  },
 };
 
+// ── Mapa de estágios da chain (posição 0-based de cada templateId na sua linha) ─
+//
+// Construído dinamicamente a partir de MIGRATION_CATALOG:
+//   - Raiz da chain (sem predecessor) → stage 0
+//   - Evolução seguinte → stage 1, etc.
+//
+// Uso: CHAIN_STAGE_MAP['MON_003'] === 2  (Kinguespinhomon = stage 2 da linha Ferrozimon)
+const CHAIN_STAGE_MAP = (() => {
+    const stageMap = {};
+    // IDs que são alvos de evolvesTo (ou seja, não são raízes)
+    const allEvolvesTo = new Set(
+        Object.values(MIGRATION_CATALOG).map(e => e.evolvesTo).filter(Boolean)
+    );
+    // Percorre cada chain a partir da raiz
+    for (const [rootId] of Object.entries(MIGRATION_CATALOG)) {
+        if (allEvolvesTo.has(rootId)) continue; // não é raiz
+        let current = rootId;
+        let stage   = 0;
+        while (current && MIGRATION_CATALOG[current]) {
+            stageMap[current] = stage;
+            current = MIGRATION_CATALOG[current].evolvesTo;
+            stage++;
+        }
+    }
+    return stageMap;
+})();
+
 // ── Helpers internos ──────────────────────────────────────────────────────────
 
 /**
@@ -194,28 +221,34 @@ function resolveUnlockedSlotsInline(lvl) {
 }
 
 /**
- * Recalcula todos os stats derivados de template + nível, usando a mesma
- * fórmula canônica de `createMonsterInstanceFromTemplate` (index.html).
+ * Recalcula TODOS os campos derivados de template + nível.
  *
- * Fórmulas:
- *   hpMax  = floor(baseHp  * levelMult)               [SEM rarityMult]
- *   atk    = floor(baseAtk * levelMult * rarityMult)
- *   def    = floor(baseDef * levelMult * rarityMult)
- *   spd    = floor(baseSpd * levelMult * rarityMult)
- *   eneMax = floor(10 + 2 * (level - 1))              [fórmula canônica v2]
- *   poder  = floor(atk * 0.5)
+ * Esta é a FUNÇÃO CANÔNICA DE REBUILD para o contexto de migração.
+ * Retorna tanto os campos de identidade (do template) quanto os stats
+ * numéricos calculados, tornando-a a fonte única de verdade para a
+ * reconstrução de instâncias migradas.
  *
- * Nota: SpeciesBridge/KitSwap não são aplicados aqui — o runtime aplica em
- * createMonsterInstanceFromTemplate no próximo load completo.
+ * SpeciesBridge / KitSwap NÃO são aplicados aqui — são deferred para
+ * Phase 2 (postMigrationCanonicalRebuild), que chama a factory real do jogo.
  *
- * @param {Object} tpl - Entrada de MIGRATION_CATALOG com base stats
- * @param {number} level
- * @returns {{ hpMax, atk, def, spd, eneMax, poder, unlockedSkillSlots }}
+ * Fórmulas canônicas (espelham createMonsterInstanceFromTemplate em index.html):
+ *   hpMax    = floor(baseHp  * levelMult)               [SEM rarityMult]
+ *   atk      = floor(baseAtk * levelMult * rarityMult)
+ *   def      = floor(baseDef * levelMult * rarityMult)
+ *   spd      = floor(baseSpd * levelMult * rarityMult)
+ *   eneMax   = floor(10 + 2 * (level - 1))
+ *   poder    = floor(atk * 0.5)
+ *   xpNeeded = round(40 + 6 * level + 0.6 * level²)     [calculateXPNeeded]
+ *
+ * @param {string} templateId - ID canônico final (ex.: 'MON_003')
+ * @param {Object} tpl        - Entrada de MIGRATION_CATALOG com base stats
+ * @param {number} level      - Nível atual da instância
+ * @returns {Object} Todos os campos derivados (identidade + stats)
  */
-function calcLeveledStats(tpl, level) {
-    const lvl       = Math.max(1, Number(level) || 1);
+function rebuildDerivedFields(templateId, tpl, level) {
+    const lvl        = Math.max(1, Number(level) || 1);
     const rarityMult = RARITY_POWER[tpl.rarity] || 1.0;
-    const lvMult    = 1 + (lvl - 1) * 0.1;
+    const lvMult     = 1 + (lvl - 1) * 0.1;
 
     const hpMax  = Math.floor((tpl.baseHp  || 30) * lvMult);
     const atk    = Math.floor((tpl.baseAtk || 5)  * lvMult * rarityMult);
@@ -223,9 +256,25 @@ function calcLeveledStats(tpl, level) {
     const spd    = Math.floor((tpl.baseSpd || 5)  * lvMult * rarityMult);
     const eneMax = Math.floor(10 + 2 * (lvl - 1));
     const poder  = Math.floor(atk * 0.5);
+    const xpNeeded           = Math.round(40 + 6 * lvl + 0.6 * (lvl * lvl));
     const unlockedSkillSlots = resolveUnlockedSlotsInline(lvl);
+    const stage              = CHAIN_STAGE_MAP[templateId] ?? 0;
 
-    return { hpMax, atk, def, spd, eneMax, poder, unlockedSkillSlots };
+    return {
+        // Campos de identidade (do template)
+        name:      tpl.name,
+        class:     tpl.class,
+        rarity:    tpl.rarity,
+        emoji:     tpl.emoji,
+        evolvesTo: tpl.evolvesTo  ?? null,
+        evolvesAt: tpl.evolvesAt  ?? null,
+        // Posição na chain (para sistema de skills por stage)
+        stage,
+        // Stats de combate
+        hpMax, atk, def, spd, eneMax, poder,
+        // Progressão
+        xpNeeded, unlockedSkillSlots,
+    };
 }
 
 /**
@@ -291,16 +340,21 @@ export function isLegacyTemplateId(id) {
 // ── Migração de instância individual ─────────────────────────────────────────
 
 /**
- * Migra uma instância de monstro in-place:
- *   0. Fingerprint guard: só migra se a instância for coerente com o legado.
- *   1. Remapeia templateId usando CATALOG_REBASE_MAP.
- *   2. Atualiza name, class, rarity, emoji, evolvesTo, evolvesAt a partir de
- *      MIGRATION_CATALOG (dados embutidos do catálogo novo).
- *   3. Reconcilia evolução (Estratégia B): avança pelo chain evolutivo até o
- *      estágio correto para o level atual.
- *   4. Recalcula todos os stats derivados (hpMax, atk, def, spd, eneMax, poder,
- *      unlockedSkillSlots) a partir do template final + nível. HP é preservado
- *      por PERCENTUAL (não por valor bruto).
+ * Migra uma instância de monstro in-place, convergindo para a pipeline canônica:
+ *
+ *   FASE 1 (sync, neste módulo):
+ *     0. Fingerprint guard: só migra se a instância for coerente com o legado.
+ *     1. Remapeia templateId usando CATALOG_REBASE_MAP.
+ *     2. Reconcilia evolução (Estratégia B): avança pelo chain evolutivo até o
+ *        estágio correto para o level atual.
+ *     3. Reconstrói TODOS os campos derivados (identidade + stats) via
+ *        rebuildDerivedFields — função canônica de rebuild do contexto de migração.
+ *     4. HP preservado por PERCENTUAL (não por valor bruto).
+ *     5. Marca a instância com `_pendingCanonicalRebuild: true` para Fase 2.
+ *
+ *   FASE 2 (async, em index.html após loadMonsters):
+ *     - postMigrationCanonicalRebuild() aplica SpeciesBridge / KitSwap
+ *       chamando createMonsterInstanceFromTemplate (factory real do jogo).
  *
  * Se o templateId NÃO for legado, ou o fingerprint não corresponder,
  * a instância não é alterada.
@@ -337,41 +391,33 @@ export function migrateMonsterInstance(monster) {
     }
 
     // ── Capturar HP% antes de qualquer alteração ─────────────────────────────
-    const oldHpMax   = Number(monster.hpMax) || 1;
-    const oldHp      = Number(monster.hp)    || 0;
-    const isFainted  = oldHp <= 0;
-    const hpPercent  = isFainted ? 0 : Math.min(1.0, oldHp / Math.max(1, oldHpMax));
+    const oldHpMax  = Number(monster.hpMax) || 1;
+    const oldHp     = Number(monster.hp)    || 0;
+    const isFainted = oldHp <= 0;
+    const hpPercent = isFainted ? 0 : Math.min(1.0, oldHp / Math.max(1, oldHpMax));
+
+    // ── Passo 1: remapear templateId (destrói aliases legados) ───────────────
+    monster.templateId = newId;
+    delete monster.monsterId;
+    delete monster.baseId;
+    delete monster.idBase;
+
+    notes.push(`Migrado: ${rawId} → ${newId}`);
+
+    // ── Passo 2: reconciliar evolução pelo nível ──────────────────────────────
+    // Avança pelo chain até encontrar o estágio correto para o level atual.
+    const level = Math.max(1, Number(monster.level) || 1);
 
     let currentId   = newId;
     let currentData = MIGRATION_CATALOG[newId];
 
     if (!currentData) {
         notes.push(`[AVISO] Template ${newId} não encontrado em MIGRATION_CATALOG; migração de ID apenas`);
-        monster.templateId = newId;
-        delete monster.monsterId;
-        delete monster.baseId;
-        delete monster.idBase;
+        monster._pendingCanonicalRebuild = true;
+        monster._migratedFromLegacy     = true;
+        monster._legacyTemplateId       = rawId;
         return { migrated: true, oldId: rawId, finalId: newId, notes };
     }
-
-    // ── Passo 1: aplicar dados do estágio inicial mapeado ────────────────────
-    monster.templateId    = newId;
-    delete monster.monsterId;
-    delete monster.baseId;
-    delete monster.idBase;
-
-    monster.name          = currentData.name;
-    monster.class         = currentData.class;
-    monster.rarity        = currentData.rarity;
-    monster.emoji         = currentData.emoji;
-    monster.evolvesTo     = currentData.evolvesTo  ?? null;
-    monster.evolvesAt     = currentData.evolvesAt  ?? null;
-
-    notes.push(`Migrado: ${rawId} → ${newId}`);
-
-    // ── Passo 2: reconciliar evolução (Estratégia B) ─────────────────────────
-    // Avança pelo chain até encontrar o estágio correto para o level atual.
-    const level = Math.max(1, Number(monster.level) || 1);
 
     while (currentData.evolvesTo && currentData.evolvesAt != null) {
         if (level < currentData.evolvesAt) break;
@@ -382,45 +428,42 @@ export function migrateMonsterInstance(monster) {
 
         currentId   = nextId;
         currentData = nextData;
-
         monster.templateId = currentId;
-        monster.name       = currentData.name;
-        monster.class      = currentData.class;
-        monster.rarity     = currentData.rarity;
-        monster.emoji      = currentData.emoji;
-        monster.evolvesTo  = currentData.evolvesTo  ?? null;
-        monster.evolvesAt  = currentData.evolvesAt  ?? null;
 
         notes.push(`Evolução reconciliada → ${currentId} (level ${level} >= ${currentData.evolvesAt ?? '—'})`);
     }
 
-    // ── Passo 3: recalcular stats do template final ───────────────────────────
-    // Não preservar stats crus: o monstro pode ter vindo de um estágio diferente
-    // com stats de outra espécie. Recalcular com base no template correto + nível.
-    const s = calcLeveledStats(currentData, level);
-    monster.hpMax              = s.hpMax;
-    monster.atk                = s.atk;
-    monster.def                = s.def;
-    monster.spd                = s.spd;
-    monster.eneMax             = s.eneMax;
-    monster.poder              = s.poder;
-    monster.unlockedSkillSlots = s.unlockedSkillSlots;
+    // ── Passo 3: reconstruir todos os campos derivados ────────────────────────
+    // rebuildDerivedFields é a fonte única de verdade para campos derivados
+    // no contexto de migração. Nenhum campo de identidade ou stat é preservado
+    // do save antigo — todos vêm do template correto + nível.
+    const derived = rebuildDerivedFields(currentId, currentData, level);
+    Object.assign(monster, derived);
 
-    // HP: preservar por percentual; fainted permanece fainted
+    // ── Passo 4: preservar apenas progresso legítimo ──────────────────────────
+    // HP: por percentual; fainted permanece fainted
     if (isFainted) {
         monster.hp = 0;
     } else {
-        monster.hp = Math.max(1, Math.round(s.hpMax * hpPercent));
+        monster.hp = Math.max(1, Math.round(derived.hpMax * hpPercent));
     }
 
-    // ENE: clamp ao novo máximo (não pode superar eneMax recalculado)
+    // ENE: clamp ao novo máximo
     const oldEne = Number(monster.ene);
-    monster.ene = Number.isFinite(oldEne) ? Math.min(oldEne, s.eneMax) : s.eneMax;
+    monster.ene = Number.isFinite(oldEne) ? Math.min(oldEne, derived.eneMax) : derived.eneMax;
 
-    // ── Passo 4: atualizar canonSpeciesId se presente ────────────────────────
+    // canonSpeciesId: atualizar se presente
     if (monster.canonSpeciesId !== undefined) {
         monster.canonSpeciesId = currentId;
     }
+
+    // ── Passo 5: marcadores de rastreabilidade ───────────────────────────────
+    // _pendingCanonicalRebuild: sinaliza para postMigrationCanonicalRebuild (Phase 2)
+    //   que esta instância deve ser reconstruída com a factory real (SpeciesBridge/KitSwap).
+    // _migratedFromLegacy e _legacyTemplateId: rastreabilidade e diagnóstico.
+    monster._pendingCanonicalRebuild = true;
+    monster._migratedFromLegacy      = true;
+    monster._legacyTemplateId        = rawId;
 
     return { migrated: true, oldId: rawId, finalId: currentId, notes };
 }
@@ -608,29 +651,191 @@ export function rebuildDexFromPossession(state) {
     return { removedLegacy: removed, addedNew: added };
 }
 
-// ── Ponto de entrada principal ────────────────────────────────────────────────
+// ── Phase 2: Rebuild canônico pós-migração ────────────────────────────────────
 
 /**
- * Aplica a migração completa de catálogo ao estado do jogo.
+ * Phase 2 — Rebuild canônico pós-migração.
+ *
+ * Para cada instância marcada com `_pendingCanonicalRebuild: true`, chama a
+ * factory real do jogo (createMonsterInstanceFromTemplate) para reconstruir
+ * todos os campos derivados — incluindo SpeciesBridge, KitSwap, e qualquer
+ * outra transformação canônica que só existe no contexto de browser completo.
+ *
+ * Preserva apenas os campos de progresso legítimo:
+ *   - id, instanceId, ownerId, createdAt  (identidade estável)
+ *   - level, xp, xpNeeded                (progressão)
+ *   - friendship                          (vínculo)
+ *   - status, isShiny, equippedItem       (estado persistente)
+ *   - hp   = clamp(round(newHpMax * hpPercent), 1, newHpMax)  [vivo]
+ *            0  [fainted]
+ *   - ene  = min(oldEne, newEneMax)
+ *
+ * NÃO preserva:
+ *   - name, class, rarity, emoji, evolvesTo, evolvesAt  → vêm do template
+ *   - hpMax, atk, def, spd, eneMax, poder               → vêm da factory
+ *   - unlockedSkillSlots, canonSpeciesId, stage         → vêm da factory
+ *   - canonAppliedOffsets, appliedKitSwaps              → vêm da factory
+ *
+ * IDEMPOTÊNCIA: instâncias sem `_pendingCanonicalRebuild` são ignoradas.
+ * Chamar duas vezes é seguro.
+ *
+ * @param {Object}   state             - GameState (mutado in-place)
+ * @param {Function} instanceFactoryFn - (templateId, level) → instância canônica
+ *   Em produção: createMonsterInstanceFromTemplate
+ *   Em testes:   mock baseado em MIGRATION_CATALOG
+ * @returns {{ rebuilt: number, skipped: number, errors: string[] }}
+ */
+export function postMigrationCanonicalRebuild(state, instanceFactoryFn) {
+    if (typeof instanceFactoryFn !== 'function') {
+        return { rebuilt: 0, skipped: 0, errors: ['instanceFactoryFn não é função'] };
+    }
+
+    const instances = collectAllMonsterInstances(state);
+    let rebuilt = 0;
+    let skipped = 0;
+    const errors = [];
+
+    for (const mon of instances) {
+        if (!mon._pendingCanonicalRebuild) {
+            skipped++;
+            continue;
+        }
+
+        const templateId = mon.templateId;
+        const level      = Math.max(1, Number(mon.level) || 1);
+
+        try {
+            const canonical = instanceFactoryFn(templateId, level);
+            if (!canonical || typeof canonical !== 'object') {
+                errors.push(`[Phase2] Factory retornou nulo/inválido para ${templateId}`);
+                delete mon._pendingCanonicalRebuild;
+                skipped++;
+                continue;
+            }
+
+            // Capturar HP% antes de aplicar hpMax canônico
+            const oldHpMax  = Number(mon.hpMax) || 1;
+            const oldHp     = Number(mon.hp)    || 0;
+            const isFainted = oldHp <= 0;
+            const hpPercent = isFainted ? 0 : Math.min(1.0, oldHp / Math.max(1, oldHpMax));
+
+            // Campos de progresso legítimo a preservar
+            const progress = {
+                // Identidade estável (nunca sobrescrever)
+                id:          mon.id,
+                instanceId:  mon.instanceId,
+                ownerId:     mon.ownerId,
+                createdAt:   mon.createdAt,
+                // Progressão
+                level:       mon.level,
+                xp:          mon.xp,
+                xpNeeded:    mon.xpNeeded  ?? canonical.xpNeeded,
+                // Vínculo
+                friendship:  mon.friendship ?? canonical.friendship ?? 0,
+                // Estado persistente
+                status:      mon.status,
+                isShiny:     mon.isShiny,
+                equippedItem: mon.equippedItem,
+            };
+
+            // Aplicar factory completa (SpeciesBridge, KitSwap, skills, etc.)
+            Object.assign(mon, canonical);
+
+            // Sobrescrever com progresso preservado
+            Object.assign(mon, progress);
+
+            // HP por percentual (regra canônica de migração)
+            const newHpMax = Number(mon.hpMax) || 1;
+            if (isFainted) {
+                mon.hp = 0;
+            } else {
+                mon.hp = Math.max(1, Math.min(newHpMax, Math.round(newHpMax * hpPercent)));
+            }
+
+            // ENE: clamp ao novo máximo
+            const oldEne = Number(mon.ene);
+            if (Number.isFinite(oldEne)) {
+                mon.ene = Math.min(oldEne, mon.eneMax || 0);
+            }
+
+            // Limpar flag (Phase 2 concluída para esta instância)
+            delete mon._pendingCanonicalRebuild;
+
+            rebuilt++;
+        } catch (err) {
+            errors.push(`[Phase2] Erro em ${templateId}: ${err?.message ?? err}`);
+            delete mon._pendingCanonicalRebuild;
+            skipped++;
+        }
+    }
+
+    return { rebuilt, skipped, errors };
+}
+
+// ── Validação de classe pós-migração ─────────────────────────────────────────
+
+/**
+ * Detecta instâncias migradas no time de jogadores cuja classe não corresponde
+ * à classe do jogador. Isso NÃO deveria acontecer para linhas canônicas — indica
+ * possível erro de mapeamento ou save em estado inconsistente.
+ *
+ * Retorna warnings (não altera o estado — diagnóstico apenas).
+ *
+ * @param {Object} state - GameState
+ * @returns {string[]} Array de mensagens de warning
+ */
+function detectTeamCrossClassWarnings(state) {
+    const warnings = [];
+    if (!Array.isArray(state.players)) return warnings;
+
+    for (const player of state.players) {
+        if (!player || !player.class || !Array.isArray(player.team)) continue;
+
+        for (const mon of player.team) {
+            if (!mon || !mon.class || !mon._migratedFromLegacy) continue;
+            if (mon.class !== player.class) {
+                warnings.push(
+                    `[CROSS-CLASS] Jogador "${player.name || player.id}" (${player.class}) ` +
+                    `tem "${mon.name || mon.templateId}" (${mon.class}) no time após migração. ` +
+                    `Legado: ${mon._legacyTemplateId ?? '?'} → ${mon.templateId}. ` +
+                    `Verificar se o mapeamento está correto ou se era cross-class intencional.`
+                );
+            }
+        }
+    }
+
+    return warnings;
+}
+
+
+
+/**
+ * Aplica a migração completa de catálogo ao estado do jogo (Phase 1).
  *
  * Etapas:
- *   1. migrateAllInstances    — remapeia templateIds e reconstrói campos derivados
- *   2. rebuildDexFromPossession — reconstrói Dex a partir da posse real
+ *   1. migrateAllInstances       — fingerprint guard + templateId remap +
+ *                                   reconciliação de estágio + rebuild de campos
+ *   2. rebuildDexFromPossession  — reconstrói Dex a partir da posse real
+ *   3. detectTeamCrossClassWarnings — verifica inconsistências de classe no time
  *
  * NÃO verifica saveVersion — o chamador (migrateSaveIfNeeded) é responsável pelo
  * controle de versão. Esta função é idempotente para saves já migrados porque:
  *   - IDs canônicos atuais não estão em CATALOG_REBASE_MAP
  *   - Dex rebuild é idempotente
  *
+ * Phase 2 (postMigrationCanonicalRebuild) deve ser chamada DEPOIS que o catálogo
+ * de monstros estiver carregado (loadMonsters.then), passando
+ * createMonsterInstanceFromTemplate como factory function.
+ *
  * @param {Object} state - GameState (mutado in-place)
- * @returns {{ instanceStats: object, dexStats: object, notes: string[] }}
+ * @returns {{ instanceStats: object, dexStats: object, crossClassWarnings: string[], notes: string[] }}
  */
 export function applyCatalogMigration(state) {
     const notes = [];
 
     if (!state || typeof state !== 'object') {
         notes.push('[CatalogMigration] Estado inválido — migração ignorada');
-        return { instanceStats: null, dexStats: null, notes };
+        return { instanceStats: null, dexStats: null, crossClassWarnings: [], notes };
     }
 
     // Etapa 1: migrar instâncias
@@ -650,5 +855,11 @@ export function applyCatalogMigration(state) {
         `${dexStats.addedNew.length} novas adicionadas`
     );
 
-    return { instanceStats, dexStats, notes };
+    // Etapa 3: detectar cross-class no time (diagnóstico — não altera estado)
+    const crossClassWarnings = detectTeamCrossClassWarnings(state);
+    for (const w of crossClassWarnings) {
+        notes.push(w);
+    }
+
+    return { instanceStats, dexStats, crossClassWarnings, notes };
 }

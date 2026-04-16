@@ -24,6 +24,7 @@ import {
     collectPossessedTemplateIds,
     rebuildDexFromPossession,
     applyCatalogMigration,
+    postMigrationCanonicalRebuild,
 } from '../js/data/catalogMigration.js';
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
@@ -884,5 +885,410 @@ describe('migrateMonsterInstance — idempotência baseada em fingerprint', () =
         expect(state.players[0].team[0].templateId).toBe('MON_001');
         expect(state.players[0].team[1].templateId).toBe('MON_009');
         expect(state.players[0].team[2].templateId).toBe('MON_013');
+    });
+});
+
+// ─── N. Novos campos: stage, xpNeeded, _pendingCanonicalRebuild ──────────────
+
+describe('migrateMonsterInstance — campos canonicalizados (stage / xpNeeded / flags)', () => {
+    it('define stage correto para cada posição na chain (Ferrozimon)', () => {
+        // MON_001 = stage 0, MON_002 = stage 1, MON_003 = stage 2, MON_004 = stage 3
+        const cases = [
+            { legacyId: 'MON_010',  expectedStage: 0 },  // → MON_001
+            { legacyId: 'MON_010B', expectedStage: 1 },  // → MON_002
+            { legacyId: 'MON_010C', expectedStage: 2 },  // → MON_003
+            { legacyId: 'MON_010D', expectedStage: 3 },  // → MON_004
+        ];
+        for (const { legacyId, expectedStage } of cases) {
+            const mon = makeInstance(legacyId, { level: 1 });
+            migrateMonsterInstance(mon);
+            expect(mon.stage).toBe(expectedStage);
+        }
+    });
+
+    it('reconciliação por nível actualiza stage para o estágio correto', () => {
+        // MON_010 level 30 → reconiclia para MON_003 (stage 2)
+        const mon = makeInstance('MON_010', { level: 30 });
+        migrateMonsterInstance(mon);
+        expect(mon.templateId).toBe('MON_003');
+        expect(mon.stage).toBe(2);
+    });
+
+    it('stage é consistente para todas as linhas (Miaumon, Lagartomon, Luvursomon, Dinomon)', () => {
+        const cases = [
+            // Linha Miaumon (Caçador)
+            { legacyId: 'MON_013',  expectedTemplate: 'MON_009', expectedStage: 0 },
+            { legacyId: 'MON_013B', expectedTemplate: 'MON_010', expectedStage: 1 },
+            { legacyId: 'MON_013C', expectedTemplate: 'MON_011', expectedStage: 2 },
+            { legacyId: 'MON_013D', expectedTemplate: 'MON_012', expectedStage: 3 },
+            // Linha Lagartomon (Mago)
+            { legacyId: 'MON_014',  expectedTemplate: 'MON_013', expectedStage: 0 },
+            { legacyId: 'MON_014B', expectedTemplate: 'MON_014', expectedStage: 1 },
+            // Linha Luvursomon (Animalista)
+            { legacyId: 'MON_012',  expectedTemplate: 'MON_017', expectedStage: 0 },
+            { legacyId: 'MON_012C', expectedTemplate: 'MON_019', expectedStage: 2 },
+            // Linha Dinomon (Bardo)
+            { legacyId: 'MON_011',  expectedTemplate: 'MON_005', expectedStage: 0 },
+            { legacyId: 'MON_011D', expectedTemplate: 'MON_008', expectedStage: 3 },
+        ];
+        for (const { legacyId, expectedTemplate, expectedStage } of cases) {
+            const mon = makeInstance(legacyId, { level: 1 });
+            migrateMonsterInstance(mon);
+            expect(mon.templateId).toBe(expectedTemplate);
+            expect(mon.stage).toBe(expectedStage);
+        }
+    });
+
+    it('xpNeeded é definido após migração (fórmula: round(40 + 6L + 0.6L²))', () => {
+        const cases = [
+            { level: 1,  xpNeeded: Math.round(40 + 6 + 0.6) },   // 47
+            { level: 5,  xpNeeded: Math.round(40 + 30 + 15) },    // 85
+            { level: 10, xpNeeded: Math.round(40 + 60 + 60) },    // 160
+            { level: 25, xpNeeded: Math.round(40 + 150 + 375) },  // 565
+        ];
+        for (const { level, xpNeeded } of cases) {
+            const mon = makeInstance('MON_010', { level });
+            migrateMonsterInstance(mon);
+            expect(mon.xpNeeded).toBe(xpNeeded);
+        }
+    });
+
+    it('instância migrada tem _pendingCanonicalRebuild=true (aguardando Phase 2)', () => {
+        const mon = makeInstance('MON_010', { level: 5 });
+        migrateMonsterInstance(mon);
+        expect(mon._pendingCanonicalRebuild).toBe(true);
+    });
+
+    it('instância migrada tem _migratedFromLegacy=true e _legacyTemplateId correto', () => {
+        const mon = makeInstance('MON_013B', { level: 10 });
+        migrateMonsterInstance(mon);
+        expect(mon._migratedFromLegacy).toBe(true);
+        expect(mon._legacyTemplateId).toBe('MON_013B');
+    });
+
+    it('instância NÃO migrada não recebe _pendingCanonicalRebuild', () => {
+        const mon = makeInstance('MON_001', { class: 'Guerreiro', rarity: 'Comum', level: 5 });
+        migrateMonsterInstance(mon);
+        expect(mon._pendingCanonicalRebuild).toBeUndefined();
+        expect(mon._migratedFromLegacy).toBeUndefined();
+    });
+});
+
+// ─── O. Phase 2 — postMigrationCanonicalRebuild ──────────────────────────────
+
+/**
+ * Mock factory para testes de Phase 2.
+ * Simula createMonsterInstanceFromTemplate usando dados do MIGRATION_CATALOG
+ * embutido. Inclui campos extras que a factory real adiciona (SpeciesBridge, KitSwap).
+ */
+function mockCanonicalFactory(templateId, level) {
+    // Dados simulados baseados no MIGRATION_CATALOG
+    const catalog = {
+        'MON_001': { name: 'Ferrozimon',      class: 'Guerreiro', rarity: 'Comum',   emoji: '⚔️', evolvesTo: 'MON_002', evolvesAt: 12, baseHp: 29, baseAtk: 7,  baseDef: 9,  baseSpd: 4  },
+        'MON_002': { name: 'Cavalheiromon',   class: 'Guerreiro', rarity: 'Incomum', emoji: '🗡️', evolvesTo: 'MON_003', evolvesAt: 25, baseHp: 39, baseAtk: 10, baseDef: 12, baseSpd: 5  },
+        'MON_003': { name: 'Kinguespinhomon', class: 'Guerreiro', rarity: 'Raro',    emoji: '🛡️', evolvesTo: 'MON_004', evolvesAt: 45, baseHp: 50, baseAtk: 14, baseDef: 16, baseSpd: 6  },
+        'MON_009': { name: 'Miaumon',         class: 'Caçador',   rarity: 'Comum',   emoji: '🐱', evolvesTo: 'MON_010', evolvesAt: 12, baseHp: 25, baseAtk: 8,  baseDef: 4,  baseSpd: 9  },
+        'MON_010': { name: 'Gatunamon',       class: 'Caçador',   rarity: 'Incomum', emoji: '🐈', evolvesTo: 'MON_011', evolvesAt: 25, baseHp: 32, baseAtk: 10, baseDef: 6,  baseSpd: 12 },
+        'MON_013': { name: 'Lagartomon',      class: 'Mago',      rarity: 'Comum',   emoji: '🦎', evolvesTo: 'MON_014', evolvesAt: 12, baseHp: 24, baseAtk: 6,  baseDef: 4,  baseSpd: 6  },
+    };
+
+    const tpl = catalog[templateId];
+    if (!tpl) return null;
+
+    const lvl        = Math.max(1, Number(level) || 1);
+    const RARITY_POWER = { Comum: 1.0, Incomum: 1.08, Raro: 1.18, Místico: 1.32, Lendário: 1.50 };
+    const rarityMult = RARITY_POWER[tpl.rarity] || 1.0;
+    const lvMult     = 1 + (lvl - 1) * 0.1;
+
+    const hpMax  = Math.floor(tpl.baseHp  * lvMult);
+    const atk    = Math.floor(tpl.baseAtk * lvMult * rarityMult);
+    const def    = Math.floor(tpl.baseDef * lvMult * rarityMult);
+    const spd    = Math.floor(tpl.baseSpd * lvMult * rarityMult);
+    const eneMax = Math.floor(10 + 2 * (lvl - 1));
+    const poder  = Math.floor(atk * 0.5);
+    const xpNeeded = Math.round(40 + 6 * lvl + 0.6 * lvl * lvl);
+
+    return {
+        templateId, name: tpl.name, class: tpl.class, rarity: tpl.rarity,
+        emoji: tpl.emoji, evolvesTo: tpl.evolvesTo ?? null, evolvesAt: tpl.evolvesAt ?? null,
+        level: lvl, xp: 0, xpNeeded,
+        hp: hpMax, hpMax, ene: eneMax, eneMax, atk, def, spd, poder,
+        unlockedSkillSlots: lvl >= 30 ? 4 : lvl >= 15 ? 3 : lvl >= 5 ? 2 : 1,
+        friendship: 50,
+        // Simula campos extras que a factory real adiciona
+        canonSpeciesId: templateId,
+        canonAppliedOffsets: {},
+        appliedKitSwaps: [],
+        stage: 0,  // factory real sempre cria em stage 0
+    };
+}
+
+describe('postMigrationCanonicalRebuild — Phase 2 canônica', () => {
+    it('recria instância migrada usando a factory canônica', () => {
+        const mon = makeInstance('MON_010', { level: 5, hp: 18, hpMax: 35 });
+        migrateMonsterInstance(mon);  // Phase 1: templateId=MON_001, hpMax=40
+
+        expect(mon._pendingCanonicalRebuild).toBe(true);
+
+        const state = makeState({ players: [{ team: [mon], box: [] }] });
+        const result = postMigrationCanonicalRebuild(state, mockCanonicalFactory);
+
+        expect(result.rebuilt).toBe(1);
+        expect(result.skipped).toBe(0);
+        expect(result.errors).toHaveLength(0);
+
+        // flag limpa após Phase 2
+        expect(mon._pendingCanonicalRebuild).toBeUndefined();
+
+        // Stats vêm da factory (valores canônicos)
+        expect(mon.name).toBe('Ferrozimon');
+        expect(mon.class).toBe('Guerreiro');
+        expect(mon.templateId).toBe('MON_001');
+        expect(mon.canonSpeciesId).toBe('MON_001');
+        expect(mon.appliedKitSwaps).toBeDefined();
+    });
+
+    it('preserva progresso legítimo após Phase 2', () => {
+        const mon = makeInstance('MON_010', {
+            level: 5,
+            xp: 77,
+            hp: 18, hpMax: 35,  // ~51.4% HP
+            ene: 8, eneMax: 20,
+            friendship: 75,
+            status: 'poisoned',
+            isShiny: true,
+            equippedItem: 'item_potion',
+            id: 'mi_test_preserve_01',
+            instanceId: 'mi_test_preserve_01',
+            ownerId: 'player_01',
+            createdAt: '2026-01-01T00:00:00Z',
+        });
+        migrateMonsterInstance(mon);  // Phase 1
+
+        const state = makeState({ players: [{ team: [mon], box: [] }] });
+        postMigrationCanonicalRebuild(state, mockCanonicalFactory);
+
+        // Progressão preservada
+        expect(mon.level).toBe(5);
+        expect(mon.xp).toBe(77);
+        expect(mon.friendship).toBe(75);
+        expect(mon.status).toBe('poisoned');
+        expect(mon.isShiny).toBe(true);
+        expect(mon.equippedItem).toBe('item_potion');
+        expect(mon.id).toBe('mi_test_preserve_01');
+        expect(mon.instanceId).toBe('mi_test_preserve_01');
+        expect(mon.ownerId).toBe('player_01');
+        expect(mon.createdAt).toBe('2026-01-01T00:00:00Z');
+
+        // HP por percentual do hpMax canônico
+        // Phase 1 hpMax=40, hp=21 (round(40 * 18/35))
+        // Phase 2 hpMax=40 (mesmo valor na factory mock), hp = round(40 * oldHpPct)
+        expect(mon.hpMax).toBeGreaterThan(0);
+        expect(mon.hp).toBeGreaterThanOrEqual(1);
+        expect(mon.hp).toBeLessThanOrEqual(mon.hpMax);
+    });
+
+    it('monstro fainted permanece fainted após Phase 2', () => {
+        const mon = makeInstance('MON_010', { level: 5, hp: 0, hpMax: 30 });
+        migrateMonsterInstance(mon);
+
+        const state = makeState({ players: [{ team: [mon], box: [] }] });
+        postMigrationCanonicalRebuild(state, mockCanonicalFactory);
+
+        expect(mon.hp).toBe(0);
+    });
+
+    it('instâncias sem _pendingCanonicalRebuild são ignoradas (idempotência real)', () => {
+        // Instância canônica atual (sem legado)
+        const mon = makeInstance('MON_001', { class: 'Guerreiro', rarity: 'Comum', level: 5 });
+        const originalName = mon.name;
+        const originalHpMax = mon.hpMax;
+
+        const state = makeState({ players: [{ team: [mon], box: [] }] });
+        const result = postMigrationCanonicalRebuild(state, mockCanonicalFactory);
+
+        // Não foi alterada
+        expect(result.rebuilt).toBe(0);
+        expect(result.skipped).toBe(1);
+        expect(mon.name).toBe(originalName);
+        expect(mon.hpMax).toBe(originalHpMax);
+    });
+
+    it('chamar Phase 2 duas vezes não produz dupla transformação', () => {
+        const mon = makeInstance('MON_010', { level: 5, hp: 18, hpMax: 35 });
+        migrateMonsterInstance(mon);  // Phase 1
+
+        const state = makeState({ players: [{ team: [mon], box: [] }] });
+        postMigrationCanonicalRebuild(state, mockCanonicalFactory);  // Phase 2
+
+        const hpAfterFirst = mon.hp;
+        const hpMaxAfterFirst = mon.hpMax;
+
+        // Segunda chamada: sem _pendingCanonicalRebuild → nada muda
+        const result2 = postMigrationCanonicalRebuild(state, mockCanonicalFactory);
+        expect(result2.rebuilt).toBe(0);
+        expect(mon.hp).toBe(hpAfterFirst);
+        expect(mon.hpMax).toBe(hpMaxAfterFirst);
+    });
+
+    it('factory retornando null gera skip sem crash', () => {
+        const mon = makeInstance('MON_010', { level: 5 });
+        migrateMonsterInstance(mon);
+
+        // Factory que sempre retorna null
+        const state = makeState({ players: [{ team: [mon], box: [] }] });
+        const result = postMigrationCanonicalRebuild(state, () => null);
+
+        expect(result.rebuilt).toBe(0);
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0]).toContain('nulo');
+    });
+
+    it('chamada sem factory (undefined) retorna imediatamente sem crash', () => {
+        const state = makeState();
+        const result = postMigrationCanonicalRebuild(state, undefined);
+        expect(result.rebuilt).toBe(0);
+        expect(result.errors).toHaveLength(1);
+    });
+});
+
+// ─── P. Cross-class warning após migração ────────────────────────────────────
+
+describe('applyCatalogMigration — cross-class warnings no time', () => {
+    it('detecta monstro migrado cross-class no time do jogador', () => {
+        // Simula Guerreiro com monstro Caçador no time por erro de mapeamento.
+        // _migratedFromLegacy=true sinaliza que veio de migração.
+        const caçadorMon = makeInstance('MON_009', {
+            class: 'Caçador', name: 'Miaumon',
+            _migratedFromLegacy: true,
+            _legacyTemplateId: 'MON_013',
+        });
+
+        const state = makeState({
+            players: [{
+                id: 'p1', name: 'Alice', class: 'Guerreiro',
+                team: [caçadorMon],
+                box: [],
+            }],
+        });
+
+        // applyCatalogMigration não vai migrar este monstro (templateId já canônico),
+        // mas se fosse migrado com _migratedFromLegacy, o warning deveria aparecer.
+        const result = applyCatalogMigration(state);
+
+        // Warning detectado para o monstro Caçador no time do Guerreiro
+        expect(result.crossClassWarnings.length).toBeGreaterThanOrEqual(1);
+        expect(result.crossClassWarnings[0]).toContain('Guerreiro');
+        expect(result.crossClassWarnings[0]).toContain('Caçador');
+        expect(result.crossClassWarnings[0]).toContain('CROSS-CLASS');
+    });
+
+    it('monstro da classe correta do jogador não gera warning', () => {
+        const guerreiroMon = makeInstance('MON_001', {
+            class: 'Guerreiro', name: 'Ferrozimon',
+            _migratedFromLegacy: true,
+            _legacyTemplateId: 'MON_010',
+        });
+
+        const state = makeState({
+            players: [{
+                id: 'p1', name: 'Bob', class: 'Guerreiro',
+                team: [guerreiroMon],
+                box: [],
+            }],
+        });
+
+        const result = applyCatalogMigration(state);
+        expect(result.crossClassWarnings.length).toBe(0);
+    });
+
+    it('save sem monstros migrados no time não gera warnings', () => {
+        const state = makeState({
+            players: [{
+                id: 'p1', class: 'Mago',
+                team: [makeInstance('MON_013', { class: 'Mago', name: 'Lagartomon' })],
+                box: [],
+            }],
+        });
+
+        const result = applyCatalogMigration(state);
+        // Sem _migratedFromLegacy → sem warning
+        expect(result.crossClassWarnings.length).toBe(0);
+    });
+});
+
+// ─── Q. Guerreiro nunca cai em linha felina; Mago nunca cai em linha errada ───
+
+describe('migração canônica — linha correta garantida por classe', () => {
+    it('Guerreiro antigo (MON_010x) permanece na linha Ferrozimon/Guerreiro', () => {
+        const cases = ['MON_010', 'MON_010B', 'MON_010C', 'MON_010D'];
+        for (const legacyId of cases) {
+            const mon = makeInstance(legacyId, { class: 'Guerreiro', level: 1 });
+            migrateMonsterInstance(mon);
+            // Nunca vai para linha felina (MON_009-012/Caçador)
+            expect(mon.class).toBe('Guerreiro');
+            expect(['MON_001','MON_002','MON_003','MON_004']).toContain(mon.templateId);
+        }
+    });
+
+    it('Caçador antigo (MON_013x) permanece na linha Miaumon/Caçador', () => {
+        const cases = ['MON_013', 'MON_013B', 'MON_013C', 'MON_013D'];
+        for (const legacyId of cases) {
+            const mon = makeInstance(legacyId, { class: 'Caçador', level: 1 });
+            migrateMonsterInstance(mon);
+            expect(mon.class).toBe('Caçador');
+            expect(['MON_009','MON_010','MON_011','MON_012']).toContain(mon.templateId);
+        }
+    });
+
+    it('Mago antigo (MON_014x) permanece na linha Lagartomon/Mago', () => {
+        const cases = ['MON_014B', 'MON_014C', 'MON_014D'];
+        for (const legacyId of cases) {
+            const mon = makeInstance(legacyId, { class: 'Mago', level: 1 });
+            migrateMonsterInstance(mon);
+            expect(mon.class).toBe('Mago');
+            expect(['MON_013','MON_014','MON_015','MON_016']).toContain(mon.templateId);
+        }
+    });
+
+    it('Bardo antigo (MON_011x) permanece na linha Dinomon/Bardo', () => {
+        const cases = ['MON_011', 'MON_011B', 'MON_011C', 'MON_011D'];
+        for (const legacyId of cases) {
+            const mon = makeInstance(legacyId, { class: 'Bardo', level: 1 });
+            migrateMonsterInstance(mon);
+            expect(mon.class).toBe('Bardo');
+            expect(['MON_005','MON_006','MON_007','MON_008']).toContain(mon.templateId);
+        }
+    });
+
+    it('Animalista antigo (MON_012x) permanece na linha Luvursomon/Animalista', () => {
+        const cases = ['MON_012', 'MON_012B', 'MON_012C', 'MON_012D'];
+        for (const legacyId of cases) {
+            const mon = makeInstance(legacyId, { class: 'Animalista', level: 1 });
+            migrateMonsterInstance(mon);
+            expect(mon.class).toBe('Animalista');
+            expect(['MON_017','MON_018','MON_019','MON_020']).toContain(mon.templateId);
+        }
+    });
+
+    it('reconciliação por nível não salta para outra linha de classe', () => {
+        // Guerreiro nível 50 deve ir para MON_004 (Arconouricomon), não para outra classe
+        const mon = makeInstance('MON_010', { class: 'Guerreiro', level: 50 });
+        migrateMonsterInstance(mon);
+        expect(mon.templateId).toBe('MON_004');
+        expect(mon.class).toBe('Guerreiro');
+        expect(mon.name).toBe('Arconouricomon');
+    });
+
+    it('Caçador nível 30 reconcilia para Felinomon (MON_011), não para linha errada', () => {
+        // Caçador antigo MON_013 nível 30 → MON_009 → reconcilia para MON_010 (nível 30 >= 25) → e vai além?
+        // MON_010 evolvesAt=25, nível 30 >= 25 → avança para MON_011 (evolvesAt=45)
+        // nível 30 < 45 → fica em MON_011? NÃO: MON_010 evolvesAt=25, MON_011 evolvesAt=45
+        // Walk: MON_009(evolvesAt=12,30>=12→MON_010) → MON_010(evolvesAt=25,30>=25→MON_011) → MON_011(evolvesAt=45,30<45→stop)
+        const mon = makeInstance('MON_013', { class: 'Caçador', level: 30 });
+        migrateMonsterInstance(mon);
+        expect(mon.templateId).toBe('MON_011');
+        expect(mon.class).toBe('Caçador');
+        expect(mon.name).toBe('Felinomon');
     });
 });
