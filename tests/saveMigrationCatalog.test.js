@@ -15,7 +15,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
     CATALOG_REBASE_MAP,
+    LEGACY_FINGERPRINTS,
     isLegacyTemplateId,
+    matchesLegacyTemplateFingerprint,
     migrateMonsterInstance,
     migrateAllInstances,
     collectAllMonsterInstances,
@@ -171,15 +173,23 @@ describe('migrateMonsterInstance — templateId legado', () => {
         expect(mon.name).toBe('Tamborilhomon');
     });
 
-    it('preserva HP e stats numéricos após migração', () => {
+    it('recalcula stats do template após migração (HP preservado por percentual)', () => {
+        // MON_010 (level 5) → MON_001 (Ferrozimon, Guerreiro, Comum)
+        // levelMult = 1 + 4*0.1 = 1.4, rarityMult = 1.0
+        // hpMax  = floor(29 * 1.4) = 40
+        // atk    = floor(7  * 1.4 * 1.0) = 9
+        // def    = floor(9  * 1.4 * 1.0) = 12
+        // eneMax = floor(10 + 2*4) = 18
+        // HP%: 18/35 ≈ 0.5143 → newHp = round(40 * 0.5143) = 21
         const mon = makeInstance('MON_010', { level: 5, hp: 18, hpMax: 35, atk: 9, def: 12 });
         migrateMonsterInstance(mon);
 
-        // HP e stats existentes devem ser preservados (não recalculados)
-        expect(mon.hp).toBe(18);
-        expect(mon.hpMax).toBe(35);
-        expect(mon.atk).toBe(9);
-        expect(mon.def).toBe(12);
+        expect(mon.hpMax).toBe(40);
+        expect(mon.hp).toBe(21);   // HP por percentual, não 18 bruto
+        expect(mon.atk).toBe(9);   // calculado do template (coincide)
+        expect(mon.def).toBe(12);  // calculado do template (coincide)
+        expect(mon.eneMax).toBe(18);
+        expect(mon.unlockedSkillSlots).toBe(2); // level 5 >= 5 → 2 slots
     });
 
     it('atualiza canonSpeciesId se presente', () => {
@@ -290,13 +300,17 @@ describe('migrateMonsterInstance — reconciliação evolutiva retroativa', () =
         expect(mon.evolvesAt).toBe(null);
     });
 
-    it('reconciliação preserva HP existente', () => {
+    it('reconciliação preserva HP por percentual (não valor bruto)', () => {
+        // MON_010 (level 30) → MON_001 → reconcilia para MON_003 (Raro)
+        // MON_003: baseHp=50, baseAtk=14, baseDef=16 | rarity=Raro (mult=1.18)
+        // levelMult = 1 + 29*0.1 = 3.9
+        // hpMax  = floor(50 * 3.9) = 195
+        // HP%: 25/50 = 0.5 → newHp = round(195 * 0.5) = 98
         const mon = makeInstance('MON_010', { level: 30, hp: 25, hpMax: 50 });
         migrateMonsterInstance(mon);
 
-        // HP deve ser preservado (estratégia B — não recalcular)
-        expect(mon.hp).toBe(25);
-        expect(mon.hpMax).toBe(50);
+        expect(mon.hpMax).toBe(195);
+        expect(mon.hp).toBe(98);   // HP por percentual, não 25 bruto
     });
 });
 
@@ -609,5 +623,266 @@ describe('CATALOG_REBASE_MAP — cobertura', () => {
         for (const [key, value] of Object.entries(CATALOG_REBASE_MAP)) {
             expect(key).not.toBe(value);
         }
+    });
+});
+
+// ─── J. matchesLegacyTemplateFingerprint ─────────────────────────────────────
+
+describe('matchesLegacyTemplateFingerprint — proteção por fingerprint', () => {
+    it('instância legítima de Ferrozimon (Guerreiro) passa pelo fingerprint', () => {
+        const sig = LEGACY_FINGERPRINTS['MON_010'];
+        const inst = { templateId: 'MON_010', class: 'Guerreiro', rarity: 'Comum' };
+        expect(matchesLegacyTemplateFingerprint(inst, sig)).toBe(true);
+    });
+
+    it('instância com class desconhecida passa pelo fingerprint (benefício da dúvida)', () => {
+        const sig = LEGACY_FINGERPRINTS['MON_010'];
+        const inst = { templateId: 'MON_010', class: 'Desconhecido', rarity: 'Comum' };
+        expect(matchesLegacyTemplateFingerprint(inst, sig)).toBe(true);
+    });
+
+    it('instância com class ausente passa pelo fingerprint (benefício da dúvida)', () => {
+        const sig = LEGACY_FINGERPRINTS['MON_010'];
+        const inst = { templateId: 'MON_010' };
+        expect(matchesLegacyTemplateFingerprint(inst, sig)).toBe(true);
+    });
+
+    it('instância já migrada de Gatunamon (Caçador) em MON_010 é BLOQUEADA', () => {
+        // MON_010 novo = Gatunamon/Caçador; fingerprint espera Guerreiro
+        const sig = LEGACY_FINGERPRINTS['MON_010'];
+        const inst = { templateId: 'MON_010', class: 'Caçador', rarity: 'Incomum' };
+        expect(matchesLegacyTemplateFingerprint(inst, sig)).toBe(false);
+    });
+
+    it('instância já migrada de Felinomon (Caçador) em MON_011 é BLOQUEADA', () => {
+        const sig = LEGACY_FINGERPRINTS['MON_011'];
+        const inst = { templateId: 'MON_011', class: 'Caçador', rarity: 'Raro' };
+        expect(matchesLegacyTemplateFingerprint(inst, sig)).toBe(false);
+    });
+
+    it('instância já migrada Salamandromon (Mago/Incomum) em MON_014 é BLOQUEADA via rarity', () => {
+        // CASO CRÍTICO: novo MON_014 = Salamandromon/Mago/Incomum
+        //              legado MON_014 = base Lagartomon/Mago/Comum
+        // class é IGUAL em ambos → rarity deve ser o tiebreaker
+        const sig = LEGACY_FINGERPRINTS['MON_014'];
+        const inst = { templateId: 'MON_014', class: 'Mago', rarity: 'Incomum' };
+        expect(matchesLegacyTemplateFingerprint(inst, sig)).toBe(false);
+    });
+
+    it('instância legítima Lagartomon base (Mago/Comum) em MON_014 é PERMITIDA', () => {
+        const sig = LEGACY_FINGERPRINTS['MON_014'];
+        const inst = { templateId: 'MON_014', class: 'Mago', rarity: 'Comum' };
+        expect(matchesLegacyTemplateFingerprint(inst, sig)).toBe(true);
+    });
+
+    it('instância com rarity desconhecida e class ambígua é PERMITIDA (benefício da dúvida)', () => {
+        // MON_014 com class=Mago mas rarity ausente → não bloquear
+        const sig = LEGACY_FINGERPRINTS['MON_014'];
+        const inst = { templateId: 'MON_014', class: 'Mago' };
+        expect(matchesLegacyTemplateFingerprint(inst, sig)).toBe(true);
+    });
+
+    it('LEGACY_FINGERPRINTS cobre exatamente os 20 IDs do CATALOG_REBASE_MAP', () => {
+        const mapKeys  = new Set(Object.keys(CATALOG_REBASE_MAP));
+        const fpKeys   = new Set(Object.keys(LEGACY_FINGERPRINTS));
+        expect(fpKeys.size).toBe(mapKeys.size);
+        for (const k of mapKeys) expect(fpKeys.has(k)).toBe(true);
+    });
+});
+
+// ─── K. Fingerprint bloqueia migração de save já migrado (sobreposição de IDs) ──
+
+describe('migrateMonsterInstance — fingerprint guard em ID sobreposto', () => {
+    it('MON_010 com class=Caçador (já é Gatunamon) NÃO é remapeado para Ferrozimon', () => {
+        // Cenário: MON_013B foi migrado para MON_010 (Gatunamon/Caçador).
+        // Se a migração rodar de novo, MON_010 está no mapa (→ MON_001 Ferrozimon/Guerreiro).
+        // O fingerprint deve bloquear (class=Caçador ≠ fingerprint.class=Guerreiro).
+        const mon = makeInstance('MON_010', { class: 'Caçador', rarity: 'Incomum', name: 'Gatunamon', level: 15 });
+        const result = migrateMonsterInstance(mon);
+
+        expect(result.migrated).toBe(false);
+        expect(mon.templateId).toBe('MON_010');
+        expect(mon.class).toBe('Caçador');
+        expect(mon.name).toBe('Gatunamon');
+        expect(result.notes.some(n => n.includes('FINGERPRINT'))).toBe(true);
+    });
+
+    it('MON_013 com class=Mago (já é Lagartomon) NÃO é remapeado para Miaumon/Caçador', () => {
+        // Cenário: MON_014 foi migrado para MON_013 (Lagartomon/Mago/Comum).
+        // fingerprint de MON_013 espera class=Caçador → bloqueia.
+        const mon = makeInstance('MON_013', { class: 'Mago', rarity: 'Comum', name: 'Lagartomon', level: 5 });
+        const result = migrateMonsterInstance(mon);
+
+        expect(result.migrated).toBe(false);
+        expect(mon.templateId).toBe('MON_013');
+        expect(mon.class).toBe('Mago');
+    });
+
+    it('MON_014 com class=Mago rarity=Incomum (Salamandromon) NÃO é remapeado para Lagartomon', () => {
+        // Cenário crítico com class ambígua: MON_014B foi migrado para MON_014 (Salamandromon/Mago/Incomum).
+        // Fingerprint de MON_014 espera rarity=Comum → tiebreaker bloqueia.
+        const mon = makeInstance('MON_014', { class: 'Mago', rarity: 'Incomum', name: 'Salamandromon', level: 20 });
+        const result = migrateMonsterInstance(mon);
+
+        expect(result.migrated).toBe(false);
+        expect(mon.templateId).toBe('MON_014');
+        expect(mon.name).toBe('Salamandromon');
+    });
+
+    it('MON_014 com class=Mago rarity=Comum (legado base) É migrado para MON_013', () => {
+        const mon = makeInstance('MON_014', { class: 'Mago', rarity: 'Comum', level: 5 });
+        const result = migrateMonsterInstance(mon);
+
+        expect(result.migrated).toBe(true);
+        expect(mon.templateId).toBe('MON_013');
+        expect(mon.class).toBe('Mago');
+    });
+});
+
+// ─── L. Stats recalculados corretamente após migração ────────────────────────
+
+describe('migrateMonsterInstance — recalcular stats do template final', () => {
+    it('MON_010 nível 10 → MON_001: stats corretos para Ferrozimon nível 10', () => {
+        // MON_001 (Comum, rarityMult=1.0), level=10
+        // levelMult = 1 + 9*0.1 = 1.9
+        // hpMax  = floor(29 * 1.9) = 55
+        // atk    = floor(7  * 1.9 * 1.0) = 13
+        // def    = floor(9  * 1.9 * 1.0) = 17
+        // eneMax = floor(10 + 2*9) = 28
+        // unlockedSkillSlots: level 10 >= 5 → 2 slots
+        const mon = makeInstance('MON_010', { level: 10 });
+        migrateMonsterInstance(mon);
+
+        expect(mon.templateId).toBe('MON_001');
+        expect(mon.hpMax).toBe(55);
+        expect(mon.atk).toBe(13);
+        expect(mon.def).toBe(17);
+        expect(mon.eneMax).toBe(28);
+        expect(mon.unlockedSkillSlots).toBe(2);
+    });
+
+    it('MON_010 nível 30 reconcilia para MON_003: stats corretos para Kinguespinhomon nível 30', () => {
+        // MON_003 (Raro, rarityMult=1.18), level=30
+        // levelMult = 1 + 29*0.1 = 3.9
+        // hpMax  = floor(50 * 3.9) = 195
+        // atk    = floor(14 * 3.9 * 1.18) = 64
+        // def    = floor(16 * 3.9 * 1.18) = 73
+        // eneMax = floor(10 + 2*29) = 68
+        // unlockedSkillSlots: level 30 >= 30 → 4 slots
+        const mon = makeInstance('MON_010', { level: 30 });
+        migrateMonsterInstance(mon);
+
+        expect(mon.templateId).toBe('MON_003');
+        expect(mon.hpMax).toBe(195);
+        expect(mon.atk).toBe(64);
+        expect(mon.def).toBe(73);
+        expect(mon.eneMax).toBe(68);
+        expect(mon.unlockedSkillSlots).toBe(4);
+    });
+
+    it('monstro fainted (hp=0) permanece fainted após recalcular stats', () => {
+        const mon = makeInstance('MON_010', { level: 10, hp: 0, hpMax: 20 });
+        migrateMonsterInstance(mon);
+
+        expect(mon.hp).toBe(0);
+        expect(mon.hpMax).toBeGreaterThan(0); // hpMax recalculado
+    });
+
+    it('monstro com HP cheio mantém HP cheio após recalcular (100% → 100%)', () => {
+        const mon = makeInstance('MON_010', { level: 5, hp: 30, hpMax: 30 });
+        migrateMonsterInstance(mon);
+
+        // HP cheio → percentual 1.0 → hp deve igualar hpMax após recálculo
+        expect(mon.hp).toBe(mon.hpMax);
+    });
+
+    it('ENE é clampada ao novo eneMax após recalcular', () => {
+        // Instância com ENE excessiva em relação ao novo eneMax
+        const mon = makeInstance('MON_010', { level: 1, ene: 999, eneMax: 999 });
+        migrateMonsterInstance(mon);
+
+        // level 1 → eneMax = floor(10 + 2*0) = 10
+        expect(mon.eneMax).toBe(10);
+        expect(mon.ene).toBe(10); // clampado
+    });
+
+    it('unlockedSkillSlots atualizado corretamente por nível', () => {
+        const cases = [
+            { level: 1,  expected: 1 },
+            { level: 4,  expected: 1 },
+            { level: 5,  expected: 2 },
+            { level: 14, expected: 2 },
+            { level: 15, expected: 3 },
+            { level: 29, expected: 3 },
+            { level: 30, expected: 4 },
+            { level: 99, expected: 4 },
+        ];
+        for (const { level, expected } of cases) {
+            const mon = makeInstance('MON_010', { level });
+            migrateMonsterInstance(mon);
+            expect(mon.unlockedSkillSlots).toBe(expected);
+        }
+    });
+
+    it('poder é atualizado como floor(atk * 0.5)', () => {
+        const mon = makeInstance('MON_010', { level: 10 });
+        migrateMonsterInstance(mon);
+        // atk=13 → poder = floor(13 * 0.5) = 6
+        expect(mon.poder).toBe(6);
+    });
+});
+
+// ─── M. Idempotência real (fingerprint, não só saveVersion) ──────────────────
+
+describe('migrateMonsterInstance — idempotência baseada em fingerprint', () => {
+    it('segunda migração de instância já migrada (via sobreposição de ID) é bloqueada', () => {
+        // 1ª migração: MON_013B → MON_010 (Gatunamon, Caçador, Incomum)
+        const mon = makeInstance('MON_013B', { level: 15, class: 'Caçador', rarity: 'Incomum' });
+        const first = migrateMonsterInstance(mon);
+        expect(first.migrated).toBe(true);
+        expect(mon.templateId).toBe('MON_010');
+        expect(mon.class).toBe('Caçador');
+
+        // 2ª migração: MON_010 é chave no mapa (→ MON_001), mas fingerprint bloqueia
+        // pois class=Caçador ≠ fingerprint.class=Guerreiro
+        const second = migrateMonsterInstance(mon);
+        expect(second.migrated).toBe(false);
+        expect(mon.templateId).toBe('MON_010');
+        expect(mon.class).toBe('Caçador');
+    });
+
+    it('segunda migração de MON_014B → MON_014 (Salamandromon) é bloqueada via rarity', () => {
+        // 1ª migração: MON_014B → MON_014 (Salamandromon, Mago, Incomum)
+        const mon = makeInstance('MON_014B', { level: 20, class: 'Mago', rarity: 'Incomum' });
+        const first = migrateMonsterInstance(mon);
+        expect(first.migrated).toBe(true);
+        expect(mon.templateId).toBe('MON_014');
+
+        // 2ª migração: MON_014 está no mapa (→ MON_013), mas rarity=Incomum ≠ fingerprint.rarity=Comum → bloqueada
+        const second = migrateMonsterInstance(mon);
+        expect(second.migrated).toBe(false);
+        expect(mon.templateId).toBe('MON_014');
+        expect(mon.name).toBe('Salamandromon');
+    });
+
+    it('save sem versão + IDs canônicos não sofre migração espúria', () => {
+        const state = makeState({
+            meta: {},  // sem saveVersion!
+            players: [{
+                team: [
+                    makeInstance('MON_001', { class: 'Guerreiro', rarity: 'Comum',   name: 'Ferrozimon' }),
+                    makeInstance('MON_009', { class: 'Caçador',   rarity: 'Comum',   name: 'Miaumon'    }),
+                    makeInstance('MON_013', { class: 'Mago',      rarity: 'Comum',   name: 'Lagartomon' }),
+                ],
+                box: [],
+            }],
+        });
+
+        applyCatalogMigration(state);
+
+        // Nenhuma instância deve ter mudado (MON_001, MON_009, MON_013 são IDs canônicos)
+        expect(state.players[0].team[0].templateId).toBe('MON_001');
+        expect(state.players[0].team[1].templateId).toBe('MON_009');
+        expect(state.players[0].team[2].templateId).toBe('MON_013');
     });
 });

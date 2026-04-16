@@ -33,6 +33,22 @@
  *   Qualquer outro mapeamento de IDs deve referenciar este arquivo.
  */
 
+// ── Multiplicadores de raridade (espelham RARITY_PWR do runtime) ─────────────
+//
+// HP NÃO usa rarityMult (apenas ATK/DEF/SPD usam).
+// Fonte: copilot-instructions.md §Multiplicadores
+const RARITY_POWER = {
+    'Comum':    1.00,
+    'Incomum':  1.08,
+    'Raro':     1.18,
+    'Místico':  1.32,
+    'Lendário': 1.50,
+};
+
+// Conjuntos de valores conhecidos para o guard de fingerprint
+const KNOWN_CLASSES  = new Set(['Guerreiro','Mago','Curandeiro','Bárbaro','Ladino','Bardo','Caçador','Animalista']);
+const KNOWN_RARITIES = new Set(['Comum','Incomum','Raro','Místico','Lendário']);
+
 // ── Mapeamento de IDs legados → IDs canônicos atuais (Rebase Fase 1) ──────────
 //
 // CHAVE  = templateId antigo (pré-rebase, pode ainda existir em saves)
@@ -45,9 +61,9 @@
 //   MON_014x → MON_013–MON_016  (Lagartomon / Mago)
 //   MON_012x → MON_017–MON_020  (Luvursomon / Animalista)
 //
-// ATENÇÃO: os novos IDs MON_009–MON_016 coincidem com antigas chaves de outras
-// linhas. A migração é segura porque é executada UMA ÚNICA VEZ (versão 2) —
-// após aplicada, o save não contém mais chaves legadas.
+// ATENÇÃO: MON_009–MON_016 são ao mesmo tempo destinos desta migração E chaves
+// de outras linhas. A proteção primária é o FINGERPRINT GUARD (abaixo); o
+// saveVersion é proteção secundária. Ambas devem estar ativas.
 export const CATALOG_REBASE_MAP = {
     // Linha Ferrozimon (antigo MON_010x → novo MON_001–004)
     'MON_010':  'MON_001',
@@ -80,48 +96,177 @@ export const CATALOG_REBASE_MAP = {
     'MON_012D': 'MON_020',
 };
 
-// ── Dados mínimos do catálogo para os 20 IDs migrados ────────────────────────
+// ── Assinaturas de fingerprint legado ─────────────────────────────────────────
+//
+// Para cada ID legado, armazena os valores esperados de `class` e `rarity` que
+// uma instância PRÉ-REBASE teria.
+//
+// Uso: matchesLegacyTemplateFingerprint(instance, LEGACY_FINGERPRINTS[legacyId])
+//
+// A rarity é o tiebreaker para IDs cujas classes são iguais no antigo e no novo
+// catálogo (ex.: MON_014 era Mago/Comum; novo MON_014 = Salamandromon/Mago/Incomum).
+export const LEGACY_FINGERPRINTS = {
+    // Ferrozimon line (Guerreiro) ─ novo MON_010 = Gatunamon/Caçador → classe distingue
+    'MON_010':  { class: 'Guerreiro',  rarity: 'Comum'    },
+    'MON_010B': { class: 'Guerreiro',  rarity: 'Incomum'  },
+    'MON_010C': { class: 'Guerreiro',  rarity: 'Raro'     },
+    'MON_010D': { class: 'Guerreiro',  rarity: 'Místico'  },
+
+    // Dinomon line (Bardo) ─ novo MON_011 = Felinomon/Caçador → classe distingue
+    'MON_011':  { class: 'Bardo',      rarity: 'Comum'    },
+    'MON_011B': { class: 'Bardo',      rarity: 'Incomum'  },
+    'MON_011C': { class: 'Bardo',      rarity: 'Raro'     },
+    'MON_011D': { class: 'Bardo',      rarity: 'Místico'  },
+
+    // Miaumon line (Caçador) ─ novo MON_013 = Lagartomon/Mago → classe distingue
+    'MON_013':  { class: 'Caçador',    rarity: 'Comum'    },
+    'MON_013B': { class: 'Caçador',    rarity: 'Incomum'  },
+    'MON_013C': { class: 'Caçador',    rarity: 'Raro'     },
+    'MON_013D': { class: 'Caçador',    rarity: 'Místico'  },
+
+    // Lagartomon line (Mago) ─ novo MON_014 = Salamandromon/Mago → MESMA classe!
+    // rarity distingue: old base (Mago/Comum) vs new stage 2 (Mago/Incomum)
+    'MON_014':  { class: 'Mago',       rarity: 'Comum'    },  // ← tiebreaker necessário
+    'MON_014B': { class: 'Mago',       rarity: 'Incomum'  },
+    'MON_014C': { class: 'Mago',       rarity: 'Raro'     },
+    'MON_014D': { class: 'Mago',       rarity: 'Místico'  },
+
+    // Luvursomon line (Animalista) ─ novo MON_012 = Panterezamon/Caçador → classe distingue
+    'MON_012':  { class: 'Animalista', rarity: 'Comum'    },
+    'MON_012B': { class: 'Animalista', rarity: 'Incomum'  },
+    'MON_012C': { class: 'Animalista', rarity: 'Raro'     },
+    'MON_012D': { class: 'Animalista', rarity: 'Místico'  },
+};
+
+// ── Dados do catálogo para os 20 IDs migrados ─────────────────────────────────
 //
 // Embutidos aqui para que a migração possa rodar SINCRONAMENTE durante o load,
 // antes da carga assíncrona de monsters.json.
 //
-// Campos: name, class, rarity, emoji, evolvesTo (null = estágio final), evolvesAt
+// Campos: name, class, rarity, emoji, evolvesTo, evolvesAt, baseHp, baseAtk,
+//         baseDef, baseSpd  (base stats para recalcular instância migrada)
 //
 // Fonte: data/monsters.json versão 1 (inspecionada em 2026-01-25).
 // Se monsters.json for atualizado, manter este bloco em sincronia.
 const MIGRATION_CATALOG = {
     // ── Linha Ferrozimon (Guerreiro) ─────────────────────────────────────────
-    'MON_001': { name: 'Ferrozimon',      class: 'Guerreiro', rarity: 'Comum',   emoji: '⚔️', evolvesTo: 'MON_002', evolvesAt: 12 },
-    'MON_002': { name: 'Cavalheiromon',   class: 'Guerreiro', rarity: 'Incomum', emoji: '🗡️', evolvesTo: 'MON_003', evolvesAt: 25 },
-    'MON_003': { name: 'Kinguespinhomon', class: 'Guerreiro', rarity: 'Raro',    emoji: '🛡️', evolvesTo: 'MON_004', evolvesAt: 45 },
-    'MON_004': { name: 'Arconouricomon',  class: 'Guerreiro', rarity: 'Místico', emoji: '👑', evolvesTo: null,      evolvesAt: null },
+    'MON_001': { name: 'Ferrozimon',      class: 'Guerreiro', rarity: 'Comum',   emoji: '⚔️', evolvesTo: 'MON_002', evolvesAt: 12, baseHp: 29, baseAtk: 7,  baseDef: 9,  baseSpd: 4  },
+    'MON_002': { name: 'Cavalheiromon',   class: 'Guerreiro', rarity: 'Incomum', emoji: '🗡️', evolvesTo: 'MON_003', evolvesAt: 25, baseHp: 39, baseAtk: 10, baseDef: 12, baseSpd: 5  },
+    'MON_003': { name: 'Kinguespinhomon', class: 'Guerreiro', rarity: 'Raro',    emoji: '🛡️', evolvesTo: 'MON_004', evolvesAt: 45, baseHp: 50, baseAtk: 14, baseDef: 16, baseSpd: 6  },
+    'MON_004': { name: 'Arconouricomon',  class: 'Guerreiro', rarity: 'Místico', emoji: '👑', evolvesTo: null,      evolvesAt: null, baseHp: 63, baseAtk: 17, baseDef: 17, baseSpd: 8 },
 
     // ── Linha Dinomon (Bardo) ────────────────────────────────────────────────
-    'MON_005': { name: 'Dinomon',           class: 'Bardo', rarity: 'Comum',   emoji: '🎵', evolvesTo: 'MON_006', evolvesAt: 12 },
-    'MON_006': { name: 'Guitarapitormon',   class: 'Bardo', rarity: 'Incomum', emoji: '🎸', evolvesTo: 'MON_007', evolvesAt: 25 },
-    'MON_007': { name: 'TRockmon',          class: 'Bardo', rarity: 'Raro',    emoji: '🎹', evolvesTo: 'MON_008', evolvesAt: 45 },
-    'MON_008': { name: 'Giganotometalmon',  class: 'Bardo', rarity: 'Místico', emoji: '🎻', evolvesTo: null,      evolvesAt: null },
+    'MON_005': { name: 'Dinomon',           class: 'Bardo', rarity: 'Comum',   emoji: '🎵', evolvesTo: 'MON_006', evolvesAt: 12, baseHp: 27, baseAtk: 6,  baseDef: 5,  baseSpd: 8  },
+    'MON_006': { name: 'Guitarapitormon',   class: 'Bardo', rarity: 'Incomum', emoji: '🎸', evolvesTo: 'MON_007', evolvesAt: 25, baseHp: 35, baseAtk: 8,  baseDef: 6,  baseSpd: 10 },
+    'MON_007': { name: 'TRockmon',          class: 'Bardo', rarity: 'Raro',    emoji: '🎹', evolvesTo: 'MON_008', evolvesAt: 45, baseHp: 46, baseAtk: 11, baseDef: 9,  baseSpd: 12 },
+    'MON_008': { name: 'Giganotometalmon',  class: 'Bardo', rarity: 'Místico', emoji: '🎻', evolvesTo: null,      evolvesAt: null, baseHp: 60, baseAtk: 16, baseDef: 12, baseSpd: 11 },
 
     // ── Linha Miaumon (Caçador) ──────────────────────────────────────────────
-    'MON_009': { name: 'Miaumon',     class: 'Caçador', rarity: 'Comum',   emoji: '🐱', evolvesTo: 'MON_010', evolvesAt: 12 },
-    'MON_010': { name: 'Gatunamon',   class: 'Caçador', rarity: 'Incomum', emoji: '🐈', evolvesTo: 'MON_011', evolvesAt: 25 },
-    'MON_011': { name: 'Felinomon',   class: 'Caçador', rarity: 'Raro',    emoji: '🐆', evolvesTo: 'MON_012', evolvesAt: 45 },
-    'MON_012': { name: 'Panterezamon',class: 'Caçador', rarity: 'Místico', emoji: '🐅', evolvesTo: null,      evolvesAt: null },
+    'MON_009': { name: 'Miaumon',      class: 'Caçador', rarity: 'Comum',   emoji: '🐱', evolvesTo: 'MON_010', evolvesAt: 12, baseHp: 25, baseAtk: 8,  baseDef: 4,  baseSpd: 9  },
+    'MON_010': { name: 'Gatunamon',    class: 'Caçador', rarity: 'Incomum', emoji: '🐈', evolvesTo: 'MON_011', evolvesAt: 25, baseHp: 32, baseAtk: 10, baseDef: 6,  baseSpd: 12 },
+    'MON_011': { name: 'Felinomon',    class: 'Caçador', rarity: 'Raro',    emoji: '🐆', evolvesTo: 'MON_012', evolvesAt: 45, baseHp: 42, baseAtk: 14, baseDef: 7,  baseSpd: 15 },
+    'MON_012': { name: 'Panterezamon', class: 'Caçador', rarity: 'Místico', emoji: '🐅', evolvesTo: null,      evolvesAt: null, baseHp: 54, baseAtk: 18, baseDef: 9,  baseSpd: 18 },
 
     // ── Linha Lagartomon (Mago) ──────────────────────────────────────────────
-    'MON_013': { name: 'Lagartomon',    class: 'Mago', rarity: 'Comum',   emoji: '🦎', evolvesTo: 'MON_014', evolvesAt: 12 },
-    'MON_014': { name: 'Salamandromon', class: 'Mago', rarity: 'Incomum', emoji: '🔥', evolvesTo: 'MON_015', evolvesAt: 25 },
-    'MON_015': { name: 'Dracoflamemon', class: 'Mago', rarity: 'Raro',    emoji: '🐉', evolvesTo: 'MON_016', evolvesAt: 45 },
-    'MON_016': { name: 'Wizardragomon', class: 'Mago', rarity: 'Místico', emoji: '✨', evolvesTo: null,      evolvesAt: null },
+    'MON_013': { name: 'Lagartomon',    class: 'Mago', rarity: 'Comum',   emoji: '🦎', evolvesTo: 'MON_014', evolvesAt: 12, baseHp: 24, baseAtk: 6,  baseDef: 4,  baseSpd: 6  },
+    'MON_014': { name: 'Salamandromon', class: 'Mago', rarity: 'Incomum', emoji: '🔥', evolvesTo: 'MON_015', evolvesAt: 25, baseHp: 30, baseAtk: 8,  baseDef: 6,  baseSpd: 8  },
+    'MON_015': { name: 'Dracoflamemon', class: 'Mago', rarity: 'Raro',    emoji: '🐉', evolvesTo: 'MON_016', evolvesAt: 45, baseHp: 39, baseAtk: 12, baseDef: 8,  baseSpd: 9  },
+    'MON_016': { name: 'Wizardragomon', class: 'Mago', rarity: 'Místico', emoji: '✨', evolvesTo: null,      evolvesAt: null, baseHp: 48, baseAtk: 15, baseDef: 10, baseSpd: 10 },
 
     // ── Linha Luvursomon (Animalista) ────────────────────────────────────────
-    'MON_017': { name: 'Luvursomon', class: 'Animalista', rarity: 'Comum',   emoji: '🐻', evolvesTo: 'MON_018', evolvesAt: 12 },
-    'MON_018': { name: 'Manoplamon', class: 'Animalista', rarity: 'Incomum', emoji: '🐾', evolvesTo: 'MON_019', evolvesAt: 25 },
-    'MON_019': { name: 'BestBearmon',class: 'Animalista', rarity: 'Raro',    emoji: '🦁', evolvesTo: 'MON_020', evolvesAt: 45 },
-    'MON_020': { name: 'Ursauramon',  class: 'Animalista', rarity: 'Místico', emoji: '🔱', evolvesTo: null,      evolvesAt: null },
+    'MON_017': { name: 'Luvursomon', class: 'Animalista', rarity: 'Comum',   emoji: '🐻', evolvesTo: 'MON_018', evolvesAt: 12, baseHp: 31, baseAtk: 6,  baseDef: 6,  baseSpd: 4  },
+    'MON_018': { name: 'Manoplamon', class: 'Animalista', rarity: 'Incomum', emoji: '🐾', evolvesTo: 'MON_019', evolvesAt: 25, baseHp: 41, baseAtk: 10, baseDef: 8,  baseSpd: 6  },
+    'MON_019': { name: 'BestBearmon',class: 'Animalista', rarity: 'Raro',    emoji: '🦁', evolvesTo: 'MON_020', evolvesAt: 45, baseHp: 54, baseAtk: 14, baseDef: 12, baseSpd: 6  },
+    'MON_020': { name: 'Ursauramon',  class: 'Animalista', rarity: 'Místico', emoji: '🔱', evolvesTo: null,      evolvesAt: null, baseHp: 68, baseAtk: 18, baseDef: 14, baseSpd: 8  },
 };
 
 // ── Helpers internos ──────────────────────────────────────────────────────────
+
+/**
+ * Calcula número de slots de habilidade desbloqueados para um nível.
+ * Espelha a lógica fallback de `_resolveUnlockedSlots` em index.html (Fase 5).
+ * @param {number} lvl
+ * @returns {number} 1–4
+ */
+function resolveUnlockedSlotsInline(lvl) {
+    const l = Math.max(1, Number(lvl) || 1);
+    return l >= 30 ? 4 : l >= 15 ? 3 : l >= 5 ? 2 : 1;
+}
+
+/**
+ * Recalcula todos os stats derivados de template + nível, usando a mesma
+ * fórmula canônica de `createMonsterInstanceFromTemplate` (index.html).
+ *
+ * Fórmulas:
+ *   hpMax  = floor(baseHp  * levelMult)               [SEM rarityMult]
+ *   atk    = floor(baseAtk * levelMult * rarityMult)
+ *   def    = floor(baseDef * levelMult * rarityMult)
+ *   spd    = floor(baseSpd * levelMult * rarityMult)
+ *   eneMax = floor(10 + 2 * (level - 1))              [fórmula canônica v2]
+ *   poder  = floor(atk * 0.5)
+ *
+ * Nota: SpeciesBridge/KitSwap não são aplicados aqui — o runtime aplica em
+ * createMonsterInstanceFromTemplate no próximo load completo.
+ *
+ * @param {Object} tpl - Entrada de MIGRATION_CATALOG com base stats
+ * @param {number} level
+ * @returns {{ hpMax, atk, def, spd, eneMax, poder, unlockedSkillSlots }}
+ */
+function calcLeveledStats(tpl, level) {
+    const lvl       = Math.max(1, Number(level) || 1);
+    const rarityMult = RARITY_POWER[tpl.rarity] || 1.0;
+    const lvMult    = 1 + (lvl - 1) * 0.1;
+
+    const hpMax  = Math.floor((tpl.baseHp  || 30) * lvMult);
+    const atk    = Math.floor((tpl.baseAtk || 5)  * lvMult * rarityMult);
+    const def    = Math.floor((tpl.baseDef || 3)  * lvMult * rarityMult);
+    const spd    = Math.floor((tpl.baseSpd || 5)  * lvMult * rarityMult);
+    const eneMax = Math.floor(10 + 2 * (lvl - 1));
+    const poder  = Math.floor(atk * 0.5);
+    const unlockedSkillSlots = resolveUnlockedSlotsInline(lvl);
+
+    return { hpMax, atk, def, spd, eneMax, poder, unlockedSkillSlots };
+}
+
+/**
+ * Verifica se uma instância de monstro corresponde à assinatura fingerprint
+ * esperada de um template legado (pré-rebase).
+ *
+ * REGRA:
+ *   - Se `class` é um valor conhecido E não coincide com a assinatura → NÃO é legado.
+ *   - Para IDs onde o novo catálogo usa a mesma classe (ex.: MON_014/Mago),
+ *     `rarity` é o tiebreaker: se é um valor conhecido e não coincide → NÃO é legado.
+ *   - Se os campos relevantes estiverem ausentes/desconhecidos → conceder benefício
+ *     da dúvida e permitir migração (instância muito antiga).
+ *
+ * @param {Object} instance       - Instância de monstro (com templateId ainda legado)
+ * @param {Object} legacySignature - { class, rarity } da assinatura esperada
+ * @returns {boolean} true se a instância parece legítima para migração
+ */
+export function matchesLegacyTemplateFingerprint(instance, legacySignature) {
+    if (!instance || !legacySignature) return false;
+
+    // ── Verificação de class ──────────────────────────────────────────────────
+    // Se class é um valor canônico conhecido E não coincide → bloquear
+    if (instance.class && KNOWN_CLASSES.has(instance.class)) {
+        if (instance.class !== legacySignature.class) return false;
+    }
+
+    // ── Verificação de rarity (tiebreaker para IDs com class ambígua) ─────────
+    // Aplica-se quando o novo catálogo usa a mesma class para este ID.
+    // Ex.: MON_014 antigo = Mago/Comum; novo MON_014 = Salamandromon/Mago/Incomum.
+    if (instance.class === legacySignature.class) {
+        const newSpecies = MIGRATION_CATALOG[instance.templateId];
+        if (newSpecies && newSpecies.class === legacySignature.class) {
+            // Mesma classe em legado e novo → checar rarity como tiebreaker
+            if (instance.rarity && KNOWN_RARITIES.has(instance.rarity)) {
+                if (instance.rarity !== legacySignature.rarity) return false;
+            }
+        }
+    }
+
+    return true;
+}
 
 /**
  * Retorna o templateId canônico de uma instância.
@@ -147,13 +292,18 @@ export function isLegacyTemplateId(id) {
 
 /**
  * Migra uma instância de monstro in-place:
+ *   0. Fingerprint guard: só migra se a instância for coerente com o legado.
  *   1. Remapeia templateId usando CATALOG_REBASE_MAP.
  *   2. Atualiza name, class, rarity, emoji, evolvesTo, evolvesAt a partir de
  *      MIGRATION_CATALOG (dados embutidos do catálogo novo).
  *   3. Reconcilia evolução (Estratégia B): avança pelo chain evolutivo até o
- *      estágio correto para o level atual, SEM recalcular HP/stats.
+ *      estágio correto para o level atual.
+ *   4. Recalcula todos os stats derivados (hpMax, atk, def, spd, eneMax, poder,
+ *      unlockedSkillSlots) a partir do template final + nível. HP é preservado
+ *      por PERCENTUAL (não por valor bruto).
  *
- * Se o templateId NÃO for legado, a instância não é alterada.
+ * Se o templateId NÃO for legado, ou o fingerprint não corresponder,
+ * a instância não é alterada.
  *
  * @param {Object} monster - Instância de monstrinho (mutada in-place)
  * @returns {{ migrated: boolean, oldId: string|null, finalId: string|null, notes: string[] }}
@@ -175,6 +325,22 @@ export function migrateMonsterInstance(monster) {
         // Não é um ID legado — sem migração necessária
         return { migrated: false, oldId: rawId, finalId: rawId, notes: [] };
     }
+
+    // ── Passo 0: Fingerprint guard ───────────────────────────────────────────
+    // Só migra se a instância parecer realmente do catálogo antigo.
+    // Isso protege saves já migrados cujo ID caiu em sobreposição (ex.: MON_013B→MON_010
+    // e depois MON_010 sendo chave para outra linha).
+    const legacySig = LEGACY_FINGERPRINTS[rawId];
+    if (legacySig && !matchesLegacyTemplateFingerprint(monster, legacySig)) {
+        notes.push(`[FINGERPRINT] ${rawId}: fingerprint não corresponde ao legado — migração bloqueada`);
+        return { migrated: false, oldId: rawId, finalId: rawId, notes };
+    }
+
+    // ── Capturar HP% antes de qualquer alteração ─────────────────────────────
+    const oldHpMax   = Number(monster.hpMax) || 1;
+    const oldHp      = Number(monster.hp)    || 0;
+    const isFainted  = oldHp <= 0;
+    const hpPercent  = isFainted ? 0 : Math.min(1.0, oldHp / Math.max(1, oldHpMax));
 
     let currentId   = newId;
     let currentData = MIGRATION_CATALOG[newId];
@@ -205,7 +371,6 @@ export function migrateMonsterInstance(monster) {
 
     // ── Passo 2: reconciliar evolução (Estratégia B) ─────────────────────────
     // Avança pelo chain até encontrar o estágio correto para o level atual.
-    // HP e stats numéricos são PRESERVADOS (não recalculados).
     const level = Math.max(1, Number(monster.level) || 1);
 
     while (currentData.evolvesTo && currentData.evolvesAt != null) {
@@ -229,7 +394,30 @@ export function migrateMonsterInstance(monster) {
         notes.push(`Evolução reconciliada → ${currentId} (level ${level} >= ${currentData.evolvesAt ?? '—'})`);
     }
 
-    // ── Passo 3: atualizar canonSpeciesId se presente ────────────────────────
+    // ── Passo 3: recalcular stats do template final ───────────────────────────
+    // Não preservar stats crus: o monstro pode ter vindo de um estágio diferente
+    // com stats de outra espécie. Recalcular com base no template correto + nível.
+    const s = calcLeveledStats(currentData, level);
+    monster.hpMax              = s.hpMax;
+    monster.atk                = s.atk;
+    monster.def                = s.def;
+    monster.spd                = s.spd;
+    monster.eneMax             = s.eneMax;
+    monster.poder              = s.poder;
+    monster.unlockedSkillSlots = s.unlockedSkillSlots;
+
+    // HP: preservar por percentual; fainted permanece fainted
+    if (isFainted) {
+        monster.hp = 0;
+    } else {
+        monster.hp = Math.max(1, Math.round(s.hpMax * hpPercent));
+    }
+
+    // ENE: clamp ao novo máximo (não pode superar eneMax recalculado)
+    const oldEne = Number(monster.ene);
+    monster.ene = Number.isFinite(oldEne) ? Math.min(oldEne, s.eneMax) : s.eneMax;
+
+    // ── Passo 4: atualizar canonSpeciesId se presente ────────────────────────
     if (monster.canonSpeciesId !== undefined) {
         monster.canonSpeciesId = currentId;
     }
