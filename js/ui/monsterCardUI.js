@@ -64,7 +64,15 @@ export function renderSpeciesIdentityBlock(monster, speciesDisplay) {
  * @param {object} speciesDisplay - Módulo SpeciesDisplay (injetado).
  * @returns {string} HTML do badge ou string vazia.
  */
-export function renderTeamReadinessIndicator(monster, speciesDisplay) {
+export function renderTeamReadinessIndicator(monster, speciesDisplay, getEvolutionTarget) {
+    // E2: Badge de "pronto para evoluir" quando monstrinho atingiu nível de evolução
+    if (typeof getEvolutionTarget === 'function') {
+        const evoTarget = getEvolutionTarget(monster);
+        if (evoTarget && monster.level >= evoTarget.evolvesAt) {
+            return `<span class="readiness-badge readiness-badge--evo" title="Pronto para evoluir em ${evoTarget.nextTemplate?.name || '?'}!">⬆️ Evoluir!</span>`;
+        }
+    }
+
     if (!speciesDisplay?.getTeamReadinessIndicator) return '';
     const readiness = speciesDisplay.getTeamReadinessIndicator(monster);
     if (!readiness) return '';
