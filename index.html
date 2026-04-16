@@ -1933,7 +1933,12 @@
                 
                 // PR9B: Preload monsters from JSON in background (non-blocking)
                 if (window.Data && window.Data.loadMonsters) {
-                    window.Data.loadMonsters().catch(() => {
+                    window.Data.loadMonsters().then(() => {
+                        // Após catálogo carregado: validar templateId do encounter salvo contra templates reais.
+                        // Encounter com templateId inválido (migração de catálogo, save antigo) é descartado aqui,
+                        // antes de chegar ao runtime de batalha.
+                        _sanitizeEncounterAgainstCatalog();
+                    }).catch(() => {
                         // Errors already logged by DataLoader, silently continue with hardcoded fallback
                     });
                 }
@@ -2341,7 +2346,32 @@
                     }
                 });
             }
-            
+
+            // SANITIZAÇÃO DO ENCOUNTER SALVO (fase1-runtime-rebuild)
+            // Normaliza campos do wildMonster e descarta encontros selvagens inválidos
+            // que poderiam causar TypeError ao acessar .rarity em nulo/incompleto.
+            // Nota: validação de templateId contra o catálogo é feita depois, em
+            // _sanitizeEncounterAgainstCatalog(), quando o catálogo já está carregado.
+            if (state.currentEncounter !== null && state.currentEncounter !== undefined) {
+                const enc = state.currentEncounter;
+                if (typeof enc !== 'object' || Array.isArray(enc)) {
+                    // Estrutura inválida — descartar silenciosamente
+                    console.warn('[System] currentEncounter descartado: não é objeto');
+                    state.currentEncounter = null;
+                } else if (enc.type === 'wild') {
+                    if (enc.wildMonster && typeof enc.wildMonster === 'object') {
+                        // Normalizar wildMonster da mesma forma que monstros do time:
+                        // garante rarity, hp, class, buffs, etc.
+                        normalizeMonster(enc.wildMonster);
+                    } else if (enc.active && !enc.wildMonster) {
+                        // Encontro selvagem ativo sem wildMonster → inválido, descartar
+                        console.warn('[System] currentEncounter wild descartado: ativo mas wildMonster ausente' +
+                            ` (saveVersion=${state.meta?.saveVersion ?? '?'})`);
+                        state.currentEncounter = null;
+                    }
+                }
+            }
+
             // CORREÇÃO BUG PERSISTÊNCIA: Garantir campos obrigatórios do config.
             // Object.assign() faz merge raso — se o save tiver um config de versão antiga
             // sem alguns campos (ex: friendshipConfig), esses campos ficam ausentes.
@@ -2409,6 +2439,37 @@
             }
 
             return state;
+        }
+
+        /**
+         * Valida currentEncounter salvo contra o catálogo de monstros real.
+         * Deve ser chamada APÓS o catálogo ser carregado (window.Data.loadMonsters).
+         * Se o templateId do wildMonster não existir no catálogo, o encounter é descartado
+         * com aviso explícito, evitando crash downstream.
+         * Idempotente: seguro chamar múltiplas vezes.
+         */
+        function _sanitizeEncounterAgainstCatalog() {
+            const enc = GameState.currentEncounter;
+            if (!enc || enc.type !== 'wild' || !enc.wildMonster) return;
+
+            const templateId  = enc.wildMonster.templateId;
+            const saveVersion = GameState.meta?.saveVersion ?? '?';
+
+            if (!templateId || templateId === 'unknown') {
+                console.warn(`[System] Encounter salvo descartado: templateId inválido ('${templateId}')` +
+                    ` | saveVersion=${saveVersion}`);
+                GameState.currentEncounter = null;
+                if (typeof renderEncounter === 'function') renderEncounter();
+                return;
+            }
+
+            const template = getMonsterTemplate(templateId);
+            if (!template) {
+                console.warn(`[System] Encounter salvo descartado: template '${templateId}' ausente no catálogo` +
+                    ` | saveVersion=${saveVersion}. O save pode ser de uma versão anterior do jogo.`);
+                GameState.currentEncounter = null;
+                if (typeof renderEncounter === 'function') renderEncounter();
+            }
         }
 
         // COMMIT 3: Centralized Persistence Layer
@@ -4277,7 +4338,19 @@
                         null, // Usar raridade padrão do template
                         { id: 'wild_' + Date.now() }
                     );
-                    
+
+                    // Guarda: se o template não existir, lança erro claro antes de acessar propriedades
+                    if (!encounter.wildMonster) {
+                        const locationId  = _wm?.selectedLocationId ?? '(sem localização)';
+                        const spotId      = _wm?.selectedSpotId     ?? '(sem spot)';
+                        const saveVersion = GameState.meta?.saveVersion ?? '?';
+                        throw new Error(
+                            `Encounter template not found: ${wildTemplateId}` +
+                            ` | localização=${locationId}, spot=${spotId}` +
+                            ` | saveVersion=${saveVersion}`
+                        );
+                    }
+
                     // FASE 1 POKEMON: Gerar shiny com chance por raridade (FASE T)
                     encounter.wildMonster.isShiny = generateShinyChance(encounter.wildMonster.rarity);
                     
