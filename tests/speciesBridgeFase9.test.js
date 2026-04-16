@@ -78,21 +78,21 @@ vi.mock('../js/canon/canonLoader.js', () => ({
 
 describe('Fase 9 — Caçador → swiftclaw (bridge)', () => {
 
-    describe('Linha Miaumon (MON_013)', () => {
-        it('MON_013 (Miaumon, Comum) mapeia para swiftclaw — ATK 8, DEF 4, SPD 9', () => {
-            expect(resolveCanonSpeciesId('MON_013')).toBe('swiftclaw');
+    describe('Linha Miaumon (MON_009)', () => {
+        it('MON_009 (Miaumon, Comum) mapeia para swiftclaw — ATK 8, DEF 4, SPD 9', () => {
+            expect(resolveCanonSpeciesId('MON_009')).toBe('swiftclaw');
         });
 
-        it('MON_013B (Gatunamon, Incomum) mapeia para swiftclaw — ATK 10, DEF 6, SPD 12', () => {
-            expect(resolveCanonSpeciesId('MON_013B')).toBe('swiftclaw');
+        it('MON_010 (Gatunamon, Incomum) mapeia para swiftclaw — ATK 10, DEF 6, SPD 12', () => {
+            expect(resolveCanonSpeciesId('MON_010')).toBe('swiftclaw');
         });
 
-        it('MON_013C (Felinomon, Raro) mapeia para swiftclaw — ATK 14, DEF 7, SPD 15', () => {
-            expect(resolveCanonSpeciesId('MON_013C')).toBe('swiftclaw');
+        it('MON_011 (Felinomon, Raro) mapeia para swiftclaw — ATK 14, DEF 7, SPD 15', () => {
+            expect(resolveCanonSpeciesId('MON_011')).toBe('swiftclaw');
         });
 
-        it('MON_013D (Panterezamon, Místico) mapeia para swiftclaw — ATK 18, DEF 9, SPD 18', () => {
-            expect(resolveCanonSpeciesId('MON_013D')).toBe('swiftclaw');
+        it('MON_012 (Panterezamon, Místico) mapeia para swiftclaw — ATK 18, DEF 9, SPD 18', () => {
+            expect(resolveCanonSpeciesId('MON_012')).toBe('swiftclaw');
         });
     });
 
@@ -110,15 +110,16 @@ describe('Fase 9 — Caçador → swiftclaw (bridge)', () => {
         });
     });
 
-    describe('MON_005 (Garruncho) — excluído intencionalmente', () => {
-        it('MON_005 permanece sem mapeamento — sem linha evolutiva validável', () => {
-            expect(resolveCanonSpeciesId('MON_005')).toBeNull();
+    describe('Caçadors totalmente mapeados — sem exclusões (todos base stages têm swiftclaw)', () => {
+        it('todos os Caçadors da linha Miaumon são mapeados — sem exceção', () => {
+            expect(resolveCanonSpeciesId('MON_009')).toBe('swiftclaw');
+            expect(resolveCanonSpeciesId('MON_025')).toBe('swiftclaw');
         });
     });
 
     describe('Integridade da tabela pós-Fase 9', () => {
-        it('deve conter exatamente 51 mapeamentos (32 Fase 8 + 7 swiftclaw + 3 shadowsting Fase 10 + 6 bellwave Fases 11+13.2 + 3 wildpace Fase 12)', () => {
-            expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(51);
+        it('deve conter exatamente 42 mapeamentos após migração Phase 1 hard-replace', () => {
+            expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(42);
         });
 
         it('todos os 7 novos mapeamentos de swiftclaw devem estar presentes', () => {
@@ -126,10 +127,10 @@ describe('Fase 9 — Caçador → swiftclaw (bridge)', () => {
                 .filter(([, v]) => v === 'swiftclaw')
                 .map(([k]) => k);
             expect(swiftclawIds).toHaveLength(7);
-            expect(swiftclawIds).toContain('MON_013');
-            expect(swiftclawIds).toContain('MON_013B');
-            expect(swiftclawIds).toContain('MON_013C');
-            expect(swiftclawIds).toContain('MON_013D');
+            expect(swiftclawIds).toContain('MON_009');
+            expect(swiftclawIds).toContain('MON_010');
+            expect(swiftclawIds).toContain('MON_011');
+            expect(swiftclawIds).toContain('MON_012');
             expect(swiftclawIds).toContain('MON_025');
             expect(swiftclawIds).toContain('MON_025B');
             expect(swiftclawIds).toContain('MON_025C');
@@ -431,29 +432,29 @@ describe('Fase 9 — Promoção kit swap swiftclaw (L20)', () => {
 describe('Fase 9 — Fallback e templates sem mapeamento', () => {
 
     const CAÇADOR_CATALOG = [
-        { id: 'MON_005', class: 'Caçador' },
-        { id: 'MON_013', class: 'Caçador' },
-        { id: 'MON_013B', class: 'Caçador' },
-        { id: 'MON_013C', class: 'Caçador' },
-        { id: 'MON_013D', class: 'Caçador' },
+        { id: 'MON_009', class: 'Caçador' },
+        { id: 'MON_010', class: 'Caçador' },
+        { id: 'MON_011', class: 'Caçador' },
+        { id: 'MON_012', class: 'Caçador' },
         { id: 'MON_025', class: 'Caçador' },
         { id: 'MON_025B', class: 'Caçador' },
         { id: 'MON_025C', class: 'Caçador' },
+        { id: 'MON_100', class: 'Guerreiro' },  // não mapeado — usado para testar relatório
     ];
 
-    it('getUnmappedTemplateIds deve retornar apenas MON_005 para o catálogo Caçador', () => {
+    it('getUnmappedTemplateIds deve retornar apenas MON_100 (não mapeado) no catálogo Caçador atualizado', () => {
         const unmapped = getUnmappedTemplateIds(CAÇADOR_CATALOG);
         expect(unmapped).toHaveLength(1);
-        expect(unmapped).toContain('MON_005');
+        expect(unmapped).toContain('MON_100');
     });
 
-    it('getEligibleUnmappedTemplateIds deve listar MON_005 como elegível (Caçador tem species)', () => {
+    it('getEligibleUnmappedTemplateIds deve listar MON_100 como elegível (Guerreiro tem shieldhorn)', () => {
         const eligible = getEligibleUnmappedTemplateIds(CAÇADOR_CATALOG);
         const ids = eligible.map(e => e.id);
-        expect(ids).toContain('MON_005');
+        expect(ids).toContain('MON_100');
     });
 
-    it('bridge report: 7 mapeados, 1 unmapped (MON_005) no catálogo Caçador', () => {
+    it('bridge report: 7 mapeados (swiftclaw), 1 unmapped (MON_100) no catálogo Caçador', () => {
         const report = getBridgeCoverageReport(CAÇADOR_CATALOG);
         expect(report.total).toBe(8);
         expect(report.mapped).toBe(7);
@@ -475,28 +476,28 @@ describe('Fase 9 — Fallback e templates sem mapeamento', () => {
 
 describe('Fase 9 — Regressão: espécies MVP não afetadas', () => {
 
-    it('shieldhorn: bridge intacto (MON_010, MON_002, MON_026)', () => {
-        expect(resolveCanonSpeciesId('MON_010')).toBe('shieldhorn');
+    it('shieldhorn: bridge intacto (MON_001, MON_002, MON_026)', () => {
+        expect(resolveCanonSpeciesId('MON_001')).toBe('shieldhorn');
         expect(resolveCanonSpeciesId('MON_002')).toBe('shieldhorn');
         expect(resolveCanonSpeciesId('MON_026')).toBe('shieldhorn');
     });
 
-    it('emberfang: bridge intacto (MON_007, MON_021, MON_029)', () => {
-        expect(resolveCanonSpeciesId('MON_007')).toBe('emberfang');
+    it('emberfang: bridge intacto (MON_021, MON_021B, MON_029)', () => {
         expect(resolveCanonSpeciesId('MON_021')).toBe('emberfang');
+        expect(resolveCanonSpeciesId('MON_021B')).toBe('emberfang');
         expect(resolveCanonSpeciesId('MON_029')).toBe('emberfang');
     });
 
-    it('moonquill: bridge intacto (MON_003, MON_014, MON_024)', () => {
-        expect(resolveCanonSpeciesId('MON_003')).toBe('moonquill');
+    it('moonquill: bridge intacto (MON_013, MON_014, MON_024)', () => {
+        expect(resolveCanonSpeciesId('MON_013')).toBe('moonquill');
         expect(resolveCanonSpeciesId('MON_014')).toBe('moonquill');
         expect(resolveCanonSpeciesId('MON_024')).toBe('moonquill');
     });
 
-    it('floracura: bridge intacto (MON_004, MON_020, MON_028)', () => {
-        expect(resolveCanonSpeciesId('MON_004')).toBe('floracura');
-        expect(resolveCanonSpeciesId('MON_020')).toBe('floracura');
+    it('floracura: bridge intacto (MON_028, MON_028B, MON_028C)', () => {
         expect(resolveCanonSpeciesId('MON_028')).toBe('floracura');
+        expect(resolveCanonSpeciesId('MON_028B')).toBe('floracura');
+        expect(resolveCanonSpeciesId('MON_028C')).toBe('floracura');
     });
 
     it('shieldhorn passiva: on_hit_received ainda funciona corretamente', () => {

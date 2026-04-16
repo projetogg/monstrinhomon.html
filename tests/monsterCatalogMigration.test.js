@@ -33,8 +33,8 @@ describe('monsters.json — carregamento', () => {
         expect(monstersMap.size).toBeGreaterThan(0);
     });
 
-    it('contém exatamente 72 templates', () => {
-        expect(monstersArray.length).toBe(72);
+    it('contém exatamente 59 templates', () => {
+        expect(monstersArray.length).toBe(59);
     });
 
     it('todos os IDs são únicos', () => {
@@ -47,7 +47,7 @@ describe('monsters.json — carregamento', () => {
 // ─── Campos obrigatórios ──────────────────────────────────────────────────────
 
 describe('monsters.json — campos obrigatórios', () => {
-    it.each(REQUIRED_FIELDS)('campo "%s" presente em todos os 72 monstros', (field) => {
+    it.each(REQUIRED_FIELDS)('campo "%s" presente em todos os 59 monstros', (field) => {
         const missing = monstersArray.filter(m => m[field] === undefined || m[field] === null || m[field] === '');
         expect(missing.map(m => m.id)).toEqual([]);
     });
@@ -92,11 +92,11 @@ describe('monsters.json — consistência de evoluções', () => {
         expect(invalid.map(m => m.id)).toEqual([]);
     });
 
-    it('39 monstros têm evolvesTo e 33 são estágios finais (incluindo 8 Lendários)', () => {
+    it('35 monstros têm evolvesTo e 24 são estágios finais (incluindo 8 Lendários)', () => {
         const withEvo   = monstersArray.filter(m => m.evolvesTo).length;
         const finalStage = monstersArray.filter(m => !m.evolvesTo).length;
-        expect(withEvo).toBe(39);
-        expect(finalStage).toBe(33);
+        expect(withEvo).toBe(35);
+        expect(finalStage).toBe(24);
     });
 });
 
@@ -106,8 +106,8 @@ describe('getMonstersMapSync — lookups', () => {
     it('encontra MON_001 pelo ID', () => {
         const m = monstersMap.get('MON_001');
         expect(m).toBeTruthy();
-        expect(m.name).toBe('Cantapau');
-        expect(m.class).toBe('Bardo');
+        expect(m.name).toBe('Ferrozimon');
+        expect(m.class).toBe('Guerreiro');
     });
 
     it('retorna undefined para ID inexistente', () => {
@@ -116,14 +116,14 @@ describe('getMonstersMapSync — lookups', () => {
 
     it('encontra monstro com evolução (MON_002)', () => {
         const m = monstersMap.get('MON_002');
-        expect(m.evolvesTo).toBe('MON_002B');
-        expect(m.evolvesAt).toBe(12);
+        expect(m.evolvesTo).toBe('MON_003');
+        expect(m.evolvesAt).toBe(25);
     });
 
-    it('encontra todos os estágios da linha MON_010', () => {
-        expect(monstersMap.get('MON_010')).toBeTruthy();
-        expect(monstersMap.get('MON_010B')).toBeTruthy();
-        expect(monstersMap.get('MON_010C')).toBeTruthy();
-        expect(monstersMap.get('MON_010D')).toBeTruthy();
+    it('encontra todos os estágios da linha Ferrozimon (MON_001→MON_004)', () => {
+        expect(monstersMap.get('MON_001')).toBeTruthy();
+        expect(monstersMap.get('MON_002')).toBeTruthy();
+        expect(monstersMap.get('MON_003')).toBeTruthy();
+        expect(monstersMap.get('MON_004')).toBeTruthy();
     });
 });

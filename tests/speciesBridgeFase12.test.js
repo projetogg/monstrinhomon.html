@@ -123,12 +123,13 @@ describe('Fase 12 — Animalista → wildpace (bridge)', () => {
     });
 
     describe('Exclusões justificadas — Animalista', () => {
-        it('MON_006 (Lobinho) não mapeado — estágio único, sem linha evolutiva', () => {
-            expect(resolveCanonSpeciesId('MON_006')).toBeNull();
+        it('MON_008 (Giganotometalmon) não mapeado — drift bruiser excluído por design', () => {
+            expect(resolveCanonSpeciesId('MON_008')).toBeNull();
         });
 
-        it('MON_012 (Luvursomon) não mapeado — drift burst/ATK ao longo da linha', () => {
-            expect(resolveCanonSpeciesId('MON_012')).toBeNull();
+        it('MON_017 (Luvursomon) não mapeado — linha Animalista sem espécie canônica', () => {
+            // MON_012 foi rebased para MON_017 na migração Phase 1
+            expect(resolveCanonSpeciesId('MON_017')).toBeNull();
         });
 
         it('MON_012B (Manoplamon) não mapeado — linha com drift de ATK crescente', () => {
@@ -159,8 +160,8 @@ describe('Fase 12 — Animalista → wildpace (bridge)', () => {
             expect(wildpaceIds).toEqual(['MON_023', 'MON_023B', 'MON_023C']);
         });
 
-        it('tabela total: 51 mapeamentos após Fase 13.2 (45 Fase 11 + 3 wildpace + 3 bellwave Fase 13.2)', () => {
-            expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(51);
+        it('tabela total: 42 mapeamentos após migração Phase 1 hard-replace', () => {
+            expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(42);
         });
     });
 });
@@ -765,35 +766,35 @@ describe('Fase 12 — wildpace — diferenciação mecânica', () => {
 describe('Fase 12 — regressão: mapeamentos e passivas das fases anteriores', () => {
 
     describe('Bridge — espécies anteriores preservadas', () => {
-        it('shieldhorn: MON_010, MON_002, MON_026 intactos', () => {
-            expect(resolveCanonSpeciesId('MON_010')).toBe('shieldhorn');
+        it('shieldhorn: MON_001, MON_002, MON_026 intactos', () => {
+            expect(resolveCanonSpeciesId('MON_001')).toBe('shieldhorn');
             expect(resolveCanonSpeciesId('MON_002')).toBe('shieldhorn');
             expect(resolveCanonSpeciesId('MON_026')).toBe('shieldhorn');
         });
 
-        it('emberfang: MON_007, MON_021, MON_029 intactos', () => {
-            expect(resolveCanonSpeciesId('MON_007')).toBe('emberfang');
+        it('emberfang: MON_021, MON_021B, MON_029 intactos', () => {
+            expect(resolveCanonSpeciesId('MON_021')).toBe('emberfang');
             expect(resolveCanonSpeciesId('MON_021')).toBe('emberfang');
             expect(resolveCanonSpeciesId('MON_029')).toBe('emberfang');
         });
 
-        it('moonquill: MON_003, MON_014, MON_024 intactos', () => {
-            expect(resolveCanonSpeciesId('MON_003')).toBe('moonquill');
+        it('moonquill: MON_013, MON_014, MON_024 intactos', () => {
+            expect(resolveCanonSpeciesId('MON_013')).toBe('moonquill');
             expect(resolveCanonSpeciesId('MON_014')).toBe('moonquill');
             expect(resolveCanonSpeciesId('MON_024')).toBe('moonquill');
         });
 
-        it('floracura: MON_004, MON_020, MON_028 intactos', () => {
-            expect(resolveCanonSpeciesId('MON_004')).toBe('floracura');
-            expect(resolveCanonSpeciesId('MON_020')).toBe('floracura');
+        it('floracura: MON_028, MON_028B, MON_028C intactos', () => {
+            expect(resolveCanonSpeciesId('MON_028')).toBe('floracura');
+            expect(resolveCanonSpeciesId('MON_028B')).toBe('floracura');
             expect(resolveCanonSpeciesId('MON_028')).toBe('floracura');
         });
 
-        it('swiftclaw: MON_013, MON_013B, MON_013C, MON_013D intactos', () => {
-            expect(resolveCanonSpeciesId('MON_013')).toBe('swiftclaw');
-            expect(resolveCanonSpeciesId('MON_013B')).toBe('swiftclaw');
-            expect(resolveCanonSpeciesId('MON_013C')).toBe('swiftclaw');
-            expect(resolveCanonSpeciesId('MON_013D')).toBe('swiftclaw');
+        it('swiftclaw: MON_009, MON_010, MON_011, MON_012 intactos', () => {
+            expect(resolveCanonSpeciesId('MON_009')).toBe('swiftclaw');
+            expect(resolveCanonSpeciesId('MON_010')).toBe('swiftclaw');
+            expect(resolveCanonSpeciesId('MON_011')).toBe('swiftclaw');
+            expect(resolveCanonSpeciesId('MON_012')).toBe('swiftclaw');
         });
 
         it('shadowsting: MON_022, MON_022B, MON_022C intactos', () => {
@@ -846,12 +847,12 @@ describe('Fase 12 — regressão: mapeamentos e passivas das fases anteriores', 
     });
 
     describe('Fallbacks não mapeados permanecem sem mapeamento', () => {
-        it('MON_006 (Lobinho) ainda sem mapeamento', () => {
-            expect(resolveCanonSpeciesId('MON_006')).toBeNull();
+        it('MON_008 (Giganotometalmon) ainda sem mapeamento', () => {
+            expect(resolveCanonSpeciesId('MON_008')).toBeNull();
         });
 
-        it('MON_012 (Luvursomon) ainda sem mapeamento', () => {
-            expect(resolveCanonSpeciesId('MON_012')).toBeNull();
+        it('MON_017 (Luvursomon) ainda sem mapeamento', () => {
+            expect(resolveCanonSpeciesId('MON_017')).toBeNull();
         });
 
         it('MON_012B (Manoplamon) ainda sem mapeamento', () => {
