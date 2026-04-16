@@ -72,14 +72,14 @@ const BASE_STATS = { hpMax: 30, atk: 7, def: 5, spd: 5, eneMax: 10 };
 
 describe('speciesBridge — tabela RUNTIME_TO_CANON_SPECIES', () => {
 
-    it('deve conter os 51 mapeamentos definidos na Fase 13.2 (12 bases + 20 evoluções MVP + 7 Caçador + 3 Ladino + 6 Bardo + 3 Animalista)', () => {
-        // Valor 51 fixo e intencional: documenta o estado do bridge após Fase 13.2.
+    it('deve conter os 42 mapeamentos definidos na Fase 13.2 (após migração Phase 1 hard-replace)', () => {
+        // Valor 42 fixo e intencional: documenta o estado do bridge após migração Phase 1.
         // Atualizar junto com cada novo mapeamento adicionado à tabela.
-        expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(51);
+        expect(Object.keys(RUNTIME_TO_CANON_SPECIES)).toHaveLength(42);
     });
 
-    it('MON_010 mapeia para shieldhorn (Guerreiro tank — DEF 9)', () => {
-        expect(RUNTIME_TO_CANON_SPECIES['MON_010']).toBe('shieldhorn');
+    it('MON_001 mapeia para shieldhorn (Guerreiro tank — DEF 9)', () => {
+        expect(RUNTIME_TO_CANON_SPECIES['MON_001']).toBe('shieldhorn');
     });
 
     it('MON_002 mapeia para shieldhorn (Guerreiro equilibrado — offsets inclinam para tank)', () => {
@@ -90,8 +90,8 @@ describe('speciesBridge — tabela RUNTIME_TO_CANON_SPECIES', () => {
         expect(RUNTIME_TO_CANON_SPECIES['MON_026']).toBe('shieldhorn');
     });
 
-    it('MON_007 mapeia para emberfang (Bárbaro burst)', () => {
-        expect(RUNTIME_TO_CANON_SPECIES['MON_007']).toBe('emberfang');
+    it('MON_021 mapeia para emberfang (Bárbaro burst)', () => {
+        expect(RUNTIME_TO_CANON_SPECIES['MON_021']).toBe('emberfang');
     });
 
     it('MON_021 mapeia para emberfang (Bárbaro burst compartilhado)', () => {
@@ -102,8 +102,8 @@ describe('speciesBridge — tabela RUNTIME_TO_CANON_SPECIES', () => {
         expect(RUNTIME_TO_CANON_SPECIES['MON_029']).toBe('emberfang');
     });
 
-    it('MON_003 mapeia para moonquill (Mago controle — ENE 10)', () => {
-        expect(RUNTIME_TO_CANON_SPECIES['MON_003']).toBe('moonquill');
+    it('MON_013 mapeia para moonquill (Mago controle — ENE 10)', () => {
+        expect(RUNTIME_TO_CANON_SPECIES['MON_013']).toBe('moonquill');
     });
 
     it('MON_014 mapeia para moonquill (Mago controle_leve — ENE 8)', () => {
@@ -114,12 +114,8 @@ describe('speciesBridge — tabela RUNTIME_TO_CANON_SPECIES', () => {
         expect(RUNTIME_TO_CANON_SPECIES['MON_024']).toBe('moonquill');
     });
 
-    it('MON_004 mapeia para floracura (Curandeiro cura estável — ENE 12)', () => {
-        expect(RUNTIME_TO_CANON_SPECIES['MON_004']).toBe('floracura');
-    });
-
-    it('MON_020 mapeia para floracura (Curandeiro cura estável — ENE 9)', () => {
-        expect(RUNTIME_TO_CANON_SPECIES['MON_020']).toBe('floracura');
+    it('MON_028 mapeia para floracura (Curandeiro cura estável — ENE 12)', () => {
+        expect(RUNTIME_TO_CANON_SPECIES['MON_028']).toBe('floracura');
     });
 
     it('MON_028 mapeia para floracura (Curandeiro suporte puro — ATK 3 / ENE 11)', () => {
@@ -142,26 +138,25 @@ describe('speciesBridge — resolveCanonSpeciesId()', () => {
 
     it('deve retornar o species_id correto para todos os templates mapeados', () => {
         // Guerreiro → shieldhorn
-        expect(resolveCanonSpeciesId('MON_010')).toBe('shieldhorn');
+        expect(resolveCanonSpeciesId('MON_001')).toBe('shieldhorn');
         expect(resolveCanonSpeciesId('MON_002')).toBe('shieldhorn');
         expect(resolveCanonSpeciesId('MON_026')).toBe('shieldhorn');
         // Bárbaro → emberfang
-        expect(resolveCanonSpeciesId('MON_007')).toBe('emberfang');
+        expect(resolveCanonSpeciesId('MON_021')).toBe('emberfang');
         expect(resolveCanonSpeciesId('MON_021')).toBe('emberfang');
         expect(resolveCanonSpeciesId('MON_029')).toBe('emberfang');
         // Mago → moonquill
-        expect(resolveCanonSpeciesId('MON_003')).toBe('moonquill');
+        expect(resolveCanonSpeciesId('MON_013')).toBe('moonquill');
         expect(resolveCanonSpeciesId('MON_014')).toBe('moonquill');
         expect(resolveCanonSpeciesId('MON_024')).toBe('moonquill');
         // Curandeiro → floracura
-        expect(resolveCanonSpeciesId('MON_004')).toBe('floracura');
-        expect(resolveCanonSpeciesId('MON_020')).toBe('floracura');
+        expect(resolveCanonSpeciesId('MON_028')).toBe('floracura');
         expect(resolveCanonSpeciesId('MON_028')).toBe('floracura');
     });
 
     it('deve retornar null para template não mapeado', () => {
-        expect(resolveCanonSpeciesId('MON_001')).toBeNull(); // Cantapau (Bardo)
-        expect(resolveCanonSpeciesId('MON_005')).toBeNull(); // Garruncho (Caçador)
+        expect(resolveCanonSpeciesId('MON_008')).toBeNull(); // Giganotometalmon (Bardo, drift bruiser)
+        expect(resolveCanonSpeciesId('MON_017')).toBeNull(); // Luvursomon (Animalista, não mapeado)
         expect(resolveCanonSpeciesId('MON_100')).toBeNull(); // Rato-de-Lama (sem perfil tank)
         expect(resolveCanonSpeciesId('MON_999')).toBeNull(); // Não existe
     });
@@ -264,26 +259,26 @@ describe('speciesBridge — applyStatOffsets()', () => {
 describe('speciesBridge — resolveAndApply()', () => {
 
     it('deve retornar stats originais + null para template sem mapeamento', () => {
-        const result = resolveAndApply('MON_001', BASE_STATS);
+        const result = resolveAndApply('MON_008', BASE_STATS);
         expect(result.stats).toEqual(BASE_STATS);
         expect(result.canonSpeciesId).toBeNull();
         expect(result.canonAppliedOffsets).toBeNull();
     });
 
-    it('deve retornar canonSpeciesId correto para MON_010 (shieldhorn)', () => {
-        const result = resolveAndApply('MON_010', BASE_STATS);
+    it('deve retornar canonSpeciesId correto para MON_001 (shieldhorn)', () => {
+        const result = resolveAndApply('MON_001', BASE_STATS);
         expect(result.canonSpeciesId).toBe('shieldhorn');
     });
 
     it('deve aplicar offsets de shieldhorn: hpMax+1, atk-1, def+1', () => {
-        const result = resolveAndApply('MON_010', BASE_STATS);
+        const result = resolveAndApply('MON_001', BASE_STATS);
         expect(result.stats.hpMax).toBe(BASE_STATS.hpMax + 1);
         expect(result.stats.atk).toBe(BASE_STATS.atk - 1);
         expect(result.stats.def).toBe(BASE_STATS.def + 1);
     });
 
-    it('deve aplicar offsets de emberfang (MON_007): atk+1, def-1, spd+1', () => {
-        const result = resolveAndApply('MON_007', BASE_STATS);
+    it('deve aplicar offsets de emberfang (MON_021): atk+1, def-1, spd+1', () => {
+        const result = resolveAndApply('MON_021', BASE_STATS);
         expect(result.canonSpeciesId).toBe('emberfang');
         expect(result.stats.atk).toBe(BASE_STATS.atk + 1);
         expect(result.stats.def).toBe(BASE_STATS.def - 1);
@@ -296,14 +291,14 @@ describe('speciesBridge — resolveAndApply()', () => {
         expect(result.stats.atk).toBe(BASE_STATS.atk + 1);
     });
 
-    it('deve aplicar offsets de moonquill (MON_003): eneMax+1', () => {
-        const result = resolveAndApply('MON_003', BASE_STATS);
+    it('deve aplicar offsets de moonquill (MON_013): eneMax+1', () => {
+        const result = resolveAndApply('MON_013', BASE_STATS);
         expect(result.canonSpeciesId).toBe('moonquill');
         expect(result.stats.eneMax).toBe(BASE_STATS.eneMax + 1);
     });
 
-    it('deve aplicar offsets de floracura (MON_004): hpMax+1, eneMax+1, spd-1', () => {
-        const result = resolveAndApply('MON_004', BASE_STATS);
+    it('deve aplicar offsets de floracura (MON_028): hpMax+1, eneMax+1, spd-1', () => {
+        const result = resolveAndApply('MON_028', BASE_STATS);
         expect(result.canonSpeciesId).toBe('floracura');
         expect(result.stats.hpMax).toBe(BASE_STATS.hpMax + 1);
         expect(result.stats.eneMax).toBe(BASE_STATS.eneMax + 1);
@@ -311,7 +306,7 @@ describe('speciesBridge — resolveAndApply()', () => {
     });
 
     it('deve registrar canonAppliedOffsets com os deltas não-zero', () => {
-        const result = resolveAndApply('MON_010', BASE_STATS);
+        const result = resolveAndApply('MON_001', BASE_STATS);
         expect(result.canonAppliedOffsets).not.toBeNull();
         expect(result.canonAppliedOffsets.hp).toBe(1);
         expect(result.canonAppliedOffsets.atk).toBe(-1);
@@ -360,14 +355,6 @@ describe('speciesBridge — resolveAndApply()', () => {
         expect(result.stats.eneMax).toBe(BASE_STATS.eneMax + 1);
     });
 
-    it('deve aplicar offsets de floracura para MON_020 (Gotimon — healer estável)', () => {
-        const result = resolveAndApply('MON_020', BASE_STATS);
-        expect(result.canonSpeciesId).toBe('floracura');
-        expect(result.stats.hpMax).toBe(BASE_STATS.hpMax + 1);
-        expect(result.stats.eneMax).toBe(BASE_STATS.eneMax + 1);
-        expect(result.stats.spd).toBe(BASE_STATS.spd - 1);
-    });
-
     it('deve aplicar offsets de floracura para MON_028 (Nutrilo — suporte puro)', () => {
         const result = resolveAndApply('MON_028', BASE_STATS);
         expect(result.canonSpeciesId).toBe('floracura');
@@ -378,7 +365,7 @@ describe('speciesBridge — resolveAndApply()', () => {
 
     it('não deve mutar stats originais', () => {
         const original = { ...BASE_STATS };
-        resolveAndApply('MON_010', BASE_STATS);
+        resolveAndApply('MON_001', BASE_STATS);
         expect(BASE_STATS).toEqual(original);
     });
 });
@@ -387,28 +374,21 @@ describe('speciesBridge — resolveAndApply()', () => {
 // DRIFT DETECTION — Fase 3.1 / atualizado na Fase 3.2
 // ===========================================================================
 
-// Catálogo mínimo de teste — cobre base stages + evoluções + classes variadas
-// Atualizado na Fase 8: MON_002B e MON_014B agora mapeados; substituídos por
-// MON_011B (Bardo evolução) e MON_030B (Ladino evolução) — sem mapeamento.
-// Atualizado na Fase 9: Caçador agora tem species (swiftclaw). MON_005 (Garruncho)
-// passa a ser elegível pelo getEligibleUnmappedTemplateIds mas não foi mapeado
-// intencionalmente (sem linha evolutiva validável).
-// Atualizado na Fase 11: Bardo agora tem species (bellwave). MON_027/B/C mapeados.
-// Atualizado na Fase 13.2: MON_011/B/C mapeados como bellwave. MON_011D continua excluído.
-// MON_001 permanece não mapeado (sem linha evolutiva validável).
-// SAMPLE_CATALOG usa MON_030B (linha Furtilhon — não mapeada) para representar Ladino
-// não mapeado (substituiu MON_022B que foi mapeado na Fase 10).
+// Catálogo mínimo de teste — cobre base stages + evoluções + classes variadas.
+// Atualizado após migração Phase 1 hard-replace (rebase de IDs).
+// Não mapeados: MON_008 (Bardo drift bruiser), MON_020 (Animalista drift burst),
+//               MON_030B (Ladino excluído), MON_017 (Animalista não mapeado), MON_100 (sem arquétipo).
 const SAMPLE_CATALOG = [
-    { id: 'MON_001', class: 'Bardo' },          // não mapeado — sem linha evolutiva (Fase 11)
-    { id: 'MON_002', class: 'Guerreiro' },       // mapeado → shieldhorn (Fase 3.2)
-    { id: 'MON_011D', class: 'Bardo' },          // não mapeado — drift irreversível em estágio final (excluído Fase 13.2)
-    { id: 'MON_003', class: 'Mago' },            // mapeado → moonquill
-    { id: 'MON_004', class: 'Curandeiro' },      // mapeado → floracura
-    { id: 'MON_007', class: 'Bárbaro' },         // mapeado → emberfang
-    { id: 'MON_010', class: 'Guerreiro' },       // mapeado → shieldhorn
-    { id: 'MON_014', class: 'Mago' },            // mapeado → moonquill (Fase 3.2)
-    { id: 'MON_030B', class: 'Ladino' },         // não mapeado — linha excluída (DEF floor / perfil ambíguo)
-    { id: 'MON_005', class: 'Caçador' },         // não mapeado — sem linha evolutiva (Fase 9)
+    { id: 'MON_008', class: 'Bardo' },          // não mapeado — drift bruiser excluído por design
+    { id: 'MON_002', class: 'Guerreiro' },       // mapeado → shieldhorn
+    { id: 'MON_020', class: 'Animalista' },      // não mapeado — Ursauramon (drift burst)
+    { id: 'MON_013', class: 'Mago' },            // mapeado → moonquill
+    { id: 'MON_028', class: 'Curandeiro' },      // mapeado → floracura
+    { id: 'MON_021', class: 'Bárbaro' },         // mapeado → emberfang
+    { id: 'MON_001', class: 'Guerreiro' },       // mapeado → shieldhorn
+    { id: 'MON_014', class: 'Mago' },            // mapeado → moonquill
+    { id: 'MON_030B', class: 'Ladino' },         // não mapeado — linha excluída
+    { id: 'MON_017', class: 'Animalista' },      // não mapeado — Luvursomon sem espécie mapeada
     { id: 'MON_100', class: 'Guerreiro' },       // não mapeado — sem perfil tank claro
 ];
 
@@ -416,20 +396,20 @@ describe('speciesBridge — getUnmappedTemplateIds()', () => {
 
     it('deve retornar lista de templates sem mapeamento', () => {
         const unmapped = getUnmappedTemplateIds(SAMPLE_CATALOG);
-        expect(unmapped).toContain('MON_001');
-        expect(unmapped).toContain('MON_011D');
+        expect(unmapped).toContain('MON_008');
+        expect(unmapped).toContain('MON_020');
         expect(unmapped).toContain('MON_030B');
-        expect(unmapped).toContain('MON_005');
+        expect(unmapped).toContain('MON_017');
         expect(unmapped).toContain('MON_100');
     });
 
     it('NÃO deve incluir templates mapeados na lista de unmapped', () => {
         const unmapped = getUnmappedTemplateIds(SAMPLE_CATALOG);
         expect(unmapped).not.toContain('MON_002'); // mapeado na Fase 3.2
-        expect(unmapped).not.toContain('MON_003');
-        expect(unmapped).not.toContain('MON_004');
-        expect(unmapped).not.toContain('MON_007');
-        expect(unmapped).not.toContain('MON_010');
+        expect(unmapped).not.toContain('MON_013');
+        expect(unmapped).not.toContain('MON_028');
+        expect(unmapped).not.toContain('MON_021');
+        expect(unmapped).not.toContain('MON_001');
         expect(unmapped).not.toContain('MON_014'); // mapeado na Fase 3.2
     });
 
@@ -443,9 +423,9 @@ describe('speciesBridge — getUnmappedTemplateIds()', () => {
     });
 
     it('deve ignorar entradas inválidas no catálogo', () => {
-        const messy = [null, undefined, { id: null }, { id: 'MON_005', class: 'Caçador' }];
+        const messy = [null, undefined, { id: null }, { id: 'MON_008', class: 'Bardo' }];
         const unmapped = getUnmappedTemplateIds(messy);
-        expect(unmapped).toContain('MON_005');
+        expect(unmapped).toContain('MON_008');
         expect(unmapped).toHaveLength(1);
     });
 });
@@ -476,21 +456,18 @@ describe('speciesBridge — getEligibleUnmappedTemplateIds()', () => {
     it('NÃO deve incluir classes sem species canônica (mas inclui classes com species que ficaram sem mapeamento)', () => {
         const eligible = getEligibleUnmappedTemplateIds(SAMPLE_CATALOG);
         const eligibleIds = eligible.map(e => e.id);
-        // MON_001 (Bardo base) agora É elegível — Bardo tem species (bellwave, Fase 11),
-        // mas MON_001 não foi mapeado (sem linha evolutiva validável).
-        // Isso é esperado: getEligibleUnmappedTemplateIds sinaliza candidatos para avaliação.
-        expect(eligibleIds).toContain('MON_001'); // Bardo base — elegível mas excluído por decisão de design
-        expect(eligibleIds).not.toContain('MON_011B'); // Bardo evolução (sufixo B) — não elegível por regex
-        // MON_005 (Caçador) é ELEGÍVEL (Caçador tem swiftclaw desde Fase 9)
-        // mas não foi mapeado por decisão de design (sem linha evolutiva validável).
+        // MON_008 (Bardo base stage, sem sufixo) É elegível — Bardo tem bellwave,
+        // mas MON_008 não foi mapeado (drift bruiser, excluído por design).
+        expect(eligibleIds).toContain('MON_008'); // Bardo base — elegível mas excluído por decisão de design
+        expect(eligibleIds).not.toContain('MON_011B'); // não existe no catálogo — trivialmente ausente
         expect(eligibleIds).not.toContain('MON_030B'); // Ladino evolução (sufixo B) — não elegível por regex
     });
 
     it('NÃO deve incluir templates já mapeados', () => {
         const eligible = getEligibleUnmappedTemplateIds(SAMPLE_CATALOG);
         const eligibleIds = eligible.map(e => e.id);
-        expect(eligibleIds).not.toContain('MON_003'); // mapeado
-        expect(eligibleIds).not.toContain('MON_010'); // mapeado
+        expect(eligibleIds).not.toContain('MON_001'); // mapeado → shieldhorn
+        expect(eligibleIds).not.toContain('MON_013'); // mapeado → moonquill
     });
 
     it('deve retornar objetos com id e class', () => {
@@ -511,8 +488,8 @@ describe('speciesBridge — getBridgeCoverageReport()', () => {
     it('deve contar total, mapeados e não mapeados corretamente (Fase 8)', () => {
         const report = getBridgeCoverageReport(SAMPLE_CATALOG);
         // SAMPLE_CATALOG: 11 entradas
-        // Mapeados: MON_002, MON_003, MON_004, MON_007, MON_010, MON_014 = 6
-        // Não mapeados: MON_001, MON_011D, MON_030B, MON_005, MON_100 = 5
+        // Mapeados: MON_002, MON_013, MON_028, MON_021, MON_001, MON_014 = 6
+        // Não mapeados: MON_008, MON_020, MON_030B, MON_017, MON_100 = 5
         expect(report.total).toBe(11);
         expect(report.mapped).toBe(6);
         expect(report.unmapped).toBe(5);

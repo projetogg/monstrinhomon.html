@@ -39,7 +39,7 @@ import { applyKitSwaps, getEffectiveSkills } from '../js/canon/kitSwap.js';
  */
 function makeInstance(overrides = {}) {
     return {
-        templateId: 'MON_010',
+        templateId: 'MON_001',
         instanceId: 'mi_test_001',
         name: 'Ferrozimon',
         class: 'Guerreiro',
@@ -63,7 +63,7 @@ function makeInstance(overrides = {}) {
 function simulateEvolution(instance, nextTemplateId) {
     const evolved = { ...instance };
     evolved.templateId = nextTemplateId;
-    evolved.name = nextTemplateId === 'MON_010B' ? 'Cavalheiromon' : 'Forma Evoluída';
+    evolved.name = nextTemplateId === 'MON_002' ? 'Cavalheiromon' : 'Forma Evoluída';
     // canonSpeciesId NÃO é alterado — essa é a regra
     return evolved;
 }
@@ -74,26 +74,26 @@ function simulateEvolution(instance, nextTemplateId) {
 
 describe('speciesBridge — templates evoluídos no bridge (pós-Fase 8)', () => {
 
-    it('MON_010 (base) está mapeado para shieldhorn', () => {
-        expect(resolveCanonSpeciesId('MON_010')).toBe('shieldhorn');
+    it('MON_001 (base) está mapeado para shieldhorn', () => {
+        expect(resolveCanonSpeciesId('MON_001')).toBe('shieldhorn');
     });
 
-    it('MON_010B (evoluído) está mapeado para shieldhorn — adicionado explicitamente na Fase 8', () => {
+    it('MON_002 (evoluído) está mapeado para shieldhorn', () => {
         // Fase 8 adicionou explicitamente os estágios evoluídos das classes MVP ao bridge.
         // A proteção central permanece: canonSpeciesId deve ser lido da INSTÂNCIA,
         // não rederivado a cada acesso. Evoluções adicionadas ao bridge são explícitas
         // e auditáveis, não derivações automáticas.
-        expect(resolveCanonSpeciesId('MON_010B')).toBe('shieldhorn');
+        expect(resolveCanonSpeciesId('MON_002')).toBe('shieldhorn');
     });
 
-    it('MON_010C (estágio avançado) está mapeado para shieldhorn — Fase 8', () => {
-        expect(resolveCanonSpeciesId('MON_010C')).toBe('shieldhorn');
+    it('MON_003 (estágio avançado) está mapeado para shieldhorn', () => {
+        expect(resolveCanonSpeciesId('MON_003')).toBe('shieldhorn');
     });
 
     it('outros templates mapeados base continuam funcionando', () => {
-        expect(resolveCanonSpeciesId('MON_007')).toBe('emberfang');
-        expect(resolveCanonSpeciesId('MON_003')).toBe('moonquill');
-        expect(resolveCanonSpeciesId('MON_004')).toBe('floracura');
+        expect(resolveCanonSpeciesId('MON_021')).toBe('emberfang');
+        expect(resolveCanonSpeciesId('MON_013')).toBe('moonquill');
+        expect(resolveCanonSpeciesId('MON_028')).toBe('floracura');
     });
 
     it('templates evoluídos fora do catálogo ainda retornam null', () => {
@@ -110,36 +110,36 @@ describe('speciesBridge — templates evoluídos no bridge (pós-Fase 8)', () =>
 
 describe('canonSpeciesId — preservado após simulação de evolução', () => {
 
-    it('canonSpeciesId permanece shieldhorn após evolução para MON_010B', () => {
-        const base = makeInstance({ templateId: 'MON_010', canonSpeciesId: 'shieldhorn' });
-        const evolved = simulateEvolution(base, 'MON_010B');
+    it('canonSpeciesId permanece shieldhorn após evolução para MON_002', () => {
+        const base = makeInstance({ templateId: 'MON_001', canonSpeciesId: 'shieldhorn' });
+        const evolved = simulateEvolution(base, 'MON_002');
 
-        expect(evolved.templateId).toBe('MON_010B');   // templateId mudou
+        expect(evolved.templateId).toBe('MON_002');   // templateId mudou
         expect(evolved.canonSpeciesId).toBe('shieldhorn'); // canonSpeciesId preservado
     });
 
     it('canonSpeciesId permanece emberfang após evolução', () => {
         const base = makeInstance({
-            templateId: 'MON_007',
+            templateId: 'MON_021',
             class: 'Bárbaro',
             canonSpeciesId: 'emberfang',
         });
-        const evolved = simulateEvolution(base, 'MON_007B');
+        const evolved = simulateEvolution(base, 'MON_021B');
 
-        expect(evolved.templateId).toBe('MON_007B');
+        expect(evolved.templateId).toBe('MON_021B');
         expect(evolved.canonSpeciesId).toBe('emberfang');
     });
 
     it('canonSpeciesId permanece moonquill após evolução', () => {
         const base = makeInstance({
-            templateId: 'MON_003',
+            templateId: 'MON_013',
             class: 'Mago',
             canonSpeciesId: 'moonquill',
             canonAppliedOffsets: { ene: 1, agi: -1 },
         });
-        const evolved = simulateEvolution(base, 'MON_003B');
+        const evolved = simulateEvolution(base, 'MON_013B');
 
-        expect(evolved.templateId).toBe('MON_003B');
+        expect(evolved.templateId).toBe('MON_013B');
         expect(evolved.canonSpeciesId).toBe('moonquill');
     });
 
@@ -308,13 +308,13 @@ describe('resolveAndApply — uso único na criação, correto comportamento par
     const baseStats = { hpMax: 30, atk: 7, def: 9, spd: 4, eneMax: 10 };
 
     it('retorna canonSpeciesId válido para template base mapeado', () => {
-        const result = resolveAndApply('MON_010', baseStats);
+        const result = resolveAndApply('MON_001', baseStats);
         expect(result.canonSpeciesId).toBe('shieldhorn');
     });
 
-    it('retorna canonSpeciesId válido para template evoluído mapeado na Fase 8', () => {
-        // Após Fase 8, MON_010B está explicitamente no bridge → retorna shieldhorn.
-        const result = resolveAndApply('MON_010B', baseStats);
+    it('retorna canonSpeciesId válido para template evoluído mapeado', () => {
+        // MON_002 (Cavalheiromon, shieldhorn) — explicitamente no bridge
+        const result = resolveAndApply('MON_002', baseStats);
         expect(result.canonSpeciesId).toBe('shieldhorn');
         // (canonAppliedOffsets depende do canonLoader estar carregado)
     });

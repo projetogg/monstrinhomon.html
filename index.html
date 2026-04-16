@@ -7072,7 +7072,10 @@
                             const label = formatSkillButtonLabel(skill, playerMonster);
                             const canUse = canUseSkillNow(skill, playerMonster) && playerMonster.hp > 0;
                             const tutAllows = tutorialAllows("skill");
-                            const tooltip = !tutAllows ? 'Tutorial: ainda não liberado' : (canUse ? (skill.desc || '') : `ENE insuficiente (${Number(playerMonster.ene) || 0}/${Number(skill.cost ?? skill.energy_cost ?? 0) || 0})`);
+                            const skillDesc = skill.desc || '';
+                            const skillMeta = [skill.category, skill.status ? `→ ${skill.status}` : null].filter(Boolean).join(' · ');
+                            const skillTooltipText = skillMeta ? `${skillDesc}\n${skillMeta}` : skillDesc;
+                            const tooltip = !tutAllows ? 'Tutorial: ainda não liberado' : (canUse ? skillTooltipText : `ENE insuficiente (${Number(playerMonster.ene) || 0}/${Number(skill.cost ?? skill.energy_cost ?? 0) || 0})`);
                             return `<button class="btn btn-primary" onclick="useSkillWild(${idx})"
                                     ${!canUse || !tutAllows ? 'disabled' : ''} title="${tooltip}">${label}</button>`;
                         }).join('')}
@@ -8619,7 +8622,15 @@
                 // Render the PartyDex UI (idempotent DOM update)
                 window.PartyDexUI.renderPartyDex(root, {
                     state: GameState,
-                    getMonsterTemplates: getMonsterTemplates
+                    getMonsterTemplates: getMonsterTemplates,
+                    getMonsterById: (id) => {
+                        // Tenta resolver template por ID para linha evolutiva
+                        if (window.Data?.getMonstersMapSync) {
+                            const map = window.Data.getMonstersMapSync();
+                            if (map) return map.get(String(id)) || null;
+                        }
+                        return getMonstersArray().find(t => t && String(t.id) === String(id)) || null;
+                    }
                 });
                 
             } catch (error) {
@@ -11511,7 +11522,7 @@
                                 isReadyForKitSwap: (monster) => window.SpeciesDisplay?.isReadyForKitSwap?.(monster) || false,
                                 isEligibleForBattle: (monster, owner) => window.ClassEligibility?.isEligibleForBattle?.(monster, owner) ?? true,
                                 renderEligibilityBadgeForTeam: (m, p) => MonsterCardUI.renderEligibilityBadgeForTeam(m, p, window.ClassEligibility),
-                                renderTeamReadinessIndicator: (m) => MonsterCardUI.renderTeamReadinessIndicator(m, window.SpeciesDisplay),
+                                renderTeamReadinessIndicator: (m) => MonsterCardUI.renderTeamReadinessIndicator(m, window.SpeciesDisplay, getEvolutionTargetTemplate),
                                 actionNames: {
                                     moveUp: 'moveTeamMemberUp',
                                     moveDown: 'moveTeamMemberDown',
@@ -11558,7 +11569,7 @@
                 isReadyForKitSwap: (monster) => window.SpeciesDisplay?.isReadyForKitSwap?.(monster) || false,
                 isEligibleForBattle: (monster, owner) => window.ClassEligibility?.isEligibleForBattle?.(monster, owner) ?? true,
                 renderEligibilityBadgeForTeam: (m, p) => MonsterCardUI.renderEligibilityBadgeForTeam(m, p, window.ClassEligibility),
-                renderTeamReadinessIndicator: (m) => MonsterCardUI.renderTeamReadinessIndicator(m, window.SpeciesDisplay),
+                renderTeamReadinessIndicator: (m) => MonsterCardUI.renderTeamReadinessIndicator(m, window.SpeciesDisplay, getEvolutionTargetTemplate),
                 actionNames: {
                     moveUp: 'moveTeamMemberUp',
                     moveDown: 'moveTeamMemberDown',

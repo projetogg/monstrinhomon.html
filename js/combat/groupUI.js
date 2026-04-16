@@ -459,8 +459,10 @@ function renderActionBar(encounter, actor, isPlayerTurn, state, helpers) {
                 ? `onclick="enterSkillMode(0)"`
                 : `onclick="enterSkillMode(${idx})"`;
             const cost = Number(skill.cost ?? skill.energy_cost ?? 0) || 0;
+            const skillDesc = skill.desc || '';
+            const skillMeta = [skill.category, skill.status ? `→ ${skill.status}` : null].filter(Boolean).join(' · ');
             const tooltip = canUse
-                ? (skill.desc || '')
+                ? (skillMeta ? `${skillDesc}\n${skillMeta}` : skillDesc)
                 : `ENE insuficiente (${Number(mon.ene) || 0}/${cost})`;
             skillButtonsHtml += `<button class="btn btn-info" ${onclickAttr} ${!canUse ? 'disabled' : ''} title="${tooltip}">✨ ${label}</button>`;
         }

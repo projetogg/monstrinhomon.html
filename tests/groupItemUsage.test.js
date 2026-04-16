@@ -1,11 +1,12 @@
 /**
- * GROUP ITEM USAGE TESTS (PR5B)
+ * GROUP ITEM USAGE TESTS (PR5B + Fase XXI Sprint I3)
  *
  * Testes para executeGroupUseItem:
  * - Cura com heal_pct e heal_min
  * - Consumo correto do inventário
  * - Validações (HP cheio, desmaiado, sem item)
  * - Suporte a múltiplos tipos de item (IT_HEAL_01/02/03)
+ * - Item tático (type: 'tatico') aplica buff DEF (Sprint I3)
  *
  * Também cobre validateItem (heal) em itemsLoader.js
  */
@@ -404,5 +405,119 @@ describe('executeGroupUseItem - Validações', () => {
 
         const result = executeGroupUseItem('IT_HEAL_01', deps);
         expect(result).toBe(false);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Sprint I3 — Item tático em batalha de grupo
+// ---------------------------------------------------------------------------
+
+const SHIELD_ITEM = {
+    id: 'IT_TATICO_01',
+    name: 'Escudo Protetor',
+    type: 'tatico',
+    shield: 3,
+    duration: 2,
+    emoji: '🛡️'
+};
+
+const SHIELD_ITEM_DEFAULT = {
+    id: 'IT_TATICO_02',
+    name: 'Escudo Básico',
+    type: 'tatico',
+    // sem campo shield/duration — usa defaults (2, 2)
+    emoji: '🛡️'
+};
+
+describe('executeGroupUseItem - Item tático (Sprint I3)', () => {
+    it('deve aplicar buff DEF ao monstrinho ativo', () => {
+        const mon = makeMon({ hp: 50, hpMax: 100, buffs: [] });
+        const player = makePlayer(mon, { 'IT_TATICO_01': 2 });
+        const { deps } = makeDeps({ mon, player, itemDefById: { 'IT_TATICO_01': SHIELD_ITEM } });
+
+        const result = executeGroupUseItem('IT_TATICO_01', deps);
+
+        expect(result).toBe(true);
+        expect(mon.buffs).toHaveLength(1);
+        expect(mon.buffs[0].type).toBe('def');
+        expect(mon.buffs[0].power).toBe(3);
+        expect(mon.buffs[0].duration).toBe(2);
+    });
+
+    it('deve consumir 1 item tático do inventário', () => {
+        const mon = makeMon({ hp: 50, hpMax: 100, buffs: [] });
+        const player = makePlayer(mon, { 'IT_TATICO_01': 3 });
+        const { deps } = makeDeps({ mon, player, itemDefById: { 'IT_TATICO_01': SHIELD_ITEM } });
+
+        executeGroupUseItem('IT_TATICO_01', deps);
+
+        expect(player.inventory['IT_TATICO_01']).toBe(2);
+    });
+
+    it('deve usar valores default de shield(2) e duration(2) quando ausentes no item', () => {
+        const mon = makeMon({ hp: 50, hpMax: 100, buffs: [] });
+        const player = makePlayer(mon, { 'IT_TATICO_02': 1 });
+        const { deps } = makeDeps({ mon, player, itemDefById: { 'IT_TATICO_02': SHIELD_ITEM_DEFAULT } });
+
+        executeGroupUseItem('IT_TATICO_02', deps);
+
+        expect(mon.buffs[0].power).toBe(2);
+        expect(mon.buffs[0].duration).toBe(2);
+    });
+
+    it('deve logar mensagem de item tático com nome e bônus', () => {
+        const mon = makeMon({ hp: 50, hpMax: 100, buffs: [] });
+        const player = makePlayer(mon, { 'IT_TATICO_01': 1 });
+        const { deps, enc } = makeDeps({ mon, player, itemDefById: { 'IT_TATICO_01': SHIELD_ITEM } });
+
+        executeGroupUseItem('IT_TATICO_01', deps);
+
+        const log = enc.log.join(' ');
+        expect(log).toContain('Escudo Protetor');
+        expect(log).toContain('DEF +3');
+    });
+
+    it('não deve curar HP ao usar item tático', () => {
+        const mon = makeMon({ hp: 50, hpMax: 100, buffs: [] });
+        const player = makePlayer(mon, { 'IT_TATICO_01': 1 });
+        const { deps } = makeDeps({ mon, player, itemDefById: { 'IT_TATICO_01': SHIELD_ITEM } });
+
+        executeGroupUseItem('IT_TATICO_01', deps);
+
+        expect(mon.hp).toBe(50); // HP não muda
+    });
+
+    it('deve retornar false ao usar item tático sem ter o item', () => {
+        const mon = makeMon({ hp: 50, hpMax: 100, buffs: [] });
+        const player = makePlayer(mon, {}); // sem item
+        const { deps } = makeDeps({ mon, player, itemDefById: { 'IT_TATICO_01': SHIELD_ITEM } });
+
+        const result = executeGroupUseItem('IT_TATICO_01', deps);
+
+        expect(result).toBe(false);
+        expect(mon.buffs).toHaveLength(0);
+    });
+
+    it('deve permitir uso de item tático mesmo com HP cheio', () => {
+        const mon = makeMon({ hp: 100, hpMax: 100, buffs: [] });
+        const player = makePlayer(mon, { 'IT_TATICO_01': 1 });
+        const { deps } = makeDeps({ mon, player, itemDefById: { 'IT_TATICO_01': SHIELD_ITEM } });
+
+        const result = executeGroupUseItem('IT_TATICO_01', deps);
+
+        expect(result).toBe(true);
+        expect(mon.buffs).toHaveLength(1);
+    });
+
+    it('deve empilhar buffs se usar item tático duas vezes', () => {
+        const mon = makeMon({ hp: 50, hpMax: 100, buffs: [] });
+        const player = makePlayer(mon, { 'IT_TATICO_01': 2 });
+        const { deps } = makeDeps({ mon, player, itemDefById: { 'IT_TATICO_01': SHIELD_ITEM } });
+
+        executeGroupUseItem('IT_TATICO_01', deps);
+        deps.state.currentEncounter.currentActor = { side: 'player', id: player.id };
+        executeGroupUseItem('IT_TATICO_01', deps);
+
+        expect(mon.buffs).toHaveLength(2);
     });
 });
