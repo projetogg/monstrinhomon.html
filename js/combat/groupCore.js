@@ -8,8 +8,8 @@
  * O estado canônico de batalha é o objeto "encounter" criado por
  * createGroupEncounter() e armazenado em GameState.currentEncounter.
  *
- * groupBattleState.js / groupBattleLoop.js são DEPRECATED e NÃO são
- * usados pela UI real — existem apenas como protótipo arquitetural.
+ * Os módulos groupBattleState.js e groupBattleLoop.js foram removidos
+ * (eram protótipos arquiteturais sem uso pela UI real).
  * ─────────────────────────────────────────────────────────────────────────
  * 
  * Todas as funções aqui são 100% determinísticas e testáveis

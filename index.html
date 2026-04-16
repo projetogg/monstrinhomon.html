@@ -1351,12 +1351,6 @@
         // para todas as funções que o utilizam
         const DEFAULT_FRIENDSHIP = 50;
 
-        // MONSTER CATALOG — LEGADO
-        // Dados canônicos estão em data/monsters.json (carregados via window.Data).
-        // Usar getMonstersArray() / getMonsterTemplate() em vez de acessar este array diretamente.
-        // Este array permanece como fallback de última instância caso o JSON não esteja disponível.
-        const MONSTER_CATALOG = [];
-
         // ENE REGEN CONSTANTS por classe (valores canônicos v2.2 — PATCH_CANONICO_COMBATE_V2.2.md BLOCO 4)
         const ENE_REGEN_BY_CLASS = {
             'Mago': { pct: 0.18, min: 3 },
@@ -1518,6 +1512,10 @@
             if (built && Object.keys(built).length > 0) {
                 SKILL_DEFS = built;
             } else {
+                // LEGADO: fallback em uso — se este warn aparecer no console, o JSON de skills
+                // ainda não carregou quando initSkillDefs() foi chamado.
+                // Remover SKILL_DEFS_FALLBACK somente após confirmar que este warn nunca aparece.
+                console.warn('[initSkillDefs] SKILL_DEFS_FALLBACK em uso — JSON de skills não disponível ainda.');
                 SKILL_DEFS = SKILL_DEFS_FALLBACK;
             }
         }
@@ -1805,15 +1803,13 @@
         // ============================================================================
 
         /**
-         * Get monster template from JSON (if available) or MONSTER_CATALOG (fallback)
-         * PR9B: Tries JSON first (sync lookup), falls back to hardcoded if not found
-         * @param {string} templateId - Monster template ID (e.g., 'MON_001')
-         * @returns {Object|null} Monster template or null if not found
+         * Retorna o template de um Monstrinho do JSON canônico.
+         * @param {string} templateId - Monster template ID (ex: 'MON_001')
+         * @returns {Object|null} Monster template ou null se não encontrado
          */
         function getMonsterTemplate(templateId) {
             if (!templateId) return null;
             
-            // PR9B: Try JSON first (synchronous lookup, no blocking)
             if (window.Data && window.Data.getMonstersMapSync) {
                 const monstersMap = window.Data.getMonstersMapSync();
                 if (monstersMap && monstersMap.has(templateId)) {
@@ -1823,13 +1819,12 @@
                 }
             }
             
-            // Fallback: hardcoded MONSTER_CATALOG
-            return MONSTER_CATALOG.find(m => m.id === templateId) || null;
+            return null;
         }
 
         /**
          * Retorna todos os templates de monstros como array.
-         * Tenta JSON primeiro (fonte canônica), fallback para MONSTER_CATALOG inline.
+         * Fonte canônica: data/monsters.json (via window.Data).
          * @returns {Object[]} Array de templates de monstros
          */
         function getMonstersArray() {
@@ -1839,7 +1834,7 @@
                     return Array.from(monstersMap.values());
                 }
             }
-            return MONSTER_CATALOG;
+            return [];
         }
 
         /**
@@ -1856,7 +1851,7 @@
                 mmDebugLog("CATALOG_ID_INVALID", {
                     context,
                     templateId,
-                    catalogType: 'MONSTER_CATALOG'
+                    catalogType: 'JSON'
                 }, "warn");
             }
             
@@ -3111,7 +3106,7 @@
          * Esta é a função OFICIAL para criar novos monstros a partir do catálogo.
          * Garante que todos os monstros nascam com estrutura canônica consistente.
          * 
-         * @param {string} templateId - ID do template no MONSTER_CATALOG (ex: 'MON_001')
+         * @param {string} templateId - ID do template do Monstrinho (ex: 'MON_001')
          * @param {number} level - Nível do monstrinho (padrão: 1)
          * @param {string|null} rarity - Raridade (se null, usa do template)
          * @param {object} overrides - Campos opcionais para sobrescrever (ex: {nickname: 'Fofinho'})
@@ -3920,10 +3915,10 @@
                 switch (skill.type) {
                     case 'DAMAGE':
                         // Calcular dano da habilidade com nova fórmula
-                        const atkMods = getBuffModifiers(attacker);
+                        const atkMods = Combat.Wild.Core.getBuffModifiers(attacker);
                         const effectiveAtk = Math.max(1, attacker.atk + atkMods.atk);
                         
-                        const defMods = getBuffModifiers(defender);
+                        const defMods = Combat.Wild.Core.getBuffModifiers(defender);
                         const effectiveDef = Math.max(1, defender.def + defMods.def);
                         
                         // Vantagem de classe
@@ -3994,41 +3989,6 @@
             } catch (error) {
                 console.error('Failed to use skill:', error);
                 return false;
-            }
-        }
-
-        // Atualizar buffs (reduzir duração, remover expirados)
-        function updateBuffs(monster) {
-            try {
-                if (!monster || !monster.buffs) return;
-                
-                monster.buffs = monster.buffs.filter(buff => {
-                    buff.duration--;
-                    return buff.duration > 0;
-                });
-            } catch (error) {
-                console.error('Failed to update buffs:', error);
-            }
-        }
-
-        // Calcular modificadores de buffs
-        function getBuffModifiers(monster) {
-            try {
-                if (!monster || !monster.buffs) return { atk: 0, def: 0, spd: 0 };
-                
-                const mods = { atk: 0, def: 0, spd: 0 };
-                
-                monster.buffs.forEach(buff => {
-                    const type = buff.type.toLowerCase();
-                    if (type === 'atk') mods.atk += buff.power;
-                    else if (type === 'def') mods.def += buff.power;
-                    else if (type === 'spd') mods.spd += buff.power;
-                });
-                
-                return mods;
-            } catch (error) {
-                console.error('Failed to get buff modifiers:', error);
-                return { atk: 0, def: 0, spd: 0 };
             }
         }
 
@@ -4675,15 +4635,6 @@
             }
         }
 
-        function _calcDamage(power, atk, def) {
-            const A = Number(atk) || 0;
-            const D = Number(def) || 0;
-            const P = Number(power) || 0;
-            const ratio = (A <= 0 && D <= 0) ? 0.5 : (A / (A + D));
-            const base = Math.floor(P * ratio);
-            return Math.max(1, base);
-        }
-
         function _isAlive(entity) {
             // PR5B: Use pure function from groupCore
             return GroupCore.isAlive(entity);
@@ -4835,7 +4786,7 @@
                     getEnemyByIndex: _getEnemyByIndex,
                     log: _log,
                     applyEneRegen: applyEneRegen,
-                    updateBuffs: updateBuffs,
+                    updateBuffs: Combat.Wild.Actions.updateBuffs,
                     rollD20: rollD20,
                     recordD20Roll: recordD20Roll,
                     getBasicAttackPower: (cls) => MM_TABLES.getBasicAttackPower(cls),
@@ -4891,7 +4842,6 @@
         /**
          * Constrói o HTML de um card de monstrinho no modal de troca.
          * Exibe monstrinhos elegíveis, bloqueados por classe e KO'd — com rótulo claro.
-                 /**
          * B1: _buildSwapCard — delegada para Combat.Group.UI.buildSwapCard (groupUI.js)
          */
         function _buildSwapCard(monster, index, player, encId, context, masterMode) {
@@ -6583,7 +6533,6 @@
         }
         
         /**
-         /**
          * Verifica se o monstro tem ENE suficiente para usar a skill.
          * Compatível com formato operacional (cost) e SKILLS_CATALOG legado (energy_cost).
          * @param {Object} skill - Skill (preferencialmente no formato operacional único)
@@ -7901,19 +7850,6 @@
         }
 
         /**
-         * Resolve o resultado de um d20 de contra-ataque inimigo.
-         * Centraliza as regras especiais: d20=1 → sempre erra, d20=20 → sempre acerta.
-         *
-         * @deprecated Função movida para WildCore.resolveD20Hit (wildCore.js).
-         *             Mantida apenas para compatibilidade com código legado.
-         *             Novos caminhos devem usar Combat.Wild.Core.resolveD20Hit.
-         */
-        function _resolveEnemyD20Hit(roll, attacker, defender) {
-            return Combat.Wild.Core.resolveD20Hit(roll, attacker, defender,
-                GameState.config?.classAdvantages || {});
-        }
-
-        /**
          * Wrapper de compatibilidade - calcula dano com ataque básico.
          * Aplica automaticamente buffs e vantagens de classe.
          *
@@ -7943,10 +7879,10 @@
                 const basicPower = MM_TABLES.getBasicAttackPower(attacker.class);
                 
                 // Aplicar modificadores de buff
-                const atkMods = getBuffModifiers(attacker);
+                const atkMods = Combat.Wild.Core.getBuffModifiers(attacker);
                 const effectiveAtk = Math.max(1, atkValue + atkMods.atk);
                 
-                const defMods = getBuffModifiers(defender);
+                const defMods = Combat.Wild.Core.getBuffModifiers(defender);
                 const effectiveDef = Math.max(1, defValue + defMods.def);
                 
                 // Vantagem de classe: +10% dano se forte, -10% dano se fraco
@@ -8672,23 +8608,18 @@
                 }
                 
                 /**
-                 * Get all monster templates (canonical source)
-                 * Priority:
-                 * 1. Data.getMonstersMapSync() - JSON-loaded monsters (PR9B)
-                 *    Returns Map, so we convert to Array via Array.from(map.values())
-                 * 2. MONSTER_CATALOG - Hardcoded fallback (only if JSON not available)
+                 * Retorna todos os templates de monstros (fonte canônica: data/monsters.json).
                  */
                 function getMonsterTemplates() {
                     // Try JSON-loaded monsters first (canonical source from PR9B)
                     if (window.Data && window.Data.getMonstersMapSync) {
                         const monstersMap = window.Data.getMonstersMapSync();
-                        // getMonstersMapSync() returns a Map, convert to Array
                         if (monstersMap && monstersMap.size > 0) {
                             return Array.from(monstersMap.values());
                         }
                     }
                     
-                    // Fallback: Use getMonstersArray() (JSON-first, inline fallback)
+                    // Fallback: Use getMonstersArray() (JSON-first)
                     return getMonstersArray();
                 }
                 
@@ -10338,6 +10269,22 @@
         }
 
         /**
+         * Encontra a primeira quest ativa de qualquer jogador que tenha localId === id.
+         * @param {string} id - locationId ou nodeId
+         * @returns {{ player, quest, progress, needed } | null}
+         */
+        function _findActiveQuestInfo(id) {
+            if (!window.GameFlow) return null;
+            for (const player of (GameState.players ?? [])) {
+                if (!player) continue;
+                const summary = window.GameFlow.getActiveQuestsSummary(player);
+                const match   = summary.find(({ quest }) => quest?.localId === id);
+                if (match) return { player, ...match };
+            }
+            return null;
+        }
+
+        /**
          * PR-07: Exibe/esconde o hint de quest ativa no painel de spots de um local.
          * Verifica todos os jogadores por quests com localId === locationId.
          */
@@ -10348,17 +10295,7 @@
                 return;
             }
 
-            // Encontrar primeira quest ativa com localId correspondente
-            let activeQuestInfo = null;
-            for (const player of (GameState.players ?? [])) {
-                if (!player) continue;
-                const summary = window.GameFlow.getActiveQuestsSummary(player);
-                const match   = summary.find(({ quest }) => quest?.localId === locationId);
-                if (match) {
-                    activeQuestInfo = { player, ...match };
-                    break;
-                }
-            }
+            const activeQuestInfo = _findActiveQuestInfo(locationId);
 
             if (!activeQuestInfo) {
                 hideEl(hintEl);
@@ -10817,16 +10754,7 @@
                 return;
             }
 
-            let activeQuestInfo = null;
-            for (const player of (GameState.players ?? [])) {
-                if (!player) continue;
-                const summary = window.GameFlow.getActiveQuestsSummary(player);
-                const match   = summary.find(({ quest }) => quest?.localId === nodeId);
-                if (match) {
-                    activeQuestInfo = { player, ...match };
-                    break;
-                }
-            }
+            const activeQuestInfo = _findActiveQuestInfo(nodeId);
 
             if (!activeQuestInfo) {
                 hideEl(hintEl);
@@ -13213,15 +13141,23 @@
             players: [] // {name, class}
         };
 
-        // @deprecated - Use MM_TABLES.CLASSES instead
-        // Kept for backward compatibility  
-        const MM_CLASSES = MM_TABLES.CLASSES;
-
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
+
+        // Dados de preview de classe — compartilhado por mmRenderNewGameStep e mmUpdateClassPreview
+        const CLASS_PREVIEW = {
+            'Guerreiro':  { icon: '⚔️', desc: 'Alto HP e defesa. Absorve dano pelo time. Vantagem contra Ladino.', tags: ['Tanque','Durável'] },
+            'Mago':       { icon: '🔮', desc: 'Alto poder mágico e energia. Fraco em defesa. Vantagem contra Bárbaro.', tags: ['Ataque','Magia'] },
+            'Curandeiro': { icon: '💚', desc: 'Cura aliados e suporta o time. Regeneração extra de energia. Vantagem contra Guerreiro.', tags: ['Suporte','Cura'] },
+            'Bárbaro':    { icon: '🪓', desc: 'Dano alto com ataques brutos. Bônus de ATK em combate. Vantagem contra Caçador.', tags: ['Dano','Físico'] },
+            'Ladino':     { icon: '🗡️', desc: 'Ágil e furtivo. Aplica penalidade de DEF no primeiro ataque. Vantagem contra Mago.', tags: ['Agilidade','Controle'] },
+            'Bardo':      { icon: '🎵', desc: 'Buffs e debuffs no time. Versatilidade tática. Vantagem contra Curandeiro.', tags: ['Buff','Versátil'] },
+            'Caçador':    { icon: '🏹', desc: 'Especialista em captura. Bônus ao capturar criaturas. Vantagem contra Bardo.', tags: ['Captura','Ranged'] },
+            'Animalista': { icon: '🐾', desc: 'Conexão especial com Monstrinhos. Bônus de amizade e XP. Versátil em todas as situações.', tags: ['Amizade','XP'] },
+        };
 
         function mmStartNewGame(){
             MM_NEW.step = 0;
@@ -13268,23 +13204,11 @@
             if (MM_NEW.step === 2) {
                 // garante array
                 while (MM_NEW.players.length < MM_NEW.numPlayers) {
-                    MM_NEW.players.push({ name: "", class: MM_CLASSES[0] });
+                    MM_NEW.players.push({ name: "", class: MM_TABLES.CLASSES[0] });
                 }
                 while (MM_NEW.players.length > MM_NEW.numPlayers) {
                     MM_NEW.players.pop();
                 }
-
-                // Dados de preview de classe
-                const CLASS_PREVIEW = {
-                    'Guerreiro':  { icon: '⚔️', desc: 'Alto HP e defesa. Absorve dano pelo time. Vantagem contra Ladino.', tags: ['Tanque','Durável'] },
-                    'Mago':       { icon: '🔮', desc: 'Alto poder mágico e energia. Fraco em defesa. Vantagem contra Bárbaro.', tags: ['Ataque','Magia'] },
-                    'Curandeiro': { icon: '💚', desc: 'Cura aliados e suporta o time. Regeneração extra de energia. Vantagem contra Guerreiro.', tags: ['Suporte','Cura'] },
-                    'Bárbaro':    { icon: '🪓', desc: 'Dano alto com ataques brutos. Bônus de ATK em combate. Vantagem contra Caçador.', tags: ['Dano','Físico'] },
-                    'Ladino':     { icon: '🗡️', desc: 'Ágil e furtivo. Aplica penalidade de DEF no primeiro ataque. Vantagem contra Mago.', tags: ['Agilidade','Controle'] },
-                    'Bardo':      { icon: '🎵', desc: 'Buffs e debuffs no time. Versatilidade tática. Vantagem contra Curandeiro.', tags: ['Buff','Versátil'] },
-                    'Caçador':    { icon: '🏹', desc: 'Especialista em captura. Bônus ao capturar criaturas. Vantagem contra Bardo.', tags: ['Captura','Ranged'] },
-                    'Animalista': { icon: '🐾', desc: 'Conexão especial com Monstrinhos. Bônus de amizade e XP. Versátil em todas as situações.', tags: ['Amizade','XP'] },
-                };
 
                 const rows = MM_NEW.players.map((p, i) => {
                     const preview = CLASS_PREVIEW[p.class] ?? { icon: '🎮', desc: '', tags: [] };
@@ -13298,7 +13222,7 @@
                         <div class="mm-field">
                             <label>Classe</label>
                             <select id="mmPClass_${i}" onchange="mmUpdateClassPreview(${i})">
-                                ${MM_CLASSES.map(c => `<option value="${escapeHtml(c)}" ${p.class===c?"selected":""}>${escapeHtml(c)}</option>`).join("")}
+                                ${MM_TABLES.CLASSES.map(c => `<option value="${escapeHtml(c)}" ${p.class===c?"selected":""}>${escapeHtml(c)}</option>`).join("")}
                             </select>
                         </div>
                         <div class="mm-class-preview" id="mmClassPreview_${i}">
@@ -13357,7 +13281,7 @@
             if (MM_NEW.step === 2) {
                 for (let i=0;i<MM_NEW.players.length;i++){
                     const name = String(mmEl(`mmPName_${i}`)?.value || "").trim();
-                    const cls = String(mmEl(`mmPClass_${i}`)?.value || MM_CLASSES[0]);
+                    const cls = String(mmEl(`mmPClass_${i}`)?.value || MM_TABLES.CLASSES[0]);
                     MM_NEW.players[i] = { name, class: cls };
                 }
             }
@@ -13375,16 +13299,6 @@
             const previewEl = document.getElementById(`mmClassPreview_${playerIndex}`);
             if (!selectEl || !previewEl) return;
             const cls = selectEl.value;
-            const CLASS_PREVIEW = {
-                'Guerreiro':  { icon: '⚔️', desc: 'Alto HP e defesa. Absorve dano pelo time. Vantagem contra Ladino.', tags: ['Tanque','Durável'] },
-                'Mago':       { icon: '🔮', desc: 'Alto poder mágico e energia. Fraco em defesa. Vantagem contra Bárbaro.', tags: ['Ataque','Magia'] },
-                'Curandeiro': { icon: '💚', desc: 'Cura aliados e suporta o time. Regeneração extra de energia. Vantagem contra Guerreiro.', tags: ['Suporte','Cura'] },
-                'Bárbaro':    { icon: '🪓', desc: 'Dano alto com ataques brutos. Bônus de ATK em combate. Vantagem contra Caçador.', tags: ['Dano','Físico'] },
-                'Ladino':     { icon: '🗡️', desc: 'Ágil e furtivo. Aplica penalidade de DEF no primeiro ataque. Vantagem contra Mago.', tags: ['Agilidade','Controle'] },
-                'Bardo':      { icon: '🎵', desc: 'Buffs e debuffs no time. Versatilidade tática. Vantagem contra Curandeiro.', tags: ['Buff','Versátil'] },
-                'Caçador':    { icon: '🏹', desc: 'Especialista em captura. Bônus ao capturar criaturas. Vantagem contra Bardo.', tags: ['Captura','Ranged'] },
-                'Animalista': { icon: '🐾', desc: 'Conexão especial com Monstrinhos. Bônus de amizade e XP. Versátil em todas as situações.', tags: ['Amizade','XP'] },
-            };
             const p = CLASS_PREVIEW[cls] ?? { icon: '🎮', desc: '', tags: [] };
             previewEl.innerHTML = `
                 <span class="mm-class-preview__icon">${p.icon}</span>
@@ -13403,7 +13317,7 @@
                 // valida nomes (MVP: auto-preenche)
                 MM_NEW.players = MM_NEW.players.map((p, idx) => ({
                     name: p.name?.trim() ? p.name.trim() : `Jogador ${idx+1}`,
-                    class: p.class || MM_CLASSES[0]
+                    class: p.class || MM_TABLES.CLASSES[0]
                 }));
 
                 // CORREÇÃO BUG PERSISTÊNCIA: Resetar TODO o estado específico do jogo
@@ -14098,7 +14012,7 @@
             // Se, por algum motivo, a classe não estiver definida, aplicar a primeira disponível.
             const firstPlayer = GameState.players[MM_STARTER.playerIndex];
             if (firstPlayer && !firstPlayer.class) {
-                firstPlayer.class = MM_CLASSES[0];
+                firstPlayer.class = MM_TABLES.CLASSES[0];
             }
             MM_STARTER.phase = 'egg';
 
@@ -14117,7 +14031,7 @@
             if (MM_STARTER.phase === 'choose') {
                 if (title) title.textContent = `🎭 ${player.name} — Escolha sua Classe`;
 
-                const classCards = MM_CLASSES.map(cls => {
+                const classCards = MM_TABLES.CLASSES.map(cls => {
                     const info = STARTER_BY_CLASS[cls];
                     const tmpl = info ? getMonsterTemplate(info.monsterId) : null;
                     const selected = player.class === cls;
@@ -14194,8 +14108,8 @@
                 return;
             }
 
-            const cls = player.class || MM_CLASSES[0];
-            const info = STARTER_BY_CLASS[cls] || STARTER_BY_CLASS[MM_CLASSES[0]];
+            const cls = player.class || MM_TABLES.CLASSES[0];
+            const info = STARTER_BY_CLASS[cls] || STARTER_BY_CLASS[MM_TABLES.CLASSES[0]];
 
             const mon = awardMonster(info.monsterId, 5, null, 'party', player);
             if (mon) {
@@ -14227,7 +14141,7 @@
             // Se a classe não estiver definida, aplicar a primeira disponível como fallback
             const nextPlayer = GameState.players[MM_STARTER.playerIndex];
             if (nextPlayer && !nextPlayer.class) {
-                nextPlayer.class = MM_CLASSES[0];
+                nextPlayer.class = MM_TABLES.CLASSES[0];
             }
             MM_STARTER.phase = 'egg';
             mmRenderStarterFlow();

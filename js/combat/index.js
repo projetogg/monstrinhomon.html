@@ -1,21 +1,17 @@
 /**
  * COMBAT MODULE - API Pública
- * 
- * Exporta todas as funções de combate organizadas por categoria
- * 
- * PR4: Wild 1v1 combat (implementado)
- * PR5A: Group/Boss combat (stubs apenas - implementação em PR futuro)
- * PR##: GroupBattleState v1.0 (estrutura completa)
- * PASSO 3: GroupBattleLoop v1.0 (loop de batalha)
+ *
+ * Exporta todas as funções de combate organizadas por categoria.
  *
  * ── PIPELINE CANÔNICO ────────────────────────────────────────────────────
+ * Combat.Wild.Core    → wildCore.js    (funções puras, d20, captura, fuga)
+ * Combat.Wild.Actions → wildActions.js (loop 1v1)
+ * Combat.Wild.UI      → wildUI.js      (renderização wild)
+ *
  * Combat.Group.Core    → groupCore.js    (funções puras, createGroupEncounter)
  * Combat.Group.Actions → groupActions.js (loop + ações de combate)
- * Combat.Group.UI      → groupUI.js      (renderização)
- *
- * Combat.Group.BattleState / BattleLoop → DEPRECATED (protótipos não usados)
- *   Não usam o estado real (GameState.currentEncounter). Mantidos apenas
- *   por compatibilidade. NÃO adicionar novas funcionalidades neles.
+ * Combat.Group.UI      → groupUI.js      (renderização grupo/boss)
+ * Combat.Group.Rewards → groupRewards.js (recompensas pós-batalha)
  * ─────────────────────────────────────────────────────────────────────────
  */
 
@@ -27,8 +23,6 @@ import * as GroupActions from './groupActions.js';
 import * as GroupUI from './groupUI.js';
 import * as GroupIntegration from './groupIntegration.js';
 import * as ItemBreakage from './itemBreakage.js';
-import * as GroupBattleState from './groupBattleState.js';
-import * as GroupBattleLoop from './groupBattleLoop.js';
 import * as GroupRewards from './groupRewards.js';
 import * as CombatEvents from './combatEvents.js';
 
@@ -44,8 +38,6 @@ export const Combat = {
         UI: GroupUI,
         Rewards: GroupRewards,
         Integration: GroupIntegration,
-        BattleState: GroupBattleState,
-        BattleLoop: GroupBattleLoop
     },
     // Boss reutiliza Group (não precisa de módulo separado)
     // Boss é apenas uma variação de grupo (encounterType diferente)
@@ -54,8 +46,6 @@ export const Combat = {
         Actions: GroupActions,
         UI: GroupUI,
         Rewards: GroupRewards,
-        BattleState: GroupBattleState,
-        BattleLoop: GroupBattleLoop
     },
     // PR11B: Item Breakage System
     ItemBreakage: ItemBreakage,
