@@ -379,6 +379,29 @@ export function getEvolutionLine(idOrLineId) {
 }
 
 /**
+ * Busca uma linha evolutiva pelo nome PT-BR de qualquer estágio.
+ *
+ * @param {string} namePt - Nome PT-BR (ex: 'Basticorno')
+ * @returns {Object|null} linha evolutiva completa ou null se não encontrado
+ */
+export function getEvolutionLineByName(namePt) {
+    if (!_canonData) {
+        console.warn('[canonLoader] getEvolutionLineByName chamado antes de loadCanonData()');
+        return null;
+    }
+    const { byLineId } = _canonData.evolutionLines;
+    const normalized = (namePt || '').trim().toLowerCase();
+    for (const line of Object.values(byLineId)) {
+        for (const stage of (line.stages || [])) {
+            if ((stage.name_pt || '').trim().toLowerCase() === normalized) {
+                return line;
+            }
+        }
+    }
+    return null;
+}
+
+/**
  * Retorna os marcos de desbloqueio para um nível específico.
  * Cobertura: levels 1-30 (Fase 2). Níveis 31-100 retornam array vazio.
  *

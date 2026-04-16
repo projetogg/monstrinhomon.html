@@ -21,6 +21,7 @@ import {
     applyCanonToConfig,
     getSpeciesData,
     getEvolutionLine,
+    getEvolutionLineByName,
     getLevelMilestones,
     getAllLevelMilestones,
     getClassGrowthRule,
@@ -777,5 +778,77 @@ describe('canonLoader — getClassGrowthRule() (Fase 2)', () => {
         expect(getClassGrowthRule('warrior')).toBeNull();
         expect(warn).toHaveBeenCalledWith(expect.stringContaining('getClassGrowthRule'));
         warn.mockRestore();
+    });
+});
+
+// ===========================================================================
+// XIX-B — getEvolutionLineByName() (Fase XIX)
+// ===========================================================================
+
+describe('canonLoader — getEvolutionLineByName() (Fase XIX)', () => {
+
+    beforeEach(async () => {
+        _resetCanonCache();
+        global.fetch = makeFetchMock(MOCK_CLASSES, MOCK_MATCHUPS, MOCK_SKILLS_MVP, MOCK_SPECIES, MOCK_EVOLUTION_LINES, MOCK_LEVEL_PROGRESSION);
+        await loadCanonData();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        delete global.fetch;
+    });
+
+    it('deve retornar linha pelo name_pt do estágio 1', () => {
+        const line = getEvolutionLineByName('Escudicorno');
+        expect(line).not.toBeNull();
+        expect(line.line_id).toBe('shieldhorn_line');
+    });
+
+    it('deve retornar linha pelo name_pt de um estágio intermediário', () => {
+        const line = getEvolutionLineByName('Basticorno');
+        expect(line).not.toBeNull();
+        expect(line.line_id).toBe('shieldhorn_line');
+    });
+
+    it('deve retornar linha pelo name_pt do estágio final', () => {
+        const line = getEvolutionLineByName('Aegishorn');
+        expect(line).not.toBeNull();
+        expect(line.line_id).toBe('shieldhorn_line');
+    });
+
+    it('deve retornar linha de outra família pelo name_pt', () => {
+        const line = getEvolutionLineByName('Presabrasa');
+        expect(line).not.toBeNull();
+        expect(line.line_id).toBe('emberfang_line');
+    });
+
+    it('deve fazer busca case-insensitive', () => {
+        const line = getEvolutionLineByName('escudicorno');
+        expect(line).not.toBeNull();
+        expect(line.line_id).toBe('shieldhorn_line');
+    });
+
+    it('deve retornar null para nome inexistente', () => {
+        const line = getEvolutionLineByName('NaoExiste');
+        expect(line).toBeNull();
+    });
+
+    it('deve retornar null para string vazia', () => {
+        const line = getEvolutionLineByName('');
+        expect(line).toBeNull();
+    });
+
+    it('deve retornar null antes de loadCanonData()', () => {
+        _resetCanonCache();
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        expect(getEvolutionLineByName('Escudicorno')).toBeNull();
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining('getEvolutionLineByName'));
+        warn.mockRestore();
+    });
+
+    it('deve retornar linha com progression_identity preenchida', () => {
+        const line = getEvolutionLineByName('Basticorno');
+        expect(line.progression_identity).toBeTruthy();
+        expect(typeof line.progression_identity).toBe('string');
     });
 });

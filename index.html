@@ -750,12 +750,20 @@
         // Fase Q: Import Player Panel UI module
         import * as PlayerPanelUI from './js/ui/playerPanelUI.js';
 
+        // Fase AB: Import Monster Card UI module
+        import * as MonsterCardUI from './js/ui/monsterCardUI.js';
+        window.MonsterCardUI = MonsterCardUI;
+
         // Fase U: Import Box System module
         import * as BoxSystem from './js/data/boxSystem.js';
         window.BoxSystem = BoxSystem;
 
         // Trade UI (FASE XIII)
         import * as TradeUI from './js/ui/tradeUI.js';
+
+        // Shop UI (Fase Z)
+        import * as ShopUI from './js/ui/shopUI.js';
+        import * as SavesUI from './js/ui/savesUI.js';
 
         // Map Unlock System (FASE XIV)
         import * as MapUnlockSystem from './js/encounter/mapUnlockSystem.js';
@@ -3508,6 +3516,10 @@
                             console.error('Failed to add to box:', boxResult.message);
                         }
                         actualDest = 'box';
+                        // D2: Feedback visual — equipe cheia, enviado para Box
+                        if (boxResult.success) {
+                            showToast(`📦 Equipe cheia! ${monster.name || 'Monstrinho'} foi enviado para a Box automaticamente.`, 'info');
+                        }
                         // Commit 13 (Wave 13.2): Use mmDebugLog
                         mmDebugLog("AWARD_MONSTER", {
                             context: 'awardMonster',
@@ -5261,6 +5273,46 @@
             const oldEmoji = (oldTmpl?.emoji) || '✨';
             const newEmoji = (newTmpl?.emoji) || '🌟';
 
+            // XIX-B: buscar linha evolutiva canônica para enriquecer reveal
+            let evoLineHtml = '';
+            try {
+                const line = CanonLoader.getEvolutionLineByName
+                    ? (CanonLoader.getEvolutionLineByName(newName) ?? CanonLoader.getEvolutionLineByName(oldName) ?? null)
+                    : null;
+                if (line) {
+                    const stages = line.stages || [];
+                    // Determinar estágio atual da nova forma
+                    const currentStageIdx = stages.findIndex(s =>
+                        (s.name_pt || '').toLowerCase() === (newName || '').toLowerCase()
+                    );
+                    const nextStages = currentStageIdx >= 0 ? stages.slice(currentStageIdx + 1) : [];
+                    const CLASS_PTBR = {
+                        warrior: 'Guerreiro', mage: 'Mago', healer: 'Curandeiro',
+                        barbarian: 'Bárbaro', rogue: 'Ladino', bard: 'Bardo',
+                        hunter: 'Caçador', animalist: 'Animalista'
+                    };
+                    const classePtbr = CLASS_PTBR[line.class_id] || line.class_id || '';
+                    const narrative = line.progression_identity || '';
+
+                    const nextHtml = nextStages.length > 0
+                        ? `<div class="mm-evo-line-next">🔮 Próximos estágios: ${nextStages.map(s =>
+                            `<span>${escapeHtml(s.name_pt || '?')} (Nv. ${s.level_at || '?'})</span>`).join(' → ')}</div>`
+                        : `<div class="mm-evo-line-next">🏆 Forma final da linha!</div>`;
+
+                    const classeHtml = classePtbr
+                        ? `<span class="mm-evo-class-badge dex-badge-class" data-class="${escapeHtml(classePtbr)}">${escapeHtml(classePtbr)}</span>`
+                        : '';
+
+                    const narrativeHtml = narrative
+                        ? `<div class="mm-evo-narrative">"${escapeHtml(narrative)}"</div>`
+                        : '';
+
+                    evoLineHtml = `<div class="mm-evo-line-info">${classeHtml}${nextHtml}${narrativeHtml}</div>`;
+                }
+            } catch (_e) {
+                // fallback silencioso — linha evolutiva canônica é enriquecimento opcional
+            }
+
             const overlay = document.createElement('div');
             overlay.className = 'mm-evo-overlay';
             overlay.setAttribute('role', 'dialog');
@@ -5298,6 +5350,7 @@
                         <div class="mm-evo-new-emoji">${newEmoji}</div>
                         <div class="mm-evo-new-name">${escapeHtml(newName)}</div>
                         <div class="mm-evo-subtitle">${escapeHtml(oldName)} evoluiu!</div>
+                        ${evoLineHtml}
                         <button class="mm-evo-btn" onclick="this.closest('.mm-evo-overlay').remove()">🌟 Incrível!</button>
                     </div>
                 </div>`;
@@ -8112,19 +8165,22 @@
         /**
          * Render Box tab content
          */
+        // D4: Tamanho de página da Box
+        const BOX_PAGE_SIZE = 12;
+
         function renderBoxTab() {
             try {
-                // Check if box tab is visible before rendering
+                // Verificar se a aba Box está visível antes de renderizar
                 const boxTab = document.getElementById('tabBox');
                 if (!boxTab || !boxTab.classList.contains('active')) {
-                    return; // Tab not active, skip rendering
+                    return;
                 }
-                
+
                 ensureBoxUIState();
-                
+
                 const activePlayer = getActivePlayerForBox();
                 const boxStatus = document.getElementById('boxStatus');
-                
+
                 if (!activePlayer) {
                     if (boxStatus) {
                         boxStatus.innerHTML = '<p>Nenhum jogador disponível</p>';
@@ -8133,10 +8189,11 @@
                 }
 
                 // O jogador da perspectiva global é a única fonte de verdade da Caixa
-                const viewedPlayerId = GameState.ui.boxViewedPlayerId; // sincronizado com perspectivePlayerId
+                const viewedPlayerId = GameState.ui.boxViewedPlayerId;
                 const viewedPlayer = GameState.players.find(p => p.id === viewedPlayerId) || activePlayer;
+                const masterMode = GameState.config?.masterMode || false;
 
-                // Atualiza status
+                // Atualiza contadores de status
                 const teamCount = viewedPlayer.team?.length || 0;
                 const TEAM_MAX = GameState.config?.maxTeamSize || 6;
                 
@@ -8144,87 +8201,149 @@
                 const BOX_MAX_TOTAL = window.BoxSystem.BOX_MAX_TOTAL;
 
                 const boxActivePlayer = document.getElementById('boxActivePlayer');
-                const boxTeamCount = document.getElementById('boxTeamCount');
-                const boxTotalCount = document.getElementById('boxTotalCount');
-
+                const boxTeamCount    = document.getElementById('boxTeamCount');
+                const boxTotalCount   = document.getElementById('boxTotalCount');
                 if (boxActivePlayer) boxActivePlayer.textContent = viewedPlayer.name;
-                if (boxTeamCount) boxTeamCount.textContent = `${teamCount}/${TEAM_MAX}`;
-                if (boxTotalCount) boxTotalCount.textContent = `${viewedPlayerBoxCount}/${BOX_MAX_TOTAL}`;
-
-                // Render team of the viewed player
-                const teamList = document.getElementById('boxTeamList');
-                if (teamList && viewedPlayer.team && viewedPlayer.team.length > 0) {
-                    teamList.innerHTML = '';
-                    viewedPlayer.team.forEach((monster, index) => {
-                        if (!monster) return;
-                        
-                        const slotDiv = document.createElement('div');
-                        slotDiv.className = 'box-slot';
-                        
-                        slotDiv.innerHTML = `
-                            <div class="box-slot-emoji">${monster.emoji || '🐾'}</div>
-                            <div class="box-slot-name">${monster.name || 'Sem Nome'}</div>
-                            <div class="box-slot-class">${monster.class || '?'}</div>
-                            <div class="box-slot-level">Nv. ${monster.level || 1}</div>
-                            <button class="btn btn-warning box-slot-btn" onclick="sendToBox(${index})">
-                                📦 Enviar para Box
-                            </button>
-                        `;
-                        teamList.appendChild(slotDiv);
-                    });
-                } else if (teamList) {
-                    teamList.innerHTML = '<p class="text-center">Equipe vazia</p>';
+                if (boxTeamCount)    boxTeamCount.textContent    = `${teamCount}/${TEAM_MAX}`;
+                if (boxTotalCount) {
+                    boxTotalCount.textContent = `${viewedPlayerBoxCount}/${BOX_MAX_TOTAL}`;
+                    // D4: destacar se cheio
+                    if (viewedPlayerBoxCount >= BOX_MAX_TOTAL) {
+                        boxTotalCount.style.color = '#e74c3c';
+                        boxTotalCount.title = 'Box cheia! Não é possível capturar novos monstrinhos.';
+                    } else {
+                        boxTotalCount.style.color = '';
+                        boxTotalCount.title = '';
+                    }
                 }
 
-                // Render box monsters for viewed player
-                const boxList = document.getElementById('boxMonstersList');
-                
-                if (boxList) {
-                    const playerSlots = GameState.sharedBox.filter(slot => slot.ownerPlayerId === viewedPlayerId);
-                    
-                    if (playerSlots.length > 0) {
-                        boxList.innerHTML = '';
-                        playerSlots.forEach(slot => {
-                            const monster = slot.monster;
+                // ── Equipe ────────────────────────────────────────────────────────
+                const teamList = document.getElementById('boxTeamList');
+                if (teamList) {
+                    if (viewedPlayer.team && viewedPlayer.team.length > 0) {
+                        teamList.innerHTML = '';
+                        viewedPlayer.team.forEach((monster, index) => {
                             if (!monster) return;
-                            
                             const slotDiv = document.createElement('div');
                             slotDiv.className = 'box-slot';
-                            
-                            let buttonHtml = '';
-                            if (teamCount < TEAM_MAX) {
-                                buttonHtml = `
-                                    <button class="btn btn-success box-slot-btn" onclick="withdrawFromBox('${slot.slotId}')">
-                                        ⬆️ Retirar
-                                    </button>
-                                `;
-                            } else {
-                                buttonHtml = `
-                                    <button class="btn box-slot-btn" disabled>
-                                        Equipe Cheia
-                                    </button>
-                                `;
-                            }
-                            
+                            const cls = monster.class || '?';
                             slotDiv.innerHTML = `
                                 <div class="box-slot-emoji">${monster.emoji || '🐾'}</div>
-                                <div class="box-slot-name">${monster.name || 'Sem Nome'}</div>
-                                <div class="box-slot-class">${monster.class || '?'}</div>
+                                <div class="box-slot-name">${escapeHtml(monster.name || 'Sem Nome')}</div>
+                                <span class="box-slot-class dex-badge-class" data-class="${escapeHtml(cls)}">${escapeHtml(cls)}</span>
                                 <div class="box-slot-level">Nv. ${monster.level || 1}</div>
-                                ${buttonHtml}
+                                <button class="btn btn-warning box-slot-btn" onclick="sendToBox(${index})">
+                                    📦 Enviar para Box
+                                </button>
                             `;
-                            boxList.appendChild(slotDiv);
+                            teamList.appendChild(slotDiv);
                         });
                     } else {
-                        boxList.innerHTML = '<p class="text-center">Nenhum monstrinho na Box deste jogador</p>';
+                        teamList.innerHTML = '<p class="text-center text-muted">Equipe vazia</p>';
                     }
+                }
+
+                // ── Box monsters (com paginação) ───────────────────────────────────
+                const boxList = document.getElementById('boxMonstersList');
+                if (!boxList) return;
+
+                const playerSlots = (GameState.sharedBox || []).filter(s => s.ownerPlayerId === viewedPlayerId);
+
+                // D1: Estado vazio com CTA
+                if (playerSlots.length === 0) {
+                    boxList.innerHTML = `
+                        <div class="box-empty-state">
+                            <div class="box-empty-icon">📦</div>
+                            <p class="box-empty-title">Caixa vazia!</p>
+                            <p class="box-empty-hint">Capture monstrinhos em batalha para preenchê-la.<br>
+                               Monstrinhos capturados quando a equipe está cheia vêm automaticamente para cá.</p>
+                        </div>`;
+                    return;
+                }
+
+                // D4: Paginação
+                const totalPages = Math.ceil(playerSlots.length / BOX_PAGE_SIZE);
+                let page = Math.max(0, Math.min(GameState.ui.boxPageIndex || 0, totalPages - 1));
+                GameState.ui.boxPageIndex = page;
+                const pageStart = page * BOX_PAGE_SIZE;
+                const pageSlots = playerSlots.slice(pageStart, pageStart + BOX_PAGE_SIZE);
+
+                // D4: Box cheia — aviso
+                const boxFullWarning = viewedPlayerBoxCount >= BOX_MAX_TOTAL
+                    ? `<div class="box-full-warning">⚠️ Box cheia (${BOX_MAX_TOTAL}/${BOX_MAX_TOTAL}) — libere espaço colocando monstrinhos no time ou trocando com colegas.</div>`
+                    : '';
+
+                // D4: Controles de paginação
+                const paginationHtml = totalPages > 1 ? `
+                    <div class="box-pagination">
+                        <button class="btn btn-sm" onclick="boxPageNav(-1)" ${page === 0 ? 'disabled' : ''}>◀ Anterior</button>
+                        <span class="box-pagination-label">Página ${page + 1} / ${totalPages} (${playerSlots.length} monstrinhos)</span>
+                        <button class="btn btn-sm" onclick="boxPageNav(1)" ${page >= totalPages - 1 ? 'disabled' : ''}>Próximo ▶</button>
+                    </div>` : `<p class="box-pagination-label text-center">${playerSlots.length} monstrinho${playerSlots.length !== 1 ? 's' : ''} na Box</p>`;
+
+                boxList.innerHTML = boxFullWarning + paginationHtml;
+
+                const grid = document.createElement('div');
+                grid.className = 'box-grid';
+                pageSlots.forEach(slot => {
+                    const monster = slot.monster;
+                    if (!monster) return;
+
+                    const cls = monster.class || '?';
+                    const playerClass = viewedPlayer.class || '';
+                    const eligible = masterMode || !playerClass || !cls || cls === playerClass;
+
+                    let buttonHtml;
+                    if (!eligible) {
+                        // D3: feedback de inelegibilidade
+                        buttonHtml = `
+                            <button class="btn box-slot-btn btn-class-lock" disabled title="Classe ${escapeHtml(cls)} — troque com um jogador ${escapeHtml(cls)}">
+                                🔒 Fora da classe
+                            </button>`;
+                    } else if (teamCount >= TEAM_MAX) {
+                        buttonHtml = `<button class="btn box-slot-btn" disabled>Equipe Cheia</button>`;
+                    } else {
+                        buttonHtml = `
+                            <button class="btn btn-success box-slot-btn" onclick="withdrawFromBox('${escapeHtml(slot.slotId)}')">
+                                ⬆️ Colocar no time
+                            </button>`;
+                    }
+
+                    const slotDiv = document.createElement('div');
+                    slotDiv.className = 'box-slot' + (eligible ? '' : ' locked');
+                    slotDiv.innerHTML = `
+                        <div class="box-slot-emoji">${monster.emoji || '🐾'}</div>
+                        <div class="box-slot-name">${escapeHtml(monster.name || 'Sem Nome')}</div>
+                        <span class="box-slot-class dex-badge-class" data-class="${escapeHtml(cls)}">${escapeHtml(cls)}</span>
+                        <div class="box-slot-level">Nv. ${monster.level || 1}</div>
+                        ${buttonHtml}
+                    `;
+                    grid.appendChild(slotDiv);
+                });
+                if (boxList.appendChild(grid), totalPages > 1) {
+                    const bottomPagination = document.createElement('div');
+                    bottomPagination.className = 'box-pagination-bottom';
+                    bottomPagination.innerHTML = paginationHtml;
+                    boxList.appendChild(bottomPagination);
                 }
 
             } catch (error) {
                 console.error('Failed to render Box tab:', error);
                 showError('Erro ao renderizar Box', error.stack);
             }
+            // U1: Manter badge da aba atualizado sempre que a Box é renderizada
+            updateBoxTabBadge();
         }
+
+        /** D4: Navega entre páginas da Box */
+        function boxPageNav(delta) {
+            const playerSlots = (GameState.sharedBox || []).filter(s => s.ownerPlayerId === GameState.ui.boxViewedPlayerId);
+            const totalPages = Math.max(1, Math.ceil(playerSlots.length / BOX_PAGE_SIZE));
+            GameState.ui.boxPageIndex = Math.max(0, Math.min((GameState.ui.boxPageIndex || 0) + delta, totalPages - 1));
+            saveToLocalStorage();
+            renderBoxTab();
+        }
+        window.boxPageNav = boxPageNav;
 
         /**
          * Send monster from team to box
@@ -8237,12 +8356,19 @@
                     return;
                 }
 
+                const monster = activePlayer.team?.[teamIndex];
+                const monName = monster?.name || 'Monstrinho';
+                if (!confirm(`Enviar ${monName} para a Box? Ele sairá da equipe.`)) {
+                    return;
+                }
+
                 const result = moveTeamToBox(activePlayer.id, teamIndex);
                 
                 if (result.success) {
                     saveToLocalStorage();
                     renderBoxTab();
                     updateAllViews();
+                    updateBoxTabBadge();
                 } else {
                     mmAlert(result.message || 'Erro ao enviar para Box', 'error');
                 }
@@ -8268,6 +8394,7 @@
                     saveToLocalStorage();
                     renderBoxTab();
                     updateAllViews();
+                    updateBoxTabBadge();
                 } else {
                     mmAlert(result.message || 'Erro ao retirar da Box', 'error');
                 }
@@ -8279,6 +8406,22 @@
         // ========================================================================
         // END PR15A: BOX SYSTEM
         // ========================================================================
+
+        /**
+         * U1 (Fase XX-A): Atualiza o badge counter na aba Caixa.
+         * Mostra o total de monstrinhos na Box do jogador em perspectiva, ou o total geral.
+         * Chamado após sendToBox, withdrawFromBox e tradeAccept.
+         */
+        function updateBoxTabBadge() {
+            try {
+                const tabBtn = document.querySelector('[data-tab="box"] .nav-label');
+                if (!tabBtn) return;
+                const totalInBox = (GameState.sharedBox || []).length;
+                tabBtn.textContent = totalInBox > 0 ? `Caixa (${totalInBox})` : 'Caixa';
+            } catch (_e) { /* silencioso */ }
+        }
+
+        window.updateBoxTabBadge = updateBoxTabBadge;
 
         // Make Box functions globally available
         window.sendToBox = sendToBox;
@@ -8513,7 +8656,7 @@
                     tradeUIState.playerBId = GameState.players[1].id;
                 }
                 root.innerHTML = window.TradeUI.renderTradePanel(
-                    { players: GameState.players || [], currentSession: GameState.currentSession || null },
+                    { players: GameState.players || [], currentSession: GameState.currentSession || null, sharedBox: GameState.sharedBox || [] },
                     tradeUIState
                 );
             } catch (error) {
@@ -8570,8 +8713,11 @@
                     showToast('Selecione dois jogadores e um monstrinho de cada lado.', 'warning');
                     return;
                 }
-                const monA = (playerA.team || []).find(m => m && (m.id === tradeUIState.selectedA || m.instanceId === tradeUIState.selectedA));
-                const monB = (playerB.team || []).find(m => m && (m.id === tradeUIState.selectedB || m.instanceId === tradeUIState.selectedB));
+                const box = GameState.sharedBox || [];
+                const monA = (playerA.team || []).find(m => m && (m.id === tradeUIState.selectedA || m.instanceId === tradeUIState.selectedA))
+                    || (box.find(s => s.ownerPlayerId === playerA.id && (s.monster?.id === tradeUIState.selectedA || s.monster?.instanceId === tradeUIState.selectedA))?.monster);
+                const monB = (playerB.team || []).find(m => m && (m.id === tradeUIState.selectedB || m.instanceId === tradeUIState.selectedB))
+                    || (box.find(s => s.ownerPlayerId === playerB.id && (s.monster?.id === tradeUIState.selectedB || s.monster?.instanceId === tradeUIState.selectedB))?.monster);
                 if (!monA || !monB) {
                     showToast('Seleção de troca inválida.', 'error');
                     return;
@@ -8598,8 +8744,11 @@
 
                 const playerA = (GameState.players || []).find(p => p?.id === proposal.playerAId);
                 const playerB = (GameState.players || []).find(p => p?.id === proposal.playerBId);
-                const monA = (playerA?.team || []).find(m => m && (m.id === proposal.monAId || m.instanceId === proposal.monAId));
-                const monB = (playerB?.team || []).find(m => m && (m.id === proposal.monBId || m.instanceId === proposal.monBId));
+                const box = GameState.sharedBox || [];
+                const monA = (playerA?.team || []).find(m => m && (m.id === proposal.monAId || m.instanceId === proposal.monAId))
+                    || (box.find(s => s.ownerPlayerId === playerA?.id && s.monster?.id === proposal.monAId)?.monster);
+                const monB = (playerB?.team || []).find(m => m && (m.id === proposal.monBId || m.instanceId === proposal.monBId))
+                    || (box.find(s => s.ownerPlayerId === playerB?.id && s.monster?.id === proposal.monBId)?.monster);
                 if (!playerA || !playerB || !monA || !monB) {
                     showToast('A proposta expirou ou ficou inválida.', 'error');
                     tradeUIState.pendingProposal = null;
@@ -8608,7 +8757,7 @@
                 }
 
                 const therapyLog = _getSessionTherapyLog();
-                const result = window.TradeUI.executeTrade(playerA, monA, playerB, monB, therapyLog);
+                const result = window.TradeUI.executeTrade(playerA, monA, playerB, monB, therapyLog, box);
                 if (!result.success) {
                     showToast(result.log?.[0] || 'Troca não concluída.', 'error');
                     return;
@@ -8624,6 +8773,7 @@
                 saveGame();
                 updatePlayersList();
                 renderTradeTab();
+                updateBoxTabBadge();
                 showToast(result.log?.[0] || 'Troca concluída!', 'success');
             } catch (error) {
                 console.error('[TradeTab] aceite falhou:', error);
@@ -8738,127 +8888,14 @@
         
         /**
          * PR13B: Render player inventory for selling
+         * Delegates HTML generation to ShopUI.renderPlayerInventory (pure function).
          * @param {object} player - Player object
          * @param {HTMLElement} container - Container element to render inventory into
          */
         function renderPlayerInventory(player, container) {
             try {
-                // Get player inventory
-                const inventory = player.inventory || {};
-                const inventoryItems = Object.entries(inventory).filter(([itemId, qty]) => qty > 0);
-                
-                if (inventoryItems.length === 0) {
-                    container.innerHTML = '<p>Seu inventário está vazio.</p>';
-                    return;
-                }
-                
-                // Get all items from the global itemsData
                 const allItems = window.itemsData || [];
-                
-                // Sort by item name
-                inventoryItems.sort((a, b) => {
-                    const itemA = allItems.find(i => i.id === a[0]);
-                    const itemB = allItems.find(i => i.id === b[0]);
-                    return (itemA?.name || '').localeCompare(itemB?.name || '');
-                });
-                
-                // Check which items are equipped
-                const equippedItems = new Set();
-                if (player.team && Array.isArray(player.team)) {
-                    player.team.forEach(monster => {
-                        if (monster?.heldItemId) {
-                            equippedItems.add(monster.heldItemId);
-                        }
-                    });
-                }
-                
-                // Render inventory items
-                let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">';
-                
-                for (const [itemId, qty] of inventoryItems) {
-                    const item = allItems.find(i => i.id === itemId);
-                    
-                    if (!item) {
-                        // Item not found in catalog (maybe old/invalid item)
-                        html += `
-                            <div class="card" style="margin: 0; padding: 1rem; background: #f8f8f8;">
-                                <h4 style="margin-top: 0; color: #999;">Item desconhecido (${itemId})</h4>
-                                <p style="font-size: 0.85em; color: #555;">
-                                    <strong>Quantidade:</strong> ${qty}x
-                                </p>
-                                <p style="font-size: 0.85em; color: #999;">
-                                    Este item não está mais no catálogo.
-                                </p>
-                            </div>
-                        `;
-                        continue;
-                    }
-                    
-                    // Calculate sell price
-                    const sellPrice = getSellPrice(item);
-                    const isEquipped = equippedItems.has(itemId);
-                    const canSell = sellPrice !== null && !isEquipped;
-                    
-                    // PR14A: Check if item is an egg
-                    const isEgg = item.category === 'egg';
-                    
-                    // Tier badge color
-                    const tierColors = {
-                        'comum': '#999',
-                        'incomum': '#2ecc71',
-                        'raro': '#3498db',
-                        'mistico': '#9b59b6',
-                        'lendario': '#f39c12'
-                    };
-                    const tierColor = tierColors[item.tier] || '#999';
-                    
-                    html += `
-                        <div class="card" style="margin: 0; padding: 1rem; border-left: 4px solid ${tierColor};">
-                            <h4 style="margin-top: 0;">${item.name}</h4>
-                            ${item.category === 'egg' ? `<p style="font-size: 0.9em; color: ${tierColor}; font-weight: bold;">🥚 OVO</p>` : `
-                            <p style="font-size: 0.9em; color: #666;">
-                                <span style="color: ${tierColor}; font-weight: bold; text-transform: uppercase;">
-                                    ${item.tier}
-                                </span>
-                            </p>`}
-                            <p style="font-size: 0.9em;">${item.description}</p>
-                            ${!isEgg && item.stats ? `<p style="font-size: 0.85em; color: #555;">
-                                <strong>Stats:</strong> 
-                                ${item.stats.atk > 0 ? `⚔️ ATK +${item.stats.atk}` : ''}${item.stats.atk > 0 && item.stats.def > 0 ? ' ' : ''}${item.stats.def > 0 ? `🛡️ DEF +${item.stats.def}` : ''}
-                            </p>` : ''}
-                            <p style="font-size: 0.85em; color: #555;">
-                                <strong>Você tem:</strong> ${qty}x
-                            </p>
-                            ${isEquipped ? `<p style="font-size: 0.85em; color: #e74c3c;">⚠️ Item equipado em um monstro</p>` : ''}
-                            ${isEgg ? `
-                            <button 
-                                class="btn btn-success" 
-                                onclick="hatchEggFromInventory('${player.id}', '${itemId}')"
-                                style="width: 100%; margin-top: 0.5rem;"
-                            >
-                                🐣 Chocar Ovo
-                            </button>
-                            ` : `
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
-                                ${sellPrice !== null ? `<strong style="font-size: 1.1em;">💰 Vender por ${sellPrice}</strong>` : `<span style="font-size: 0.9em; color: #999;">Não vendável</span>`}
-                                <button 
-                                    class="btn ${canSell ? 'btn-warning' : 'btn-secondary'}" 
-                                    onclick="sellItem('${player.id}', '${itemId}', 1)"
-                                    ${!canSell ? 'disabled' : ''}
-                                    style="${!canSell ? 'opacity: 0.5; cursor: not-allowed;' : ''}"
-                                    title="${isEquipped ? 'Não é possível vender item equipado' : (sellPrice === null ? 'Este item não pode ser vendido' : 'Vender 1x')}"
-                                >
-                                    ${canSell ? `💵 Vender (${sellPrice})` : (isEquipped ? '🔒 Equipado' : '✗ Não vendável')}
-                                </button>
-                            </div>
-                            `}
-                        </div>
-                    `;
-                }
-                
-                html += '</div>';
-                container.innerHTML = html;
-                
+                container.innerHTML = ShopUI.renderPlayerInventory(player, allItems);
             } catch (error) {
                 console.error('Failed to render player inventory:', error);
                 container.innerHTML = '<p style="color: red;">Erro ao carregar inventário.</p>';
@@ -8867,86 +8904,19 @@
         
         /**
          * Render shop items list
+         * Delegates HTML generation to ShopUI.renderShopItems (pure function).
          * @param {object} player - Player object
          * @param {HTMLElement} container - Container element to render items into
          */
         function renderShopItems(player, container) {
             try {
-                // Get all items from the global itemsData (loaded at init)
                 const allItems = window.itemsData || [];
-                
-                if (allItems.length === 0) {
-                    container.innerHTML = '<p>Nenhum item disponível.</p>';
-                    return;
-                }
-                
-                // Filter items that can be bought (have price.buy > 0)
-                const buyableItems = allItems.filter(item => item.price && item.price.buy > 0);
-                
-                if (buyableItems.length === 0) {
-                    container.innerHTML = '<p>Nenhum item disponível para compra.</p>';
-                    return;
-                }
-                
-                // Sort by price
-                buyableItems.sort((a, b) => a.price.buy - b.price.buy);
-                
-                // Render items
-                let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">';
-                
-                for (const item of buyableItems) {
-                    const price = item.price.buy;
-                    const canAfford = (player.money || 0) >= price;
-                    const owned = player.inventory?.[item.id] || 0;
-                    
-                    // Tier badge color
-                    const tierColors = {
-                        'comum': '#999',
-                        'incomum': '#2ecc71',
-                        'raro': '#3498db',
-                        'mistico': '#9b59b6',
-                        'lendario': '#f39c12'
-                    };
-                    const tierColor = tierColors[item.tier] || '#999';
-                    
-                    // Check if it's an egg
-                    const isEgg = item.category === 'egg';
-                    
-                    html += `
-                        <div class="card" style="margin: 0; padding: 1rem; border-left: 4px solid ${tierColor};">
-                            <h4 style="margin-top: 0;">${item.name}</h4>
-                            ${isEgg ? '<p style="font-size: 0.9em; color: #666; font-weight: bold;">🥚 OVO</p>' : item.tier ? `<p style="font-size: 0.9em; color: #666;">
-                                <span style="color: ${tierColor}; font-weight: bold; text-transform: uppercase;">
-                                    ${item.tier}
-                                </span>
-                            </p>` : ''}
-                            <p style="font-size: 0.9em;">${item.description}</p>
-                            ${item.stats ? `<p style="font-size: 0.85em; color: #555;">
-                                <strong>Stats:</strong> 
-                                ${item.stats.atk > 0 ? `⚔️ ATK +${item.stats.atk}` : ''}${item.stats.atk > 0 && item.stats.def > 0 ? ' ' : ''}${item.stats.def > 0 ? `🛡️ DEF +${item.stats.def}` : ''}
-                            </p>` : ''}
-                            ${item.break?.enabled ? `<p style="font-size: 0.85em; color: #e74c3c;">⚠️ Pode quebrar (${Math.round(item.break.chance * 100)}%)</p>` : ''}
-                            <p style="font-size: 0.85em; color: #555;">
-                                <strong>Você tem:</strong> ${owned}x
-                            </p>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
-                                <strong style="font-size: 1.1em;">💰 ${price}</strong>
-                                <button 
-                                    class="btn ${canAfford ? 'btn-success' : 'btn-secondary'}" 
-                                    onclick="buyItem('${player.id}', '${item.id}')"
-                                    ${!canAfford ? 'disabled' : ''}
-                                    style="${!canAfford ? 'opacity: 0.5; cursor: not-allowed;' : ''}"
-                                >
-                                    ${canAfford ? '✓ Comprar' : '✗ Sem dinheiro'}
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                html += '</div>';
-                container.innerHTML = html;
-                
+                const config = {
+                    money: player.money || 0,
+                    inventory: player.inventory || {},
+                    playerId: player.id
+                };
+                container.innerHTML = ShopUI.renderShopItems(allItems, config);
             } catch (error) {
                 console.error('Failed to render shop items:', error);
                 container.innerHTML = '<p style="color: red;">Erro ao carregar itens.</p>';
@@ -10150,6 +10120,9 @@
                 const isBoss      = node.type === 'boss';
                 const isCompleted = completedLocations.has(node.nodeId);
                 const isBossDefeated = isBoss && (nodeFlags[node.nodeId]?.bossDefeated === true);
+                const bossAttempts = isBoss ? (nodeFlags[node.nodeId]?.bossAttempts ?? 0) : 0;
+                // XIX-B: estado de "tentativa falhada" — boss desafiado mas não derrotado
+                const isBossAttempted = isBoss && !isBossDefeated && bossAttempts > 0;
                 const hasQuest    = activeQuestLocationIds.has(node.nodeId);
 
                 // Motivo do bloqueio (PR-06)
@@ -10163,14 +10136,20 @@
                 // Badges visuais (PR-05 + PR-07 + PR-09)
                 const badgeCompleted    = isCompleted    ? '<span class="wm-node__badge wm-node__badge--done">✅</span>' : '';
                 const badgeCity         = isCity         ? '<span class="wm-node__badge wm-node__badge--city">🏙️</span>' : '';
-                const badgeBoss         = isBoss && !isBossDefeated ? '<span class="wm-node__badge wm-node__badge--boss">👑</span>' : '';
+                const badgeBoss         = isBoss && !isBossDefeated && !isBossAttempted ? '<span class="wm-node__badge wm-node__badge--boss">👑</span>' : '';
                 const badgeBossDefeated = isBossDefeated ? '<span class="wm-node__badge wm-node__badge--boss-defeated">⚔️</span>' : '';
+                // XIX-B: badge de tentativa falhada
+                const badgeBossAttempted = isBossAttempted ? '<span class="wm-node__badge wm-node__badge--boss-attempted" title="Tentativa anterior falhada — volte mais forte!">💀</span>' : '';
                 const badgeQuest        = hasQuest       ? '<span class="wm-node__badge wm-node__badge--quest">❗</span>' : '';
                 const badgeLock         = !unlocked      ? '<span class="wm-node__lock">🔒</span>' : '';
                 const typeClass = isCity
                     ? 'wm-node--city'
                     : isBoss
-                        ? (isBossDefeated ? 'wm-node--boss wm-node--boss-defeated' : 'wm-node--boss')
+                        ? (isBossDefeated
+                            ? 'wm-node--boss wm-node--boss-defeated'
+                            : isBossAttempted
+                                ? 'wm-node--boss wm-node--boss-attempted'
+                                : 'wm-node--boss')
                         : '';
 
                 // Sublabel de motivo do bloqueio (PR-06)
@@ -10186,7 +10165,9 @@
                     : false;
                 const defeatedLabel = isBossDefeated
                     ? `<span class="wm-node__boss-status">${bossRegionDone ? '🏆 Região concluída' : 'Conquistado'}</span>`
-                    : '';
+                    : isBossAttempted
+                        ? `<span class="wm-node__boss-status wm-node__boss-status--attempted">💀 Tentar novamente</span>`
+                        : '';
 
                 return `
                   <div class="wm-node ${lockClass} ${typeClass}" ${onclick}
@@ -10196,7 +10177,7 @@
                     <span class="wm-node__emoji">${node.biomeEmoji}</span>
                     <span class="wm-node__name">${node.name}</span>
                     ${levelStr ? `<span class="wm-node__level">${levelStr}</span>` : ''}
-                    <div class="wm-node__badges">${badgeCompleted}${badgeCity}${badgeBoss}${badgeBossDefeated}${badgeQuest}${badgeLock}</div>
+                    <div class="wm-node__badges">${badgeCompleted}${badgeCity}${badgeBoss}${badgeBossDefeated}${badgeBossAttempted}${badgeQuest}${badgeLock}</div>
                     ${lockLabel}${defeatedLabel}
                   </div>`;
             }).join('');
@@ -11611,8 +11592,8 @@
                                 },
                                 isReadyForKitSwap: (monster) => window.SpeciesDisplay?.isReadyForKitSwap?.(monster) || false,
                                 isEligibleForBattle: (monster, owner) => window.ClassEligibility?.isEligibleForBattle?.(monster, owner) ?? true,
-                                renderEligibilityBadgeForTeam,
-                                renderTeamReadinessIndicator,
+                                renderEligibilityBadgeForTeam: (m, p) => MonsterCardUI.renderEligibilityBadgeForTeam(m, p, window.ClassEligibility),
+                                renderTeamReadinessIndicator: (m) => MonsterCardUI.renderTeamReadinessIndicator(m, window.SpeciesDisplay),
                                 actionNames: {
                                     moveUp: 'moveTeamMemberUp',
                                     moveDown: 'moveTeamMemberDown',
@@ -11632,93 +11613,9 @@
         }
 
         /**
-         * Renderiza o bloco de identidade canônica de espécie para o card do monstrinho.
-         * Fase 15: visibilidade persistente fora do combate.
-         *
-         * Retorna string HTML vazia se o monstrinho não tiver espécie canônica mapeada.
-         *
-         * @param {object} monster - Instância de monstrinho.
-         * @returns {string} HTML do bloco de identidade.
+         * Renderiza o card de um monstrinho (wrapper de delegação para PlayerPanelUI).
+         * Passa MonsterCardUI.renderSpeciesIdentityBlock com window.SpeciesDisplay injetado.
          */
-        function renderSpeciesIdentityBlock(monster) {
-            if (!window.SpeciesDisplay) return '';
-            const info = window.SpeciesDisplay.getSpeciesDisplayInfo(monster);
-            if (!info.hasSpecies) return '';
-
-            const promotionBadge = info.isPromoted ? '⭐' : '🌟';
-            const promotionSuffix = info.isPromoted ? ' (Promoção)' : '';
-            const kitCssClass = info.isPromoted
-                ? 'species-identity__kit species-identity__kit--promoted'
-                : 'species-identity__kit';
-            const kitHtml = info.hasKitSwap
-                ? `<div class="${kitCssClass}">${promotionBadge} ${info.kitSwapName}${promotionSuffix}</div>`
-                : '';
-
-            const milestoneHtml = info.nextMilestone
-                ? `<div class="species-identity__milestone">⏳ ${info.nextMilestone}</div>`
-                : '';
-
-            return `
-                <div class="species-identity">
-                    <div class="species-identity__header">🧬 ${info.speciesLabel} · ${info.archetype}</div>
-                    <div class="species-identity__passive">✨ ${info.passiveName} — ${info.passiveDesc}</div>
-                    ${kitHtml}
-                    ${milestoneHtml}
-                </div>
-            `;
-        }
-
-        /**
-         * Fase 17 — Indicador leve de prontidão canônica para a visão de equipe.
-         *
-         * Renderiza um badge compacto informando o estado de progressão canônica
-         * do monstrinho sem duplicar a ficha completa de identidade.
-         *
-         * Estados:
-         *  - 'complete'     → ✅ Completo (identidade totalmente ativa)
-         *  - 'near_promo'   → ⚡ Nv.X (perto da promoção do kit_swap)
-         *  - 'near_unlock'  → ⚡ Nv.X (perto do desbloqueio do kit_swap)
-         *  - null           → string vazia (silencioso — sem poluição visual)
-         *
-         * @param {object} monster - Instância de monstrinho.
-         * @returns {string} HTML do badge ou string vazia.
-         */
-        function renderTeamReadinessIndicator(monster) {
-            if (!window.SpeciesDisplay?.getTeamReadinessIndicator) return '';
-            const readiness = window.SpeciesDisplay.getTeamReadinessIndicator(monster);
-            if (!readiness) return '';
-
-            switch (readiness.state) {
-                case 'complete':
-                    return '<span class="readiness-badge readiness-badge--complete" title="Identidade canônica completa">✅ Completo</span>';
-                case 'near_promo':
-                    return `<span class="readiness-badge readiness-badge--near" title="Promoção no Nv. ${readiness.targetLevel}">⚡ Nv.${readiness.targetLevel}</span>`;
-                case 'near_unlock':
-                    return `<span class="readiness-badge readiness-badge--near" title="Habilidade especial no Nv. ${readiness.targetLevel}">⚡ Nv.${readiness.targetLevel}</span>`;
-                default:
-                    return '';
-            }
-        }
-
-        /**
-         * Fase 19 — Badge de elegibilidade por classe para a visão de equipe.
-         *
-         * Mostra "✔ Elegível" ou "✖ Fora da classe" de forma compacta,
-         * permitindo ao jogador identificar rapidamente quais monstrinhos
-         * podem ser usados em batalha com este treinador.
-         *
-         * Retorna string vazia se ClassEligibility não estiver disponível
-         * (graceful degradation).
-         *
-         * @param {object} monster - Instância de monstrinho
-         * @param {object} player  - Jogador dono do time
-         * @returns {string} HTML do badge
-         */
-        function renderEligibilityBadgeForTeam(monster, player) {
-            if (!window.ClassEligibility?.renderEligibilityBadge) return '';
-            return window.ClassEligibility.renderEligibilityBadge(monster, player);
-        }
-
         function renderMonsterCard(monster) {
             if (!window.PlayerPanelUI?.renderMonsterCard) return '';
             return window.PlayerPanelUI.renderMonsterCard(monster, {
@@ -11727,7 +11624,7 @@
                 getFriendshipLevel,
                 getFriendshipBonuses,
                 formatFriendshipBonusPercent,
-                renderSpeciesIdentityBlock
+                renderSpeciesIdentityBlock: (m) => MonsterCardUI.renderSpeciesIdentityBlock(m, window.SpeciesDisplay)
             });
         }
 
@@ -11742,8 +11639,8 @@
                 },
                 isReadyForKitSwap: (monster) => window.SpeciesDisplay?.isReadyForKitSwap?.(monster) || false,
                 isEligibleForBattle: (monster, owner) => window.ClassEligibility?.isEligibleForBattle?.(monster, owner) ?? true,
-                renderEligibilityBadgeForTeam,
-                renderTeamReadinessIndicator,
+                renderEligibilityBadgeForTeam: (m, p) => MonsterCardUI.renderEligibilityBadgeForTeam(m, p, window.ClassEligibility),
+                renderTeamReadinessIndicator: (m) => MonsterCardUI.renderTeamReadinessIndicator(m, window.SpeciesDisplay),
                 actionNames: {
                     moveUp: 'moveTeamMemberUp',
                     moveDown: 'moveTeamMemberDown',
@@ -13821,37 +13718,10 @@
             if (!host) return;
 
             const selectedSlot = SaveLayer.getActiveSlot();
-
-            const slotHtml = [1, 2, 3].map(slot => {
-                const env = mmReadSlot(slot);
-                const empty = !env || !env.state;
-                const date = env?.timestamp ? new Date(env.timestamp).toLocaleString('pt-BR') : "";
-                const isSelected = selectedSlot === slot;
-                // "Selecionado" = este é o slot manual associado (destino de próximos snapshots).
-                // NÃO significa que a sessão atual vem deste slot.
-                const selectedBadge = isSelected ? `<span style="color:#4ade80;font-weight:bold;margin-left:8px;" title="Slot manual selecionado para próximos snapshots">● Selecionado</span>` : "";
-                
-                const meta = empty
-                    ? `<div class="mm-slot-meta">Nenhum snapshot salvo</div>`
-                    : `<div class="mm-slot-meta">
-                         <div><b>Sessão:</b> ${escapeHtml(env.sessionName || "Sessão")}</div>
-                         <div><b>Jogadores:</b> ${env.playersCount ?? "?"}</div>
-                         <div><b>Snapshot de:</b> ${date}</div>
-                       </div>`;
-
-                return `
-                    <div class="mm-slot${isSelected ? ' mm-slot-active' : ''}">
-                        <h3>Slot ${slot}${selectedBadge}</h3>
-                        ${meta}
-                        <div class="mm-slot-actions">
-                            <button class="mm-btn w-auto" ${empty ? "disabled" : ""} onclick="mmLoadFromSlot(${slot})">📂 Restaurar</button>
-                            <button class="mm-btn w-auto" onclick="mmSaveToSlot(${slot})">💾 Salvar aqui</button>
-                            <button class="mm-btn w-auto" ${empty ? "disabled" : ""} onclick="mmExportSlot(${slot})">⬇️ Exportar</button>
-                            <button class="mm-btn w-auto" ${empty ? "disabled" : ""} onclick="mmDeleteSlot(${slot})">🗑️ Apagar</button>
-                        </div>
-                    </div>
-                `;
-            }).join("");
+            // Delega geração de HTML ao módulo puro SavesUI (sem efeitos colaterais).
+            const slotHtml = [1, 2, 3].map(slot =>
+                SavesUI.renderSaveSlotCardHtml(slot, mmReadSlot(slot), selectedSlot === slot)
+            ).join("");
 
             host.innerHTML = slotHtml;
         }
@@ -13880,31 +13750,10 @@
             if (!host) return;
 
             const last = mmGetLastSlot();
-            const cards = [1, 2, 3].map(slot => {
-                const env = mmReadSlot(slot);
-                const empty = !env || !env.state;
-                const date = env?.timestamp ? new Date(env.timestamp).toLocaleString('pt-BR') : "";
-                const meta = empty
-                    ? `<div class="mm-slot-meta">Vazio</div>`
-                    : `<div class="mm-slot-meta">
-                         <div><b>Sessão:</b> ${escapeHtml(env.sessionName || "Sessão")}</div>
-                         <div><b>Jogadores:</b> ${env.playersCount ?? "?"}</div>
-                         <div><b>Data:</b> ${date}</div>
-                       </div>`;
-
-                return `
-                    <div class="mm-slot ${slot === last ? "slot-outline" : ""}">
-                        <h3 class="my-0 mb-6">Slot ${slot} ${slot === last ? "⭐" : ""}</h3>
-                        ${meta}
-                        <div class="mm-slot-actions">
-                            <button class="mm-btn w-auto"
-                                onclick="mmChooseSlotAndStartNewGame(${slot})">
-                                ${empty ? "✅ Usar este slot" : "✅ Usar (sobrescrever)"}
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join("");
+            // Delega geração de HTML ao módulo puro SavesUI (sem efeitos colaterais).
+            const cards = [1, 2, 3].map(slot =>
+                SavesUI.renderSlotPickerCardHtml(slot, mmReadSlot(slot), slot === last)
+            ).join("");
 
             host.innerHTML = cards;
         }
