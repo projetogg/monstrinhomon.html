@@ -117,27 +117,25 @@ describe('Fase 11 — Bardo → bellwave (bridge)', () => {
     });
 
     describe('Exclusões justificadas', () => {
-        it('MON_001 (Cantapau) não mapeado — sem linha evolutiva', () => {
-            expect(resolveCanonSpeciesId('MON_001')).toBeNull();
+        it('MON_008 (Giganotometalmon) não mapeado — drift bruiser excluído por design', () => {
+            expect(resolveCanonSpeciesId('MON_008')).toBeNull();
         });
 
-        it('MON_011 (Dinomon) não mapeado — drift em MON_011D (ATK 16 > SPD 11)', () => {
-            // Atualizado em Fase 13.2: MON_011 agora é bellwave (mapeamento parcial da linha)
-            expect(resolveCanonSpeciesId('MON_011')).toBe('bellwave');
+        it('MON_005 (Dinomon) mapeado para bellwave após migração Phase 1 (rebased de MON_011)', () => {
+            expect(resolveCanonSpeciesId('MON_005')).toBe('bellwave');
         });
 
-        it('MON_011B (Guitarapitormon) não mapeado — linha com drift no final', () => {
-            // Atualizado em Fase 13.2: MON_011B agora é bellwave (mapeamento parcial da linha)
-            expect(resolveCanonSpeciesId('MON_011B')).toBe('bellwave');
+        it('MON_006 (Guitarapitormon) mapeado para bellwave após migração Phase 1 (rebased de MON_011B)', () => {
+            expect(resolveCanonSpeciesId('MON_006')).toBe('bellwave');
         });
 
-        it('MON_011C (TRockmon) não mapeado — linha com drift no final', () => {
-            // Atualizado em Fase 13.2: MON_011C agora é bellwave (mapeamento parcial da linha)
-            expect(resolveCanonSpeciesId('MON_011C')).toBe('bellwave');
+        it('MON_007 (TRockmon) mapeado para bellwave após migração Phase 1 (rebased de MON_011C)', () => {
+            expect(resolveCanonSpeciesId('MON_007')).toBe('bellwave');
         });
 
-        it('MON_011D (Giganotometalmon) não mapeado — pivot de arquétipo (bruiser pesado)', () => {
-            expect(resolveCanonSpeciesId('MON_011D')).toBeNull();
+        it('MON_008 (Giganotometalmon) permanece não mapeado — pivot de arquétipo (bruiser pesado)', () => {
+            // MON_011D foi rebased para MON_008; continua excluído por drift
+            expect(resolveCanonSpeciesId('MON_008')).toBeNull();
         });
     });
 
@@ -148,12 +146,12 @@ describe('Fase 11 — Bardo → bellwave (bridge)', () => {
             expect(bellwaveMappings).toHaveLength(6);
         });
 
-        it('mapeamentos são exatamente MON_027, MON_027B, MON_027C, MON_011, MON_011B, MON_011C', () => {
+        it('mapeamentos são exatamente MON_005, MON_006, MON_007, MON_027, MON_027B, MON_027C', () => {
             const bellwaveIds = Object.entries(RUNTIME_TO_CANON_SPECIES)
                 .filter(([, v]) => v === 'bellwave')
                 .map(([k]) => k)
                 .sort();
-            expect(bellwaveIds).toEqual(['MON_011', 'MON_011B', 'MON_011C', 'MON_027', 'MON_027B', 'MON_027C']);
+            expect(bellwaveIds).toEqual(['MON_005', 'MON_006', 'MON_007', 'MON_027', 'MON_027B', 'MON_027C']);
         });
     });
 });
@@ -761,32 +759,32 @@ describe('Fase 11 — bellwave — diferenciação mecânica', () => {
 describe('Fase 11 — regressão: espécies anteriores intactas', () => {
 
     describe('Mapeamentos anteriores preservados', () => {
-        it('Guerreiro/shieldhorn: MON_010, MON_002, MON_026 intactos', () => {
-            expect(resolveCanonSpeciesId('MON_010')).toBe('shieldhorn');
+        it('Guerreiro/shieldhorn: MON_001, MON_002, MON_026 intactos', () => {
+            expect(resolveCanonSpeciesId('MON_001')).toBe('shieldhorn');
             expect(resolveCanonSpeciesId('MON_002')).toBe('shieldhorn');
             expect(resolveCanonSpeciesId('MON_026')).toBe('shieldhorn');
         });
 
-        it('Bárbaro/emberfang: MON_007, MON_021, MON_029 intactos', () => {
-            expect(resolveCanonSpeciesId('MON_007')).toBe('emberfang');
+        it('Bárbaro/emberfang: MON_021, MON_021B, MON_029 intactos', () => {
+            expect(resolveCanonSpeciesId('MON_021')).toBe('emberfang');
             expect(resolveCanonSpeciesId('MON_021')).toBe('emberfang');
             expect(resolveCanonSpeciesId('MON_029')).toBe('emberfang');
         });
 
-        it('Mago/moonquill: MON_003, MON_014, MON_024 intactos', () => {
-            expect(resolveCanonSpeciesId('MON_003')).toBe('moonquill');
+        it('Mago/moonquill: MON_013, MON_014, MON_024 intactos', () => {
+            expect(resolveCanonSpeciesId('MON_013')).toBe('moonquill');
             expect(resolveCanonSpeciesId('MON_014')).toBe('moonquill');
             expect(resolveCanonSpeciesId('MON_024')).toBe('moonquill');
         });
 
-        it('Curandeiro/floracura: MON_004, MON_020, MON_028 intactos', () => {
-            expect(resolveCanonSpeciesId('MON_004')).toBe('floracura');
-            expect(resolveCanonSpeciesId('MON_020')).toBe('floracura');
+        it('Curandeiro/floracura: MON_028, MON_028B, MON_028C intactos', () => {
+            expect(resolveCanonSpeciesId('MON_028')).toBe('floracura');
+            expect(resolveCanonSpeciesId('MON_028B')).toBe('floracura');
             expect(resolveCanonSpeciesId('MON_028')).toBe('floracura');
         });
 
-        it('Caçador/swiftclaw: MON_013, MON_025 intactos', () => {
-            expect(resolveCanonSpeciesId('MON_013')).toBe('swiftclaw');
+        it('Caçador/swiftclaw: MON_009, MON_025 intactos', () => {
+            expect(resolveCanonSpeciesId('MON_009')).toBe('swiftclaw');
             expect(resolveCanonSpeciesId('MON_025')).toBe('swiftclaw');
         });
 

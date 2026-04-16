@@ -545,11 +545,14 @@ describe('Fase 11.1 — bellwave — canonSpeciesId estático na linha', () => {
         expect(resolveCanonSpeciesId('MON_027C')).toBe('bellwave');
     });
 
-    it('templates excluídos permanecem nulos (MON_001 sem linha, MON_011D drift)', () => {
-        expect(resolveCanonSpeciesId('MON_001')).toBeNull();   // sem linha evolutiva
-        // MON_011 agora é bellwave (Fase 13.2: mapeamento parcial da linha Dinomon)
-        expect(resolveCanonSpeciesId('MON_011')).toBe('bellwave');
-        expect(resolveCanonSpeciesId('MON_011D')).toBeNull();  // pivot bruiser — excluído
+    it('templates excluídos permanecem nulos (MON_008 drift bruiser, MON_017 Animalista)', () => {
+        // MON_001 agora é shieldhorn (rebased de MON_010 na migração Phase 1)
+        // MON_008 (rebased de MON_011D) permanece excluído — pivot bruiser
+        expect(resolveCanonSpeciesId('MON_008')).toBeNull();   // drift bruiser — excluído
+        // MON_005 agora é bellwave (rebased de MON_011 na migração Phase 1)
+        expect(resolveCanonSpeciesId('MON_005')).toBe('bellwave');
+        // MON_017 (Luvursomon, Animalista) — sem espécie mapeada
+        expect(resolveCanonSpeciesId('MON_017')).toBeNull();
     });
 
     it('canonSpeciesId não varia entre estágios — arquétipo é da espécie, não do template', () => {

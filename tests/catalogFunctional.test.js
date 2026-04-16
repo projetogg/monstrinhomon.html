@@ -60,7 +60,7 @@ describe('Catálogo Funcional — Carregamento via DataLoader', () => {
         clearCache();
     });
 
-    it('loadMonsters deve carregar todos os 72 monstros do JSON', async () => {
+    it('loadMonsters deve carregar todos os 59 monstros do JSON', async () => {
         global.fetch = vi.fn(() =>
             Promise.resolve({
                 ok: true,
@@ -71,7 +71,7 @@ describe('Catálogo Funcional — Carregamento via DataLoader', () => {
         const map = await loadMonsters();
 
         expect(map).toBeInstanceOf(Map);
-        expect(map.size).toBe(72);
+        expect(map.size).toBe(59);
     });
 
     it('monstros do bootstrap devem ser acessíveis por ID após carregamento', async () => {
@@ -85,13 +85,13 @@ describe('Catálogo Funcional — Carregamento via DataLoader', () => {
         await loadMonsters();
         const map = getMonstersMapSync();
 
-        // Monstros novos do bootstrap (famílias MON_010+, MON_020+)
+        // Monstros do catálogo atualizado após migração Phase 1 hard-replace
         const bootstrapIds = [
-            'MON_010', 'MON_010B', 'MON_010C', 'MON_010D',
-            'MON_011', 'MON_012', 'MON_013', 'MON_014',
+            'MON_001', 'MON_002', 'MON_003', 'MON_004',
+            'MON_005', 'MON_009', 'MON_013', 'MON_017',
             'MON_020', 'MON_021', 'MON_022', 'MON_023',
             'MON_024', 'MON_025', 'MON_026', 'MON_027',
-            'MON_020C', 'MON_027C'
+            'MON_021C', 'MON_027C'
         ];
 
         for (const id of bootstrapIds) {
@@ -102,7 +102,7 @@ describe('Catálogo Funcional — Carregamento via DataLoader', () => {
         }
     });
 
-    it('todos os 72 monstros devem passar validateMonsterSchema', () => {
+    it('todos os 59 monstros devem passar validateMonsterSchema', () => {
         for (const m of allMonsters) {
             expect(
                 validateMonsterSchema(m),
@@ -112,10 +112,11 @@ describe('Catálogo Funcional — Carregamento via DataLoader', () => {
     });
 
     it('normalizeMonsterData deve preservar campos de evolução', () => {
-        const pedrino = allMonsters.find(m => m.id === 'MON_002');
-        const normalized = normalizeMonsterData(pedrino);
+        // MON_001 (Ferrozimon) → MON_002 (Cavalheiromon) at level 12
+        const ferrozimon = allMonsters.find(m => m.id === 'MON_001');
+        const normalized = normalizeMonsterData(ferrozimon);
 
-        expect(normalized.evolvesTo).toBe('MON_002B');
+        expect(normalized.evolvesTo).toBe('MON_002');
         expect(normalized.evolvesAt).toBe(12);
     });
 
@@ -136,28 +137,29 @@ describe('Catálogo Funcional — Resolução de Evolução', () => {
     const allMonsters = loadMonstersJsonRaw().monsters;
     const monsterMap = new Map(allMonsters.map(m => [m.id, m]));
 
-    it('cadeia MON_002 → MON_002B → MON_002C deve ser resolvível', () => {
-        const pedrino = monsterMap.get('MON_002');
-        const evo1 = simulateGetEvolutionData(pedrino);
-        expect(evo1).toEqual({ toId: 'MON_002B', atLv: 12 });
+    it('cadeia MON_005 → MON_006 → MON_007 deve ser resolvível (linha Dinomon/Bardo)', () => {
+        const dinomon = monsterMap.get('MON_005');
+        const evo1 = simulateGetEvolutionData(dinomon);
+        expect(evo1).toEqual({ toId: 'MON_006', atLv: 12 });
 
-        const pedronar = monsterMap.get(evo1.toId);
-        expect(pedronar).toBeDefined();
-        expect(pedronar.name).toBe('Pedronar');
+        const guitarapitormon = monsterMap.get(evo1.toId);
+        expect(guitarapitormon).toBeDefined();
+        expect(guitarapitormon.name).toBe('Guitarapitormon');
 
-        const evo2 = simulateGetEvolutionData(pedronar);
-        expect(evo2).toEqual({ toId: 'MON_002C', atLv: 25 });
+        const evo2 = simulateGetEvolutionData(guitarapitormon);
+        expect(evo2).toEqual({ toId: 'MON_007', atLv: 25 });
 
-        const pedragon = monsterMap.get(evo2.toId);
-        expect(pedragon).toBeDefined();
-        expect(pedragon.name).toBe('Pedragon');
+        const trockmon = monsterMap.get(evo2.toId);
+        expect(trockmon).toBeDefined();
+        expect(trockmon.name).toBe('TRockmon');
 
-        // Final da cadeia
-        expect(simulateGetEvolutionData(pedragon)).toBe(null);
+        // Final da cadeia 3 estágios (TRockmon evolui para MON_008)
+        const evo3 = simulateGetEvolutionData(trockmon);
+        expect(evo3).toEqual({ toId: 'MON_008', atLv: 45 });
     });
 
-    it('cadeia 4 estágios MON_010 → 010B → 010C → 010D deve ser resolvível', () => {
-        let current = monsterMap.get('MON_010');
+    it('cadeia 4 estágios MON_001 → 002 → 003 → 004 deve ser resolvível (linha Ferrozimon/Guerreiro)', () => {
+        let current = monsterMap.get('MON_001');
         const names = [current.name];
         const levels = [];
 
@@ -174,8 +176,8 @@ describe('Catálogo Funcional — Resolução de Evolução', () => {
         expect(levels).toEqual([12, 25, 45]);
     });
 
-    it('cadeia 3 estágios MON_020 → 020B → 020C deve ser resolvível', () => {
-        let current = monsterMap.get('MON_020');
+    it('cadeia 3 estágios MON_021 → 021B → 021C deve ser resolvível (linha Tamborilhomon/Bárbaro)', () => {
+        let current = monsterMap.get('MON_021');
         const ids = [current.id];
 
         let evo = simulateGetEvolutionData(current);
@@ -186,7 +188,7 @@ describe('Catálogo Funcional — Resolução de Evolução', () => {
             evo = simulateGetEvolutionData(current);
         }
 
-        expect(ids).toEqual(['MON_020', 'MON_020B', 'MON_020C']);
+        expect(ids).toEqual(['MON_021', 'MON_021B', 'MON_021C']);
     });
 
     it('monstros sem evolução devem retornar null em getEvolutionData', () => {
@@ -203,11 +205,11 @@ describe('Catálogo Funcional — Pool de Encontros', () => {
 
     const allMonsters = loadMonstersJsonRaw().monsters;
 
-    it('todos os 72 monstros devem estar disponíveis como pool de encontro', () => {
+    it('todos os 59 monstros devem estar disponíveis como pool de encontro', () => {
         // Simula a seleção aleatória do index.html (linha 3439)
         // O jogo usa MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)]
         // Verificar que nenhum monstro fica inacessível
-        expect(allMonsters.length).toBe(72);
+        expect(allMonsters.length).toBe(59);
         for (const m of allMonsters) {
             expect(m.id).toBeTruthy();
             expect(m.baseHp).toBeGreaterThan(0);
@@ -255,19 +257,19 @@ describe('Catálogo Funcional — getMonsterTemplate Simulado', () => {
     it('getMonsterTemplate deve encontrar monstro original (MON_001)', () => {
         const t = simulateGetMonsterTemplate('MON_001', []);
         expect(t).toBeDefined();
-        expect(t.name).toBe('Cantapau');
-        expect(t.class).toBe('Bardo');
+        expect(t.name).toBe('Ferrozimon');
+        expect(t.class).toBe('Guerreiro');
     });
 
     it('getMonsterTemplate deve encontrar monstro do bootstrap (MON_010)', () => {
         const t = simulateGetMonsterTemplate('MON_010', []);
         expect(t).toBeDefined();
-        expect(t.name).toBe('Ferrozimon');
-        expect(t.class).toBe('Guerreiro');
+        expect(t.name).toBe('Gatunamon');
+        expect(t.class).toBe('Caçador');
     });
 
-    it('getMonsterTemplate deve encontrar estágio final (MON_014D)', () => {
-        const t = simulateGetMonsterTemplate('MON_014D', []);
+    it('getMonsterTemplate deve encontrar estágio final (MON_016)', () => {
+        const t = simulateGetMonsterTemplate('MON_016', []);
         expect(t).toBeDefined();
         expect(t.name).toBe('Wizardragomon');
     });
@@ -287,7 +289,7 @@ describe('Catálogo Funcional — getMonsterTemplate Simulado', () => {
     });
 
     it('retorno é deep clone — mutação não afeta cache', () => {
-        const t1 = simulateGetMonsterTemplate('MON_010', []);
+        const t1 = simulateGetMonsterTemplate('MON_001', []);
         t1.baseHp = 9999;
 
         const t2 = simulateGetMonsterTemplate('MON_010', []);

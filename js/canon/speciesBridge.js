@@ -60,63 +60,20 @@ import { getSpeciesStatOffsets } from './canonLoader.js';
 // ---------------------------------------------------------------------------
 export const RUNTIME_TO_CANON_SPECIES = {
     // ── Guerreiro — arquétipo tank_puro (shieldhorn) ────────────────────────
-    // Ferrozimon: DEF 9 vs ATK 7 — perfil tank mais claro do catálogo
-    'MON_010': 'shieldhorn',
-    // Pedrino: ATK 7, DEF 6 — guerreiro equilibrado; offsets (def+1, atk-1)
-    //   o inclinam para o arquétipo defensivo sem distorcer o personagem.
+    // Ferrozimon (MON_001): DEF 9 vs ATK 7 — perfil tank mais claro do catálogo
+    'MON_001': 'shieldhorn',
+    // Cavalheiromon (MON_002): ATK 10, DEF 12 — DEF claramente dominante; arquétipo
+    //   tank_puro inequívoco nesta evolução.
     'MON_002': 'shieldhorn',
+    // Kinguespinhomon (MON_003): ATK 14, DEF 16 — DEF dominante; perfil tank mais
+    //   pronunciado que o estágio base.
+    'MON_003': 'shieldhorn',
+    // Arconouricomon (MON_004): ATK 17, DEF 17 — alto em ambos, mas DEF não fica
+    //   atrás de ATK; mantém identidade tank da linha.
+    'MON_004': 'shieldhorn',
     // Cascalhimon: ATK 6, DEF 8, SPD 3 — segundo perfil mais tanky do catálogo
     //   (DEF alta, velocidade mínima). Ajuste ideal para shieldhorn.
     'MON_026': 'shieldhorn',
-
-    // ── Bárbaro — arquétipo burst_agressivo (emberfang) ─────────────────────
-    // Trovão: ATK 8, DEF 4 — alto dano, fragilidade intencional
-    'MON_007': 'emberfang',
-    // Tamborilhomon: mesmo arquétipo burst, mesma classe
-    'MON_021': 'emberfang',
-    // Tigrumo: ATK 9, DEF 4 — ATK ainda maior que Trovão; perfil burst inequívoco
-    'MON_029': 'emberfang',
-
-    // ── Mago — arquétipo controle_leve (moonquill) ──────────────────────────
-    // Faíscari: Mago Comum, ENE 10 — perfil ENE-alto e controle
-    'MON_003': 'moonquill',
-    // Lagartomon: ENE 8, ATK 6 — menos agressivo que Faíscari; bom fit para
-    //   controle_leve (offset ene+1 reforça foco em energia/controle).
-    'MON_014': 'moonquill',
-    // Coralimon: ATK 5, DEF 6, ENE 8 — mago defensivo/controle; DEF acima da
-    //   média para Mago sugere estilo de suporte + controle, coerente com moonquill.
-    'MON_024': 'moonquill',
-
-    // ── Curandeiro — arquétipo cura_estavel (floracura) ─────────────────────
-    // Ninfolha: ENE 12, ATK 4 — suporte sustentado; mapeamento original Fase 3
-    'MON_004': 'floracura',
-    // Gotimon: ENE 9, ATK 4 — healer estável; offset (hp+1, ene+1, agi-1)
-    //   reforça o papel de suporte sem distorcer o personagem.
-    'MON_020': 'floracura',
-    // Nutrilo: ENE 11, ATK 3 — perfil de suporte mais puro do catálogo;
-    //   ATK mínimo e ENE alto são o arquétipo floracura em sua forma mais clara.
-    'MON_028': 'floracura',
-
-    // ── Guerreiro — evoluções da linha Pedrino (shieldhorn) ─────────────────
-    // Pedronar: ATK 10, DEF 8 — continua equilibrado/defensivo; offsets
-    //   (def+1, atk-1) reforçam o arquétipo shieldhorn sem distorcer.
-    'MON_002B': 'shieldhorn',
-    // Pedragon: ATK 14, DEF 11 — DEF cresce proporcionalmente ao ATK;
-    //   mantém o perfil defensivo da linha evolutiva.
-    'MON_002C': 'shieldhorn',
-
-    // ── Guerreiro — evoluções da linha Ferrozimon (shieldhorn) ──────────────
-    // Cavalheiromon: ATK 10, DEF 12 — DEF claramente dominante; arquétipo
-    //   tank_puro inequívoco nesta evolução.
-    'MON_010B': 'shieldhorn',
-    // Kinguespinhomon: ATK 14, DEF 16 — DEF dominante; perfil tank mais
-    //   pronunciado que o estágio base.
-    'MON_010C': 'shieldhorn',
-    // Arconouricomon: ATK 17, DEF 17 — alto em ambos, mas DEF não fica atrás
-    //   de ATK; mantém identidade tank da linha.
-    'MON_010D': 'shieldhorn',
-
-    // ── Guerreiro — evoluções da linha Cascalhimon (shieldhorn) ─────────────
     // Muralhimon: ATK 9, DEF 12 — perfil fortemente defensivo; evolução
     //   natural do tank Cascalhimon.
     'MON_026B': 'shieldhorn',
@@ -124,33 +81,39 @@ export const RUNTIME_TO_CANON_SPECIES = {
     //   tank_puro em sua forma mais clara nesta linha.
     'MON_026C': 'shieldhorn',
 
-    // ── Bárbaro — evoluções da linha Tamborilhomon (emberfang) ──────────────
+    // ── Bárbaro — arquétipo burst_agressivo (emberfang) ─────────────────────
+    // Tamborilhomon: arquétipo burst, classe Bárbaro
+    'MON_021': 'emberfang',
     // Rufamon: ATK 11, DEF 8 — ATK alto; mantém arquétipo burst da linha.
     'MON_021B': 'emberfang',
     // Trovatambormon: ATK 14, DEF 10 — ATK cresce consistentemente; perfil
     //   burst_agressivo preservado.
     'MON_021C': 'emberfang',
-
-    // ── Bárbaro — evoluções da linha Tigrumo (emberfang) ────────────────────
+    // Tigrumo: ATK 9, DEF 4 — ATK dominante; perfil burst inequívoco
+    'MON_029': 'emberfang',
     // Rugigron: ATK 13, DEF 6 — alto ATK, fragilidade intencional;
     //   arquétipo burst inequívoco.
     'MON_029B': 'emberfang',
-    // Bestigrar: ATK 17, DEF 9 — ATK muito alto; fragil relativo; perfil
+    // Bestigrar: ATK 17, DEF 9 — ATK muito alto; frágil relativo; perfil
     //   emberfang em sua forma mais pronunciada.
     'MON_029C': 'emberfang',
 
-    // ── Mago — evoluções da linha Lagartomon (moonquill) ────────────────────
-    // Salamandromon: ATK 8, DEF 6, ENE 11 — ENE dominante sobre ATK/DEF;
+    // ── Mago — arquétipo controle_leve (moonquill) ──────────────────────────
+    // Lagartomon (MON_013): ENE 8, ATK 6 — perfil ENE-dominante, bom fit para
+    //   controle_leve (offset ene+1 reforça foco em energia/controle).
+    'MON_013': 'moonquill',
+    // Salamandromon (MON_014): ATK 8, DEF 6, ENE 11 — ENE dominante sobre ATK/DEF;
     //   controle_leve preservado.
-    'MON_014B': 'moonquill',
-    // Dracoflamemon: ATK 12, DEF 8, ENE 14 — ENE cresce mais que ATK;
+    'MON_014': 'moonquill',
+    // Dracoflamemon (MON_015): ATK 12, DEF 8, ENE 14 — ENE cresce mais que ATK;
     //   arquétipo de controle se acentua na evolução.
-    'MON_014C': 'moonquill',
-    // Wizardragomon: ATK 15, DEF 10, ENE 18 — ENE muito dominante;
+    'MON_015': 'moonquill',
+    // Wizardragomon (MON_016): ATK 15, DEF 10, ENE 18 — ENE muito dominante;
     //   forma mais pura do arquétipo controle_leve na linha.
-    'MON_014D': 'moonquill',
-
-    // ── Mago — evoluções da linha Coralimon (moonquill) ─────────────────────
+    'MON_016': 'moonquill',
+    // Coralimon: ATK 5, DEF 6, ENE 8 — mago defensivo/controle; DEF acima da
+    //   média para Mago sugere estilo de suporte + controle, coerente com moonquill.
+    'MON_024': 'moonquill',
     // Recifalmon: ATK 8, DEF 7, ENE 12 — ENE dominante, perfil defensivo/
     //   controle mantido; encaixa moonquill.
     'MON_024B': 'moonquill',
@@ -158,15 +121,10 @@ export const RUNTIME_TO_CANON_SPECIES = {
     //   controle_leve inequívoco.
     'MON_024C': 'moonquill',
 
-    // ── Curandeiro — evoluções da linha Gotimon (floracura) ─────────────────
-    // Lirialmon: ATK 6, DEF 6, ENE 12 — ENE alto, perfil healer estável;
-    //   offset (hp+1, ene+1, agi-1) continua coerente.
-    'MON_020B': 'floracura',
-    // Serafloramon: ATK 7, DEF 9, ENE 16 — ENE dominante, DEF acima da
-    //   média; suporte defensivo — floracura claro.
-    'MON_020C': 'floracura',
-
-    // ── Curandeiro — evoluções da linha Nutrilo (floracura) ─────────────────
+    // ── Curandeiro — arquétipo cura_estavel (floracura) ─────────────────────
+    // Nutrilo: ENE 11, ATK 3 — perfil de suporte mais puro do catálogo;
+    //   ATK mínimo e ENE alto são o arquétipo floracura em sua forma mais clara.
+    'MON_028': 'floracura',
     // Silvelio: ATK 5, DEF 7, ENE 14 — suporte quase puro; ATK mínimo
     //   e ENE alto são o arquétipo floracura continuado.
     'MON_028B': 'floracura',
@@ -175,22 +133,18 @@ export const RUNTIME_TO_CANON_SPECIES = {
     'MON_028C': 'floracura',
 
     // ── Caçador — arquétipo striker_veloz (swiftclaw) — Fase 9 ───────────────
-    // Miaumon: ATK 8, DEF 4, SPD 9 — ATK:DEF 2.0, alta velocidade relativa;
+    // Miaumon (MON_009): ATK 8, DEF 4, SPD 9 — ATK:DEF 2.0, alta velocidade relativa;
     //   arquétipo striker_veloz inequívoco. Starter canônico da classe.
-    'MON_013': 'swiftclaw',
+    'MON_009': 'swiftclaw',
+    // Gatunamon (MON_010): ATK 10, DEF 6, SPD 12 — ratio 1.67; arquétipo preservado.
+    'MON_010': 'swiftclaw',
+    // Felinomon (MON_011): ATK 14, DEF 7, SPD 15 — ratio 2.0; striker_veloz se acentua.
+    'MON_011': 'swiftclaw',
+    // Panterezamon (MON_012): ATK 18, DEF 9, SPD 18 — ratio 2.0; forma mais pura do arquétipo.
+    'MON_012': 'swiftclaw',
     // Pulimbon: ATK 6, DEF 4, SPD 10 — ratio 1.5, SPD levemente maior que Miaumon;
     //   linha alternativa com foco ainda maior em velocidade pura.
     'MON_025': 'swiftclaw',
-
-    // ── Caçador — evoluções da linha Miaumon (swiftclaw) ─────────────────────
-    // Gatunamon: ATK 10, DEF 6, SPD 12 — ratio 1.67; arquétipo preservado.
-    'MON_013B': 'swiftclaw',
-    // Felinomon: ATK 14, DEF 7, SPD 15 — ratio 2.0; striker_veloz se acentua.
-    'MON_013C': 'swiftclaw',
-    // Panterezamon: ATK 18, DEF 9, SPD 18 — ratio 2.0; forma mais pura do arquétipo.
-    'MON_013D': 'swiftclaw',
-
-    // ── Caçador — evoluções da linha Pulimbon (swiftclaw) ────────────────────
     // Flecharelmon: ATK 10, DEF 5, SPD 14 — ratio 2.0; SPD cresce mais que ATK;
     //   velocidade se torna mais pronunciada que no estágio base.
     'MON_025B': 'swiftclaw',
@@ -222,38 +176,37 @@ export const RUNTIME_TO_CANON_SPECIES = {
     //   forma madura; SPD e ENE mantêm dominância relativa sobre ATK e DEF.
     'MON_027C': 'bellwave',
 
-    // ── Bardo segunda linha (bellwave) — Fase 13.2 — mapeamento parcial ────
-    // Linha Dinomon → Guitarapitormon → TRockmon (MON_011/B/C): os 3 estágios
+    // ── Bardo segunda linha (bellwave) — Phase 1 / Fase 13.2 ─────────────────
+    // Linha Dinomon → Guitarapitormon → TRockmon (MON_005/006/007): os 3 estágios
     //   iniciais da linha dino mantêm SPD/ATK ≥ 1.18 e ENE/ATK ≥ 1.0 após offsets,
     //   preservando identidade cadencia_ritmica. DEF_off ≥ 4 em todos — sem floor.
-    //   O estágio final (MON_011D/Giganotometalmon) é explicitamente excluído:
+    //   O estágio final (MON_008/Giganotometalmon) é explicitamente excluído:
     //   ATK=16 > SPD=11 gera SPD/ATK=0.75 após offset — drift para perfil bruiser.
     //   Mapeamento parcial é seguro: canonSpeciesId é estático por instância
     //   (definido em createMonsterInstanceFromTemplate, nunca rederivado na evolução).
-    //   Instâncias criadas de MON_011D via encontro selvagem têm null canonSpeciesId;
-    //   instâncias evoluídas de MON_011C preservam bellwave por design intencional.
-    // Dinomon: ATK 6, DEF 5→4, SPD 8→9, ENE 6→7 — SPD/ATK 1.50, ENE/ATK 1.17;
+    //   Instâncias criadas de MON_008 via encontro selvagem têm null canonSpeciesId;
+    //   instâncias evoluídas de MON_007 preservam bellwave por design intencional.
+    // Dinomon (MON_005): ATK 6, DEF 5→4, SPD 8→9, ENE 6→7 — SPD/ATK 1.50, ENE/ATK 1.17;
     //   offsets: def-1=4, ene+1=7, agi+1=9; início da cadência sonora.
-    'MON_011': 'bellwave',
-    // Guitarapitormon: ATK 8, DEF 6→5, SPD 10→11, ENE 8→9 — SPD/ATK 1.38, ENE/ATK 1.12;
+    'MON_005': 'bellwave',
+    // Guitarapitormon (MON_006): ATK 8, DEF 6→5, SPD 10→11, ENE 8→9 — SPD/ATK 1.38, ENE/ATK 1.12;
     //   identidade preservada; SPD e ENE superam ATK; DEF_off=5.
-    'MON_011B': 'bellwave',
-    // TRockmon: ATK 11, DEF 9→8, SPD 12→13, ENE 10→11 — SPD/ATK 1.18, ENE/ATK 1.00;
+    'MON_006': 'bellwave',
+    // TRockmon (MON_007): ATK 11, DEF 9→8, SPD 12→13, ENE 10→11 — SPD/ATK 1.18, ENE/ATK 1.00;
     //   forma madura da segunda linha; arquétipo ainda sustentado; DEF_off=8.
-    'MON_011C': 'bellwave',
-    // MON_011D (Giganotometalmon): excluído — ver justificativa na seção "Sem mapeamento".
+    'MON_007': 'bellwave',
+    // MON_008 (Giganotometalmon): excluído — ver justificativa na seção "Sem mapeamento".
 
     // ── Sem mapeamento — justificativas ─────────────────────────────────────
     // MON_100 (Rato-de-Lama, Guerreiro): ATK 5, DEF 3, HP 20 — stats fracos
     //   sem perfil defensivo claro; não se encaixa em tank_puro. Sem mapeamento.
     //
-    // MON_005 (Garruncho, Caçador Comum): sem linha evolutiva (estágio único);
-    //   sem dados de bootstrap para validar o arquétipo ao longo da linha completa.
-    //   Não mapeado por falta de linha canônica validável (princípio: Fase 9).
-    //
-    // MON_008 (Sombrio, Ladino Comum): sem linha evolutiva (estágio único);
-    //   mesma razão que Garruncho — sem linha completa para validar o arquétipo.
-    //   Não mapeado em Fase 10 por falta de linha canônica validável.
+    // MON_008 (Giganotometalmon, Bardo Místico): excluído por drift de arquétipo.
+    //   Enquanto MON_005/006/007 têm SPD/ATK ≥ 1.18 (mapeados), MON_008
+    //   tem ATK=16 > SPD=11: SPD/ATK=0.75 e ENE/ATK=0.81 após offsets — ambos abaixo
+    //   de 1.0. Perfil vira bruiser pesado, incompatível com cadencia_ritmica.
+    //   Mapeamento parcial da linha é seguro: instâncias selvagens de MON_008 têm
+    //   null canonSpeciesId; instâncias evoluídas de MON_007 preservam bellwave.
     //
     // MON_030/B/C (Furtilhon, Velurino, Sombrifur): linha mantida excluída em Fase 13.2.
     //   Razão primária: ATK/DEF após offsets shadowsting (atk+1, def-1) é extremo —
@@ -262,16 +215,10 @@ export const RUNTIME_TO_CANON_SPECIES = {
     //   Razão secundária: ENE/ATK=0.75 (abaixo de Corvimon 0.86) — ENE menor que o
     //   necessário para o loop debuff→execução. Linha excluída da Fase 10 e confirmada em 13.2.
     //
-    // MON_001 (Cantapau, Bardo Comum): sem linha evolutiva (estágio único);
-    //   mesma razão que Garruncho e Sombrio — sem linha completa para validar.
-    //   Não mapeado em Fase 11.
-    //
-    // MON_011D (Giganotometalmon, Bardo Místico): excluído por drift de arquétipo.
-    //   Enquanto MON_011/B/C têm SPD/ATK ≥ 1.18 (mapeados em Fase 13.2), MON_011D
-    //   tem ATK=16 > SPD=11: SPD/ATK=0.75 e ENE/ATK=0.81 após offsets — ambos abaixo
-    //   de 1.0. Perfil vira bruiser pesado, incompatível com cadencia_ritmica.
-    //   Mapeamento parcial da linha é seguro: instâncias selvagens de MON_011D têm
-    //   null canonSpeciesId; instâncias evoluídas de MON_011C preservam bellwave.
+    // MON_017/018/019/020 (Luvursomon → Ursauramon, Animalista): ATK domina DEF
+    //   progressivamente (1.0→1.25→1.17→1.29) com SPD baixo e constante — drift de
+    //   burst crescente. Risco de sobreposição com emberfang (Bárbaro) e shieldhorn
+    //   (Guerreiro). Linha excluída para evitar colisão de arquétipo.
     //
     // ── Animalista — arquétipo equilíbrio_adaptativo (wildpace) — Fase 12 ────
     // Linha escolhida: Cervimon → Galhantemon → Bosquidalmon (MON_023/B/C).
@@ -282,11 +229,7 @@ export const RUNTIME_TO_CANON_SPECIES = {
     // Identidade única: sem drift em nenhum estágio — arquétipo coerente do início ao fim.
     //
     // Linhas excluídas desta fase:
-    //   MON_006 (Lobinho): estágio único, sem linha evolutiva — linha não validável.
-    //   MON_012/B/C/D (Luvursomon → Ursauramon): ATK domina DEF progressivamente
-    //     (1.0→1.25→1.17→1.29) com SPD baixo e constante — drift de burst crescente.
-    //     Risco de sobreposição com emberfang (Bárbaro) e shieldhorn (Guerreiro).
-    //     Excluída para evitar colisão de arquétipo.
+    //   MON_017/B/C/D (Luvursomon → Ursauramon): ver justificativa acima (drift burst).
     //
     // Cervimon: ATK 6, DEF 6, SPD 7 — ATK:DEF 1.0; SPD/ATK 1.17; equilíbrio base
     'MON_023': 'wildpace',
