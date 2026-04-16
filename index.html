@@ -4599,15 +4599,6 @@
             }
         }
 
-        function _calcDamage(power, atk, def) {
-            const A = Number(atk) || 0;
-            const D = Number(def) || 0;
-            const P = Number(power) || 0;
-            const ratio = (A <= 0 && D <= 0) ? 0.5 : (A / (A + D));
-            const base = Math.floor(P * ratio);
-            return Math.max(1, base);
-        }
-
         function _isAlive(entity) {
             // PR5B: Use pure function from groupCore
             return GroupCore.isAlive(entity);
@@ -4815,7 +4806,6 @@
         /**
          * Constrói o HTML de um card de monstrinho no modal de troca.
          * Exibe monstrinhos elegíveis, bloqueados por classe e KO'd — com rótulo claro.
-                 /**
          * B1: _buildSwapCard — delegada para Combat.Group.UI.buildSwapCard (groupUI.js)
          */
         function _buildSwapCard(monster, index, player, encId, context, masterMode) {
@@ -6507,7 +6497,6 @@
         }
         
         /**
-         /**
          * Verifica se o monstro tem ENE suficiente para usar a skill.
          * Compatível com formato operacional (cost) e SKILLS_CATALOG legado (energy_cost).
          * @param {Object} skill - Skill (preferencialmente no formato operacional único)
@@ -7819,19 +7808,6 @@
                 console.error('Damage calculation failed:', error);
                 return 1;
             }
-        }
-
-        /**
-         * Resolve o resultado de um d20 de contra-ataque inimigo.
-         * Centraliza as regras especiais: d20=1 → sempre erra, d20=20 → sempre acerta.
-         *
-         * @deprecated Função movida para WildCore.resolveD20Hit (wildCore.js).
-         *             Mantida apenas para compatibilidade com código legado.
-         *             Novos caminhos devem usar Combat.Wild.Core.resolveD20Hit.
-         */
-        function _resolveEnemyD20Hit(roll, attacker, defender) {
-            return Combat.Wild.Core.resolveD20Hit(roll, attacker, defender,
-                GameState.config?.classAdvantages || {});
         }
 
         /**
@@ -13211,15 +13187,23 @@
             players: [] // {name, class}
         };
 
-        // @deprecated - Use MM_TABLES.CLASSES instead
-        // Kept for backward compatibility  
-        const MM_CLASSES = MM_TABLES.CLASSES;
-
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
+
+        // Dados de preview de classe — compartilhado por mmRenderNewGameStep e mmUpdateClassPreview
+        const CLASS_PREVIEW = {
+            'Guerreiro':  { icon: '⚔️', desc: 'Alto HP e defesa. Absorve dano pelo time. Vantagem contra Ladino.', tags: ['Tanque','Durável'] },
+            'Mago':       { icon: '🔮', desc: 'Alto poder mágico e energia. Fraco em defesa. Vantagem contra Bárbaro.', tags: ['Ataque','Magia'] },
+            'Curandeiro': { icon: '💚', desc: 'Cura aliados e suporta o time. Regeneração extra de energia. Vantagem contra Guerreiro.', tags: ['Suporte','Cura'] },
+            'Bárbaro':    { icon: '🪓', desc: 'Dano alto com ataques brutos. Bônus de ATK em combate. Vantagem contra Caçador.', tags: ['Dano','Físico'] },
+            'Ladino':     { icon: '🗡️', desc: 'Ágil e furtivo. Aplica penalidade de DEF no primeiro ataque. Vantagem contra Mago.', tags: ['Agilidade','Controle'] },
+            'Bardo':      { icon: '🎵', desc: 'Buffs e debuffs no time. Versatilidade tática. Vantagem contra Curandeiro.', tags: ['Buff','Versátil'] },
+            'Caçador':    { icon: '🏹', desc: 'Especialista em captura. Bônus ao capturar criaturas. Vantagem contra Bardo.', tags: ['Captura','Ranged'] },
+            'Animalista': { icon: '🐾', desc: 'Conexão especial com Monstrinhos. Bônus de amizade e XP. Versátil em todas as situações.', tags: ['Amizade','XP'] },
+        };
 
         function mmStartNewGame(){
             MM_NEW.step = 0;
@@ -13266,23 +13250,11 @@
             if (MM_NEW.step === 2) {
                 // garante array
                 while (MM_NEW.players.length < MM_NEW.numPlayers) {
-                    MM_NEW.players.push({ name: "", class: MM_CLASSES[0] });
+                    MM_NEW.players.push({ name: "", class: MM_TABLES.CLASSES[0] });
                 }
                 while (MM_NEW.players.length > MM_NEW.numPlayers) {
                     MM_NEW.players.pop();
                 }
-
-                // Dados de preview de classe
-                const CLASS_PREVIEW = {
-                    'Guerreiro':  { icon: '⚔️', desc: 'Alto HP e defesa. Absorve dano pelo time. Vantagem contra Ladino.', tags: ['Tanque','Durável'] },
-                    'Mago':       { icon: '🔮', desc: 'Alto poder mágico e energia. Fraco em defesa. Vantagem contra Bárbaro.', tags: ['Ataque','Magia'] },
-                    'Curandeiro': { icon: '💚', desc: 'Cura aliados e suporta o time. Regeneração extra de energia. Vantagem contra Guerreiro.', tags: ['Suporte','Cura'] },
-                    'Bárbaro':    { icon: '🪓', desc: 'Dano alto com ataques brutos. Bônus de ATK em combate. Vantagem contra Caçador.', tags: ['Dano','Físico'] },
-                    'Ladino':     { icon: '🗡️', desc: 'Ágil e furtivo. Aplica penalidade de DEF no primeiro ataque. Vantagem contra Mago.', tags: ['Agilidade','Controle'] },
-                    'Bardo':      { icon: '🎵', desc: 'Buffs e debuffs no time. Versatilidade tática. Vantagem contra Curandeiro.', tags: ['Buff','Versátil'] },
-                    'Caçador':    { icon: '🏹', desc: 'Especialista em captura. Bônus ao capturar criaturas. Vantagem contra Bardo.', tags: ['Captura','Ranged'] },
-                    'Animalista': { icon: '🐾', desc: 'Conexão especial com Monstrinhos. Bônus de amizade e XP. Versátil em todas as situações.', tags: ['Amizade','XP'] },
-                };
 
                 const rows = MM_NEW.players.map((p, i) => {
                     const preview = CLASS_PREVIEW[p.class] ?? { icon: '🎮', desc: '', tags: [] };
@@ -13296,7 +13268,7 @@
                         <div class="mm-field">
                             <label>Classe</label>
                             <select id="mmPClass_${i}" onchange="mmUpdateClassPreview(${i})">
-                                ${MM_CLASSES.map(c => `<option value="${escapeHtml(c)}" ${p.class===c?"selected":""}>${escapeHtml(c)}</option>`).join("")}
+                                ${MM_TABLES.CLASSES.map(c => `<option value="${escapeHtml(c)}" ${p.class===c?"selected":""}>${escapeHtml(c)}</option>`).join("")}
                             </select>
                         </div>
                         <div class="mm-class-preview" id="mmClassPreview_${i}">
@@ -13355,7 +13327,7 @@
             if (MM_NEW.step === 2) {
                 for (let i=0;i<MM_NEW.players.length;i++){
                     const name = String(mmEl(`mmPName_${i}`)?.value || "").trim();
-                    const cls = String(mmEl(`mmPClass_${i}`)?.value || MM_CLASSES[0]);
+                    const cls = String(mmEl(`mmPClass_${i}`)?.value || MM_TABLES.CLASSES[0]);
                     MM_NEW.players[i] = { name, class: cls };
                 }
             }
@@ -13373,16 +13345,6 @@
             const previewEl = document.getElementById(`mmClassPreview_${playerIndex}`);
             if (!selectEl || !previewEl) return;
             const cls = selectEl.value;
-            const CLASS_PREVIEW = {
-                'Guerreiro':  { icon: '⚔️', desc: 'Alto HP e defesa. Absorve dano pelo time. Vantagem contra Ladino.', tags: ['Tanque','Durável'] },
-                'Mago':       { icon: '🔮', desc: 'Alto poder mágico e energia. Fraco em defesa. Vantagem contra Bárbaro.', tags: ['Ataque','Magia'] },
-                'Curandeiro': { icon: '💚', desc: 'Cura aliados e suporta o time. Regeneração extra de energia. Vantagem contra Guerreiro.', tags: ['Suporte','Cura'] },
-                'Bárbaro':    { icon: '🪓', desc: 'Dano alto com ataques brutos. Bônus de ATK em combate. Vantagem contra Caçador.', tags: ['Dano','Físico'] },
-                'Ladino':     { icon: '🗡️', desc: 'Ágil e furtivo. Aplica penalidade de DEF no primeiro ataque. Vantagem contra Mago.', tags: ['Agilidade','Controle'] },
-                'Bardo':      { icon: '🎵', desc: 'Buffs e debuffs no time. Versatilidade tática. Vantagem contra Curandeiro.', tags: ['Buff','Versátil'] },
-                'Caçador':    { icon: '🏹', desc: 'Especialista em captura. Bônus ao capturar criaturas. Vantagem contra Bardo.', tags: ['Captura','Ranged'] },
-                'Animalista': { icon: '🐾', desc: 'Conexão especial com Monstrinhos. Bônus de amizade e XP. Versátil em todas as situações.', tags: ['Amizade','XP'] },
-            };
             const p = CLASS_PREVIEW[cls] ?? { icon: '🎮', desc: '', tags: [] };
             previewEl.innerHTML = `
                 <span class="mm-class-preview__icon">${p.icon}</span>
@@ -13401,7 +13363,7 @@
                 // valida nomes (MVP: auto-preenche)
                 MM_NEW.players = MM_NEW.players.map((p, idx) => ({
                     name: p.name?.trim() ? p.name.trim() : `Jogador ${idx+1}`,
-                    class: p.class || MM_CLASSES[0]
+                    class: p.class || MM_TABLES.CLASSES[0]
                 }));
 
                 // CORREÇÃO BUG PERSISTÊNCIA: Resetar TODO o estado específico do jogo
@@ -14096,7 +14058,7 @@
             // Se, por algum motivo, a classe não estiver definida, aplicar a primeira disponível.
             const firstPlayer = GameState.players[MM_STARTER.playerIndex];
             if (firstPlayer && !firstPlayer.class) {
-                firstPlayer.class = MM_CLASSES[0];
+                firstPlayer.class = MM_TABLES.CLASSES[0];
             }
             MM_STARTER.phase = 'egg';
 
@@ -14115,7 +14077,7 @@
             if (MM_STARTER.phase === 'choose') {
                 if (title) title.textContent = `🎭 ${player.name} — Escolha sua Classe`;
 
-                const classCards = MM_CLASSES.map(cls => {
+                const classCards = MM_TABLES.CLASSES.map(cls => {
                     const info = STARTER_BY_CLASS[cls];
                     const tmpl = info ? getMonsterTemplate(info.monsterId) : null;
                     const selected = player.class === cls;
@@ -14192,8 +14154,8 @@
                 return;
             }
 
-            const cls = player.class || MM_CLASSES[0];
-            const info = STARTER_BY_CLASS[cls] || STARTER_BY_CLASS[MM_CLASSES[0]];
+            const cls = player.class || MM_TABLES.CLASSES[0];
+            const info = STARTER_BY_CLASS[cls] || STARTER_BY_CLASS[MM_TABLES.CLASSES[0]];
 
             const mon = awardMonster(info.monsterId, 5, null, 'party', player);
             if (mon) {
@@ -14225,7 +14187,7 @@
             // Se a classe não estiver definida, aplicar a primeira disponível como fallback
             const nextPlayer = GameState.players[MM_STARTER.playerIndex];
             if (nextPlayer && !nextPlayer.class) {
-                nextPlayer.class = MM_CLASSES[0];
+                nextPlayer.class = MM_TABLES.CLASSES[0];
             }
             MM_STARTER.phase = 'egg';
             mmRenderStarterFlow();
