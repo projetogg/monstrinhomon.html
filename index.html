@@ -761,6 +761,10 @@
         import * as BoxSystem from './js/data/boxSystem.js';
         window.BoxSystem = BoxSystem;
 
+        // Fase K: Import Catalog Migration module (migração de templateIds pré-rebase)
+        import * as CatalogMigration from './js/data/catalogMigration.js';
+        window.CatalogMigration = CatalogMigration;
+
         // Trade UI (FASE XIII)
         import * as TradeUI from './js/ui/tradeUI.js';
 
@@ -1999,52 +2003,71 @@
             
             // Determine current version (default to 0 for old saves)
             const currentVersion = saveObj.meta.saveVersion || 0;
-            const targetVersion = 1;  // Current version
-            
+            const targetVersion = 2;  // Current version
+
             if (currentVersion >= targetVersion) {
                 // Already at current version
                 return saveObj;
             }
-            
+
             console.log(`[Migration] Migrating save from version ${currentVersion} to ${targetVersion}`);
-            
+
             // Migration ladder
             let migratedSave = saveObj;
-            
+
             // Migrate from version 0 to 1
             if (currentVersion < 1) {
                 // Version 0 -> 1: Update saveVersion (preserving other meta fields)
                 migratedSave.meta.saveVersion = 1;
-                
+
                 // Add timestamp if not present
                 if (!migratedSave.meta.lastSaveDate) {
                     migratedSave.meta.lastSaveDate = new Date().toISOString();
                 }
-                
+
                 // Ensure therapistMode exists
                 if (migratedSave.therapistMode === undefined) {
                     migratedSave.therapistMode = false;
                 }
-                
+
                 // Garantir arrays essenciais
                 migratedSave.players = Array.isArray(migratedSave.players) ? migratedSave.players : [];
                 migratedSave.monsters = Array.isArray(migratedSave.monsters) ? migratedSave.monsters : [];
                 migratedSave.sessions = Array.isArray(migratedSave.sessions) ? migratedSave.sessions : [];
-                
+
                 // PR16A: Ensure PartyDex and partyMoney exist
                 if (window.PartyDex) {
                     window.PartyDex.ensurePartyDex(migratedSave);
                     window.PartyDex.ensurePartyMoney(migratedSave);
                     console.log('[Migration] PR16A: PartyDex and partyMoney initialized');
                 }
-                
+
                 console.log('[Migration] Applied v0->v1: Added meta.saveVersion (preserved existing meta fields)');
             }
-            
-            // Future migrations would go here:
-            // if (currentVersion < 2) { ... }
-            // if (currentVersion < 3) { ... }
-            
+
+            // Migrate from version 1 to 2: Catalog Rebase Fase 1
+            // Remapeia templateIds pré-rebase e reconstrói Dex a partir da posse real.
+            // Executado também em saves em v1 que nunca receberam a migração de catálogo.
+            if (currentVersion < 2) {
+                try {
+                    const cm = window.CatalogMigration;
+                    if (cm && typeof cm.applyCatalogMigration === 'function') {
+                        const result = cm.applyCatalogMigration(migratedSave);
+                        for (const note of result.notes) {
+                            console.log('[Migration] v1->v2:', note);
+                        }
+                    } else {
+                        console.warn('[Migration] v1->v2: CatalogMigration não disponível; templateIds legados podem persistir');
+                    }
+                } catch (e) {
+                    console.error('[Migration] v1->v2: Erro durante migração de catálogo:', e);
+                    // Não interrompe o load — save prossegue mesmo sem migração de catálogo
+                }
+
+                migratedSave.meta.saveVersion = 2;
+                console.log('[Migration] Applied v1->v2: Catalog Rebase Fase 1 (templateId remap + Dex rebuild)');
+            }
+
             return migratedSave;
         }
 
