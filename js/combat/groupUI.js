@@ -25,6 +25,7 @@ import * as GroupCore from './groupCore.js';
 import * as TargetSelection from '../ui/targetSelection.js';
 import { executePlayerAttackGroup, executePlayerSkillGroup } from './groupActions.js';
 import { categorizeBattleTeam, canManualSwap } from './battleSwap.js';
+import { getMonsterVisualHTML } from '../ui/monsterVisual.js';
 
 /** IDs dos itens de cura consumíveis suportados em batalha. Manter alinhado com data/items.json. */
 const HEAL_ITEM_IDS = ['IT_HEAL_01', 'IT_HEAL_02', 'IT_HEAL_03'];
@@ -157,7 +158,7 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
 
         playersHtml += `
         <div id="grpP_${pid}" class="${unitClass}"${pos ? ` data-pos="${pos}"` : ''}>
-            <div class="group-unit-name">${mon.emoji || ''} ${mon.name || mon.nome} <small>Nv ${mon.level}</small>
+            <div class="group-unit-name">${getMonsterVisualHTML(mon, { size: 'sm' })} ${mon.name || mon.nome} <small>Nv ${mon.level}</small>
                 ${isKO ? '<span class="group-unit-ko-badge">💀 KO</span>' : ''}
                 ${isCurrent ? '<span class="group-unit-active-badge">▶ Em batalha</span>' : ''}
             </div>
@@ -203,7 +204,7 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
 
         enemiesHtml += `
         <div id="grpE_${i}" class="${unitClass}"${clickHandler}>
-            <div class="group-unit-name">${e.emoji || ''} ${e.name || e.nome} <small>Nv ${e.level}</small>
+            <div class="group-unit-name">${getMonsterVisualHTML(e, { size: 'sm' })} ${e.name || e.nome} <small>Nv ${e.level}</small>
                 ${isDead ? '<span class="group-unit-ko-badge">💀 KO</span>' : ''}
                 ${isCurrent ? '<span class="group-unit-active-badge">▶ Atacando</span>' : ''}
                 ${encounter.positions ? `<span class="badge bg-secondary ms-1" style="font-size:0.7em">${encounter.positions['enemy_'+i] === 'front' ? '⚔️Frente' : encounter.positions['enemy_'+i] === 'mid' ? '🛡️Meio' : '🎯Trás'}</span>` : ''}
@@ -687,7 +688,8 @@ export function cancelTargetMode(deps) {
 export function buildSwapCard({ monster, index, player, encId, context, masterMode, BattleSwap }) {
     const status = BattleSwap.getSwapStatus(monster, index, player, { masterMode });
     const hpPct = Math.max(0, Math.min(100, ((monster.hp || 0) / (monster.hpMax || 1)) * 100));
-    const name = monster.emoji ? `${monster.emoji} ${monster.name || monster.nome}` : (monster.name || monster.nome);
+    const monName = monster.name || monster.nome;
+    const monVisual = getMonsterVisualHTML(monster, { size: 'sm' });
     const isEligible = status.category === 'eligible';
     const clickAttr = isEligible
         ? `onclick="selectReplacementMonster('${player.id}', ${index}, '${encId}', '${context}')" role="button" tabindex="0"`
@@ -695,7 +697,7 @@ export function buildSwapCard({ monster, index, player, encId, context, masterMo
     const cardClass = `swap-card swap-card--${status.category}`;
     return `
     <div class="${cardClass}" ${clickAttr} title="${status.title}">
-        <div class="swap-card__name">${name} <small>Nv ${monster.level || 1}</small></div>
+        <div class="swap-card__name">${monVisual} ${monName} <small>Nv ${monster.level || 1}</small></div>
         <div class="swap-card__meta">HP ${monster.hp || 0}/${monster.hpMax || 0} (${Math.floor(hpPct)}%) · Classe: ${monster.class || '—'}</div>
         <span class="swap-card__reason">${status.label}</span>
     </div>`;

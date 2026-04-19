@@ -13,6 +13,8 @@
  * - Defensive programming
  */
 
+import { getMonsterVisualHTML } from './monsterVisual.js';
+
 /**
  * Calculate PartyDex progress information
  * @param {Object} state - GameState object
@@ -254,7 +256,7 @@ export function renderPartyDex(container, deps) {
  * @param {Object} [deps] - Optional dependencies (getMonsterById for evo chain)
  * @returns {string} HTML string
  */
-function renderMonsterCard(template, status, deps) {
+export function renderMonsterCard(template, status, deps) {
     const safeId = (template.id || 'unknown').replace(/[^a-zA-Z0-9_-]/g, '_');
     
     if (status === 'unknown') {
@@ -268,11 +270,12 @@ function renderMonsterCard(template, status, deps) {
     }
     
     if (status === 'seen') {
-        // Seen: Silhouette + "???"
+        // Seen: Silhouette + "???" — nome mascarado também no atributo acessível
+        const maskedTemplate = { ...template, name: '???' };
         return `
             <div class="dex-card dex-seen" data-status="seen" data-id="${safeId}">
                 <div class="dex-art">
-                    <div class="dex-silhouette">${template.emoji || '👾'}</div>
+                    ${getMonsterVisualHTML(maskedTemplate, { size: 'sm', silhouette: true })}
                 </div>
                 <div class="dex-name">???</div>
             </div>
@@ -308,7 +311,7 @@ function renderMonsterCard(template, status, deps) {
     return `
         <div class="dex-card dex-captured" data-status="captured" data-id="${safeId}">
             <div class="dex-art">
-                <div class="dex-emoji">${template.emoji || '👾'}</div>
+                ${getMonsterVisualHTML(template, { size: 'sm' })}
             </div>
             <div class="dex-info">
                 <div class="dex-name">${template.name || 'Desconhecido'}</div>

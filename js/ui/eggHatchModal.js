@@ -23,7 +23,10 @@
  * 
  * Funções exportadas:
  * - showEggHatchModal(monster): Mostra modal completo (incubação + resultado)
+ * - buildHatchResultHTML(monster): Gera HTML puro do resultado (testável)
  */
+
+import { getMonsterVisualHTML } from './monsterVisual.js';
 
 /**
  * Cria o elemento do modal no DOM (se não existir)
@@ -80,13 +83,11 @@ function showIncubationState(modal) {
 }
 
 /**
- * Mostra resultado do nascimento (Stage 2)
- * @param {HTMLElement} modal - Elemento do modal
+ * Gera o HTML do card de resultado do nascimento (função pura, testável)
  * @param {Object} monster - Dados do Monstrinho nascido
+ * @returns {string} HTML string do card de resultado
  */
-function showBirthResult(modal, monster) {
-    const content = modal.querySelector('#eggHatchContent');
-    
+export function buildHatchResultHTML(monster) {
     // Mapear raridade para emoji
     const rarityEmoji = {
         'Comum': '🟢',
@@ -106,8 +107,9 @@ function showBirthResult(modal, monster) {
     
     const emoji = rarityEmoji[monster.rarity] || '⚪';
     const color = rarityColor[monster.rarity] || '#808080';
+    const visualHTML = getMonsterVisualHTML(monster, { size: 'md' });
     
-    content.innerHTML = `
+    return `
         <div style="text-align: center; padding: 20px;">
             <div style="font-size: 60px; margin-bottom: 15px;">🎉</div>
             <h2 style="color: var(--success); margin-bottom: 20px;">Um Monstrinhomon nasceu!</h2>
@@ -117,7 +119,7 @@ function showBirthResult(modal, monster) {
                         padding: 20px; 
                         margin: 20px 0;
                         border: 3px solid ${color};">
-                <div style="font-size: 40px; margin-bottom: 10px;">${monster.emoji || '❓'}</div>
+                <div style="margin-bottom: 10px;">${visualHTML}</div>
                 <div style="font-size: 24px; font-weight: bold; color: var(--dark); margin-bottom: 10px;">
                     ${monster.name}
                 </div>
@@ -140,6 +142,16 @@ function showBirthResult(modal, monster) {
             </button>
         </div>
     `;
+}
+
+/**
+ * Mostra resultado do nascimento (Stage 2)
+ * @param {HTMLElement} modal - Elemento do modal
+ * @param {Object} monster - Dados do Monstrinho nascido
+ */
+function showBirthResult(modal, monster) {
+    const content = modal.querySelector('#eggHatchContent');
+    content.innerHTML = buildHatchResultHTML(monster);
     
     // Tocar som de nascimento (se disponível)
     playHatchSound();
