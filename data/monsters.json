@@ -13,7 +13,8 @@
       "baseEne": 4,
       "emoji": "⚔️",
       "evolvesTo": "MON_002",
-      "evolvesAt": 12
+      "evolvesAt": 12,
+      "image": "assets/monsters/MON_001.png"
     },
     {
       "id": "MON_002",
@@ -67,7 +68,8 @@
       "baseEne": 6,
       "emoji": "🎵",
       "evolvesTo": "MON_006",
-      "evolvesAt": 12
+      "evolvesAt": 12,
+      "image": "assets/monsters/MON_005.png"
     },
     {
       "id": "MON_006",
@@ -121,7 +123,8 @@
       "baseEne": 4,
       "emoji": "🐱",
       "evolvesTo": "MON_010",
-      "evolvesAt": 12
+      "evolvesAt": 12,
+      "image": "assets/monsters/MON_009.png"
     },
     {
       "id": "MON_010",
@@ -175,7 +178,8 @@
       "baseEne": 8,
       "emoji": "🦎",
       "evolvesTo": "MON_014",
-      "evolvesAt": 12
+      "evolvesAt": 12,
+      "image": "assets/monsters/MON_013.png"
     },
     {
       "id": "MON_014",
@@ -229,7 +233,8 @@
       "baseEne": 5,
       "emoji": "🐻",
       "evolvesTo": "MON_018",
-      "evolvesAt": 12
+      "evolvesAt": 12,
+      "image": "assets/monsters/MON_017.png"
     },
     {
       "id": "MON_018",
@@ -575,7 +580,8 @@
       "baseEne": 11,
       "emoji": "🌿",
       "evolvesTo": "MON_028B",
-      "evolvesAt": 12
+      "evolvesAt": 12,
+      "image": "assets/monsters/MON_028.png"
     },
     {
       "id": "MON_028B",
@@ -615,7 +621,8 @@
       "baseEne": 5,
       "emoji": "🐯",
       "evolvesTo": "MON_029B",
-      "evolvesAt": 12
+      "evolvesAt": 12,
+      "image": "assets/monsters/MON_029.png"
     },
     {
       "id": "MON_029B",
@@ -655,7 +662,8 @@
       "baseEne": 6,
       "emoji": "🦊",
       "evolvesTo": "MON_030B",
-      "evolvesAt": 12
+      "evolvesAt": 12,
+      "image": "assets/monsters/MON_030.png"
     },
     {
       "id": "MON_030B",
