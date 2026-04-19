@@ -106,6 +106,11 @@ describe('PartyDex - estado unknown', () => {
         expect(html).toContain('???');
     });
 
+    it('não deve revelar nome no estado unknown', () => {
+        const html = renderMonsterCard(templateComImagem, 'unknown');
+        expect(html).not.toContain('Ferrozimon');
+    });
+
     it('deve usar classe dex-unknown', () => {
         const html = renderMonsterCard(templateComImagem, 'unknown');
         expect(html).toContain('dex-unknown');

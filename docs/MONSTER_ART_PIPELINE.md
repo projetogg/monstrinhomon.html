@@ -81,17 +81,18 @@ Os PNGs **ainda não existem** — serão entregues em uma PR posterior de asset
 
 ## Escopo desta PR (PR1 — Infraestrutura)
 
-Esta PR entrega **apenas infraestrutura**. O seguinte ainda **não está integrado**:
+Esta PR entregou **apenas infraestrutura**. A integração nas UIs de runtime foi realizada na **PR2**.
 
-- `PartyDexUI` — sem integração com `monsterVisual.js`
-- `eggHatchModal` — sem integração
-- `groupUI` — sem integração
-- Demais telas de runtime
+## Integração nas UIs (PR2 — Integração)
 
-Os PNGs reais **não foram subidos** nesta PR.
+As seguintes UIs foram integradas com `monsterVisual.js` na PR2:
 
-Comportamento atual: o jogo funciona exatamente como antes, com emojis em todas as telas.
-A integração do helper nas UIs será feita em PR subsequentes.
+- **`partyDexUI.js`** — estados `seen` (silhueta) e `captured` (imagem ou emoji) usam o helper canônico
+- **`eggHatchModal.js`** — resultado do nascimento usa o helper canônico
+- **`js/combat/groupUI.js`** — cards de combate (jogador, inimigo, swap) usam o helper canônico
+
+O jogo funciona com emojis como fallback enquanto os PNGs não existem.
+Quando os PNGs forem entregues, as UIs exibirão as imagens automaticamente, sem nenhuma mudança adicional.
 
 ---
 

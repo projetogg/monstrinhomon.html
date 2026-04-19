@@ -270,8 +270,10 @@ export function renderMonsterCard(template, status, deps) {
     }
     
     if (status === 'seen') {
-        // Seen: Silhouette + "???" — nome mascarado também no atributo acessível
-        const maskedTemplate = { ...template, name: '???' };
+        // Seen: Silhouette + "???" — nome mascarado também no atributo acessível.
+        // Apenas campos visuais são passados: imagem (para src) e emoji (para fallback).
+        // O campo `name` é explicitamente substituído por '???' para não vazar via alt/aria-label.
+        const maskedTemplate = { image: template.image, emoji: template.emoji, name: '???' };
         return `
             <div class="dex-card dex-seen" data-status="seen" data-id="${safeId}">
                 <div class="dex-art">
