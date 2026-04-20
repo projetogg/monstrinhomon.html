@@ -11,7 +11,10 @@
  * - Read-only (no state mutations)
  * - Pure functions for calculations
  * - Defensive programming
+ * - Usa <img> quando template.image estiver declarado; fallback emoji caso contrário
  */
+
+import { monsterArtHTML } from './monsterVisual.js';
 
 /**
  * Calculate PartyDex progress information
@@ -269,10 +272,15 @@ function renderMonsterCard(template, status, deps) {
     
     if (status === 'seen') {
         // Seen: Silhouette + "???"
+        const artHTML = monsterArtHTML(template, {
+            imgClass: 'dex-monster-img dex-silhouette-img',
+            emojiClass: 'dex-silhouette',
+            alt: '???',
+        });
         return `
             <div class="dex-card dex-seen" data-status="seen" data-id="${safeId}">
                 <div class="dex-art">
-                    <div class="dex-silhouette">${template.emoji || '👾'}</div>
+                    ${artHTML}
                 </div>
                 <div class="dex-name">???</div>
             </div>
@@ -281,6 +289,13 @@ function renderMonsterCard(template, status, deps) {
     
     // Captured: Full card
     const rarityClass = (template.rarity || 'Comum').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+    // Arte principal: <img> se disponível, senão emoji
+    const artHTML = monsterArtHTML(template, {
+        imgClass: 'dex-monster-img',
+        emojiClass: 'dex-emoji',
+        alt: template.name || 'Monstrinho',
+    });
 
     // Linha evolutiva: busca próxima forma pelo catálogo via getMonsterById/getMonsterTemplates
     let evoHtml = '';
@@ -308,7 +323,7 @@ function renderMonsterCard(template, status, deps) {
     return `
         <div class="dex-card dex-captured" data-status="captured" data-id="${safeId}">
             <div class="dex-art">
-                <div class="dex-emoji">${template.emoji || '👾'}</div>
+                ${artHTML}
             </div>
             <div class="dex-info">
                 <div class="dex-name">${template.name || 'Desconhecido'}</div>

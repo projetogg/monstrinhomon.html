@@ -157,7 +157,11 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
 
         playersHtml += `
         <div id="grpP_${pid}" class="${unitClass}"${pos ? ` data-pos="${pos}"` : ''}>
-            <div class="group-unit-name">${mon.emoji || ''} ${mon.name || mon.nome} <small>Nv ${mon.level}</small>
+            <div class="group-unit-name">${
+                mon.image
+                    ? `<img src="${mon.image}" alt="${mon.name || mon.nome}" class="group-unit-img">`
+                    : (mon.emoji || '')
+            } ${mon.name || mon.nome} <small>Nv ${mon.level}</small>
                 ${isKO ? '<span class="group-unit-ko-badge">💀 KO</span>' : ''}
                 ${isCurrent ? '<span class="group-unit-active-badge">▶ Em batalha</span>' : ''}
             </div>
@@ -203,7 +207,11 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
 
         enemiesHtml += `
         <div id="grpE_${i}" class="${unitClass}"${clickHandler}>
-            <div class="group-unit-name">${e.emoji || ''} ${e.name || e.nome} <small>Nv ${e.level}</small>
+            <div class="group-unit-name">${
+                e.image
+                    ? `<img src="${e.image}" alt="${e.name || e.nome}" class="group-unit-img">`
+                    : (e.emoji || '')
+            } ${e.name || e.nome} <small>Nv ${e.level}</small>
                 ${isDead ? '<span class="group-unit-ko-badge">💀 KO</span>' : ''}
                 ${isCurrent ? '<span class="group-unit-active-badge">▶ Atacando</span>' : ''}
                 ${encounter.positions ? `<span class="badge bg-secondary ms-1" style="font-size:0.7em">${encounter.positions['enemy_'+i] === 'front' ? '⚔️Frente' : encounter.positions['enemy_'+i] === 'mid' ? '🛡️Meio' : '🎯Trás'}</span>` : ''}

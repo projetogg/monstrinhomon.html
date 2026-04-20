@@ -8,7 +8,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "coverage": "vitest run --coverage",
-    "validate-data": "node scripts/validate-data.mjs"
+    "validate-data": "node scripts/validate-data.mjs",
+    "validate:monster-assets": "node scripts/validate-monster-assets.mjs"
   },
   "keywords": [
     "game",

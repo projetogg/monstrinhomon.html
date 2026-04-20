@@ -107,6 +107,11 @@ function showBirthResult(modal, monster) {
     const emoji = rarityEmoji[monster.rarity] || '⚪';
     const color = rarityColor[monster.rarity] || '#808080';
     
+    // Arte do monstrinho: <img> se disponível, senão emoji
+    const monsterArt = monster.image
+        ? `<img src="${monster.image}" alt="${monster.name}" class="egg-hatch-monster-img" draggable="false">`
+        : `<span style="font-size: 40px; display: block; margin-bottom: 10px;">${monster.emoji || '❓'}</span>`;
+    
     content.innerHTML = `
         <div style="text-align: center; padding: 20px;">
             <div style="font-size: 60px; margin-bottom: 15px;">🎉</div>
@@ -117,7 +122,7 @@ function showBirthResult(modal, monster) {
                         padding: 20px; 
                         margin: 20px 0;
                         border: 3px solid ${color};">
-                <div style="font-size: 40px; margin-bottom: 10px;">${monster.emoji || '❓'}</div>
+                ${monsterArt}
                 <div style="font-size: 24px; font-weight: bold; color: var(--dark); margin-bottom: 10px;">
                     ${monster.name}
                 </div>

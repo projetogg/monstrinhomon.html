@@ -2101,6 +2101,48 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     border-radius: 5px;
 }
 
+/* PR3 — Assets visuais dos Monstrinhos */
+
+/* Imagem no card da Dex (capturado) */
+.dex-monster-img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    display: block;
+    margin: 0 auto;
+}
+
+/* Silhueta: imagem no estado "seen" — filtro aplicado pelo pai .dex-seen .dex-art */
+.dex-silhouette-img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    display: block;
+    margin: 0 auto;
+}
+
+/* Imagem no modal de eclosão de ovo */
+.egg-hatch-monster-img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    display: block;
+    margin: 0 auto 10px;
+}
+
+/* Thumbnail de monstrinho nos cards de batalha em grupo */
+.group-unit-img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    vertical-align: middle;
+    border-radius: 4px;
+}
+
 /* E1 — Linha evolutiva no card do Monstrodex */
 .dex-evo-line {
     margin-top: 4px;
