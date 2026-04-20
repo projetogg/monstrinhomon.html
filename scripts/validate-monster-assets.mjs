@@ -33,6 +33,8 @@ function error(ctx, msg) {
 }
 
 function warn(ctx, msg) {
+    // Warnings são informativos apenas — não afetam o exit code.
+    // Apenas erros (via error()) causam exit 1.
     console.warn(`  ⚠️  [${ctx}] ${msg}`);
     warnings++;
 }

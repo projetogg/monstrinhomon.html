@@ -68,7 +68,10 @@ function escapeAttr(str) {
         .replace(/>/g, '&gt;');
 }
 
-// Exporta para uso no browser via window global (index.html)
+// Exporta funções globalmente para uso no browser via window.
+// Necessário porque index.html carrega scripts via <script type="module"> mas também
+// usa scripts não-módulo que acessam helpers diretamente pelo window.
+// O padrão ES module (import/export) é usado para os testes e outros módulos JS.
 if (typeof window !== 'undefined') {
     window.MonsterVisual = { monsterArtHTML, hasImage };
 }
