@@ -25,9 +25,45 @@ import * as GroupCore from './groupCore.js';
 import * as TargetSelection from '../ui/targetSelection.js';
 import { executePlayerAttackGroup, executePlayerSkillGroup } from './groupActions.js';
 import { categorizeBattleTeam, canManualSwap } from './battleSwap.js';
+import { getMonstersMapSync } from '../data/dataLoader.js';
 
 /** IDs dos itens de cura consumíveis suportados em batalha. Manter alinhado com data/items.json. */
 const HEAL_ITEM_IDS = ['IT_HEAL_01', 'IT_HEAL_02', 'IT_HEAL_03'];
+
+/**
+ * Escapa atributos HTML para evitar XSS em strings interpoladas.
+ * @param {string} str
+ * @returns {string}
+ */
+function escapeAttr(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+/**
+ * Resolve o HTML de arte de uma unidade de batalha (instância ou inimigo).
+ * Deriva a imagem do template via templateId/monsterId (canônico).
+ * Fallback: mon.image (save legado), depois emoji.
+ *
+ * @param {Object} mon - Instância ou objeto de inimigo
+ * @param {Map|null} monstersMap - Catálogo (Map<id,template>)
+ * @param {string} [cssClass] - Classe CSS para o <img>
+ * @returns {string} HTML string (<img> ou string de emoji)
+ */
+function resolveUnitArt(mon, monstersMap, cssClass = 'group-unit-img') {
+    if (!mon) return '';
+    const tid = mon.templateId || mon.monsterId;
+    const template = (tid && monstersMap) ? monstersMap.get(tid) : null;
+    const imgSrc = (template && template.image) || mon.image || null;
+    const name = mon.name || mon.nome || 'Monstrinho';
+    if (imgSrc) {
+        return `<img src="${escapeAttr(imgSrc)}" alt="${escapeAttr(name)}" class="${escapeAttr(cssClass)}">`;
+    }
+    return mon.emoji || '';
+}
 
 /**
  * Renderiza UI completa do encounter de grupo / boss no layout .battle-arena.
@@ -77,6 +113,8 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
     }
 
     // ── JOGADORES (coluna esquerda) ──────────────────────────────────────────
+    // Catálogo para derivar imagem via templateId (não persiste image na instância)
+    const monstersMap = getMonstersMapSync();
     let playersHtml = '';
     for (const pid of (encounter.participants || [])) {
         const p = state.players.find(x => x.id === pid);
@@ -157,11 +195,7 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
 
         playersHtml += `
         <div id="grpP_${pid}" class="${unitClass}"${pos ? ` data-pos="${pos}"` : ''}>
-            <div class="group-unit-name">${
-                mon.image
-                    ? `<img src="${mon.image}" alt="${mon.name || mon.nome}" class="group-unit-img">`
-                    : (mon.emoji || '')
-            } ${mon.name || mon.nome} <small>Nv ${mon.level}</small>
+            <div class="group-unit-name">${resolveUnitArt(mon, monstersMap)} ${mon.name || mon.nome} <small>Nv ${mon.level}</small>
                 ${isKO ? '<span class="group-unit-ko-badge">💀 KO</span>' : ''}
                 ${isCurrent ? '<span class="group-unit-active-badge">▶ Em batalha</span>' : ''}
             </div>
@@ -207,11 +241,7 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
 
         enemiesHtml += `
         <div id="grpE_${i}" class="${unitClass}"${clickHandler}>
-            <div class="group-unit-name">${
-                e.image
-                    ? `<img src="${e.image}" alt="${e.name || e.nome}" class="group-unit-img">`
-                    : (e.emoji || '')
-            } ${e.name || e.nome} <small>Nv ${e.level}</small>
+            <div class="group-unit-name">${resolveUnitArt(e, monstersMap)} ${e.name || e.nome} <small>Nv ${e.level}</small>
                 ${isDead ? '<span class="group-unit-ko-badge">💀 KO</span>' : ''}
                 ${isCurrent ? '<span class="group-unit-active-badge">▶ Atacando</span>' : ''}
                 ${encounter.positions ? `<span class="badge bg-secondary ms-1" style="font-size:0.7em">${encounter.positions['enemy_'+i] === 'front' ? '⚔️Frente' : encounter.positions['enemy_'+i] === 'mid' ? '🛡️Meio' : '🎯Trás'}</span>` : ''}

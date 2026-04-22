@@ -1,5 +1,6 @@
+import { monsterArtHTML } from './monsterVisual.js';
+
 /**
- * EGG HATCH MODAL (PR14B)
  * 
  * Modal visual de eclosão de ovo com feedback emocional.
  * Não altera nenhuma mecânica - apenas mostra melhor o que já acontece.
@@ -82,9 +83,10 @@ function showIncubationState(modal) {
 /**
  * Mostra resultado do nascimento (Stage 2)
  * @param {HTMLElement} modal - Elemento do modal
- * @param {Object} monster - Dados do Monstrinho nascido
+ * @param {Object} monster - Dados do Monstrinho nascido (instância)
+ * @param {Object|null} template - Template do catálogo (derivação canônica de image)
  */
-function showBirthResult(modal, monster) {
+function showBirthResult(modal, monster, template) {
     const content = modal.querySelector('#eggHatchContent');
     
     // Mapear raridade para emoji
@@ -107,10 +109,13 @@ function showBirthResult(modal, monster) {
     const emoji = rarityEmoji[monster.rarity] || '⚪';
     const color = rarityColor[monster.rarity] || '#808080';
     
-    // Arte do monstrinho: <img> se disponível, senão emoji
-    const monsterArt = monster.image
-        ? `<img src="${monster.image}" alt="${monster.name}" class="egg-hatch-monster-img" draggable="false">`
-        : `<span style="font-size: 40px; display: block; margin-bottom: 10px;">${monster.emoji || '❓'}</span>`;
+    // Arte do monstrinho: derivada do template (canônico) ou fallback para monster.image (legado)
+    const artSource = template || (monster.image ? { image: monster.image, name: monster.name, emoji: monster.emoji } : monster);
+    const monsterArt = monsterArtHTML(artSource, {
+        imgClass: 'egg-hatch-monster-img',
+        emojiClass: 'egg-hatch-monster-emoji',
+        alt: monster.name,
+    });
     
     content.innerHTML = `
         <div style="text-align: center; padding: 20px;">
@@ -191,10 +196,11 @@ function closeModal() {
  *   executará as linhas seguintes (consumir ovo, salvar estado)
  * - O modal é bloqueante - não há forma de fechá-lo sem clicar em Confirmar
  * 
- * @param {Object} monster - Dados do Monstrinho nascido
+ * @param {Object} monster - Dados do Monstrinho nascido (instância)
+ * @param {Object|null} [template] - Template do catálogo para derivar image (preferencial)
  * @returns {Promise} Promise que resolve quando modal é fechado pelo usuário
  */
-export function showEggHatchModal(monster) {
+export function showEggHatchModal(monster, template = null) {
     return new Promise((resolve, reject) => {
         try {
             // Criar/obter modal
@@ -221,7 +227,7 @@ export function showEggHatchModal(monster) {
             
             // Stage 2: Após 400ms, mostrar resultado
             setTimeout(() => {
-                showBirthResult(modal, monster);
+                showBirthResult(modal, monster, template);
             }, 400);
             
         } catch (error) {

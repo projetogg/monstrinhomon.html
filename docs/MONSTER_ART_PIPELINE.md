@@ -129,3 +129,4 @@ Levas futuras devem seguir o mesmo processo:
 | PR1    | Pipeline de arte preparado; helper monsterVisual pendente   |
 | PR2    | Validador criado em modo permissivo (warning-only)          |
 | PR3    | 8 starters materializados; validador endurecido (erro real) |
+| PR3.1  | Limpeza arquitetural: `image` removida de instâncias; UI deriva via templateId |

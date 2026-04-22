@@ -24,8 +24,7 @@
  * @param {string} [opts.emojiClass] - Classe CSS para o <span> de emoji
  * @param {string} [opts.alt] - Texto alt para o <img>
  * @returns {string} HTML string
- */
-export function monsterArtHTML(template, opts = {}) {
+ */export function monsterArtHTML(template, opts = {}) {
     if (!template) return '';
 
     const {
@@ -56,6 +55,47 @@ export function hasImage(template) {
 }
 
 /**
+ * Resolve e retorna HTML de arte a partir de uma instância de Monstrinho.
+ *
+ * REGRA: `image` não é persistida na instância — é derivada do template via `templateId`.
+ * Compatibilidade reversa: se o template não for encontrado (ex.: instância legada),
+ * usa `instance.image` se presente, ou emoji como último recurso.
+ *
+ * @param {Object} instance - Instância de Monstrinho (com templateId ou monsterId)
+ * @param {Map|Array|null} catalog - Catálogo de templates (Map<id,template> ou Array)
+ * @param {Object} [opts] - Mesmas opções de monsterArtHTML
+ * @returns {string} HTML string
+ */
+export function resolveArtFromInstance(instance, catalog, opts = {}) {
+    if (!instance) return '';
+
+    // 1. Deriva template do catálogo pelo templateId
+    const tid = instance.templateId || instance.monsterId;
+    let template = null;
+    if (tid && catalog) {
+        if (catalog instanceof Map) {
+            template = catalog.get(tid) || null;
+        } else if (Array.isArray(catalog)) {
+            template = catalog.find(t => t.id === tid) || null;
+        }
+    }
+
+    if (template) {
+        return monsterArtHTML(template, opts);
+    }
+
+    // 2. Compatibilidade reversa: instância carregada com image (save legado)
+    if (instance.image) {
+        const { imgClass = 'monster-art-img', alt = instance.name || 'Monstrinho' } = opts;
+        return `<img src="${escapeAttr(instance.image)}" alt="${escapeAttr(alt)}" class="${escapeAttr(imgClass)}" draggable="false">`;
+    }
+
+    // 3. Fallback final: emoji
+    const { emojiClass = 'monster-art-emoji', alt = instance.name || 'Monstrinho' } = opts;
+    return `<span class="${escapeAttr(emojiClass)}" aria-label="${escapeAttr(alt)}">${instance.emoji || '👾'}</span>`;
+}
+
+/**
  * Escapa atributos HTML para evitar XSS em strings interpoladas.
  * @param {string} str
  * @returns {string}
@@ -73,5 +113,5 @@ function escapeAttr(str) {
 // usa scripts não-módulo que acessam helpers diretamente pelo window.
 // O padrão ES module (import/export) é usado para os testes e outros módulos JS.
 if (typeof window !== 'undefined') {
-    window.MonsterVisual = { monsterArtHTML, hasImage };
+    window.MonsterVisual = { monsterArtHTML, hasImage, resolveArtFromInstance };
 }

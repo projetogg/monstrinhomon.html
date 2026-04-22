@@ -3306,7 +3306,7 @@
                     name: template.name,
                     nickname: template.name,      // Padrão (pode ser sobrescrito)
                     emoji: template.emoji || '👾',
-        image: template.image || null,
+                    // image NÃO é persistida na instância — derivar do template via templateId na UI
                     
                     // Classe e raridade
                     class: template.class || 'Neutro',
@@ -9292,7 +9292,7 @@
                 // and NO state changes happen below
                 try {
                     if (window.showEggHatchModal) {
-                        await window.showEggHatchModal(newMonster);
+                        await window.showEggHatchModal(newMonster, template);
                     }
                 } catch (error) {
                     console.error('[EggHatch] Modal error - egg NOT consumed:', error);

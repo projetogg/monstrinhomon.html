@@ -2133,6 +2133,14 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     margin: 0 auto 10px;
 }
 
+/* Emoji de fallback no Egg Hatch Modal */
+.egg-hatch-monster-emoji {
+    font-size: 40px;
+    display: block;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
 /* Thumbnail de monstrinho nos cards de batalha em grupo */
 .group-unit-img {
     width: 28px;
