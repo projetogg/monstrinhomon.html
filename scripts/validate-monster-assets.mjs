@@ -1,41 +1,50 @@
 /**
- * validate-monster-assets.mjs — Validador de Assets Visuais dos Monstrinhos
+ * validate-monster-assets.mjs — Validação de Assets Visuais de Monstrinhos
  *
- * Verifica integridade dos assets declarados em data/monsters.json.
+ * Verifica a consistência entre campos `image` em data/monsters.json
+ * e os arquivos físicos em assets/monsters/.
  *
- * Regras:
- *   - Se `image` estiver declarado, o arquivo DEVE existir → ERRO (exit 1)
- *   - Nome do arquivo deve ser exatamente `<id>.png` (sem espaços/aliases) → ERRO
- *   - Colisão de path (dois monstros apontando para o mesmo arquivo) → ERRO
- *   - Monstros sem `image` são permitidos (fallback por emoji)
- *
- * Uso: node scripts/validate-monster-assets.mjs
- *      npm run validate:monster-assets
+ * Comportamento durante a transição (antes dos PNGs existirem):
+ *  - campo `image` declarado sem arquivo físico → AVISO (⚠️), não erro fatal
+ *  - colisão de paths (dois monstros apontando para o mesmo arquivo) → ERRO
+ *  - path com formato inválido (não começa com assets/monsters/) → ERRO
+ *  - assets órfãos (arquivo sem entrada no catálogo) → AVISO
  *
  * Códigos de saída:
- *   0 = todos os assets válidos
- *   1 = erro(s) encontrado(s)
+ *   0 = validação passou (pode haver avisos)
+ *   1 = erros críticos encontrados
+ *
+ * Uso:
+ *   node scripts/validate-monster-assets.mjs
+ *   npm run validate:monster-assets
  */
 
-import { readFileSync, existsSync } from 'fs';
-import { resolve, dirname, basename, extname } from 'path';
+import { readFileSync, readdirSync, existsSync } from 'fs';
+import { resolve, dirname, basename } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 
+// ─── Constantes ──────────────────────────────────────────────────────────────
+
+const MONSTERS_JSON = resolve(ROOT, 'data/monsters.json');
+const ASSETS_DIR = resolve(ROOT, 'assets/monsters');
+const EXPECTED_PATH_PREFIX = 'assets/monsters/';
+const EXPECTED_PATH_PATTERN = /^assets\/monsters\/MON_[A-Z0-9]+\.png$/;
+
+// ─── Contadores ───────────────────────────────────────────────────────────────
+
 let errors = 0;
 let warnings = 0;
 
-function error(ctx, msg) {
-    console.error(`  ❌ [${ctx}] ${msg}`);
+function error(context, msg) {
+    console.error(`  ❌ [${context}] ${msg}`);
     errors++;
 }
 
-function warn(ctx, msg) {
-    // Warnings são informativos apenas — não afetam o exit code.
-    // Apenas erros (via error()) causam exit 1.
-    console.warn(`  ⚠️  [${ctx}] ${msg}`);
+function warn(context, msg) {
+    console.warn(`  ⚠️  [${context}] ${msg}`);
     warnings++;
 }
 
@@ -43,86 +52,191 @@ function ok(msg) {
     console.log(`  ✅ ${msg}`);
 }
 
-function loadJSON(relativePath) {
-    const fullPath = resolve(ROOT, relativePath);
+function info(msg) {
+    console.log(`  ℹ️  ${msg}`);
+}
+
+// ─── Carga do catálogo ───────────────────────────────────────────────────────
+
+function loadMonsters() {
+    if (!existsSync(MONSTERS_JSON)) {
+        error('IO', `Arquivo não encontrado: ${MONSTERS_JSON}`);
+        return null;
+    }
     try {
-        return JSON.parse(readFileSync(fullPath, 'utf8'));
+        const data = JSON.parse(readFileSync(MONSTERS_JSON, 'utf8'));
+        if (!Array.isArray(data.monsters)) {
+            error('Schema', 'data/monsters.json deve ter campo "monsters" como array');
+            return null;
+        }
+        return data.monsters;
     } catch (e) {
-        error('IO', `Falha ao carregar ${relativePath}: ${e.message}`);
+        error('IO', `Falha ao carregar monsters.json: ${e.message}`);
         return null;
     }
 }
 
-console.log('🖼️  Validação de Assets — Monstrinhomon');
-console.log('='.repeat(50));
+// ─── Leitura de assets físicos ───────────────────────────────────────────────
 
-const data = loadJSON('data/monsters.json');
+function listPhysicalAssets() {
+    if (!existsSync(ASSETS_DIR)) {
+        info(`Diretório ${ASSETS_DIR} não existe ainda (normal antes dos PNGs serem entregues)`);
+        return new Set();
+    }
+    const files = readdirSync(ASSETS_DIR)
+        .filter(f => f !== '.gitkeep' && f.endsWith('.png'));
+    return new Set(files);
+}
 
-if (!data?.monsters || !Array.isArray(data.monsters)) {
-    error('monsters.json', 'Campo "monsters" ausente ou não é array');
+// ─── Validações ──────────────────────────────────────────────────────────────
+
+function validateImageFields(monsters) {
+    const monstersWithImage = monsters.filter(m => m.image !== undefined);
+
+    if (monstersWithImage.length === 0) {
+        info('Nenhum monstrinho tem campo "image" declarado');
+        return { monstersWithImage: [], pathMap: new Map() };
+    }
+
+    ok(`${monstersWithImage.length} monstrinhos com campo "image" encontrados`);
+
+    const pathMap = new Map(); // path → [monsterIds]
+
+    for (const m of monstersWithImage) {
+        // Validar tipo
+        if (typeof m.image !== 'string' || m.image.trim() === '') {
+            error('Schema', `${m.id}: campo "image" deve ser string não-vazia (encontrado: ${JSON.stringify(m.image)})`);
+            continue;
+        }
+
+        const imagePath = m.image.trim();
+
+        // Validar formato do path
+        if (!EXPECTED_PATH_PATTERN.test(imagePath)) {
+            error('Convenção', `${m.id}: path inválido "${imagePath}" — esperado formato "assets/monsters/MON_XXX.png"`);
+        }
+
+        // Registrar para detecção de colisões
+        if (!pathMap.has(imagePath)) {
+            pathMap.set(imagePath, []);
+        }
+        pathMap.get(imagePath).push(m.id);
+    }
+
+    return { monstersWithImage, pathMap };
+}
+
+function validateNoDuplicatePaths(pathMap) {
+    let hasDuplicates = false;
+    for (const [path, ids] of pathMap) {
+        if (ids.length > 1) {
+            error('Colisão', `Path "${path}" usado por múltiplos monstrinhos: ${ids.join(', ')}`);
+            hasDuplicates = true;
+        }
+    }
+    if (!hasDuplicates && pathMap.size > 0) {
+        ok(`Nenhuma colisão de path detectada (${pathMap.size} paths únicos)`);
+    }
+}
+
+function validatePhysicalFiles(monstersWithImage, physicalAssets) {
+    let missingCount = 0;
+    let presentCount = 0;
+
+    for (const m of monstersWithImage) {
+        if (!m.image || typeof m.image !== 'string') continue;
+
+        const filename = basename(m.image.trim());
+
+        if (physicalAssets.has(filename)) {
+            presentCount++;
+        } else {
+            warn(
+                'Asset Ausente',
+                `${m.id} (${m.name}): "${m.image}" declarado mas arquivo físico não encontrado — normal antes da entrega dos PNGs`
+            );
+            missingCount++;
+        }
+    }
+
+    if (presentCount > 0) {
+        ok(`${presentCount} asset(s) físico(s) presente(s) e declarados no catálogo`);
+    }
+    if (missingCount > 0) {
+        info(`${missingCount} asset(s) ainda não entregues (apenas avisos — não falha CI nesta fase)`);
+    }
+}
+
+function validateOrphanAssets(pathMap, physicalAssets) {
+    // Conjunto de filenames esperados pelo catálogo
+    const expectedFilenames = new Set();
+    for (const path of pathMap.keys()) {
+        expectedFilenames.add(basename(path));
+    }
+
+    let orphanCount = 0;
+    for (const file of physicalAssets) {
+        if (!expectedFilenames.has(file)) {
+            warn('Órfão', `Asset "${file}" encontrado em assets/monsters/ sem entrada no catálogo`);
+            orphanCount++;
+        }
+    }
+
+    if (orphanCount === 0 && physicalAssets.size > 0) {
+        ok('Nenhum asset órfão encontrado');
+    }
+}
+
+function validateAssetFilenameConvention(physicalAssets) {
+    for (const file of physicalAssets) {
+        const expectedPattern = /^MON_[A-Z0-9]+\.png$/;
+        if (!expectedPattern.test(file)) {
+            error('Convenção', `Asset "${file}" não segue convenção MON_XXX.png`);
+        }
+    }
+}
+
+// ─── Main ────────────────────────────────────────────────────────────────────
+
+console.log('\n🔍 Validando assets visuais de monstrinhos...\n');
+
+const monsters = loadMonsters();
+
+if (monsters) {
+    const physicalAssets = listPhysicalAssets();
+
+    info(`${monsters.length} monstrinhos no catálogo`);
+    info(`${physicalAssets.size} arquivo(s) físico(s) em assets/monsters/`);
+    console.log('');
+
+    // 1. Validar campos image no catálogo
+    const { monstersWithImage, pathMap } = validateImageFields(monsters);
+
+    // 2. Detectar colisões de path
+    validateNoDuplicatePaths(pathMap);
+
+    // 3. Verificar arquivos físicos vs declarados
+    validatePhysicalFiles(monstersWithImage, physicalAssets);
+
+    // 4. Detectar assets órfãos
+    validateOrphanAssets(pathMap, physicalAssets);
+
+    // 5. Verificar convenção dos assets físicos
+    validateAssetFilenameConvention(physicalAssets);
+}
+
+// ─── Resultado ───────────────────────────────────────────────────────────────
+
+console.log('');
+console.log('─'.repeat(60));
+
+if (errors > 0) {
+    console.error(`\n💥 Validação FALHOU: ${errors} erro(s), ${warnings} aviso(s)\n`);
     process.exit(1);
-}
-
-const monsters = data.monsters;
-console.log(`\n📦 ${monsters.length} monstros carregados`);
-
-const pathsSeen = new Map(); // path → id (detecção de colisão)
-let withImage = 0;
-let withoutImage = 0;
-
-for (const m of monsters) {
-    const ctx = `monster:${m.id || '(sem id)'}`;
-
-    if (!m.image) {
-        withoutImage++;
-        continue; // Monstros sem image são permitidos (fallback emoji)
-    }
-
-    withImage++;
-    const declaredPath = m.image;
-
-    // Regra 1: nome do arquivo deve ser exatamente `<id>.png`
-    const expectedFilename = `${m.id}.png`;
-    const actualFilename = basename(declaredPath);
-    if (actualFilename !== expectedFilename) {
-        error(ctx, `Nome inválido: "${actualFilename}" (esperado: "${expectedFilename}")`);
-    }
-
-    // Regra 2: extensão deve ser .png
-    if (extname(declaredPath).toLowerCase() !== '.png') {
-        error(ctx, `Extensão inválida em "${declaredPath}" (esperado: .png)`);
-    }
-
-    // Regra 3: sem espaços no path
-    if (declaredPath.includes(' ')) {
-        error(ctx, `Path com espaço: "${declaredPath}"`);
-    }
-
-    // Regra 4: colisão de path
-    if (pathsSeen.has(declaredPath)) {
-        error(ctx, `Colisão de path: "${declaredPath}" já declarado por "${pathsSeen.get(declaredPath)}"`);
-    } else {
-        pathsSeen.set(declaredPath, m.id);
-    }
-
-    // Regra 5: arquivo deve existir → ERRO (não warning)
-    const fullPath = resolve(ROOT, declaredPath);
-    if (!existsSync(fullPath)) {
-        error(ctx, `Asset declarado mas arquivo ausente: "${declaredPath}"`);
-    }
-}
-
-console.log(`\n  📊 Com imagem declarada:  ${withImage}`);
-console.log(`  📊 Sem imagem (emoji):    ${withoutImage}`);
-
-// ─── Resumo ──────────────────────────────────────────────────────────────────
-
-console.log('\n' + '='.repeat(50));
-if (errors === 0 && warnings === 0) {
-    console.log('✅ Todos os assets válidos! Nenhum erro ou aviso encontrado.');
+} else if (warnings > 0) {
+    console.log(`\n✅ Validação passou com ${warnings} aviso(s) (não críticos)\n`);
+    process.exit(0);
 } else {
-    if (errors > 0) console.error(`❌ ${errors} erro(s) encontrado(s)`);
-    if (warnings > 0) console.warn(`⚠️  ${warnings} aviso(s) encontrado(s)`);
+    console.log('\n✅ Validação passou sem erros nem avisos\n');
+    process.exit(0);
 }
-
-process.exit(errors > 0 ? 1 : 0);

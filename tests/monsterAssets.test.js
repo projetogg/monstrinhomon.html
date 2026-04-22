@@ -98,50 +98,49 @@ describe('MonsterAssets - Integridade do Lote MON_001-020', () => {
 // ─── B. Regressão visual — PartyDex ─────────────────────────────────────────
 
 describe('MonsterAssets - PartyDex visual com assets reais', () => {
-    // Importamos as funções do partyDexUI para testar a saída HTML estrutural
-    // Note: como partyDexUI.js importa monsterVisual.js, testaremos via monsterVisual
+    // Testa via getMonsterVisualHTML (API canônica do novo monsterVisual.js)
 
-    it('monsterVisual.monsterArtHTML deve retornar <img> quando image presente', async () => {
-        const { monsterArtHTML } = await import('../js/ui/monsterVisual.js');
+    it('monsterVisual.getMonsterVisualHTML deve retornar <img> quando image presente', async () => {
+        const { getMonsterVisualHTML } = await import('../js/ui/monsterVisual.js');
         const template = {
             id: 'MON_001',
             name: 'Ferrozimon',
             image: 'assets/monsters/MON_001.png',
             emoji: '⚔️',
         };
-        const html = monsterArtHTML(template);
+        const html = getMonsterVisualHTML(template);
         expect(html).toContain('<img');
         expect(html).toContain('assets/monsters/MON_001.png');
         expect(html).toContain('alt="Ferrozimon"');
     });
 
-    it('monsterVisual.monsterArtHTML deve retornar emoji quando image ausente', async () => {
-        const { monsterArtHTML } = await import('../js/ui/monsterVisual.js');
+    it('monsterVisual.getMonsterVisualHTML deve retornar emoji quando image ausente', async () => {
+        const { getMonsterVisualHTML } = await import('../js/ui/monsterVisual.js');
         const template = {
             id: 'MON_002',
             name: 'Cavalheiromon',
             emoji: '🗡️',
             // sem image
         };
-        const html = monsterArtHTML(template);
+        const html = getMonsterVisualHTML(template);
         expect(html).not.toContain('<img');
         expect(html).toContain('🗡️');
     });
 
-    it('monsterVisual.monsterArtHTML usa fallback 👾 quando template sem emoji e sem image', async () => {
-        const { monsterArtHTML } = await import('../js/ui/monsterVisual.js');
+    it('monsterVisual.getMonsterVisualHTML usa fallback ❓ quando template sem emoji e sem image', async () => {
+        const { getMonsterVisualHTML } = await import('../js/ui/monsterVisual.js');
         const template = { id: 'MON_999', name: 'Teste' };
-        const html = monsterArtHTML(template);
-        expect(html).toContain('👾');
+        const html = getMonsterVisualHTML(template);
+        expect(html).toContain('❓');
     });
 
-    it('monsterVisual.hasImage retorna true apenas quando image declarado', async () => {
-        const { hasImage } = await import('../js/ui/monsterVisual.js');
-        expect(hasImage({ image: 'assets/monsters/MON_001.png' })).toBe(true);
-        expect(hasImage({ image: '' })).toBe(false);
-        expect(hasImage({})).toBe(false);
-        expect(hasImage(null)).toBe(false);
-        expect(hasImage(undefined)).toBe(false);
+    it('monsterVisual.getMonsterVisualData retorna type=image apenas quando image declarado', async () => {
+        const { getMonsterVisualData } = await import('../js/ui/monsterVisual.js');
+        expect(getMonsterVisualData({ image: 'assets/monsters/MON_001.png', name: 'X', emoji: '⚔️' }).type).toBe('image');
+        expect(getMonsterVisualData({ image: '', name: 'X', emoji: '⚔️' }).type).toBe('emoji');
+        expect(getMonsterVisualData({ name: 'X', emoji: '⚔️' }).type).toBe('emoji');
+        expect(getMonsterVisualData(null).type).toBe('emoji');
+        expect(getMonsterVisualData(undefined).type).toBe('emoji');
     });
 });
 
@@ -166,16 +165,15 @@ describe('MonsterAssets - EggHatch visual estrutural', () => {
         expect(src).toMatch(/monsterId\s*:/);
     });
 
-    it('eggHatchModal deve importar monsterArtHTML de monsterVisual.js (render canônico)', () => {
+    it('eggHatchModal deve importar getMonsterVisualHTML de monsterVisual.js (render canônico)', () => {
         const src = readFileSync(resolve(ROOT, 'js/ui/eggHatchModal.js'), 'utf8');
         expect(src).toContain('monsterVisual.js');
-        expect(src).toContain('monsterArtHTML');
+        expect(src).toContain('getMonsterVisualHTML');
     });
 
-    it('eggHatchModal.showEggHatchModal deve aceitar template como segundo parâmetro', () => {
+    it('eggHatchModal.showEggHatchModal deve estar disponível como export de função', async () => {
         const src = readFileSync(resolve(ROOT, 'js/ui/eggHatchModal.js'), 'utf8');
-        // Assinatura deve incluir template como segundo parâmetro
-        expect(src).toMatch(/showEggHatchModal\s*\([^)]*template/);
+        expect(src).toContain('showEggHatchModal');
     });
 });
 
@@ -188,28 +186,27 @@ describe('MonsterAssets - GroupUI visual estrutural', () => {
         expect(src).toContain('export function renderGroupEncounterPanel');
     });
 
-    it('groupUI deve derivar imagem via templateId usando resolveUnitArt (não mon.image direto)', () => {
+    it('groupUI deve usar getMonsterVisualHTML para renderizar unidades (não resolveUnitArt)', () => {
         const src = readFileSync(resolve(ROOT, 'js/combat/groupUI.js'), 'utf8');
-        // Deve usar a função helper de resolução canônica
-        expect(src).toContain('resolveUnitArt');
-        expect(src).toContain('group-unit-img');
+        // API canônica: getMonsterVisualHTML de monsterVisual.js
+        expect(src).toContain('getMonsterVisualHTML');
+        expect(src).toContain('monsterVisual.js');
     });
 
-    it('groupUI deve importar getMonstersMapSync para lookup de template', () => {
+    it('groupUI deve importar getMonsterVisualHTML de monsterVisual.js', () => {
         const src = readFileSync(resolve(ROOT, 'js/combat/groupUI.js'), 'utf8');
-        expect(src).toContain('getMonstersMapSync');
+        expect(src).toContain('getMonsterVisualHTML');
     });
 
-    it('groupUI.resolveUnitArt deve fazer fallback para mon.image (compatibilidade com saves legados)', () => {
+    it('groupUI aplica size sm para miniaturas das unidades', () => {
         const src = readFileSync(resolve(ROOT, 'js/combat/groupUI.js'), 'utf8');
-        // Fallback de compatibilidade reversa: mon.image se template não encontrado
-        expect(src).toContain('mon.image');
+        expect(src).toContain("size: 'sm'");
     });
 
-    it('groupUI.resolveUnitArt deve fazer fallback para emoji quando sem image', () => {
+    it('groupUI NÃO deve conter resolveUnitArt (função removida na refatoração)', () => {
         const src = readFileSync(resolve(ROOT, 'js/combat/groupUI.js'), 'utf8');
-        // resolveUnitArt usa mon.emoji para ambos jogadores e inimigos (parâmetro genérico)
-        expect(src).toContain('mon.emoji');
+        // resolveUnitArt foi substituído por getMonsterVisualHTML
+        expect(src).not.toContain('resolveUnitArt');
     });
 });
 
@@ -223,21 +220,21 @@ describe('MonsterAssets - Silhouette (estado seen)', () => {
         expect(css).toContain('brightness(0)');
     });
 
-    it('partyDexUI deve usar dex-silhouette-img para <img> no estado seen', () => {
+    it('partyDexUI deve usar opção silhouette:true de getMonsterVisualHTML para estado seen', () => {
         const src = readFileSync(resolve(ROOT, 'js/ui/partyDexUI.js'), 'utf8');
-        expect(src).toContain('dex-silhouette-img');
+        expect(src).toContain('silhouette: true');
     });
 
-    it('monsterVisual.monsterArtHTML deve aceitar imgClass customizado para silhueta', async () => {
-        const { monsterArtHTML } = await import('../js/ui/monsterVisual.js');
+    it('monsterVisual.getMonsterVisualHTML deve aceitar opção silhouette:true', async () => {
+        const { getMonsterVisualHTML } = await import('../js/ui/monsterVisual.js');
         const template = {
             id: 'MON_001',
             name: 'Ferrozimon',
             image: 'assets/monsters/MON_001.png',
             emoji: '⚔️',
         };
-        const html = monsterArtHTML(template, { imgClass: 'dex-monster-img dex-silhouette-img' });
-        expect(html).toContain('dex-silhouette-img');
+        const html = getMonsterVisualHTML(template, { silhouette: true });
+        expect(html).toContain('monster-silhouette');
     });
 });
 
@@ -255,67 +252,33 @@ describe('MonsterAssets - Validador validate-monster-assets.mjs', () => {
     });
 });
 
-// ─── E. Arquitetura PR3.1 — image derivada do template, não persistida ────────
+// ─── E. Arquitetura — image derivada do template, não persistida ────────
 
-describe('MonsterAssets - PR3.1 Arquitetura: image derivada do template', () => {
-    it('monsterVisual.js deve exportar resolveArtFromInstance', async () => {
+describe('MonsterAssets - Arquitetura: image derivada do template', () => {
+    it('monsterVisual.js deve exportar getMonsterVisualHTML', async () => {
         const mod = await import('../js/ui/monsterVisual.js');
-        expect(typeof mod.resolveArtFromInstance).toBe('function');
+        expect(typeof mod.getMonsterVisualHTML).toBe('function');
     });
 
-    it('resolveArtFromInstance deve retornar <img> quando template encontrado no catálogo (Map)', async () => {
-        const { resolveArtFromInstance } = await import('../js/ui/monsterVisual.js');
-        const catalog = new Map([
-            ['MON_001', { id: 'MON_001', name: 'Ferrozimon', image: 'assets/monsters/MON_001.png', emoji: '⚔️' }],
-        ]);
-        const instance = { templateId: 'MON_001', name: 'Ferrozimon', emoji: '⚔️' };
-        const html = resolveArtFromInstance(instance, catalog, { imgClass: 'group-unit-img' });
+    it('monsterVisual.js deve exportar getMonsterVisualData', async () => {
+        const mod = await import('../js/ui/monsterVisual.js');
+        expect(typeof mod.getMonsterVisualData).toBe('function');
+    });
+
+    it('getMonsterVisualHTML deve retornar <img> quando monster tem image', async () => {
+        const { getMonsterVisualHTML } = await import('../js/ui/monsterVisual.js');
+        const monster = { id: 'MON_001', name: 'Ferrozimon', image: 'assets/monsters/MON_001.png', emoji: '⚔️' };
+        const html = getMonsterVisualHTML(monster, { size: 'sm' });
         expect(html).toContain('<img');
         expect(html).toContain('assets/monsters/MON_001.png');
-        expect(html).toContain('group-unit-img');
     });
 
-    it('resolveArtFromInstance deve retornar emoji quando template sem image', async () => {
-        const { resolveArtFromInstance } = await import('../js/ui/monsterVisual.js');
-        const catalog = new Map([
-            ['MON_999', { id: 'MON_999', name: 'SemImagem', emoji: '🔥' }],
-        ]);
-        const instance = { templateId: 'MON_999', name: 'SemImagem', emoji: '🔥' };
-        const html = resolveArtFromInstance(instance, catalog);
+    it('getMonsterVisualHTML deve retornar emoji quando monster sem image', async () => {
+        const { getMonsterVisualHTML } = await import('../js/ui/monsterVisual.js');
+        const monster = { id: 'MON_999', name: 'SemImagem', emoji: '🔥' };
+        const html = getMonsterVisualHTML(monster);
         expect(html).toContain('🔥');
         expect(html).not.toContain('<img');
-    });
-
-    it('resolveArtFromInstance deve aceitar Array como catálogo', async () => {
-        const { resolveArtFromInstance } = await import('../js/ui/monsterVisual.js');
-        const catalog = [
-            { id: 'MON_001', name: 'Ferrozimon', image: 'assets/monsters/MON_001.png', emoji: '⚔️' },
-        ];
-        const instance = { templateId: 'MON_001', name: 'Ferrozimon' };
-        const html = resolveArtFromInstance(instance, catalog);
-        expect(html).toContain('<img');
-        expect(html).toContain('MON_001.png');
-    });
-
-    it('resolveArtFromInstance deve usar mon.image como fallback (compatibilidade save legado)', async () => {
-        const { resolveArtFromInstance } = await import('../js/ui/monsterVisual.js');
-        // Sem catálogo, mas instância tem image (save antigo)
-        const instance = { name: 'LegadoMon', image: 'assets/monsters/MON_001.png', emoji: '⚔️' };
-        const html = resolveArtFromInstance(instance, null);
-        expect(html).toContain('<img');
-        expect(html).toContain('MON_001.png');
-    });
-
-    it('resolveArtFromInstance deve usar monsterId como fallback de ID (saves com schema antigo)', async () => {
-        const { resolveArtFromInstance } = await import('../js/ui/monsterVisual.js');
-        const catalog = new Map([
-            ['MON_005', { id: 'MON_005', name: 'Dinomon', image: 'assets/monsters/MON_005.png', emoji: '🎵' }],
-        ]);
-        // Instância com monsterId (schema antigo do eggHatcher)
-        const instance = { monsterId: 'MON_005', name: 'Dinomon', emoji: '🎵' };
-        const html = resolveArtFromInstance(instance, catalog);
-        expect(html).toContain('<img');
-        expect(html).toContain('MON_005.png');
     });
 
     it('createMonsterInstanceFromTemplate em index.html NÃO deve copiar image', () => {
@@ -329,9 +292,8 @@ describe('MonsterAssets - PR3.1 Arquitetura: image derivada do template', () => 
         expect(src).toContain('templateId: template.id');
     });
 
-    it('showEggHatchModal deve receber template na chamada em index.html', () => {
-        const src = readFileSync(resolve(ROOT, 'index.html'), 'utf8');
-        // Call site passa template como segundo argumento
-        expect(src).toMatch(/showEggHatchModal\s*\(\s*newMonster\s*,\s*template\s*\)/);
+    it('eggHatcher.js NÃO deve copiar image para a instância', () => {
+        const src = readFileSync(resolve(ROOT, 'js/data/eggHatcher.js'), 'utf8');
+        expect(src).not.toContain('image: template.image');
     });
 });

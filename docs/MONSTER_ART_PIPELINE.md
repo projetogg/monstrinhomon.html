@@ -1,149 +1,132 @@
-# MONSTER ART PIPELINE
+# Pipeline de Arte — Monstrinhos
 
-Documento de referência para o pipeline de arte dos Monstrinhos em Monstrinhomon.
+## Fonte Canônica de Metadata
 
----
-
-## Status da Segunda Leva (Leva 2 — MON_001-020)
-
-5 famílias completas (4 evoluções cada) importadas como assets placeholder prontos para substituição por arte final:
-
-| Família   | IDs                        | Classe     | Arquivos                              |
-|-----------|----------------------------|------------|---------------------------------------|
-| Guerreiro | MON_001, 002, 003, 004     | Guerreiro  | `assets/monsters/MON_00{1-4}.png`     |
-| Bardo     | MON_005, 006, 007, 008     | Bardo      | `assets/monsters/MON_00{5-8}.png`     |
-| Caçador   | MON_009, 010, 011, 012     | Caçador    | `assets/monsters/MON_0{09-12}.png`    |
-| Mago      | MON_013, 014, 015, 016     | Mago       | `assets/monsters/MON_0{13-16}.png`    |
-| Animalista| MON_017, 018, 019, 020     | Animalista | `assets/monsters/MON_0{17-20}.png`    |
-
-**Bloqueados (conflito editorial pendente):** MON_021–027 — sem `image` declarado.
+O arquivo `data/monsters.json` é a **fonte única e canônica** de metadata dos monstrinhos.
+Nenhuma outra fonte substitui ou sobrescreve os dados definidos nele.
 
 ---
 
-## Status da Primeira Leva (PR3)
+## Campo `image` (opcional)
 
-Os 8 Starters Base foram materializados. Os seguintes assets PNG estão ativos no repositório:
-
-| ID       | Nome        | Classe     | Arquivo                         |
-|----------|-------------|------------|---------------------------------|
-| MON_001  | Ferrozimon  | Guerreiro  | `assets/monsters/MON_001.png`   |
-| MON_005  | Dinomon     | Bardo      | `assets/monsters/MON_005.png`   |
-| MON_009  | Miaumon     | Caçador    | `assets/monsters/MON_009.png`   |
-| MON_013  | Lagartomon  | Mago       | `assets/monsters/MON_013.png`   |
-| MON_017  | Luvursomon  | Animalista | `assets/monsters/MON_017.png`   |
-| MON_028  | Nutrilo     | Curandeiro | `assets/monsters/MON_028.png`   |
-| MON_029  | Tigrumo     | Bárbaro    | `assets/monsters/MON_029.png`   |
-| MON_030  | Furtilhon   | Ladino     | `assets/monsters/MON_030.png`   |
-
----
-
-## Estrutura de Paths
-
-```
-assets/
-  monsters/
-    MON_001.png
-    MON_005.png
-    MON_009.png
-    MON_013.png
-    MON_017.png
-    MON_028.png
-    MON_029.png
-    MON_030.png
-```
-
-**Regra de nomenclatura:** nome do arquivo deve ser exatamente `<ID>.png` (sem espaços, sem aliases).
-
----
-
-## Campo `image` no Catálogo
-
-Os 8 starters têm o campo `image` declarado em `data/monsters.json`:
+O schema do catálogo agora aceita um campo opcional `image`:
 
 ```json
 {
   "id": "MON_001",
   "name": "Ferrozimon",
   "class": "Guerreiro",
+  "rarity": "Comum",
   "emoji": "⚔️",
-  "image": "assets/monsters/MON_001.png",
-  ...
+  "image": "assets/monsters/MON_001.png"
 }
 ```
 
-O restante do catálogo **não tem** o campo `image` — isso é intencional. O fallback por emoji
-continua funcionando para todos os monstrinhos sem imagem declarada.
+- O campo é **opcional**: monstrinhos sem `image` continuam funcionando normalmente via fallback de emoji.
+- O campo `emoji` **nunca deve ser removido**: é o fallback garantido enquanto os assets de imagem não existirem.
 
 ---
 
-## Regras de Validação (PR3+)
+## Convenção de Paths de Assets
 
-A partir da PR3, a presença do campo `image` em `data/monsters.json` implica **obrigatoriedade** do arquivo:
+Todos os assets de imagem de monstrinhos devem seguir o padrão:
 
-| Situação                            | Resultado      |
-|-------------------------------------|----------------|
-| `image` declarado + arquivo existe  | ✅ OK           |
-| `image` declarado + arquivo ausente | ❌ ERRO (exit 1)|
-| `image` ausente (fallback emoji)    | ✅ Permitido    |
-| Path com espaço                     | ❌ ERRO         |
-| Nome != `<ID>.png`                  | ❌ ERRO         |
-| Colisão de path entre monstros      | ❌ ERRO         |
+```
+assets/monsters/MON_XXX.png
+```
 
-Para rodar a validação:
+Exemplos:
+- `assets/monsters/MON_001.png`
+- `assets/monsters/MON_005.png`
+- `assets/monsters/MON_028.png`
 
+Regras:
+- Formato obrigatório: **PNG**
+- Nome do arquivo: `{ID_DO_MONSTRO}.png` (ex: `MON_001.png`)
+- Pasta raiz: `assets/monsters/`
+- IDs devem ser exatamente os IDs canônicos de `monsters.json`
+
+---
+
+## Regra de Fallback Visual
+
+O helper canônico `js/ui/monsterVisual.js` implementa a seguinte lógica:
+
+1. Se `monster.image` existir → renderizar `<img src="..." alt="...">`
+2. Caso contrário → renderizar fallback `<span>` com emoji
+
+**Nenhuma UI deve implementar essa lógica diretamente.** Todo render visual de monstrinho deve passar pelo helper `monsterVisual.js`.
+
+---
+
+## Primeira Leva de Arte (futura)
+
+A primeira leva de imagens cobrirá os **8 starters base**, um por classe:
+
+| ID       | Nome        | Classe      |
+|----------|-------------|-------------|
+| MON_001  | Ferrozimon  | Guerreiro   |
+| MON_005  | Dinomon     | Bardo       |
+| MON_009  | Miaumon     | Caçador     |
+| MON_013  | Lagartomon  | Mago        |
+| MON_017  | Luvursomon  | Animalista  |
+| MON_028  | Nutrilo     | Curandeiro  |
+| MON_029  | Tigrumo     | Bárbaro     |
+| MON_030  | Furtilhon   | Ladino      |
+
+Os campos `image` já estão declarados no catálogo com os paths previstos.
+Os PNGs **ainda não existem** — serão entregues em uma PR posterior de assets.
+
+---
+
+## Escopo desta PR (PR1 — Infraestrutura)
+
+Esta PR entregou **apenas infraestrutura**. A integração nas UIs de runtime foi realizada na **PR2**.
+
+## Integração nas UIs (PR2 — Integração)
+
+As seguintes UIs foram integradas com `monsterVisual.js` na PR2:
+
+- **`partyDexUI.js`** — estados `seen` (silhueta) e `captured` (imagem ou emoji) usam o helper canônico
+- **`eggHatchModal.js`** — resultado do nascimento usa o helper canônico
+- **`js/combat/groupUI.js`** — cards de combate (jogador, inimigo, swap) usam o helper canônico
+
+O jogo funciona com emojis como fallback enquanto os PNGs não existem.
+Quando os PNGs forem entregues, as UIs exibirão as imagens automaticamente, sem nenhuma mudança adicional.
+
+---
+
+## Validação Automática
+
+O script `scripts/validate-monster-assets.mjs` verifica:
+
+1. Todos os campos `image` declarados no catálogo têm arquivo físico correspondente
+2. Não há dois monstrinhos apontando para o mesmo asset (colisão de paths)
+3. Cada asset em `assets/monsters/` segue a convenção `MON_XXX.png`
+4. Assets presentes no diretório sem entrada no catálogo são reportados como órfãos
+
+**Comportamento durante a transição** (antes dos PNGs existirem):
+O script reporta campos `image` declarados sem arquivo físico como **avisos** (`⚠️`), não erros fatais.
+O script falha com erro (exit code 1) apenas se encontrar colisões de path ou paths mal formatados.
+
+Executar via:
 ```bash
 npm run validate:monster-assets
 ```
 
 ---
 
-## Integração com as UIs
+## Estilos CSS
 
-O helper `js/ui/monsterVisual.js` centraliza a lógica de renderização:
+As classes de estilo da camada visual estão em `css/main.css`:
 
-- **`monsterArtHTML(template, opts)`**: retorna `<img>` se `template.image` existir, senão `<span>` com emoji.
-- **`hasImage(template)`**: boolean — `true` se o template tem image declarado.
-
-### PartyDex (`js/ui/partyDexUI.js`)
-- Estado **captured**: usa `<img class="dex-monster-img">` se image presente, emoji senão.
-- Estado **seen**: usa `<img class="dex-monster-img dex-silhouette-img">` — a silhueta é aplicada pelo CSS pai `.dex-seen .dex-art { filter: brightness(0) ... }`.
-- Estado **unknown**: ❓ (sem mudança).
-
-### Egg Hatch (`js/ui/eggHatchModal.js`)
-- Modal de nascimento usa `<img class="egg-hatch-monster-img">` para os 8 starters.
-- Fallback para emoji nos demais.
-
-### Group Combat (`js/combat/groupUI.js`)
-- Cards de unidade usam `<img class="group-unit-img">` (thumbnail 28×28) quando `mon.image` presente.
-- Fallback para emoji nos demais.
+- `.monster-visual` — base de todo visual de monstrinho
+- `.monster-visual--sm` — tamanho pequeno (32×32px)
+- `.monster-visual--md` — tamanho médio (64×64px, padrão)
+- `.monster-visual--lg` — tamanho grande (96×96px)
+- `.monster-emoji` — estilo específico para fallback de emoji
+- `.monster-silhouette` — aplica efeito de silhueta (funciona em `<img>` e emoji)
 
 ---
 
-## Fallback por Emoji
-
-O restante do catálogo (todos os monstrinhos sem `image`) continua exibindo o emoji correspondente.
-Isso é o comportamento padrão até próximas levas de arte.
-
----
-
-## Próximas Levas
-
-Esta foi a **primeira leva**: os 8 starters base (1 por classe).
-
-Levas futuras devem seguir o mesmo processo:
-1. Adicionar PNGs em `assets/monsters/<ID>.png`
-2. Adicionar campo `image` no monster correspondente em `data/monsters.json`
-3. Rodar `npm run validate:monster-assets` — deve passar
-4. Rodar `npm test` — nenhum teste deve quebrar
-
----
-
-## Histórico
-
-| Versão | Descrição                                                   |
-|--------|-------------------------------------------------------------|
-| PR1    | Pipeline de arte preparado; helper monsterVisual pendente   |
-| PR2    | Validador criado em modo permissivo (warning-only)          |
-| PR3    | 8 starters materializados; validador endurecido (erro real) |
-| PR3.1  | Limpeza arquitetural: `image` removida de instâncias; UI deriva via templateId |
-| Leva 2 | 20 sprites (MON_001–020) importados como placeholders; 5 famílias × 4 evoluções; path `assets/monsters/`; MON_021–027 bloqueados |
+_Última atualização: PR1 — Infraestrutura Visual_

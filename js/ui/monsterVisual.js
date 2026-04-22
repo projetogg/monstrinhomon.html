@@ -1,117 +1,99 @@
 /**
- * monsterVisual.js — Helper de Visual dos Monstrinhos
+ * monsterVisual.js — Helper canônico de render visual de monstrinhos
  *
- * Funções utilitárias para renderizar a arte dos monstrinhos nas UIs.
- * Lógica centralizada para:
- *   - Usar <img> quando template.image está declarado
- *   - Fallback para emoji quando image não está presente
- *   - Silhueta (estado "seen") via CSS filter
+ * Este módulo é a ÚNICA base autorizada para gerar HTML visual de monstrinho.
+ * Toda UI que precisar exibir um monstrinho deve usar este helper.
  *
- * REGRAS:
- *   - Monstrinhos com `image` declarado usam <img> em todas as UIs
- *   - Monstrinhos sem `image` usam o emoji como fallback
- *   - A silhueta é aplicada via CSS (filter: brightness(0)) na classe pai
- *   - Não alterar lógica de jogo aqui — apenas apresentação
+ * Regras:
+ *  - se monster.image existir → gerar <img>
+ *  - senão → gerar <span> com emoji (fallback)
+ *  - sempre incluir alt/aria-label com o nome do monstrinho
+ *  - não acessar DOM diretamente
+ *  - não mutar o objeto de entrada
+ *
+ * Uso:
+ *   import { getMonsterVisualHTML } from './monsterVisual.js';
+ *   elemento.innerHTML = getMonsterVisualHTML(monster, { size: 'md' });
  */
 
 /**
- * Retorna o HTML do elemento visual principal do monstrinho.
- * Usa <img> se template.image existir; senão, usa emoji em <span>.
- *
- * @param {Object} template - Template do monstrinho (do catalog)
- * @param {Object} [opts]
- * @param {string} [opts.imgClass] - Classe CSS para o <img>
- * @param {string} [opts.emojiClass] - Classe CSS para o <span> de emoji
- * @param {string} [opts.alt] - Texto alt para o <img>
- * @returns {string} HTML string
- */export function monsterArtHTML(template, opts = {}) {
-    if (!template) return '';
-
-    const {
-        imgClass   = 'monster-art-img',
-        emojiClass = 'monster-art-emoji',
-        alt        = template.name || 'Monstrinho',
-    } = opts;
-
-    if (template.image) {
-        return `<img
-            src="${escapeAttr(template.image)}"
-            alt="${escapeAttr(alt)}"
-            class="${escapeAttr(imgClass)}"
-            draggable="false"
-        >`;
-    }
-
-    return `<span class="${escapeAttr(emojiClass)}" aria-label="${escapeAttr(alt)}">${template.emoji || '👾'}</span>`;
-}
-
-/**
- * Retorna true se o template possui um asset de imagem declarado.
- * @param {Object} template
- * @returns {boolean}
+ * Tamanhos de exibição suportados.
+ * @type {string[]}
  */
-export function hasImage(template) {
-    return !!(template && template.image);
-}
+const VALID_SIZES = ['sm', 'md', 'lg'];
 
 /**
- * Resolve e retorna HTML de arte a partir de uma instância de Monstrinho.
- *
- * REGRA: `image` não é persistida na instância — é derivada do template via `templateId`.
- * Compatibilidade reversa: se o template não for encontrado (ex.: instância legada),
- * usa `instance.image` se presente, ou emoji como último recurso.
- *
- * @param {Object} instance - Instância de Monstrinho (com templateId ou monsterId)
- * @param {Map|Array|null} catalog - Catálogo de templates (Map<id,template> ou Array)
- * @param {Object} [opts] - Mesmas opções de monsterArtHTML
- * @returns {string} HTML string
+ * Tamanho padrão quando não especificado.
+ * @type {string}
  */
-export function resolveArtFromInstance(instance, catalog, opts = {}) {
-    if (!instance) return '';
+const DEFAULT_SIZE = 'md';
 
-    // 1. Deriva template do catálogo pelo templateId
-    const tid = instance.templateId || instance.monsterId;
-    let template = null;
-    if (tid && catalog) {
-        if (catalog instanceof Map) {
-            template = catalog.get(tid) || null;
-        } else if (Array.isArray(catalog)) {
-            template = catalog.find(t => t.id === tid) || null;
-        }
+/**
+ * Retorna os dados visuais de um monstrinho: qual tipo de render usar e os valores.
+ *
+ * @param {Object} monster - Objeto do monstrinho (do catálogo ou instância)
+ * @param {string} [monster.name] - Nome do monstrinho
+ * @param {string} [monster.emoji] - Emoji fallback
+ * @param {string} [monster.image] - Path do asset de imagem (opcional)
+ * @returns {{ type: 'image'|'emoji', src: string|null, emoji: string|null, name: string }}
+ */
+export function getMonsterVisualData(monster) {
+    if (!monster || typeof monster !== 'object') {
+        return { type: 'emoji', src: null, emoji: '❓', name: 'Desconhecido' };
     }
 
-    if (template) {
-        return monsterArtHTML(template, opts);
+    const name = monster.name || 'Monstrinho';
+    const emoji = monster.emoji || '❓';
+
+    if (monster.image && typeof monster.image === 'string' && monster.image.trim() !== '') {
+        return { type: 'image', src: monster.image.trim(), emoji, name };
     }
 
-    // 2. Compatibilidade reversa: instância carregada com image (save legado)
-    if (instance.image) {
-        const { imgClass = 'monster-art-img', alt = instance.name || 'Monstrinho' } = opts;
-        return `<img src="${escapeAttr(instance.image)}" alt="${escapeAttr(alt)}" class="${escapeAttr(imgClass)}" draggable="false">`;
-    }
-
-    // 3. Fallback final: emoji
-    const { emojiClass = 'monster-art-emoji', alt = instance.name || 'Monstrinho' } = opts;
-    return `<span class="${escapeAttr(emojiClass)}" aria-label="${escapeAttr(alt)}">${instance.emoji || '👾'}</span>`;
+    return { type: 'emoji', src: null, emoji, name };
 }
 
 /**
- * Escapa atributos HTML para evitar XSS em strings interpoladas.
+ * Gera o HTML de exibição visual de um monstrinho.
+ *
+ * @param {Object} monster - Objeto do monstrinho (do catálogo ou instância)
+ * @param {Object} [options={}] - Opções de renderização
+ * @param {'sm'|'md'|'lg'} [options.size='md'] - Tamanho do visual
+ * @param {boolean} [options.silhouette=false] - Aplicar efeito de silhueta
+ * @param {string} [options.extraClass=''] - Classes CSS adicionais
+ * @returns {string} HTML pronto para inserção via innerHTML
+ */
+export function getMonsterVisualHTML(monster, options = {}) {
+    const size = VALID_SIZES.includes(options.size) ? options.size : DEFAULT_SIZE;
+    const silhouette = options.silhouette === true;
+    const extraClass = (options.extraClass && typeof options.extraClass === 'string')
+        ? ' ' + options.extraClass.trim()
+        : '';
+
+    const visual = getMonsterVisualData(monster);
+
+    const sizeClass = `monster-visual--${size}`;
+    const silhouetteClass = silhouette ? ' monster-silhouette' : '';
+    const baseClasses = `monster-visual ${sizeClass}${silhouetteClass}${extraClass}`;
+
+    if (visual.type === 'image') {
+        return `<img class="${baseClasses}" src="${_escapeAttr(visual.src)}" alt="${_escapeAttr(visual.name)}">`;
+    }
+
+    return `<span class="${baseClasses} monster-emoji" aria-label="${_escapeAttr(visual.name)}">${visual.emoji}</span>`;
+}
+
+/**
+ * Escapa caracteres especiais para uso seguro em atributos HTML.
+ * Função interna — não exportar.
+ *
  * @param {string} str
  * @returns {string}
  */
-function escapeAttr(str) {
-    return String(str ?? '')
+function _escapeAttr(str) {
+    return String(str)
         .replace(/&/g, '&amp;')
         .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
-}
-
-// Exporta funções globalmente para uso no browser via window.
-// Necessário porque index.html carrega scripts via <script type="module"> mas também
-// usa scripts não-módulo que acessam helpers diretamente pelo window.
-// O padrão ES module (import/export) é usado para os testes e outros módulos JS.
-if (typeof window !== 'undefined') {
-    window.MonsterVisual = { monsterArtHTML, hasImage, resolveArtFromInstance };
 }

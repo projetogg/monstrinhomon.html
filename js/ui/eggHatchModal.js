@@ -1,6 +1,5 @@
-import { monsterArtHTML } from './monsterVisual.js';
-
 /**
+ * EGG HATCH MODAL (PR14B)
  * 
  * Modal visual de eclosão de ovo com feedback emocional.
  * Não altera nenhuma mecânica - apenas mostra melhor o que já acontece.
@@ -24,7 +23,10 @@ import { monsterArtHTML } from './monsterVisual.js';
  * 
  * Funções exportadas:
  * - showEggHatchModal(monster): Mostra modal completo (incubação + resultado)
+ * - buildHatchResultHTML(monster): Gera HTML puro do resultado (testável)
  */
+
+import { getMonsterVisualHTML } from './monsterVisual.js';
 
 /**
  * Cria o elemento do modal no DOM (se não existir)
@@ -81,14 +83,11 @@ function showIncubationState(modal) {
 }
 
 /**
- * Mostra resultado do nascimento (Stage 2)
- * @param {HTMLElement} modal - Elemento do modal
- * @param {Object} monster - Dados do Monstrinho nascido (instância)
- * @param {Object|null} template - Template do catálogo (derivação canônica de image)
+ * Gera o HTML do card de resultado do nascimento (função pura, testável)
+ * @param {Object} monster - Dados do Monstrinho nascido
+ * @returns {string} HTML string do card de resultado
  */
-function showBirthResult(modal, monster, template) {
-    const content = modal.querySelector('#eggHatchContent');
-    
+export function buildHatchResultHTML(monster) {
     // Mapear raridade para emoji
     const rarityEmoji = {
         'Comum': '🟢',
@@ -108,16 +107,9 @@ function showBirthResult(modal, monster, template) {
     
     const emoji = rarityEmoji[monster.rarity] || '⚪';
     const color = rarityColor[monster.rarity] || '#808080';
+    const visualHTML = getMonsterVisualHTML(monster, { size: 'md' });
     
-    // Arte do monstrinho: derivada do template (canônico) ou fallback para monster.image (legado)
-    const artSource = template || (monster.image ? { image: monster.image, name: monster.name, emoji: monster.emoji } : monster);
-    const monsterArt = monsterArtHTML(artSource, {
-        imgClass: 'egg-hatch-monster-img',
-        emojiClass: 'egg-hatch-monster-emoji',
-        alt: monster.name,
-    });
-    
-    content.innerHTML = `
+    return `
         <div style="text-align: center; padding: 20px;">
             <div style="font-size: 60px; margin-bottom: 15px;">🎉</div>
             <h2 style="color: var(--success); margin-bottom: 20px;">Um Monstrinhomon nasceu!</h2>
@@ -127,7 +119,7 @@ function showBirthResult(modal, monster, template) {
                         padding: 20px; 
                         margin: 20px 0;
                         border: 3px solid ${color};">
-                ${monsterArt}
+                <div style="margin-bottom: 10px;">${visualHTML}</div>
                 <div style="font-size: 24px; font-weight: bold; color: var(--dark); margin-bottom: 10px;">
                     ${monster.name}
                 </div>
@@ -150,6 +142,16 @@ function showBirthResult(modal, monster, template) {
             </button>
         </div>
     `;
+}
+
+/**
+ * Mostra resultado do nascimento (Stage 2)
+ * @param {HTMLElement} modal - Elemento do modal
+ * @param {Object} monster - Dados do Monstrinho nascido
+ */
+function showBirthResult(modal, monster) {
+    const content = modal.querySelector('#eggHatchContent');
+    content.innerHTML = buildHatchResultHTML(monster);
     
     // Tocar som de nascimento (se disponível)
     playHatchSound();
@@ -196,11 +198,10 @@ function closeModal() {
  *   executará as linhas seguintes (consumir ovo, salvar estado)
  * - O modal é bloqueante - não há forma de fechá-lo sem clicar em Confirmar
  * 
- * @param {Object} monster - Dados do Monstrinho nascido (instância)
- * @param {Object|null} [template] - Template do catálogo para derivar image (preferencial)
+ * @param {Object} monster - Dados do Monstrinho nascido
  * @returns {Promise} Promise que resolve quando modal é fechado pelo usuário
  */
-export function showEggHatchModal(monster, template = null) {
+export function showEggHatchModal(monster) {
     return new Promise((resolve, reject) => {
         try {
             // Criar/obter modal
@@ -227,7 +228,7 @@ export function showEggHatchModal(monster, template = null) {
             
             // Stage 2: Após 400ms, mostrar resultado
             setTimeout(() => {
-                showBirthResult(modal, monster, template);
+                showBirthResult(modal, monster);
             }, 400);
             
         } catch (error) {
