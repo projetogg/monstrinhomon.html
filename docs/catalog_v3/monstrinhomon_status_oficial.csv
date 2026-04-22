@@ -1,0 +1,79 @@
+id,name,class,raridade,estagio,familia_evolutiva,hp,atk,def,ene,agi,papel_tatico,origem_decisao,status_confianca,justificativa_curta,observacoes
+MON_001,Ferrozimon,Guerreiro,Comum,Base,MON_001,29,7,9,4,4,Tank/Proteção,RUNTIME_DIRETO,FATO_CONFIRMADO,Stats runtime. DEF=9 dominante. Total=53.,Nome canônico DEX v3 confirmado.
+MON_002,Cavalheiromon,Guerreiro,Incomum,Evo1,MON_001,39,10,12,5,5,Tank/Proteção,RUNTIME_DIRETO,FATO_CONFIRMADO,Stats runtime. Delta+18. DEF=12. Total=71.,—
+MON_003,Rexuriçomon,Guerreiro,Raro,Evo2,MON_001,50,14,16,6,6,Tank/Proteção,RUNTIME_DIRETO,FATO_CONFIRMADO,Stats runtime. Delta+21. DEF=16. Total=92.,Renomeado v3 (era Kinguespinhomon). Atualizar monsters.json.
+MON_004,Arcanouriçomon,Guerreiro,Místico,Evo3,MON_001,63,17,17,9,8,Tank dual,AJUSTE_DE_BALANCEAMENTO,FATO_CONFIRMADO,Runtime SPD=8/ENE=9. ENE/AGI trocados em v2 — corrigidos. Total=114.,Swap ENE/AGI corrigido. Valor agora alinhado com runtime.
+MON_005,Dinomon,Bardo,Comum,Base,MON_005,27,6,5,6,8,Buff/Debuff,RUNTIME_DIRETO,FATO_CONFIRMADO,Stats runtime. AGI=8>ENE=6. Total=52.,—
+MON_006,Guitarapitormon,Bardo,Incomum,Evo1,MON_005,35,8,6,8,10,Buff/Debuff,RUNTIME_DIRETO,FATO_CONFIRMADO,Stats runtime. Delta+15. AGI=10. Total=67.,—
+MON_007,Rugirockmon,Bardo,Raro,Evo2,MON_005,46,11,9,10,12,Buff/Debuff,RUNTIME_DIRETO,FATO_CONFIRMADO,Stats runtime. Delta+21. Total=88.,Renomeado v3 (era TRockmon).
+MON_008,Colossauromon,Bardo,Místico,Evo3,MON_005,60,16,12,12,11,Buff dual,RUNTIME_DIRETO,FATO_CONFIRMADO,Stats runtime. Delta+23. Total=111.,Renomeado v3 (era Giganotometalmon). AGI=11<Evo2: trade-off dual Bárbaro.
+MON_009,Miaumon,Caçador,Comum,Base,MON_009,25,8,4,4,9,Pressão à distância,RUNTIME_DIRETO,FATO_CONFIRMADO,Stats runtime. AGI=9. ATK=8. Total=50.,—
+MON_010,Gatunamon,Caçador,Incomum,Evo1,MON_009,32,10,6,6,12,Pressão à distância,RUNTIME_DIRETO,FATO_CONFIRMADO,Stats runtime. Delta+16. AGI=12. Total=66.,—
+MON_011,Felinomon,Caçador,Raro,Evo2,MON_009,42,14,7,6,15,Pressão à distância,RUNTIME_DIRETO,FATO_CONFIRMADO,Stats runtime. Delta+18. AGI=15. Total=84.,—
+MON_012,Panterezamon,Caçador,Místico,Evo3,MON_009,54,18,9,8,18,Pressão dual,RUNTIME_DIRETO,FATO_CONFIRMADO,Stats runtime. Delta+23. AGI=18=ATK=18. Total=107.,—
+MON_013,Lagartomon,Mago,Comum,Base,MON_013,24,6,4,8,6,Ofensivo técnico,RUNTIME_DIRETO,FATO_CONFIRMADO,Stats runtime. ENE=8>ATK=6. Total=48.,—
+MON_014,Salamandromon,Mago,Incomum,Evo1,MON_013,30,8,6,11,8,Ofensivo técnico,RUNTIME_DIRETO,FATO_CONFIRMADO,Stats runtime. Delta+15. ENE=11>ATK=8. Total=63.,—
+MON_015,Dracoflamemon,Mago,Raro,Evo2,MON_013,39,12,8,14,9,Ofensivo técnico,RUNTIME_DIRETO,FATO_CONFIRMADO,Stats runtime. Delta+19. ENE=14>ATK=12. Total=82.,—
+MON_016,Arcanodracomon,Mago,Místico,Evo3,MON_013,48,15,10,18,10,Ofensivo dual,RUNTIME_DIRETO,FATO_CONFIRMADO,Stats runtime. Delta+19. ENE=18>ATK=15. Total=101.,Renomeado v3 (era Wizardragomon).
+MON_017,Luvursomon,Animalista,Comum,Base,MON_017,31,6,6,5,4,Versátil,RUNTIME_DIRETO,FATO_CONFIRMADO,Stats runtime. Equilibrado sem extremo. Total=52.,—
+MON_018,Manoplamon,Animalista,Incomum,Evo1,MON_017,41,10,8,6,6,Versátil,RUNTIME_DIRETO,FATO_CONFIRMADO,Stats runtime. Delta+19. Total=71.,—
+MON_019,Bestaursomon,Animalista,Raro,Evo2,MON_017,54,14,12,7,6,Versátil,RUNTIME_DIRETO,FATO_CONFIRMADO,Stats runtime. Delta+22. Total=93.,Renomeado v3 (era BestBearmon).
+MON_020,Ursauramon,Animalista,Místico,Evo3,MON_017,68,18,14,8,8,Versátil bruiser,RUNTIME_DIRETO,FATO_CONFIRMADO,Stats runtime. Delta+23. HP=68 pico Místico. Total=116.,—
+MON_021,Vivimon,Curandeiro,Comum,Base,MON_021,28,3,5,10,4,Cura/Suporte,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,Calibrado sobre Nutrilo runtime (TOT=52). ENE=10. Total=50.,ID conflita runtime (Tamborilhomon/Bárbaro). Namespace pendente.
+MON_022,Luminamon,Curandeiro,Incomum,Evo1,MON_021,37,5,7,13,5,Cura/Suporte,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,TOT=67 (-2 de Silvelio runtime). Delta+17.,ID conflita runtime (Corvimon/Ladino).
+MON_023,Serafimon,Curandeiro,Raro,Evo2,MON_021,48,7,10,17,7,Cura/Suporte,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,TOT=89 (-1 de Auravelo runtime). Delta+22.,ID conflita runtime (Cervimon/Animalista).
+MON_024,Arcanumon,Curandeiro,Místico,Evo3,MON_021,62,10,13,22,9,Cura arcana dual,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,ENE=22 pico do catálogo. ATK=10 respeita limite máximo. Total=116.,Nome duplicado com MON_102 runtime. MON_102 deve ser renomeado antes de importar.
+MON_025,Furimon,Bárbaro,Comum,Base,MON_025,32,9,5,4,4,Burst,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,Banda Comum Bárbaro 54-57. ATK=9. Total=54.,ID conflita runtime (Pulimbon/Caçador).
+MON_026,Rugidomon,Bárbaro,Incomum,Evo1,MON_025,43,13,7,5,5,Burst,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,Banda Incomum Bárbaro 72-77. ATK=13. Delta+19. Total=73.,ID conflita runtime (Cascalhimon/Guerreiro).
+MON_027,Brutamon,Bárbaro,Raro,Evo2,MON_025,57,17,10,6,6,Burst,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,ATK=17=Bestigrar runtime. Delta+23. Total=96.,ID conflita runtime (Zunzumon/Bardo).
+MON_028,Titanmon,Bárbaro,Místico,Evo3,MON_025,62,22,10,8,9,Bruiser ofensivo dual,AJUSTE_DE_BALANCEAMENTO,PROPOSTA_CONSOLIDADA,HP=62<Guerreiro Místico HP=63. ATK=22 pico. Total=111.,HP reduzido 70→65→62. ID conflita runtime (Nutrilo/Curandeiro).
+MON_029,Sombramon,Ladino,Comum,Base,MON_029,23,8,3,6,11,Execução,CONFLITO_NAO_RESOLVIDO,PROPOSTA_AINDA_ABERTA,Stats coerentes. runtimeEnabled=False. BLOQUEADO. Total=51.,NÃO IMPORTAR. Aguarda arte. ID conflita runtime (Tigrumo/Bárbaro).
+MON_030,Furtimon,Ladino,Incomum,Evo1,MON_029,30,11,5,8,14,Execução,CONFLITO_NAO_RESOLVIDO,PROPOSTA_AINDA_ABERTA,Coerente com família. BLOQUEADO. Total=68.,NÃO IMPORTAR. Dependente de MON_029.
+MON_031,Umbromon,Ladino,Raro,Evo2,MON_029,39,15,7,10,17,Execução,CONFLITO_NAO_RESOLVIDO,PROPOSTA_AINDA_ABERTA,AGI=17 correto Ladino Raro. BLOQUEADO. Total=88.,NÃO IMPORTAR. Dependente de MON_029.
+MON_032,Feralmon,Ladino,Místico,Evo3,MON_029,50,20,9,13,21,Assassino dual,CONFLITO_NAO_RESOLVIDO,PROPOSTA_AINDA_ABERTA,AGI=21 mais alta do catálogo. HP=50 é a fraqueza. Total=113.,NÃO IMPORTAR. BLOQUEADO. Verificar first-strike em combate antes de liberar.
+MON_033,Bosquemon,Animalista,Comum,Base,MON_033,30,6,8,5,5,Versátil defensivo,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,DEF=8>ATK=6 desde base. Distinto de Luvursomon. Total=54.,—
+MON_034,Matamon,Animalista,Incomum,Evo1,MON_033,40,9,11,7,7,Versátil defensivo,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,Delta+20. DEF mantém dominância. Total=74.,Nome provisório.
+MON_035,Floremon,Animalista,Raro,Evo2,MON_033,52,12,14,9,9,Versátil defensivo,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,Delta+22. DEF=14. Total=96.,Nome provisório.
+MON_036,Etermon,Mago,Comum,Base,MON_036,22,6,3,9,7,Ofensivo etéreo,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,HP=22 mínimo catálogo Comum. Fantasia etérea. ENE=9>ATK=6. Total=47.,Verificar UX — HP mínimo pode frustrar iniciante.
+MON_037,Astramon,Mago,Incomum,Evo1,MON_036,28,9,5,12,9,Ofensivo etéreo,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,ENE=12>ATK=9. Delta+16. Total=63.,Nome provisório.
+MON_038,Cosmomon,Mago,Raro,Evo2,MON_036,36,12,7,16,11,Ofensivo etéreo,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,ENE=16>Dracoflamemon(14). Delta+19. Total=82.,Nome provisório.
+MON_039,Rastromon,Caçador,Comum,Base,MON_039,25,7,4,5,10,Pressão rastreadora,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,AGI=10>Miaumon(9). ATK=7. Total=51.,—
+MON_040,Trilhamon,Caçador,Incomum,Evo1,MON_039,32,11,6,6,13,Pressão rastreadora,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,Delta+17. ATK=11. AGI=13. Total=68.,Nome provisório.
+MON_041,Furtivomon,Caçador,Raro,Evo2,MON_039,41,14,7,8,16,Pressão rastreadora,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,Delta+18. AGI=16>Felinomon(15). Total=86.,Nome provisório.
+MON_042,Ecomon,Bardo,Comum,Base,MON_042,24,5,4,8,8,Buff eco-ritmo,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,ENE=AGI=8. Bardo de ressonância simétrica. Total=49.,Distinto de Dinomon e Cantimon.
+MON_043,Resonmon,Bardo,Incomum,Evo1,MON_042,30,7,5,11,11,Buff eco-ritmo,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,ENE=AGI=11. Identidade simétrica. Delta+15. Total=64.,Nome provisório.
+MON_044,Harmonmon,Bardo,Raro,Evo2,MON_042,38,9,7,14,14,Buff eco-ritmo,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,ENE=AGI=14. Finaliza simetria. Delta+18. Total=82.,Nome provisório.
+MON_045,Florimon,Animalista,Comum,Base,MON_045,28,7,5,7,6,Versátil floral,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,ATK e ENE próximos. Distinto de Bosquemon/Luvursomon. Total=53.,—
+MON_046,Petalomon,Animalista,Incomum,Evo1,MON_045,37,10,8,9,8,Versátil floral,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,Delta+19. ATK dominante. Total=72.,Nome provisório.
+MON_047,Jardinom,Animalista,Raro,Evo2,MON_045,48,13,11,12,10,Versátil floral,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,Delta+22. ATK+ENE crescem juntos. Total=94.,Nome provisório.
+MON_048,Nebulmon,Mago,Comum,Base,MON_048,24,7,3,8,6,Ofensivo tempestade,AJUSTE_DE_BALANCEAMENTO,PROPOSTA_CONSOLIDADA,HP=23→24. ENE=8>ATK=7. Total=48.,—
+MON_049,Nevoamon,Mago,Incomum,Evo1,MON_048,29,10,5,11,8,Ofensivo tempestade,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,ATK=10 mais alto Mago Incomum. ENE=11>ATK. Delta+15. Total=63.,Nome provisório.
+MON_050,Tempestamon,Mago,Raro,Evo2,MON_048,37,13,7,15,10,Ofensivo tempestade,AJUSTE_DE_BALANCEAMENTO,PROPOSTA_CONSOLIDADA,ATK=14→13. ENE=14→15. ENE>ATK restaura identidade. Total=82 mantido.,Ajuste de identidade. Delta+19.
+MON_051,Guardmon,Guerreiro,Comum,Base,MON_051,30,6,9,4,4,Tank guardião,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,DEF=9=Ferrozimon. HP=30>Ferrozimon(29). Total=53.,—
+MON_052,Escudomon,Guerreiro,Incomum,Evo1,MON_051,40,9,13,5,4,Tank guardião,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,DEF=13 mais alta Guerreiro Incomum. Delta+18. Total=71.,Nome provisório.
+MON_053,Fortemon,Guerreiro,Raro,Evo2,MON_051,53,12,17,7,5,Tank guardião,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,DEF=17 mais alta Guerreiro Raro. Delta+23. Total=94.,Nome provisório.
+MON_054,Serenmon,Curandeiro,Comum,Base,MON_054,27,3,5,11,5,Cura serena,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,ENE=11>Vivimon(10). AGI=5>Vivimon(4). Total=51.,—
+MON_055,Calmamon,Curandeiro,Incomum,Evo1,MON_054,35,5,7,14,6,Cura serena,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,ENE=14=Silvelio runtime. TOT=67 aceitável. Delta+16.,Nome provisório.
+MON_056,Pacifmon,Curandeiro,Raro,Evo2,MON_054,45,7,10,18,8,Cura serena,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,ENE=18>Auravelo runtime(17). Delta+21. Total=88.,Nome provisório.
+MON_057,Orvalhomon,Curandeiro,Comum,Base,MON_057,26,4,4,10,6,Cura móvel,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,AGI=6>Vivimon(4)>Serenmon(5). Curandeiro mais ágil. Total=50.,—
+MON_058,Brisamon,Curandeiro,Incomum,Evo1,MON_057,36,5,7,14,8,Cura móvel,AJUSTE_DE_BALANCEAMENTO,PROPOSTA_CONSOLIDADA,HP=36 DEF=7 ENE=14 AGI=8. TOT=70. Calibrado sobre Silvelio(69). Delta+20.,Ajuste de calibragem.
+MON_059,Ventumon,Curandeiro,Raro,Evo2,MON_057,44,7,9,17,10,Cura móvel,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,AGI=10 mais alta Curandeiro Raro. Delta+21. Total=87.,Nome provisório.
+MON_060,Pradomon,Animalista,Comum,Base,MON_060,29,8,5,5,7,Versátil ofensivo,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,ATK=8 mais alto Animalista Base. AGI=7. Total=54.,—
+MON_061,Campomon,Animalista,Incomum,Evo1,MON_060,38,11,8,7,9,Versátil ofensivo,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,ATK dominante. Delta+19. Total=73.,Nome provisório.
+MON_062,Savannamon,Animalista,Raro,Evo2,MON_060,49,14,11,9,11,Versátil ofensivo,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,ATK=14 AGI=11. Animalista mais ofensivo. Delta+21. Total=94.,Nome provisório.
+MON_063,Cantimon,Bardo,Comum,Base,MON_063,25,6,5,7,9,Buff melodia,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,AGI=9>ENE=7. Bardo de velocidade. Total=52.,—
+MON_064,Melodmon,Bardo,Incomum,Evo1,MON_063,32,8,6,10,12,Buff melodia,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,AGI=12 mais alta Bardo Incomum. Delta+16. Total=68.,Nome provisório.
+MON_065,Sinfomon,Bardo,Raro,Evo2,MON_063,41,11,7,13,15,Buff melodia,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,AGI=15 mais alta Bardo Raro. Delta+19. Total=87.,Nome provisório.
+MON_066,Noxmon,Ladino,Comum,Base,MON_066,22,8,3,5,12,Execução noturna,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,AGI=12 mais alta Ladino Base. HP=22 mínimo. Total=50.,—
+MON_067,Furtomon,Ladino,Incomum,Evo1,MON_066,28,11,5,7,15,Execução noturna,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,AGI=15. Delta+16. ATK=11. Total=66.,Nome provisório.
+MON_068,Velurmon,Ladino,Raro,Evo2,MON_066,36,15,7,9,18,Execução noturna,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,AGI=18 mais alta Ladino Raro. ATK=15. Delta+19. Total=85.,Nome provisório.
+MON_069,Aljavamon,Caçador,Incomum,Solo,MON_069,32,12,5,6,14,Pressão aljava,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,Solo. TOT=69 topo banda Incomum. ATK=12.,Sem evolução. Verificar balanceamento em encontro.
+MON_070,Vigimon,Caçador,Incomum,Solo,MON_070,30,10,7,8,12,Pressão vigília,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,Solo. DEF=7 ENE=8 acima média Caçador. Total=67.,Sem evolução.
+MON_071,Bronzemon,Guerreiro,Incomum,Base,MON_071,38,9,12,5,4,Tank bronze,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,2-stage começa Incomum. DEF=12. HP=38. Total=68.,—
+MON_072,Ferragmon,Guerreiro,Raro,Evo1,MON_071,50,13,16,7,6,Tank ferro,AJUSTE_DE_BALANCEAMENTO,PROPOSTA_CONSOLIDADA,HP=52→50 DEF=17→16. TOT=95→92. Delta=24 (corrigido de +27).,Delta corrigido.
+MON_073,Gritamon,Bárbaro,Incomum,Base,MON_073,42,14,7,5,6,Burst grito,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,ATK=14>Rugidomon(13). Agressivo. Total=74.,—
+MON_074,Urramon,Bárbaro,Raro,Evo1,MON_073,55,19,10,7,7,Burst urro,AJUSTE_DE_BALANCEAMENTO,PROPOSTA_CONSOLIDADA,HP=57→55. TOT=100→98. Delta=24 (corrigido). 2-stage Raro < 3-stage Raro.,Delta corrigido.
+MON_075,Musgomon,Animalista,Incomum,Base,MON_075,40,10,9,7,8,Versátil musgo,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,2-stage começa Incomum. Equilibrado. Total=74.,—
+MON_076,Selvarmon,Animalista,Raro,Evo1,MON_075,53,13,12,10,10,Versátil selva,BASE_COMPLETA_AJUSTADA,PROPOSTA_CONSOLIDADA,Equilibrado. Delta+24. Total=98.,Nome provisório.
+MON_077,Flechamon,Caçador,Incomum,Base,MON_077,32,12,5,5,14,Pressão flecha,AJUSTE_DE_BALANCEAMENTO,PROPOSTA_CONSOLIDADA,AGI=15→14. Incomum não igualava Felinomon Raro(15). Total=68.,AGI reduzida.
+MON_078,Disparamon,Caçador,Raro,Evo1,MON_077,42,16,7,7,17,Pressão disparo,AJUSTE_DE_BALANCEAMENTO,PROPOSTA_CONSOLIDADA,AGI=18→17. Raro não igualava Panterezamon Místico(18). Delta+21. Total=89.,AGI reduzida.
