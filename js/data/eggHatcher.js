@@ -83,6 +83,7 @@ function createMonsterInstance(template, level = 1) {
         class: template.class,
         rarity: template.rarity,
         emoji: template.emoji || '❓',
+        // image NÃO é persistida na instância — derivar do template via templateId na UI
         level: level,
         xp: 0,
         hp: template.baseHp || 30,

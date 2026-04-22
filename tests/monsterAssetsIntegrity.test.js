@@ -1,10 +1,10 @@
 /**
- * MONSTER ASSETS INTEGRITY TESTS (PR1)
+ * MONSTER ASSETS INTEGRITY TESTS (Leva 2)
  *
  * Testes de integridade do sistema de assets visuais de monstrinhos.
  * Cobertura:
  *  - leitura e estrutura do catálogo
- *  - presença do campo image nos 8 starters
+ *  - presença do campo image nos 23 monstrinhos (lote MON_001-020 + MON_028-030)
  *  - formato válido de paths de imagem
  *  - ausência de colisões de path
  *  - convenção assets/monsters/MON_XXX.png
@@ -14,17 +14,32 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-// ─── IDs dos starters que devem ter campo image na PR1 ───────────────────────
+// ─── IDs com campo image — Lote MON_001-020 + starters anteriores ────────────
 
 const STARTER_IDS_COM_IMAGE = [
-    'MON_001', // Ferrozimon  (Guerreiro)
-    'MON_005', // Dinomon     (Bardo)
-    'MON_009', // Miaumon     (Caçador)
-    'MON_013', // Lagartomon  (Mago)
-    'MON_017', // Luvursomon  (Animalista)
-    'MON_028', // Nutrilo     (Curandeiro)
-    'MON_029', // Tigrumo     (Bárbaro)
-    'MON_030', // Furtilhon   (Ladino)
+    'MON_001', // Ferrozimon      (Guerreiro)
+    'MON_002', // Cavalheiromon   (Guerreiro)
+    'MON_003', // Kinguespinhomon (Guerreiro)
+    'MON_004', // Arconouricomon  (Guerreiro)
+    'MON_005', // Dinomon         (Bardo)
+    'MON_006', // Guitarapitormon (Bardo)
+    'MON_007', // TRockmon        (Bardo)
+    'MON_008', // Giganotometalmon(Bardo)
+    'MON_009', // Miaumon         (Caçador)
+    'MON_010', // Gatunamon       (Caçador)
+    'MON_011', // Felinomon       (Caçador)
+    'MON_012', // Panterezamon    (Caçador)
+    'MON_013', // Lagartomon      (Mago)
+    'MON_014', // Salamandromon   (Mago)
+    'MON_015', // Dracoflamemon   (Mago)
+    'MON_016', // Wizardragomon   (Mago)
+    'MON_017', // Luvursomon      (Animalista)
+    'MON_018', // Manoplamon      (Animalista)
+    'MON_019', // BestBearmon     (Animalista)
+    'MON_020', // Ursauramon      (Animalista)
+    'MON_028', // Nutrilo         (Curandeiro)
+    'MON_029', // Tigrumo         (Bárbaro)
+    'MON_030', // Furtilhon       (Ladino)
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -69,24 +84,24 @@ describe('Catálogo — Leitura e Estrutura', () => {
     });
 });
 
-describe('Campo image — Starters da Primeira Leva', () => {
+describe('Campo image — Lote MON_001-020 + starters anteriores', () => {
     const data = loadMonstersJson();
     const monsterMap = new Map(data.monsters.map(m => [m.id, m]));
 
-    it('todos os 8 starters devem existir no catálogo', () => {
+    it('todos os 23 monstrinhos com image devem existir no catálogo', () => {
         for (const id of STARTER_IDS_COM_IMAGE) {
-            expect(monsterMap.has(id), `Starter ${id} não encontrado no catálogo`).toBe(true);
+            expect(monsterMap.has(id), `${id} não encontrado no catálogo`).toBe(true);
         }
     });
 
-    it('todos os 8 starters devem ter campo image definido', () => {
+    it('todos os 23 monstrinhos devem ter campo image definido', () => {
         for (const id of STARTER_IDS_COM_IMAGE) {
             const m = monsterMap.get(id);
             expect(m?.image, `${id} não tem campo image`).toBeDefined();
         }
     });
 
-    it('campo image dos starters deve ser string não-vazia', () => {
+    it('campo image dos 23 deve ser string não-vazia', () => {
         for (const id of STARTER_IDS_COM_IMAGE) {
             const m = monsterMap.get(id);
             expect(typeof m?.image).toBe('string');
@@ -172,14 +187,14 @@ describe('Campo image — Colisões de Path', () => {
         ).toHaveLength(0);
     });
 
-    it('deve ter exatamente 8 paths únicos (um por starter)', () => {
+    it('deve ter exatamente 23 paths únicos (lote MON_001-020 + MON_028-030)', () => {
         const paths = new Set(monstersComImage.map(m => m.image));
         expect(paths.size).toBe(STARTER_IDS_COM_IMAGE.length);
     });
 });
 
 describe('Convenção de Nomenclatura — assets/monsters/', () => {
-    it('cada starter deve ter path no formato assets/monsters/MON_XXX.png', () => {
+    it('cada monstrinho com image deve ter path no formato assets/monsters/MON_XXX.png', () => {
         const data = loadMonstersJson();
         const monsterMap = new Map(data.monsters.map(m => [m.id, m]));
         const pattern = /^assets\/monsters\/MON_[A-Z0-9]+\.png$/;
