@@ -1,11 +1,13 @@
 /**
- * MONSTER ASSETS TESTS (PR3)
+ * MONSTER ASSETS TESTS (PR3 / Leva 2)
  *
  * Testes de integridade de assets e regressão visual estrutural.
  * Cobertura:
- *   A. Integridade de assets
+ *   A. Integridade de assets — lote completo MON_001-020 + starters MON_028-030
  *   B. Regressão visual estrutural (PartyDex, EggHatch, GroupUI)
  *   C. Silhouette state
+ *   D. Validador
+ *   E. Arquitetura PR3.1
  */
 
 import { describe, it, expect } from 'vitest';
@@ -18,22 +20,29 @@ const ROOT = resolve(__dirname, '..');
 
 // ─── A. Integridade de assets ────────────────────────────────────────────────
 
-describe('MonsterAssets - Integridade dos 8 Starters', () => {
-    const STARTER_IDS = [
-        'MON_001', 'MON_005', 'MON_009', 'MON_013',
-        'MON_017', 'MON_028', 'MON_029', 'MON_030',
+describe('MonsterAssets - Integridade do Lote MON_001-020', () => {
+    // Lote completo: 5 famílias × 4 evoluções (001-004, 005-008, 009-012, 013-016, 017-020)
+    const LOTE_IDS = [
+        'MON_001', 'MON_002', 'MON_003', 'MON_004',
+        'MON_005', 'MON_006', 'MON_007', 'MON_008',
+        'MON_009', 'MON_010', 'MON_011', 'MON_012',
+        'MON_013', 'MON_014', 'MON_015', 'MON_016',
+        'MON_017', 'MON_018', 'MON_019', 'MON_020',
     ];
 
-    it('deve ter 8 arquivos PNG em assets/monsters/', () => {
-        for (const id of STARTER_IDS) {
+    // MON_028-030 são starters de lotes anteriores — image legítima, mantida
+    const LOTE_ANTERIOR_IDS = ['MON_028', 'MON_029', 'MON_030'];
+
+    it('deve ter 20 arquivos PNG em assets/monsters/ (lote MON_001-020)', () => {
+        for (const id of LOTE_IDS) {
             const filePath = resolve(ROOT, `assets/monsters/${id}.png`);
             expect(existsSync(filePath), `${id}.png deve existir`).toBe(true);
         }
     });
 
-    it('os PNGs devem ser arquivos válidos (signature PNG)', () => {
+    it('os 20 PNGs devem ser arquivos válidos (signature PNG)', () => {
         const PNG_SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
-        for (const id of STARTER_IDS) {
+        for (const id of LOTE_IDS) {
             const filePath = resolve(ROOT, `assets/monsters/${id}.png`);
             const buf = readFileSync(filePath);
             const sig = buf.slice(0, 8);
@@ -44,11 +53,11 @@ describe('MonsterAssets - Integridade dos 8 Starters', () => {
         }
     });
 
-    it('monsters.json deve ter campo image para os 8 starters', () => {
+    it('monsters.json deve ter campo image para todos os 20 do lote', () => {
         const data = JSON.parse(readFileSync(resolve(ROOT, 'data/monsters.json'), 'utf8'));
         const monstersById = Object.fromEntries(data.monsters.map(m => [m.id, m]));
 
-        for (const id of STARTER_IDS) {
+        for (const id of LOTE_IDS) {
             const m = monstersById[id];
             expect(m, `${id} deve existir no catálogo`).toBeDefined();
             expect(m.image, `${id} deve ter campo image`).toBeTruthy();
@@ -59,15 +68,27 @@ describe('MonsterAssets - Integridade dos 8 Starters', () => {
         }
     });
 
-    it('monsters.json não deve ter campo image em monstros não-starters', () => {
+    it('monsters.json deve manter campo image nos starters do lote anterior (MON_028-030)', () => {
         const data = JSON.parse(readFileSync(resolve(ROOT, 'data/monsters.json'), 'utf8'));
-        const starterSet = new Set(STARTER_IDS);
+        const monstersById = Object.fromEntries(data.monsters.map(m => [m.id, m]));
+
+        for (const id of LOTE_ANTERIOR_IDS) {
+            const m = monstersById[id];
+            expect(m, `${id} deve existir no catálogo`).toBeDefined();
+            expect(m.image, `${id} deve manter campo image do lote anterior`).toBeTruthy();
+            expect(m.image).toBe(`assets/monsters/${id}.png`);
+        }
+    });
+
+    it('guard rail: MON_021-027 NÃO devem ter campo image (bloqueados — editorial pendente)', () => {
+        const data = JSON.parse(readFileSync(resolve(ROOT, 'data/monsters.json'), 'utf8'));
+        const BLOCKED_IDS = ['MON_021', 'MON_022', 'MON_023', 'MON_024', 'MON_025', 'MON_026', 'MON_027'];
 
         for (const m of data.monsters) {
-            if (!starterSet.has(m.id)) {
+            if (BLOCKED_IDS.includes(m.id)) {
                 expect(
                     m.image,
-                    `${m.id} (não-starter) não deve ter campo image nesta leva`
+                    `${m.id} (bloqueado) não deve ter campo image — conflito editorial pendente`
                 ).toBeFalsy();
             }
         }

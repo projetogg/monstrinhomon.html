@@ -4,6 +4,22 @@ Documento de referência para o pipeline de arte dos Monstrinhos em Monstrinhomo
 
 ---
 
+## Status da Segunda Leva (Leva 2 — MON_001-020)
+
+5 famílias completas (4 evoluções cada) importadas como assets placeholder prontos para substituição por arte final:
+
+| Família   | IDs                        | Classe     | Arquivos                              |
+|-----------|----------------------------|------------|---------------------------------------|
+| Guerreiro | MON_001, 002, 003, 004     | Guerreiro  | `assets/monsters/MON_00{1-4}.png`     |
+| Bardo     | MON_005, 006, 007, 008     | Bardo      | `assets/monsters/MON_00{5-8}.png`     |
+| Caçador   | MON_009, 010, 011, 012     | Caçador    | `assets/monsters/MON_0{09-12}.png`    |
+| Mago      | MON_013, 014, 015, 016     | Mago       | `assets/monsters/MON_0{13-16}.png`    |
+| Animalista| MON_017, 018, 019, 020     | Animalista | `assets/monsters/MON_0{17-20}.png`    |
+
+**Bloqueados (conflito editorial pendente):** MON_021–027 — sem `image` declarado.
+
+---
+
 ## Status da Primeira Leva (PR3)
 
 Os 8 Starters Base foram materializados. Os seguintes assets PNG estão ativos no repositório:
@@ -130,3 +146,4 @@ Levas futuras devem seguir o mesmo processo:
 | PR2    | Validador criado em modo permissivo (warning-only)          |
 | PR3    | 8 starters materializados; validador endurecido (erro real) |
 | PR3.1  | Limpeza arquitetural: `image` removida de instâncias; UI deriva via templateId |
+| Leva 2 | 20 sprites (MON_001–020) importados como placeholders; 5 famílias × 4 evoluções; path `assets/monsters/`; MON_021–027 bloqueados |

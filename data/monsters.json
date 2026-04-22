@@ -28,7 +28,8 @@
       "baseEne": 5,
       "emoji": "🗡️",
       "evolvesTo": "MON_003",
-      "evolvesAt": 25
+      "evolvesAt": 25,
+      "image": "assets/monsters/MON_002.png"
     },
     {
       "id": "MON_003",
@@ -42,7 +43,8 @@
       "baseEne": 6,
       "emoji": "🛡️",
       "evolvesTo": "MON_004",
-      "evolvesAt": 45
+      "evolvesAt": 45,
+      "image": "assets/monsters/MON_003.png"
     },
     {
       "id": "MON_004",
@@ -54,7 +56,8 @@
       "baseDef": 17,
       "baseSpd": 8,
       "baseEne": 9,
-      "emoji": "👑"
+      "emoji": "👑",
+      "image": "assets/monsters/MON_004.png"
     },
     {
       "id": "MON_005",
@@ -83,7 +86,8 @@
       "baseEne": 8,
       "emoji": "🎸",
       "evolvesTo": "MON_007",
-      "evolvesAt": 25
+      "evolvesAt": 25,
+      "image": "assets/monsters/MON_006.png"
     },
     {
       "id": "MON_007",
@@ -97,7 +101,8 @@
       "baseEne": 10,
       "emoji": "🎹",
       "evolvesTo": "MON_008",
-      "evolvesAt": 45
+      "evolvesAt": 45,
+      "image": "assets/monsters/MON_007.png"
     },
     {
       "id": "MON_008",
@@ -109,7 +114,8 @@
       "baseDef": 12,
       "baseSpd": 11,
       "baseEne": 12,
-      "emoji": "🎻"
+      "emoji": "🎻",
+      "image": "assets/monsters/MON_008.png"
     },
     {
       "id": "MON_009",
@@ -138,7 +144,8 @@
       "baseEne": 6,
       "emoji": "🐈",
       "evolvesTo": "MON_011",
-      "evolvesAt": 25
+      "evolvesAt": 25,
+      "image": "assets/monsters/MON_010.png"
     },
     {
       "id": "MON_011",
@@ -152,7 +159,8 @@
       "baseEne": 6,
       "emoji": "🐆",
       "evolvesTo": "MON_012",
-      "evolvesAt": 45
+      "evolvesAt": 45,
+      "image": "assets/monsters/MON_011.png"
     },
     {
       "id": "MON_012",
@@ -164,7 +172,8 @@
       "baseDef": 9,
       "baseSpd": 18,
       "baseEne": 8,
-      "emoji": "🐅"
+      "emoji": "🐅",
+      "image": "assets/monsters/MON_012.png"
     },
     {
       "id": "MON_013",
@@ -193,7 +202,8 @@
       "baseEne": 11,
       "emoji": "🔥",
       "evolvesTo": "MON_015",
-      "evolvesAt": 25
+      "evolvesAt": 25,
+      "image": "assets/monsters/MON_014.png"
     },
     {
       "id": "MON_015",
@@ -207,7 +217,8 @@
       "baseEne": 14,
       "emoji": "🐉",
       "evolvesTo": "MON_016",
-      "evolvesAt": 45
+      "evolvesAt": 45,
+      "image": "assets/monsters/MON_015.png"
     },
     {
       "id": "MON_016",
@@ -219,7 +230,8 @@
       "baseDef": 10,
       "baseSpd": 10,
       "baseEne": 18,
-      "emoji": "✨"
+      "emoji": "✨",
+      "image": "assets/monsters/MON_016.png"
     },
     {
       "id": "MON_017",
@@ -248,7 +260,8 @@
       "baseEne": 6,
       "emoji": "🐾",
       "evolvesTo": "MON_019",
-      "evolvesAt": 25
+      "evolvesAt": 25,
+      "image": "assets/monsters/MON_018.png"
     },
     {
       "id": "MON_019",
@@ -262,7 +275,8 @@
       "baseEne": 7,
       "emoji": "🦁",
       "evolvesTo": "MON_020",
-      "evolvesAt": 45
+      "evolvesAt": 45,
+      "image": "assets/monsters/MON_019.png"
     },
     {
       "id": "MON_020",
@@ -274,7 +288,8 @@
       "baseDef": 14,
       "baseSpd": 8,
       "baseEne": 8,
-      "emoji": "🔱"
+      "emoji": "🔱",
+      "image": "assets/monsters/MON_020.png"
     },
     {
       "id": "MON_021",
