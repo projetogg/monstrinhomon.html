@@ -22,7 +22,8 @@ describe('PlayerPanelUI - renderMonsterCard', () => {
             isShiny: true
         });
 
-        expect(html).toContain('🔮');
+        // O helper usa ❓ como fallback quando o monstrinho não tem emoji
+        expect(html).toContain('monster-visual');
         expect(html).toContain('⭐ SHINY ⭐');
         expect(html).toContain('0/20 HP');
         expect(html).toContain('style="width: 0%"');

@@ -3,6 +3,8 @@
  * Extração de renderização do painel de jogadores (Fase Q).
  */
 
+import { getMonsterVisualHTML } from './monsterVisual.js';
+
 function clampPercent(value) {
     if (!Number.isFinite(value)) return 0;
     return Math.max(0, Math.min(100, value));
@@ -50,7 +52,7 @@ export function renderMonsterCard(monster, options = {}) {
 
         return `
             <div class="monster-card ${safeText(monster.class, 'common')}">
-                <div class="font-size-36">${safeText(monster.emoji, '🔮')}</div>
+                <div class="monster-card-portrait">${getMonsterVisualHTML(monster, { variant: 'box', size: 'md' })}</div>
                 <strong>${safeText(monster.name, 'Unknown')}</strong>
                 ${monster.isShiny ? '<div class="badge badge-shiny">⭐ SHINY ⭐</div>' : ''}
                 <div class="badge badge-${safeText(monster.rarity, 'common')}">${safeText(monster.rarity, 'common')}</div>
@@ -146,6 +148,7 @@ export function renderTeamReorderList(player, deps = {}) {
                 <div class="team-member-card ${isActive ? 'team-member-card-active' : 'team-member-card-inactive'}${ineligibleClass}">
                     <span class="team-member-index">${index + 1}.</span>
                     <div class="team-member-info">
+                        ${getMonsterVisualHTML(monster, { variant: 'inline', size: 'sm' })}
                         <strong>${safeText(monster.name, 'Unknown')}</strong>
                         <span class="badge badge-${safeText(monster.rarity, 'common')}">${safeText(monster.rarity, 'Comum')}</span>
                         Lv${monster.level || 1}

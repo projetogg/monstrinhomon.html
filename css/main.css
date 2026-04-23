@@ -2008,10 +2008,6 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     border: 2px solid var(--primary);
 }
 
-.dex-art {
-    margin-bottom: 10px;
-}
-
 .dex-emoji {
     font-size: 60px;
 }
@@ -5376,7 +5372,7 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
     border-color: rgba(255,215,64,0.7);}
 
 /* =========================
-   MONSTER VISUAL — Camada de render visual de monstrinhos
+   MONSTER VISUAL — Design System de render visual de monstrinhos
    Usado por js/ui/monsterVisual.js
    ========================= */
 
@@ -5399,15 +5395,15 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
 }
 
 .monster-visual--md {
-    width: 64px;
-    height: 64px;
-    font-size: 48px;
+    width: 80px;
+    height: 80px;
+    font-size: 60px;
 }
 
 .monster-visual--lg {
-    width: 96px;
-    height: 96px;
-    font-size: 72px;
+    width: 120px;
+    height: 120px;
+    font-size: 90px;
 }
 
 /* Fallback de emoji */
@@ -5419,4 +5415,84 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
 .monster-silhouette {
     filter: brightness(0) saturate(100%);
     opacity: 0.7;
+}
+
+/* ── Variantes contextuais ── */
+
+/* Dex: card de coleção — destaque visual com moldura e fundo suave */
+.monster-visual--variant-dex {
+    width: 120px;
+    height: 120px;
+    font-size: 90px;
+    background: linear-gradient(135deg, #f0f4ff 0%, #e8eeff 100%);
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.12);
+    border: 1.5px solid rgba(108, 92, 231, 0.15);
+}
+
+/* Box/Equipe: miniatura de card de time — fundo neutro, borda fina */
+.monster-visual--variant-box {
+    width: 64px;
+    height: 64px;
+    font-size: 48px;
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 8px;
+    padding: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Battle: retrato de combate — integrado ao dark theme da arena */
+.monster-visual--variant-battle {
+    width: 80px;
+    height: 80px;
+    font-size: 60px;
+    border-radius: 8px;
+    padding: 4px;
+}
+
+/* Inline: miniatura junto a texto — sem fundo, alinhada verticalmente */
+.monster-visual--variant-inline {
+    width: 28px;
+    height: 28px;
+    font-size: 22px;
+    vertical-align: middle;
+}
+
+/* Responsividade: telas menores (mobile/iPad) */
+@media (max-width: 768px) {
+    .monster-visual--lg {
+        width: 96px;
+        height: 96px;
+        font-size: 72px;
+    }
+
+    .monster-visual--md {
+        width: 64px;
+        height: 64px;
+        font-size: 48px;
+    }
+
+    .monster-visual--variant-dex {
+        width: 96px;
+        height: 96px;
+        font-size: 72px;
+    }
+}
+
+/* ── Zona de arte da Dex — container de altura fixa para uniformidade ── */
+.dex-art {
+    height: 130px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+/* ── Zona de retrato em combate ── */
+.group-unit-portrait {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 6px 0 4px;
 }
