@@ -265,17 +265,29 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 }
 .battle-dice-label { font-size: 14px; font-weight: bold; opacity: 0.85; }
 .battle-dice-input {
-    width: 76px; height: 48px; text-align: center;
-    font-size: 22px; font-weight: bold; padding: 4px 2px;
+    width: 84px; height: 56px; text-align: center;
+    font-size: 28px; font-weight: bold; padding: 4px 2px;
     border-radius: 10px; border: 2px solid rgba(255,255,255,0.25);
     background: rgba(255,255,255,0.08); color: white;
     min-height: 44px; min-width: 44px;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
+.battle-dice-input:focus {
+    outline: none;
+    border-color: rgba(108,92,231,0.9);
+    box-shadow: 0 0 18px rgba(108,92,231,0.50);
+}
 .battle-dice-input::placeholder { color: rgba(255,255,255,0.35); }
 .battle-dice-input--active:not(:placeholder-shown) {
     border-color: rgba(108,92,231,0.8);
-    box-shadow: 0 0 10px rgba(108,92,231,0.35);
+    box-shadow: 0 0 14px rgba(108,92,231,0.45);
+}
+.battle-dice-hint {
+    font-size: 10px;
+    opacity: 0.5;
+    text-align: center;
+    margin-top: 2px;
+    white-space: nowrap;
 }
 .battle-advantage-inline {
     font-size: 12px; padding: 4px 8px; border-radius: 6px;
@@ -313,7 +325,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     background: rgba(0,0,0,0.35);
     border-radius: 10px; padding: 6px 12px;
     /* ~6 linhas de 13px + padding por linha */
-    max-height: 96px; overflow-y: auto;
+    max-height: 128px; overflow-y: auto;
     font-family: inherit; font-size: 13px; color: #ccc;
     line-height: 1.5;
     scrollbar-width: thin;
@@ -322,10 +334,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .battle-log-compact::-webkit-scrollbar { width: 4px; }
 .battle-log-compact::-webkit-scrollbar-track { background: transparent; }
 .battle-log-compact::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
-.battle-log-compact > div {
-    padding: 2px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-}
+
 /* Variante para tela de resultado: altura maior para mostrar log completo */
 .battle-log-compact.battle-log-result {
     max-height: 180px;
@@ -465,7 +474,8 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     .battle-actions-row { flex-direction: column; align-items: stretch; }
     .battle-main-actions { justify-content: center; }
     .battle-main-actions .btn { font-size: 14px; padding: 9px 14px; }
-    .battle-dice-input { width: 60px; height: 40px; font-size: 18px; }
+    .battle-dice-input { width: 72px; height: 50px; font-size: 22px; }
+    .battle-dice-section { align-items: center; }
     .group-actions-label { font-size: 12px; }
 }
 
@@ -5638,7 +5648,7 @@ img.monster-visual--variant-battle {
 .battle-field {
     position: relative;
     width: 100%;
-    height: 380px;
+    height: 440px;
     border-radius: 16px;
     overflow: hidden;
     margin-bottom: 8px;
@@ -5875,7 +5885,7 @@ img.monster-visual--variant-battle {
 
 @media (max-width: 768px) {
     .battle-field {
-        height: 300px;
+        height: 340px;
     }
     .bic {
         min-width: 160px;
@@ -5898,7 +5908,7 @@ img.monster-visual--variant-battle {
 
 @media (max-width: 480px) {
     .battle-field {
-        height: 260px;
+        height: 280px;
     }
     .bic {
         min-width: 130px;
@@ -5915,4 +5925,168 @@ img.monster-visual--variant-battle {
         height: 90px !important;
         font-size: 68px !important;
     }
+}
+
+/* ── Indicador de vantagem de classe na arena ─────────────────────────────── */
+.battle-advantage-arena {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 20;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+.battle-advantage-arena-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 0.3px;
+    backdrop-filter: blur(4px);
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.45);
+}
+.battle-advantage-arena-badge.advantage {
+    background: rgba(0,184,148,0.85);
+    color: #fff;
+    border: 1px solid rgba(0,184,148,0.5);
+}
+.battle-advantage-arena-badge.disadvantage {
+    background: rgba(214,48,49,0.85);
+    color: #fff;
+    border: 1px solid rgba(214,48,49,0.5);
+}
+
+/* ── Badge de agressividade (overlay na arena) ────────────────────────────── */
+.battle-aggr-overlay {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.battle-aggr-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    backdrop-filter: blur(4px);
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+.battle-aggr-badge--veryhigh {
+    background: rgba(214,48,49,0.85);
+    color: #fff;
+}
+.battle-aggr-badge--high {
+    background: rgba(230,126,34,0.85);
+    color: #fff;
+}
+.battle-aggr-badge--medium {
+    background: rgba(253,203,110,0.90);
+    color: #333;
+}
+.battle-aggr-badge--low {
+    background: rgba(0,184,148,0.85);
+    color: #fff;
+}
+.battle-aggr-badge--calm {
+    background: rgba(0,184,148,0.95);
+    color: #fff;
+    font-size: 12px;
+}
+
+/* ── Barra visual de threshold de captura ─────────────────────────────────── */
+.cap-bar-wrap {
+    margin: 5px 0 3px;
+}
+.cap-bar-label-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    opacity: 0.75;
+    margin-bottom: 3px;
+}
+.cap-bar-track {
+    position: relative;
+    height: 10px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 5px;
+    overflow: visible;
+}
+.cap-bar-hp {
+    height: 100%;
+    border-radius: 5px;
+    background: linear-gradient(90deg, #d63031, #ff7675);
+    transition: width 0.4s ease;
+}
+.cap-bar-hp.capturable {
+    background: linear-gradient(90deg, #00b894, #00cec9);
+}
+.cap-bar-threshold-line {
+    position: absolute;
+    top: -3px;
+    bottom: -3px;
+    width: 2px;
+    background: rgba(255,255,255,0.85);
+    border-radius: 2px;
+    box-shadow: 0 0 4px rgba(255,255,255,0.6);
+}
+.cap-bar-threshold-label {
+    position: absolute;
+    top: -16px;
+    font-size: 9px;
+    font-weight: bold;
+    color: rgba(255,255,255,0.85);
+    white-space: nowrap;
+    transform: translateX(-50%);
+}
+
+/* ── Botão de acalmar (Conter/Agressividade) — azul ──────────────────────── */
+.btn-calm {
+    background: linear-gradient(135deg, #0984e3, #6c5ce7);
+    color: #fff;
+    border: none;
+}
+.btn-calm:hover {
+    background: linear-gradient(135deg, #0773c7, #5a4bd0);
+}
+
+/* ── Coloração semântica das linhas do log de combate ────────────────────── */
+.battle-log-compact > div { padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.battle-log-compact > div:last-child { font-weight: bold; color: #fff; }
+.battle-log-compact > div.blog-dmg    { color: #ff7675; }
+.battle-log-compact > div.blog-crit   { color: #fdcb6e; font-weight: bold; }
+.battle-log-compact > div.blog-heal   { color: #55efc4; }
+.battle-log-compact > div.blog-miss   { color: #b2bec3; font-style: italic; }
+.battle-log-compact > div.blog-capture { color: #a29bfe; font-weight: bold; }
+.battle-log-compact > div.blog-flee   { color: #ffeaa7; }
+
+/* ── Separador visual dentro do painel secundário ─────────────────────────── */
+.battle-sec-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.10);
+    margin: 7px 0;
+}
+.battle-sec-sub {
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    opacity: 0.45;
+    margin-bottom: 5px;
 }
