@@ -7153,6 +7153,9 @@
                 const hasAnyOrb = comum > 0 || incomum > 0 || rara > 0;
                 const captureAction = player ? CAPTURE_ACTIONS[player.class] : null;
 
+                // Converte nome de classe para CSS slug sem acentos (ex: 'Caçador' → 'cacador')
+                const classToCssSlug = cls => (cls || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
                 // Vantagem de classe (inline)
                 const advantageHtml = playerMonster && monster ? (() => {
                     const adv = getClassAdvantage(playerMonster.class, monster.class);
@@ -7216,7 +7219,7 @@
                                 ${playerMonster ? `
                                 <div class="battle-combatant-portrait battle-combatant-portrait--player">${getMonsterVisualHTML(playerMonster, { variant: 'battle', size: 'xl' })}</div>
                                 <div class="battle-combatant-name">${playerMonster.name} <small>Nv ${playerMonster.level}</small></div>
-                                <div class="battle-class-badge battle-class-badge--${(playerMonster.class || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}">${playerMonster.class || ''}</div>
+                                <div class="battle-class-badge battle-class-badge--${classToCssSlug(playerMonster.class)}">${playerMonster.class || ''}</div>
                                 <div class="battle-combatant-divider"></div>
                                 <div class="battle-bar-row">
                                     <div class="battle-bar-label"><span>❤️ HP</span><span>${playerMonster.hp}/${playerMonster.hpMax}</span></div>
@@ -7239,7 +7242,7 @@
                                 <div class="battle-combatant-role">⚔️ INIMIGO</div>
                                 <div class="battle-combatant-portrait battle-combatant-portrait--enemy">${getMonsterVisualHTML(monster, { variant: 'battle', size: 'xl' })}</div>
                                 <div class="battle-combatant-name">${monster.name} <small>Nv ${monster.level}</small>${monster.isShiny ? ' <span class="badge badge-shiny">⭐ Shiny</span>' : ''}</div>
-                                <div class="battle-class-badge battle-class-badge--${(monster.class || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}"><span class="badge badge-${monster.rarity}">${monster.rarity}</span> ${monster.class}</div>
+                                <div class="battle-class-badge battle-class-badge--${classToCssSlug(monster.class)}"><span class="badge badge-${monster.rarity}">${monster.rarity}</span> ${monster.class}</div>
                                 <div class="battle-combatant-divider"></div>
                                 <div class="battle-stat-row">
                                     <span>⚔️ ATK ${monster.atk}</span><span>🛡️ DEF ${monster.def}</span><span>💥 PWR ${monster.poder}</span>
