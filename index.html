@@ -7070,14 +7070,29 @@
         }
         window.closeBattleResult = closeBattleResult;
 
+        /**
+         * Retorna uma cópia superficial do monstrinho enriquecida com `image`
+         * do template canônico, sem mutar o objeto original.
+         * Necessário porque `image` não é persistida na instância por design.
+         */
+        function enrichMonsterVisual(mon) {
+            if (!mon) return mon;
+            if (mon.image) return mon; // já tem imagem (ex: wildMonster vindo do template)
+            const templateId = mon.templateId ?? mon.monsterId;
+            if (!templateId) return mon;
+            const tmpl = getMonsterTemplate(templateId);
+            if (!tmpl || !tmpl.image) return mon;
+            return { ...mon, image: tmpl.image };
+        }
+
         function renderWildEncounter(panel, encounter) {
             try {
-                const monster = encounter.wildMonster;
+                const monster = enrichMonsterVisual(encounter.wildMonster);
                 if (!monster) return;
                 
                 const playerId = encounter.selectedPlayerId;
                 const player = GameState.players.find(p => p.id === playerId);
-                const playerMonster = player ? _getActiveMonsterOfPlayer(player) : null;
+                const playerMonster = enrichMonsterVisual(player ? _getActiveMonsterOfPlayer(player) : null);
 
                 // BUG FIX: Quando o encounter está inativo, exibir painel de resultado
                 // para que o jogador possa ver o XP ganho antes de fechar.
@@ -7138,6 +7153,9 @@
                 const hasAnyOrb = comum > 0 || incomum > 0 || rara > 0;
                 const captureAction = player ? CAPTURE_ACTIONS[player.class] : null;
 
+                // Converte nome de classe para CSS slug sem acentos (ex: 'Caçador' → 'cacador')
+                const classToCssSlug = cls => (cls || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
                 // Vantagem de classe (inline)
                 const advantageHtml = playerMonster && monster ? (() => {
                     const adv = getClassAdvantage(playerMonster.class, monster.class);
@@ -7197,10 +7215,12 @@
                         <div class="battle-combatants">
                             <!-- Lado do jogador -->
                             <div class="battle-combatant-box battle-player-side" id="wildPlayerBox">
-                                <div class="battle-combatant-role">👤 Seu Monstrinho</div>
+                                <div class="battle-combatant-role">👤 SEU MONSTRINHO</div>
                                 ${playerMonster ? `
-                                <div class="battle-combatant-portrait">${getMonsterVisualHTML(playerMonster, { variant: 'battle', size: 'xl' })}</div>
+                                <div class="battle-combatant-portrait battle-combatant-portrait--player">${getMonsterVisualHTML(playerMonster, { variant: 'battle', size: 'xl' })}</div>
                                 <div class="battle-combatant-name">${playerMonster.name} <small>Nv ${playerMonster.level}</small></div>
+                                <div class="battle-class-badge battle-class-badge--${classToCssSlug(playerMonster.class)}">${playerMonster.class || ''}</div>
+                                <div class="battle-combatant-divider"></div>
                                 <div class="battle-bar-row">
                                     <div class="battle-bar-label"><span>❤️ HP</span><span>${playerMonster.hp}/${playerMonster.hpMax}</span></div>
                                     <div class="battle-bar"><div class="battle-bar-fill hp" style="width:${pmHpPct}%"></div></div>
@@ -7219,16 +7239,13 @@
 
                             <!-- Lado do inimigo -->
                             <div class="battle-combatant-box battle-enemy-side" id="wildEnemyBox">
-                                <div class="battle-combatant-role">⚔️ Inimigo</div>
-                                <div class="battle-combatant-portrait">${getMonsterVisualHTML(monster, { variant: 'battle', size: 'xl' })}</div>
-                                <div class="battle-combatant-name">${monster.name} <small>Nv ${monster.level}</small></div>
+                                <div class="battle-combatant-role">⚔️ INIMIGO</div>
+                                <div class="battle-combatant-portrait battle-combatant-portrait--enemy">${getMonsterVisualHTML(monster, { variant: 'battle', size: 'xl' })}</div>
+                                <div class="battle-combatant-name">${monster.name} <small>Nv ${monster.level}</small>${monster.isShiny ? ' <span class="badge badge-shiny">⭐ Shiny</span>' : ''}</div>
+                                <div class="battle-class-badge battle-class-badge--${classToCssSlug(monster.class)}"><span class="badge badge-${monster.rarity}">${monster.rarity}</span> ${monster.class}</div>
+                                <div class="battle-combatant-divider"></div>
                                 <div class="battle-stat-row">
-                                    <span class="badge badge-${monster.rarity}">${monster.rarity}</span>
-                                    <span>${monster.class}</span>
-                                    ${monster.isShiny ? '<span class="badge badge-shiny">⭐ Shiny</span>' : ''}
-                                </div>
-                                <div class="battle-stat-row">
-                                    <span>ATK ${monster.atk}</span><span>DEF ${monster.def}</span><span>PWR ${monster.poder}</span>
+                                    <span>⚔️ ATK ${monster.atk}</span><span>🛡️ DEF ${monster.def}</span><span>💥 PWR ${monster.poder}</span>
                                 </div>
                                 <div class="battle-bar-row" id="wildEnemyHpRow">
                                     <div class="battle-bar-label"><span>❤️ HP</span><span>${monster.hp}/${monster.hpMax} (${Math.floor(hpPercent*100)}%)</span></div>
