@@ -107,7 +107,7 @@ export function buildHatchResultHTML(monster) {
     
     const emoji = rarityEmoji[monster.rarity] || '⚪';
     const color = rarityColor[monster.rarity] || '#808080';
-    const visualHTML = getMonsterVisualHTML(monster, { size: 'md' });
+    const visualHTML = getMonsterVisualHTML(monster, { size: 'lg' });
     
     return `
         <div style="text-align: center; padding: 20px;">

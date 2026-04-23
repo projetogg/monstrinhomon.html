@@ -251,3 +251,90 @@ describe('getMonsterVisualHTML - sem mutação', () => {
         expect(opts).toEqual(originalOpts);
     });
 });
+
+// ─── getMonsterVisualHTML - variantes contextuais ─────────────────────────────
+
+describe('getMonsterVisualHTML - variant dex', () => {
+    it('deve incluir classe monster-visual--variant-dex', () => {
+        const html = getMonsterVisualHTML(monsterSemImagem, { variant: 'dex' });
+        expect(html).toContain('monster-visual--variant-dex');
+    });
+
+    it('deve incluir classe monster-visual--variant-dex em render de imagem', () => {
+        const html = getMonsterVisualHTML(monsterComImagem, { variant: 'dex' });
+        expect(html).toContain('monster-visual--variant-dex');
+        expect(html).toContain('<img');
+    });
+
+    it('deve acumular variant com size', () => {
+        const html = getMonsterVisualHTML(monsterSemImagem, { variant: 'dex', size: 'lg' });
+        expect(html).toContain('monster-visual--variant-dex');
+        expect(html).toContain('monster-visual--lg');
+    });
+});
+
+describe('getMonsterVisualHTML - variant box', () => {
+    it('deve incluir classe monster-visual--variant-box', () => {
+        const html = getMonsterVisualHTML(monsterSemImagem, { variant: 'box' });
+        expect(html).toContain('monster-visual--variant-box');
+    });
+
+    it('deve incluir classe monster-visual--variant-box em render de imagem', () => {
+        const html = getMonsterVisualHTML(monsterComImagem, { variant: 'box', size: 'md' });
+        expect(html).toContain('monster-visual--variant-box');
+    });
+});
+
+describe('getMonsterVisualHTML - variant battle', () => {
+    it('deve incluir classe monster-visual--variant-battle', () => {
+        const html = getMonsterVisualHTML(monsterSemImagem, { variant: 'battle' });
+        expect(html).toContain('monster-visual--variant-battle');
+    });
+});
+
+describe('getMonsterVisualHTML - variant inline', () => {
+    it('deve incluir classe monster-visual--variant-inline', () => {
+        const html = getMonsterVisualHTML(monsterSemImagem, { variant: 'inline' });
+        expect(html).toContain('monster-visual--variant-inline');
+    });
+
+    it('deve incluir classe monster-visual--variant-inline junto ao size sm', () => {
+        const html = getMonsterVisualHTML(monsterSemImagem, { variant: 'inline', size: 'sm' });
+        expect(html).toContain('monster-visual--variant-inline');
+        expect(html).toContain('monster-visual--sm');
+    });
+});
+
+describe('getMonsterVisualHTML - variant silhouette (açúcar sintático)', () => {
+    it('deve ativar monster-silhouette automaticamente via variant silhouette', () => {
+        const html = getMonsterVisualHTML(monsterSemImagem, { variant: 'silhouette' });
+        expect(html).toContain('monster-silhouette');
+        expect(html).toContain('monster-visual--variant-silhouette');
+    });
+
+    it('variant silhouette funciona também com imagem', () => {
+        const html = getMonsterVisualHTML(monsterComImagem, { variant: 'silhouette' });
+        expect(html).toContain('monster-silhouette');
+        expect(html).toContain('<img');
+    });
+
+    it('variant silhouette + silhouette: true explícito não duplica a classe', () => {
+        const html = getMonsterVisualHTML(monsterSemImagem, { variant: 'silhouette', silhouette: true });
+        // monster-silhouette deve aparecer exatamente uma vez
+        const count = (html.match(/monster-silhouette/g) || []).length;
+        expect(count).toBe(1);
+    });
+});
+
+describe('getMonsterVisualHTML - variant inválido ignorado', () => {
+    it('variant inválido não deve adicionar classe', () => {
+        const html = getMonsterVisualHTML(monsterSemImagem, { variant: 'invalido' });
+        expect(html).not.toContain('monster-visual--variant-invalido');
+        expect(html).toContain('monster-visual');
+    });
+
+    it('variant undefined não deve adicionar classe', () => {
+        const html = getMonsterVisualHTML(monsterSemImagem, {});
+        expect(html).not.toContain('monster-visual--variant-');
+    });
+});

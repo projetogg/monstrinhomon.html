@@ -277,7 +277,7 @@ export function renderMonsterCard(template, status, deps) {
         return `
             <div class="dex-card dex-seen" data-status="seen" data-id="${safeId}">
                 <div class="dex-art">
-                    ${getMonsterVisualHTML(maskedTemplate, { size: 'sm', silhouette: true })}
+                    ${getMonsterVisualHTML(maskedTemplate, { variant: 'dex', size: 'lg', silhouette: true })}
                 </div>
                 <div class="dex-name">???</div>
             </div>
@@ -313,7 +313,7 @@ export function renderMonsterCard(template, status, deps) {
     return `
         <div class="dex-card dex-captured" data-status="captured" data-id="${safeId}">
             <div class="dex-art">
-                ${getMonsterVisualHTML(template, { size: 'sm' })}
+                ${getMonsterVisualHTML(template, { variant: 'dex', size: 'lg' })}
             </div>
             <div class="dex-info">
                 <div class="dex-name">${template.name || 'Desconhecido'}</div>

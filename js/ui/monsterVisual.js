@@ -13,7 +13,14 @@
  *
  * Uso:
  *   import { getMonsterVisualHTML } from './monsterVisual.js';
- *   elemento.innerHTML = getMonsterVisualHTML(monster, { size: 'md' });
+ *   elemento.innerHTML = getMonsterVisualHTML(monster, { size: 'md', variant: 'dex' });
+ *
+ * Variantes suportadas (variant):
+ *  - 'dex'       → card da Monstrodex (120px, fundo suave, moldura)
+ *  - 'box'       → card de equipe/caixa (64px, fundo neutro, borda fina)
+ *  - 'battle'    → card de combate (80px, integrado ao dark theme)
+ *  - 'inline'    → miniatura inline junto a texto (28px)
+ *  - 'silhouette'→ ativa silhouette automaticamente (açúcar sintático)
  */
 
 /**
@@ -27,6 +34,12 @@ const VALID_SIZES = ['sm', 'md', 'lg'];
  * @type {string}
  */
 const DEFAULT_SIZE = 'md';
+
+/**
+ * Variantes contextuais suportadas.
+ * @type {string[]}
+ */
+const VALID_VARIANTS = ['dex', 'box', 'battle', 'inline', 'silhouette'];
 
 /**
  * Retorna os dados visuais de um monstrinho: qual tipo de render usar e os valores.
@@ -59,12 +72,15 @@ export function getMonsterVisualData(monster) {
  * @param {Object} [options={}] - Opções de renderização
  * @param {'sm'|'md'|'lg'} [options.size='md'] - Tamanho do visual
  * @param {boolean} [options.silhouette=false] - Aplicar efeito de silhueta
+ * @param {'dex'|'box'|'battle'|'inline'|'silhouette'} [options.variant] - Variante contextual
  * @param {string} [options.extraClass=''] - Classes CSS adicionais
  * @returns {string} HTML pronto para inserção via innerHTML
  */
 export function getMonsterVisualHTML(monster, options = {}) {
     const size = VALID_SIZES.includes(options.size) ? options.size : DEFAULT_SIZE;
-    const silhouette = options.silhouette === true;
+    const variant = VALID_VARIANTS.includes(options.variant) ? options.variant : null;
+    // variant 'silhouette' ativa silhouette automaticamente (açúcar sintático)
+    const silhouette = options.silhouette === true || variant === 'silhouette';
     const extraClass = (options.extraClass && typeof options.extraClass === 'string')
         ? ' ' + options.extraClass.trim()
         : '';
@@ -72,8 +88,9 @@ export function getMonsterVisualHTML(monster, options = {}) {
     const visual = getMonsterVisualData(monster);
 
     const sizeClass = `monster-visual--${size}`;
+    const variantClass = variant ? ` monster-visual--variant-${variant}` : '';
     const silhouetteClass = silhouette ? ' monster-silhouette' : '';
-    const baseClasses = `monster-visual ${sizeClass}${silhouetteClass}${extraClass}`;
+    const baseClasses = `monster-visual ${sizeClass}${variantClass}${silhouetteClass}${extraClass}`;
 
     if (visual.type === 'image') {
         return `<img class="${baseClasses}" src="${_escapeAttr(visual.src)}" alt="${_escapeAttr(visual.name)}">`;

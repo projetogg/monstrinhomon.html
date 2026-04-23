@@ -18,6 +18,7 @@ import { describe, it, expect } from 'vitest';
 import { renderMonsterCard } from '../js/ui/partyDexUI.js';
 import { buildHatchResultHTML } from '../js/ui/eggHatchModal.js';
 import { buildSwapCard } from '../js/combat/groupUI.js';
+import { renderMonsterCard as renderPlayerMonsterCard } from '../js/ui/playerPanelUI.js';
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -393,5 +394,113 @@ describe('Regressão - ausência de image não quebra nenhum UI', () => {
         });
         expect(html).toContain('TesteMon');
         expect(html).toContain('monster-visual');
+    });
+});
+
+// ─── Rollout: Dex — tamanho e variante ───────────────────────────────────────
+
+describe('Rollout - Dex usa monster-visual--lg e variant dex', () => {
+    it('captured com image deve usar monster-visual--lg', () => {
+        const html = renderMonsterCard(templateComImagem, 'captured');
+        expect(html).toContain('monster-visual--lg');
+    });
+
+    it('captured com image deve usar monster-visual--variant-dex', () => {
+        const html = renderMonsterCard(templateComImagem, 'captured');
+        expect(html).toContain('monster-visual--variant-dex');
+    });
+
+    it('seen com image deve usar monster-visual--lg', () => {
+        const html = renderMonsterCard(templateComImagem, 'seen');
+        expect(html).toContain('monster-visual--lg');
+    });
+
+    it('seen com image deve usar monster-visual--variant-dex', () => {
+        const html = renderMonsterCard(templateComImagem, 'seen');
+        expect(html).toContain('monster-visual--variant-dex');
+    });
+
+    it('seen continua ativando monster-silhouette', () => {
+        const html = renderMonsterCard(templateComImagem, 'seen');
+        expect(html).toContain('monster-silhouette');
+    });
+
+    it('captured sem image deve usar monster-visual--lg (emoji)', () => {
+        const html = renderMonsterCard(templateSemImagem, 'captured');
+        expect(html).toContain('monster-visual--lg');
+        expect(html).toContain('monster-visual--variant-dex');
+    });
+});
+
+// ─── Rollout: playerPanelUI.renderMonsterCard usa monster-visual ─────────────
+
+const monsterParaCard = {
+    id: 'MI_TEST',
+    name: 'Testemon',
+    class: 'Mago',
+    rarity: 'Comum',
+    emoji: '🔮',
+    image: 'assets/monsters/MON_001.png',
+    level: 5,
+    hp: 40,
+    hpMax: 40,
+    xp: 0,
+};
+
+const monsterParaCardSemImagem = {
+    id: 'MI_TEST2',
+    name: 'Testemon2',
+    class: 'Guerreiro',
+    rarity: 'Incomum',
+    emoji: '⚔️',
+    level: 3,
+    hp: 30,
+    hpMax: 30,
+    xp: 0,
+};
+
+describe('Rollout - playerPanelUI.renderMonsterCard usa helper visual', () => {
+    it('deve gerar monster-visual em vez de apenas emoji direto', () => {
+        const html = renderPlayerMonsterCard(monsterParaCard);
+        expect(html).toContain('monster-visual');
+    });
+
+    it('deve gerar <img> quando monster tem image', () => {
+        const html = renderPlayerMonsterCard(monsterParaCard);
+        expect(html).toContain('<img');
+    });
+
+    it('deve usar variant box', () => {
+        const html = renderPlayerMonsterCard(monsterParaCard);
+        expect(html).toContain('monster-visual--variant-box');
+    });
+
+    it('deve gerar <span> com emoji quando monster não tem image', () => {
+        const html = renderPlayerMonsterCard(monsterParaCardSemImagem);
+        expect(html).toContain('<span');
+        expect(html).toContain('⚔️');
+    });
+
+    it('ausência de image não deve quebrar o card', () => {
+        expect(() => renderPlayerMonsterCard(monsterParaCardSemImagem)).not.toThrow();
+    });
+
+    it('card sem image deve conter monster-visual', () => {
+        const html = renderPlayerMonsterCard(monsterParaCardSemImagem);
+        expect(html).toContain('monster-visual');
+    });
+});
+
+// ─── Rollout: eggHatch usa size lg ───────────────────────────────────────────
+
+describe('Rollout - eggHatch usa monster-visual--lg', () => {
+    it('buildHatchResultHTML com image deve usar monster-visual--lg', () => {
+        const html = buildHatchResultHTML(monsterHatchComImagem);
+        expect(html).toContain('monster-visual--lg');
+    });
+
+    it('buildHatchResultHTML sem image deve usar monster-visual--lg (emoji)', () => {
+        const html = buildHatchResultHTML(monsterHatchSemImagem);
+        expect(html).toContain('monster-visual--lg');
     });
 });
