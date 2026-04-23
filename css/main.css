@@ -351,14 +351,6 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .battle-arena--centered { text-align: center; }
 .battle-result-title { font-size: 24px; margin-bottom: 4px; }
 
-/* Status de captura no painel secundário */
-.battle-capture-status-label {
-    font-size: 11px; font-weight: bold;
-}
-.battle-capture-breakdown {
-    font-size: 10px; opacity: 0.65; margin-top: 1px;
-}
-
 /* ================================= */
 /* COMBATE EM GRUPO / BOSS — Layout  */
 /* ================================= */
@@ -6066,16 +6058,6 @@ img.monster-visual--variant-battle {
     background: linear-gradient(135deg, #0773c7, #5a4bd0);
 }
 
-/* ── Coloração semântica das linhas do log de combate ────────────────────── */
-.battle-log-compact > div { padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-.battle-log-compact > div:last-child { font-weight: bold; color: #fff; }
-.battle-log-compact > div.blog-dmg    { color: #ff7675; }
-.battle-log-compact > div.blog-crit   { color: #fdcb6e; font-weight: bold; }
-.battle-log-compact > div.blog-heal   { color: #55efc4; }
-.battle-log-compact > div.blog-miss   { color: #b2bec3; font-style: italic; }
-.battle-log-compact > div.blog-capture { color: #a29bfe; font-weight: bold; }
-.battle-log-compact > div.blog-flee   { color: #ffeaa7; }
-
 /* ── Separador visual dentro do painel secundário ─────────────────────────── */
 .battle-sec-divider {
     height: 1px;
@@ -6089,4 +6071,65 @@ img.monster-visual--variant-battle {
     letter-spacing: 0.4px;
     opacity: 0.45;
     margin-bottom: 5px;
+}
+.battle-log-compact > div { padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.battle-log-compact > div:last-child { font-weight: bold; color: #fff; }
+.battle-log-compact > div.blog-dmg    { color: #ff7675; }
+.battle-log-compact > div.blog-crit   { color: #fdcb6e; font-weight: bold; }
+.battle-log-compact > div.blog-heal   { color: #55efc4; }
+.battle-log-compact > div.blog-miss   { color: #b2bec3; font-style: italic; }
+.battle-log-compact > div.blog-capture { color: #a29bfe; font-weight: bold; }
+.battle-log-compact > div.blog-flee   { color: #ffeaa7; }
+
+/* ── Wrapper coluna do d20 ─────────────────────────────────────────────────── */
+.battle-dice-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+/* ── Linha de itens de cura (botões em fila) ──────────────────────────────── */
+.battle-heal-items-row {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+}
+
+/* ── Select de ClasterOrb (tema escuro) ───────────────────────────────────── */
+.capture-orb-select {
+    width: 100%;
+    padding: 4px;
+    font-size: 12px;
+    min-height: 32px;
+    margin-bottom: 4px;
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.20);
+    border-radius: 7px;
+}
+.capture-orb-select option { background: #2d3436; color: #fff; }
+
+/* ── Wrapper do botão Conter (margem superior) ────────────────────────────── */
+.battle-capture-action-wrap { margin-top: 6px; }
+
+/* ── Label de status de captura (sucesso / falha) ────────────────────────── */
+.battle-capture-status-label {
+    font-size: 11px;
+    font-weight: bold;
+    margin-top: 5px;
+}
+.battle-capture-status-label--success { color: #55efc4; }
+.battle-capture-status-label--fail    { color: #ff7675; }
+
+/* ── Label do limiar na barra de captura ──────────────────────────────────── */
+.cap-bar-label-threshold--success { color: #55efc4; }
+.cap-bar-label-threshold--fail    { color: #ff7675; }
+
+/* ── Breakdown de captura ─────────────────────────────────────────────────── */
+.battle-capture-breakdown {
+    font-size: 10px;
+    opacity: 0.65;
+    margin-top: 2px;
 }

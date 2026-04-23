@@ -7344,7 +7344,7 @@
                         <!-- Linha de ações: d20 + botões principais -->
                         <div class="battle-actions-row">
                             <div class="battle-dice-section">
-                                <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+                                <div class="battle-dice-col">
                                     <label class="battle-dice-label" for="diceRoll" title="Role o dado físico d20 e digite o resultado aqui antes de atacar">🎲 d20</label>
                                     <input type="number" id="diceRoll" min="1" max="20" placeholder="1–20"
                                            class="battle-dice-input battle-dice-input--active"
@@ -7379,7 +7379,7 @@
                             <div class="battle-sec-panel">
                                 ${availableHeals.length > 0 ? `
                                 <div class="battle-sec-sub">💚 Cura</div>
-                                <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">
+                                <div class="battle-heal-items-row">
                                     ${availableHeals.map(h => {
                                         const qty = player.inventory?.[h.id] || 0;
                                         const canUse = canHeal && qty > 0;
@@ -7396,8 +7396,7 @@
                                 ${player ? (() => {
                                     if (!hasAnyOrb) return `<div style="font-size:12px;opacity:0.6;margin-bottom:4px">❌ Sem ClasterOrbs</div>`;
                                     return `
-                                    <select id="captureOrbSelect" onchange="updateCaptureThreshold()"
-                                            style="width:100%;padding:4px;font-size:12px;min-height:32px;margin-bottom:4px;background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.20);border-radius:7px">
+                                    <select id="captureOrbSelect" class="capture-orb-select" onchange="updateCaptureThreshold()">
                                         ${comum   > 0 ? `<option value="CLASTERORB_COMUM">⚪ Comum (${comum}x)</option>` : ''}
                                         ${incomum > 0 ? `<option value="CLASTERORB_INCOMUM">🔵 Incomum (${incomum}x)</option>` : ''}
                                         ${rara    > 0 ? `<option value="CLASTERORB_RARA">🟣 Rara (${rara}x)</option>` : ''}
@@ -7407,7 +7406,7 @@
                                     </div>`;
                                 })() : ''}
                                 ${captureAction ? `
-                                <div style="margin-top:6px">
+                                <div class="battle-capture-action-wrap">
                                     <button class="btn btn-calm" style="width:100%"
                                             onclick="useCaptureAction()"
                                             ${playerMonster && playerMonster.hp > 0 && monster.hp > 0 && !encounter.behaviorallyResolved ? '' : 'disabled'}
@@ -7487,7 +7486,7 @@
                     <div class="cap-bar-wrap">
                         <div class="cap-bar-label-row">
                             <span>HP atual: ${hpBarPct}%</span>
-                            <span style="color:${hpSuccess ? '#55efc4' : '#ff7675'}">Limiar: ${threshPct}% ${hpSuccess ? '✅' : '❌'}</span>
+                            <span class="cap-bar-label-threshold--${hpSuccess ? 'success' : 'fail'}">Limiar: ${threshPct}% ${hpSuccess ? '✅' : '❌'}</span>
                         </div>
                         <div class="cap-bar-track">
                             <div class="cap-bar-hp ${barColor}" style="width:${hpBarPct}%"></div>
@@ -7496,10 +7495,10 @@
                             </div>
                         </div>
                     </div>
-                    <div class="battle-capture-status-label" style="color:${success ? '#55efc4' : '#ff7675'};margin-top:5px;font-size:11px">
+                    <div class="battle-capture-status-label battle-capture-status-label--${success ? 'success' : 'fail'}">
                         ${readiness.emoji} ${readiness.text} — ${score}/${needed} pts ${success ? '✅' : '❌'}
                     </div>
-                    <div class="battle-capture-breakdown" style="margin-top:2px">
+                    <div class="battle-capture-breakdown">
                         HP +${Math.round((1-hpPct)*50)} · Calma +${Math.round((1-(monster.aggression??100)/100)*50)} · Orb +${orbInfo.capture_bonus_pp}
                     </div>
                 `;
