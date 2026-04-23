@@ -5604,7 +5604,7 @@ img.monster-visual--variant-battle {
     padding: 6px 0 4px;
 }
 
-/* ── Retrato grande no combate selvagem (wildPlayerBox / wildEnemyBox) ── */
+/* ── Retrato grande no combate selvagem (legado — mantido para compatibilidade) ── */
 .battle-combatant-portrait {
     display: flex;
     justify-content: center;
@@ -5627,5 +5627,292 @@ img.monster-visual--variant-battle {
 @media (max-width: 768px) {
     .battle-combatant-portrait {
         height: 160px;
+    }
+}
+
+/* ══════════════════════════════════════════════════
+   CAMPO DE BATALHA ESTILO RPG (substituição do layout lado a lado)
+   ══════════════════════════════════════════════════ */
+
+/* Container principal do campo */
+.battle-field {
+    position: relative;
+    width: 100%;
+    height: 380px;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 8px;
+    background:
+        radial-gradient(ellipse 70% 40% at 70% 42%, rgba(58,100,45,0.55) 0%, transparent 100%),
+        radial-gradient(ellipse 50% 30% at 22% 78%, rgba(45,80,35,0.45) 0%, transparent 100%),
+        linear-gradient(180deg, #1a1f2e 0%, #1e2535 45%, #22301e 70%, #1e2c18 100%);
+    border: 2px solid rgba(255,255,255,0.08);
+}
+
+/* Plataforma do inimigo (semicírculo de grama no fundo, direita) */
+.battle-field::before {
+    content: '';
+    position: absolute;
+    top: 28%;
+    right: 5%;
+    width: 52%;
+    height: 36%;
+    background: radial-gradient(ellipse at center, rgba(72,130,55,0.55) 0%, rgba(50,90,38,0.30) 55%, transparent 100%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* Plataforma do jogador (semicírculo de grama na frente, esquerda) */
+.battle-field::after {
+    content: '';
+    position: absolute;
+    bottom: 10%;
+    left: 5%;
+    width: 42%;
+    height: 28%;
+    background: radial-gradient(ellipse at center, rgba(80,140,60,0.50) 0%, rgba(55,100,42,0.25) 55%, transparent 100%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* Zona do sprite do inimigo — canto superior-direito */
+.battle-sprite-zone--enemy {
+    position: absolute;
+    top: 5%;
+    right: 6%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    width: 52%;
+    height: 68%;
+    pointer-events: none;
+}
+
+/* Sprite do inimigo: grande e proeminente */
+.battle-sprite-zone--enemy .monster-visual {
+    width: 220px !important;
+    height: 220px !important;
+    font-size: 160px !important;
+    filter: drop-shadow(0 8px 24px rgba(0,0,0,0.80));
+    object-fit: contain;
+}
+
+/* Zona do sprite do jogador — canto inferior-esquerdo */
+.battle-sprite-zone--player {
+    position: absolute;
+    bottom: 8%;
+    left: 6%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    width: 38%;
+    height: 52%;
+    pointer-events: none;
+}
+
+/* Sprite do jogador: um pouco menor (perspectiva de frente) */
+.battle-sprite-zone--player .monster-visual {
+    width: 160px !important;
+    height: 160px !important;
+    font-size: 120px !important;
+    filter: drop-shadow(0 6px 18px rgba(0,0,0,0.75));
+    object-fit: contain;
+    /* Espelha horizontalmente para o jogador ficar "de frente" para o inimigo */
+    transform: scaleX(-1);
+}
+
+/* ── Card de informação estilo Pokémon (BIC = Battle Info Card) ── */
+.bic {
+    position: absolute;
+    background: rgba(15,18,28,0.92);
+    border-radius: 12px;
+    padding: 8px 12px 7px;
+    min-width: 200px;
+    max-width: 260px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.60);
+    z-index: 10;
+}
+
+/* Card do inimigo: topo-esquerda */
+.bic--enemy {
+    top: 8px;
+    left: 8px;
+    border: 1.5px solid rgba(214,48,49,0.50);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.60), 0 0 14px rgba(214,48,49,0.15);
+}
+
+/* Card do jogador: baixo-direita */
+.bic--player {
+    bottom: 8px;
+    right: 8px;
+    border: 1.5px solid rgba(0,184,148,0.50);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.60), 0 0 14px rgba(0,184,148,0.15);
+}
+
+/* Linha de topo do card: ícone de classe | nome | nível */
+.bic-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.bic-class-icon {
+    font-size: 18px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.bic-name {
+    font-size: 13px;
+    font-weight: bold;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bic-level {
+    font-size: 11px;
+    font-weight: bold;
+    color: rgba(255,255,255,0.65);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Separador entre header e barras */
+.bic-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.10);
+    margin: 4px 0;
+}
+
+/* Linha de barra individual */
+.bic-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 4px;
+}
+
+.bic-bar-icon {
+    font-size: 11px;
+    flex-shrink: 0;
+    width: 16px;
+    text-align: center;
+}
+
+/* Barra de progresso do BIC */
+.bic-bar {
+    flex: 1;
+    height: 8px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.bic-bar-val {
+    font-size: 10px;
+    color: rgba(255,255,255,0.60);
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: 40px;
+    text-align: right;
+}
+
+/* Barra de XP — mais fina, na parte inferior do card do jogador */
+.bic-xp-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 2px;
+}
+
+.bic-xp-bar {
+    flex: 1;
+    height: 5px;
+    background: rgba(255,255,255,0.10);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.bic-xp-label {
+    font-size: 9px;
+    color: rgba(255,255,255,0.45);
+    white-space: nowrap;
+}
+
+/* Tags de classe e raridade dentro do card */
+.bic-tags {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin: 4px 0;
+}
+
+/* Stats ATK/DEF/PWR compactos */
+.bic-stat {
+    font-size: 10px;
+    opacity: 0.65;
+    margin-top: 3px;
+}
+
+/* Nota de captura dentro do card do inimigo */
+.bic-capture-note {
+    font-size: 10px;
+    margin-top: 4px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 4px;
+}
+
+/* Item equipado no card do jogador */
+.bic-held-item {
+    font-size: 10px;
+    opacity: 0.70;
+    margin-top: 3px;
+}
+
+@media (max-width: 768px) {
+    .battle-field {
+        height: 300px;
+    }
+    .bic {
+        min-width: 160px;
+        max-width: 200px;
+        padding: 6px 8px 5px;
+    }
+    .bic-name { font-size: 11px; }
+    .bic-class-icon { font-size: 14px; }
+    .battle-sprite-zone--enemy .monster-visual {
+        width: 150px !important;
+        height: 150px !important;
+        font-size: 110px !important;
+    }
+    .battle-sprite-zone--player .monster-visual {
+        width: 110px !important;
+        height: 110px !important;
+        font-size: 80px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .battle-field {
+        height: 260px;
+    }
+    .bic {
+        min-width: 130px;
+        max-width: 170px;
+        padding: 5px 7px 4px;
+    }
+    .battle-sprite-zone--enemy .monster-visual {
+        width: 120px !important;
+        height: 120px !important;
+        font-size: 90px !important;
+    }
+    .battle-sprite-zone--player .monster-visual {
+        width: 90px !important;
+        height: 90px !important;
+        font-size: 68px !important;
     }
 }

@@ -7211,62 +7211,88 @@
                             ${player ? `<span style="opacity:0.75">👤 ${player.name} (${player.class})</span>` : ''}
                         </div>
 
-                        <!-- Combatentes lado a lado -->
-                        <div class="battle-combatants">
-                            <!-- Lado do jogador -->
-                            <div class="battle-combatant-box battle-player-side" id="wildPlayerBox">
-                                <div class="battle-combatant-role">👤 SEU MONSTRINHO</div>
-                                ${playerMonster ? `
-                                <div class="battle-combatant-portrait battle-combatant-portrait--player">${getMonsterVisualHTML(playerMonster, { variant: 'battle', size: 'xl' })}</div>
-                                <div class="battle-combatant-name">${playerMonster.name} <small>Nv ${playerMonster.level}</small></div>
-                                <div class="battle-class-badge battle-class-badge--${classToCssSlug(playerMonster.class)}">${playerMonster.class || ''}</div>
-                                <div class="battle-combatant-divider"></div>
-                                <div class="battle-bar-row">
-                                    <div class="battle-bar-label"><span>❤️ HP</span><span>${playerMonster.hp}/${playerMonster.hpMax}</span></div>
-                                    <div class="battle-bar"><div class="battle-bar-fill hp" style="width:${pmHpPct}%"></div></div>
-                                </div>
-                                <div class="battle-bar-row">
-                                    <div class="battle-bar-label"><span>⚡ ENE</span><span>${playerMonster.ene || 0}/${playerMonster.eneMax || 0}</span></div>
-                                    <div class="battle-bar"><div class="battle-bar-fill ene" style="width:${pmEnePct}%"></div></div>
-                                </div>
-                                <div class="battle-bar-row">
-                                    <div class="battle-bar-label"><span>✨ XP</span><span>${Math.floor(pmXpPct)}%</span></div>
-                                    <div class="battle-bar"><div class="battle-bar-fill xp" style="width:${pmXpPct}%"></div></div>
-                                </div>
-                                ${formatEquippedItemDisplay(playerMonster.heldItemId)}
-                                ` : `<div style="opacity:0.5;margin-top:6px">Sem monstrinho ativo</div>`}
+                        <!-- Campo de batalha estilo RPG -->
+                        <div class="battle-field">
+
+                            <!-- Sprite do inimigo (topo-direita, grande) -->
+                            <div class="battle-sprite-zone battle-sprite-zone--enemy">
+                                ${getMonsterVisualHTML(monster, { variant: 'battle', size: 'xl' })}
                             </div>
 
-                            <!-- Lado do inimigo -->
-                            <div class="battle-combatant-box battle-enemy-side" id="wildEnemyBox">
-                                <div class="battle-combatant-role">⚔️ INIMIGO</div>
-                                <div class="battle-combatant-portrait battle-combatant-portrait--enemy">${getMonsterVisualHTML(monster, { variant: 'battle', size: 'xl' })}</div>
-                                <div class="battle-combatant-name">${monster.name} <small>Nv ${monster.level}</small>${monster.isShiny ? ' <span class="badge badge-shiny">⭐ Shiny</span>' : ''}</div>
-                                <div class="battle-class-badge battle-class-badge--${classToCssSlug(monster.class)}"><span class="badge badge-${monster.rarity}">${monster.rarity}</span> ${monster.class}</div>
-                                <div class="battle-combatant-divider"></div>
-                                <div class="battle-stat-row">
-                                    <span>⚔️ ATK ${monster.atk}</span><span>🛡️ DEF ${monster.def}</span><span>💥 PWR ${monster.poder}</span>
+                            <!-- Card de info do inimigo (topo-esquerda), mantém id para JS -->
+                            <div class="bic bic--enemy" id="wildEnemyBox">
+                                <div class="bic-header">
+                                    <span class="bic-class-icon">${GameState.CLASS_EMOJI?.[monster.class] || '👾'}</span>
+                                    <span class="bic-name">${monster.name}${monster.isShiny ? ' ⭐' : ''}</span>
+                                    <span class="bic-level">Nv.${monster.level}</span>
                                 </div>
-                                <div class="battle-bar-row" id="wildEnemyHpRow">
-                                    <div class="battle-bar-label"><span>❤️ HP</span><span>${monster.hp}/${monster.hpMax} (${Math.floor(hpPercent*100)}%)</span></div>
-                                    <div class="battle-bar"><div class="battle-bar-fill hp" id="wildEnemyHpFill" style="width:${hpPercent*100}%"></div></div>
+                                <div class="bic-divider"></div>
+                                <div class="bic-bar-row" id="wildEnemyHpRow">
+                                    <span class="bic-bar-icon">❤️</span>
+                                    <div class="bic-bar"><div class="bic-bar-fill hp" id="wildEnemyHpFill" style="width:${hpPercent*100}%"></div></div>
+                                    <span class="bic-bar-val">${monster.hp}/${monster.hpMax}</span>
                                 </div>
                                 ${(monster.eneMax > 0) ? `
-                                <div class="battle-bar-row">
-                                    <div class="battle-bar-label"><span>⚡ ENE</span><span>${monster.ene ?? 0}/${monster.eneMax}</span></div>
-                                    <div class="battle-bar"><div class="battle-bar-fill ene" style="width:${Math.max(0,Math.min(100,((monster.ene??0)/monster.eneMax)*100))}%"></div></div>
+                                <div class="bic-bar-row">
+                                    <span class="bic-bar-icon">⚡</span>
+                                    <div class="bic-bar"><div class="bic-bar-fill ene" style="width:${Math.max(0,Math.min(100,((monster.ene??0)/monster.eneMax)*100))}%"></div></div>
+                                    <span class="bic-bar-val">${monster.ene ?? 0}/${monster.eneMax}</span>
                                 </div>` : ''}
-                                <div class="battle-bar-row">
-                                    <div class="battle-bar-label"><span>😤 Agressividade</span><span>${monster.aggression ?? 100}/100</span></div>
-                                    <div class="battle-bar"><div class="battle-bar-fill aggr" style="width:${monster.aggression ?? 100}%"></div></div>
+                                <div class="bic-bar-row">
+                                    <span class="bic-bar-icon">😤</span>
+                                    <div class="bic-bar"><div class="bic-bar-fill aggr" style="width:${monster.aggression ?? 100}%"></div></div>
+                                    <span class="bic-bar-val">${monster.aggression ?? 100}/100</span>
                                 </div>
-                                <div class="battle-capture-note">
+                                <div class="bic-tags">
+                                    <span class="battle-class-badge battle-class-badge--${classToCssSlug(monster.class)}">${monster.class}</span>
+                                    <span class="badge badge-${monster.rarity}">${monster.rarity}</span>
+                                </div>
+                                <div class="bic-stat">⚔️${monster.atk} 🛡️${monster.def} 💥${monster.poder}</div>
+                                <div class="bic-capture-note">
                                     ${encounter.behaviorallyResolved
-                                        ? '<span style="color:#00b894">🌿 Calmo/Rendido! → Use uma ClasterOrb para capturar!</span>'
-                                        : `${rd.emoji} <strong>${rd.text}</strong> — ${scoreNow} pontos (precisa ${neededNow})`
+                                        ? '<span style="color:#00b894">🌿 Calmo/Rendido!</span>'
+                                        : `${rd.emoji} <strong>${rd.text}</strong> — ${scoreNow}/${neededNow} pts`
                                     }
                                 </div>
                             </div>
+
+                            <!-- Sprite do jogador (baixo-esquerda) -->
+                            ${playerMonster ? `
+                            <div class="battle-sprite-zone battle-sprite-zone--player">
+                                ${getMonsterVisualHTML(playerMonster, { variant: 'battle', size: 'xl' })}
+                            </div>` : ''}
+
+                            <!-- Card de info do jogador (baixo-direita), mantém id para JS -->
+                            <div class="bic bic--player" id="wildPlayerBox">
+                                ${playerMonster ? `
+                                <div class="bic-header">
+                                    <span class="bic-class-icon">${GameState.CLASS_EMOJI?.[playerMonster.class] || '👾'}</span>
+                                    <span class="bic-name">${playerMonster.name}</span>
+                                    <span class="bic-level">Nv.${playerMonster.level}</span>
+                                </div>
+                                <div class="bic-divider"></div>
+                                <div class="bic-bar-row">
+                                    <span class="bic-bar-icon">❤️</span>
+                                    <div class="bic-bar"><div class="bic-bar-fill hp" style="width:${pmHpPct}%"></div></div>
+                                    <span class="bic-bar-val">${playerMonster.hp}/${playerMonster.hpMax}</span>
+                                </div>
+                                <div class="bic-bar-row">
+                                    <span class="bic-bar-icon">⚡</span>
+                                    <div class="bic-bar"><div class="bic-bar-fill ene" style="width:${pmEnePct}%"></div></div>
+                                    <span class="bic-bar-val">${playerMonster.ene || 0}/${playerMonster.eneMax || 0}</span>
+                                </div>
+                                <div class="bic-xp-row">
+                                    <span class="bic-bar-icon">✨</span>
+                                    <div class="bic-xp-bar"><div class="bic-bar-fill xp" style="width:${pmXpPct}%"></div></div>
+                                    <span class="bic-xp-label">${Math.floor(pmXpPct)}%</span>
+                                </div>
+                                <div class="bic-tags">
+                                    <span class="battle-class-badge battle-class-badge--${classToCssSlug(playerMonster.class)}">${playerMonster.class || ''}</span>
+                                </div>
+                                <div class="bic-held-item">${formatEquippedItemDisplay(playerMonster.heldItemId)}</div>
+                                ` : `<div style="opacity:0.5;font-size:12px">Sem monstrinho ativo</div>`}
+                            </div>
+
                         </div>
 
                         <!-- Linha de ações: d20 + botões principais -->
