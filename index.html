@@ -13272,18 +13272,23 @@
 
                 const rows = MM_NEW.players.map((p, i) => {
                     const preview = CLASS_PREVIEW[p.class] ?? { icon: '🎮', desc: '', tags: [] };
+                    const chips = MM_TABLES.CLASSES.map(c => {
+                        const cp = CLASS_PREVIEW[c] ?? { icon: '🎮' };
+                        const sel = p.class === c;
+                        return `<button type="button" class="mm-class-chip${sel ? ' is-selected' : ''}" data-cls="${escapeHtml(c)}" onclick="mmSelectClass(${i},'${escapeHtml(c)}')" aria-pressed="${sel}">\
+<span class="mm-class-chip__icon">${cp.icon}</span><span>${escapeHtml(c)}</span></button>`;
+                    }).join('');
                     return `
                     <div class="border-pale border-radius-14 p-10-12 my-10">
-                        <div class="text-900 mb-8">Jogador ${i+1}</div>
+                        <div class="mm-player-header">Jogador ${i+1}</div>
                         <div class="mm-field">
                             <label>Nome</label>
                             <input id="mmPName_${i}" maxlength="14" placeholder="Ex.: Ana" value="${escapeHtml(p.name || "")}">
                         </div>
                         <div class="mm-field">
                             <label>Classe</label>
-                            <select id="mmPClass_${i}" onchange="mmUpdateClassPreview(${i})">
-                                ${MM_TABLES.CLASSES.map(c => `<option value="${escapeHtml(c)}" ${p.class===c?"selected":""}>${escapeHtml(c)}</option>`).join("")}
-                            </select>
+                            <input type="hidden" id="mmPClass_${i}" value="${escapeHtml(p.class)}">
+                            <div class="mm-class-grid" id="mmClassGrid_${i}">${chips}</div>
                         </div>
                         <div class="mm-class-preview" id="mmClassPreview_${i}">
                             <span class="mm-class-preview__icon">${preview.icon}</span>
@@ -13351,14 +13356,34 @@
         }
 
         /**
+         * Seleciona uma classe via chip e atualiza o preview.
+         * @param {number} playerIndex - índice do jogador no wizard
+         * @param {string} cls - nome da classe selecionada
+         */
+        function mmSelectClass(playerIndex, cls) {
+            const hidden = mmEl(`mmPClass_${playerIndex}`);
+            if (hidden) hidden.value = cls;
+            const grid = document.getElementById(`mmClassGrid_${playerIndex}`);
+            if (grid) {
+                grid.querySelectorAll('.mm-class-chip').forEach(chip => {
+                    const sel = chip.dataset.cls === cls;
+                    chip.classList.toggle('is-selected', sel);
+                    chip.setAttribute('aria-pressed', sel ? 'true' : 'false');
+                });
+            }
+            mmUpdateClassPreview(playerIndex);
+        }
+        window.mmSelectClass = mmSelectClass;
+
+        /**
          * Atualiza o preview de classe ao mudar o select no wizard.
          * @param {number} playerIndex - índice do jogador no wizard
          */
         function mmUpdateClassPreview(playerIndex) {
-            const selectEl = mmEl(`mmPClass_${playerIndex}`);
+            const hiddenEl = mmEl(`mmPClass_${playerIndex}`);
             const previewEl = document.getElementById(`mmClassPreview_${playerIndex}`);
-            if (!selectEl || !previewEl) return;
-            const cls = selectEl.value;
+            if (!hiddenEl || !previewEl) return;
+            const cls = hiddenEl.value;
             const p = CLASS_PREVIEW[cls] ?? { icon: '🎮', desc: '', tags: [] };
             previewEl.innerHTML = `
                 <span class="mm-class-preview__icon">${p.icon}</span>
