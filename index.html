@@ -7156,13 +7156,53 @@
                 // Converte nome de classe para CSS slug sem acentos (ex: 'Caçador' → 'cacador')
                 const classToCssSlug = cls => (cls || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-                // Vantagem de classe (inline)
+                // Vantagem de classe (inline — na actions row)
                 const advantageHtml = playerMonster && monster ? (() => {
                     const adv = getClassAdvantage(playerMonster.class, monster.class);
                     return adv.cssClass !== 'neutral'
                         ? `<span class="battle-advantage-inline ${adv.cssClass}">${adv.text}</span>`
                         : '';
                 })() : '';
+
+                // Indicador de vantagem de classe na arena (centro visual)
+                const arenaAdvantageHtml = playerMonster && monster ? (() => {
+                    const adv = getClassAdvantage(playerMonster.class, monster.class);
+                    if (adv.cssClass === 'neutral') return '';
+                    const isAdv = adv.cssClass === 'advantage';
+                    const arrow = isAdv ? '↑' : '↓';
+                    const label = isAdv ? '+2 ATK · +10% DMG' : '-2 ATK · -10% DMG';
+                    return `<div class="battle-advantage-arena">
+                        <span class="battle-advantage-arena-badge ${adv.cssClass}" title="${adv.text}">
+                            ${arrow} ${playerMonster.class} ${isAdv ? '►' : '◄'} ${monster.class} — ${label}
+                        </span>
+                    </div>`;
+                })() : '';
+
+                // Badge de agressividade na arena
+                const aggrValue = monster.aggression ?? 100;
+                const aggrBadgeHtml = encounter.behaviorallyResolved
+                    ? `<div class="battle-aggr-overlay"><span class="battle-aggr-badge battle-aggr-badge--calm">🌿 Calmo / Rendido</span></div>`
+                    : (() => {
+                        let cls, emoji, text;
+                        if (aggrValue >= 80) { cls = 'veryhigh'; emoji = '😤'; text = 'Muito arisco'; }
+                        else if (aggrValue >= 55) { cls = 'high'; emoji = '😠'; text = 'Arisco'; }
+                        else if (aggrValue >= 30) { cls = 'medium'; emoji = '😐'; text = 'Moderado'; }
+                        else { cls = 'low'; emoji = '😌'; text = 'Calmo'; }
+                        return `<div class="battle-aggr-overlay"><span class="battle-aggr-badge battle-aggr-badge--${cls}">${emoji} ${text} (${aggrValue}/100)</span></div>`;
+                    })();
+
+                // Classificador semântico de linhas do log
+                const classifyLog = (entry) => {
+                    if (!entry) return '';
+                    const s = String(entry);
+                    if (/CRIT|🌟|crít/i.test(s)) return 'blog-crit';
+                    if (/curou|recuperou|heal|💚|🍖|✨.*HP|\+\d+\s*HP/i.test(s)) return 'blog-heal';
+                    if (/errou|miss|falhou|💥/i.test(s)) return 'blog-miss';
+                    if (/captur|🎯/i.test(s)) return 'blog-capture';
+                    if (/fug|🏃/i.test(s)) return 'blog-flee';
+                    if (/dano|atacou|golpe|⚔️/i.test(s)) return 'blog-dmg';
+                    return '';
+                };
 
                 // Habilidades — usa resolveMonsterSkills() como único ponto de entrada canônico.
                 // Retorna skills normalizadas (formato operacional único do skillResolver).
@@ -7293,16 +7333,25 @@
                                 ` : `<div style="opacity:0.5;font-size:12px">Sem monstrinho ativo</div>`}
                             </div>
 
+                            <!-- Indicador de vantagem de classe no centro da arena -->
+                            ${arenaAdvantageHtml}
+
+                            <!-- Badge de agressividade na parte inferior da arena -->
+                            ${aggrBadgeHtml}
+
                         </div>
 
                         <!-- Linha de ações: d20 + botões principais -->
                         <div class="battle-actions-row">
                             <div class="battle-dice-section">
-                                <label class="battle-dice-label" for="diceRoll" title="Role o dado físico d20 e digite o resultado aqui antes de atacar">🎲 d20:</label>
-                                <input type="number" id="diceRoll" min="1" max="20" placeholder="1–20"
-                                       class="battle-dice-input battle-dice-input--active"
-                                       oninput="onDiceRollInput(this)"
-                                       title="Role o dado físico d20 e digite o resultado (1 a 20)">
+                                <div class="battle-dice-col">
+                                    <label class="battle-dice-label" for="diceRoll" title="Role o dado físico d20 e digite o resultado aqui antes de atacar">🎲 d20</label>
+                                    <input type="number" id="diceRoll" min="1" max="20" placeholder="1–20"
+                                           class="battle-dice-input battle-dice-input--active"
+                                           oninput="onDiceRollInput(this)"
+                                           title="Role o dado físico d20 e digite o resultado (1 a 20)">
+                                    <span class="battle-dice-hint">role e digite</span>
+                                </div>
                             </div>
                             ${advantageHtml}
                             <div class="battle-main-actions">
@@ -7326,42 +7375,43 @@
                                 ${skillsHtml}
                             </div>
 
-                            <!-- Itens de cura + Sistema de captura -->
+                            <!-- Itens de cura + Sistema de captura (separados visualmente) -->
                             <div class="battle-sec-panel">
-                                <div class="battle-sec-title">💚 Itens & Captura</div>
                                 ${availableHeals.length > 0 ? `
-                                <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">
+                                <div class="battle-sec-sub">💚 Cura</div>
+                                <div class="battle-heal-items-row">
                                     ${availableHeals.map(h => {
                                         const qty = player.inventory?.[h.id] || 0;
                                         const canUse = canHeal && qty > 0;
-                                        return `<button class="btn btn-primary"
+                                        return `<button class="btn btn-success"
                                                 onclick="useItemInBattle('${h.id}')"
                                                 ${!canUse || !tutItem ? 'disabled' : ''}
                                                 ${!tutItem ? 'title="Tutorial: ainda não liberado"' : `title="${h.name} (${qty}x)"`}>
                                             ${h.emoji} ${qty}x
                                         </button>`;
                                     }).join('')}
-                                </div>` : ''}
+                                </div>
+                                <div class="battle-sec-divider"></div>` : ''}
+                                <div class="battle-sec-sub">🎯 Captura</div>
                                 ${player ? (() => {
                                     if (!hasAnyOrb) return `<div style="font-size:12px;opacity:0.6;margin-bottom:4px">❌ Sem ClasterOrbs</div>`;
                                     return `
-                                    <select id="captureOrbSelect" onchange="updateCaptureThreshold()"
-                                            style="width:100%;padding:4px;font-size:12px;min-height:32px;margin-bottom:4px">
+                                    <select id="captureOrbSelect" class="capture-orb-select" onchange="updateCaptureThreshold()">
                                         ${comum   > 0 ? `<option value="CLASTERORB_COMUM">⚪ Comum (${comum}x)</option>` : ''}
                                         ${incomum > 0 ? `<option value="CLASTERORB_INCOMUM">🔵 Incomum (${incomum}x)</option>` : ''}
                                         ${rara    > 0 ? `<option value="CLASTERORB_RARA">🟣 Rara (${rara}x)</option>` : ''}
                                     </select>
-                                    <div id="captureThresholdDisplay" style="font-size:11px;padding:2px 0">
+                                    <div id="captureThresholdDisplay">
                                         <span id="finalThresholdValue">Calculando...</span>
                                     </div>`;
                                 })() : ''}
                                 ${captureAction ? `
-                                <div style="margin-top:6px">
-                                    <button class="btn btn-secondary" style="width:100%"
+                                <div class="battle-capture-action-wrap">
+                                    <button class="btn btn-calm" style="width:100%"
                                             onclick="useCaptureAction()"
                                             ${playerMonster && playerMonster.hp > 0 && monster.hp > 0 && !encounter.behaviorallyResolved ? '' : 'disabled'}
                                             title="${captureAction.name}: reduz a Agressividade em ${Math.abs(captureAction.aggDelta)} pontos">
-                                        ${captureAction.emoji} ${captureAction.name} <small>(↓ Agressividade)</small>
+                                        🤝 ${captureAction.name} <small>(↓ Agressividade)</small>
                                     </button>
                                 </div>` : ''}
                             </div>
@@ -7369,7 +7419,11 @@
 
                         <!-- Log de combate compacto -->
                         <div class="battle-log-compact" id="combatLog">
-                            ${(encounter.log || []).slice(-6).map(entry => `<div>${entry}</div>`).join('')}
+                            ${(encounter.log || []).slice(-8).map((entry, i, arr) => {
+                                const isLast = i === arr.length - 1;
+                                const cls = classifyLog(entry);
+                                return `<div class="${cls}${isLast ? ' blog-latest' : ''}">${entry}</div>`;
+                            }).join('')}
                         </div>
                     </div>
                 `;
@@ -7420,16 +7474,32 @@
                     monster.rarity, hpPct, orbInfo.capture_bonus_pp
                 );
                 const hpSuccess = hpPct <= hpThreshold;
-                
+
+                // Barra visual: HP atual (vermelho/verde) com marcador do threshold
+                const hpBarPct = Math.round(hpPct * 100);
+                const threshPct = Math.round(hpThreshold * 100);
+                const barColor = hpSuccess ? 'capturable' : '';
+                // O marcador de threshold fica no ponto percentual do limiar
+                const threshLeft = `calc(${threshPct}% - 1px)`;
+
                 display.innerHTML = `
-                    <div class="battle-capture-status-label" style="color:${success ? '#2e7d32' : '#c62828'}">
-                        ${readiness.emoji} ${readiness.text} — ${score} pontos ${success ? `✅ (suficiente!)` : `❌ (precisa ${needed})`}
+                    <div class="cap-bar-wrap">
+                        <div class="cap-bar-label-row">
+                            <span>HP atual: ${hpBarPct}%</span>
+                            <span class="cap-bar-label-threshold--${hpSuccess ? 'success' : 'fail'}">Limiar: ${threshPct}% ${hpSuccess ? '✅' : '❌'}</span>
+                        </div>
+                        <div class="cap-bar-track">
+                            <div class="cap-bar-hp ${barColor}" style="width:${hpBarPct}%"></div>
+                            <div class="cap-bar-threshold-line" style="left:${threshLeft}">
+                                <span class="cap-bar-threshold-label">${threshPct}%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="battle-capture-status-label battle-capture-status-label--${success ? 'success' : 'fail'}">
+                        ${readiness.emoji} ${readiness.text} — ${score}/${needed} pts ${success ? '✅' : '❌'}
                     </div>
                     <div class="battle-capture-breakdown">
-                        HP ${Math.round((1-monster.hp/monster.hpMax)*50)} · Calma ${Math.round((1-(monster.aggression??100)/100)*50)} · Orb +${orbInfo.capture_bonus_pp}
-                    </div>
-                    <div class="battle-capture-breakdown" style="opacity:0.7">
-                        📊 HP ${Math.round(hpPct*100)}% / limiar ${Math.round(hpThreshold*100)}% ${hpSuccess ? '✅' : '❌'}
+                        HP +${Math.round((1-hpPct)*50)} · Calma +${Math.round((1-(monster.aggression??100)/100)*50)} · Orb +${orbInfo.capture_bonus_pp}
                     </div>
                 `;
             } catch (error) {
