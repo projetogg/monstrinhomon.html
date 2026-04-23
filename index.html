@@ -716,6 +716,9 @@
         
         // CAMADA 3: Target Selection
         import * as TargetSelection from './js/ui/targetSelection.js';
+
+        // Helper canônico de visual de monstrinhos
+        import { getMonsterVisualHTML } from './js/ui/monsterVisual.js';
         
         // Import progression modules (PR8A)
         import Progression from './js/progression/index.js';
@@ -7091,7 +7094,7 @@
                         const xpPct = Math.max(0, Math.min(100, (xpCurrent / xpNeeded) * 100));
                         xpBar = `
                             <div class="battle-result-xp-box">
-                                <strong>${playerMonster.emoji || ''} ${playerMonster.name} (Nv ${playerMonster.level})</strong>
+                                <strong>${playerMonster.name} (Nv ${playerMonster.level})</strong>
                                 <div class="battle-bar-row" style="margin-top:8px">
                                     <div class="battle-bar-label"><span>✨ XP</span><span>${xpCurrent}/${xpNeeded} (${Math.floor(xpPct)}%)</span></div>
                                     <div class="battle-bar"><div class="battle-bar-fill xp" style="width:${xpPct}%"></div></div>
@@ -7180,7 +7183,7 @@
 
                         <!-- Barra de contexto superior -->
                         <div class="battle-top-bar">
-                            <span class="battle-encounter-title">${monster.emoji} ${monster.name} selvagem${monster.isShiny ? ' ⭐ SHINY' : ''} apareceu!</span>
+                            <span class="battle-encounter-title">${monster.name} selvagem${monster.isShiny ? ' ⭐ SHINY' : ''} apareceu!</span>
                             ${encounter.lastRoll ? (() => {
                                 const lr = encounter.lastRoll;
                                 const bc = lr.type === 'crit' ? 'crit' : lr.type === 'fail' ? 'fail' : '';
@@ -7196,7 +7199,8 @@
                             <div class="battle-combatant-box battle-player-side" id="wildPlayerBox">
                                 <div class="battle-combatant-role">👤 Seu Monstrinho</div>
                                 ${playerMonster ? `
-                                <div class="battle-combatant-name">${playerMonster.emoji || ''} ${playerMonster.name} <small>Nv ${playerMonster.level}</small></div>
+                                <div class="battle-combatant-portrait">${getMonsterVisualHTML(playerMonster, { variant: 'battle', size: 'xl' })}</div>
+                                <div class="battle-combatant-name">${playerMonster.name} <small>Nv ${playerMonster.level}</small></div>
                                 <div class="battle-bar-row">
                                     <div class="battle-bar-label"><span>❤️ HP</span><span>${playerMonster.hp}/${playerMonster.hpMax}</span></div>
                                     <div class="battle-bar"><div class="battle-bar-fill hp" style="width:${pmHpPct}%"></div></div>
@@ -7216,7 +7220,8 @@
                             <!-- Lado do inimigo -->
                             <div class="battle-combatant-box battle-enemy-side" id="wildEnemyBox">
                                 <div class="battle-combatant-role">⚔️ Inimigo</div>
-                                <div class="battle-combatant-name">${monster.emoji} ${monster.name} <small>Nv ${monster.level}</small></div>
+                                <div class="battle-combatant-portrait">${getMonsterVisualHTML(monster, { variant: 'battle', size: 'xl' })}</div>
+                                <div class="battle-combatant-name">${monster.name} <small>Nv ${monster.level}</small></div>
                                 <div class="battle-stat-row">
                                     <span class="badge badge-${monster.rarity}">${monster.rarity}</span>
                                     <span>${monster.class}</span>

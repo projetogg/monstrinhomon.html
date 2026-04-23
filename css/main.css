@@ -5473,6 +5473,12 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
     font-size: 90px;
 }
 
+.monster-visual--xl {
+    width: 160px;
+    height: 160px;
+    font-size: 120px;
+}
+
 /* Fallback de emoji */
 .monster-emoji {
     user-select: none;
@@ -5505,8 +5511,16 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
 
 /* Battle: retrato de combate — integrado ao dark theme da arena */
 .monster-visual--variant-battle {
-    border-radius: 8px;
-    padding: 4px;
+    border-radius: 12px;
+    padding: 6px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Sombra extra para imagens reais dentro da variante battle */
+img.monster-visual--variant-battle {
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6));
 }
 
 /* Inline: miniatura junto a texto — sem fundo, alinhada verticalmente */
@@ -5516,6 +5530,12 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
 
 /* Responsividade: telas menores (mobile/iPad) */
 @media (max-width: 768px) {
+    .monster-visual--xl {
+        width: 120px;
+        height: 120px;
+        font-size: 90px;
+    }
+
     .monster-visual--lg {
         width: 96px;
         height: 96px;
@@ -5550,4 +5570,19 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
     justify-content: center;
     align-items: center;
     padding: 6px 0 4px;
+}
+
+/* ── Retrato grande no combate selvagem (wildPlayerBox / wildEnemyBox) ── */
+.battle-combatant-portrait {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 176px;
+    margin-bottom: 8px;
+}
+
+@media (max-width: 768px) {
+    .battle-combatant-portrait {
+        height: 136px;
+    }
 }

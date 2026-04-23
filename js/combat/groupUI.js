@@ -158,7 +158,7 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
 
         playersHtml += `
         <div id="grpP_${pid}" class="${unitClass}"${pos ? ` data-pos="${pos}"` : ''}>
-            <div class="group-unit-portrait">${getMonsterVisualHTML(mon, { variant: 'battle', size: 'md' })}</div>
+            <div class="group-unit-portrait">${getMonsterVisualHTML(mon, { variant: 'battle', size: 'lg' })}</div>
             <div class="group-unit-name">${mon.name || mon.nome} <small>Nv ${mon.level}</small>
                 ${isKO ? '<span class="group-unit-ko-badge">💀 KO</span>' : ''}
                 ${isCurrent ? '<span class="group-unit-active-badge">▶ Em batalha</span>' : ''}
@@ -205,7 +205,7 @@ export function renderGroupEncounterPanel(panel, encounter, deps) {
 
         enemiesHtml += `
         <div id="grpE_${i}" class="${unitClass}"${clickHandler}>
-            <div class="group-unit-portrait">${getMonsterVisualHTML(e, { variant: 'battle', size: 'md' })}</div>
+            <div class="group-unit-portrait">${getMonsterVisualHTML(e, { variant: 'battle', size: 'lg' })}</div>
             <div class="group-unit-name">${e.name || e.nome} <small>Nv ${e.level}</small>
                 ${isDead ? '<span class="group-unit-ko-badge">💀 KO</span>' : ''}
                 ${isCurrent ? '<span class="group-unit-active-badge">▶ Atacando</span>' : ''}

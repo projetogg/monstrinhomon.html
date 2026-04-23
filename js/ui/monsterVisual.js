@@ -27,7 +27,7 @@
  * Tamanhos de exibição suportados.
  * @type {string[]}
  */
-const VALID_SIZES = ['sm', 'md', 'lg'];
+const VALID_SIZES = ['sm', 'md', 'lg', 'xl'];
 
 /**
  * Tamanho padrão quando não especificado.
