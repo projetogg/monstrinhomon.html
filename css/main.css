@@ -98,6 +98,12 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     box-shadow: 0 5px 15px rgba(0,0,0,0.2);
 }
 .monster-card:active { transform: scale(0.95); }
+.monster-card .monster-card-portrait {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 6px;
+}
 .monster-card.fire { background: linear-gradient(135deg, #ff6b35 0%, #ff8c61 100%); }
 .monster-card.water { background: linear-gradient(135deg, #4ecdc4 0%, #7ee0d7 100%); }
 .monster-card.plant { background: linear-gradient(135deg, #95e06c 0%, #b3eb93 100%); }
@@ -5421,9 +5427,6 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
 
 /* Dex: card de coleção — destaque visual com moldura e fundo suave */
 .monster-visual--variant-dex {
-    width: 120px;
-    height: 120px;
-    font-size: 90px;
     background: linear-gradient(135deg, #f0f4ff 0%, #e8eeff 100%);
     border-radius: 12px;
     padding: 8px;
@@ -5433,9 +5436,6 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
 
 /* Box/Equipe: miniatura de card de time — fundo neutro, borda fina */
 .monster-visual--variant-box {
-    width: 64px;
-    height: 64px;
-    font-size: 48px;
     background: rgba(0, 0, 0, 0.04);
     border-radius: 8px;
     padding: 4px;
@@ -5444,18 +5444,12 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
 
 /* Battle: retrato de combate — integrado ao dark theme da arena */
 .monster-visual--variant-battle {
-    width: 80px;
-    height: 80px;
-    font-size: 60px;
     border-radius: 8px;
     padding: 4px;
 }
 
 /* Inline: miniatura junto a texto — sem fundo, alinhada verticalmente */
 .monster-visual--variant-inline {
-    width: 28px;
-    height: 28px;
-    font-size: 22px;
     vertical-align: middle;
 }
 
