@@ -5645,13 +5645,13 @@ img.monster-visual--variant-battle {
     overflow: hidden;
     margin-bottom: 8px;
     background:
-        radial-gradient(ellipse 70% 40% at 70% 42%, rgba(58,100,45,0.55) 0%, transparent 100%),
-        radial-gradient(ellipse 50% 30% at 22% 78%, rgba(45,80,35,0.45) 0%, transparent 100%),
+        radial-gradient(ellipse 70% 40% at 70% 42%, rgba(58,100,45,0.20) 0%, transparent 100%),
+        radial-gradient(ellipse 50% 30% at 22% 78%, rgba(45,80,35,0.16) 0%, transparent 100%),
         linear-gradient(180deg, #1a1f2e 0%, #1e2535 45%, #22301e 70%, #1e2c18 100%);
     border: 2px solid rgba(255,255,255,0.08);
 }
 
-/* Plataforma do inimigo (semicírculo de grama no fundo, direita) */
+/* Plataforma do inimigo (semicírculo de grama no fundo, direita) — opacidade reduzida para não poluir sprites */
 .battle-field::before {
     content: '';
     position: absolute;
@@ -5659,12 +5659,12 @@ img.monster-visual--variant-battle {
     right: 5%;
     width: 52%;
     height: 36%;
-    background: radial-gradient(ellipse at center, rgba(72,130,55,0.55) 0%, rgba(50,90,38,0.30) 55%, transparent 100%);
+    background: radial-gradient(ellipse at center, rgba(72,130,55,0.18) 0%, rgba(50,90,38,0.10) 55%, transparent 100%);
     border-radius: 50%;
     pointer-events: none;
 }
 
-/* Plataforma do jogador (semicírculo de grama na frente, esquerda) */
+/* Plataforma do jogador (semicírculo de grama na frente, esquerda) — opacidade reduzida para não poluir sprites */
 .battle-field::after {
     content: '';
     position: absolute;
@@ -5672,7 +5672,7 @@ img.monster-visual--variant-battle {
     left: 5%;
     width: 42%;
     height: 28%;
-    background: radial-gradient(ellipse at center, rgba(80,140,60,0.50) 0%, rgba(55,100,42,0.25) 55%, transparent 100%);
+    background: radial-gradient(ellipse at center, rgba(80,140,60,0.16) 0%, rgba(55,100,42,0.08) 55%, transparent 100%);
     border-radius: 50%;
     pointer-events: none;
 }
@@ -5707,16 +5707,16 @@ img.monster-visual--variant-battle {
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    width: 38%;
-    height: 52%;
+    width: 42%;
+    height: 60%;
     pointer-events: none;
 }
 
-/* Sprite do jogador: um pouco menor (perspectiva de frente) */
+/* Sprite do jogador: aumentado para melhor proporção visual */
 .battle-sprite-zone--player .monster-visual {
-    width: 160px !important;
-    height: 160px !important;
-    font-size: 120px !important;
+    width: 190px !important;
+    height: 190px !important;
+    font-size: 140px !important;
     filter: drop-shadow(0 6px 18px rgba(0,0,0,0.75));
     object-fit: contain;
     /* Espelha horizontalmente para o jogador ficar "de frente" para o inimigo */
@@ -5729,8 +5729,8 @@ img.monster-visual--variant-battle {
     background: rgba(15,18,28,0.92);
     border-radius: 12px;
     padding: 8px 12px 7px;
-    min-width: 200px;
-    max-width: 260px;
+    min-width: 220px;
+    max-width: 270px;
     backdrop-filter: blur(6px);
     box-shadow: 0 4px 20px rgba(0,0,0,0.60);
     z-index: 10;
@@ -5805,22 +5805,56 @@ img.monster-visual--variant-battle {
     text-align: center;
 }
 
-/* Barra de progresso do BIC */
+/* Barra de progresso do BIC — HP maior para melhor visibilidade */
 .bic-bar {
     flex: 1;
-    height: 8px;
+    height: 10px;
     background: rgba(255,255,255,0.12);
-    border-radius: 4px;
+    border-radius: 5px;
     overflow: hidden;
+}
+
+/* Barra de energia — ligeiramente menor que HP */
+.bic-bar-row:nth-of-type(3) .bic-bar {
+    height: 8px;
 }
 
 .bic-bar-val {
     font-size: 10px;
-    color: rgba(255,255,255,0.60);
+    color: rgba(255,255,255,0.85);
     white-space: nowrap;
     flex-shrink: 0;
     min-width: 40px;
     text-align: right;
+    font-weight: bold;
+}
+
+/* ── Fills coloridos do BIC (corrige barras invisíveis) ── */
+.bic-bar-fill {
+    height: 100%;
+    border-radius: inherit;
+    transition: width 0.4s ease;
+}
+.bic-bar-fill.hp   {
+    background: linear-gradient(90deg, #d63031 0%, #ff7675 100%);
+    box-shadow: 0 0 6px rgba(214,48,49,0.55);
+}
+.bic-bar-fill.ene  {
+    background: linear-gradient(90deg, #fdcb6e 0%, #e17055 100%);
+    box-shadow: 0 0 4px rgba(253,203,110,0.45);
+}
+.bic-bar-fill.aggr {
+    background: linear-gradient(90deg, #e53935 0%, #ff7043 100%);
+}
+
+/* Pulso quando HP está baixo — adicionar classe .hp--critical via JS */
+@keyframes bic-hp-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.60; }
+}
+.bic-bar-fill.hp--critical {
+    animation: bic-hp-pulse 0.9s ease-in-out infinite;
+    background: linear-gradient(90deg, #c0392b 0%, #e74c3c 100%);
 }
 
 /* Barra de XP — mais fina, na parte inferior do card do jogador */
@@ -5839,10 +5873,18 @@ img.monster-visual--variant-battle {
     overflow: hidden;
 }
 
+/* Fill colorido da barra de XP */
+.bic-bar-fill.xp {
+    background: linear-gradient(90deg, #6c5ce7 0%, #a29bfe 100%);
+    transition: width 0.6s ease;
+    box-shadow: 0 0 4px rgba(108,92,231,0.50);
+}
+
 .bic-xp-label {
     font-size: 9px;
-    color: rgba(255,255,255,0.45);
+    color: rgba(255,255,255,0.70);
     white-space: nowrap;
+    font-weight: bold;
 }
 
 /* Tags de classe e raridade dentro do card */
@@ -5892,9 +5934,9 @@ img.monster-visual--variant-battle {
         font-size: 110px !important;
     }
     .battle-sprite-zone--player .monster-visual {
-        width: 110px !important;
-        height: 110px !important;
-        font-size: 80px !important;
+        width: 130px !important;
+        height: 130px !important;
+        font-size: 96px !important;
     }
 }
 
@@ -5913,9 +5955,9 @@ img.monster-visual--variant-battle {
         font-size: 90px !important;
     }
     .battle-sprite-zone--player .monster-visual {
-        width: 90px !important;
-        height: 90px !important;
-        font-size: 68px !important;
+        width: 105px !important;
+        height: 105px !important;
+        font-size: 80px !important;
     }
 }
 
