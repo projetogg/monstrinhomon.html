@@ -299,7 +299,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     display: flex; gap: 8px; flex-wrap: wrap;
     flex: 1; justify-content: flex-end; align-items: center;
 }
-.battle-main-actions .btn { padding: 12px 20px; font-size: 15px; font-weight: bold; }
+.battle-main-actions .btn { padding: 14px 24px; font-size: 16px; font-weight: 900; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
 
 .battle-secondary-row {
     display: grid;
@@ -322,18 +322,18 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .battle-sec-panel .btn { padding: 8px 12px; font-size: 13px; min-width: 90px; }
 
 .battle-log-compact {
-    background: rgba(0,0,0,0.35);
+    background: rgba(255,255,255,0.95);
     border-radius: 10px; padding: 6px 12px;
-    /* ~6 linhas de 13px + padding por linha */
     max-height: 128px; overflow-y: auto;
-    font-family: inherit; font-size: 13px; color: #ccc;
+    font-family: inherit; font-size: 13px; color: #2d3436;
     line-height: 1.5;
     scrollbar-width: thin;
-    scrollbar-color: rgba(255,255,255,0.2) transparent;
+    scrollbar-color: rgba(0,0,0,0.2) transparent;
+    border: 1px solid rgba(0,0,0,0.08);
 }
 .battle-log-compact::-webkit-scrollbar { width: 4px; }
 .battle-log-compact::-webkit-scrollbar-track { background: transparent; }
-.battle-log-compact::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+.battle-log-compact::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.20); border-radius: 4px; }
 
 /* Variante para tela de resultado: altura maior para mostrar log completo */
 .battle-log-compact.battle-log-result {
@@ -5633,48 +5633,73 @@ img.monster-visual--variant-battle {
 }
 
 /* ══════════════════════════════════════════════════
-   CAMPO DE BATALHA ESTILO RPG (substituição do layout lado a lado)
+   CAMPO DE BATALHA ESTILO RPG (redesign visual v2)
    ══════════════════════════════════════════════════ */
 
-/* Container principal do campo */
+/* Animações de sprite ─────────────────────────────────────────────────────── */
+/* Distância de flutuação idle — altere aqui para afetar ambas as animações */
+:root { --idle-float-distance: -7px; }
+
+@keyframes battle-idle-float {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(var(--idle-float-distance)); }
+}
+@keyframes battle-idle-float-mirror {
+    0%, 100% { transform: scaleX(-1) translateY(0); }
+    50%       { transform: scaleX(-1) translateY(var(--idle-float-distance)); }
+}
+/* Tremor de dano — adicionar .shake-anim via JS */
+@keyframes battle-shake {
+    0%, 100% { transform: translateX(0); }
+    20%       { transform: translateX(-7px); }
+    40%       { transform: translateX(7px); }
+    60%       { transform: translateX(-4px); }
+    80%       { transform: translateX(4px); }
+}
+.shake-anim { animation: battle-shake 0.4s ease-in-out !important; }
+
+/* Container principal do campo ─────────────────────────────────────────────── */
 .battle-field {
     position: relative;
     width: 100%;
-    height: 440px;
+    height: 500px;
     border-radius: 16px;
     overflow: hidden;
     margin-bottom: 8px;
-    background:
-        radial-gradient(ellipse 70% 40% at 70% 42%, rgba(58,100,45,0.20) 0%, transparent 100%),
-        radial-gradient(ellipse 50% 30% at 22% 78%, rgba(45,80,35,0.16) 0%, transparent 100%),
-        linear-gradient(180deg, #1a1f2e 0%, #1e2535 45%, #22301e 70%, #1e2c18 100%);
-    border: 2px solid rgba(255,255,255,0.08);
+    /* Fundo claro estilo ilustração */
+    background: linear-gradient(180deg, #d6ecff 0%, #e8f5e9 55%, #c8e6c9 100%);
+    border: 2px solid #aed6a1;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.60);
 }
 
-/* Plataforma do inimigo (semicírculo de grama no fundo, direita) — opacidade reduzida para não poluir sprites */
+/* Plataforma de grama do inimigo — semicírculo sólido, lado direito */
 .battle-field::before {
     content: '';
     position: absolute;
-    top: 28%;
-    right: 5%;
-    width: 52%;
-    height: 36%;
-    background: radial-gradient(ellipse at center, rgba(72,130,55,0.18) 0%, rgba(50,90,38,0.10) 55%, transparent 100%);
+    top: 32%;
+    right: 3%;
+    width: 56%;
+    height: 42%;
+    background: radial-gradient(ellipse at 50% 60%,
+        #5db83e 0%, #4caf50 45%, #388e3c 75%, transparent 100%);
     border-radius: 50%;
     pointer-events: none;
+    z-index: 1;
 }
 
-/* Plataforma do jogador (semicírculo de grama na frente, esquerda) — opacidade reduzida para não poluir sprites */
+/* Plataforma de grama do jogador — semicírculo sólido, lado esquerdo */
 .battle-field::after {
     content: '';
     position: absolute;
-    bottom: 10%;
-    left: 5%;
-    width: 42%;
-    height: 28%;
-    background: radial-gradient(ellipse at center, rgba(80,140,60,0.16) 0%, rgba(55,100,42,0.08) 55%, transparent 100%);
+    bottom: 6%;
+    left: 3%;
+    width: 46%;
+    height: 34%;
+    background: radial-gradient(ellipse at 50% 60%,
+        #66bb6a 0%, #4caf50 45%, #388e3c 75%, transparent 100%);
     border-radius: 50%;
     pointer-events: none;
+    z-index: 1;
 }
 
 /* Zona do sprite do inimigo — canto superior-direito */
@@ -5686,108 +5711,156 @@ img.monster-visual--variant-battle {
     align-items: flex-end;
     justify-content: center;
     width: 52%;
-    height: 68%;
+    height: 72%;
     pointer-events: none;
+    z-index: 3;
 }
 
-/* Sprite do inimigo: grande e proeminente */
+/* Sprite do inimigo: grande, proeminente, animação idle */
 .battle-sprite-zone--enemy .monster-visual {
-    width: 220px !important;
-    height: 220px !important;
-    font-size: 160px !important;
-    filter: drop-shadow(0 8px 24px rgba(0,0,0,0.80));
+    width: 260px !important;
+    height: 260px !important;
+    font-size: 190px !important;
+    filter: drop-shadow(0 10px 28px rgba(0,0,0,0.45));
     object-fit: contain;
+    animation: battle-idle-float 3s ease-in-out infinite;
 }
 
 /* Zona do sprite do jogador — canto inferior-esquerdo */
 .battle-sprite-zone--player {
     position: absolute;
-    bottom: 8%;
-    left: 6%;
+    bottom: 6%;
+    left: 4%;
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    width: 42%;
-    height: 60%;
+    width: 44%;
+    height: 64%;
     pointer-events: none;
+    z-index: 3;
 }
 
-/* Sprite do jogador: aumentado para melhor proporção visual */
+/* Sprite do jogador: espelhado + animação idle */
 .battle-sprite-zone--player .monster-visual {
-    width: 190px !important;
-    height: 190px !important;
-    font-size: 140px !important;
-    filter: drop-shadow(0 6px 18px rgba(0,0,0,0.75));
+    width: 210px !important;
+    height: 210px !important;
+    font-size: 160px !important;
+    filter: drop-shadow(0 8px 20px rgba(0,0,0,0.40));
     object-fit: contain;
-    /* Espelha horizontalmente para o jogador ficar "de frente" para o inimigo */
-    transform: scaleX(-1);
+    animation: battle-idle-float-mirror 3.4s ease-in-out infinite;
 }
 
 /* ── Card de informação estilo Pokémon (BIC = Battle Info Card) ── */
+/* Fundo branco com borda escura, estilo referência */
 .bic {
     position: absolute;
-    background: rgba(15,18,28,0.92);
-    border-radius: 12px;
-    padding: 8px 12px 7px;
-    min-width: 220px;
-    max-width: 270px;
-    backdrop-filter: blur(6px);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.60);
+    background: #ffffff;
+    border: 2.5px solid #1a1a1a;
+    border-radius: 14px;
+    min-width: 230px;
+    max-width: 295px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.30);
     z-index: 10;
 }
 
-/* Card do inimigo: topo-esquerda */
+/* Card do inimigo: topo-DIREITA (alinhado ao sprite do inimigo) */
 .bic--enemy {
     top: 8px;
-    left: 8px;
-    border: 1.5px solid rgba(214,48,49,0.50);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.60), 0 0 14px rgba(214,48,49,0.15);
+    right: 8px;
+    left: auto;
 }
 
-/* Card do jogador: baixo-direita */
+/* Card do jogador: baixo-ESQUERDA (alinhado ao sprite do jogador) */
 .bic--player {
     bottom: 8px;
-    right: 8px;
-    border: 1.5px solid rgba(0,184,148,0.50);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.60), 0 0 14px rgba(0,184,148,0.15);
+    left: 8px;
+    right: auto;
 }
 
-/* Linha de topo do card: ícone de classe | nome | nível */
+/* ── Estrutura tripartida do header BIC ── */
+/* [CLASS ícone | Nome em band escura | LV. XX] */
 .bic-header {
     display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 6px;
+    align-items: stretch;
+    border-bottom: 2px solid #1a1a1a;
+    min-height: 56px;
 }
 
-.bic-class-icon {
-    font-size: 18px;
-    line-height: 1;
+/* Coluna esquerda: rótulo CLASS + ícone circular */
+.bic-class-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 8px 5px 9px;
+    border-right: 2px solid #1a1a1a;
+    min-width: 54px;
+    gap: 3px;
     flex-shrink: 0;
+}
+
+.bic-class-label {
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 0.8px;
+    color: #1a1a1a;
+    text-transform: uppercase;
+    line-height: 1;
+}
+
+.bic-class-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #dde4ea;
+    border: 2px solid #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    line-height: 1;
+}
+
+/* Faixa central: nome do monstrinho sobre fundo escuro */
+.bic-name-band {
+    flex: 1;
+    background: #1a1a1a;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    min-width: 0;
 }
 
 .bic-name {
+    color: #ffffff;
     font-size: 13px;
-    font-weight: bold;
-    flex: 1;
+    font-weight: 900;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    line-height: 1.2;
 }
 
-.bic-level {
+/* Caixa de nível: LV. XX com borda */
+.bic-level-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 9px;
+    border-left: 2px solid #1a1a1a;
     font-size: 11px;
-    font-weight: bold;
-    color: rgba(255,255,255,0.65);
+    font-weight: 900;
+    color: #1a1a1a;
     white-space: nowrap;
+    min-width: 50px;
     flex-shrink: 0;
+    letter-spacing: 0.2px;
 }
 
-/* Separador entre header e barras */
-.bic-divider {
-    height: 1px;
-    background: rgba(255,255,255,0.10);
-    margin: 4px 0;
+/* ── Área de barras ── */
+.bic-bars {
+    padding: 8px 10px 4px;
 }
 
 /* Linha de barra individual */
@@ -5795,53 +5868,53 @@ img.monster-visual--variant-battle {
     display: flex;
     align-items: center;
     gap: 5px;
-    margin-bottom: 4px;
+    margin-bottom: 5px;
 }
 
 .bic-bar-icon {
-    font-size: 11px;
+    font-size: 13px;
     flex-shrink: 0;
-    width: 16px;
+    width: 18px;
     text-align: center;
+    line-height: 1;
 }
 
-/* Barra de progresso do BIC — HP maior para melhor visibilidade */
+/* Trilha de barra — fundo cinza claro */
 .bic-bar {
     flex: 1;
-    height: 10px;
-    background: rgba(255,255,255,0.12);
-    border-radius: 5px;
+    background: #d5d5d5;
+    border-radius: 6px;
     overflow: hidden;
 }
 
-/* Barra de energia — ligeiramente menor que HP */
-.bic-bar-row:nth-of-type(3) .bic-bar {
-    height: 8px;
-}
+/* HP: barra alta e proeminente */
+.bic-bar--hp { height: 16px; }
+/* ENE: ligeiramente menor */
+.bic-bar--ene { height: 12px; }
+/* AGGR: menor ainda */
+.bic-bar--aggr { height: 10px; }
 
 .bic-bar-val {
-    font-size: 10px;
-    color: rgba(255,255,255,0.85);
+    font-size: 11px;
+    font-weight: 900;
+    color: #1a1a1a;
     white-space: nowrap;
     flex-shrink: 0;
-    min-width: 40px;
+    min-width: 42px;
     text-align: right;
-    font-weight: bold;
 }
 
-/* ── Fills coloridos do BIC (corrige barras invisíveis) ── */
+/* ── Fills coloridos ── */
 .bic-bar-fill {
     height: 100%;
-    border-radius: inherit;
+    border-radius: 6px;
     transition: width 0.4s ease;
 }
-.bic-bar-fill.hp   {
-    background: linear-gradient(90deg, #d63031 0%, #ff7675 100%);
-    box-shadow: 0 0 6px rgba(214,48,49,0.55);
+.bic-bar-fill.hp {
+    background: #e74c3c;
 }
-.bic-bar-fill.ene  {
-    background: linear-gradient(90deg, #fdcb6e 0%, #e17055 100%);
-    box-shadow: 0 0 4px rgba(253,203,110,0.45);
+.bic-bar-fill.ene {
+    background: #3498db;
 }
 .bic-bar-fill.aggr {
     background: linear-gradient(90deg, #e53935 0%, #ff7043 100%);
@@ -5850,115 +5923,197 @@ img.monster-visual--variant-battle {
 /* Pulso quando HP está baixo — adicionar classe .hp--critical via JS */
 @keyframes bic-hp-pulse {
     0%, 100% { opacity: 1; }
-    50%       { opacity: 0.60; }
+    50%       { opacity: 0.55; }
 }
 .bic-bar-fill.hp--critical {
     animation: bic-hp-pulse 0.9s ease-in-out infinite;
-    background: linear-gradient(90deg, #c0392b 0%, #e74c3c 100%);
+    background: #c0392b;
 }
 
-/* Barra de XP — mais fina, na parte inferior do card do jogador */
-.bic-xp-row {
+/* ── Faixa de XP (na base do card do jogador) — cor âmbar ── */
+.bic-xp-strip {
+    padding: 5px 10px 7px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.bic-xp-strip-labels {
     display: flex;
-    align-items: center;
-    gap: 5px;
-    margin-top: 2px;
+    justify-content: space-between;
+    font-size: 9px;
+    font-weight: 700;
+    color: #888;
+    margin-bottom: 3px;
 }
 
-.bic-xp-bar {
-    flex: 1;
-    height: 5px;
-    background: rgba(255,255,255,0.10);
+.bic-xp-track {
+    height: 6px;
+    background: #e0e0e0;
     border-radius: 3px;
     overflow: hidden;
 }
 
-/* Fill colorido da barra de XP */
 .bic-bar-fill.xp {
-    background: linear-gradient(90deg, #6c5ce7 0%, #a29bfe 100%);
+    height: 100%;
+    background: #f39c12;
+    border-radius: 3px;
     transition: width 0.6s ease;
-    box-shadow: 0 0 4px rgba(108,92,231,0.50);
 }
 
-.bic-xp-label {
-    font-size: 9px;
-    color: rgba(255,255,255,0.70);
-    white-space: nowrap;
-    font-weight: bold;
+/* ── Área de informações extras (tags, stats, captura) ── */
+.bic-info {
+    padding: 5px 10px 7px;
+    border-top: 1px solid #e8e8e8;
 }
 
-/* Tags de classe e raridade dentro do card */
+/* Tags de classe e raridade */
 .bic-tags {
     display: flex;
     gap: 4px;
     flex-wrap: wrap;
-    margin: 4px 0;
+    margin-bottom: 3px;
 }
 
 /* Stats ATK/DEF/PWR compactos */
 .bic-stat {
     font-size: 10px;
-    opacity: 0.65;
-    margin-top: 3px;
+    color: #555;
+    margin-top: 2px;
 }
 
-/* Nota de captura dentro do card do inimigo */
+/* Nota de captura */
 .bic-capture-note {
     font-size: 10px;
+    color: #555;
     margin-top: 4px;
-    border-top: 1px solid rgba(255,255,255,0.08);
     padding-top: 4px;
+    border-top: 1px solid #eee;
 }
 
-/* Item equipado no card do jogador */
+/* Item equipado */
 .bic-held-item {
     font-size: 10px;
-    opacity: 0.70;
+    color: #666;
     margin-top: 3px;
 }
 
+/* ── Grid 2×2 de habilidades ── */
+.skill-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+/* Habilidade ofensiva: vermelho forte */
+.btn-skill-offensive {
+    background: #d63031;
+    color: #fff;
+    font-weight: 900;
+    font-size: 14px;
+    border: none;
+    border-radius: 12px;
+    padding: 13px 10px;
+    cursor: pointer;
+    transition: background 0.18s, transform 0.12s;
+    min-height: 54px;
+    text-align: center;
+    line-height: 1.25;
+    box-shadow: 0 3px 8px rgba(214,48,49,0.40);
+    font-family: inherit;
+}
+.btn-skill-offensive:hover:not(:disabled) {
+    background: #c0392b;
+    transform: translateY(-2px);
+}
+.btn-skill-offensive:active:not(:disabled) { transform: scale(0.97); }
+.btn-skill-offensive:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Habilidade defensiva / neutra: branco com borda */
+.btn-skill-defensive {
+    background: #ffffff;
+    color: #1a1a1a;
+    font-weight: 800;
+    font-size: 14px;
+    border: 2px solid #bdc3c7;
+    border-radius: 12px;
+    padding: 13px 10px;
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s, transform 0.12s;
+    min-height: 54px;
+    text-align: center;
+    line-height: 1.25;
+    font-family: inherit;
+}
+.btn-skill-defensive:hover:not(:disabled) {
+    border-color: #7f8c8d;
+    background: #f5f5f5;
+    transform: translateY(-1px);
+}
+.btn-skill-defensive:active:not(:disabled) { transform: scale(0.97); }
+.btn-skill-defensive:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+}
+
+/* Slot vazio de habilidade (mantém grid visual com 4 posições) */
+.btn-skill-empty {
+    background: rgba(255,255,255,0.04);
+    border: 2px dashed rgba(255,255,255,0.14);
+    border-radius: 12px;
+    min-height: 54px;
+    cursor: default;
+}
+
+/* ── Responsividade ── */
 @media (max-width: 768px) {
-    .battle-field {
-        height: 340px;
-    }
-    .bic {
-        min-width: 160px;
-        max-width: 200px;
-        padding: 6px 8px 5px;
-    }
+    .battle-field { height: 380px; }
+    .bic { min-width: 170px; max-width: 215px; }
+    .bic-header { min-height: 48px; }
+    .bic-class-col { min-width: 46px; padding: 4px 6px; }
+    .bic-class-circle { width: 30px; height: 30px; font-size: 16px; }
     .bic-name { font-size: 11px; }
-    .bic-class-icon { font-size: 14px; }
+    .bic-level-box { font-size: 10px; min-width: 42px; }
+    .bic-bar--hp  { height: 13px; }
+    .bic-bar--ene { height: 10px; }
     .battle-sprite-zone--enemy .monster-visual {
-        width: 150px !important;
-        height: 150px !important;
-        font-size: 110px !important;
+        width: 180px !important;
+        height: 180px !important;
+        font-size: 130px !important;
     }
     .battle-sprite-zone--player .monster-visual {
+        width: 155px !important;
+        height: 155px !important;
+        font-size: 112px !important;
+    }
+    .btn-skill-offensive,
+    .btn-skill-defensive { font-size: 13px; padding: 11px 8px; min-height: 48px; }
+}
+
+@media (max-width: 480px) {
+    .battle-field { height: 300px; }
+    .bic { min-width: 140px; max-width: 180px; }
+    .bic-header { min-height: 42px; }
+    .bic-class-col { min-width: 40px; padding: 3px 5px; }
+    .bic-class-circle { width: 26px; height: 26px; font-size: 14px; }
+    .bic-name { font-size: 10px; }
+    .bic-level-box { font-size: 9px; min-width: 36px; padding: 0 6px; }
+    .bic-bar--hp  { height: 11px; }
+    .bic-bar--ene { height: 8px; }
+    .battle-sprite-zone--enemy .monster-visual {
         width: 130px !important;
         height: 130px !important;
         font-size: 96px !important;
     }
-}
-
-@media (max-width: 480px) {
-    .battle-field {
-        height: 280px;
-    }
-    .bic {
-        min-width: 130px;
-        max-width: 170px;
-        padding: 5px 7px 4px;
-    }
-    .battle-sprite-zone--enemy .monster-visual {
-        width: 120px !important;
-        height: 120px !important;
-        font-size: 90px !important;
-    }
     .battle-sprite-zone--player .monster-visual {
-        width: 105px !important;
-        height: 105px !important;
-        font-size: 80px !important;
+        width: 112px !important;
+        height: 112px !important;
+        font-size: 82px !important;
     }
+    .btn-skill-offensive,
+    .btn-skill-defensive { font-size: 12px; padding: 9px 6px; min-height: 44px; }
 }
 
 /* ── Indicador de vantagem de classe na arena ─────────────────────────────── */
@@ -6114,14 +6269,14 @@ img.monster-visual--variant-battle {
     opacity: 0.45;
     margin-bottom: 5px;
 }
-.battle-log-compact > div { padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-.battle-log-compact > div:last-child { font-weight: bold; color: #fff; }
-.battle-log-compact > div.blog-dmg    { color: #ff7675; }
-.battle-log-compact > div.blog-crit   { color: #fdcb6e; font-weight: bold; }
-.battle-log-compact > div.blog-heal   { color: #55efc4; }
-.battle-log-compact > div.blog-miss   { color: #b2bec3; font-style: italic; }
-.battle-log-compact > div.blog-capture { color: #a29bfe; font-weight: bold; }
-.battle-log-compact > div.blog-flee   { color: #ffeaa7; }
+.battle-log-compact > div { padding: 2px 0; border-bottom: 1px solid rgba(0,0,0,0.06); }
+.battle-log-compact > div:last-child { font-weight: bold; color: #1a1a1a; }
+.battle-log-compact > div.blog-dmg    { color: #c0392b; }
+.battle-log-compact > div.blog-crit   { color: #e67e22; font-weight: bold; }
+.battle-log-compact > div.blog-heal   { color: #27ae60; }
+.battle-log-compact > div.blog-miss   { color: #7f8c8d; font-style: italic; }
+.battle-log-compact > div.blog-capture { color: #8e44ad; font-weight: bold; }
+.battle-log-compact > div.blog-flee   { color: #d35400; }
 
 /* ── Wrapper coluna do d20 ─────────────────────────────────────────────────── */
 .battle-dice-col {
