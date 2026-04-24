@@ -7208,21 +7208,35 @@
                 // Retorna skills normalizadas (formato operacional único do skillResolver).
                 const skillsHtml = playerMonster ? (() => {
                     const skills = resolveMonsterSkills(playerMonster);
-                    if (!skills || skills.length === 0) return '<small style="opacity:0.5">Sem habilidades</small>';
-                    return `<div style="display:flex;gap:5px;flex-wrap:wrap">
-                        ${skills.map((skill, idx) => {
-                            if (!skill) return '';
-                            const label = formatSkillButtonLabel(skill, playerMonster);
-                            const canUse = canUseSkillNow(skill, playerMonster) && playerMonster.hp > 0;
-                            const tutAllows = tutorialAllows("skill");
-                            const skillDesc = skill.desc || '';
-                            const skillMeta = [skill.category, skill.status ? `→ ${skill.status}` : null].filter(Boolean).join(' · ');
-                            const skillTooltipText = skillMeta ? `${skillDesc}\n${skillMeta}` : skillDesc;
-                            const tooltip = !tutAllows ? 'Tutorial: ainda não liberado' : (canUse ? skillTooltipText : `ENE insuficiente (${Number(playerMonster.ene) || 0}/${Number(skill.cost ?? skill.energy_cost ?? 0) || 0})`);
-                            return `<button class="btn btn-primary" onclick="useSkillWild(${idx})"
-                                    ${!canUse || !tutAllows ? 'disabled' : ''} title="${tooltip}">${label}</button>`;
-                        }).join('')}
-                    </div>`;
+                    const tutAllows = tutorialAllows("skill");
+                    // Gera sempre 4 slots para o grid 2×2 ficar consistente
+                    const slots = [0, 1, 2, 3].map(idx => {
+                        const skill = skills?.[idx];
+                        if (!skill) return `<div class="btn-skill-empty" aria-hidden="true"></div>`;
+                        const name = skill.name || skill.nome || String(skill.id);
+                        const cost = Number(skill.cost ?? skill.energy_cost ?? skill.eneCost ?? 0) || 0;
+                        const icon = skill.icon || '';
+                        const kitBadge = skill._kitSwapId ? (skill._kitSwapId.endsWith('_ii') ? ' ⭐' : ' 🌟') : '';
+                        const label = [icon, name].filter(Boolean).join(' ') + kitBadge;
+                        const canUse = canUseSkillNow(skill, playerMonster) && playerMonster.hp > 0;
+                        // Categorização ofensivo vs defensivo (inline, sem módulo externo)
+                        const t = skill.target || '';
+                        const skillType = (skill.type || '').toUpperCase();
+                        const isOff = (t === 'enemy' || t === 'area' || t === 'Inimigo' || t === 'Área')
+                                   || (t !== 'self' && t !== 'ally' && t !== 'Self' && t !== 'Aliado' && skillType === 'DAMAGE');
+                        const btnClass = isOff ? 'btn-skill-offensive' : 'btn-skill-defensive';
+                        const skillDesc = skill.desc || '';
+                        const skillMeta = [skill.category, skill.status ? `→ ${skill.status}` : null].filter(Boolean).join(' · ');
+                        const tooltip = !tutAllows
+                            ? 'Tutorial: ainda não liberado'
+                            : (!canUse
+                                ? `ENE insuficiente (${Number(playerMonster.ene) || 0}/${cost})`
+                                : (skillMeta ? `${skillDesc}\n${skillMeta}` : skillDesc));
+                        return `<button class="${btnClass}" onclick="useSkillWild(${idx})"
+                                ${!canUse || !tutAllows ? 'disabled' : ''}
+                                title="${tooltip}">${label}</button>`;
+                    });
+                    return `<div class="skill-grid">${slots.join('')}</div>`;
                 })() : '<small style="opacity:0.5">—</small>';
 
                 // Itens de cura
@@ -7259,40 +7273,48 @@
                                 ${getMonsterVisualHTML(monster, { variant: 'battle', size: 'xl' })}
                             </div>
 
-                            <!-- Card de info do inimigo (topo-esquerda), mantém id para JS -->
+                            <!-- Card de info do inimigo (topo-DIREITA), mantém id para JS -->
                             <div class="bic bic--enemy" id="wildEnemyBox">
                                 <div class="bic-header">
-                                    <span class="bic-class-icon">${GameState.CLASS_EMOJI?.[monster.class] || '👾'}</span>
-                                    <span class="bic-name">${monster.name}${monster.isShiny ? ' ⭐' : ''}</span>
-                                    <span class="bic-level">Nv.${monster.level}</span>
+                                    <div class="bic-class-col">
+                                        <span class="bic-class-label">CLASS</span>
+                                        <div class="bic-class-circle">${GameState.CLASS_EMOJI?.[monster.class] || '👾'}</div>
+                                    </div>
+                                    <div class="bic-name-band">
+                                        <span class="bic-name">${monster.name}${monster.isShiny ? ' ⭐' : ''}</span>
+                                    </div>
+                                    <div class="bic-level-box">LV.${monster.level}</div>
                                 </div>
-                                <div class="bic-divider"></div>
-                                <div class="bic-bar-row" id="wildEnemyHpRow">
-                                    <span class="bic-bar-icon">❤️</span>
-                                    <div class="bic-bar"><div class="bic-bar-fill hp" id="wildEnemyHpFill" style="width:${hpPercent*100}%"></div></div>
-                                    <span class="bic-bar-val">${monster.hp}/${monster.hpMax}</span>
+                                <div class="bic-bars">
+                                    <div class="bic-bar-row" id="wildEnemyHpRow">
+                                        <span class="bic-bar-icon">❤️</span>
+                                        <div class="bic-bar bic-bar--hp"><div class="bic-bar-fill hp" id="wildEnemyHpFill" style="width:${hpPercent*100}%"></div></div>
+                                        <span class="bic-bar-val">${monster.hp}/${monster.hpMax}</span>
+                                    </div>
+                                    ${(monster.eneMax > 0) ? `
+                                    <div class="bic-bar-row">
+                                        <span class="bic-bar-icon">⚡</span>
+                                        <div class="bic-bar bic-bar--ene"><div class="bic-bar-fill ene" style="width:${Math.max(0,Math.min(100,((monster.ene??0)/monster.eneMax)*100))}%"></div></div>
+                                        <span class="bic-bar-val">${monster.ene ?? 0}/${monster.eneMax}</span>
+                                    </div>` : ''}
+                                    <div class="bic-bar-row">
+                                        <span class="bic-bar-icon">😤</span>
+                                        <div class="bic-bar bic-bar--aggr"><div class="bic-bar-fill aggr" style="width:${monster.aggression ?? 100}%"></div></div>
+                                        <span class="bic-bar-val">${monster.aggression ?? 100}/100</span>
+                                    </div>
                                 </div>
-                                ${(monster.eneMax > 0) ? `
-                                <div class="bic-bar-row">
-                                    <span class="bic-bar-icon">⚡</span>
-                                    <div class="bic-bar"><div class="bic-bar-fill ene" style="width:${Math.max(0,Math.min(100,((monster.ene??0)/monster.eneMax)*100))}%"></div></div>
-                                    <span class="bic-bar-val">${monster.ene ?? 0}/${monster.eneMax}</span>
-                                </div>` : ''}
-                                <div class="bic-bar-row">
-                                    <span class="bic-bar-icon">😤</span>
-                                    <div class="bic-bar"><div class="bic-bar-fill aggr" style="width:${monster.aggression ?? 100}%"></div></div>
-                                    <span class="bic-bar-val">${monster.aggression ?? 100}/100</span>
-                                </div>
-                                <div class="bic-tags">
-                                    <span class="battle-class-badge battle-class-badge--${classToCssSlug(monster.class)}">${monster.class}</span>
-                                    <span class="badge badge-${monster.rarity}">${monster.rarity}</span>
-                                </div>
-                                <div class="bic-stat">⚔️${monster.atk} 🛡️${monster.def} 💥${monster.poder}</div>
-                                <div class="bic-capture-note">
-                                    ${encounter.behaviorallyResolved
-                                        ? '<span style="color:#00b894">🌿 Calmo/Rendido!</span>'
-                                        : `${rd.emoji} <strong>${rd.text}</strong> — ${scoreNow}/${neededNow} pts`
-                                    }
+                                <div class="bic-info">
+                                    <div class="bic-tags">
+                                        <span class="battle-class-badge battle-class-badge--${classToCssSlug(monster.class)}">${monster.class}</span>
+                                        <span class="badge badge-${monster.rarity}">${monster.rarity}</span>
+                                    </div>
+                                    <div class="bic-stat">⚔️${monster.atk} 🛡️${monster.def} 💥${monster.poder}</div>
+                                    <div class="bic-capture-note">
+                                        ${encounter.behaviorallyResolved
+                                            ? '<span style="color:#27ae60">🌿 Calmo/Rendido!</span>'
+                                            : `${rd.emoji} <strong>${rd.text}</strong> — ${scoreNow}/${neededNow} pts`
+                                        }
+                                    </div>
                                 </div>
                             </div>
 
@@ -7302,35 +7324,42 @@
                                 ${getMonsterVisualHTML(playerMonster, { variant: 'battle', size: 'xl' })}
                             </div>` : ''}
 
-                            <!-- Card de info do jogador (baixo-direita), mantém id para JS -->
+                            <!-- Card de info do jogador (baixo-ESQUERDA), mantém id para JS -->
                             <div class="bic bic--player" id="wildPlayerBox">
                                 ${playerMonster ? `
                                 <div class="bic-header">
-                                    <span class="bic-class-icon">${GameState.CLASS_EMOJI?.[playerMonster.class] || '👾'}</span>
-                                    <span class="bic-name">${playerMonster.name}</span>
-                                    <span class="bic-level">Nv.${playerMonster.level}</span>
+                                    <div class="bic-class-col">
+                                        <span class="bic-class-label">CLASS</span>
+                                        <div class="bic-class-circle">${GameState.CLASS_EMOJI?.[playerMonster.class] || '👾'}</div>
+                                    </div>
+                                    <div class="bic-name-band">
+                                        <span class="bic-name">${playerMonster.name}</span>
+                                    </div>
+                                    <div class="bic-level-box">LV.${playerMonster.level}</div>
                                 </div>
-                                <div class="bic-divider"></div>
-                                <div class="bic-bar-row">
-                                    <span class="bic-bar-icon">❤️</span>
-                                    <div class="bic-bar"><div class="bic-bar-fill hp" style="width:${pmHpPct}%"></div></div>
-                                    <span class="bic-bar-val">${playerMonster.hp}/${playerMonster.hpMax}</span>
+                                <div class="bic-bars">
+                                    <div class="bic-bar-row">
+                                        <span class="bic-bar-icon">❤️</span>
+                                        <div class="bic-bar bic-bar--hp"><div class="bic-bar-fill hp" style="width:${pmHpPct}%"></div></div>
+                                        <span class="bic-bar-val">${playerMonster.hp}/${playerMonster.hpMax}</span>
+                                    </div>
+                                    <div class="bic-bar-row">
+                                        <span class="bic-bar-icon">⚡</span>
+                                        <div class="bic-bar bic-bar--ene"><div class="bic-bar-fill ene" style="width:${pmEnePct}%"></div></div>
+                                        <span class="bic-bar-val">${playerMonster.ene || 0}/${playerMonster.eneMax || 0}</span>
+                                    </div>
                                 </div>
-                                <div class="bic-bar-row">
-                                    <span class="bic-bar-icon">⚡</span>
-                                    <div class="bic-bar"><div class="bic-bar-fill ene" style="width:${pmEnePct}%"></div></div>
-                                    <span class="bic-bar-val">${playerMonster.ene || 0}/${playerMonster.eneMax || 0}</span>
+                                <div class="bic-xp-strip">
+                                    <div class="bic-xp-strip-labels"><span>Exp.</span><span>${Math.floor(pmXpPct)}%</span></div>
+                                    <div class="bic-xp-track"><div class="bic-bar-fill xp" style="width:${pmXpPct}%"></div></div>
                                 </div>
-                                <div class="bic-xp-row">
-                                    <span class="bic-bar-icon">✨</span>
-                                    <div class="bic-xp-bar"><div class="bic-bar-fill xp" style="width:${pmXpPct}%"></div></div>
-                                    <span class="bic-xp-label">${Math.floor(pmXpPct)}%</span>
+                                <div class="bic-info">
+                                    <div class="bic-tags">
+                                        <span class="battle-class-badge battle-class-badge--${classToCssSlug(playerMonster.class)}">${playerMonster.class || ''}</span>
+                                    </div>
+                                    <div class="bic-held-item">${formatEquippedItemDisplay(playerMonster.heldItemId)}</div>
                                 </div>
-                                <div class="bic-tags">
-                                    <span class="battle-class-badge battle-class-badge--${classToCssSlug(playerMonster.class)}">${playerMonster.class || ''}</span>
-                                </div>
-                                <div class="bic-held-item">${formatEquippedItemDisplay(playerMonster.heldItemId)}</div>
-                                ` : `<div style="opacity:0.5;font-size:12px">Sem monstrinho ativo</div>`}
+                                ` : `<div style="opacity:0.5;font-size:12px;padding:10px">Sem monstrinho ativo</div>`}
                             </div>
 
                             <!-- Indicador de vantagem de classe no centro da arena -->
@@ -7356,22 +7385,22 @@
                             ${advantageHtml}
                             <div class="battle-main-actions">
                                 ${playerMonster && monster
-                                    ? `<button class="btn btn-danger" onclick="attackWild()" ${tutorialAllows("attack") ? "" : "disabled title='Tutorial: ainda não liberado'"}>⚔️ Atacar</button>`
-                                    : `<button class="btn btn-danger" onclick="attackWild()">⚔️ Atacar</button>`
+                                    ? `<button class="btn btn-danger" onclick="attackWild()" style="box-shadow:0 4px 14px rgba(214,48,49,0.45)" ${tutorialAllows("attack") ? "" : "disabled title='Tutorial: ainda não liberado'"}>⚔️ Atacar</button>`
+                                    : `<button class="btn btn-danger" onclick="attackWild()" style="box-shadow:0 4px 14px rgba(214,48,49,0.45)">⚔️ Atacar</button>`
                                 }
                                 ${hasAnyOrb
-                                    ? `<button class="btn btn-success" onclick="attemptCapture()" ${tutorialAllows("capture") ? "" : "disabled title='Tutorial: ainda não liberado'"}>🎯 Capturar</button>`
+                                    ? `<button class="btn btn-success" onclick="attemptCapture()" style="box-shadow:0 4px 14px rgba(0,184,148,0.45)" ${tutorialAllows("capture") ? "" : "disabled title='Tutorial: ainda não liberado'"}>🎯 Capturar</button>`
                                     : `<button class="btn btn-success opacity-50" disabled title="Sem ClasterOrbs">🎯 Capturar</button>`
                                 }
-                                <button class="btn btn-warning" onclick="fleeEncounter()" ${tutorialAllows("flee") ? "" : "disabled title='Tutorial: ainda não liberado'"}>🏃 Fugir</button>
+                                <button class="btn btn-warning" onclick="fleeEncounter()" style="box-shadow:0 4px 14px rgba(253,203,110,0.40)" ${tutorialAllows("flee") ? "" : "disabled title='Tutorial: ainda não liberado'"}>🏃 Fugir</button>
                             </div>
                         </div>
 
                         <!-- Painel secundário: habilidades | itens & captura -->
                         <div class="battle-secondary-row">
                             <!-- Habilidades -->
-                            <div class="battle-sec-panel">
-                                <div class="battle-sec-title">✨ Habilidades</div>
+                            <div class="battle-sec-panel" style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.12)">
+                                <div class="battle-sec-title" style="opacity:0.9;font-size:12px;margin-bottom:10px">⚡ HABILIDADES</div>
                                 ${skillsHtml}
                             </div>
 
