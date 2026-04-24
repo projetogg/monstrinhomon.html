@@ -7211,7 +7211,7 @@
                     const tutAllows = tutorialAllows("skill");
                     // Gera sempre 4 slots para o grid 2×2 ficar consistente
                     const slots = [0, 1, 2, 3].map(idx => {
-                        const skill = skills?.[idx];
+                        const skill = skills[idx];
                         if (!skill) return `<div class="btn-skill-empty" aria-hidden="true"></div>`;
                         const name = skill.name || skill.nome || String(skill.id);
                         const cost = Number(skill.cost ?? skill.energy_cost ?? skill.eneCost ?? 0) || 0;

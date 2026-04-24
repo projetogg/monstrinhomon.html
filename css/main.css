@@ -5637,13 +5637,16 @@ img.monster-visual--variant-battle {
    ══════════════════════════════════════════════════ */
 
 /* Animações de sprite ─────────────────────────────────────────────────────── */
+/* Distância de flutuação idle — altere aqui para afetar ambas as animações */
+:root { --idle-float-distance: -7px; }
+
 @keyframes battle-idle-float {
     0%, 100% { transform: translateY(0); }
-    50%       { transform: translateY(-7px); }
+    50%       { transform: translateY(var(--idle-float-distance)); }
 }
 @keyframes battle-idle-float-mirror {
     0%, 100% { transform: scaleX(-1) translateY(0); }
-    50%       { transform: scaleX(-1) translateY(-7px); }
+    50%       { transform: scaleX(-1) translateY(var(--idle-float-distance)); }
 }
 /* Tremor de dano — adicionar .shake-anim via JS */
 @keyframes battle-shake {
@@ -5885,7 +5888,7 @@ img.monster-visual--variant-battle {
 }
 
 /* HP: barra alta e proeminente */
-.bic-bar--hp  { height: 16px; }
+.bic-bar--hp { height: 16px; }
 /* ENE: ligeiramente menor */
 .bic-bar--ene { height: 12px; }
 /* AGGR: menor ainda */
