@@ -27,6 +27,19 @@ body {
    ========================= */
 .app-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
 
+/* Utilitário de acessibilidade: visível apenas para leitores de tela */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 .error-panel {
     position: fixed; top: 0; left: 0; right: 0; background: #d63031; color: white;
     padding: 15px; z-index: 10000; display: none; font-family: monospace; font-size: 14px;
@@ -557,9 +570,34 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
   position: relative;
   overflow: hidden;
   pointer-events: all;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   /* estado inicial: fora da tela à direita */
   transform: translateX(calc(100% + 32px));
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.mm-toast-text {
+  flex: 1;
+}
+/* Botão de fechar em toasts urgentes (erro/aviso) */
+.mm-toast-close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.8);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 4px;
+  min-height: unset;
+  min-width: unset;
+  border-radius: 4px;
+  align-self: flex-start;
+}
+.mm-toast-close:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.15);
 }
 .mm-toast.show {
   transform: translateX(0);
@@ -574,6 +612,10 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
   background: rgba(255,255,255,0.45);
   border-radius: 0 0 12px 12px;
   animation: mm-toast-progress 3.5s linear forwards;
+}
+/* Erros ficam 6s — barra de progresso ajustada */
+.mm-toast.error::after {
+  animation-duration: 6s;
 }
 @keyframes mm-toast-progress {
   from { width: 100%; }
@@ -2637,6 +2679,30 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     letter-spacing: 0.03em;
 }
 
+/* Empty state do card "📊 Sessão" — quando não há jogadores */
+.home-empty-state-session {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 0;
+    text-align: center;
+}
+.home-empty-state-icon {
+    font-size: 1.5em;
+    line-height: 1;
+}
+.home-empty-state-msg {
+    font-size: 0.8em;
+    color: #888;
+    margin: 0;
+}
+.home-empty-state-btn {
+    font-size: 0.78em;
+    padding: 5px 12px;
+    min-height: unset;
+}
+
 /* Mini-grid 3×2 para card de Conquistas */
 .stats-mini-grid {
     display: grid;
@@ -3149,6 +3215,26 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 
     .quick-actions {
         flex-direction: row;
+    }
+}
+
+/* Telas muito estreitas (< 360px: Samsung Galaxy A, iPhone SE 1ª gen) */
+@media (max-width: 359px) {
+    /* Dashboard sempre 1 coluna — já aplicado em 480px, reforçado aqui */
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Quick-actions em coluna: cada botão ocupa a linha inteira */
+    .quick-actions {
+        flex-direction: column;
+    }
+
+    .quick-action-btn {
+        flex: 0 0 auto;
+        width: 100%;
+        justify-content: flex-start;
+        padding: 10px 14px;
     }
 }
 
@@ -4598,6 +4684,73 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
     color: #fff;
 }
 .mm-alert-card--dark .mm-alert-msg { color: rgba(255,255,255,0.88); }
+
+/* Modal de confirmação — linha de botões lado a lado */
+.mm-confirm-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+.mm-confirm-btn-cancel {
+    background: #f0f0f0;
+    color: #444;
+}
+.mm-confirm-btn-cancel:hover {
+    background: #e0e0e0;
+    transform: translateY(-1px);
+}
+
+/* ── Indicador de carregamento das abas secundárias ─────────────────────── */
+.tab-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 20px;
+    color: #888;
+    font-size: 0.9em;
+}
+.tab-loading-icon {
+    display: inline-block;
+    animation: tab-loading-spin 1.2s linear infinite;
+}
+@keyframes tab-loading-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+/* ── Empty state das abas secundárias (sem dados disponíveis) ──────────── */
+.tab-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 28px 16px;
+    text-align: center;
+}
+.tab-empty-icon {
+    font-size: 2em;
+    line-height: 1;
+}
+.tab-empty-msg {
+    font-size: 0.95em;
+    font-weight: 600;
+    color: #555;
+    margin: 0;
+}
+.tab-empty-hint {
+    font-size: 0.82em;
+    color: #888;
+    margin: 0;
+    line-height: 1.5;
+}
+.tab-empty-btn {
+    margin-top: 4px;
+    font-size: 0.85em;
+    padding: 6px 16px;
+    min-height: unset;
+}
 
 /* ── Breadcrumb de navegação ─────────────────────────────────────────────── */
 .nav-breadcrumb {
@@ -6329,4 +6482,436 @@ img.monster-visual--variant-battle {
     font-size: 10px;
     opacity: 0.65;
     margin-top: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SPRINT 1 — Melhorias de UX/UI
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* --- Navbar: Dropdown "Mais" -------------------------------------------- */
+.nav-more-wrapper {
+    position: relative;
+}
+
+.nav-btn--more {
+    position: relative;
+}
+
+.nav-more-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 180px;
+    background: #fff;
+    border: 1px solid rgba(108,92,231,0.18);
+    border-radius: 14px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.14);
+    z-index: 8800;
+    overflow: hidden;
+    padding: 4px 0;
+}
+
+.nav-more-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 18px;
+    border: none;
+    background: transparent;
+    color: var(--dark);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+    min-height: 44px;
+}
+
+.nav-more-item:hover,
+.nav-more-item:focus-visible {
+    background: #f0eeff;
+    outline: none;
+}
+
+.nav-more-item--active {
+    background: #e8e0ff;
+    color: var(--primary);
+}
+
+/* Indicador de aba ativa no botão "Mais" */
+.nav-btn--more.active::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    background: var(--primary);
+    border-radius: 50%;
+}
+
+/* --- Menu Principal: Hierarquia visual ------------------------------------ */
+
+/* Botão primário do menu — "Continuar" */
+.mm-btn--primary {
+    background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+    color: #fff;
+    font-size: 18px;
+    padding: 16px 14px;
+    border: none;
+    box-shadow: 0 4px 18px rgba(108,92,231,0.38);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.mm-btn--primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(108,92,231,0.5);
+}
+
+/* Botão secundário do menu — "Novo Jogo" */
+.mm-btn--secondary {
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+    border: 1.5px solid rgba(255,255,255,0.22);
+    font-size: 16px;
+}
+
+.mm-btn--secondary:hover {
+    background: rgba(255,255,255,0.16);
+}
+
+/* Botão ghost do menu — ações de baixo impacto */
+.mm-btn--ghost {
+    background: transparent;
+    color: rgba(255,255,255,0.75);
+    border: 1px solid rgba(255,255,255,0.12);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 10px 14px;
+    margin: 4px 0;
+}
+
+.mm-btn--ghost:hover {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+}
+
+/* Botão ghost vermelho — ação destrutiva discreta */
+.mm-btn--danger-ghost {
+    color: rgba(255,120,120,0.8);
+    border-color: rgba(255,120,120,0.2);
+}
+
+.mm-btn--danger-ghost:hover {
+    background: rgba(214,48,49,0.12);
+    color: #ff7675;
+    border-color: rgba(214,48,49,0.3);
+}
+
+/* Botão terapeuta — âmbar, distinto visualmente */
+.mm-btn--mestre {
+    background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%);
+    color: #fff;
+    border: none;
+    font-size: 15px;
+    box-shadow: 0 3px 12px rgba(230,126,34,0.35);
+}
+
+.mm-btn--mestre:hover {
+    background: linear-gradient(135deg, #d35400, #e67e22);
+    transform: translateY(-1px);
+}
+
+/* Separador visual entre grupos de botões */
+.mm-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.10);
+    margin: 8px 0;
+    border-radius: 1px;
+}
+
+/* Seção do Mestre no menu — borda discreta para distinguir */
+.mm-mestre-section {
+    border: 1px solid rgba(230,126,34,0.25);
+    border-radius: 12px;
+    padding: 8px;
+    margin-top: 4px;
+    background: rgba(230,126,34,0.06);
+}
+
+/* --- Tela Inicial: Identidade visual aprimorada ------------------------- */
+
+.mm-card--intro {
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    padding: 32px 24px;
+}
+
+/* Mascotes decorativos na tela inicial */
+.mm-intro-mascots {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.mm-intro-mascot {
+    position: absolute;
+    font-size: 48px;
+    opacity: 0;
+    animation: mm-mascot-float linear infinite;
+    filter: blur(1px);
+}
+
+.mm-intro-mascot--1 {
+    left: 8%;
+    bottom: 10%;
+    animation-duration: 8s;
+    animation-delay: 0s;
+    font-size: 40px;
+}
+
+.mm-intro-mascot--2 {
+    right: 10%;
+    bottom: 20%;
+    animation-duration: 10s;
+    animation-delay: 2s;
+    font-size: 44px;
+}
+
+.mm-intro-mascot--3 {
+    left: 20%;
+    bottom: 5%;
+    animation-duration: 12s;
+    animation-delay: 4s;
+    font-size: 36px;
+}
+
+@keyframes mm-mascot-float {
+    0%   { opacity: 0; transform: translateY(0) scale(0.9); }
+    15%  { opacity: 0.35; }
+    85%  { opacity: 0.25; }
+    100% { opacity: 0; transform: translateY(-140px) scale(1.1); }
+}
+
+/* Título da tela inicial — maior, com gradiente */
+.mm-intro-title {
+    font-size: 36px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #a29bfe 0%, #20ddcc 50%, #fd79a8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+    margin-bottom: 4px;
+}
+
+/* Tagline da tela inicial */
+.mm-intro-tagline {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    opacity: 0.88;
+    margin-bottom: 20px;
+}
+
+/* Botão Jogar — maior e mais vibrante.
+   Usa seletor composto #mmIntro + .mm-card--intro para superar a especificidade de
+   .mm-overlay .mm-card .mm-btn sem precisar de !important. */
+#mmIntro .mm-card--intro .mm-intro-play-btn {
+    font-size: 20px;
+    padding: 18px 48px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #20ddcc 0%, #a060ff 100%);
+    color: #fff;
+    border: none;
+    box-shadow: 0 6px 28px rgba(32,221,204,0.40);
+    transition: transform 0.15s, box-shadow 0.15s;
+    margin: 4px auto;
+    width: auto;
+    display: inline-block;
+}
+
+#mmIntro .mm-card--intro .mm-intro-play-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 36px rgba(32,221,204,0.55);
+}
+
+/* Responsividade: dropdown da navbar em mobile */
+@media (max-width: 480px) {
+    .nav-more-dropdown {
+        right: auto;
+        left: 0;
+        min-width: 160px;
+    }
+}
+
+/* ==========================================================================
+   Sprint 2 — Estilos adicionais
+   ========================================================================== */
+
+/* Separador visual no dropdown "Mais" */
+.nav-more-separator {
+    margin: 4px 12px;
+    border: none;
+    border-top: 1px solid rgba(108,92,231,0.12);
+}
+
+/* Botão do menu principal desabilitado (sem save) */
+.mm-btn--disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: auto; /* permite exibir tooltip (title) */
+    box-shadow: none !important;
+    transform: none !important;
+}
+.mm-btn--disabled:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Topbar da Home clicável (batalha ativa) */
+.home-session-indicator--clickable {
+    cursor: pointer;
+    border-color: #a29bfe;
+    background: #f0eeff;
+    transition: background 0.15s, border-color 0.15s;
+}
+.home-session-indicator--clickable:hover {
+    background: #e8e0ff;
+    border-color: var(--primary);
+}
+
+/* Empty state nos cards do dashboard */
+.home-empty-cta {
+    font-size: 0.82em;
+    color: #888;
+    line-height: 1.5;
+    margin: 4px 0 0;
+}
+.home-empty-link {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--primary);
+    font-weight: 700;
+    cursor: pointer;
+    font-size: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.home-empty-link:hover {
+    color: #a29bfe;
+}
+
+/* Empty state na lista de jogadores */
+.players-empty-state {
+    text-align: center;
+    padding: 24px 16px;
+}
+.players-empty-icon {
+    font-size: 2.2em;
+    margin: 0 0 6px;
+    line-height: 1;
+}
+.players-empty-msg {
+    font-size: 1em;
+    font-weight: 700;
+    color: #444;
+    margin: 0 0 4px;
+}
+.players-empty-hint {
+    font-size: 0.85em;
+    color: #888;
+    margin: 0;
+}
+
+/* Seção "Adicionar Jogador" — layout compacto e consistente */
+.add-player-card h3 {
+    margin-bottom: 10px;
+}
+.add-player-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+.add-player-class-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.add-player-class-row .mm-input {
+    flex: 1;
+}
+.add-player-btn {
+    width: 100%;
+}
+
+/* Badge de preview de classe */
+.class-preview-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8em;
+    font-weight: 700;
+    background: #f0eeff;
+    color: var(--primary);
+    border: 1px solid #d4c8ff;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* =========================================================
+   Sprint 3 — Bloco C: prefers-reduced-motion
+   Desativa/simplifica animações para usuários sensíveis a movimento
+   ========================================================= */
+@media (prefers-reduced-motion: reduce) {
+    /* Partículas da intro: remover flutuação */
+    .mm-intro-particle {
+        animation: none;
+        opacity: 0;
+    }
+
+    /* Mascotes decorativos: remover flutuação */
+    .mm-intro-mascot {
+        animation: none;
+        opacity: 0;
+    }
+
+    /* Flashes de batalha: substituir por transição de opacidade simples */
+    .flash-crit,
+    .flash-fail,
+    .flash-hit {
+        animation: none;
+        transition: opacity 0.15s ease;
+    }
+
+    /* Barra de progresso do toast: remover animação */
+    .mm-toast::after {
+        animation: none;
+        width: 0;
+    }
+
+    /* Toast bounce do level-up: remover bounce, manter slide-in */
+    .mm-toast.level-up {
+        animation: none;
+    }
+
+    /* Transições gerais de cards e botões: reduzir */
+    .card,
+    .btn,
+    .mm-btn,
+    .tab-button {
+        transition: none;
+    }
+
+    /* Spinner de carregamento: parar rotação */
+    .tab-loading-icon {
+        animation: none;
+    }
 }

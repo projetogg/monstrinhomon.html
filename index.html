@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>Monstrinhomon - Therapeutic Game</title>
+    <title>Monstrinhomon - RPG Terapêutico Infantil</title>
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/overworld.css">
     <!-- Nunito: tipografia lúdica para títulos e nomes de monstrinhos -->
@@ -18,8 +18,8 @@
 <body>
     <div id="errorPanel" class="error-panel">
         <div id="errorMessage"></div>
-        <button onclick="copyError()">📋 Copy Error</button>
-        <button onclick="dismissError()">✖ Dismiss</button>
+        <button onclick="copyError()">📋 Copiar Erro</button>
+        <button onclick="dismissError()">✖ Fechar</button>
     </div>
 
     <div class="app-container">
@@ -44,19 +44,35 @@
                 <button class="tab-button nav-btn" data-tab="box" onclick="switchTab('box')" aria-label="Caixa">
                     <span class="nav-icon">📦</span><span class="nav-label">Caixa</span>
                 </button>
-                <button class="tab-button nav-btn" data-tab="shop" onclick="switchTab('shop')" aria-label="Loja">
-                    <span class="nav-icon">🛒</span><span class="nav-label">Loja</span>
-                </button>
-                <button class="tab-button nav-btn" data-tab="partyDex" onclick="switchTab('partyDex')" aria-label="Monstrodex">
-                    <span class="nav-icon">📘</span><span class="nav-label">Monstrodex</span>
-                </button>
-                <button class="tab-button nav-btn" data-tab="missoes" onclick="switchTab('missoes')" aria-label="Missões">
-                    <span class="nav-icon">📜</span><span class="nav-label">Missões</span>
-                </button>
-                <button class="tab-button nav-btn" data-tab="trade" onclick="switchTab('trade')" aria-label="Trocas">
-                    <span class="nav-icon">🔄</span><span class="nav-label">Trocas</span>
-                </button>
-                <button id="headerMestreBtn" class="tab-button nav-btn nav-btn--mestre" onclick="mmOpenMestre()" aria-label="Painel Mestre">
+                <!-- Botão "Mais" — abre dropdown com itens secundários -->
+                <div class="nav-more-wrapper" id="navMoreWrapper">
+                    <button class="tab-button nav-btn nav-btn--more" id="navMoreBtn"
+                            onclick="toggleNavMore(event)"
+                            aria-label="Mais opções"
+                            aria-expanded="false"
+                            aria-haspopup="menu">
+                        <span class="nav-icon">⋯</span><span class="nav-label">Mais</span>
+                    </button>
+                    <div class="nav-more-dropdown" id="navMoreDropdown" hidden role="menu" aria-label="Mais opções">
+                        <button class="nav-more-item" data-tab="shop" onclick="switchTab('shop');closeNavMore()" role="menuitem">
+                            <span>🛒</span> Loja
+                        </button>
+                        <button class="nav-more-item" data-tab="partyDex" onclick="switchTab('partyDex');closeNavMore()" role="menuitem">
+                            <span>📘</span> Monstrodex
+                        </button>
+                        <button class="nav-more-item" data-tab="missoes" onclick="switchTab('missoes');closeNavMore()" role="menuitem">
+                            <span>📜</span> Missões
+                        </button>
+                        <button class="nav-more-item" data-tab="trade" onclick="switchTab('trade');closeNavMore()" role="menuitem">
+                            <span>🔄</span> Trocas
+                        </button>
+                        <hr class="nav-more-separator" role="separator" aria-hidden="true">
+                        <button class="nav-more-item" data-tab="settings" onclick="switchTab('settings');closeNavMore()" role="menuitem">
+                            <span>⚙️</span> Configurações
+                        </button>
+                    </div>
+                </div>
+                <button id="headerMestreBtn" class="tab-button nav-btn nav-btn--mestre is-hidden" onclick="mmOpenMestre()" aria-label="Painel Mestre">
                     <span class="nav-icon">🧑‍🏫</span><span class="nav-label">Mestre</span>
                 </button>
             </nav>
@@ -168,45 +184,50 @@
         </div>
 
         <div id="tabSession" class="tab-content">
-            <h2>Session Management 📋</h2>
+            <h2>📋 Gestão de Sessão</h2>
             
             <div class="card">
-                <h3>Create New Session</h3>
-                <input type="text" id="sessionName" placeholder="Session Name (e.g., Therapy Session 2024-01-15)">
-                <button class="btn btn-success" onclick="createSession()">Create Session</button>
+                <h3>Nova Sessão</h3>
+                <input type="text" id="sessionName" placeholder="Nome da Sessão (ex: Sessão Terapêutica 2024-01-15)">
+                <button class="btn btn-success" onclick="createSession()">Criar Sessão</button>
             </div>
 
             <div id="activeSessionPanel" class="card is-hidden">
-                <h3>Active Session: <span id="activeSessionName"></span></h3>
-                <p>Created: <span id="sessionCreated"></span></p>
+                <h3>Sessão Ativa: <span id="activeSessionName"></span></h3>
+                <p>Criada em: <span id="sessionCreated"></span></p>
                 
-                <h4>Turn Order</h4>
+                <h4>Ordem de Turno</h4>
                 <div id="turnOrderList"></div>
                 
-                <button class="btn btn-warning" onclick="nextTurn()">Next Turn ▶</button>
+                <button class="btn btn-warning" onclick="nextTurn()">Próximo Turno ▶</button>
                 <button class="btn btn-primary" onclick="openTradePanel()">🔄 Trocas</button>
-                <button class="btn btn-danger" onclick="endSession()">End Session</button>
+                <button class="btn btn-danger" onclick="endSession()">Encerrar Sessão</button>
             </div>
         </div>
 
         <div id="tabPlayers" class="tab-content">
             <h2>👥 Grupo de Jogadores</h2>
             
-            <div class="card">
+            <div class="card add-player-card">
                 <h3>➕ Adicionar Jogador</h3>
-                <input type="text" id="playerName" placeholder="Nome do Jogador">
-                <select id="playerClass">
-                    <option value="">Selecionar Classe</option>
-                    <option value="Guerreiro">⚔️ Guerreiro</option>
-                    <option value="Mago">🔮 Mago</option>
-                    <option value="Curandeiro">💚 Curandeiro</option>
-                    <option value="Bárbaro">💪 Bárbaro</option>
-                    <option value="Ladino">🗡️ Ladino</option>
-                    <option value="Bardo">🎵 Bardo</option>
-                    <option value="Caçador">🏹 Caçador</option>
-                    <option value="Animalista">🐾 Animalista</option>
-                </select>
-                <button class="btn btn-success" onclick="addPlayer()">➕ Adicionar</button>
+                <div class="add-player-fields">
+                    <input type="text" id="playerName" class="mm-input" placeholder="Nome do Jogador">
+                    <div class="add-player-class-row">
+                        <select id="playerClass" class="mm-input" onchange="updateClassPreview(this.value)">
+                            <option value="">Selecionar Classe</option>
+                            <option value="Guerreiro">⚔️ Guerreiro</option>
+                            <option value="Mago">🔮 Mago</option>
+                            <option value="Curandeiro">💚 Curandeiro</option>
+                            <option value="Bárbaro">💪 Bárbaro</option>
+                            <option value="Ladino">🗡️ Ladino</option>
+                            <option value="Bardo">🎵 Bardo</option>
+                            <option value="Caçador">🏹 Caçador</option>
+                            <option value="Animalista">🐾 Animalista</option>
+                        </select>
+                        <span id="classPreviewBadge" class="class-preview-badge is-hidden"></span>
+                    </div>
+                </div>
+                <button class="btn btn-success add-player-btn" onclick="addPlayer()">➕ Adicionar</button>
             </div>
 
             <div id="playersList"></div>
@@ -407,20 +428,20 @@
         </div>
 
         <div id="tabTherapy" class="tab-content">
-            <h2>Therapeutic Objectives 🎯</h2>
+            <h2>🎯 Objetivos Terapêuticos</h2>
             
             <div class="therapist-panel">
-                <h3>⚕️ Therapist Controls</h3>
+                <h3>⚕️ Controles do Terapeuta</h3>
                 
                 <div class="card">
-                    <h4>Add Objective</h4>
-                    <input type="text" id="newObjective" placeholder="Objective description">
+                    <h4>Adicionar Objetivo</h4>
+                    <input type="text" id="newObjective" placeholder="Descrição do objetivo">
                     <select id="objectiveWeight">
-                        <option value="1">Low Weight (1)</option>
-                        <option value="2">Medium Weight (2)</option>
-                        <option value="3">High Weight (3)</option>
+                        <option value="1">Peso Baixo (1)</option>
+                        <option value="2">Peso Médio (2)</option>
+                        <option value="3">Peso Alto (3)</option>
                     </select>
-                    <button class="btn btn-success" onclick="addObjective()">Add Objective</button>
+                    <button class="btn btn-success" onclick="addObjective()">Adicionar Objetivo</button>
                 </div>
 
                 <div id="objectivesList"></div>
@@ -430,7 +451,7 @@
         </div>
 
         <div id="tabReport" class="tab-content">
-            <h2>Session Report 📊</h2>
+            <h2>📊 Relatório de Sessão</h2>
             <div id="reportContent"></div>
         </div>
 
@@ -484,14 +505,14 @@
             <div class="card">
                 <h3>🎒 Equipe</h3>
                 <div id="boxTeamList" class="box-grid">
-                    <p class="text-center">Carregando...</p>
+                    <div class="tab-loading"><span class="tab-loading-icon" aria-hidden="true">⏳</span> Carregando equipe...</div>
                 </div>
             </div>
 
             <div class="card">
                 <h3>📦 Monstrinhos na Box</h3>
                 <div id="boxMonstersList" class="box-grid">
-                    <p class="text-center">Carregando...</p>
+                    <div class="tab-loading"><span class="tab-loading-icon" aria-hidden="true">⏳</span> Carregando Box...</div>
                 </div>
             </div>
         </div>
@@ -499,7 +520,7 @@
         <!-- PR16B: PartyDex Tab -->
         <div id="tabPartyDex" class="tab-content">
             <div id="partyDexRoot">
-                <p class="text-center">Carregando Monstrodex...</p>
+                <div class="tab-loading"><span class="tab-loading-icon" aria-hidden="true">⏳</span> Carregando Monstrodex...</div>
             </div>
         </div>
 
@@ -514,18 +535,18 @@
         <div id="tabMissoes" class="tab-content">
             <h2>📜 Missões</h2>
             <div id="missoesTabContent">
-                <p class="text-muted">Carregando missões...</p>
+                <div class="tab-loading"><span class="tab-loading-icon" aria-hidden="true">⏳</span> Carregando missões...</div>
             </div>
         </div>
 
         <div id="tabSettings" class="tab-content">
-            <h2>Settings ⚙️</h2>
+            <h2>⚙️ Configurações</h2>
             
             <div class="card">
-                <h3>Game Configuration</h3>
+                <h3>Configuração do Jogo</h3>
                 <label>
                     <input type="checkbox" id="therapistMode" onchange="toggleTherapistMode()">
-                    Therapist Mode (Show advanced controls)
+                    Modo Terapeuta (exibir controles avançados)
                 </label>
                 <label style="margin-top:8px;display:block">
                     <input type="checkbox" id="simplifiedLogMode" onchange="toggleSimplifiedLog()">
@@ -534,7 +555,7 @@
             </div>
 
             <div class="card">
-                <h3>🎵 Audio Configuration</h3>
+                <h3>🎵 Configuração de Áudio</h3>
                 <div class="d-grid grid-gap-12">
                     <div>
                         <div class="mb-6">🎧 Volume SFX</div>
@@ -556,14 +577,14 @@
             </div>
 
             <div class="card">
-                <h3>Data Management</h3>
-                <button class="btn btn-success" onclick="exportData()">📥 Export All Data</button>
-                <button class="btn btn-warning" onclick="importData()">📤 Import Data</button>
-                <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear All Data</button>
+                <h3>Gerenciamento de Dados</h3>
+                <button class="btn btn-success" onclick="exportData()">📥 Exportar Dados</button>
+                <button class="btn btn-warning" onclick="importData()">📤 Importar Dados</button>
+                <button class="btn btn-danger" onclick="clearAllData()">🗑️ Apagar Todos os Dados</button>
             </div>
 
             <div id="configPanel" class="card is-hidden">
-                <h3>Advanced Configuration</h3>
+                <h3>Configuração Avançada</h3>
                 <div id="configEditor"></div>
             </div>
         </div>
@@ -571,11 +592,16 @@
 
     <!-- ===== Feature 4.0 Overlays ===== -->
     <div id="mmIntro" class="mm-overlay">
-        <div class="mm-card">
+        <div class="mm-card mm-card--intro">
             <div class="mm-intro-particles" id="mmIntroParticles"></div>
-            <div class="mm-title">🎮 Monstrinhomon</div>
-            <p class="mm-sub">RPG terapêutico de monstros capturáveis.<br/>Capture, batalhe, evolua!</p>
-            <button class="mm-btn" onclick="mmShowMainMenu()">✨ Iniciar</button>
+            <div class="mm-intro-mascots" aria-hidden="true">
+                <span class="mm-intro-mascot mm-intro-mascot--1">🐉</span>
+                <span class="mm-intro-mascot mm-intro-mascot--2">🦊</span>
+                <span class="mm-intro-mascot mm-intro-mascot--3">🦋</span>
+            </div>
+            <div class="mm-title mm-intro-title">🎮 Monstrinhomon</div>
+            <p class="mm-sub mm-intro-tagline">Capture. Evolua. Batalhe!</p>
+            <button class="mm-btn mm-intro-play-btn" onclick="mmShowMainMenu()">▶ Jogar</button>
             <p class="mm-hint">💾 O jogo salva automaticamente no navegador.</p>
         </div>
     </div>
@@ -583,15 +609,24 @@
     <div id="mmMenu" class="mm-overlay">
         <div class="mm-card">
             <div class="mm-title">Menu Principal</div>
-            <button id="mmBtnContinue" class="mm-btn" onclick="mmContinue()">📖 Continuar</button>
-            <button class="mm-btn" onclick="mmOpenSaves()">📂 Gerenciar Saves</button>
-            <button class="mm-btn" onclick="mmOpenSlotPickerForNewGame()">🎮 Novo Jogo</button>
-            <button class="mm-btn" onclick="mmStartTutorial()">🎓 Tutorial</button>
-            <button class="mm-btn" onclick="mmShowConfig()">⚙️ Configurações</button>
-            <button id="mmTherapistBtn" class="mm-btn is-hidden" onclick="mmOpenTherapistPanel()">🧑‍🏫 Mestre</button>
-            <div class="mm-row">
-                <button class="mm-btn" onclick="mmCloseAllOverlays()">Fechar</button>
-                <button class="mm-btn" onclick="mmResetSaveConfirm()">🗑️ Apagar Save</button>
+            <!-- Grupo principal: jogar -->
+            <button id="mmBtnContinue" class="mm-btn mm-btn--primary" onclick="mmContinue()">📖 Continuar</button>
+            <button class="mm-btn mm-btn--secondary" onclick="mmOpenSlotPickerForNewGame()">🎮 Novo Jogo</button>
+            <!-- Separador -->
+            <div class="mm-divider"></div>
+            <!-- Grupo secundário: gerenciar -->
+            <button class="mm-btn mm-btn--ghost" onclick="mmOpenSaves()">📂 Gerenciar Saves</button>
+            <button class="mm-btn mm-btn--ghost" onclick="mmStartTutorial()">🎓 Tutorial</button>
+            <button class="mm-btn mm-btn--ghost" onclick="mmShowConfig()">⚙️ Configurações</button>
+            <!-- Grupo terapeuta — só aparece quando modo terapeuta está ativo -->
+            <div id="mmMenuMestreSection" class="mm-mestre-section is-hidden">
+                <div class="mm-divider"></div>
+                <button class="mm-btn mm-btn--mestre" onclick="mmOpenTherapistPanel()">🧑‍🏫 Painel do Mestre</button>
+            </div>
+            <!-- Ação destrutiva discreta -->
+            <div class="mm-row mt-6">
+                <button class="mm-btn mm-btn--ghost" onclick="mmCloseAllOverlays()">✕ Fechar</button>
+                <button class="mm-btn mm-btn--ghost mm-btn--danger-ghost" onclick="mmResetSaveConfirm()">🗑️ Apagar Save</button>
             </div>
         </div>
     </div>
@@ -626,9 +661,27 @@
 
     <div id="mmConfig" class="mm-overlay">
         <div class="mm-card">
-            <div class="mm-title">Configurações</div>
-            <p class="mm-sub">MVP: placeholder. (Depois entra volume, modo terapeuta, etc.)</p>
-            <button class="mm-btn" onclick="mmShowMainMenu()">Voltar</button>
+            <div class="mm-title">⚙️ Configurações</div>
+            <div class="mm-field">
+                <label>🎧 Volume SFX</label>
+                <input id="mmCfgSfxVol" type="range" min="0" max="100" value="70"
+                    style="width:100%;accent-color:#6c5ce7"
+                    oninput="Audio.setSfxVolume(Number(this.value)/100)">
+            </div>
+            <div class="mm-field">
+                <label>🎵 Volume Música</label>
+                <input id="mmCfgMusicVol" type="range" min="0" max="100" value="40"
+                    style="width:100%;accent-color:#6c5ce7"
+                    oninput="Audio.setMusicVolume(Number(this.value)/100)">
+            </div>
+            <div class="mm-field">
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+                    <input type="checkbox" id="mmCfgSimplifiedLog" style="width:20px;height:20px;min-height:unset;margin:0;accent-color:#6c5ce7"
+                        onchange="toggleSimplifiedLog()">
+                    📋 Log simplificado no combate
+                </label>
+            </div>
+            <button class="mm-btn" onclick="mmSaveConfigAndBack()">↩️ Voltar</button>
         </div>
     </div>
 
@@ -1229,6 +1282,11 @@
                 if (sfx) sfx.value = String(Math.round(sfxVol * 100));
                 if (mus) mus.value = String(Math.round(musVol * 100));
                 if (mute) mute.textContent = muted ? "🔇 Mudo" : "🔊 Som";
+                // Sincronizar sliders do overlay de configurações (mmConfig) também
+                const cfgSfx = document.getElementById("mmCfgSfxVol");
+                const cfgMus = document.getElementById("mmCfgMusicVol");
+                if (cfgSfx) cfgSfx.value = String(Math.round(sfxVol * 100));
+                if (cfgMus) cfgMus.value = String(Math.round(musVol * 100));
             }
 
             return { init, unlock, playSfx, setSfxVolume, setMusicVolume, toggleMute, syncUI };
@@ -2682,6 +2740,27 @@
                 if (activeButton) {
                     activeButton.classList.add('active');
                 }
+
+                // Destaque o botão "Mais" se a aba ativa pertence ao menu secundário
+                const secondaryTabs = ['shop', 'partyDex', 'missoes', 'trade', 'settings'];
+                const maisBtn = document.getElementById('navMoreBtn');
+                if (maisBtn) {
+                    if (secondaryTabs.includes(tabName)) {
+                        maisBtn.classList.add('active');
+                    } else {
+                        maisBtn.classList.remove('active');
+                    }
+                }
+                // Atualiza indicador de tab ativa no dropdown
+                document.querySelectorAll('.nav-more-item').forEach(item => {
+                    const isActive = item.dataset.tab === tabName;
+                    item.classList.toggle('nav-more-item--active', isActive);
+                    if (isActive) {
+                        item.setAttribute('aria-current', 'page');
+                    } else {
+                        item.removeAttribute('aria-current');
+                    }
+                });
                 
                 // PR16B: Render PartyDex when tab is opened
                 // Note: renderPartyDexTab() is idempotent (DOM-only, no side effects)
@@ -2710,7 +2789,77 @@
             }
         }
 
-        // THERAPIST MODE HELPERS (Feature 4.6)
+        // --- Navbar "Mais" dropdown ---
+        function toggleNavMore(e) {
+            e.stopPropagation();
+            const dropdown = document.getElementById('navMoreDropdown');
+            const btn = document.getElementById('navMoreBtn');
+            if (!dropdown || !btn) return;
+            const isOpen = !dropdown.hidden;
+            if (isOpen) {
+                closeNavMore();
+            } else {
+                dropdown.hidden = false;
+                btn.setAttribute('aria-expanded', 'true');
+                // Mover foco para o primeiro item do menu
+                const firstItem = dropdown.querySelector('.nav-more-item');
+                if (firstItem) firstItem.focus();
+                // Fechar com Escape
+                document.addEventListener('keydown', _navMoreEscape);
+                // Fechar ao clicar fora
+                // setTimeout(0) adia o registro do listener para o próximo tick do event loop,
+                // evitando que o click que abriu o dropdown feche-o imediatamente.
+                setTimeout(() => document.addEventListener('click', _navMoreOutside, { once: true }), 0);
+            }
+        }
+
+        function closeNavMore() {
+            const dropdown = document.getElementById('navMoreDropdown');
+            const btn = document.getElementById('navMoreBtn');
+            if (dropdown) dropdown.hidden = true;
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+            // Remover listener de Escape e devolver foco ao botão
+            document.removeEventListener('keydown', _navMoreEscape);
+            if (btn && document.activeElement && dropdown && dropdown.contains(document.activeElement)) {
+                btn.focus();
+            }
+        }
+
+        function _navMoreEscape(e) {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                closeNavMore();
+            }
+        }
+
+        function _navMoreOutside(e) {
+            const wrapper = document.getElementById('navMoreWrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                closeNavMore();
+            }
+        }
+
+        window.toggleNavMore = toggleNavMore;
+        window.closeNavMore  = closeNavMore;
+
+        // Bloco G: Preview de classe ao selecionar no formulário de adicionar jogador
+        const CLASS_ICONS = {
+            'Guerreiro': '⚔️', 'Mago': '🔮', 'Curandeiro': '💚',
+            'Bárbaro': '💪', 'Ladino': '🗡️', 'Bardo': '🎵',
+            'Caçador': '🏹', 'Animalista': '🐾'
+        };
+        function updateClassPreview(cls) {
+            const badge = document.getElementById('classPreviewBadge');
+            if (!badge) return;
+            if (!cls) {
+                badge.classList.add('is-hidden');
+                badge.textContent = '';
+                return;
+            }
+            badge.textContent = `${CLASS_ICONS[cls] || '🎮'} ${cls}`;
+            badge.className = `class-preview-badge preview-badge--${cls.toLowerCase().replace(/[^a-z]/g, '')}`;
+        }
+        window.updateClassPreview = updateClassPreview;
         
         // Helper functions for show/hide elements using CSS classes
         function showEl(el) {
@@ -2760,29 +2909,39 @@
         }
 
         function mmUpdateTherapistUI() {
-            // Update therapist button visibility in menu
-            const btn = document.getElementById("mmTherapistBtn");
-            if (btn) {
-                if (mmIsTherapistMode()) {
-                    showEl(btn);
+            const isTherapist = mmIsTherapistMode();
+
+            // Seção Mestre no menu principal (novo layout com agrupamento)
+            const mestreSection = document.getElementById("mmMenuMestreSection");
+            if (mestreSection) {
+                if (isTherapist) {
+                    mestreSection.classList.remove("is-hidden");
                 } else {
-                    hideEl(btn);
+                    mestreSection.classList.add("is-hidden");
                 }
             }
+
+            // Compatibilidade: botão legado mmTherapistBtn (se ainda existir)
+            const btn = document.getElementById("mmTherapistBtn");
+            if (btn) {
+                if (isTherapist) { showEl(btn); } else { hideEl(btn); }
+            }
             
-            // Atualizar botão Mestre persistente no header (destaque quando modo ativo)
+            // Botão Mestre persistente no header — oculto quando modo terapeuta está desativado
             const headerBtn = document.getElementById("headerMestreBtn");
             if (headerBtn) {
-                if (mmIsTherapistMode()) {
+                if (isTherapist) {
+                    headerBtn.classList.remove("is-hidden");
                     headerBtn.classList.add("mestre-btn-active");
                 } else {
+                    headerBtn.classList.add("is-hidden");
                     headerBtn.classList.remove("mestre-btn-active");
                 }
             }
             
-            // Update checkbox in settings
+            // Atualizar checkbox em configurações
             const checkbox = document.getElementById("therapistMode");
-            if (checkbox) checkbox.checked = mmIsTherapistMode();
+            if (checkbox) checkbox.checked = isTherapist;
         }
 
         // COMMIT 2: Therapist Export/Import Save Tools
@@ -2793,7 +2952,7 @@
                 // Copy to clipboard
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(saveData).then(() => {
-                        showToast('✅ Save data copied to clipboard!\n\nYou can also download it as a file.', 'success');
+                        showToast('✅ Dados copiados para a área de transferência!', 'success');
                     }).catch(() => {
                         mmAlert('⚠️ Não foi possível copiar para a área de transferência, mas você pode baixar o arquivo.', 'warning');
                     });
@@ -2858,7 +3017,7 @@
                 
                 // Basic validation
                 if (typeof saveData !== 'object' || saveData === null) {
-                    mmAlert('❌ Invalid save data: must be an object', 'error');
+                    mmAlert('❌ Dados inválidos: o save deve ser um objeto JSON', 'error');
                     return;
                 }
                 
@@ -2902,7 +3061,7 @@
                 // Hide import UI
                 therapistCancelImport();
                 
-                showToast('✅ Save data loaded successfully!', 'success');
+                showToast('✅ Dados carregados com sucesso!', 'success');
                 console.log('[Therapist] Save imported and loaded successfully');
                 
             } catch (error) {
@@ -4172,19 +4331,17 @@
         }
 
         function endSession() {
-            try {
-                if (!GameState.currentSession) return;
-                
-                if (confirm('Encerrar esta sessão?')) {
+            if (!GameState.currentSession) return;
+            mmConfirm('Encerrar esta sessão?', () => {
+                try {
                     GameState.currentSession.completedAt = new Date().toISOString();
                     GameState.currentSession = null;
-                    
                     saveToLocalStorage();
                     updateAllViews();
+                } catch (error) {
+                    showError('Failed to end session', error.stack);
                 }
-            } catch (error) {
-                showError('Failed to end session', error.stack);
-            }
+            }, null, '🏁');
         }
 
         // ENCOUNTER MANAGEMENT
@@ -4623,11 +4780,18 @@
                 const player = _getPlayerById(actor.id);
                 if (!player) return;
 
-                const confirmed = window.confirm(`${player.name || player.nome}: Tem certeza que deseja fugir da batalha?`);
-                if (!confirmed) return;
-
-                const deps = createGroupCombatDeps();
-                Combat.Group.Actions.executeGroupFlee(deps);
+                mmConfirm(
+                    `${player.name || player.nome}: Tem certeza que deseja fugir da batalha?`,
+                    () => {
+                        try {
+                            const deps = createGroupCombatDeps();
+                            Combat.Group.Actions.executeGroupFlee(deps);
+                        } catch (error) {
+                            showError('Failed to flee', error.stack);
+                        }
+                    },
+                    null, '🏃'
+                );
             } catch (error) {
                 showError('Failed to flee', error.stack);
             }
@@ -5253,36 +5417,78 @@
         }
         
         /**
-         * Exibe um toast notification temporário
+         * Exibe um toast notification temporário.
+         * Usa dois containers de aria-live fixos para anúncio confiável por leitores de tela.
          */
         function showToast(text, type = 'success') {
+            // Container visual (layout)
             const host = document.getElementById("mmToastHost");
             if (!host) return;
 
+            // Constantes de duração
+            const TOAST_DURATION_ERROR    = 6000; // erros: mais tempo para crianças lerem
+            const TOAST_DURATION_LEVEL_UP = 4000;
+            const TOAST_DURATION_DEFAULT  = 3500;
+
+            const isUrgent = type === 'error' || type === 'warning';
+
+            // Container de aria-live fixo: assertive para urgentes, polite para demais
+            const ariaHost = document.getElementById(
+                isUrgent ? "mmToastHostAssertive" : "mmToastHostPolite"
+            );
+
             const el = document.createElement("div");
             el.className = `mm-toast ${type}`;
-            el.textContent = text;
 
+            // Conteúdo: texto + botão de fechar para erros e avisos
+            const msgSpan = document.createElement('span');
+            msgSpan.className = 'mm-toast-text';
+            msgSpan.textContent = text;
+            el.appendChild(msgSpan);
+
+            if (isUrgent) {
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'mm-toast-close';
+                closeBtn.setAttribute('aria-label', 'Fechar notificação');
+                closeBtn.textContent = '✕';
+                closeBtn.addEventListener('click', () => dismissToast(el));
+                el.appendChild(closeBtn);
+            }
+
+            // Adicionar ao container visual para posicionamento
             host.appendChild(el);
+
+            // Adicionar cópia de texto ao container aria-live para anúncio confiável
+            if (ariaHost) {
+                const ariaAnnounce = document.createElement('span');
+                ariaAnnounce.textContent = text;
+                ariaAnnounce.className = 'sr-only';
+                ariaHost.appendChild(ariaAnnounce);
+                // Remover após leitura (não acumula no DOM)
+                setTimeout(() => ariaAnnounce.remove(), 5000);
+            }
 
             // Double-rAF garante que a transição CSS dispare corretamente
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => el.classList.add('show'));
             });
 
-            // Duração maior para crianças. Level-up normalmente usa showLevelUpModal(),
-            // mas mantemos aqui como fallback caso showToast('...', 'level-up') seja chamado diretamente.
-            const DURATION = type === 'level-up' ? 4000 : 3500;
+            const DURATION = type === 'error' ? TOAST_DURATION_ERROR
+                : type === 'level-up' ? TOAST_DURATION_LEVEL_UP
+                : TOAST_DURATION_DEFAULT;
 
-            // Iniciar fade-out e slide-out antes de remover do DOM
-            setTimeout(() => {
-                el.style.opacity = "0";
-                el.style.transform = "translateX(calc(100% + 32px))";
-                el.style.transition = "opacity .25s ease, transform .25s ease";
-            }, DURATION);
+            const timer = setTimeout(() => dismissToast(el), DURATION);
+            el._dismissTimer = timer;
+        }
 
-            // Remover do DOM após a animação
-            setTimeout(() => el.remove(), DURATION + 350);
+        function dismissToast(el) {
+            if (!el || el._dismissed) return;
+            el._dismissed = true;
+            clearTimeout(el._dismissTimer);
+            el.style.opacity = "0";
+            el.style.transform = "translateX(calc(100% + 32px))";
+            el.style.transition = "opacity .25s ease, transform .25s ease";
+            setTimeout(() => el.remove(), 350);
         }
 
         /**
@@ -5315,6 +5521,64 @@
             // Fechar ao clicar fora do card
             overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
         }
+
+        /**
+         * mmConfirm — substitui window.confirm() nativo por modal estilizado.
+         * Usa padrão de callbacks para não bloquear o event loop.
+         * @param {string}   msg       - Mensagem de confirmação
+         * @param {Function} onConfirm - Callback chamado ao confirmar
+         * @param {Function} [onCancel]- Callback opcional chamado ao cancelar
+         * @param {string}   [icon]    - Emoji/ícone opcional (padrão: '❓')
+         */
+        function mmConfirm(msg, onConfirm, onCancel, icon = '❓') {
+            const overlay = document.createElement('div');
+            overlay.className = 'mm-alert-overlay';
+            overlay.setAttribute('role', 'dialog');
+            overlay.setAttribute('aria-modal', 'true');
+            overlay.setAttribute('aria-label', 'Confirmação');
+            overlay.innerHTML = `
+                <div class="mm-alert-card">
+                    <span class="mm-alert-icon" aria-hidden="true">${icon}</span>
+                    <p class="mm-alert-msg">${msg}</p>
+                    <div class="mm-confirm-actions">
+                        <button class="mm-alert-btn mm-confirm-btn-cancel" id="mmConfirmCancel">✕ Cancelar</button>
+                        <button class="mm-alert-btn" id="mmConfirmOk">✅ Confirmar</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(overlay);
+
+            const close = () => overlay.remove();
+
+            overlay.querySelector('#mmConfirmOk').addEventListener('click', () => {
+                close();
+                if (typeof onConfirm === 'function') onConfirm();
+            });
+            overlay.querySelector('#mmConfirmCancel').addEventListener('click', () => {
+                close();
+                if (typeof onCancel === 'function') onCancel();
+            });
+
+            // Fechar com Escape
+            const onKey = (e) => {
+                if (e.key === 'Escape') {
+                    document.removeEventListener('keydown', onKey);
+                    close();
+                    if (typeof onCancel === 'function') onCancel();
+                }
+            };
+            document.addEventListener('keydown', onKey);
+            overlay.addEventListener('click', e => {
+                if (e.target === overlay) {
+                    document.removeEventListener('keydown', onKey);
+                    close();
+                    if (typeof onCancel === 'function') onCancel();
+                }
+            });
+
+            // Focar o botão confirmar para acessibilidade
+            requestAnimationFrame(() => overlay.querySelector('#mmConfirmOk')?.focus());
+        }
+        window.mmConfirm = mmConfirm;
 
         /**
          * showLevelUpModal — exibe modal de celebração de level-up.
@@ -6923,7 +7187,7 @@
                 } else if (encounter.type === 'group_trainer' || encounter.type === 'boss') {
                     renderGroupEncounter(panel, encounter);
                 } else {
-                    panel.innerHTML = '<div class="encounter-panel"><h3>Encounter type not yet implemented</h3></div>';
+                    panel.innerHTML = '<div class="encounter-panel"><h3>Tipo de encontro ainda não implementado</h3></div>';
                 }
             } catch (error) {
                 showError('Failed to render encounter', error.stack);
@@ -8114,11 +8378,11 @@
         }
 
         function fleeEncounter() {
-            try {
-                const encounter = GameState.currentEncounter;
-                if (!encounter) return;
-                
-                if (confirm('Fugir deste encontro?')) {
+            const encounter = GameState.currentEncounter;
+            if (!encounter) return;
+
+            mmConfirm('Fugir deste encontro?', () => {
+                try {
                     // Fase 11.2: fuga agora usa SPD para calcular chance real de sucesso
                     const playerId = encounter.selectedPlayerId;
                     const player = GameState.players?.find(p => p.id === playerId);
@@ -8131,7 +8395,7 @@
                             getBasicPower: (cls) => MM_TABLES.getBasicAttackPower(cls),
                             eneRegenData: ENE_REGEN_BY_CLASS,
                         };
-                        const result = Combat.Wild.Actions.executeWildFlee({
+                        Combat.Wild.Actions.executeWildFlee({
                             encounter,
                             playerMonster,
                             fleeBaseChance,
@@ -8146,13 +8410,13 @@
                         encounter.active = false;
                         encounter.result = 'fled';
                     }
-                    
+
                     saveToLocalStorage();
                     renderEncounter();
+                } catch (error) {
+                    showError('Flee failed', error.stack);
                 }
-            } catch (error) {
-                showError('Flee failed', error.stack);
-            }
+            }, null, '🏃');
         }
 
         function getCurrentPlayer() {
@@ -8580,20 +8844,21 @@
 
                 const monster = activePlayer.team?.[teamIndex];
                 const monName = monster?.name || 'Monstrinho';
-                if (!confirm(`Enviar ${monName} para a Box? Ele sairá da equipe.`)) {
-                    return;
-                }
-
-                const result = moveTeamToBox(activePlayer.id, teamIndex);
-                
-                if (result.success) {
-                    saveToLocalStorage();
-                    renderBoxTab();
-                    updateAllViews();
-                    updateBoxTabBadge();
-                } else {
-                    mmAlert(result.message || 'Erro ao enviar para Box', 'error');
-                }
+                mmConfirm(`Enviar ${monName} para a Box? Ele sairá da equipe.`, () => {
+                    try {
+                        const result = moveTeamToBox(activePlayer.id, teamIndex);
+                        if (result.success) {
+                            saveToLocalStorage();
+                            renderBoxTab();
+                            updateAllViews();
+                            updateBoxTabBadge();
+                        } else {
+                            mmAlert(result.message || 'Erro ao enviar para Box', 'error');
+                        }
+                    } catch (error) {
+                        showError('Erro ao enviar para Box', error.stack);
+                    }
+                }, null, '📦');
             } catch (error) {
                 showError('Erro ao enviar para Box', error.stack);
             }
@@ -11405,13 +11670,49 @@
 
         function updateHomeStats() {
             try {
-                const statPlayers = document.getElementById('statPlayers');
-                const statMonsters = document.getElementById('statMonsters');
-                const statSession = document.getElementById('statSession');
-                
-                if (statPlayers) statPlayers.textContent = GameState.players?.length || 0;
-                if (statMonsters) statMonsters.textContent = GameState.monsters?.length || 0;
-                if (statSession) statSession.textContent = GameState.currentSession ? 'Sim' : 'Não';
+                const homeStats = document.getElementById('homeStats');
+                const playerCount = GameState.players?.length || 0;
+
+                if (homeStats) {
+                    if (playerCount === 0) {
+                        // Empty state: guiar o usuário a abrir o Painel Mestre
+                        homeStats.innerHTML = `
+                            <div class="home-empty-state-session">
+                                <span class="home-empty-state-icon">👤</span>
+                                <p class="home-empty-state-msg">Nenhum jogador ainda</p>
+                                <button class="btn btn-primary home-empty-state-btn" onclick="mmOpenMestre()">Abrir Painel Mestre</button>
+                            </div>`;
+                    } else {
+                        // Estado normal: mini-grid de stats
+                        const statPlayersEl = homeStats.querySelector('#statPlayers');
+                        const statMonstersEl = homeStats.querySelector('#statMonsters');
+                        const statSessionEl = homeStats.querySelector('#statSession');
+
+                        // Se o mini-grid ainda não existe (foi substituído pelo empty state), restaurá-lo
+                        if (!statPlayersEl) {
+                            homeStats.innerHTML = `
+                                <div class="home-stat-item">
+                                    <span class="home-stat-value" id="statPlayers">0</span>
+                                    <span class="home-stat-label">Jogadores</span>
+                                </div>
+                                <div class="home-stat-item">
+                                    <span class="home-stat-value" id="statMonsters">0</span>
+                                    <span class="home-stat-label">Monstros</span>
+                                </div>
+                                <div class="home-stat-item">
+                                    <span class="home-stat-value" id="statSession">—</span>
+                                    <span class="home-stat-label">Ativa</span>
+                                </div>`;
+                        }
+
+                        const sp = document.getElementById('statPlayers');
+                        const sm = document.getElementById('statMonsters');
+                        const ss = document.getElementById('statSession');
+                        if (sp) sp.textContent = playerCount;
+                        if (sm) sm.textContent = GameState.monsters?.length || 0;
+                        if (ss) ss.textContent = GameState.currentSession ? 'Sim' : 'Não';
+                    }
+                }
 
                 // Atualiza barra de status compacta no topo da Home
                 const sessionDot = document.getElementById('homeSessionDot');
@@ -11419,11 +11720,31 @@
                 if (sessionDot && sessionLabel) {
                     if (GameState.currentSession) {
                         sessionDot.className = 'session-dot session-dot--active';
-                        const playerCount = GameState.players?.length || 0;
                         const sessionName = GameState.currentSession.name || 'Sessão Ativa';
-                        const labelText = `${sessionName} • ${playerCount} jogador${playerCount !== 1 ? 'es' : ''}`;
+                        const wins = GameState.stats?.battlesWon || 0;
+                        const hasActiveBattle = !!(GameState.currentEncounter?.active);
+                        let labelText = `${sessionName} • ${playerCount} jogador${playerCount !== 1 ? 'es' : ''}`;
+                        if (wins > 0) labelText += ` • ${wins} vitória${wins !== 1 ? 's' : ''}`;
+                        if (hasActiveBattle) labelText += ' ⚔️';
                         sessionLabel.textContent = labelText;
-                        sessionLabel.title = labelText;
+                        sessionLabel.title = hasActiveBattle ? labelText + ' — clique para voltar à batalha' : labelText;
+                        // Topbar clicável quando há batalha ativa
+                        const indicator = document.getElementById('homeSessionIndicator');
+                        if (indicator) {
+                            if (hasActiveBattle) {
+                                indicator.classList.add('home-session-indicator--clickable');
+                                indicator.onclick = () => switchTab('encounter');
+                                indicator.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchTab('encounter'); } };
+                                indicator.setAttribute('role', 'button');
+                                indicator.setAttribute('tabindex', '0');
+                            } else {
+                                indicator.classList.remove('home-session-indicator--clickable');
+                                indicator.onclick = null;
+                                indicator.onkeydown = null;
+                                indicator.removeAttribute('role');
+                                indicator.removeAttribute('tabindex');
+                            }
+                        }
                     } else {
                         sessionDot.className = 'session-dot session-dot--inactive';
                         const labelText = 'Sem sessão ativa — configure no Painel Mestre';
@@ -11458,6 +11779,14 @@
                 const seenCount = monstrodex.seen.length;
                 const capturedCount = monstrodex.captured.length;
                 
+                if (seenCount === 0) {
+                    container.innerHTML = `<p class="home-empty-cta">
+                        🌿 Nenhum monstro encontrado ainda —
+                        <button class="home-empty-link" onclick="switchTab('encounter')">explore o Mundo!</button>
+                    </p>`;
+                    return;
+                }
+
                 let html = `<div class="home-stats-row">
                     <div class="home-stat-item">
                         <span class="home-stat-value">${seenCount}</span>
@@ -11509,7 +11838,10 @@
             }
 
             if (entries.length === 0) {
-                container.innerHTML = '<p class="text-muted">Nenhuma quest ativa no momento.</p>';
+                container.innerHTML = `<p class="home-empty-cta">
+                    🗺️ Nenhuma missão ativa —
+                    <button class="home-empty-link" onclick="switchTab('encounter')">explore o Mundo!</button>
+                </p>`;
                 return;
             }
 
@@ -11532,13 +11864,23 @@
             if (!container) return;
 
             if (!window.GameFlow) {
-                container.innerHTML = '<p class="text-muted">Sistema de quests não carregado.</p>';
+                container.innerHTML = `
+                    <div class="tab-empty-state">
+                        <span class="tab-empty-icon">📜</span>
+                        <p class="tab-empty-msg">Sistema de quests não carregado.</p>
+                    </div>`;
                 return;
             }
 
             const players = GameState.players || [];
             if (players.length === 0) {
-                container.innerHTML = '<p class="text-muted">Adicione jogadores para ver missões.</p>';
+                container.innerHTML = `
+                    <div class="tab-empty-state">
+                        <span class="tab-empty-icon">📜</span>
+                        <p class="tab-empty-msg">Nenhum jogador ainda.</p>
+                        <p class="tab-empty-hint">Adicione jogadores pelo Painel Mestre para ver suas missões aqui.</p>
+                        <button class="btn btn-primary tab-empty-btn" onclick="mmOpenMestre()">Abrir Painel Mestre</button>
+                    </div>`;
                 return;
             }
 
@@ -11664,6 +12006,14 @@
                 const xpK = stats.totalXpGained >= 1000
                     ? (Math.floor(stats.totalXpGained / 100) / 10).toString().replace(/\.0$/, '') + 'k'
                     : stats.totalXpGained;
+
+                // Empty state quando nenhuma batalha foi travada ainda
+                if (totalBattles === 0 && !stats.captureAttempts && !stats.totalXpGained) {
+                    container.innerHTML = `<p class="home-empty-cta">⚔️ Nenhuma batalha ainda — aventure-se no
+                        <button class="home-empty-link" onclick="switchTab('encounter')">Mundo!</button>
+                    </p>`;
+                    return;
+                }
                 
                 container.innerHTML = `<div class="stats-mini-grid">
                     <div class="stat-mini">
@@ -11702,7 +12052,11 @@
                 if (!container) return;
                 
                 if (!GameState.players || GameState.players.length === 0) {
-                    container.innerHTML = '<div class="card"><p>No players yet. Add one above!</p></div>';
+                    container.innerHTML = `<div class="card players-empty-state">
+                        <p class="players-empty-icon">👥</p>
+                        <p class="players-empty-msg">Nenhum jogador ainda.</p>
+                        <p class="players-empty-hint">Use o formulário acima para adicionar o primeiro jogador da sessão.</p>
+                    </div>`;
                     return;
                 }
                 
@@ -12272,12 +12626,12 @@
             try {
                 const objectivesList = document.getElementById('objectivesList');
                 if (objectivesList) {
-                    let html = '<h4>Current Objectives:</h4>';
+                    let html = '<h4>Objetivos Atuais:</h4>';
                     (GameState.objectives || []).forEach(obj => {
                         if (!obj) return;
                         html += `
                             <div class="objective-item">
-                                <strong>Weight ${obj.weight}:</strong> ${obj.text}
+                                <strong>Peso ${obj.weight}:</strong> ${obj.text}
                             </div>
                         `;
                     });
@@ -12288,7 +12642,7 @@
                 if (!therapyPlayersList) return;
                 
                 if (!GameState.currentSession) {
-                    therapyPlayersList.innerHTML = '<div class="card"><p>No active session</p></div>';
+                    therapyPlayersList.innerHTML = '<div class="card"><p>Nenhuma sessão ativa</p></div>';
                     return;
                 }
                 
@@ -12535,16 +12889,16 @@
         }
 
         function clearAllData() {
-            try {
-                if (confirm('Tem certeza? Isso apagará TODOS os dados!')) {
-                    if (confirm('Confirmar exclusão? Esta ação não pode ser desfeita!')) {
+            mmConfirm('Tem certeza? Isso apagará TODOS os dados!', () => {
+                mmConfirm('Confirmar exclusão? Esta ação não pode ser desfeita!', () => {
+                    try {
                         StorageManager.remove(StorageManager.StorageKeys.STATE); // PR3
                         location.reload();
+                    } catch (error) {
+                        showError('Clear data failed', error.stack);
                     }
-                }
-            } catch (error) {
-                showError('Clear data failed', error.stack);
-            }
+                }, null, '🗑️');
+            }, null, '⚠️');
         }
 
         function toggleTherapistMode() {
@@ -12588,9 +12942,26 @@
         // H1: Toggle de log simplificado — salva no GameState.config
         function toggleSimplifiedLog() {
             try {
-                const checked = document.getElementById('simplifiedLogMode')?.checked;
+                // Determina qual checkbox disparou a mudança e usa seu valor como fonte da verdade
+                const tabCheck = document.getElementById('simplifiedLogMode');
+                const cfgCheck = document.getElementById('mmCfgSimplifiedLog');
+                // A fonte da verdade é o checkbox que foi alterado pelo evento atual;
+                // como ambos são sincronizados após cada mudança, basta ler qualquer um.
+                const activeEl = document.activeElement;
+                let checked;
+                if (activeEl === tabCheck) {
+                    checked = tabCheck.checked;
+                } else if (activeEl === cfgCheck) {
+                    checked = cfgCheck.checked;
+                } else {
+                    // Fallback: lê estado do primeiro disponível
+                    checked = tabCheck?.checked ?? cfgCheck?.checked ?? false;
+                }
                 if (!GameState.config) GameState.config = {};
-                GameState.config.simplifiedLog = !!checked;
+                GameState.config.simplifiedLog = checked;
+                // Sincronizar ambos os checkboxes com o valor final
+                if (tabCheck) tabCheck.checked = checked;
+                if (cfgCheck) cfgCheck.checked = checked;
                 saveToLocalStorage();
                 showToast(checked ? '📋 Log simplificado ativado' : '📋 Log completo ativado', 'info');
             } catch (error) {
@@ -12701,15 +13072,66 @@
             const ok = mmHasSave();
             if (btn) {
                 btn.disabled = !ok;
+                btn.title = ok ? '' : 'Sem jogo salvo — inicie um Novo Jogo';
                 btn.textContent = ok ? "📖 Continuar" : "📖 Continuar (sem save)";
+                btn.classList.toggle('mm-btn--disabled', !ok);
             }
             // Update therapist button visibility
             mmUpdateTherapistUI();
         }
 
         function mmShowConfig(){
+            // Sincronizar controles do overlay com o estado atual
+            // Fonte primária: GameState.config; fallback: sliders de tabSettings
+            const sfxEl = document.getElementById('mmCfgSfxVol');
+            const musEl = document.getElementById('mmCfgMusicVol');
+            const logEl = document.getElementById('mmCfgSimplifiedLog');
+
+            const cfgSfx = GameState?.config?.sfxVolume;
+            const cfgMus = GameState?.config?.musicVolume;
+            const cfgLog = GameState?.config?.simplifiedLog;
+
+            if (sfxEl) {
+                sfxEl.value = cfgSfx !== undefined ? Math.round(cfgSfx * 100)
+                    : (document.getElementById('mmSfxVol')?.value || 70);
+            }
+            if (musEl) {
+                musEl.value = cfgMus !== undefined ? Math.round(cfgMus * 100)
+                    : (document.getElementById('mmMusicVol')?.value || 40);
+            }
+            if (logEl) {
+                logEl.checked = cfgLog !== undefined ? cfgLog
+                    : (document.getElementById('simplifiedLogMode')?.checked || false);
+            }
             mmShow("mmConfig");
         }
+
+        /** Persiste os valores do overlay de configurações no GameState e salva antes de voltar ao menu. */
+        function mmSaveConfigAndBack() {
+            try {
+                const sfxVal = Number(document.getElementById('mmCfgSfxVol')?.value ?? 70) / 100;
+                const musVal = Number(document.getElementById('mmCfgMusicVol')?.value ?? 40) / 100;
+                const logVal = !!(document.getElementById('mmCfgSimplifiedLog')?.checked);
+
+                if (GameState?.config) {
+                    GameState.config.sfxVolume = sfxVal;
+                    GameState.config.musicVolume = musVal;
+                    GameState.config.simplifiedLog = logVal;
+                }
+
+                // Sincronizar sliders de tabSettings também
+                const sfxMainEl = document.getElementById('mmSfxVol');
+                const musMainEl = document.getElementById('mmMusicVol');
+                const logMainEl = document.getElementById('simplifiedLogMode');
+                if (sfxMainEl) sfxMainEl.value = Math.round(sfxVal * 100);
+                if (musMainEl) musMainEl.value = Math.round(musVal * 100);
+                if (logMainEl) logMainEl.checked = logVal;
+
+                if (typeof saveToLocalStorage === 'function') saveToLocalStorage();
+            } catch (_e) { /* silencioso — não bloquear o usuário */ }
+            mmShowMainMenu();
+        }
+        window.mmSaveConfigAndBack = mmSaveConfigAndBack;
 
         // Feature 4.6: Therapist Mode Panel Functions
 
@@ -13329,15 +13751,15 @@
         }
 
         function mmResetSaveConfirm(){
-            const ok = confirm("Apagar o save do navegador? Isso não pode ser desfeito.");
-            if (!ok) return;
-            try {
-                StorageManager.remove(MM_SAVE_KEY); // PR3
-                showToast("Save apagado com sucesso!", 'success');
-            } catch(e){
-                mmAlert("Erro ao apagar save: " + e.message, 'error');
-            }
-            mmShowMainMenu();
+            mmConfirm("Apagar o save do navegador? Isso não pode ser desfeito.", () => {
+                try {
+                    StorageManager.remove(MM_SAVE_KEY); // PR3
+                    showToast("Save apagado com sucesso!", 'success');
+                } catch(e){
+                    mmAlert("Erro ao apagar save: " + e.message, 'error');
+                }
+                mmShowMainMenu();
+            }, null, '🗑️');
         }
 
         // ---- New Game Wizard (MVP) ----
@@ -13717,16 +14139,17 @@
         }
 
         function mmSaveToSlot(slot) {
-            if (!confirm(`Salvar o jogo atual no Slot ${slot}? Isso vai sobrescrever.`)) return;
-            // Define slot ativo e salva via camada canônica (auto-save + slot)
-            SaveLayer.setActiveSlot(slot);
-            const result = SaveLayer.saveActiveGame(GameState, mmBuildSaveEnvelope);
-            if (result.autoSaved && result.slotSaved) {
-                showToast(`💾 Salvo no Slot ${slot}!`);
-                mmRenderSavesScreen();
-            } else {
-                mmAlert("Falha ao salvar no slot.", 'error');
-            }
+            mmConfirm(`Salvar o jogo atual no Slot ${slot}? Isso vai sobrescrever.`, () => {
+                // Define slot ativo e salva via camada canônica (auto-save + slot)
+                SaveLayer.setActiveSlot(slot);
+                const result = SaveLayer.saveActiveGame(GameState, mmBuildSaveEnvelope);
+                if (result.autoSaved && result.slotSaved) {
+                    showToast(`💾 Salvo no Slot ${slot}!`);
+                    mmRenderSavesScreen();
+                } else {
+                    mmAlert("Falha ao salvar no slot.", 'error');
+                }
+            }, null, '💾');
         }
 
         /**
@@ -13766,38 +14189,39 @@
                 mmAlert("Slot vazio ou inválido.", 'error');
                 return;
             }
-            if (!confirm(`Restaurar snapshot do Slot ${slot}? O progresso atual será substituído.`)) return;
-            
-            try {
-                // 1. Restaura snapshot para o GameState em memória
-                Object.assign(GameState, env.state);
-                
-                // 2. Registra slot como associação operacional via camada canônica
-                SaveLayer.setActiveSlot(slot);
-                
-                // 3. Persiste snapshot restaurado como novo auto-save (fonte de verdade)
-                saveToLocalStorage();
-                
-                // Update all views
-                if (typeof updateAllViews === "function") updateAllViews();
-                if (typeof renderEncounter === "function") renderEncounter();
-                
-                showToast(`📂 Snapshot do Slot ${slot} restaurado!`);
-                mmCloseSaves();
-                
-                // Feature 4.1.1: Show tutorial choice or go to game based on preference
-                mmPostGameStartFlow();
-            } catch (e) {
-                console.error("Failed to restore slot", e);
-                mmAlert("Erro ao restaurar o slot.", 'error');
-            }
+            mmConfirm(`Restaurar snapshot do Slot ${slot}? O progresso atual será substituído.`, () => {
+                try {
+                    // 1. Restaura snapshot para o GameState em memória
+                    Object.assign(GameState, env.state);
+
+                    // 2. Registra slot como associação operacional via camada canônica
+                    SaveLayer.setActiveSlot(slot);
+
+                    // 3. Persiste snapshot restaurado como novo auto-save (fonte de verdade)
+                    saveToLocalStorage();
+
+                    // Update all views
+                    if (typeof updateAllViews === "function") updateAllViews();
+                    if (typeof renderEncounter === "function") renderEncounter();
+
+                    showToast(`📂 Snapshot do Slot ${slot} restaurado!`);
+                    mmCloseSaves();
+
+                    // Feature 4.1.1: Show tutorial choice or go to game based on preference
+                    mmPostGameStartFlow();
+                } catch (e) {
+                    console.error("Failed to restore slot", e);
+                    mmAlert("Erro ao restaurar o slot.", 'error');
+                }
+            }, null, '📂');
         }
 
         function mmDeleteSlot(slot) {
-            if (!confirm(`Apagar Slot ${slot}? Esta ação não pode ser desfeita.`)) return;
-            StorageManager.deleteSlot(slot); // PR3
-            showToast(`🗑️ Slot ${slot} apagado.`);
-            mmRenderSavesScreen();
+            mmConfirm(`Apagar Slot ${slot}? Esta ação não pode ser desfeita.`, () => {
+                StorageManager.deleteSlot(slot); // PR3
+                showToast(`🗑️ Slot ${slot} apagado.`);
+                mmRenderSavesScreen();
+            }, null, '🗑️');
         }
 
         function mmExportSlot(slot) {
@@ -13911,8 +14335,10 @@
             const occupied = !!(env && env.state);
 
             if (occupied && !force) {
-                const ok = confirm(`Slot ${slot} já tem um save. Sobrescrever?`);
-                if (!ok) return;
+                mmConfirm(`Slot ${slot} já tem um save. Sobrescrever?`, () => {
+                    mmChooseSlotAndStartNewGame(slot, true);
+                }, null, '💾');
+                return;
             }
 
             // Registra slot como associação operacional (metadado do slot manual selecionado)
@@ -14008,27 +14434,39 @@
 
         function mmStartTutorial() {
             const tut = ensureTutorialState();
-            
+
             // Se não há jogadores, precisa criar um jogo primeiro
             if (!GameState.players || GameState.players.length === 0) {
                 mmAlert("Por favor, crie um novo jogo primeiro!", 'warning');
                 return;
             }
-            
-            const restart = !tut.active ? true : confirm("Continuar tutorial atual? (OK = continuar / Cancelar = reiniciar)");
-            if (!restart) {
-                tut.active = false;
-                tut.stepIndex = 0;
-                tut.done = {};
+
+            const _runTutorial = (restart) => {
+                if (!restart) {
+                    tut.active = false;
+                    tut.stepIndex = 0;
+                    tut.done = {};
+                }
+                tut.active = true;
+                const step = TUTORIAL_STEPS[tut.stepIndex] || TUTORIAL_STEPS[0];
+                mmCloseAllOverlays();
+                step.start();
+                if (typeof saveToLocalStorage === "function") saveToLocalStorage();
+                if (typeof renderEncounter === "function") renderEncounter();
+            };
+
+            if (!tut.active) {
+                // Sem tutorial em curso: iniciar diretamente
+                _runTutorial(true);
+            } else {
+                // Tutorial em curso: perguntar se quer continuar ou reiniciar
+                mmConfirm(
+                    "Continuar tutorial atual?\n\n✅ Confirmar = Continuar de onde parou\n✕ Cancelar = Reiniciar do início",
+                    () => _runTutorial(true),
+                    () => _runTutorial(false),
+                    '📖'
+                );
             }
-            tut.active = true;
-            
-            // Inicia step atual
-            const step = TUTORIAL_STEPS[tut.stepIndex] || TUTORIAL_STEPS[0];
-            mmCloseAllOverlays();
-            step.start();
-            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
-            if (typeof renderEncounter === "function") renderEncounter();
         }
 
         function exitTutorial() {
@@ -14530,6 +14968,12 @@
             bootApp();
         }
     </script>
-    <div id="mmToastHost"></div>
+    <!-- Dois containers de toast com aria-live fixo para anúncio confiável por leitores de tela:
+         - mmToastHostPolite: sucesso / info / level-up (não interrompe)
+         - mmToastHostAssertive: erros e avisos (interrompe imediatamente) -->
+    <div id="mmToastHostPolite"   aria-live="polite"   aria-atomic="false" style="display:contents"></div>
+    <div id="mmToastHostAssertive" aria-live="assertive" aria-atomic="false" style="display:contents"></div>
+    <!-- Wrapper de posicionamento visual (apenas layout, sem aria) -->
+    <div id="mmToastHost" aria-hidden="true"></div>
 </body>
 </html>
