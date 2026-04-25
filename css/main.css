@@ -6565,24 +6565,26 @@ img.monster-visual--variant-battle {
     margin-bottom: 20px;
 }
 
-/* Botão Jogar — maior e mais vibrante */
-.mm-intro-play-btn {
-    font-size: 20px !important;
-    padding: 18px 48px !important;
-    border-radius: 18px !important;
-    background: linear-gradient(135deg, #20ddcc 0%, #a060ff 100%) !important;
-    color: #fff !important;
-    border: none !important;
-    box-shadow: 0 6px 28px rgba(32,221,204,0.40) !important;
-    transition: transform 0.15s, box-shadow 0.15s !important;
-    margin: 4px auto !important;
-    width: auto !important;
-    display: inline-block !important;
+/* Botão Jogar — maior e mais vibrante.
+   Usa seletor composto #mmIntro + .mm-card--intro para superar a especificidade de
+   .mm-overlay .mm-card .mm-btn sem precisar de !important. */
+#mmIntro .mm-card--intro .mm-intro-play-btn {
+    font-size: 20px;
+    padding: 18px 48px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #20ddcc 0%, #a060ff 100%);
+    color: #fff;
+    border: none;
+    box-shadow: 0 6px 28px rgba(32,221,204,0.40);
+    transition: transform 0.15s, box-shadow 0.15s;
+    margin: 4px auto;
+    width: auto;
+    display: inline-block;
 }
 
-.mm-intro-play-btn:hover {
-    transform: translateY(-3px) !important;
-    box-shadow: 0 10px 36px rgba(32,221,204,0.55) !important;
+#mmIntro .mm-card--intro .mm-intro-play-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 36px rgba(32,221,204,0.55);
 }
 
 /* Responsividade: dropdown da navbar em mobile */

@@ -2785,6 +2785,8 @@
                 dropdown.hidden = false;
                 btn.setAttribute('aria-expanded', 'true');
                 // Fechar ao clicar fora
+                // setTimeout(0) adia o registro do listener para o próximo tick do event loop,
+                // evitando que o click que abriu o dropdown feche-o imediatamente.
                 setTimeout(() => document.addEventListener('click', _navMoreOutside, { once: true }), 0);
             }
         }
@@ -12694,14 +12696,24 @@
         // H1: Toggle de log simplificado — salva no GameState.config
         function toggleSimplifiedLog() {
             try {
-                // Verifica qual checkbox disparou o evento (settings tab ou config overlay)
+                // Determina qual checkbox disparou a mudança e usa seu valor como fonte da verdade
                 const tabCheck = document.getElementById('simplifiedLogMode');
                 const cfgCheck = document.getElementById('mmCfgSimplifiedLog');
-                // O estado real é a união dos dois (qualquer um pode ter mudado)
-                const checked = tabCheck?.checked || cfgCheck?.checked || false;
+                // A fonte da verdade é o checkbox que foi alterado pelo evento atual;
+                // como ambos são sincronizados após cada mudança, basta ler qualquer um.
+                const activeEl = document.activeElement;
+                let checked;
+                if (activeEl === tabCheck) {
+                    checked = tabCheck.checked;
+                } else if (activeEl === cfgCheck) {
+                    checked = cfgCheck.checked;
+                } else {
+                    // Fallback: lê estado do primeiro disponível
+                    checked = tabCheck?.checked ?? cfgCheck?.checked ?? false;
+                }
                 if (!GameState.config) GameState.config = {};
-                GameState.config.simplifiedLog = !!checked;
-                // Sincronizar ambos os checkboxes
+                GameState.config.simplifiedLog = checked;
+                // Sincronizar ambos os checkboxes com o valor final
                 if (tabCheck) tabCheck.checked = checked;
                 if (cfgCheck) cfgCheck.checked = checked;
                 saveToLocalStorage();
