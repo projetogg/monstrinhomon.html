@@ -7473,6 +7473,87 @@ img.monster-visual--variant-battle {
     font-weight: 800;
 }
 
+/* ─── Categorias de itens na loja ────────────────────────────────────────── */
+.shop-category-section {
+    margin-bottom: 18px;
+}
+.shop-category-title {
+    font-size: var(--font-sm);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(255,255,255,0.55);
+    margin: 0 0 8px 0;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.shop-item-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.shop-item-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 2px;
+}
+.shop-item-name {
+    font-weight: 700;
+    font-size: var(--font-sm);
+    flex: 1;
+}
+.shop-badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: var(--radius-full);
+    font-size: 10px;
+    font-weight: 700;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+}
+.shop-item-desc {
+    font-size: 12px;
+    color: rgba(255,255,255,0.55);
+    margin: 0;
+    line-height: 1.4;
+}
+.shop-item-stats {
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    margin: 0;
+}
+.shop-item-break {
+    font-size: 11px;
+    color: #e74c3c;
+    margin: 0;
+}
+.shop-item-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 6px;
+}
+.shop-item-owned {
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+}
+.shop-item-buy {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.shop-item-price {
+    font-size: 13px;
+    color: #fdcb6e;
+}
+
 /* Responsivo: empilhar em mobile */
 @media (max-width: 640px) {
     .shop-layout { grid-template-columns: 1fr; }
