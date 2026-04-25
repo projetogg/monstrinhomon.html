@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>Monstrinhomon - Therapeutic Game</title>
+    <title>Monstrinhomon - RPG Terapêutico Infantil</title>
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/overworld.css">
     <!-- Nunito: tipografia lúdica para títulos e nomes de monstrinhos -->
@@ -18,8 +18,8 @@
 <body>
     <div id="errorPanel" class="error-panel">
         <div id="errorMessage"></div>
-        <button onclick="copyError()">📋 Copy Error</button>
-        <button onclick="dismissError()">✖ Dismiss</button>
+        <button onclick="copyError()">📋 Copiar Erro</button>
+        <button onclick="dismissError()">✖ Fechar</button>
     </div>
 
     <div class="app-container">
@@ -44,19 +44,34 @@
                 <button class="tab-button nav-btn" data-tab="box" onclick="switchTab('box')" aria-label="Caixa">
                     <span class="nav-icon">📦</span><span class="nav-label">Caixa</span>
                 </button>
-                <button class="tab-button nav-btn" data-tab="shop" onclick="switchTab('shop')" aria-label="Loja">
-                    <span class="nav-icon">🛒</span><span class="nav-label">Loja</span>
-                </button>
-                <button class="tab-button nav-btn" data-tab="partyDex" onclick="switchTab('partyDex')" aria-label="Monstrodex">
-                    <span class="nav-icon">📘</span><span class="nav-label">Monstrodex</span>
-                </button>
-                <button class="tab-button nav-btn" data-tab="missoes" onclick="switchTab('missoes')" aria-label="Missões">
-                    <span class="nav-icon">📜</span><span class="nav-label">Missões</span>
-                </button>
-                <button class="tab-button nav-btn" data-tab="trade" onclick="switchTab('trade')" aria-label="Trocas">
-                    <span class="nav-icon">🔄</span><span class="nav-label">Trocas</span>
-                </button>
-                <button id="headerMestreBtn" class="tab-button nav-btn nav-btn--mestre" onclick="mmOpenMestre()" aria-label="Painel Mestre">
+                <!-- Botão "Mais" — abre dropdown com itens secundários -->
+                <div class="nav-more-wrapper" id="navMoreWrapper">
+                    <button class="tab-button nav-btn nav-btn--more" id="navMoreBtn"
+                            onclick="toggleNavMore(event)"
+                            aria-label="Mais opções"
+                            aria-expanded="false"
+                            aria-haspopup="menu">
+                        <span class="nav-icon">⋯</span><span class="nav-label">Mais</span>
+                    </button>
+                    <div class="nav-more-dropdown" id="navMoreDropdown" hidden role="menu" aria-label="Mais opções">
+                        <button class="nav-more-item" data-tab="shop" onclick="switchTab('shop');closeNavMore()" role="menuitem">
+                            <span>🛒</span> Loja
+                        </button>
+                        <button class="nav-more-item" data-tab="partyDex" onclick="switchTab('partyDex');closeNavMore()" role="menuitem">
+                            <span>📘</span> Monstrodex
+                        </button>
+                        <button class="nav-more-item" data-tab="missoes" onclick="switchTab('missoes');closeNavMore()" role="menuitem">
+                            <span>📜</span> Missões
+                        </button>
+                        <button class="nav-more-item" data-tab="trade" onclick="switchTab('trade');closeNavMore()" role="menuitem">
+                            <span>🔄</span> Trocas
+                        </button>
+                        <button class="nav-more-item" data-tab="settings" onclick="switchTab('settings');closeNavMore()" role="menuitem">
+                            <span>⚙️</span> Configurações
+                        </button>
+                    </div>
+                </div>
+                <button id="headerMestreBtn" class="tab-button nav-btn nav-btn--mestre is-hidden" onclick="mmOpenMestre()" aria-label="Painel Mestre">
                     <span class="nav-icon">🧑‍🏫</span><span class="nav-label">Mestre</span>
                 </button>
             </nav>
@@ -168,24 +183,24 @@
         </div>
 
         <div id="tabSession" class="tab-content">
-            <h2>Session Management 📋</h2>
+            <h2>📋 Gestão de Sessão</h2>
             
             <div class="card">
-                <h3>Create New Session</h3>
-                <input type="text" id="sessionName" placeholder="Session Name (e.g., Therapy Session 2024-01-15)">
-                <button class="btn btn-success" onclick="createSession()">Create Session</button>
+                <h3>Nova Sessão</h3>
+                <input type="text" id="sessionName" placeholder="Nome da Sessão (ex: Sessão Terapêutica 2024-01-15)">
+                <button class="btn btn-success" onclick="createSession()">Criar Sessão</button>
             </div>
 
             <div id="activeSessionPanel" class="card is-hidden">
-                <h3>Active Session: <span id="activeSessionName"></span></h3>
-                <p>Created: <span id="sessionCreated"></span></p>
+                <h3>Sessão Ativa: <span id="activeSessionName"></span></h3>
+                <p>Criada em: <span id="sessionCreated"></span></p>
                 
-                <h4>Turn Order</h4>
+                <h4>Ordem de Turno</h4>
                 <div id="turnOrderList"></div>
                 
-                <button class="btn btn-warning" onclick="nextTurn()">Next Turn ▶</button>
+                <button class="btn btn-warning" onclick="nextTurn()">Próximo Turno ▶</button>
                 <button class="btn btn-primary" onclick="openTradePanel()">🔄 Trocas</button>
-                <button class="btn btn-danger" onclick="endSession()">End Session</button>
+                <button class="btn btn-danger" onclick="endSession()">Encerrar Sessão</button>
             </div>
         </div>
 
@@ -407,20 +422,20 @@
         </div>
 
         <div id="tabTherapy" class="tab-content">
-            <h2>Therapeutic Objectives 🎯</h2>
+            <h2>🎯 Objetivos Terapêuticos</h2>
             
             <div class="therapist-panel">
-                <h3>⚕️ Therapist Controls</h3>
+                <h3>⚕️ Controles do Terapeuta</h3>
                 
                 <div class="card">
-                    <h4>Add Objective</h4>
-                    <input type="text" id="newObjective" placeholder="Objective description">
+                    <h4>Adicionar Objetivo</h4>
+                    <input type="text" id="newObjective" placeholder="Descrição do objetivo">
                     <select id="objectiveWeight">
-                        <option value="1">Low Weight (1)</option>
-                        <option value="2">Medium Weight (2)</option>
-                        <option value="3">High Weight (3)</option>
+                        <option value="1">Peso Baixo (1)</option>
+                        <option value="2">Peso Médio (2)</option>
+                        <option value="3">Peso Alto (3)</option>
                     </select>
-                    <button class="btn btn-success" onclick="addObjective()">Add Objective</button>
+                    <button class="btn btn-success" onclick="addObjective()">Adicionar Objetivo</button>
                 </div>
 
                 <div id="objectivesList"></div>
@@ -430,7 +445,7 @@
         </div>
 
         <div id="tabReport" class="tab-content">
-            <h2>Session Report 📊</h2>
+            <h2>📊 Relatório de Sessão</h2>
             <div id="reportContent"></div>
         </div>
 
@@ -519,13 +534,13 @@
         </div>
 
         <div id="tabSettings" class="tab-content">
-            <h2>Settings ⚙️</h2>
+            <h2>⚙️ Configurações</h2>
             
             <div class="card">
-                <h3>Game Configuration</h3>
+                <h3>Configuração do Jogo</h3>
                 <label>
                     <input type="checkbox" id="therapistMode" onchange="toggleTherapistMode()">
-                    Therapist Mode (Show advanced controls)
+                    Modo Terapeuta (exibir controles avançados)
                 </label>
                 <label style="margin-top:8px;display:block">
                     <input type="checkbox" id="simplifiedLogMode" onchange="toggleSimplifiedLog()">
@@ -534,7 +549,7 @@
             </div>
 
             <div class="card">
-                <h3>🎵 Audio Configuration</h3>
+                <h3>🎵 Configuração de Áudio</h3>
                 <div class="d-grid grid-gap-12">
                     <div>
                         <div class="mb-6">🎧 Volume SFX</div>
@@ -556,14 +571,14 @@
             </div>
 
             <div class="card">
-                <h3>Data Management</h3>
-                <button class="btn btn-success" onclick="exportData()">📥 Export All Data</button>
-                <button class="btn btn-warning" onclick="importData()">📤 Import Data</button>
-                <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear All Data</button>
+                <h3>Gerenciamento de Dados</h3>
+                <button class="btn btn-success" onclick="exportData()">📥 Exportar Dados</button>
+                <button class="btn btn-warning" onclick="importData()">📤 Importar Dados</button>
+                <button class="btn btn-danger" onclick="clearAllData()">🗑️ Apagar Todos os Dados</button>
             </div>
 
             <div id="configPanel" class="card is-hidden">
-                <h3>Advanced Configuration</h3>
+                <h3>Configuração Avançada</h3>
                 <div id="configEditor"></div>
             </div>
         </div>
@@ -571,11 +586,16 @@
 
     <!-- ===== Feature 4.0 Overlays ===== -->
     <div id="mmIntro" class="mm-overlay">
-        <div class="mm-card">
+        <div class="mm-card mm-card--intro">
             <div class="mm-intro-particles" id="mmIntroParticles"></div>
-            <div class="mm-title">🎮 Monstrinhomon</div>
-            <p class="mm-sub">RPG terapêutico de monstros capturáveis.<br/>Capture, batalhe, evolua!</p>
-            <button class="mm-btn" onclick="mmShowMainMenu()">✨ Iniciar</button>
+            <div class="mm-intro-mascots" aria-hidden="true">
+                <span class="mm-intro-mascot mm-intro-mascot--1">🐉</span>
+                <span class="mm-intro-mascot mm-intro-mascot--2">🦊</span>
+                <span class="mm-intro-mascot mm-intro-mascot--3">🦋</span>
+            </div>
+            <div class="mm-title mm-intro-title">🎮 Monstrinhomon</div>
+            <p class="mm-sub mm-intro-tagline">Capture. Evolua. Batalhe!</p>
+            <button class="mm-btn mm-intro-play-btn" onclick="mmShowMainMenu()">▶ Jogar</button>
             <p class="mm-hint">💾 O jogo salva automaticamente no navegador.</p>
         </div>
     </div>
@@ -583,15 +603,24 @@
     <div id="mmMenu" class="mm-overlay">
         <div class="mm-card">
             <div class="mm-title">Menu Principal</div>
-            <button id="mmBtnContinue" class="mm-btn" onclick="mmContinue()">📖 Continuar</button>
-            <button class="mm-btn" onclick="mmOpenSaves()">📂 Gerenciar Saves</button>
-            <button class="mm-btn" onclick="mmOpenSlotPickerForNewGame()">🎮 Novo Jogo</button>
-            <button class="mm-btn" onclick="mmStartTutorial()">🎓 Tutorial</button>
-            <button class="mm-btn" onclick="mmShowConfig()">⚙️ Configurações</button>
-            <button id="mmTherapistBtn" class="mm-btn is-hidden" onclick="mmOpenTherapistPanel()">🧑‍🏫 Mestre</button>
-            <div class="mm-row">
-                <button class="mm-btn" onclick="mmCloseAllOverlays()">Fechar</button>
-                <button class="mm-btn" onclick="mmResetSaveConfirm()">🗑️ Apagar Save</button>
+            <!-- Grupo principal: jogar -->
+            <button id="mmBtnContinue" class="mm-btn mm-btn--primary" onclick="mmContinue()">📖 Continuar</button>
+            <button class="mm-btn mm-btn--secondary" onclick="mmOpenSlotPickerForNewGame()">🎮 Novo Jogo</button>
+            <!-- Separador -->
+            <div class="mm-divider"></div>
+            <!-- Grupo secundário: gerenciar -->
+            <button class="mm-btn mm-btn--ghost" onclick="mmOpenSaves()">📂 Gerenciar Saves</button>
+            <button class="mm-btn mm-btn--ghost" onclick="mmStartTutorial()">🎓 Tutorial</button>
+            <button class="mm-btn mm-btn--ghost" onclick="mmShowConfig()">⚙️ Configurações</button>
+            <!-- Grupo terapeuta — só aparece quando modo terapeuta está ativo -->
+            <div id="mmMenuMestreSection" class="mm-mestre-section is-hidden">
+                <div class="mm-divider"></div>
+                <button class="mm-btn mm-btn--mestre" onclick="mmOpenTherapistPanel()">🧑‍🏫 Painel do Mestre</button>
+            </div>
+            <!-- Ação destrutiva discreta -->
+            <div class="mm-row mt-6">
+                <button class="mm-btn mm-btn--ghost" onclick="mmCloseAllOverlays()">✕ Fechar</button>
+                <button class="mm-btn mm-btn--ghost mm-btn--danger-ghost" onclick="mmResetSaveConfirm()">🗑️ Apagar Save</button>
             </div>
         </div>
     </div>
@@ -626,9 +655,27 @@
 
     <div id="mmConfig" class="mm-overlay">
         <div class="mm-card">
-            <div class="mm-title">Configurações</div>
-            <p class="mm-sub">MVP: placeholder. (Depois entra volume, modo terapeuta, etc.)</p>
-            <button class="mm-btn" onclick="mmShowMainMenu()">Voltar</button>
+            <div class="mm-title">⚙️ Configurações</div>
+            <div class="mm-field">
+                <label>🎧 Volume SFX</label>
+                <input id="mmCfgSfxVol" type="range" min="0" max="100" value="70"
+                    style="width:100%;accent-color:#6c5ce7"
+                    oninput="Audio.setSfxVolume(Number(this.value)/100)">
+            </div>
+            <div class="mm-field">
+                <label>🎵 Volume Música</label>
+                <input id="mmCfgMusicVol" type="range" min="0" max="100" value="40"
+                    style="width:100%;accent-color:#6c5ce7"
+                    oninput="Audio.setMusicVolume(Number(this.value)/100)">
+            </div>
+            <div class="mm-field">
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+                    <input type="checkbox" id="mmCfgSimplifiedLog" style="width:20px;height:20px;min-height:unset;margin:0;accent-color:#6c5ce7"
+                        onchange="toggleSimplifiedLog()">
+                    📋 Log simplificado no combate
+                </label>
+            </div>
+            <button class="mm-btn" onclick="mmShowMainMenu()">↩️ Voltar</button>
         </div>
     </div>
 
@@ -2682,6 +2729,21 @@
                 if (activeButton) {
                     activeButton.classList.add('active');
                 }
+
+                // Destaque o botão "Mais" se a aba ativa pertence ao menu secundário
+                const secondaryTabs = ['shop', 'partyDex', 'missoes', 'trade', 'settings'];
+                const maisBtn = document.getElementById('navMoreBtn');
+                if (maisBtn) {
+                    if (secondaryTabs.includes(tabName)) {
+                        maisBtn.classList.add('active');
+                    } else {
+                        maisBtn.classList.remove('active');
+                    }
+                }
+                // Atualiza indicador de tab ativa no dropdown
+                document.querySelectorAll('.nav-more-item').forEach(item => {
+                    item.classList.toggle('nav-more-item--active', item.dataset.tab === tabName);
+                });
                 
                 // PR16B: Render PartyDex when tab is opened
                 // Note: renderPartyDexTab() is idempotent (DOM-only, no side effects)
@@ -2709,6 +2771,40 @@
                 showError('Tab switching failed', error.stack);
             }
         }
+
+        // --- Navbar "Mais" dropdown ---
+        function toggleNavMore(e) {
+            e.stopPropagation();
+            const dropdown = document.getElementById('navMoreDropdown');
+            const btn = document.getElementById('navMoreBtn');
+            if (!dropdown || !btn) return;
+            const isOpen = !dropdown.hidden;
+            if (isOpen) {
+                closeNavMore();
+            } else {
+                dropdown.hidden = false;
+                btn.setAttribute('aria-expanded', 'true');
+                // Fechar ao clicar fora
+                setTimeout(() => document.addEventListener('click', _navMoreOutside, { once: true }), 0);
+            }
+        }
+
+        function closeNavMore() {
+            const dropdown = document.getElementById('navMoreDropdown');
+            const btn = document.getElementById('navMoreBtn');
+            if (dropdown) dropdown.hidden = true;
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+        }
+
+        function _navMoreOutside(e) {
+            const wrapper = document.getElementById('navMoreWrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                closeNavMore();
+            }
+        }
+
+        window.toggleNavMore = toggleNavMore;
+        window.closeNavMore  = closeNavMore;
 
         // THERAPIST MODE HELPERS (Feature 4.6)
         
@@ -2760,29 +2856,39 @@
         }
 
         function mmUpdateTherapistUI() {
-            // Update therapist button visibility in menu
-            const btn = document.getElementById("mmTherapistBtn");
-            if (btn) {
-                if (mmIsTherapistMode()) {
-                    showEl(btn);
+            const isTherapist = mmIsTherapistMode();
+
+            // Seção Mestre no menu principal (novo layout com agrupamento)
+            const mestreSection = document.getElementById("mmMenuMestreSection");
+            if (mestreSection) {
+                if (isTherapist) {
+                    mestreSection.classList.remove("is-hidden");
                 } else {
-                    hideEl(btn);
+                    mestreSection.classList.add("is-hidden");
                 }
             }
+
+            // Compatibilidade: botão legado mmTherapistBtn (se ainda existir)
+            const btn = document.getElementById("mmTherapistBtn");
+            if (btn) {
+                if (isTherapist) { showEl(btn); } else { hideEl(btn); }
+            }
             
-            // Atualizar botão Mestre persistente no header (destaque quando modo ativo)
+            // Botão Mestre persistente no header — oculto quando modo terapeuta está desativado
             const headerBtn = document.getElementById("headerMestreBtn");
             if (headerBtn) {
-                if (mmIsTherapistMode()) {
+                if (isTherapist) {
+                    headerBtn.classList.remove("is-hidden");
                     headerBtn.classList.add("mestre-btn-active");
                 } else {
+                    headerBtn.classList.add("is-hidden");
                     headerBtn.classList.remove("mestre-btn-active");
                 }
             }
             
-            // Update checkbox in settings
+            // Atualizar checkbox em configurações
             const checkbox = document.getElementById("therapistMode");
-            if (checkbox) checkbox.checked = mmIsTherapistMode();
+            if (checkbox) checkbox.checked = isTherapist;
         }
 
         // COMMIT 2: Therapist Export/Import Save Tools
@@ -12588,9 +12694,16 @@
         // H1: Toggle de log simplificado — salva no GameState.config
         function toggleSimplifiedLog() {
             try {
-                const checked = document.getElementById('simplifiedLogMode')?.checked;
+                // Verifica qual checkbox disparou o evento (settings tab ou config overlay)
+                const tabCheck = document.getElementById('simplifiedLogMode');
+                const cfgCheck = document.getElementById('mmCfgSimplifiedLog');
+                // O estado real é a união dos dois (qualquer um pode ter mudado)
+                const checked = tabCheck?.checked || cfgCheck?.checked || false;
                 if (!GameState.config) GameState.config = {};
                 GameState.config.simplifiedLog = !!checked;
+                // Sincronizar ambos os checkboxes
+                if (tabCheck) tabCheck.checked = checked;
+                if (cfgCheck) cfgCheck.checked = checked;
                 saveToLocalStorage();
                 showToast(checked ? '📋 Log simplificado ativado' : '📋 Log completo ativado', 'info');
             } catch (error) {
@@ -12708,6 +12821,16 @@
         }
 
         function mmShowConfig(){
+            // Sincronizar controles do overlay de configurações com o estado atual
+            const sfxEl = document.getElementById('mmCfgSfxVol');
+            const musEl = document.getElementById('mmCfgMusicVol');
+            const logEl = document.getElementById('mmCfgSimplifiedLog');
+            const srcSfx = document.getElementById('mmSfxVol');
+            const srcMus = document.getElementById('mmMusicVol');
+            const srcLog = document.getElementById('simplifiedLogMode');
+            if (sfxEl && srcSfx) sfxEl.value = srcSfx.value;
+            if (musEl && srcMus) musEl.value = srcMus.value;
+            if (logEl && srcLog) logEl.checked = srcLog.checked;
             mmShow("mmConfig");
         }
 

@@ -6330,3 +6330,266 @@ img.monster-visual--variant-battle {
     opacity: 0.65;
     margin-top: 2px;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SPRINT 1 — Melhorias de UX/UI
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* --- Navbar: Dropdown "Mais" -------------------------------------------- */
+.nav-more-wrapper {
+    position: relative;
+}
+
+.nav-btn--more {
+    position: relative;
+}
+
+.nav-more-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 180px;
+    background: #fff;
+    border: 1px solid rgba(108,92,231,0.18);
+    border-radius: 14px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.14);
+    z-index: 8800;
+    overflow: hidden;
+    padding: 4px 0;
+}
+
+.nav-more-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 18px;
+    border: none;
+    background: transparent;
+    color: var(--dark);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+    min-height: 44px;
+}
+
+.nav-more-item:hover,
+.nav-more-item:focus-visible {
+    background: #f0eeff;
+    outline: none;
+}
+
+.nav-more-item--active {
+    background: #e8e0ff;
+    color: var(--primary);
+}
+
+/* Indicador de aba ativa no botão "Mais" */
+.nav-btn--more.active::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    background: var(--primary);
+    border-radius: 50%;
+}
+
+/* --- Menu Principal: Hierarquia visual ------------------------------------ */
+
+/* Botão primário do menu — "Continuar" */
+.mm-btn--primary {
+    background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+    color: #fff;
+    font-size: 18px;
+    padding: 16px 14px;
+    border: none;
+    box-shadow: 0 4px 18px rgba(108,92,231,0.38);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.mm-btn--primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(108,92,231,0.5);
+}
+
+/* Botão secundário do menu — "Novo Jogo" */
+.mm-btn--secondary {
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+    border: 1.5px solid rgba(255,255,255,0.22);
+    font-size: 16px;
+}
+
+.mm-btn--secondary:hover {
+    background: rgba(255,255,255,0.16);
+}
+
+/* Botão ghost do menu — ações de baixo impacto */
+.mm-btn--ghost {
+    background: transparent;
+    color: rgba(255,255,255,0.75);
+    border: 1px solid rgba(255,255,255,0.12);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 10px 14px;
+    margin: 4px 0;
+}
+
+.mm-btn--ghost:hover {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+}
+
+/* Botão ghost vermelho — ação destrutiva discreta */
+.mm-btn--danger-ghost {
+    color: rgba(255,120,120,0.8);
+    border-color: rgba(255,120,120,0.2);
+}
+
+.mm-btn--danger-ghost:hover {
+    background: rgba(214,48,49,0.12);
+    color: #ff7675;
+    border-color: rgba(214,48,49,0.3);
+}
+
+/* Botão terapeuta — âmbar, distinto visualmente */
+.mm-btn--mestre {
+    background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%);
+    color: #fff;
+    border: none;
+    font-size: 15px;
+    box-shadow: 0 3px 12px rgba(230,126,34,0.35);
+}
+
+.mm-btn--mestre:hover {
+    background: linear-gradient(135deg, #d35400, #e67e22);
+    transform: translateY(-1px);
+}
+
+/* Separador visual entre grupos de botões */
+.mm-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.10);
+    margin: 8px 0;
+    border-radius: 1px;
+}
+
+/* Seção do Mestre no menu — borda discreta para distinguir */
+.mm-mestre-section {
+    border: 1px solid rgba(230,126,34,0.25);
+    border-radius: 12px;
+    padding: 8px;
+    margin-top: 4px;
+    background: rgba(230,126,34,0.06);
+}
+
+/* --- Tela Inicial: Identidade visual aprimorada ------------------------- */
+
+.mm-card--intro {
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    padding: 32px 24px;
+}
+
+/* Mascotes decorativos na tela inicial */
+.mm-intro-mascots {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.mm-intro-mascot {
+    position: absolute;
+    font-size: 48px;
+    opacity: 0;
+    animation: mm-mascot-float linear infinite;
+    filter: blur(1px);
+}
+
+.mm-intro-mascot--1 {
+    left: 8%;
+    bottom: 10%;
+    animation-duration: 8s;
+    animation-delay: 0s;
+    font-size: 40px;
+}
+
+.mm-intro-mascot--2 {
+    right: 10%;
+    bottom: 20%;
+    animation-duration: 10s;
+    animation-delay: 2s;
+    font-size: 44px;
+}
+
+.mm-intro-mascot--3 {
+    left: 20%;
+    bottom: 5%;
+    animation-duration: 12s;
+    animation-delay: 4s;
+    font-size: 36px;
+}
+
+@keyframes mm-mascot-float {
+    0%   { opacity: 0; transform: translateY(0) scale(0.9); }
+    15%  { opacity: 0.35; }
+    85%  { opacity: 0.25; }
+    100% { opacity: 0; transform: translateY(-140px) scale(1.1); }
+}
+
+/* Título da tela inicial — maior, com gradiente */
+.mm-intro-title {
+    font-size: 36px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #a29bfe 0%, #20ddcc 50%, #fd79a8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+    margin-bottom: 4px;
+}
+
+/* Tagline da tela inicial */
+.mm-intro-tagline {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    opacity: 0.88;
+    margin-bottom: 20px;
+}
+
+/* Botão Jogar — maior e mais vibrante */
+.mm-intro-play-btn {
+    font-size: 20px !important;
+    padding: 18px 48px !important;
+    border-radius: 18px !important;
+    background: linear-gradient(135deg, #20ddcc 0%, #a060ff 100%) !important;
+    color: #fff !important;
+    border: none !important;
+    box-shadow: 0 6px 28px rgba(32,221,204,0.40) !important;
+    transition: transform 0.15s, box-shadow 0.15s !important;
+    margin: 4px auto !important;
+    width: auto !important;
+    display: inline-block !important;
+}
+
+.mm-intro-play-btn:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 10px 36px rgba(32,221,204,0.55) !important;
+}
+
+/* Responsividade: dropdown da navbar em mobile */
+@media (max-width: 480px) {
+    .nav-more-dropdown {
+        right: auto;
+        left: 0;
+        min-width: 160px;
+    }
+}
