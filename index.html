@@ -2857,7 +2857,7 @@
                 return;
             }
             badge.textContent = `${CLASS_ICONS[cls] || '🎮'} ${cls}`;
-            badge.className = `class-preview-badge data-class-${cls.toLowerCase().replace(/[^a-z]/g, '')}`;
+            badge.className = `class-preview-badge preview-badge--${cls.toLowerCase().replace(/[^a-z]/g, '')}`;
         }
         window.updateClassPreview = updateClassPreview;
         
@@ -11593,11 +11593,13 @@
                             if (hasActiveBattle) {
                                 indicator.classList.add('home-session-indicator--clickable');
                                 indicator.onclick = () => switchTab('encounter');
+                                indicator.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchTab('encounter'); } };
                                 indicator.setAttribute('role', 'button');
                                 indicator.setAttribute('tabindex', '0');
                             } else {
                                 indicator.classList.remove('home-session-indicator--clickable');
                                 indicator.onclick = null;
+                                indicator.onkeydown = null;
                                 indicator.removeAttribute('role');
                                 indicator.removeAttribute('tabindex');
                             }
