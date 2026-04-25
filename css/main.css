@@ -6595,3 +6595,120 @@ img.monster-visual--variant-battle {
         min-width: 160px;
     }
 }
+
+/* ==========================================================================
+   Sprint 2 — Estilos adicionais
+   ========================================================================== */
+
+/* Separador visual no dropdown "Mais" */
+.nav-more-separator {
+    margin: 4px 12px;
+    border: none;
+    border-top: 1px solid rgba(108,92,231,0.12);
+}
+
+/* Botão do menu principal desabilitado (sem save) */
+.mm-btn--disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: auto; /* permite exibir tooltip (title) */
+    box-shadow: none !important;
+    transform: none !important;
+}
+.mm-btn--disabled:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Topbar da Home clicável (batalha ativa) */
+.home-session-indicator--clickable {
+    cursor: pointer;
+    border-color: #a29bfe;
+    background: #f0eeff;
+    transition: background 0.15s, border-color 0.15s;
+}
+.home-session-indicator--clickable:hover {
+    background: #e8e0ff;
+    border-color: var(--primary);
+}
+
+/* Empty state nos cards do dashboard */
+.home-empty-cta {
+    font-size: 0.82em;
+    color: #888;
+    line-height: 1.5;
+    margin: 4px 0 0;
+}
+.home-empty-link {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--primary);
+    font-weight: 700;
+    cursor: pointer;
+    font-size: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.home-empty-link:hover {
+    color: #a29bfe;
+}
+
+/* Empty state na lista de jogadores */
+.players-empty-state {
+    text-align: center;
+    padding: 24px 16px;
+}
+.players-empty-icon {
+    font-size: 2.2em;
+    margin: 0 0 6px;
+    line-height: 1;
+}
+.players-empty-msg {
+    font-size: 1em;
+    font-weight: 700;
+    color: #444;
+    margin: 0 0 4px;
+}
+.players-empty-hint {
+    font-size: 0.85em;
+    color: #888;
+    margin: 0;
+}
+
+/* Seção "Adicionar Jogador" — layout compacto e consistente */
+.add-player-card h3 {
+    margin-bottom: 10px;
+}
+.add-player-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+.add-player-class-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.add-player-class-row .mm-input {
+    flex: 1;
+}
+.add-player-btn {
+    width: 100%;
+}
+
+/* Badge de preview de classe */
+.class-preview-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8em;
+    font-weight: 700;
+    background: #f0eeff;
+    color: var(--primary);
+    border: 1px solid #d4c8ff;
+    white-space: nowrap;
+    flex-shrink: 0;
+}

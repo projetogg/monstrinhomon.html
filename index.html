@@ -66,6 +66,7 @@
                         <button class="nav-more-item" data-tab="trade" onclick="switchTab('trade');closeNavMore()" role="menuitem">
                             <span>🔄</span> Trocas
                         </button>
+                        <hr class="nav-more-separator" role="separator" aria-hidden="true">
                         <button class="nav-more-item" data-tab="settings" onclick="switchTab('settings');closeNavMore()" role="menuitem">
                             <span>⚙️</span> Configurações
                         </button>
@@ -207,21 +208,26 @@
         <div id="tabPlayers" class="tab-content">
             <h2>👥 Grupo de Jogadores</h2>
             
-            <div class="card">
+            <div class="card add-player-card">
                 <h3>➕ Adicionar Jogador</h3>
-                <input type="text" id="playerName" placeholder="Nome do Jogador">
-                <select id="playerClass">
-                    <option value="">Selecionar Classe</option>
-                    <option value="Guerreiro">⚔️ Guerreiro</option>
-                    <option value="Mago">🔮 Mago</option>
-                    <option value="Curandeiro">💚 Curandeiro</option>
-                    <option value="Bárbaro">💪 Bárbaro</option>
-                    <option value="Ladino">🗡️ Ladino</option>
-                    <option value="Bardo">🎵 Bardo</option>
-                    <option value="Caçador">🏹 Caçador</option>
-                    <option value="Animalista">🐾 Animalista</option>
-                </select>
-                <button class="btn btn-success" onclick="addPlayer()">➕ Adicionar</button>
+                <div class="add-player-fields">
+                    <input type="text" id="playerName" class="mm-input" placeholder="Nome do Jogador">
+                    <div class="add-player-class-row">
+                        <select id="playerClass" class="mm-input" onchange="updateClassPreview(this.value)">
+                            <option value="">Selecionar Classe</option>
+                            <option value="Guerreiro">⚔️ Guerreiro</option>
+                            <option value="Mago">🔮 Mago</option>
+                            <option value="Curandeiro">💚 Curandeiro</option>
+                            <option value="Bárbaro">💪 Bárbaro</option>
+                            <option value="Ladino">🗡️ Ladino</option>
+                            <option value="Bardo">🎵 Bardo</option>
+                            <option value="Caçador">🏹 Caçador</option>
+                            <option value="Animalista">🐾 Animalista</option>
+                        </select>
+                        <span id="classPreviewBadge" class="class-preview-badge is-hidden"></span>
+                    </div>
+                </div>
+                <button class="btn btn-success add-player-btn" onclick="addPlayer()">➕ Adicionar</button>
             </div>
 
             <div id="playersList"></div>
@@ -1276,6 +1282,11 @@
                 if (sfx) sfx.value = String(Math.round(sfxVol * 100));
                 if (mus) mus.value = String(Math.round(musVol * 100));
                 if (mute) mute.textContent = muted ? "🔇 Mudo" : "🔊 Som";
+                // Sincronizar sliders do overlay de configurações (mmConfig) também
+                const cfgSfx = document.getElementById("mmCfgSfxVol");
+                const cfgMus = document.getElementById("mmCfgMusicVol");
+                if (cfgSfx) cfgSfx.value = String(Math.round(sfxVol * 100));
+                if (cfgMus) cfgMus.value = String(Math.round(musVol * 100));
             }
 
             return { init, unlock, playSfx, setSfxVolume, setMusicVolume, toggleMute, syncUI };
@@ -2742,7 +2753,13 @@
                 }
                 // Atualiza indicador de tab ativa no dropdown
                 document.querySelectorAll('.nav-more-item').forEach(item => {
-                    item.classList.toggle('nav-more-item--active', item.dataset.tab === tabName);
+                    const isActive = item.dataset.tab === tabName;
+                    item.classList.toggle('nav-more-item--active', isActive);
+                    if (isActive) {
+                        item.setAttribute('aria-current', 'page');
+                    } else {
+                        item.removeAttribute('aria-current');
+                    }
                 });
                 
                 // PR16B: Render PartyDex when tab is opened
@@ -2784,6 +2801,11 @@
             } else {
                 dropdown.hidden = false;
                 btn.setAttribute('aria-expanded', 'true');
+                // Mover foco para o primeiro item do menu
+                const firstItem = dropdown.querySelector('.nav-more-item');
+                if (firstItem) firstItem.focus();
+                // Fechar com Escape
+                document.addEventListener('keydown', _navMoreEscape);
                 // Fechar ao clicar fora
                 // setTimeout(0) adia o registro do listener para o próximo tick do event loop,
                 // evitando que o click que abriu o dropdown feche-o imediatamente.
@@ -2796,6 +2818,18 @@
             const btn = document.getElementById('navMoreBtn');
             if (dropdown) dropdown.hidden = true;
             if (btn) btn.setAttribute('aria-expanded', 'false');
+            // Remover listener de Escape e devolver foco ao botão
+            document.removeEventListener('keydown', _navMoreEscape);
+            if (btn && document.activeElement && dropdown && dropdown.contains(document.activeElement)) {
+                btn.focus();
+            }
+        }
+
+        function _navMoreEscape(e) {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                closeNavMore();
+            }
         }
 
         function _navMoreOutside(e) {
@@ -2808,7 +2842,24 @@
         window.toggleNavMore = toggleNavMore;
         window.closeNavMore  = closeNavMore;
 
-        // THERAPIST MODE HELPERS (Feature 4.6)
+        // Bloco G: Preview de classe ao selecionar no formulário de adicionar jogador
+        const CLASS_ICONS = {
+            'Guerreiro': '⚔️', 'Mago': '🔮', 'Curandeiro': '💚',
+            'Bárbaro': '💪', 'Ladino': '🗡️', 'Bardo': '🎵',
+            'Caçador': '🏹', 'Animalista': '🐾'
+        };
+        function updateClassPreview(cls) {
+            const badge = document.getElementById('classPreviewBadge');
+            if (!badge) return;
+            if (!cls) {
+                badge.classList.add('is-hidden');
+                badge.textContent = '';
+                return;
+            }
+            badge.textContent = `${CLASS_ICONS[cls] || '🎮'} ${cls}`;
+            badge.className = `class-preview-badge data-class-${cls.toLowerCase().replace(/[^a-z]/g, '')}`;
+        }
+        window.updateClassPreview = updateClassPreview;
         
         // Helper functions for show/hide elements using CSS classes
         function showEl(el) {
@@ -2901,7 +2952,7 @@
                 // Copy to clipboard
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(saveData).then(() => {
-                        showToast('✅ Save data copied to clipboard!\n\nYou can also download it as a file.', 'success');
+                        showToast('✅ Dados copiados para a área de transferência!', 'success');
                     }).catch(() => {
                         mmAlert('⚠️ Não foi possível copiar para a área de transferência, mas você pode baixar o arquivo.', 'warning');
                     });
@@ -2966,7 +3017,7 @@
                 
                 // Basic validation
                 if (typeof saveData !== 'object' || saveData === null) {
-                    mmAlert('❌ Invalid save data: must be an object', 'error');
+                    mmAlert('❌ Dados inválidos: o save deve ser um objeto JSON', 'error');
                     return;
                 }
                 
@@ -3010,7 +3061,7 @@
                 // Hide import UI
                 therapistCancelImport();
                 
-                showToast('✅ Save data loaded successfully!', 'success');
+                showToast('✅ Dados carregados com sucesso!', 'success');
                 console.log('[Therapist] Save imported and loaded successfully');
                 
             } catch (error) {
@@ -7031,7 +7082,7 @@
                 } else if (encounter.type === 'group_trainer' || encounter.type === 'boss') {
                     renderGroupEncounter(panel, encounter);
                 } else {
-                    panel.innerHTML = '<div class="encounter-panel"><h3>Encounter type not yet implemented</h3></div>';
+                    panel.innerHTML = '<div class="encounter-panel"><h3>Tipo de encontro ainda não implementado</h3></div>';
                 }
             } catch (error) {
                 showError('Failed to render encounter', error.stack);
@@ -11527,11 +11578,30 @@
                 if (sessionDot && sessionLabel) {
                     if (GameState.currentSession) {
                         sessionDot.className = 'session-dot session-dot--active';
-                        const playerCount = GameState.players?.length || 0;
                         const sessionName = GameState.currentSession.name || 'Sessão Ativa';
-                        const labelText = `${sessionName} • ${playerCount} jogador${playerCount !== 1 ? 'es' : ''}`;
+                        const playerCount = GameState.players?.length || 0;
+                        const wins = GameState.stats?.battlesWon || 0;
+                        const hasActiveBattle = !!(GameState.currentEncounter?.active);
+                        let labelText = `${sessionName} • ${playerCount} jogador${playerCount !== 1 ? 'es' : ''}`;
+                        if (wins > 0) labelText += ` • ${wins} vitória${wins !== 1 ? 's' : ''}`;
+                        if (hasActiveBattle) labelText += ' ⚔️';
                         sessionLabel.textContent = labelText;
-                        sessionLabel.title = labelText;
+                        sessionLabel.title = hasActiveBattle ? labelText + ' — clique para voltar à batalha' : labelText;
+                        // Topbar clicável quando há batalha ativa
+                        const indicator = document.getElementById('homeSessionIndicator');
+                        if (indicator) {
+                            if (hasActiveBattle) {
+                                indicator.classList.add('home-session-indicator--clickable');
+                                indicator.onclick = () => switchTab('encounter');
+                                indicator.setAttribute('role', 'button');
+                                indicator.setAttribute('tabindex', '0');
+                            } else {
+                                indicator.classList.remove('home-session-indicator--clickable');
+                                indicator.onclick = null;
+                                indicator.removeAttribute('role');
+                                indicator.removeAttribute('tabindex');
+                            }
+                        }
                     } else {
                         sessionDot.className = 'session-dot session-dot--inactive';
                         const labelText = 'Sem sessão ativa — configure no Painel Mestre';
@@ -11566,6 +11636,14 @@
                 const seenCount = monstrodex.seen.length;
                 const capturedCount = monstrodex.captured.length;
                 
+                if (seenCount === 0) {
+                    container.innerHTML = `<p class="home-empty-cta">
+                        🌿 Nenhum monstro encontrado ainda —
+                        <button class="home-empty-link" onclick="switchTab('encounter')">explore o Mundo!</button>
+                    </p>`;
+                    return;
+                }
+
                 let html = `<div class="home-stats-row">
                     <div class="home-stat-item">
                         <span class="home-stat-value">${seenCount}</span>
@@ -11617,7 +11695,10 @@
             }
 
             if (entries.length === 0) {
-                container.innerHTML = '<p class="text-muted">Nenhuma quest ativa no momento.</p>';
+                container.innerHTML = `<p class="home-empty-cta">
+                    🗺️ Nenhuma missão ativa —
+                    <button class="home-empty-link" onclick="switchTab('encounter')">explore o Mundo!</button>
+                </p>`;
                 return;
             }
 
@@ -11772,6 +11853,14 @@
                 const xpK = stats.totalXpGained >= 1000
                     ? (Math.floor(stats.totalXpGained / 100) / 10).toString().replace(/\.0$/, '') + 'k'
                     : stats.totalXpGained;
+
+                // Empty state quando nenhuma batalha foi travada ainda
+                if (totalBattles === 0 && !stats.captureAttempts && !stats.totalXpGained) {
+                    container.innerHTML = `<p class="home-empty-cta">⚔️ Nenhuma batalha ainda — aventure-se no
+                        <button class="home-empty-link" onclick="switchTab('encounter')">Mundo!</button>
+                    </p>`;
+                    return;
+                }
                 
                 container.innerHTML = `<div class="stats-mini-grid">
                     <div class="stat-mini">
@@ -11810,7 +11899,11 @@
                 if (!container) return;
                 
                 if (!GameState.players || GameState.players.length === 0) {
-                    container.innerHTML = '<div class="card"><p>No players yet. Add one above!</p></div>';
+                    container.innerHTML = `<div class="card players-empty-state">
+                        <p class="players-empty-icon">👥</p>
+                        <p class="players-empty-msg">Nenhum jogador ainda.</p>
+                        <p class="players-empty-hint">Use o formulário acima para adicionar o primeiro jogador da sessão.</p>
+                    </div>`;
                     return;
                 }
                 
@@ -12380,12 +12473,12 @@
             try {
                 const objectivesList = document.getElementById('objectivesList');
                 if (objectivesList) {
-                    let html = '<h4>Current Objectives:</h4>';
+                    let html = '<h4>Objetivos Atuais:</h4>';
                     (GameState.objectives || []).forEach(obj => {
                         if (!obj) return;
                         html += `
                             <div class="objective-item">
-                                <strong>Weight ${obj.weight}:</strong> ${obj.text}
+                                <strong>Peso ${obj.weight}:</strong> ${obj.text}
                             </div>
                         `;
                     });
@@ -12396,7 +12489,7 @@
                 if (!therapyPlayersList) return;
                 
                 if (!GameState.currentSession) {
-                    therapyPlayersList.innerHTML = '<div class="card"><p>No active session</p></div>';
+                    therapyPlayersList.innerHTML = '<div class="card"><p>Nenhuma sessão ativa</p></div>';
                     return;
                 }
                 
@@ -12826,7 +12919,9 @@
             const ok = mmHasSave();
             if (btn) {
                 btn.disabled = !ok;
+                btn.title = ok ? '' : 'Sem jogo salvo — inicie um Novo Jogo';
                 btn.textContent = ok ? "📖 Continuar" : "📖 Continuar (sem save)";
+                btn.classList.toggle('mm-btn--disabled', !ok);
             }
             // Update therapist button visibility
             mmUpdateTherapistUI();
