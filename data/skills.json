@@ -775,7 +775,7 @@
     },
     {
       "id": "ARMADILHA_1",
-      "name": "Armadilha I",
+      "name": "Armadilha II",
       "class": "Caçador",
       "groupKey": "Armadilha",
       "stageIndex": 1,
@@ -793,7 +793,7 @@
     },
     {
       "id": "ARMADILHA_2",
-      "name": "Armadilha II",
+      "name": "Armadilha III",
       "class": "Caçador",
       "groupKey": "Armadilha",
       "stageIndex": 2,

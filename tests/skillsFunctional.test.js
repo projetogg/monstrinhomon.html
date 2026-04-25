@@ -455,7 +455,7 @@ describe('Skills JSON — Novas Skills AÇÃO 1', () => {
             'Curandeiro': 8,  // grupo 3 não tem stage 0 (2+3+3)
             'Bárbaro':    8,  // grupo 3 não tem stage 0 (3+3+2)
             'Ladino':     8,  // grupo 3 não tem stage 0 (3+3+2)
-            'Caçador':    6,  // 2 grupos × 3 stages (3ª linha não implementada)
+            'Caçador':    6,  // 2 grupos × 3 stages (ARMADILHA disponível desde stage 0; 3ª linha não implementada nesta fase)
             'Animalista': 8,  // grupo 3 não tem stage 0 (3+3+2)
         };
         const classCounts = {};

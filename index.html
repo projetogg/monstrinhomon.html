@@ -4245,8 +4245,8 @@
                         // Simbiose Natural: cura o atacante ao causar dano
                         if (skill.selfHeal && skill.selfHeal > 0) {
                             const heal = Math.min(skill.selfHeal, attacker.hpMax - attacker.hp);
-                            attacker.hp = Math.min(attacker.hpMax, attacker.hp + skill.selfHeal);
-                            encounter.log.push(`💚 ${attacker.name} recupera ${heal} HP pela Simbiose!`);
+                            attacker.hp = Math.min(attacker.hpMax, attacker.hp + heal);
+                            if (heal > 0) encounter.log.push(`💚 ${attacker.name} recupera ${heal} HP pela Simbiose!`);
                         }
                         break;
                         
