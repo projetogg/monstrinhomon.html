@@ -505,14 +505,14 @@
             <div class="card">
                 <h3>🎒 Equipe</h3>
                 <div id="boxTeamList" class="box-grid">
-                    <p class="text-center">Carregando...</p>
+                    <div class="tab-loading"><span class="tab-loading-icon" aria-hidden="true">⏳</span> Carregando equipe...</div>
                 </div>
             </div>
 
             <div class="card">
                 <h3>📦 Monstrinhos na Box</h3>
                 <div id="boxMonstersList" class="box-grid">
-                    <p class="text-center">Carregando...</p>
+                    <div class="tab-loading"><span class="tab-loading-icon" aria-hidden="true">⏳</span> Carregando Box...</div>
                 </div>
             </div>
         </div>
@@ -520,7 +520,7 @@
         <!-- PR16B: PartyDex Tab -->
         <div id="tabPartyDex" class="tab-content">
             <div id="partyDexRoot">
-                <p class="text-center">Carregando Monstrodex...</p>
+                <div class="tab-loading"><span class="tab-loading-icon" aria-hidden="true">⏳</span> Carregando Monstrodex...</div>
             </div>
         </div>
 
@@ -535,7 +535,7 @@
         <div id="tabMissoes" class="tab-content">
             <h2>📜 Missões</h2>
             <div id="missoesTabContent">
-                <p class="text-muted">Carregando missões...</p>
+                <div class="tab-loading"><span class="tab-loading-icon" aria-hidden="true">⏳</span> Carregando missões...</div>
             </div>
         </div>
 
@@ -681,7 +681,7 @@
                     📋 Log simplificado no combate
                 </label>
             </div>
-            <button class="mm-btn" onclick="mmShowMainMenu()">↩️ Voltar</button>
+            <button class="mm-btn" onclick="mmSaveConfigAndBack()">↩️ Voltar</button>
         </div>
     </div>
 
@@ -4331,19 +4331,17 @@
         }
 
         function endSession() {
-            try {
-                if (!GameState.currentSession) return;
-                
-                if (confirm('Encerrar esta sessão?')) {
+            if (!GameState.currentSession) return;
+            mmConfirm('Encerrar esta sessão?', () => {
+                try {
                     GameState.currentSession.completedAt = new Date().toISOString();
                     GameState.currentSession = null;
-                    
                     saveToLocalStorage();
                     updateAllViews();
+                } catch (error) {
+                    showError('Failed to end session', error.stack);
                 }
-            } catch (error) {
-                showError('Failed to end session', error.stack);
-            }
+            }, null, '🏁');
         }
 
         // ENCOUNTER MANAGEMENT
@@ -4782,11 +4780,18 @@
                 const player = _getPlayerById(actor.id);
                 if (!player) return;
 
-                const confirmed = window.confirm(`${player.name || player.nome}: Tem certeza que deseja fugir da batalha?`);
-                if (!confirmed) return;
-
-                const deps = createGroupCombatDeps();
-                Combat.Group.Actions.executeGroupFlee(deps);
+                mmConfirm(
+                    `${player.name || player.nome}: Tem certeza que deseja fugir da batalha?`,
+                    () => {
+                        try {
+                            const deps = createGroupCombatDeps();
+                            Combat.Group.Actions.executeGroupFlee(deps);
+                        } catch (error) {
+                            showError('Failed to flee', error.stack);
+                        }
+                    },
+                    null, '🏃'
+                );
             } catch (error) {
                 showError('Failed to flee', error.stack);
             }
@@ -5418,9 +5423,32 @@
             const host = document.getElementById("mmToastHost");
             if (!host) return;
 
+            // Erros/avisos usam assertive para serem lidos imediatamente por leitores de tela
+            const isUrgent = type === 'error' || type === 'warning';
+            if (isUrgent) {
+                host.setAttribute('aria-live', 'assertive');
+            } else {
+                host.setAttribute('aria-live', 'polite');
+            }
+
             const el = document.createElement("div");
             el.className = `mm-toast ${type}`;
-            el.textContent = text;
+            el.setAttribute('role', 'alert');
+
+            // Conteúdo: texto + botão de fechar para erros e avisos
+            const msgSpan = document.createElement('span');
+            msgSpan.className = 'mm-toast-text';
+            msgSpan.textContent = text;
+            el.appendChild(msgSpan);
+
+            if (isUrgent) {
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'mm-toast-close';
+                closeBtn.setAttribute('aria-label', 'Fechar notificação');
+                closeBtn.textContent = '✕';
+                closeBtn.addEventListener('click', () => dismissToast(el));
+                el.appendChild(closeBtn);
+            }
 
             host.appendChild(el);
 
@@ -5429,19 +5457,21 @@
                 requestAnimationFrame(() => el.classList.add('show'));
             });
 
-            // Duração maior para crianças. Level-up normalmente usa showLevelUpModal(),
-            // mas mantemos aqui como fallback caso showToast('...', 'level-up') seja chamado diretamente.
-            const DURATION = type === 'level-up' ? 4000 : 3500;
+            // Duração: erros ficam 6s (mais tempo para crianças lerem), level-up 4s, demais 3.5s
+            const DURATION = type === 'error' ? 6000 : type === 'level-up' ? 4000 : 3500;
 
-            // Iniciar fade-out e slide-out antes de remover do DOM
-            setTimeout(() => {
-                el.style.opacity = "0";
-                el.style.transform = "translateX(calc(100% + 32px))";
-                el.style.transition = "opacity .25s ease, transform .25s ease";
-            }, DURATION);
+            const timer = setTimeout(() => dismissToast(el), DURATION);
+            el._dismissTimer = timer;
+        }
 
-            // Remover do DOM após a animação
-            setTimeout(() => el.remove(), DURATION + 350);
+        function dismissToast(el) {
+            if (!el || el._dismissed) return;
+            el._dismissed = true;
+            clearTimeout(el._dismissTimer);
+            el.style.opacity = "0";
+            el.style.transform = "translateX(calc(100% + 32px))";
+            el.style.transition = "opacity .25s ease, transform .25s ease";
+            setTimeout(() => el.remove(), 350);
         }
 
         /**
@@ -5474,6 +5504,64 @@
             // Fechar ao clicar fora do card
             overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
         }
+
+        /**
+         * mmConfirm — substitui window.confirm() nativo por modal estilizado.
+         * Usa padrão de callbacks para não bloquear o event loop.
+         * @param {string}   msg       - Mensagem de confirmação
+         * @param {Function} onConfirm - Callback chamado ao confirmar
+         * @param {Function} [onCancel]- Callback opcional chamado ao cancelar
+         * @param {string}   [icon]    - Emoji/ícone opcional (padrão: '❓')
+         */
+        function mmConfirm(msg, onConfirm, onCancel, icon = '❓') {
+            const overlay = document.createElement('div');
+            overlay.className = 'mm-alert-overlay';
+            overlay.setAttribute('role', 'dialog');
+            overlay.setAttribute('aria-modal', 'true');
+            overlay.setAttribute('aria-label', 'Confirmação');
+            overlay.innerHTML = `
+                <div class="mm-alert-card">
+                    <span class="mm-alert-icon" aria-hidden="true">${icon}</span>
+                    <p class="mm-alert-msg">${msg}</p>
+                    <div class="mm-confirm-actions">
+                        <button class="mm-alert-btn mm-confirm-btn-cancel" id="mmConfirmCancel">✕ Cancelar</button>
+                        <button class="mm-alert-btn" id="mmConfirmOk">✅ Confirmar</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(overlay);
+
+            const close = () => overlay.remove();
+
+            overlay.querySelector('#mmConfirmOk').addEventListener('click', () => {
+                close();
+                if (typeof onConfirm === 'function') onConfirm();
+            });
+            overlay.querySelector('#mmConfirmCancel').addEventListener('click', () => {
+                close();
+                if (typeof onCancel === 'function') onCancel();
+            });
+
+            // Fechar com Escape
+            const onKey = (e) => {
+                if (e.key === 'Escape') {
+                    document.removeEventListener('keydown', onKey);
+                    close();
+                    if (typeof onCancel === 'function') onCancel();
+                }
+            };
+            document.addEventListener('keydown', onKey);
+            overlay.addEventListener('click', e => {
+                if (e.target === overlay) {
+                    document.removeEventListener('keydown', onKey);
+                    close();
+                    if (typeof onCancel === 'function') onCancel();
+                }
+            });
+
+            // Focar o botão confirmar para acessibilidade
+            requestAnimationFrame(() => overlay.querySelector('#mmConfirmOk')?.focus());
+        }
+        window.mmConfirm = mmConfirm;
 
         /**
          * showLevelUpModal — exibe modal de celebração de level-up.
@@ -8273,11 +8361,11 @@
         }
 
         function fleeEncounter() {
-            try {
-                const encounter = GameState.currentEncounter;
-                if (!encounter) return;
-                
-                if (confirm('Fugir deste encontro?')) {
+            const encounter = GameState.currentEncounter;
+            if (!encounter) return;
+
+            mmConfirm('Fugir deste encontro?', () => {
+                try {
                     // Fase 11.2: fuga agora usa SPD para calcular chance real de sucesso
                     const playerId = encounter.selectedPlayerId;
                     const player = GameState.players?.find(p => p.id === playerId);
@@ -8290,7 +8378,7 @@
                             getBasicPower: (cls) => MM_TABLES.getBasicAttackPower(cls),
                             eneRegenData: ENE_REGEN_BY_CLASS,
                         };
-                        const result = Combat.Wild.Actions.executeWildFlee({
+                        Combat.Wild.Actions.executeWildFlee({
                             encounter,
                             playerMonster,
                             fleeBaseChance,
@@ -8305,13 +8393,13 @@
                         encounter.active = false;
                         encounter.result = 'fled';
                     }
-                    
+
                     saveToLocalStorage();
                     renderEncounter();
+                } catch (error) {
+                    showError('Flee failed', error.stack);
                 }
-            } catch (error) {
-                showError('Flee failed', error.stack);
-            }
+            }, null, '🏃');
         }
 
         function getCurrentPlayer() {
@@ -8739,20 +8827,21 @@
 
                 const monster = activePlayer.team?.[teamIndex];
                 const monName = monster?.name || 'Monstrinho';
-                if (!confirm(`Enviar ${monName} para a Box? Ele sairá da equipe.`)) {
-                    return;
-                }
-
-                const result = moveTeamToBox(activePlayer.id, teamIndex);
-                
-                if (result.success) {
-                    saveToLocalStorage();
-                    renderBoxTab();
-                    updateAllViews();
-                    updateBoxTabBadge();
-                } else {
-                    mmAlert(result.message || 'Erro ao enviar para Box', 'error');
-                }
+                mmConfirm(`Enviar ${monName} para a Box? Ele sairá da equipe.`, () => {
+                    try {
+                        const result = moveTeamToBox(activePlayer.id, teamIndex);
+                        if (result.success) {
+                            saveToLocalStorage();
+                            renderBoxTab();
+                            updateAllViews();
+                            updateBoxTabBadge();
+                        } else {
+                            mmAlert(result.message || 'Erro ao enviar para Box', 'error');
+                        }
+                    } catch (error) {
+                        showError('Erro ao enviar para Box', error.stack);
+                    }
+                }, null, '📦');
             } catch (error) {
                 showError('Erro ao enviar para Box', error.stack);
             }
@@ -11564,13 +11653,49 @@
 
         function updateHomeStats() {
             try {
-                const statPlayers = document.getElementById('statPlayers');
-                const statMonsters = document.getElementById('statMonsters');
-                const statSession = document.getElementById('statSession');
-                
-                if (statPlayers) statPlayers.textContent = GameState.players?.length || 0;
-                if (statMonsters) statMonsters.textContent = GameState.monsters?.length || 0;
-                if (statSession) statSession.textContent = GameState.currentSession ? 'Sim' : 'Não';
+                const homeStats = document.getElementById('homeStats');
+                const playerCount = GameState.players?.length || 0;
+
+                if (homeStats) {
+                    if (playerCount === 0) {
+                        // Empty state: guiar o usuário a abrir o Painel Mestre
+                        homeStats.innerHTML = `
+                            <div class="home-empty-state-session">
+                                <span class="home-empty-state-icon">👤</span>
+                                <p class="home-empty-state-msg">Nenhum jogador ainda</p>
+                                <button class="btn btn-primary home-empty-state-btn" onclick="mmOpenMestre()">Abrir Painel Mestre</button>
+                            </div>`;
+                    } else {
+                        // Estado normal: mini-grid de stats
+                        const statPlayersEl = homeStats.querySelector('#statPlayers');
+                        const statMonstersEl = homeStats.querySelector('#statMonsters');
+                        const statSessionEl = homeStats.querySelector('#statSession');
+
+                        // Se o mini-grid ainda não existe (foi substituído pelo empty state), restaurá-lo
+                        if (!statPlayersEl) {
+                            homeStats.innerHTML = `
+                                <div class="home-stat-item">
+                                    <span class="home-stat-value" id="statPlayers">0</span>
+                                    <span class="home-stat-label">Jogadores</span>
+                                </div>
+                                <div class="home-stat-item">
+                                    <span class="home-stat-value" id="statMonsters">0</span>
+                                    <span class="home-stat-label">Monstros</span>
+                                </div>
+                                <div class="home-stat-item">
+                                    <span class="home-stat-value" id="statSession">—</span>
+                                    <span class="home-stat-label">Ativa</span>
+                                </div>`;
+                        }
+
+                        const sp = document.getElementById('statPlayers');
+                        const sm = document.getElementById('statMonsters');
+                        const ss = document.getElementById('statSession');
+                        if (sp) sp.textContent = playerCount;
+                        if (sm) sm.textContent = GameState.monsters?.length || 0;
+                        if (ss) ss.textContent = GameState.currentSession ? 'Sim' : 'Não';
+                    }
+                }
 
                 // Atualiza barra de status compacta no topo da Home
                 const sessionDot = document.getElementById('homeSessionDot');
@@ -11579,7 +11704,6 @@
                     if (GameState.currentSession) {
                         sessionDot.className = 'session-dot session-dot--active';
                         const sessionName = GameState.currentSession.name || 'Sessão Ativa';
-                        const playerCount = GameState.players?.length || 0;
                         const wins = GameState.stats?.battlesWon || 0;
                         const hasActiveBattle = !!(GameState.currentEncounter?.active);
                         let labelText = `${sessionName} • ${playerCount} jogador${playerCount !== 1 ? 'es' : ''}`;
@@ -11723,13 +11847,23 @@
             if (!container) return;
 
             if (!window.GameFlow) {
-                container.innerHTML = '<p class="text-muted">Sistema de quests não carregado.</p>';
+                container.innerHTML = `
+                    <div class="tab-empty-state">
+                        <span class="tab-empty-icon">📜</span>
+                        <p class="tab-empty-msg">Sistema de quests não carregado.</p>
+                    </div>`;
                 return;
             }
 
             const players = GameState.players || [];
             if (players.length === 0) {
-                container.innerHTML = '<p class="text-muted">Adicione jogadores para ver missões.</p>';
+                container.innerHTML = `
+                    <div class="tab-empty-state">
+                        <span class="tab-empty-icon">📜</span>
+                        <p class="tab-empty-msg">Nenhum jogador ainda.</p>
+                        <p class="tab-empty-hint">Adicione jogadores pelo Painel Mestre para ver suas missões aqui.</p>
+                        <button class="btn btn-primary tab-empty-btn" onclick="mmOpenMestre()">Abrir Painel Mestre</button>
+                    </div>`;
                 return;
             }
 
@@ -12738,16 +12872,16 @@
         }
 
         function clearAllData() {
-            try {
-                if (confirm('Tem certeza? Isso apagará TODOS os dados!')) {
-                    if (confirm('Confirmar exclusão? Esta ação não pode ser desfeita!')) {
+            mmConfirm('Tem certeza? Isso apagará TODOS os dados!', () => {
+                mmConfirm('Confirmar exclusão? Esta ação não pode ser desfeita!', () => {
+                    try {
                         StorageManager.remove(StorageManager.StorageKeys.STATE); // PR3
                         location.reload();
+                    } catch (error) {
+                        showError('Clear data failed', error.stack);
                     }
-                }
-            } catch (error) {
-                showError('Clear data failed', error.stack);
-            }
+                }, null, '🗑️');
+            }, null, '⚠️');
         }
 
         function toggleTherapistMode() {
@@ -12930,18 +13064,57 @@
         }
 
         function mmShowConfig(){
-            // Sincronizar controles do overlay de configurações com o estado atual
+            // Sincronizar controles do overlay com o estado atual
+            // Fonte primária: GameState.config; fallback: sliders de tabSettings
             const sfxEl = document.getElementById('mmCfgSfxVol');
             const musEl = document.getElementById('mmCfgMusicVol');
             const logEl = document.getElementById('mmCfgSimplifiedLog');
-            const srcSfx = document.getElementById('mmSfxVol');
-            const srcMus = document.getElementById('mmMusicVol');
-            const srcLog = document.getElementById('simplifiedLogMode');
-            if (sfxEl && srcSfx) sfxEl.value = srcSfx.value;
-            if (musEl && srcMus) musEl.value = srcMus.value;
-            if (logEl && srcLog) logEl.checked = srcLog.checked;
+
+            const cfgSfx = GameState?.config?.sfxVolume;
+            const cfgMus = GameState?.config?.musicVolume;
+            const cfgLog = GameState?.config?.simplifiedLog;
+
+            if (sfxEl) {
+                sfxEl.value = cfgSfx !== undefined ? Math.round(cfgSfx * 100)
+                    : (document.getElementById('mmSfxVol')?.value || 70);
+            }
+            if (musEl) {
+                musEl.value = cfgMus !== undefined ? Math.round(cfgMus * 100)
+                    : (document.getElementById('mmMusicVol')?.value || 40);
+            }
+            if (logEl) {
+                logEl.checked = cfgLog !== undefined ? cfgLog
+                    : (document.getElementById('simplifiedLogMode')?.checked || false);
+            }
             mmShow("mmConfig");
         }
+
+        /** Persiste os valores do overlay de configurações no GameState e salva antes de voltar ao menu. */
+        function mmSaveConfigAndBack() {
+            try {
+                const sfxVal = Number(document.getElementById('mmCfgSfxVol')?.value ?? 70) / 100;
+                const musVal = Number(document.getElementById('mmCfgMusicVol')?.value ?? 40) / 100;
+                const logVal = !!(document.getElementById('mmCfgSimplifiedLog')?.checked);
+
+                if (GameState?.config) {
+                    GameState.config.sfxVolume = sfxVal;
+                    GameState.config.musicVolume = musVal;
+                    GameState.config.simplifiedLog = logVal;
+                }
+
+                // Sincronizar sliders de tabSettings também
+                const sfxMainEl = document.getElementById('mmSfxVol');
+                const musMainEl = document.getElementById('mmMusicVol');
+                const logMainEl = document.getElementById('simplifiedLogMode');
+                if (sfxMainEl) sfxMainEl.value = Math.round(sfxVal * 100);
+                if (musMainEl) musMainEl.value = Math.round(musVal * 100);
+                if (logMainEl) logMainEl.checked = logVal;
+
+                if (typeof saveToLocalStorage === 'function') saveToLocalStorage();
+            } catch (_e) { /* silencioso — não bloquear o usuário */ }
+            mmShowMainMenu();
+        }
+        window.mmSaveConfigAndBack = mmSaveConfigAndBack;
 
         // Feature 4.6: Therapist Mode Panel Functions
 
@@ -13561,15 +13734,15 @@
         }
 
         function mmResetSaveConfirm(){
-            const ok = confirm("Apagar o save do navegador? Isso não pode ser desfeito.");
-            if (!ok) return;
-            try {
-                StorageManager.remove(MM_SAVE_KEY); // PR3
-                showToast("Save apagado com sucesso!", 'success');
-            } catch(e){
-                mmAlert("Erro ao apagar save: " + e.message, 'error');
-            }
-            mmShowMainMenu();
+            mmConfirm("Apagar o save do navegador? Isso não pode ser desfeito.", () => {
+                try {
+                    StorageManager.remove(MM_SAVE_KEY); // PR3
+                    showToast("Save apagado com sucesso!", 'success');
+                } catch(e){
+                    mmAlert("Erro ao apagar save: " + e.message, 'error');
+                }
+                mmShowMainMenu();
+            }, null, '🗑️');
         }
 
         // ---- New Game Wizard (MVP) ----
@@ -13949,16 +14122,17 @@
         }
 
         function mmSaveToSlot(slot) {
-            if (!confirm(`Salvar o jogo atual no Slot ${slot}? Isso vai sobrescrever.`)) return;
-            // Define slot ativo e salva via camada canônica (auto-save + slot)
-            SaveLayer.setActiveSlot(slot);
-            const result = SaveLayer.saveActiveGame(GameState, mmBuildSaveEnvelope);
-            if (result.autoSaved && result.slotSaved) {
-                showToast(`💾 Salvo no Slot ${slot}!`);
-                mmRenderSavesScreen();
-            } else {
-                mmAlert("Falha ao salvar no slot.", 'error');
-            }
+            mmConfirm(`Salvar o jogo atual no Slot ${slot}? Isso vai sobrescrever.`, () => {
+                // Define slot ativo e salva via camada canônica (auto-save + slot)
+                SaveLayer.setActiveSlot(slot);
+                const result = SaveLayer.saveActiveGame(GameState, mmBuildSaveEnvelope);
+                if (result.autoSaved && result.slotSaved) {
+                    showToast(`💾 Salvo no Slot ${slot}!`);
+                    mmRenderSavesScreen();
+                } else {
+                    mmAlert("Falha ao salvar no slot.", 'error');
+                }
+            }, null, '💾');
         }
 
         /**
@@ -13998,38 +14172,39 @@
                 mmAlert("Slot vazio ou inválido.", 'error');
                 return;
             }
-            if (!confirm(`Restaurar snapshot do Slot ${slot}? O progresso atual será substituído.`)) return;
-            
-            try {
-                // 1. Restaura snapshot para o GameState em memória
-                Object.assign(GameState, env.state);
-                
-                // 2. Registra slot como associação operacional via camada canônica
-                SaveLayer.setActiveSlot(slot);
-                
-                // 3. Persiste snapshot restaurado como novo auto-save (fonte de verdade)
-                saveToLocalStorage();
-                
-                // Update all views
-                if (typeof updateAllViews === "function") updateAllViews();
-                if (typeof renderEncounter === "function") renderEncounter();
-                
-                showToast(`📂 Snapshot do Slot ${slot} restaurado!`);
-                mmCloseSaves();
-                
-                // Feature 4.1.1: Show tutorial choice or go to game based on preference
-                mmPostGameStartFlow();
-            } catch (e) {
-                console.error("Failed to restore slot", e);
-                mmAlert("Erro ao restaurar o slot.", 'error');
-            }
+            mmConfirm(`Restaurar snapshot do Slot ${slot}? O progresso atual será substituído.`, () => {
+                try {
+                    // 1. Restaura snapshot para o GameState em memória
+                    Object.assign(GameState, env.state);
+
+                    // 2. Registra slot como associação operacional via camada canônica
+                    SaveLayer.setActiveSlot(slot);
+
+                    // 3. Persiste snapshot restaurado como novo auto-save (fonte de verdade)
+                    saveToLocalStorage();
+
+                    // Update all views
+                    if (typeof updateAllViews === "function") updateAllViews();
+                    if (typeof renderEncounter === "function") renderEncounter();
+
+                    showToast(`📂 Snapshot do Slot ${slot} restaurado!`);
+                    mmCloseSaves();
+
+                    // Feature 4.1.1: Show tutorial choice or go to game based on preference
+                    mmPostGameStartFlow();
+                } catch (e) {
+                    console.error("Failed to restore slot", e);
+                    mmAlert("Erro ao restaurar o slot.", 'error');
+                }
+            }, null, '📂');
         }
 
         function mmDeleteSlot(slot) {
-            if (!confirm(`Apagar Slot ${slot}? Esta ação não pode ser desfeita.`)) return;
-            StorageManager.deleteSlot(slot); // PR3
-            showToast(`🗑️ Slot ${slot} apagado.`);
-            mmRenderSavesScreen();
+            mmConfirm(`Apagar Slot ${slot}? Esta ação não pode ser desfeita.`, () => {
+                StorageManager.deleteSlot(slot); // PR3
+                showToast(`🗑️ Slot ${slot} apagado.`);
+                mmRenderSavesScreen();
+            }, null, '🗑️');
         }
 
         function mmExportSlot(slot) {
@@ -14143,8 +14318,10 @@
             const occupied = !!(env && env.state);
 
             if (occupied && !force) {
-                const ok = confirm(`Slot ${slot} já tem um save. Sobrescrever?`);
-                if (!ok) return;
+                mmConfirm(`Slot ${slot} já tem um save. Sobrescrever?`, () => {
+                    mmChooseSlotAndStartNewGame(slot, true);
+                }, null, '💾');
+                return;
             }
 
             // Registra slot como associação operacional (metadado do slot manual selecionado)
@@ -14240,27 +14417,39 @@
 
         function mmStartTutorial() {
             const tut = ensureTutorialState();
-            
+
             // Se não há jogadores, precisa criar um jogo primeiro
             if (!GameState.players || GameState.players.length === 0) {
                 mmAlert("Por favor, crie um novo jogo primeiro!", 'warning');
                 return;
             }
-            
-            const restart = !tut.active ? true : confirm("Continuar tutorial atual? (OK = continuar / Cancelar = reiniciar)");
-            if (!restart) {
-                tut.active = false;
-                tut.stepIndex = 0;
-                tut.done = {};
+
+            const _runTutorial = (restart) => {
+                if (!restart) {
+                    tut.active = false;
+                    tut.stepIndex = 0;
+                    tut.done = {};
+                }
+                tut.active = true;
+                const step = TUTORIAL_STEPS[tut.stepIndex] || TUTORIAL_STEPS[0];
+                mmCloseAllOverlays();
+                step.start();
+                if (typeof saveToLocalStorage === "function") saveToLocalStorage();
+                if (typeof renderEncounter === "function") renderEncounter();
+            };
+
+            if (!tut.active) {
+                // Sem tutorial em curso: iniciar diretamente
+                _runTutorial(true);
+            } else {
+                // Tutorial em curso: perguntar se quer continuar ou reiniciar
+                mmConfirm(
+                    "Continuar tutorial atual?\n\n✅ Confirmar = Continuar de onde parou\n✕ Cancelar = Reiniciar do início",
+                    () => _runTutorial(true),
+                    () => _runTutorial(false),
+                    '📖'
+                );
             }
-            tut.active = true;
-            
-            // Inicia step atual
-            const step = TUTORIAL_STEPS[tut.stepIndex] || TUTORIAL_STEPS[0];
-            mmCloseAllOverlays();
-            step.start();
-            if (typeof saveToLocalStorage === "function") saveToLocalStorage();
-            if (typeof renderEncounter === "function") renderEncounter();
         }
 
         function exitTutorial() {
@@ -14762,6 +14951,6 @@
             bootApp();
         }
     </script>
-    <div id="mmToastHost"></div>
+    <div id="mmToastHost" role="status" aria-live="polite" aria-atomic="false"></div>
 </body>
 </html>
