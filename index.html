@@ -5417,23 +5417,28 @@
         }
         
         /**
-         * Exibe um toast notification temporário
+         * Exibe um toast notification temporário.
+         * Usa dois containers de aria-live fixos para anúncio confiável por leitores de tela.
          */
         function showToast(text, type = 'success') {
+            // Container visual (layout)
             const host = document.getElementById("mmToastHost");
             if (!host) return;
 
-            // Erros/avisos usam assertive para serem lidos imediatamente por leitores de tela
+            // Constantes de duração
+            const TOAST_DURATION_ERROR    = 6000; // erros: mais tempo para crianças lerem
+            const TOAST_DURATION_LEVEL_UP = 4000;
+            const TOAST_DURATION_DEFAULT  = 3500;
+
             const isUrgent = type === 'error' || type === 'warning';
-            if (isUrgent) {
-                host.setAttribute('aria-live', 'assertive');
-            } else {
-                host.setAttribute('aria-live', 'polite');
-            }
+
+            // Container de aria-live fixo: assertive para urgentes, polite para demais
+            const ariaHost = document.getElementById(
+                isUrgent ? "mmToastHostAssertive" : "mmToastHostPolite"
+            );
 
             const el = document.createElement("div");
             el.className = `mm-toast ${type}`;
-            el.setAttribute('role', 'alert');
 
             // Conteúdo: texto + botão de fechar para erros e avisos
             const msgSpan = document.createElement('span');
@@ -5450,15 +5455,27 @@
                 el.appendChild(closeBtn);
             }
 
+            // Adicionar ao container visual para posicionamento
             host.appendChild(el);
+
+            // Adicionar cópia de texto ao container aria-live para anúncio confiável
+            if (ariaHost) {
+                const ariaAnnounce = document.createElement('span');
+                ariaAnnounce.textContent = text;
+                ariaAnnounce.className = 'sr-only';
+                ariaHost.appendChild(ariaAnnounce);
+                // Remover após leitura (não acumula no DOM)
+                setTimeout(() => ariaAnnounce.remove(), 5000);
+            }
 
             // Double-rAF garante que a transição CSS dispare corretamente
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => el.classList.add('show'));
             });
 
-            // Duração: erros ficam 6s (mais tempo para crianças lerem), level-up 4s, demais 3.5s
-            const DURATION = type === 'error' ? 6000 : type === 'level-up' ? 4000 : 3500;
+            const DURATION = type === 'error' ? TOAST_DURATION_ERROR
+                : type === 'level-up' ? TOAST_DURATION_LEVEL_UP
+                : TOAST_DURATION_DEFAULT;
 
             const timer = setTimeout(() => dismissToast(el), DURATION);
             el._dismissTimer = timer;
@@ -14951,6 +14968,12 @@
             bootApp();
         }
     </script>
-    <div id="mmToastHost" role="status" aria-live="polite" aria-atomic="false"></div>
+    <!-- Dois containers de toast com aria-live fixo para anúncio confiável por leitores de tela:
+         - mmToastHostPolite: sucesso / info / level-up (não interrompe)
+         - mmToastHostAssertive: erros e avisos (interrompe imediatamente) -->
+    <div id="mmToastHostPolite"   aria-live="polite"   aria-atomic="false" style="display:contents"></div>
+    <div id="mmToastHostAssertive" aria-live="assertive" aria-atomic="false" style="display:contents"></div>
+    <!-- Wrapper de posicionamento visual (apenas layout, sem aria) -->
+    <div id="mmToastHost" aria-hidden="true"></div>
 </body>
 </html>
