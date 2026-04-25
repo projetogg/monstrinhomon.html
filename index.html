@@ -1523,9 +1523,9 @@
                     { tier: 3, name: 'Escudo III', type: 'BUFF', cost: 8, power: 4, buffType: 'DEF', target: 'self', duration: 3, desc: 'Escudo poderoso.' }
                 ],
                 'Provocar': [
-                    null, // S0 não tem
-                    { tier: 2, name: 'Provocar I', type: 'TAUNT', cost: 4, power: 0, desc: 'Provoca o inimigo.' },
-                    { tier: 3, name: 'Provocar II', type: 'TAUNT', cost: 6, power: 0, desc: 'Provoca intensamente.' }
+                    { tier: 1, name: 'Provocar I', type: 'TAUNT', cost: 4, power: 0, target: 'enemy', desc: 'Provoca o inimigo, forçando-o a atacar.' },
+                    { tier: 2, name: 'Provocar II', type: 'TAUNT', cost: 5, power: 0, target: 'enemy', desc: 'Provoca intensamente.' },
+                    { tier: 3, name: 'Provocar III', type: 'TAUNT', cost: 6, power: 0, target: 'enemy', desc: 'Provocação ensurdecedora.' }
                 ]
             },
             // CURANDEIRO
@@ -1539,6 +1539,11 @@
                     { tier: 1, name: 'Bênção I', type: 'BUFF', cost: 4, power: 2, buffType: 'ATK', target: 'ally', duration: 2, desc: 'Aumenta ATK do aliado.' },
                     { tier: 2, name: 'Bênção II', type: 'BUFF', cost: 6, power: 3, buffType: 'ATK', target: 'ally', duration: 2, desc: 'Aumenta muito o ATK.' },
                     { tier: 3, name: 'Bênção III', type: 'BUFF', cost: 8, power: 4, buffType: 'DEF', target: 'ally', duration: 3, desc: 'Bênção poderosa (DEF).' }
+                ],
+                'Purificação': [
+                    null, // S0: sem Purificação no stage 0
+                    { tier: 2, name: 'Purificação I', type: 'HEAL', cost: 6, power: 15, target: 'ally', cleanse: 1, desc: 'Cura moderada e remove 1 status negativo.' },
+                    { tier: 3, name: 'Purificação II', type: 'HEAL', cost: 9, power: 25, target: 'ally', cleanse: 99, desc: 'Cura poderosa e remove todos os status negativos.' }
                 ]
             },
             // MAGO
@@ -1570,6 +1575,11 @@
                     { tier: 1, name: 'Golpe Brutal I', type: 'DAMAGE', cost: 6, power: 18, desc: 'Golpe brutal.' },
                     { tier: 2, name: 'Golpe Brutal II', type: 'DAMAGE', cost: 8, power: 26, desc: 'Golpe muito brutal.' },
                     { tier: 3, name: 'Golpe Brutal III', type: 'DAMAGE', cost: 12, power: 34, desc: 'Golpe devastador.' }
+                ],
+                'Grito de Guerra': [
+                    null, // S0: Grito de Guerra não disponível no stage 0
+                    { tier: 2, name: 'Grito de Guerra I', type: 'BUFF', cost: 6, power: 2, buffType: 'ATK', target: 'ally', duration: 1, desc: 'Aumenta ATK de todos os aliados por 1 turno.' },
+                    { tier: 3, name: 'Grito de Guerra II', type: 'BUFF', cost: 9, power: 3, buffType: 'ATK', target: 'ally', duration: 2, desc: 'Grito que aumenta ATK de todos os aliados por 2 turnos.' }
                 ]
             },
             // LADINO
@@ -1580,9 +1590,14 @@
                     { tier: 3, name: 'Ataque Preciso III', type: 'DAMAGE', cost: 8, power: 26, desc: 'Ataque extremamente preciso.' }
                 ],
                 'Enfraquecer': [
-                    null, // S0 não tem
+                    null, // S0: Enfraquecer não disponível no stage 0 (substituído por Sombra Evasiva)
                     { tier: 2, name: 'Enfraquecer I', type: 'BUFF', cost: 4, power: -2, buffType: 'ATK', target: 'enemy', duration: 1, desc: 'Reduz ATK do inimigo.' },
                     { tier: 3, name: 'Enfraquecer II', type: 'BUFF', cost: 6, power: -3, buffType: 'ATK', target: 'enemy', duration: 2, desc: 'Enfraquece muito o inimigo.' }
+                ],
+                'Sombra Evasiva': [
+                    { tier: 1, name: 'Sombra Evasiva I', type: 'BUFF', cost: 3, power: 2, buffType: 'SPD', target: 'self', duration: 2, desc: 'Aumenta a velocidade.' },
+                    { tier: 2, name: 'Sombra Evasiva II', type: 'BUFF', cost: 5, power: 3, buffType: 'SPD', target: 'self', duration: 2, desc: 'Velocidade aumentada.' },
+                    { tier: 3, name: 'Sombra Evasiva III', type: 'BUFF', cost: 7, power: 4, buffType: 'SPD', target: 'self', duration: 3, desc: 'Velocidade máxima.' }
                 ]
             },
             // BARDO
@@ -1611,9 +1626,9 @@
                     { tier: 3, name: 'Flecha Poderosa III', type: 'DAMAGE', cost: 8, power: 26, desc: 'Flecha devastadora.' }
                 ],
                 'Armadilha': [
-                    null, // S0 não tem
-                    { tier: 2, name: 'Armadilha I', type: 'BUFF', cost: 4, power: -2, buffType: 'SPD', target: 'enemy', duration: 1, desc: 'Reduz SPD do inimigo.' },
-                    { tier: 3, name: 'Armadilha II', type: 'BUFF', cost: 6, power: -3, buffType: 'SPD', target: 'enemy', duration: 2, desc: 'Armadilha poderosa.' }
+                    { tier: 1, name: 'Armadilha I', type: 'BUFF', cost: 3, power: -2, buffType: 'SPD', target: 'enemy', duration: 1, desc: 'Arma uma armadilha que reduz SPD.' },
+                    { tier: 2, name: 'Armadilha II', type: 'BUFF', cost: 4, power: -2, buffType: 'SPD', target: 'enemy', duration: 1, desc: 'Armadilha mais eficaz.' },
+                    { tier: 3, name: 'Armadilha III', type: 'BUFF', cost: 7, power: -3, buffType: 'SPD', target: 'enemy', duration: 2, desc: 'Armadilha poderosa.' }
                 ]
             },
             // ANIMALISTA
@@ -1627,6 +1642,11 @@
                     { tier: 1, name: 'Instinto Selvagem I', type: 'BUFF', cost: 4, power: 2, buffType: 'DEF', target: 'self', duration: 2, desc: 'Aumenta DEF.' },
                     { tier: 2, name: 'Instinto Selvagem II', type: 'BUFF', cost: 6, power: 2, buffType: 'SPD', target: 'self', duration: 2, desc: 'Aumenta SPD.' },
                     { tier: 3, name: 'Instinto Selvagem III', type: 'BUFF', cost: 8, power: 3, buffType: 'DEF', target: 'self', duration: 3, desc: 'Instinto aguçado.' }
+                ],
+                'Simbiose Natural': [
+                    null, // S0: Simbiose Natural não disponível no stage 0
+                    { tier: 2, name: 'Simbiose Natural I', type: 'DAMAGE', cost: 6, power: 15, selfHeal: 8, desc: 'Ataque que drena energia e cura o próprio Monstrinho.' },
+                    { tier: 3, name: 'Simbiose Natural II', type: 'DAMAGE', cost: 8, power: 20, selfHeal: 12, desc: 'Ataque poderoso que regenera bastante HP.' }
                 ]
             }
         };
@@ -4221,6 +4241,13 @@
                         
                         defender.hp = Math.max(0, defender.hp - skillDamage);
                         encounter.log.push(`💥 ${defender.name} recebe ${skillDamage} de dano!`);
+
+                        // Simbiose Natural: cura o atacante ao causar dano
+                        if (skill.selfHeal && skill.selfHeal > 0) {
+                            const heal = Math.min(skill.selfHeal, attacker.hpMax - attacker.hp);
+                            attacker.hp = Math.min(attacker.hpMax, attacker.hp + skill.selfHeal);
+                            encounter.log.push(`💚 ${attacker.name} recupera ${heal} HP pela Simbiose!`);
+                        }
                         break;
                         
                     case 'HEAL':
@@ -4229,6 +4256,23 @@
                         const target = (skill.target === 'ally' || skill.target === 'self') ? attacker : defender;
                         target.hp = Math.min(target.hpMax, target.hp + healAmount);
                         encounter.log.push(`💚 ${target.name} recupera ${healAmount} HP!`);
+
+                        // Purificação: remover buffs negativos (status negativos) do alvo
+                        if (skill.cleanse && skill.cleanse > 0 && target.buffs) {
+                            const negBefore = target.buffs.filter(b => b.power < 0).length;
+                            if (skill.cleanse >= 99) {
+                                target.buffs = target.buffs.filter(b => b.power >= 0);
+                            } else {
+                                let removed = 0;
+                                target.buffs = target.buffs.filter(b => {
+                                    if (b.power < 0 && removed < skill.cleanse) { removed++; return false; }
+                                    return true;
+                                });
+                            }
+                            const negAfter = target.buffs.filter(b => b.power < 0).length;
+                            const cleansed = negBefore - negAfter;
+                            if (cleansed > 0) encounter.log.push(`✨ ${cleansed} status negativo(s) removido(s) de ${target.name}!`);
+                        }
                         break;
                         
                     case 'BUFF':
