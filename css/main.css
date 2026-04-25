@@ -14,6 +14,36 @@
     --class-bardo:      #d35400;
     --class-cacador:    #16a085;
     --class-animalista: #2980b9;
+
+    /* ── Design tokens de espaçamento ────────────────────────────────────── */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 40px;
+
+    /* ── Design tokens de tipografia ─────────────────────────────────────── */
+    --font-xs:   11px;
+    --font-sm:   13px;
+    --font-base: 16px;
+    --font-md:   18px;
+    --font-lg:   22px;
+    --font-xl:   28px;
+    --font-hero: 40px;
+
+    /* ── Design tokens de border-radius ──────────────────────────────────── */
+    --radius-sm:   6px;
+    --radius-md:   12px;
+    --radius-lg:   16px;
+    --radius-xl:   20px;
+    --radius-full: 9999px;
+
+    /* ── Cores de raridade ────────────────────────────────────────────────── */
+    --rarity-comum:    #78909c;
+    --rarity-incomum:  #43a047;
+    --rarity-raro:     #1e88e5;
+    --rarity-mistico:  #8e24aa;
+    --rarity-lendario: #f57f17;
 }
 
 body {
@@ -6913,5 +6943,476 @@ img.monster-visual--variant-battle {
     /* Spinner de carregamento: parar rotação */
     .tab-loading-icon {
         animation: none;
+    }
+}
+
+/* ===========================================================================
+   UX/UI SPRINT — Melhorias de UX/UI/Design (Fase 1–2)
+   =========================================================================== */
+
+/* ─── 1. Hierarquia de botões do Menu Principal ──────────────────────────── */
+.mm-btn--primary {
+    background: linear-gradient(135deg, var(--primary) 0%, #a855f7 100%);
+    border-color: rgba(255,255,255,0.25);
+    font-size: 18px;
+    padding: 16px 20px;
+    box-shadow: 0 4px 18px rgba(108,92,231,0.45);
+    letter-spacing: 0.3px;
+}
+.mm-btn--primary:hover {
+    background: linear-gradient(135deg, #7c6ef0 0%, #b66ef9 100%);
+    box-shadow: 0 6px 24px rgba(108,92,231,0.6);
+}
+
+.mm-btn--secondary {
+    background: rgba(255,255,255,0.06);
+    border: 2px solid rgba(255,255,255,0.25);
+    font-size: 16px;
+}
+.mm-btn--secondary:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.4);
+}
+
+.mm-btn--ghost {
+    background: transparent;
+    border-color: transparent;
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0.8;
+    padding: 10px 14px;
+}
+.mm-btn--ghost:hover {
+    background: rgba(255,255,255,0.08);
+    opacity: 1;
+    border-color: rgba(255,255,255,0.1);
+}
+
+.mm-btn--mestre {
+    background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+    border-color: rgba(100,120,255,0.4);
+    box-shadow: 0 2px 10px rgba(26,35,126,0.5);
+    font-size: 15px;
+}
+.mm-btn--mestre:hover {
+    background: linear-gradient(135deg, #283593 0%, #3949ab 100%);
+}
+
+.mm-btn--danger-ghost {
+    color: #ff6b6b;
+    border-color: rgba(255,107,107,0.25);
+}
+.mm-btn--danger-ghost:hover {
+    background: rgba(255,107,107,0.1);
+    border-color: rgba(255,107,107,0.5);
+}
+
+/* Separador de ação destrutiva — espaço extra antes do botão perigoso */
+.mm-danger-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+.mm-danger-row .mm-btn { width: auto; flex: 1; }
+
+/* Separador visual entre grupos de botões no menu */
+.mm-divider-labeled {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0;
+    font-size: 11px;
+    opacity: 0.45;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.mm-divider-labeled::before,
+.mm-divider-labeled::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255,255,255,0.15);
+}
+
+/* ─── 2. Animação shake ao receber dano ──────────────────────────────────── */
+@keyframes shake-damage {
+    0%, 100% { transform: translateX(0) rotate(0deg); }
+    20%       { transform: translateX(-7px) rotate(-1.5deg); }
+    40%       { transform: translateX(7px) rotate(1.5deg); }
+    60%       { transform: translateX(-4px) rotate(-0.5deg); }
+    80%       { transform: translateX(4px) rotate(0.5deg); }
+}
+
+.shake-damage {
+    animation: shake-damage 0.42s ease-out;
+}
+
+/* ─── 3. Botão de captura com estado "Capturável!" ───────────────────────── */
+.btn-capture--ready {
+    background: linear-gradient(135deg, #00b894 0%, #00cec9 100%) !important;
+    border-color: rgba(0,200,180,0.5) !important;
+    box-shadow: 0 0 16px rgba(0,184,148,0.65), 0 4px 12px rgba(0,0,0,0.3) !important;
+    animation: capture-pulse 1.6s ease-in-out infinite;
+    font-weight: 900 !important;
+}
+.btn-capture--ready::before {
+    content: '✨ ';
+}
+
+@keyframes capture-pulse {
+    0%, 100% { box-shadow: 0 0 12px rgba(0,184,148,0.55), 0 4px 12px rgba(0,0,0,0.25); }
+    50%       { box-shadow: 0 0 24px rgba(0,184,148,0.85), 0 4px 16px rgba(0,0,0,0.30); }
+}
+
+/* Badge "Capturável!" sobre a arena inimiga */
+.capture-ready-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: linear-gradient(135deg, rgba(0,184,148,0.9), rgba(0,206,201,0.9));
+    color: white;
+    font-size: 12px;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
+    margin-top: 4px;
+    letter-spacing: 0.4px;
+    box-shadow: 0 2px 8px rgba(0,184,148,0.45);
+    animation: capture-pulse 1.6s ease-in-out infinite;
+}
+
+/* ─── 4. Breadcrumb do Mundo ─────────────────────────────────────────────── */
+.mm-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--font-sm);
+    opacity: 0.75;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+.mm-breadcrumb-sep {
+    opacity: 0.4;
+    font-size: 10px;
+}
+.mm-breadcrumb-item {
+    cursor: pointer;
+    color: inherit;
+    background: none;
+    border: none;
+    font: inherit;
+    font-size: var(--font-sm);
+    opacity: 0.85;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    transition: background 0.15s, opacity 0.15s;
+}
+.mm-breadcrumb-item:hover {
+    background: rgba(255,255,255,0.1);
+    opacity: 1;
+}
+.mm-breadcrumb-item--current {
+    opacity: 1;
+    font-weight: 700;
+    cursor: default;
+}
+.mm-breadcrumb-item--current:hover {
+    background: none;
+}
+
+/* ─── 5. Home Hub ────────────────────────────────────────────────────────── */
+
+/* Banner de missão ativa */
+.home-hub-banner {
+    background: linear-gradient(135deg, rgba(108,92,231,0.18) 0%, rgba(0,206,201,0.12) 100%);
+    border: 1px solid rgba(108,92,231,0.25);
+    border-radius: var(--radius-lg);
+    padding: 14px 18px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    transition: box-shadow 0.2s;
+}
+.home-hub-banner:hover {
+    box-shadow: 0 4px 18px rgba(108,92,231,0.2);
+}
+.home-hub-banner__icon { font-size: 24px; flex-shrink: 0; }
+.home-hub-banner__info { flex: 1; min-width: 0; }
+.home-hub-banner__title {
+    font-weight: 800;
+    font-size: var(--font-base);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.home-hub-banner__progress {
+    font-size: var(--font-sm);
+    opacity: 0.75;
+    margin-top: 4px;
+}
+.home-hub-banner__bar-track {
+    height: 5px;
+    background: rgba(255,255,255,0.12);
+    border-radius: var(--radius-full);
+    margin-top: 6px;
+    overflow: hidden;
+}
+.home-hub-banner__bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), #a855f7);
+    border-radius: var(--radius-full);
+    transition: width 0.4s ease;
+}
+.home-hub-banner__btn {
+    flex-shrink: 0;
+    padding: 8px 18px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 800;
+    font-size: var(--font-sm);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, transform 0.1s;
+    min-height: 36px;
+}
+.home-hub-banner__btn:hover { background: #7c6ef0; transform: translateY(-1px); }
+.home-hub-banner__btn:active { transform: translateY(0); }
+
+/* Banner "sem sessão" */
+.home-hub-empty-banner {
+    background: rgba(255,255,255,0.04);
+    border: 1px dashed rgba(255,255,255,0.15);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 14px;
+    opacity: 0.7;
+}
+.home-hub-empty-banner p { font-size: var(--font-sm); margin-top: 6px; }
+
+/* Card de monstrinho ativo */
+.home-hub-monster {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius-lg);
+    padding: 14px 18px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.home-hub-monster__emoji {
+    font-size: 44px;
+    line-height: 1;
+    flex-shrink: 0;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+}
+.home-hub-monster__info { flex: 1; min-width: 0; }
+.home-hub-monster__name {
+    font-weight: 900;
+    font-size: var(--font-md);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.home-hub-monster__meta {
+    font-size: var(--font-sm);
+    opacity: 0.7;
+    margin-top: 2px;
+}
+.home-hub-monster__hp-track {
+    height: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: var(--radius-full);
+    margin-top: 8px;
+    overflow: hidden;
+}
+.home-hub-monster__hp-fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: width 0.4s ease;
+}
+.home-hub-monster__hp-fill--high   { background: linear-gradient(90deg, #00b894, #55efc4); }
+.home-hub-monster__hp-fill--mid    { background: linear-gradient(90deg, #fdcb6e, #e17055); }
+.home-hub-monster__hp-fill--low    { background: linear-gradient(90deg, #d63031, #ff7675); }
+.home-hub-monster__hp-val {
+    font-size: var(--font-xs);
+    opacity: 0.6;
+    margin-top: 4px;
+}
+
+/* Grid de ações rápidas */
+.home-quick-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+}
+.home-quick-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 16px 10px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius-lg);
+    color: white;
+    font-size: var(--font-sm);
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+    min-height: 80px;
+}
+.home-quick-btn:hover {
+    background: rgba(255,255,255,0.12);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+}
+.home-quick-btn:active { transform: translateY(0); }
+.home-quick-btn__icon { font-size: 28px; }
+
+/* Acordeão de stats da sessão na Home */
+.home-stats-accordion {
+    margin-bottom: 14px;
+}
+.home-stats-accordion summary {
+    cursor: pointer;
+    font-size: var(--font-sm);
+    opacity: 0.6;
+    font-weight: 600;
+    padding: 6px 0;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.home-stats-accordion summary::before { content: '▶'; font-size: 10px; transition: transform 0.2s; }
+.home-stats-accordion[open] summary::before { transform: rotate(90deg); }
+.home-stats-accordion summary::-webkit-details-marker { display: none; }
+.home-stats-accordion__body {
+    padding: 10px 0;
+}
+
+/* ─── 6. Melhorias de responsividade ────────────────────────────────────── */
+@media (max-width: 480px) {
+    .app-container { padding: 10px; }
+    .header { padding: 12px 14px; border-radius: 14px; }
+    .header h1 { font-size: 1.4em; }
+    .tab-button { padding: 10px 14px; font-size: 13px; }
+    .battle-dice-input { width: 90px !important; height: 60px !important; font-size: 26px !important; }
+    .home-quick-actions { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .home-quick-btn { padding: 12px 6px; min-height: 70px; font-size: 12px; }
+    .home-quick-btn__icon { font-size: 24px; }
+    .mm-overlay .mm-card { padding: 14px; }
+    .mm-title { font-size: 22px; }
+    .mm-btn { font-size: 15px; padding: 11px 12px; }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    .app-container { padding: 14px; }
+    .battle-dice-input { width: 94px; height: 56px; font-size: 24px; }
+    .home-quick-actions { gap: 10px; }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+    /* iPad portrait e landscape */
+    .app-container { padding: 16px; }
+    .home-quick-actions { grid-template-columns: repeat(3, 1fr); }
+    .tab-nav-bar { gap: 4px; }
+    .tab-button { padding: 11px 16px; font-size: 13px; }
+}
+
+/* ─── 7. Egg Hatch — Animações de 3 fases ────────────────────────────────── */
+@keyframes egg-shake {
+    0%, 100% { transform: rotate(0deg) translateX(0); }
+    20%       { transform: rotate(-5deg) translateX(-4px); }
+    40%       { transform: rotate(5deg) translateX(4px); }
+    60%       { transform: rotate(-3deg) translateX(-2px); }
+    80%       { transform: rotate(3deg) translateX(2px); }
+}
+
+@keyframes egg-crack-flash {
+    0%   { filter: brightness(1); }
+    30%  { filter: brightness(2.5) saturate(1.5); }
+    60%  { filter: brightness(1.5); }
+    100% { filter: brightness(1); }
+}
+
+@keyframes monster-reveal {
+    from { opacity: 0; transform: scale(0.5) translateY(20px); filter: brightness(3); }
+    60%  { opacity: 1; transform: scale(1.15) translateY(-5px); filter: brightness(1.3); }
+    100% { opacity: 1; transform: scale(1) translateY(0); filter: brightness(1); }
+}
+
+.egg-hatch-phase-shaking { animation: egg-shake 0.5s ease-in-out; }
+.egg-hatch-phase-cracking { animation: egg-crack-flash 0.6s ease-out; }
+.egg-hatch-phase-revealing { animation: monster-reveal 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+/* Fundo de raridade no modal de chocamento */
+.egg-hatch-modal--comum    { border-color: var(--rarity-comum) !important; }
+.egg-hatch-modal--incomum  { border-color: var(--rarity-incomum) !important; }
+.egg-hatch-modal--raro     { border-color: var(--rarity-raro) !important; }
+.egg-hatch-modal--mistico  { border-color: var(--rarity-mistico) !important; box-shadow: 0 0 30px rgba(142,36,170,0.4) !important; }
+.egg-hatch-modal--lendario {
+    border-color: var(--rarity-lendario) !important;
+    box-shadow: 0 0 40px rgba(245,127,23,0.6) !important;
+    animation: legendary-glow 1s ease-in-out infinite;
+}
+
+@keyframes legendary-glow {
+    0%, 100% { box-shadow: 0 0 30px rgba(245,127,23,0.5); }
+    50%       { box-shadow: 0 0 55px rgba(245,127,23,0.85); }
+}
+
+/* Badges de raridade unificados (usando nomenclatura do jogo em PT-BR) */
+.badge-raridade {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-size: var(--font-xs);
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+.badge-raridade--comum    { background: rgba(120,144,156,0.2); color: var(--rarity-comum);    border: 1px solid rgba(120,144,156,0.35); }
+.badge-raridade--incomum  { background: rgba(67,160,71,0.15);  color: var(--rarity-incomum);  border: 1px solid rgba(67,160,71,0.35); }
+.badge-raridade--raro     { background: rgba(30,136,229,0.15); color: var(--rarity-raro);     border: 1px solid rgba(30,136,229,0.35); }
+.badge-raridade--mistico  { background: rgba(142,36,170,0.15); color: #ce93d8;                 border: 1px solid rgba(142,36,170,0.35); }
+.badge-raridade--lendario { background: rgba(245,127,23,0.15); color: var(--rarity-lendario); border: 1px solid rgba(245,127,23,0.4); animation: shimmer 2s ease-in-out infinite; }
+
+/* ─── 8. Confetes de vitória ─────────────────────────────────────────────── */
+@keyframes confetti-fall {
+    0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(120vh) rotate(720deg); opacity: 0; }
+}
+.confetti-particle {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 99999;
+    animation: confetti-fall linear forwards;
+}
+
+/* ─── 9. Reduced motion — atualização com novos elementos ────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .shake-damage, .capture-pulse, .btn-capture--ready,
+    .egg-hatch-phase-shaking, .egg-hatch-phase-cracking, .egg-hatch-phase-revealing,
+    .badge-raridade--lendario, .egg-hatch-modal--lendario, .confetti-particle {
+        animation: none;
+    }
+    .home-hub-banner, .home-quick-btn, .home-hub-banner__btn {
+        transition: none;
     }
 }
