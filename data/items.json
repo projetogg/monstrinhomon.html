@@ -16,7 +16,8 @@
         "chance": 0.15
       },
       "price": {
-        "buy": 50
+        "buy": 50,
+        "sell": 20
       }
     },
     {
@@ -34,7 +35,8 @@
         "chance": 0.15
       },
       "price": {
-        "buy": 50
+        "buy": 50,
+        "sell": 20
       }
     },
     {
@@ -49,10 +51,11 @@
       },
       "break": {
         "enabled": true,
-        "chance": 0.10
+        "chance": 0.1
       },
       "price": {
-        "buy": 120
+        "buy": 120,
+        "sell": 48
       }
     },
     {
@@ -67,10 +70,11 @@
       },
       "break": {
         "enabled": true,
-        "chance": 0.10
+        "chance": 0.1
       },
       "price": {
-        "buy": 120
+        "buy": 120,
+        "sell": 48
       }
     },
     {
@@ -88,7 +92,8 @@
         "chance": 0.05
       },
       "price": {
-        "buy": 250
+        "buy": 250,
+        "sell": 100
       }
     },
     {
@@ -106,7 +111,8 @@
         "chance": 0.05
       },
       "price": {
-        "buy": 250
+        "buy": 250,
+        "sell": 100
       }
     },
     {
@@ -124,7 +130,8 @@
         "chance": 0
       },
       "price": {
-        "buy": 500
+        "buy": 500,
+        "sell": 200
       }
     },
     {
@@ -142,7 +149,8 @@
         "chance": 0
       },
       "price": {
-        "buy": 500
+        "buy": 500,
+        "sell": 200
       }
     },
     {
@@ -160,7 +168,8 @@
         "chance": 0
       },
       "price": {
-        "buy": 1000
+        "buy": 1000,
+        "sell": 400
       }
     },
     {
@@ -178,7 +187,8 @@
         "chance": 0
       },
       "price": {
-        "buy": 1000
+        "buy": 1000,
+        "sell": 400
       }
     },
     {
@@ -193,10 +203,11 @@
       },
       "break": {
         "enabled": true,
-        "chance": 0.10
+        "chance": 0.1
       },
       "price": {
-        "buy": 150
+        "buy": 150,
+        "sell": 60
       }
     },
     {
@@ -214,7 +225,8 @@
         "chance": 0.05
       },
       "price": {
-        "buy": 300
+        "buy": 300,
+        "sell": 120
       }
     },
     {
@@ -232,7 +244,8 @@
         "chance": 0
       },
       "price": {
-        "buy": 1200
+        "buy": 1200,
+        "sell": 480
       }
     },
     {
@@ -242,7 +255,9 @@
       "category": "egg",
       "stackable": true,
       "maxStack": 99,
-      "usableIn": ["menu"],
+      "usableIn": [
+        "menu"
+      ],
       "price": {
         "buy": 120,
         "sell": 59
@@ -262,7 +277,9 @@
       "category": "egg",
       "stackable": true,
       "maxStack": 99,
-      "usableIn": ["menu"],
+      "usableIn": [
+        "menu"
+      ],
       "price": {
         "buy": 300,
         "sell": 149
@@ -282,7 +299,9 @@
       "category": "egg",
       "stackable": true,
       "maxStack": 99,
-      "usableIn": ["menu"],
+      "usableIn": [
+        "menu"
+      ],
       "price": {
         "buy": 750,
         "sell": 374
@@ -302,7 +321,9 @@
       "category": "egg",
       "stackable": true,
       "maxStack": 99,
-      "usableIn": ["menu"],
+      "usableIn": [
+        "menu"
+      ],
       "price": {
         "buy": 1500,
         "sell": 749
@@ -322,7 +343,9 @@
       "category": "egg",
       "stackable": true,
       "maxStack": 99,
-      "usableIn": ["menu"],
+      "usableIn": [
+        "menu"
+      ],
       "price": {
         "buy": 3000,
         "sell": 1499
@@ -340,7 +363,7 @@
       "name": "Petisco de Cura",
       "description": "Restaura 30% do HP máximo (mínimo 30 HP). Usado em batalha.",
       "type": "heal",
-      "heal_pct": 0.30,
+      "heal_pct": 0.3,
       "heal_min": 30,
       "emoji": "💚",
       "stackable": true,
@@ -370,7 +393,7 @@
       "name": "Elixir Máximo",
       "description": "Restaura 100% do HP máximo. Usado em batalha.",
       "type": "heal",
-      "heal_pct": 1.00,
+      "heal_pct": 1.0,
       "heal_min": 999,
       "emoji": "✨",
       "stackable": true,

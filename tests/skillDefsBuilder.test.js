@@ -157,14 +157,14 @@ describe('buildRuntimeSkillDefs', () => {
                 expect(result[cls], `classe ${cls} deve existir`).toBeDefined();
             }
         });
-        it('deve ter 54 entradas no skills.json', async () => {
+        it('deve ter 65 entradas no skills.json (AÇÃO 1 completa — 8 classes × 3 linhas × 3 tiers, com linhas 3 sem stage 0)', async () => {
             const { readFile } = await import('fs/promises');
             const { fileURLToPath } = await import('url');
             const { dirname, join } = await import('path');
             const dir = dirname(fileURLToPath(import.meta.url));
             const raw = await readFile(join(dir, '../data/skills.json'), 'utf-8');
             const data = JSON.parse(raw);
-            expect(data.skills).toHaveLength(54);
+            expect(data.skills).toHaveLength(65);
         });
     });
 });
