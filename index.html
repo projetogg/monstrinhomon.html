@@ -552,6 +552,14 @@
                     <input type="checkbox" id="simplifiedLogMode" onchange="toggleSimplifiedLog()">
                     📋 Log simplificado (apenas ações principais no combate)
                 </label>
+                <div class="settings-inline-group">
+                    <label for="diceModeSetting">🎲 Modo do dado de combate</label>
+                    <select id="diceModeSetting" onchange="setCombatDiceMode(this.value)">
+                        <option value="auto">Automático (jogo rola ataque/defesa)</option>
+                        <option value="manual">Manual (dado físico + seleção)</option>
+                    </select>
+                    <small>Escolha fixa para todas as batalhas até alterar aqui.</small>
+                </div>
             </div>
 
             <div class="card">
@@ -680,6 +688,13 @@
                         onchange="toggleSimplifiedLog()">
                     📋 Log simplificado no combate
                 </label>
+            </div>
+            <div class="mm-field">
+                <label for="mmCfgDiceMode">🎲 Modo do dado de combate</label>
+                <select id="mmCfgDiceMode" onchange="setCombatDiceMode(this.value)" style="width:100%;padding:8px;border-radius:8px">
+                    <option value="auto">Automático (jogo rola ataque/defesa)</option>
+                    <option value="manual">Manual (dado físico + seleção)</option>
+                </select>
             </div>
             <button class="mm-btn" onclick="mmSaveConfigAndBack()">↩️ Voltar</button>
         </div>
@@ -1348,6 +1363,7 @@
             config: {
                 maxTeamSize: 6,
                 maxLevel: 100,
+                combatDiceMode: 'auto',
                 levelExpo: 1.5,
                 battleXpBase: 15,
                 captureModel: 'threshold_no_dice',
@@ -1984,6 +2000,7 @@
         async function init() {
             try {
                 loadFromLocalStorage();
+                syncCombatDiceModeInputs();
                 
                 // PR3: Restore therapist mode state via StorageManager
                 if (typeof GameState.therapistMode !== "boolean") {
@@ -2488,6 +2505,7 @@
             const configDefaults = {
                 maxTeamSize: 6,
                 maxLevel: 100,
+                combatDiceMode: 'auto',
                 levelExpo: 1.5,
                 battleXpBase: 15,
                 captureModel: 'threshold_no_dice',
@@ -7184,6 +7202,7 @@
                 
                 if (encounter.type === 'wild') {
                     renderWildEncounter(panel, encounter);
+                    syncCombatDiceModeInputs();
                 } else if (encounter.type === 'group_trainer' || encounter.type === 'boss') {
                     renderGroupEncounter(panel, encounter);
                 } else {
@@ -7637,13 +7656,24 @@
                         <!-- Linha de ações: d20 + botões principais -->
                         <div class="battle-actions-row">
                             <div class="battle-dice-section">
-                                <div class="battle-dice-col">
-                                    <label class="battle-dice-label" for="diceRoll" title="Role o dado físico d20 e digite o resultado aqui antes de atacar">🎲 d20</label>
-                                    <input type="number" id="diceRoll" min="1" max="20" placeholder="1–20"
-                                           class="battle-dice-input battle-dice-input--active"
-                                           oninput="onDiceRollInput(this)"
-                                           title="Role o dado físico d20 e digite o resultado (1 a 20)">
-                                    <span class="battle-dice-hint">role e digite</span>
+                                <div class="battle-dice-clash" id="battleDiceClash">
+                                    <div class="battle-dice-col">
+                                        <label class="battle-dice-label" for="diceRollAttack" title="Dado de ataque">🎯 ATK</label>
+                                        <input type="number" id="diceRollAttack" min="1" max="20" placeholder="1–20"
+                                               class="battle-dice-input battle-dice-input--active"
+                                               oninput="onDiceRollInput(this, 'attack')"
+                                               title="Resultado do dado de ataque (1 a 20)">
+                                        <span class="battle-dice-hint" id="diceAttackHint">dado de ataque</span>
+                                    </div>
+                                    <div class="battle-dice-vs">VS</div>
+                                    <div class="battle-dice-col">
+                                        <label class="battle-dice-label" for="diceRollDefense" title="Dado de defesa">🛡️ DEF</label>
+                                        <input type="number" id="diceRollDefense" min="1" max="20" placeholder="1–20"
+                                               class="battle-dice-input battle-dice-input--active"
+                                               oninput="onDiceRollInput(this, 'defense')"
+                                               title="Resultado do dado de defesa (1 a 20)">
+                                        <span class="battle-dice-hint" id="diceDefenseHint">dado de defesa</span>
+                                    </div>
                                 </div>
                             </div>
                             ${advantageHtml}
@@ -8051,9 +8081,50 @@
             }
         }
 
+        function _rollD20() {
+            return Math.floor(Math.random() * 20) + 1;
+        }
+
+        function _updateDiceClashUI({ attackerLabel, defenderLabel, attackRoll, defenseRoll, rolling = false }) {
+            const attackHint = document.getElementById('diceAttackHint');
+            const defenseHint = document.getElementById('diceDefenseHint');
+            const attackInput = document.getElementById('diceRollAttack');
+            const defenseInput = document.getElementById('diceRollDefense');
+            if (attackHint && attackerLabel) attackHint.textContent = attackerLabel;
+            if (defenseHint && defenderLabel) defenseHint.textContent = defenderLabel;
+            [attackInput, defenseInput].forEach((el) => {
+                if (!el) return;
+                el.classList.remove('battle-dice-input--hit', 'battle-dice-input--miss');
+                el.classList.toggle('battle-dice-input--rolling', rolling);
+            });
+            if (attackInput && Number.isInteger(attackRoll)) attackInput.value = String(attackRoll);
+            if (defenseInput && Number.isInteger(defenseRoll)) defenseInput.value = String(defenseRoll);
+        }
+
+        function _animateDiceClash({ attackerLabel, defenderLabel, attackRoll, defenseRoll, duration = 650 }) {
+            _updateDiceClashUI({ attackerLabel, defenderLabel, rolling: true });
+            return new Promise((resolve) => {
+                const startedAt = Date.now();
+                const interval = setInterval(() => {
+                    _updateDiceClashUI({
+                        attackerLabel,
+                        defenderLabel,
+                        attackRoll: _rollD20(),
+                        defenseRoll: _rollD20(),
+                        rolling: true
+                    });
+                    if (Date.now() - startedAt >= duration) {
+                        clearInterval(interval);
+                        _updateDiceClashUI({ attackerLabel, defenderLabel, attackRoll, defenseRoll, rolling: false });
+                        resolve();
+                    }
+                }, 85);
+            });
+        }
+
         // ===== COMBAT WILD 1v1 - Wrapper de Compatibilidade =====
         // Mantém API pública, delega para módulo Combat
-        function attackWild() {
+        async function attackWild() {
             try {
                 // 1. Validações iniciais
                 const encounter = GameState.currentEncounter;
@@ -8078,13 +8149,31 @@
                     return;
                 }
                 
-                // 2. Capturar input do usuário
-                const d20Roll = Combat.Wild.UI.getCombatInputRoll();
-                if (!d20Roll) {
-                    mmAlert('🎲 Role o dado físico d20, depois digite o resultado (1 a 20) no campo de dado e clique Atacar!', 'error');
-                    return;
+                // 2. Resolver dados (manual ou automático)
+                const diceMode = getCombatDiceMode();
+                const manualRolls = Combat.Wild.UI.getCombatInputRolls();
+                let d20Roll = manualRolls.attackRoll;
+                let defenderRoll = manualRolls.defenseRoll;
+
+                if (diceMode === 'manual') {
+                    if (!d20Roll || !defenderRoll) {
+                        mmAlert('🎲 Modo manual: informe os dois dados (ATK e DEF) entre 1 e 20 antes de atacar.', 'error');
+                        return;
+                    }
+                } else {
+                    d20Roll = _rollD20();
+                    defenderRoll = _rollD20();
                 }
-                Combat.Wild.UI.clearCombatInput();
+
+                await _animateDiceClash({
+                    attackerLabel: `ATK ${playerMonster.name}`,
+                    defenderLabel: `DEF ${encounter.wildMonster.name}`,
+                    attackRoll: d20Roll,
+                    defenseRoll: defenderRoll
+                });
+                if (diceMode === 'manual') {
+                    Combat.Wild.UI.clearCombatInput();
+                }
                 
                 // 3. Preparar dependências
                 const dependencies = {
@@ -8095,7 +8184,8 @@
                     audio: Audio,
                     ui: {
                         flashTarget: flashTarget,
-                        showFloatingText: showFloatingText
+                        showFloatingText: showFloatingText,
+                        updateDiceClash: _updateDiceClashUI
                     },
                     tutorialOnAction: tutorialOnAction,
                     updateFriendship: updateFriendship,
@@ -8111,6 +8201,7 @@
                     player,
                     playerMonster,
                     d20Roll,
+                    defenderRoll,
                     dependencies
                 });
                 
@@ -8226,34 +8317,37 @@
          * - d20 = 20: sempre acerta (acerto crítico)
          */
         /**
-         * onDiceRollInput — feedback visual imediato no input de d20.
-         * Pulso ativo → hit (verde) ou miss (vermelho) conforme a regra.
+         * onDiceRollInput — feedback visual imediato no input de d20 (modo manual).
+         * Pulso ativo → compara ATK x DEF e pinta sucesso/defesa.
          */
-        function onDiceRollInput(input) {
+        function onDiceRollInput(input, kind = 'attack') {
+            if (getCombatDiceMode() !== 'manual') return;
             const val = parseInt(input.value, 10);
-            input.classList.remove('battle-dice-input--active', 'battle-dice-input--hit', 'battle-dice-input--miss');
+            const attackInput = document.getElementById('diceRollAttack');
+            const defenseInput = document.getElementById('diceRollDefense');
+            [attackInput, defenseInput].forEach((el) => {
+                if (!el) return;
+                el.classList.remove('battle-dice-input--hit', 'battle-dice-input--miss');
+                if (!(el.value && !isNaN(parseInt(el.value, 10)))) {
+                    el.classList.add('battle-dice-input--active');
+                } else {
+                    el.classList.remove('battle-dice-input--active');
+                }
+            });
             if (!input.value || isNaN(val)) {
-                // Campo vazio: pulso ativo indica que o jogador deve digitar
-                input.classList.add('battle-dice-input--active');
                 return;
             }
-            // Clamp para feedback visual mesmo com valor fora de range
-            const clamped = Math.max(1, Math.min(20, val));
-            // Tenta verificar acerto com o monstro atual para feedback em tempo real
-            try {
-                const enc = GameState && GameState.currentEncounter;
-                const playerId = enc?.selectedPlayerId;
-                const player = playerId && GameState.players.find(p => p.id === playerId);
-                const playerMonster = player && _getActiveMonsterOfPlayer(player);
-                const wildMonster = enc?.wildMonster;
-                if (enc && enc.type === 'wild' && playerMonster && wildMonster) {
-                    const hit = checkHit(clamped, playerMonster, wildMonster);
-                    input.classList.add(hit ? 'battle-dice-input--hit' : 'battle-dice-input--miss');
-                    return;
-                }
-            } catch (_) { /* sem contexto de combate disponível */ }
-            // Sem contexto de combate: não mostra hit/miss para evitar confusão
-            // apenas remove o pulso indicando que um valor foi digitado
+            const atk = Math.max(1, Math.min(20, parseInt(attackInput?.value || '0', 10)));
+            const def = Math.max(1, Math.min(20, parseInt(defenseInput?.value || '0', 10)));
+            if (!(atk >= 1 && atk <= 20 && def >= 1 && def <= 20)) return;
+            const attackWon = atk >= def;
+            if (attackWon) {
+                attackInput?.classList.add('battle-dice-input--hit');
+                defenseInput?.classList.add('battle-dice-input--miss');
+            } else {
+                attackInput?.classList.add('battle-dice-input--miss');
+                defenseInput?.classList.add('battle-dice-input--hit');
+            }
         }
 
         function checkHit(d20Roll, attacker, defender) {
@@ -12970,6 +13064,49 @@
         }
         window.toggleSimplifiedLog = toggleSimplifiedLog;
 
+        function getCombatDiceMode() {
+            return GameState?.config?.combatDiceMode === 'manual' ? 'manual' : 'auto';
+        }
+
+        function syncCombatDiceModeInputs() {
+            const mode = getCombatDiceMode();
+            const tabSelect = document.getElementById('diceModeSetting');
+            const cfgSelect = document.getElementById('mmCfgDiceMode');
+            if (tabSelect) tabSelect.value = mode;
+            if (cfgSelect) cfgSelect.value = mode;
+
+            const attackInput = document.getElementById('diceRollAttack');
+            const defenseInput = document.getElementById('diceRollDefense');
+            const attackHint = document.getElementById('diceAttackHint');
+            const defenseHint = document.getElementById('diceDefenseHint');
+            const isManual = mode === 'manual';
+
+            [attackInput, defenseInput].forEach((el) => {
+                if (!el) return;
+                el.disabled = !isManual;
+                if (!isManual) {
+                    el.value = '';
+                    el.classList.remove('battle-dice-input--hit', 'battle-dice-input--miss', 'battle-dice-input--rolling');
+                    el.classList.add('battle-dice-input--active');
+                }
+            });
+
+            if (attackHint) attackHint.textContent = isManual ? 'dado físico (ataque)' : 'automático pelo jogo';
+            if (defenseHint) defenseHint.textContent = isManual ? 'dado físico (defesa)' : 'automático pelo jogo';
+        }
+
+        function setCombatDiceMode(mode) {
+            const finalMode = mode === 'manual' ? 'manual' : 'auto';
+            if (!GameState.config) GameState.config = {};
+            GameState.config.combatDiceMode = finalMode;
+            syncCombatDiceModeInputs();
+            saveToLocalStorage();
+            showToast(finalMode === 'manual'
+                ? '🎲 Modo manual ativado: informe ATK e DEF a cada ataque.'
+                : '🎲 Modo automático ativado: jogo rola os dados.', 'info');
+        }
+        window.setCombatDiceMode = setCombatDiceMode;
+
         // Feature 4.4: Global click listener for button sounds
         document.addEventListener("click", (e) => {
             const btn = e.target.closest("button");
@@ -13086,6 +13223,7 @@
             const sfxEl = document.getElementById('mmCfgSfxVol');
             const musEl = document.getElementById('mmCfgMusicVol');
             const logEl = document.getElementById('mmCfgSimplifiedLog');
+            const diceModeEl = document.getElementById('mmCfgDiceMode');
 
             const cfgSfx = GameState?.config?.sfxVolume;
             const cfgMus = GameState?.config?.musicVolume;
@@ -13103,6 +13241,9 @@
                 logEl.checked = cfgLog !== undefined ? cfgLog
                     : (document.getElementById('simplifiedLogMode')?.checked || false);
             }
+            if (diceModeEl) {
+                diceModeEl.value = getCombatDiceMode();
+            }
             mmShow("mmConfig");
         }
 
@@ -13112,20 +13253,25 @@
                 const sfxVal = Number(document.getElementById('mmCfgSfxVol')?.value ?? 70) / 100;
                 const musVal = Number(document.getElementById('mmCfgMusicVol')?.value ?? 40) / 100;
                 const logVal = !!(document.getElementById('mmCfgSimplifiedLog')?.checked);
+                const diceModeVal = document.getElementById('mmCfgDiceMode')?.value === 'manual' ? 'manual' : 'auto';
 
                 if (GameState?.config) {
                     GameState.config.sfxVolume = sfxVal;
                     GameState.config.musicVolume = musVal;
                     GameState.config.simplifiedLog = logVal;
+                    GameState.config.combatDiceMode = diceModeVal;
                 }
 
                 // Sincronizar sliders de tabSettings também
                 const sfxMainEl = document.getElementById('mmSfxVol');
                 const musMainEl = document.getElementById('mmMusicVol');
                 const logMainEl = document.getElementById('simplifiedLogMode');
+                const diceModeMainEl = document.getElementById('diceModeSetting');
                 if (sfxMainEl) sfxMainEl.value = Math.round(sfxVal * 100);
                 if (musMainEl) musMainEl.value = Math.round(musVal * 100);
                 if (logMainEl) logMainEl.checked = logVal;
+                if (diceModeMainEl) diceModeMainEl.value = diceModeVal;
+                syncCombatDiceModeInputs();
 
                 if (typeof saveToLocalStorage === 'function') saveToLocalStorage();
             } catch (_e) { /* silencioso — não bloquear o usuário */ }

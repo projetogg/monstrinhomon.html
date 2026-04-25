@@ -6,22 +6,38 @@
  */
 
 /**
- * Captura o valor do input de d20
+ * Captura os valores dos dados de ataque/defesa
  * 
- * @returns {number|null} Valor do dado (1-20) ou null se inválido
+ * @returns {{attackRoll: number|null, defenseRoll: number|null}}
  */
-export function getCombatInputRoll() {
-    const diceInput = document.getElementById('diceRoll');
-    const roll = parseInt(diceInput?.value || '0');
-    return (roll >= 1 && roll <= 20) ? roll : null;
+export function getCombatInputRolls() {
+    const attackInput = document.getElementById('diceRollAttack');
+    const defenseInput = document.getElementById('diceRollDefense');
+    const attackRoll = parseInt(attackInput?.value || '0', 10);
+    const defenseRoll = parseInt(defenseInput?.value || '0', 10);
+    return {
+        attackRoll: (attackRoll >= 1 && attackRoll <= 20) ? attackRoll : null,
+        defenseRoll: (defenseRoll >= 1 && defenseRoll <= 20) ? defenseRoll : null
+    };
 }
 
 /**
- * Limpa o input de d20 após uso
+ * Compatibilidade legada
+ *
+ * @returns {number|null}
+ */
+export function getCombatInputRoll() {
+    return getCombatInputRolls().attackRoll;
+}
+
+/**
+ * Limpa os inputs de d20 após uso
  */
 export function clearCombatInput() {
-    const diceInput = document.getElementById('diceRoll');
-    if (diceInput) diceInput.value = '';
+    const attackInput = document.getElementById('diceRollAttack');
+    const defenseInput = document.getElementById('diceRollDefense');
+    if (attackInput) attackInput.value = '';
+    if (defenseInput) defenseInput.value = '';
 }
 
 /**
