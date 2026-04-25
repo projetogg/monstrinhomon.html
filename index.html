@@ -500,42 +500,45 @@
         </div>
 
         <div id="tabShop" class="tab-content">
-            <h2>Loja de Itens 🛒</h2>
-            
-            <div class="card">
-                <h3>👤 Selecionar Jogador</h3>
-                <div class="mb-10">
-                    <label><strong>Comprar para:</strong></label>
-                    <select id="shopPlayerSelect" onchange="onShopPlayerChange()">
-                        <option value="">-- Selecione um Jogador --</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="card">
-                <h3>💰 Informações do Jogador</h3>
-                <div id="shopPlayerInfo">
-                    <p>Selecione um jogador para comprar itens.</p>
+            <h2>🛒 Loja de Itens</h2>
+
+            <!-- Seletor de jogador compacto -->
+            <div class="card shop-player-header">
+                <div class="shop-player-row">
+                    <div class="shop-player-select-group">
+                        <label><strong>🎒 Comprar para:</strong></label>
+                        <select id="shopPlayerSelect" onchange="onShopPlayerChange()">
+                            <option value="">-- Selecione um Jogador --</option>
+                        </select>
+                    </div>
+                    <div id="shopPlayerInfo" class="shop-player-money">
+                        <p class="text-muted">Selecione um jogador.</p>
+                    </div>
                 </div>
             </div>
 
-            <div class="card">
-                <h3>💼 Seu Inventário</h3>
-                <div id="shopPlayerInventory">
-                    <p>Seu inventário está vazio.</p>
+            <!-- Layout 2 colunas: Inventário | Loja -->
+            <div class="shop-layout">
+                <!-- Coluna 1: Inventário do jogador -->
+                <div class="card shop-inventory-col">
+                    <h3 class="shop-col-title">💼 Inventário</h3>
+                    <div id="shopPlayerInventory">
+                        <p class="text-muted">Selecione um jogador.</p>
+                    </div>
                 </div>
-            </div>
 
-            <div class="card">
-                <h3>🛒 Itens Disponíveis para Compra</h3>
-                <div id="shopItemsList">
-                    <p>Carregando itens...</p>
+                <!-- Coluna 2: Itens disponíveis -->
+                <div class="card shop-items-col">
+                    <h3 class="shop-col-title">🛒 Disponível</h3>
+                    <div id="shopItemsList">
+                        <p class="text-muted">Carregando itens...</p>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div id="tabBox" class="tab-content">
-            <h2>Box (PC) 📦</h2>
+            <h2>📦 Box</h2>
 
             <div class="card">
                 <h3>📍 Status</h3>
@@ -554,7 +557,20 @@
             </div>
 
             <div class="card">
-                <h3>📦 Monstrinhos na Box</h3>
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+                    <h3 style="margin:0">📦 Monstrinhos na Box</h3>
+                    <div class="box-filter-bar" id="boxFilterBar">
+                        <span class="box-filter-label">Filtrar:</span>
+                        <button class="box-filter-chip box-filter-chip--active" data-filter="all" onclick="boxSetFilter('all')">Todos</button>
+                        <button class="box-filter-chip" data-filter="Guerreiro" onclick="boxSetFilter('Guerreiro')">⚔️ Guerreiro</button>
+                        <button class="box-filter-chip" data-filter="Mago" onclick="boxSetFilter('Mago')">🔮 Mago</button>
+                        <button class="box-filter-chip" data-filter="Curandeiro" onclick="boxSetFilter('Curandeiro')">💚 Curandeiro</button>
+                        <button class="box-filter-chip" data-filter="Bárbaro" onclick="boxSetFilter('Bárbaro')">🪓 Bárbaro</button>
+                        <button class="box-filter-chip" data-filter="Ladino" onclick="boxSetFilter('Ladino')">🗡️ Ladino</button>
+                        <button class="box-filter-chip" data-filter="Bardo" onclick="boxSetFilter('Bardo')">🎵 Bardo</button>
+                        <button class="box-filter-chip" data-filter="Caçador" onclick="boxSetFilter('Caçador')">🏹 Caçador</button>
+                    </div>
+                </div>
                 <div id="boxMonstersList" class="box-grid">
                     <div class="tab-loading"><span class="tab-loading-icon" aria-hidden="true">⏳</span> Carregando Box...</div>
                 </div>
@@ -655,7 +671,7 @@
             <div class="mm-title">🎮 Monstrinhomon</div>
             <!-- Grupo principal: jogar -->
             <button id="mmBtnContinue" class="mm-btn mm-btn--primary" onclick="mmContinue()">📖 Continuar</button>
-            <button class="mm-btn mm-btn--secondary" onclick="mmOpenSlotPickerForNewGame()">✨ Novo Jogo</button>
+            <button class="mm-btn mm-btn--secondary" onclick="mmOpenSlotPickerForNewGame()">🎮 Novo Jogo</button>
             <!-- Separador com label -->
             <div class="mm-divider-labeled">gerenciar</div>
             <!-- Grupo secundário: gerenciar -->
@@ -670,7 +686,7 @@
             <!-- Ações: fechar e apagar save separados com borda e espaço extra -->
             <div class="mm-danger-row">
                 <button class="mm-btn mm-btn--ghost" onclick="mmCloseAllOverlays()">✕ Fechar</button>
-                <button class="mm-btn mm-btn--ghost mm-btn--danger-ghost" onclick="mmResetSaveConfirm()" title="Ação irreversível: apaga o save do navegador">⚠️ Apagar Save</button>
+                <button class="mm-btn mm-btn--ghost mm-btn--danger-ghost" onclick="mmResetSaveConfirm()" aria-label="Apagar save — ação irreversível que apaga todos os dados do navegador" title="Ação irreversível: apaga o save do navegador">⚠️ Apagar Save</button>
             </div>
         </div>
     </div>
@@ -6816,7 +6832,7 @@
                 const el = typeof target === 'string' ? document.getElementById(target) : target;
                 if (!el) return;
                 el.classList.remove('shake-damage');
-                void el.offsetWidth; // reflow para reiniciar animação
+                void el.offsetWidth; // Força reflow do browser para reiniciar a animação CSS do zero
                 el.classList.add('shake-damage');
                 setTimeout(() => el.classList.remove('shake-damage'), 450);
             } catch (e) {
@@ -6827,18 +6843,20 @@
         /**
          * Exibe confetes animados de vitória (leve, ~18 partículas, 2.5 s).
          * Não exibido se prefers-reduced-motion estiver ativo.
+         * Usa as cores do design system (--primary, --secondary, --success, --warning, --danger).
          */
         function _showConfetti() {
             try {
                 if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
-                const colors = ['#6c5ce7','#fd79a8','#00b894','#fdcb6e','#d63031','#74b9ff','#a29bfe'];
+                // Cores espelhadas das variáveis CSS do design system (--primary, --secondary, --success, --warning, --danger, etc.)
+                const CONFETTI_COLORS = ['#6c5ce7','#fd79a8','#00b894','#fdcb6e','#d63031','#74b9ff','#a29bfe'];
                 for (let i = 0; i < 18; i++) {
                     setTimeout(() => {
                         const p = document.createElement('div');
                         p.className = 'confetti-particle';
                         p.style.cssText = [
                             `left:${10 + Math.random() * 80}%`,
-                            `background:${colors[Math.floor(Math.random() * colors.length)]}`,
+                            `background:${CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)]}`,
                             `width:${6 + Math.random() * 8}px`,
                             `height:${6 + Math.random() * 8}px`,
                             `animation-duration:${1.5 + Math.random() * 1.5}s`,
@@ -8842,6 +8860,11 @@
 
                 const playerSlots = (GameState.sharedBox || []).filter(s => s.ownerPlayerId === viewedPlayerId);
 
+                // Aplicar filtro de classe se selecionado
+                const filteredSlots = _boxFilter === 'all'
+                    ? playerSlots
+                    : playerSlots.filter(s => s.monster?.class === _boxFilter);
+
                 // D1: Estado vazio com CTA
                 if (playerSlots.length === 0) {
                     boxList.innerHTML = `
@@ -8854,12 +8877,17 @@
                     return;
                 }
 
-                // D4: Paginação
-                const totalPages = Math.ceil(playerSlots.length / BOX_PAGE_SIZE);
+                if (filteredSlots.length === 0) {
+                    boxList.innerHTML = `<p class="text-center text-muted">Nenhum monstrinho ${_boxFilter !== 'all' ? 'da classe <strong>' + escapeHtml(_boxFilter) + '</strong>' : ''} na Box.</p>`;
+                    return;
+                }
+
+                // D4: Paginação (sobre slots filtrados)
+                const totalPages = Math.ceil(filteredSlots.length / BOX_PAGE_SIZE);
                 let page = Math.max(0, Math.min(GameState.ui.boxPageIndex || 0, totalPages - 1));
                 GameState.ui.boxPageIndex = page;
                 const pageStart = page * BOX_PAGE_SIZE;
-                const pageSlots = playerSlots.slice(pageStart, pageStart + BOX_PAGE_SIZE);
+                const pageSlots = filteredSlots.slice(pageStart, pageStart + BOX_PAGE_SIZE);
 
                 // D4: Box cheia — aviso
                 const boxFullWarning = viewedPlayerBoxCount >= BOX_MAX_TOTAL
@@ -8867,12 +8895,13 @@
                     : '';
 
                 // D4: Controles de paginação
+                const filterNote = _boxFilter !== 'all' ? ` (filtrado: ${escapeHtml(_boxFilter)})` : '';
                 const paginationHtml = totalPages > 1 ? `
                     <div class="box-pagination">
                         <button class="btn btn-sm" onclick="boxPageNav(-1)" ${page === 0 ? 'disabled' : ''}>◀ Anterior</button>
-                        <span class="box-pagination-label">Página ${page + 1} / ${totalPages} (${playerSlots.length} monstrinhos)</span>
+                        <span class="box-pagination-label">Página ${page + 1} / ${totalPages} (${filteredSlots.length} monstrinhos${filterNote})</span>
                         <button class="btn btn-sm" onclick="boxPageNav(1)" ${page >= totalPages - 1 ? 'disabled' : ''}>Próximo ▶</button>
-                    </div>` : `<p class="box-pagination-label text-center">${playerSlots.length} monstrinho${playerSlots.length !== 1 ? 's' : ''} na Box</p>`;
+                    </div>` : `<p class="box-pagination-label text-center">${filteredSlots.length} monstrinho${filteredSlots.length !== 1 ? 's' : ''} na Box${filterNote}</p>`;
 
                 boxList.innerHTML = boxFullWarning + paginationHtml;
 
@@ -8931,12 +8960,34 @@
         /** D4: Navega entre páginas da Box */
         function boxPageNav(delta) {
             const playerSlots = (GameState.sharedBox || []).filter(s => s.ownerPlayerId === GameState.ui.boxViewedPlayerId);
-            const totalPages = Math.max(1, Math.ceil(playerSlots.length / BOX_PAGE_SIZE));
+            const filteredForNav = _boxFilter === 'all'
+                ? playerSlots
+                : playerSlots.filter(s => s.monster?.class === _boxFilter);
+            const totalPages = Math.max(1, Math.ceil(filteredForNav.length / BOX_PAGE_SIZE));
             GameState.ui.boxPageIndex = Math.max(0, Math.min((GameState.ui.boxPageIndex || 0) + delta, totalPages - 1));
             saveToLocalStorage();
             renderBoxTab();
         }
         window.boxPageNav = boxPageNav;
+
+        // Estado de filtro da Box
+        let _boxFilter = 'all';
+
+        /**
+         * Define o filtro ativo da Box por classe e re-renderiza.
+         * @param {string} filter - 'all' ou nome de classe
+         */
+        function boxSetFilter(filter) {
+            _boxFilter = filter || 'all';
+            // Atualizar chips de filtro
+            document.querySelectorAll('#boxFilterBar .box-filter-chip').forEach(chip => {
+                chip.classList.toggle('box-filter-chip--active', chip.dataset.filter === _boxFilter);
+            });
+            // Resetar página ao mudar filtro
+            if (GameState.ui) GameState.ui.boxPageIndex = 0;
+            renderBoxTab();
+        }
+        window.boxSetFilter = boxSetFilter;
 
         /**
          * Send monster from team to box
@@ -9463,12 +9514,10 @@
                     return;
                 }
                 
-                // Display player info
+                // Display player info (versão compacta)
                 const money = player.money || 0;
-                playerInfo.innerHTML = `
-                    <p><strong>Jogador:</strong> ${player.name} (${player.class || 'Sem classe'})</p>
-                    <p><strong>💰 Dinheiro:</strong> ${money}</p>
-                `;
+                const afterlife = player.afterlifeCurrency || 0;
+                playerInfo.innerHTML = `<strong>${escapeHtml(player.name)}</strong> (${escapeHtml(player.class || '?')}) &nbsp;💰 ${money}&nbsp;&nbsp;⭐ ${afterlife}`;
                 
                 // PR13B: Render player inventory for selling
                 if (inventoryContainer) {

@@ -7050,7 +7050,18 @@ img.monster-visual--variant-battle {
 }
 
 /* ─── 3. Botão de captura com estado "Capturável!" ───────────────────────── */
-.btn-capture--ready {
+/* .btn-capture--ready precisa sobrescrever .btn.btn-success que usa background direto via CSS —
+   os !important são necessários pois .btn-success define background e box-shadow inline via style=""
+   (gerado no template JS). font-weight sobrescreve .btn (normal). */
+.btn.btn-success.btn-capture--ready {
+    background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+    border-color: rgba(0,200,180,0.5);
+    box-shadow: 0 0 16px rgba(0,184,148,0.65), 0 4px 12px rgba(0,0,0,0.3);
+    animation: capture-pulse 1.6s ease-in-out infinite;
+    font-weight: 900;
+}
+/* Fallback para contextos sem .btn (histórico/legado) */
+.btn-capture--ready:not(.btn) {
     background: linear-gradient(135deg, #00b894 0%, #00cec9 100%) !important;
     border-color: rgba(0,200,180,0.5) !important;
     box-shadow: 0 0 16px rgba(0,184,148,0.65), 0 4px 12px rgba(0,0,0,0.3) !important;
@@ -7059,6 +7070,7 @@ img.monster-visual--variant-battle {
 }
 .btn-capture--ready::before {
     content: '✨ ';
+    /* aria-hidden é gerenciado pelo browser para ::before */
 }
 
 @keyframes capture-pulse {
@@ -7407,7 +7419,7 @@ img.monster-visual--variant-battle {
 
 /* ─── 9. Reduced motion — atualização com novos elementos ────────────────── */
 @media (prefers-reduced-motion: reduce) {
-    .shake-damage, .capture-pulse, .btn-capture--ready,
+    .shake-damage, .capture-pulse, .btn.btn-success.btn-capture--ready, .btn-capture--ready,
     .egg-hatch-phase-shaking, .egg-hatch-phase-cracking, .egg-hatch-phase-revealing,
     .badge-raridade--lendario, .egg-hatch-modal--lendario, .confetti-particle {
         animation: none;
@@ -7415,4 +7427,91 @@ img.monster-visual--variant-battle {
     .home-hub-banner, .home-quick-btn, .home-hub-banner__btn {
         transition: none;
     }
+}
+
+/* ─── 10. Layout da Loja — 2 colunas ────────────────────────────────────── */
+.shop-player-header {
+    margin-bottom: 12px;
+}
+.shop-player-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.shop-player-select-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+}
+.shop-player-select-group select {
+    flex: 1;
+    min-width: 140px;
+}
+.shop-player-money {
+    white-space: nowrap;
+    font-size: var(--font-sm);
+    opacity: 0.85;
+}
+.shop-player-money p { margin: 0; }
+
+.shop-layout {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 14px;
+    align-items: start;
+}
+.shop-inventory-col,
+.shop-items-col {
+    margin: 0;
+}
+.shop-col-title {
+    margin: 0 0 12px 0;
+    font-size: var(--font-md);
+    font-weight: 800;
+}
+
+/* Responsivo: empilhar em mobile */
+@media (max-width: 640px) {
+    .shop-layout { grid-template-columns: 1fr; }
+    .shop-player-row { flex-direction: column; align-items: flex-start; }
+}
+
+/* ─── 11. Box: filtros rápidos ───────────────────────────────────────────── */
+.box-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+.box-filter-chip {
+    padding: 5px 12px;
+    border-radius: var(--radius-full);
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.06);
+    color: white;
+    font-size: var(--font-sm);
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s, border-color 0.15s;
+    white-space: nowrap;
+}
+.box-filter-chip:hover {
+    background: rgba(255,255,255,0.14);
+}
+.box-filter-chip--active {
+    background: var(--primary);
+    border-color: rgba(108,92,231,0.6);
+}
+.box-filter-label {
+    font-size: var(--font-xs);
+    font-weight: 700;
+    opacity: 0.5;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-right: 4px;
 }
