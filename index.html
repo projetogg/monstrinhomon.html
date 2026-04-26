@@ -7659,6 +7659,12 @@
                                 <div class="battle-dice-clash" id="battleDiceClash">
                                     <div class="battle-dice-col">
                                         <label class="battle-dice-label" for="diceRollAttack" title="Dado de ataque">🎯 ATK</label>
+                                        <div class="battle-die-model" id="battleDieAttack" aria-hidden="true">
+                                            <div class="battle-die-shadow"></div>
+                                            <div class="battle-die-body">
+                                                <span class="battle-die-value">?</span>
+                                            </div>
+                                        </div>
                                         <input type="number" id="diceRollAttack" min="1" max="20" placeholder="1–20"
                                                class="battle-dice-input battle-dice-input--active"
                                                oninput="onDiceRollInput(this, 'attack')"
@@ -7668,6 +7674,12 @@
                                     <div class="battle-dice-vs">VS</div>
                                     <div class="battle-dice-col">
                                         <label class="battle-dice-label" for="diceRollDefense" title="Dado de defesa">🛡️ DEF</label>
+                                        <div class="battle-die-model" id="battleDieDefense" aria-hidden="true">
+                                            <div class="battle-die-shadow"></div>
+                                            <div class="battle-die-body">
+                                                <span class="battle-die-value">?</span>
+                                            </div>
+                                        </div>
                                         <input type="number" id="diceRollDefense" min="1" max="20" placeholder="1–20"
                                                class="battle-dice-input battle-dice-input--active"
                                                oninput="onDiceRollInput(this, 'defense')"
@@ -8099,6 +8111,21 @@
             });
             if (attackInput && Number.isInteger(attackRoll)) attackInput.value = String(attackRoll);
             if (defenseInput && Number.isInteger(defenseRoll)) defenseInput.value = String(defenseRoll);
+            _updateDiceModel('battleDieAttack', attackRoll, rolling);
+            _updateDiceModel('battleDieDefense', defenseRoll, rolling);
+        }
+
+        function _updateDiceModel(dieId, value, rolling) {
+            const dieEl = document.getElementById(dieId);
+            if (!dieEl) return;
+            const valueEl = dieEl.querySelector('.battle-die-value');
+            if (valueEl) valueEl.textContent = Number.isInteger(value) ? String(value) : '?';
+            dieEl.classList.toggle('is-rolling', !!rolling);
+            if (Number.isInteger(value)) {
+                dieEl.setAttribute('data-value', String(value));
+            } else {
+                dieEl.removeAttribute('data-value');
+            }
         }
 
         function _animateDiceClash({ attackerLabel, defenderLabel, attackRoll, defenseRoll, duration = 650 }) {
@@ -8339,6 +8366,8 @@
             }
             const atk = Math.max(1, Math.min(20, parseInt(attackInput?.value || '0', 10)));
             const def = Math.max(1, Math.min(20, parseInt(defenseInput?.value || '0', 10)));
+            _updateDiceModel('battleDieAttack', atk >= 1 && atk <= 20 ? atk : null, false);
+            _updateDiceModel('battleDieDefense', def >= 1 && def <= 20 ? def : null, false);
             if (!(atk >= 1 && atk <= 20 && def >= 1 && def <= 20)) return;
             const attackWon = atk >= def;
             if (attackWon) {
@@ -13090,6 +13119,10 @@
                     el.classList.add('battle-dice-input--active');
                 }
             });
+            if (!isManual) {
+                _updateDiceModel('battleDieAttack', null, false);
+                _updateDiceModel('battleDieDefense', null, false);
+            }
 
             if (attackHint) attackHint.textContent = isManual ? 'dado físico (ataque)' : 'automático pelo jogo';
             if (defenseHint) defenseHint.textContent = isManual ? 'dado físico (defesa)' : 'automático pelo jogo';
