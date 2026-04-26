@@ -276,6 +276,63 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .battle-dice-section {
     display: flex; align-items: center; gap: 6px; flex-shrink: 0;
 }
+.battle-dice-clash {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.battle-dice-vs {
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    opacity: 0.65;
+}
+.battle-die-model {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    margin-bottom: 4px;
+    perspective: 500px;
+}
+.battle-die-shadow {
+    position: absolute;
+    left: 50%;
+    bottom: 4px;
+    width: 46px;
+    height: 10px;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: rgba(0,0,0,0.35);
+    filter: blur(2px);
+}
+.battle-die-body {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    border: 2px solid rgba(255,255,255,0.38);
+    background:
+        radial-gradient(circle at 22% 18%, rgba(255,255,255,0.85), rgba(255,255,255,0.12) 32%, transparent 45%),
+        linear-gradient(160deg, #ffffff 0%, #dfe6f1 48%, #c5cedc 100%);
+    box-shadow:
+        0 8px 14px rgba(0,0,0,0.35),
+        inset 0 -8px 12px rgba(0,0,0,0.18),
+        inset 0 4px 7px rgba(255,255,255,0.45);
+    transform-origin: center;
+}
+.battle-die-value {
+    color: #1b2431;
+    font-weight: 900;
+    font-size: 22px;
+    text-shadow: 0 1px 1px rgba(255,255,255,0.45);
+}
+.battle-die-model.is-rolling .battle-die-body {
+    animation: dice-model-roll-2d 0.5s cubic-bezier(0.18, 0.8, 0.24, 1) infinite;
+}
+.battle-die-model.is-rolling .battle-die-shadow {
+    animation: dice-shadow-bounce 0.5s ease-in-out infinite;
+}
 .battle-dice-label { font-size: 14px; font-weight: bold; opacity: 0.85; }
 .battle-dice-input {
     width: 84px; height: 56px; text-align: center;
@@ -4325,9 +4382,29 @@ span[data-class="Animalista"], div[data-class="Animalista"]:not(.card):not(.grou
 .battle-dice-input--active {
     animation: dice-pulse 1.2s ease-in-out infinite;
 }
+.battle-dice-input--rolling {
+    animation: dice-rolling 0.12s linear infinite;
+    filter: saturate(1.4);
+}
 @keyframes dice-pulse {
     0%, 100% { border-color: #a29bfe; box-shadow: 0 0 0 2px rgba(108,92,231,0.20); }
     50%       { border-color: #6c5ce7; box-shadow: 0 0 0 4px rgba(108,92,231,0.35); }
+}
+@keyframes dice-rolling {
+    0% { transform: rotate(0deg) scale(1); }
+    50% { transform: rotate(4deg) scale(1.03); }
+    100% { transform: rotate(-4deg) scale(1); }
+}
+@keyframes dice-model-roll-2d {
+    0%   { transform: translateY(0) rotate(0deg) scale(1); }
+    25%  { transform: translateY(-8px) rotate(16deg) scale(1.02); }
+    50%  { transform: translateY(-2px) rotate(-14deg) scale(0.98); }
+    75%  { transform: translateY(-10px) rotate(8deg) scale(1.01); }
+    100% { transform: translateY(0) rotate(-6deg) scale(1); }
+}
+@keyframes dice-shadow-bounce {
+    0%,100% { transform: translateX(-50%) scale(1); opacity: 0.32; }
+    50%     { transform: translateX(-50%) scale(0.82); opacity: 0.18; }
 }
 
 /* ── Swap modal — animação de entrada ────────────────────────────────────── */
@@ -6437,6 +6514,20 @@ img.monster-visual--variant-battle {
     flex-direction: column;
     align-items: center;
     gap: 2px;
+}
+
+.settings-inline-group {
+    display: grid;
+    gap: 6px;
+    margin-top: 10px;
+}
+.settings-inline-group select {
+    width: 100%;
+    max-width: 420px;
+}
+.settings-inline-group small {
+    opacity: 0.7;
+    font-size: 12px;
 }
 
 /* ── Linha de itens de cura (botões em fila) ──────────────────────────────── */
