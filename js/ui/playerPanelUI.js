@@ -217,6 +217,7 @@ export function renderPlayerTeamSection(player, deps = {}) {
             <div class="group-player-header">
                 <span class="group-player-name">${player.name}</span>
                 <div class="badge badge-${playerClass}" data-class="${playerClass}">${playerClass}</div>
+                <button class="group-player-profile-btn" onclick="window.openPlayerProfile && window.openPlayerProfile('${player.id}')" title="Ver perfil de ${player.name}">👤</button>
             </div>
             <div class="group-player-stats">
                 <span class="group-stat-pill">💰 ${player.money || 0}</span>

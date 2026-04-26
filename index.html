@@ -763,6 +763,23 @@
         </div>
     </div>
 
+    <!-- Modal de Perfil do Jogador -->
+    <div id="playerProfileModal" role="dialog" aria-modal="true" aria-labelledby="ppmPlayerName">
+        <div class="ppm-card">
+            <div class="ppm-header" id="ppmHeader">
+                <div class="ppm-class-avatar" id="ppmClassAvatar">👤</div>
+                <div class="ppm-header-info">
+                    <div class="ppm-player-name" id="ppmPlayerName">—</div>
+                    <div class="ppm-class-label" id="ppmClassLabel">—</div>
+                </div>
+                <button class="ppm-close-btn" onclick="closePlayerProfile()" aria-label="Fechar perfil">✕</button>
+            </div>
+            <div class="ppm-body" id="ppmBody">
+                <!-- populado por openPlayerProfile() -->
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         // Import combat modules
         import Combat from './js/combat/index.js';
@@ -1049,9 +1066,160 @@
         window.backToSpots     = backToSpots;
         window.showWorldMap    = showWorldMap;
         window.owSelectNode    = owSelectNode;
+        window.openPlayerProfile  = openPlayerProfile;
+        window.closePlayerProfile = closePlayerProfile;
 
         // Destructure groupCore for easier access
         const GroupCore = Combat.Group.Core;
+
+        // ── PERFIL DO JOGADOR ─────────────────────────────────────────────────────
+        /**
+         * Abre o modal de perfil de um jogador específico.
+         * @param {string} playerId - ID do jogador
+         */
+        function openPlayerProfile(playerId) {
+            const modal = document.getElementById('playerProfileModal');
+            if (!modal) return;
+            const player = GameState.players.find(p => p.id === playerId);
+            if (!player) return;
+
+            // Cabeçalho
+            const header = document.getElementById('ppmHeader');
+            const avatarEl = document.getElementById('ppmClassAvatar');
+            const nameEl = document.getElementById('ppmPlayerName');
+            const classEl = document.getElementById('ppmClassLabel');
+            const classEmoji = MM_TABLES.CLASS_EMOJI[player.class] || '👤';
+            if (header) header.dataset.class = player.class || '';
+            if (avatarEl) avatarEl.textContent = classEmoji;
+            if (nameEl) nameEl.textContent = player.name || player.nome || '—';
+            if (classEl) classEl.textContent = `${classEmoji} ${player.class || '—'}`;
+
+            // Corpo
+            const body = document.getElementById('ppmBody');
+            if (!body) return;
+            body.innerHTML = _renderPlayerProfileBody(player);
+
+            modal.classList.add('show');
+
+            // Fechar ao clicar no backdrop
+            modal.onclick = (e) => { if (e.target === modal) closePlayerProfile(); };
+        }
+
+        /** Fecha o modal de perfil do jogador. */
+        function closePlayerProfile() {
+            const modal = document.getElementById('playerProfileModal');
+            if (modal) modal.classList.remove('show');
+        }
+
+        /**
+         * Renderiza o conteúdo do modal de perfil de um jogador.
+         * @param {object} player
+         * @returns {string} HTML
+         */
+        function _renderPlayerProfileBody(player) {
+            // Recursos
+            const money = player.money || 0;
+            const afterlife = player.afterlifeCurrency || 0;
+            const resourcesHtml = `
+                <div class="ppm-resources">
+                    <span class="ppm-resource-pill">💰 ${money} moedas</span>
+                    <span class="ppm-resource-pill">✨ ${afterlife} pós-vida</span>
+                    <span class="ppm-resource-pill">👝 ${(player.team || []).length} no time</span>
+                </div>`;
+
+            // Monstrinho ativo
+            const activeMon = _getActiveMonsterOfPlayer(player);
+            let activeMonHtml = '';
+            if (activeMon) {
+                const hp    = Number(activeMon.hp) || 0;
+                const hpMax = Number(activeMon.hpMax) || 1;
+                const ene   = Number(activeMon.ene) || 0;
+                const eneMax= Number(activeMon.eneMax) || 1;
+                const hpPct = Math.max(0, Math.min(100, (hp / hpMax) * 100));
+                const enePct= Math.max(0, Math.min(100, (ene / eneMax) * 100));
+                const frIcon = getFriendshipIcon(activeMon.friendship ?? 50);
+                const frLvl  = getFriendshipLevel(activeMon.friendship ?? 50);
+                const monEmoji = activeMon.emoji || MM_TABLES.CLASS_EMOJI[activeMon.class] || '👾';
+                activeMonHtml = `
+                <div>
+                    <div class="ppm-section-title">⚔️ Monstrinho Ativo</div>
+                    <div class="ppm-active-mon">
+                        <div class="ppm-active-mon-emoji">${monEmoji}</div>
+                        <div class="ppm-active-mon-info">
+                            <div class="ppm-active-mon-name">${activeMon.name || activeMon.nome}</div>
+                            <div class="ppm-active-mon-meta">${activeMon.class} · ${activeMon.rarity} · Nv ${activeMon.level}</div>
+                            <div class="ppm-mini-bar-row">
+                                <span class="ppm-mini-bar-label">❤️</span>
+                                <div class="ppm-mini-bar"><div class="ppm-mini-bar-fill hp" style="width:${hpPct}%"></div></div>
+                                <span class="ppm-mini-bar-val">${hp}/${hpMax}</span>
+                            </div>
+                            <div class="ppm-mini-bar-row">
+                                <span class="ppm-mini-bar-label">⚡</span>
+                                <div class="ppm-mini-bar"><div class="ppm-mini-bar-fill ene" style="width:${enePct}%"></div></div>
+                                <span class="ppm-mini-bar-val">${ene}/${eneMax}</span>
+                            </div>
+                            <div class="ppm-active-mon-friendship">${frIcon} Amizade Nv ${frLvl} (${activeMon.friendship ?? 50}/100)</div>
+                        </div>
+                    </div>
+                </div>`;
+            } else {
+                activeMonHtml = `<div><div class="ppm-section-title">⚔️ Monstrinho Ativo</div><div class="ppm-active-mon-empty">Sem monstrinho ativo</div></div>`;
+            }
+
+            // Grade do time (até 6 slots)
+            const TEAM_SLOTS = 6;
+            const team = player.team || [];
+            let teamSlotsHtml = '';
+            for (let i = 0; i < TEAM_SLOTS; i++) {
+                const mon = team[i];
+                if (!mon) {
+                    teamSlotsHtml += `<div class="ppm-team-slot ppm-team-slot--empty"><span style="font-size:20px;opacity:0.3">＋</span></div>`;
+                    continue;
+                }
+                const hp    = Number(mon.hp) || 0;
+                const hpMax = Number(mon.hpMax) || 1;
+                const hpPct = Math.max(0, Math.min(100, (hp / hpMax) * 100));
+                const isKO  = hp <= 0;
+                const monEmoji = mon.emoji || MM_TABLES.CLASS_EMOJI[mon.class] || '👾';
+                const isActive = i === (player.activeIndex ?? 0);
+                teamSlotsHtml += `
+                <div class="ppm-team-slot${isKO ? ' ppm-team-slot--ko' : ''}">
+                    <div class="ppm-team-slot-emoji">${monEmoji}${isActive ? ' ▶' : ''}</div>
+                    <div class="ppm-team-slot-name">${(mon.name || mon.nome || '').substring(0, 12)}</div>
+                    <div class="ppm-team-slot-meta">Nv ${mon.level}${isKO ? ' · 💀' : ''}</div>
+                    <div class="ppm-team-slot-hp"><div class="ppm-team-slot-hp-fill" style="width:${hpPct}%;background:${isKO?'#d63031':'#00b894'}"></div></div>
+                </div>`;
+            }
+            const teamHtml = `
+                <div>
+                    <div class="ppm-section-title">👥 Time</div>
+                    <div class="ppm-team-grid">${teamSlotsHtml}</div>
+                </div>`;
+
+            // Missões ativas
+            let questsHtml = '';
+            try {
+                const quests = window.GameFlow?.getActiveQuestsSummary?.(player) || [];
+                if (quests.length === 0) {
+                    questsHtml = `<div class="ppm-quest-empty">Sem missões ativas</div>`;
+                } else {
+                    questsHtml = quests.map(q => `
+                        <div class="ppm-quest-item">
+                            <div class="ppm-quest-title">📜 ${q.title || q.name || '—'}</div>
+                            ${q.step ? `<div class="ppm-quest-step">${q.step}</div>` : ''}
+                        </div>`).join('');
+                }
+            } catch (_) {
+                questsHtml = `<div class="ppm-quest-empty">—</div>`;
+            }
+            const questsSectionHtml = `
+                <div>
+                    <div class="ppm-section-title">📋 Missões Ativas</div>
+                    ${questsHtml}
+                </div>`;
+
+            return resourcesHtml + activeMonHtml + teamHtml + questsSectionHtml;
+        }
         
         // GLOBAL ERROR HANDLER
         window.addEventListener('error', function(event) {
@@ -7420,6 +7588,21 @@
                 // Converte nome de classe para CSS slug sem acentos (ex: 'Caçador' → 'cacador')
                 const classToCssSlug = cls => (cls || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
+                // Preview do d20: calcula o valor mínimo necessário para acertar e dano estimado
+                const d20HintHtml = (() => {
+                    if (!playerMonster || !monster) return '';
+                    const atk = playerMonster.atk || 5;
+                    const def = monster.def || 3;
+                    const classAdv = GameState.config?.classAdvantages?.[playerMonster.class];
+                    const atkBonus = classAdv?.strong === monster.class ? 2 : (classAdv?.weak === monster.class ? -2 : 0);
+                    const minRoll = Math.max(1, def - atk - atkBonus);
+                    const power = MM_TABLES.getBasicAttackPower(playerMonster.class);
+                    const damageMult = classAdv?.strong === monster.class ? 1.10 : (classAdv?.weak === monster.class ? 0.90 : 1.0);
+                    const estDmg = Math.max(1, Math.floor((atk + power - def) * damageMult));
+                    const minRollLabel = minRoll <= 1 ? 'qualquer valor' : `${minRoll}+`;
+                    return `<span id="diceHitHint" class="battle-dice-hit-hint" data-min="${minRoll}" data-dmg="${estDmg}">precisa de ${minRollLabel} · ~${estDmg} dmg</span>`;
+                })();
+
                 // Vantagem de classe (inline — na actions row)
                 const advantageHtml = playerMonster && monster ? (() => {
                     const adv = getClassAdvantage(playerMonster.class, monster.class);
@@ -7644,6 +7827,7 @@
                                            oninput="onDiceRollInput(this)"
                                            title="Role o dado físico d20 e digite o resultado (1 a 20)">
                                     <span class="battle-dice-hint">role e digite</span>
+                                    ${d20HintHtml}
                                 </div>
                             </div>
                             ${advantageHtml}
@@ -8228,13 +8412,22 @@
         /**
          * onDiceRollInput — feedback visual imediato no input de d20.
          * Pulso ativo → hit (verde) ou miss (vermelho) conforme a regra.
+         * Também atualiza o hint textual de acerto/dano estimado.
          */
         function onDiceRollInput(input) {
             const val = parseInt(input.value, 10);
+            const hint = document.getElementById('diceHitHint');
             input.classList.remove('battle-dice-input--active', 'battle-dice-input--hit', 'battle-dice-input--miss');
             if (!input.value || isNaN(val)) {
                 // Campo vazio: pulso ativo indica que o jogador deve digitar
                 input.classList.add('battle-dice-input--active');
+                if (hint) {
+                    const minRoll = parseInt(hint.dataset.min, 10) || 1;
+                    const estDmg = parseInt(hint.dataset.dmg, 10) || 1;
+                    const minLabel = minRoll <= 1 ? 'qualquer valor' : `${minRoll}+`;
+                    hint.textContent = `precisa de ${minLabel} · ~${estDmg} dmg`;
+                    hint.className = 'battle-dice-hit-hint';
+                }
                 return;
             }
             // Clamp para feedback visual mesmo com valor fora de range
@@ -8249,6 +8442,19 @@
                 if (enc && enc.type === 'wild' && playerMonster && wildMonster) {
                     const hit = checkHit(clamped, playerMonster, wildMonster);
                     input.classList.add(hit ? 'battle-dice-input--hit' : 'battle-dice-input--miss');
+                    if (hint) {
+                        const estDmg = parseInt(hint.dataset.dmg, 10) || 1;
+                        if (clamped === 20) {
+                            hint.textContent = '🌟 CRIT! (d20=20)';
+                            hint.className = 'battle-dice-hit-hint battle-dice-hit-hint--crit';
+                        } else if (hit) {
+                            hint.textContent = `✅ Acerta! (~${estDmg} dmg)`;
+                            hint.className = 'battle-dice-hit-hint battle-dice-hit-hint--hit';
+                        } else {
+                            hint.textContent = `❌ Erra com ${clamped}`;
+                            hint.className = 'battle-dice-hit-hint battle-dice-hit-hint--miss';
+                        }
+                    }
                     return;
                 }
             } catch (_) { /* sem contexto de combate disponível */ }
