@@ -103,12 +103,14 @@
           "MON_001",
           "MON_028",
           "MON_017",
-          "MON_100"
+          "MON_100",
+          "MON_031"
         ],
         "Incomum": [
           "MON_006",
           "MON_023B",
-          "MON_002"
+          "MON_002",
+          "MON_031B"
         ],
         "Raro": [
           "MON_023C"
@@ -215,13 +217,16 @@
           "MON_028",
           "MON_017",
           "MON_021",
-          "MON_027"
+          "MON_027",
+          "MON_031",
+          "MON_032"
         ],
         "Incomum": [
           "MON_006",
           "MON_023B",
           "MON_027B",
-          "MON_002"
+          "MON_002",
+          "MON_031B"
         ],
         "Raro": [
           "MON_023C",
@@ -328,13 +333,15 @@
           "MON_023",
           "MON_028",
           "MON_009",
-          "MON_005"
+          "MON_005",
+          "MON_032"
         ],
         "Incomum": [
           "MON_023B",
           "MON_028B",
           "MON_018",
-          "MON_006"
+          "MON_006",
+          "MON_032B"
         ],
         "Raro": [
           "MON_023C",
@@ -446,13 +453,15 @@
           "MON_023B",
           "MON_028B",
           "MON_018",
-          "MON_010"
+          "MON_010",
+          "MON_031B"
         ],
         "Raro": [
           "MON_023C",
           "MON_028C",
           "MON_019",
-          "MON_011"
+          "MON_011",
+          "MON_031C"
         ],
         "Místico": [],
         "Lendário": []
@@ -1046,13 +1055,15 @@
           "MON_006",
           "MON_030B",
           "MON_014",
-          "MON_024B"
+          "MON_024B",
+          "MON_031B"
         ],
         "Raro": [
           "MON_022C",
           "MON_007",
           "MON_030C",
-          "MON_015"
+          "MON_015",
+          "MON_031C"
         ],
         "Místico": [
           "MON_008",
