@@ -1,35 +1,567 @@
 {
-  "_comment": "Templates de encontro multi-inimigo para batalhas em grupo",
+  "_comment": "Templates de encontro por localização. ENC_001-ENC_040 referenciados no worldMap.json. Tipos: wild (selvagem), group_trainer (treinador), boss.",
   "templates": [
     {
-      "id": "enc_duo_guerreiro",
-      "name": "Patrulha Dupla",
-      "type": "group_trainer",
-      "enemies": [
-        { "class": "Guerreiro", "level": 3, "rarity": "Comum" },
-        { "class": "Bárbaro", "level": 2, "rarity": "Comum" }
+      "id": "ENC_001",
+      "locationId": "LOC_001",
+      "type": "wild",
+      "monsters": [
+        "MON_005",
+        "MON_001"
       ],
-      "fleeType": "normal"
+      "minLevel": 1,
+      "maxLevel": 3,
+      "rewardXp": 20,
+      "rewardGold": 15,
+      "dropTableId": "DROP_001"
     },
     {
-      "id": "enc_trio_mixed",
-      "name": "Trio Misto",
-      "type": "group_trainer",
-      "enemies": [
-        { "class": "Mago", "level": 5, "rarity": "Incomum" },
-        { "class": "Curandeiro", "level": 4, "rarity": "Comum" },
-        { "class": "Ladino", "level": 4, "rarity": "Comum" }
+      "id": "ENC_002",
+      "locationId": "LOC_001",
+      "type": "wild",
+      "monsters": [
+        "MON_028",
+        "MON_017"
       ],
-      "fleeType": "intimidating"
+      "minLevel": 1,
+      "maxLevel": 3,
+      "rewardXp": 20,
+      "rewardGold": 15,
+      "dropTableId": "DROP_001"
     },
     {
-      "id": "enc_boss_dragon",
-      "name": "Dragão Ancião",
+      "id": "ENC_003",
+      "locationId": "LOC_001",
+      "type": "wild",
+      "monsters": [
+        "MON_100",
+        "MON_023"
+      ],
+      "minLevel": 2,
+      "maxLevel": 4,
+      "rewardXp": 22,
+      "rewardGold": 18,
+      "dropTableId": "DROP_001"
+    },
+    {
+      "id": "ENC_004",
+      "locationId": "LOC_001",
+      "type": "group_trainer",
+      "monsters": [
+        "MON_001",
+        "MON_006"
+      ],
+      "minLevel": 3,
+      "maxLevel": 4,
+      "rewardXp": 50,
+      "rewardGold": 40,
+      "dropTableId": "DROP_002"
+    },
+    {
+      "id": "ENC_005",
+      "locationId": "LOC_002",
+      "type": "wild",
+      "monsters": [
+        "MON_017",
+        "MON_023"
+      ],
+      "minLevel": 3,
+      "maxLevel": 6,
+      "rewardXp": 25,
+      "rewardGold": 20,
+      "dropTableId": "DROP_001"
+    },
+    {
+      "id": "ENC_006",
+      "locationId": "LOC_002",
+      "type": "wild",
+      "monsters": [
+        "MON_028",
+        "MON_009"
+      ],
+      "minLevel": 3,
+      "maxLevel": 6,
+      "rewardXp": 25,
+      "rewardGold": 20,
+      "dropTableId": "DROP_001"
+    },
+    {
+      "id": "ENC_007",
+      "locationId": "LOC_002",
+      "type": "wild",
+      "monsters": [
+        "MON_023B",
+        "MON_005"
+      ],
+      "minLevel": 5,
+      "maxLevel": 8,
+      "rewardXp": 30,
+      "rewardGold": 22,
+      "dropTableId": "DROP_001"
+    },
+    {
+      "id": "ENC_008",
+      "locationId": "LOC_002",
+      "type": "group_trainer",
+      "monsters": [
+        "MON_023",
+        "MON_018"
+      ],
+      "minLevel": 6,
+      "maxLevel": 8,
+      "rewardXp": 60,
+      "rewardGold": 50,
+      "dropTableId": "DROP_002"
+    },
+    {
+      "id": "ENC_009",
+      "locationId": "LOC_002",
       "type": "boss",
-      "enemies": [
-        { "class": "Bárbaro", "level": 10, "rarity": "Lendário" }
+      "monsters": [
+        "MON_023C"
       ],
-      "fleeType": "elite"
+      "minLevel": 8,
+      "maxLevel": 8,
+      "rewardXp": 150,
+      "rewardGold": 120,
+      "dropTableId": "DROP_003"
+    },
+    {
+      "id": "ENC_010",
+      "locationId": "LOC_003",
+      "type": "wild",
+      "monsters": [
+        "MON_001",
+        "MON_026"
+      ],
+      "minLevel": 6,
+      "maxLevel": 9,
+      "rewardXp": 40,
+      "rewardGold": 35,
+      "dropTableId": "DROP_004"
+    },
+    {
+      "id": "ENC_011",
+      "locationId": "LOC_003",
+      "type": "wild",
+      "monsters": [
+        "MON_021",
+        "MON_100"
+      ],
+      "minLevel": 6,
+      "maxLevel": 9,
+      "rewardXp": 40,
+      "rewardGold": 35,
+      "dropTableId": "DROP_004"
+    },
+    {
+      "id": "ENC_012",
+      "locationId": "LOC_003",
+      "type": "wild",
+      "monsters": [
+        "MON_026B",
+        "MON_021B"
+      ],
+      "minLevel": 9,
+      "maxLevel": 12,
+      "rewardXp": 45,
+      "rewardGold": 38,
+      "dropTableId": "DROP_004"
+    },
+    {
+      "id": "ENC_013",
+      "locationId": "LOC_003",
+      "type": "group_trainer",
+      "monsters": [
+        "MON_002",
+        "MON_026"
+      ],
+      "minLevel": 10,
+      "maxLevel": 12,
+      "rewardXp": 80,
+      "rewardGold": 70,
+      "dropTableId": "DROP_007"
+    },
+    {
+      "id": "ENC_014",
+      "locationId": "LOC_003",
+      "type": "boss",
+      "monsters": [
+        "MON_026C"
+      ],
+      "minLevel": 12,
+      "maxLevel": 12,
+      "rewardXp": 200,
+      "rewardGold": 180,
+      "dropTableId": "DROP_003"
+    },
+    {
+      "id": "ENC_015",
+      "locationId": "LOC_004",
+      "type": "wild",
+      "monsters": [
+        "MON_022",
+        "MON_013"
+      ],
+      "minLevel": 10,
+      "maxLevel": 13,
+      "rewardXp": 50,
+      "rewardGold": 45,
+      "dropTableId": "DROP_004"
+    },
+    {
+      "id": "ENC_016",
+      "locationId": "LOC_004",
+      "type": "wild",
+      "monsters": [
+        "MON_005",
+        "MON_030"
+      ],
+      "minLevel": 10,
+      "maxLevel": 13,
+      "rewardXp": 50,
+      "rewardGold": 45,
+      "dropTableId": "DROP_004"
+    },
+    {
+      "id": "ENC_017",
+      "locationId": "LOC_004",
+      "type": "wild",
+      "monsters": [
+        "MON_022B",
+        "MON_030B"
+      ],
+      "minLevel": 12,
+      "maxLevel": 16,
+      "rewardXp": 55,
+      "rewardGold": 48,
+      "dropTableId": "DROP_004"
+    },
+    {
+      "id": "ENC_018",
+      "locationId": "LOC_004",
+      "type": "wild",
+      "monsters": [
+        "MON_024B",
+        "MON_014"
+      ],
+      "minLevel": 13,
+      "maxLevel": 16,
+      "rewardXp": 55,
+      "rewardGold": 48,
+      "dropTableId": "DROP_004"
+    },
+    {
+      "id": "ENC_019",
+      "locationId": "LOC_004",
+      "type": "group_trainer",
+      "monsters": [
+        "MON_006",
+        "MON_022",
+        "MON_014"
+      ],
+      "minLevel": 14,
+      "maxLevel": 16,
+      "rewardXp": 100,
+      "rewardGold": 90,
+      "dropTableId": "DROP_007"
+    },
+    {
+      "id": "ENC_020",
+      "locationId": "LOC_004",
+      "type": "boss",
+      "monsters": [
+        "MON_022C",
+        "MON_007"
+      ],
+      "minLevel": 16,
+      "maxLevel": 16,
+      "rewardXp": 250,
+      "rewardGold": 220,
+      "dropTableId": "DROP_003"
+    },
+    {
+      "id": "ENC_021",
+      "locationId": "LOC_005",
+      "type": "wild",
+      "monsters": [
+        "MON_024",
+        "MON_009"
+      ],
+      "minLevel": 8,
+      "maxLevel": 11,
+      "rewardXp": 45,
+      "rewardGold": 40,
+      "dropTableId": "DROP_004"
+    },
+    {
+      "id": "ENC_022",
+      "locationId": "LOC_005",
+      "type": "wild",
+      "monsters": [
+        "MON_028",
+        "MON_025"
+      ],
+      "minLevel": 8,
+      "maxLevel": 11,
+      "rewardXp": 45,
+      "rewardGold": 40,
+      "dropTableId": "DROP_004"
+    },
+    {
+      "id": "ENC_023",
+      "locationId": "LOC_005",
+      "type": "wild",
+      "monsters": [
+        "MON_024B",
+        "MON_025B"
+      ],
+      "minLevel": 11,
+      "maxLevel": 14,
+      "rewardXp": 50,
+      "rewardGold": 42,
+      "dropTableId": "DROP_004"
+    },
+    {
+      "id": "ENC_024",
+      "locationId": "LOC_005",
+      "type": "group_trainer",
+      "monsters": [
+        "MON_024",
+        "MON_028B"
+      ],
+      "minLevel": 12,
+      "maxLevel": 14,
+      "rewardXp": 90,
+      "rewardGold": 80,
+      "dropTableId": "DROP_007"
+    },
+    {
+      "id": "ENC_025",
+      "locationId": "LOC_005",
+      "type": "boss",
+      "monsters": [
+        "MON_024C"
+      ],
+      "minLevel": 14,
+      "maxLevel": 14,
+      "rewardXp": 220,
+      "rewardGold": 200,
+      "dropTableId": "DROP_003"
+    },
+    {
+      "id": "ENC_026",
+      "locationId": "LOC_006",
+      "type": "wild",
+      "monsters": [
+        "MON_021",
+        "MON_029"
+      ],
+      "minLevel": 15,
+      "maxLevel": 18,
+      "rewardXp": 70,
+      "rewardGold": 65,
+      "dropTableId": "DROP_005"
+    },
+    {
+      "id": "ENC_027",
+      "locationId": "LOC_006",
+      "type": "wild",
+      "monsters": [
+        "MON_013",
+        "MON_021B"
+      ],
+      "minLevel": 15,
+      "maxLevel": 18,
+      "rewardXp": 70,
+      "rewardGold": 65,
+      "dropTableId": "DROP_005"
+    },
+    {
+      "id": "ENC_028",
+      "locationId": "LOC_006",
+      "type": "wild",
+      "monsters": [
+        "MON_029B",
+        "MON_014"
+      ],
+      "minLevel": 18,
+      "maxLevel": 22,
+      "rewardXp": 78,
+      "rewardGold": 70,
+      "dropTableId": "DROP_005"
+    },
+    {
+      "id": "ENC_029",
+      "locationId": "LOC_006",
+      "type": "group_trainer",
+      "monsters": [
+        "MON_021",
+        "MON_029",
+        "MON_014"
+      ],
+      "minLevel": 20,
+      "maxLevel": 22,
+      "rewardXp": 130,
+      "rewardGold": 120,
+      "dropTableId": "DROP_008"
+    },
+    {
+      "id": "ENC_030",
+      "locationId": "LOC_006",
+      "type": "boss",
+      "monsters": [
+        "MON_021C",
+        "MON_015"
+      ],
+      "minLevel": 22,
+      "maxLevel": 22,
+      "rewardXp": 320,
+      "rewardGold": 300,
+      "dropTableId": "DROP_003"
+    },
+    {
+      "id": "ENC_031",
+      "locationId": "LOC_007",
+      "type": "wild",
+      "monsters": [
+        "MON_022",
+        "MON_009"
+      ],
+      "minLevel": 12,
+      "maxLevel": 16,
+      "rewardXp": 60,
+      "rewardGold": 55,
+      "dropTableId": "DROP_005"
+    },
+    {
+      "id": "ENC_032",
+      "locationId": "LOC_007",
+      "type": "wild",
+      "monsters": [
+        "MON_030",
+        "MON_025"
+      ],
+      "minLevel": 12,
+      "maxLevel": 16,
+      "rewardXp": 60,
+      "rewardGold": 55,
+      "dropTableId": "DROP_005"
+    },
+    {
+      "id": "ENC_033",
+      "locationId": "LOC_007",
+      "type": "wild",
+      "monsters": [
+        "MON_022B",
+        "MON_010"
+      ],
+      "minLevel": 16,
+      "maxLevel": 20,
+      "rewardXp": 68,
+      "rewardGold": 60,
+      "dropTableId": "DROP_005"
+    },
+    {
+      "id": "ENC_034",
+      "locationId": "LOC_007",
+      "type": "group_trainer",
+      "monsters": [
+        "MON_011",
+        "MON_030B",
+        "MON_022"
+      ],
+      "minLevel": 18,
+      "maxLevel": 20,
+      "rewardXp": 110,
+      "rewardGold": 100,
+      "dropTableId": "DROP_008"
+    },
+    {
+      "id": "ENC_035",
+      "locationId": "LOC_007",
+      "type": "boss",
+      "monsters": [
+        "MON_022C",
+        "MON_011"
+      ],
+      "minLevel": 20,
+      "maxLevel": 20,
+      "rewardXp": 280,
+      "rewardGold": 260,
+      "dropTableId": "DROP_003"
+    },
+    {
+      "id": "ENC_036",
+      "locationId": "LOC_008",
+      "type": "wild",
+      "monsters": [
+        "MON_001",
+        "MON_017"
+      ],
+      "minLevel": 20,
+      "maxLevel": 25,
+      "rewardXp": 100,
+      "rewardGold": 90,
+      "dropTableId": "DROP_006"
+    },
+    {
+      "id": "ENC_037",
+      "locationId": "LOC_008",
+      "type": "wild",
+      "monsters": [
+        "MON_021",
+        "MON_025"
+      ],
+      "minLevel": 20,
+      "maxLevel": 25,
+      "rewardXp": 100,
+      "rewardGold": 90,
+      "dropTableId": "DROP_006"
+    },
+    {
+      "id": "ENC_038",
+      "locationId": "LOC_008",
+      "type": "wild",
+      "monsters": [
+        "MON_026",
+        "MON_027"
+      ],
+      "minLevel": 25,
+      "maxLevel": 30,
+      "rewardXp": 110,
+      "rewardGold": 98,
+      "dropTableId": "DROP_006"
+    },
+    {
+      "id": "ENC_039",
+      "locationId": "LOC_008",
+      "type": "group_trainer",
+      "monsters": [
+        "MON_002",
+        "MON_018",
+        "MON_027B"
+      ],
+      "minLevel": 28,
+      "maxLevel": 30,
+      "rewardXp": 180,
+      "rewardGold": 160,
+      "dropTableId": "DROP_008"
+    },
+    {
+      "id": "ENC_040",
+      "locationId": "LOC_008",
+      "type": "boss",
+      "monsters": [
+        "MON_003",
+        "MON_021C",
+        "MON_025C"
+      ],
+      "minLevel": 30,
+      "maxLevel": 30,
+      "rewardXp": 450,
+      "rewardGold": 400,
+      "dropTableId": "DROP_003"
     }
   ]
 }

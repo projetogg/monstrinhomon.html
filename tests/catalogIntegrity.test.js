@@ -58,8 +58,8 @@ describe('Catálogo de Monstros - Integridade Geral', () => {
         expect(Array.isArray(data.monsters)).toBe(true);
     });
 
-    it('deve conter 59 monstros no catálogo', () => {
-        expect(monsters.length).toBe(59);
+    it('deve conter 64 monstros no catálogo', () => {
+        expect(monsters.length).toBe(64);
     });
 
     it('não deve ter IDs duplicados', () => {
@@ -209,8 +209,8 @@ describe('EVOLUCOES.csv ↔ monsters.json - Sincronia', () => {
     const monsterMap = new Map(monsters.map(m => [m.id, m]));
     const csvEntries = loadEvolucoesCSV();
 
-    it('EVOLUCOES.csv deve ter exatamente 35 entradas', () => {
-        expect(csvEntries.length).toBe(35);
+    it('EVOLUCOES.csv deve ter exatamente 38 entradas', () => {
+        expect(csvEntries.length).toBe(38);
     });
 
     it('cada entrada do CSV deve corresponder a evolvesTo/evolvesAt no JSON', () => {

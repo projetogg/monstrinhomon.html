@@ -365,3 +365,105 @@ describe('Skills JSON — Distribuição por Categoria', () => {
         expect(controle.length).toBeGreaterThan(1);
     });
 });
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Testes para as novas skills adicionadas na AÇÃO 1 (11 novas skills)
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('Skills JSON — Novas Skills AÇÃO 1', () => {
+    const data = loadSkillsJsonRaw();
+    const skillMap = new Map(data.skills.map(s => [s.id, s]));
+
+    // Guerreiro: PROVOCAR_0
+    it('PROVOCAR_0 deve existir e ter stage 0 com TAUNT', () => {
+        expect(skillMap.has('PROVOCAR_0')).toBe(true);
+        const s = skillMap.get('PROVOCAR_0');
+        expect(s.class).toBe('Guerreiro');
+        expect(s.stageIndex).toBe(0);
+        expect(s.type).toBe('TAUNT');
+        expect(s.tier).toBe(1);
+    });
+
+    // Ladino: Sombra Evasiva (3 stages)
+    it('SOMBRA_EVASIVA_0/1/2 devem existir com BUFF SPD', () => {
+        for (const stage of [0, 1, 2]) {
+            const id = `SOMBRA_EVASIVA_${stage}`;
+            expect(skillMap.has(id), `${id} deve existir`).toBe(true);
+            const s = skillMap.get(id);
+            expect(s.class).toBe('Ladino');
+            expect(s.stageIndex).toBe(stage);
+            expect(s.type).toBe('BUFF');
+            expect(s.buffType).toBe('SPD');
+        }
+    });
+
+    // Caçador: ARMADILHA_0
+    it('ARMADILHA_0 deve existir e ter stage 0', () => {
+        expect(skillMap.has('ARMADILHA_0')).toBe(true);
+        const s = skillMap.get('ARMADILHA_0');
+        expect(s.class).toBe('Caçador');
+        expect(s.stageIndex).toBe(0);
+        expect(s.power).toBe(-2);
+        expect(s.tier).toBe(1);
+    });
+
+    // Curandeiro: Purificação (stage 1 e 2)
+    it('PURIFICACAO_1/2 devem existir com HEAL e cleanse', () => {
+        for (const stage of [1, 2]) {
+            const id = `PURIFICACAO_${stage}`;
+            expect(skillMap.has(id), `${id} deve existir`).toBe(true);
+            const s = skillMap.get(id);
+            expect(s.class).toBe('Curandeiro');
+            expect(s.stageIndex).toBe(stage);
+            expect(s.type).toBe('HEAL');
+            expect(s.cleanse).toBeGreaterThan(0);
+        }
+    });
+
+    // Bárbaro: Grito de Guerra (stage 1 e 2)
+    it('GRITO_DE_GUERRA_1/2 devem existir com BUFF ATK para área', () => {
+        for (const stage of [1, 2]) {
+            const id = `GRITO_DE_GUERRA_${stage}`;
+            expect(skillMap.has(id), `${id} deve existir`).toBe(true);
+            const s = skillMap.get(id);
+            expect(s.class).toBe('Bárbaro');
+            expect(s.stageIndex).toBe(stage);
+            expect(s.type).toBe('BUFF');
+            expect(s.target).toBe('Todos_Aliados');
+        }
+    });
+
+    // Animalista: Simbiose Natural (stage 1 e 2)
+    it('SIMBIOSE_NATURAL_1/2 devem existir com DAMAGE e selfHeal', () => {
+        for (const stage of [1, 2]) {
+            const id = `SIMBIOSE_NATURAL_${stage}`;
+            expect(skillMap.has(id), `${id} deve existir`).toBe(true);
+            const s = skillMap.get(id);
+            expect(s.class).toBe('Animalista');
+            expect(s.stageIndex).toBe(stage);
+            expect(s.type).toBe('DAMAGE');
+            expect(s.selfHeal).toBeGreaterThan(0);
+        }
+    });
+
+    // Total de skills por classe — AÇÃO 1 completa
+    it('cada classe deve ter exatamente o número correto de skills', () => {
+        const expected = {
+            'Guerreiro':  9,  // 3 grupos × 3 stages
+            'Mago':       9,  // 3 grupos × 3 stages
+            'Bardo':      9,  // 3 grupos × 3 stages
+            'Curandeiro': 8,  // grupo 3 não tem stage 0 (2+3+3)
+            'Bárbaro':    8,  // grupo 3 não tem stage 0 (3+3+2)
+            'Ladino':     8,  // grupo 3 não tem stage 0 (3+3+2)
+            'Caçador':    6,  // 2 grupos × 3 stages (ARMADILHA disponível desde stage 0; 3ª linha não implementada nesta fase)
+            'Animalista': 8,  // grupo 3 não tem stage 0 (3+3+2)
+        };
+        const classCounts = {};
+        for (const s of data.skills) {
+            classCounts[s.class] = (classCounts[s.class] || 0) + 1;
+        }
+        for (const [cls, count] of Object.entries(expected)) {
+            expect(classCounts[cls], `${cls} deve ter ${count} skills`).toBe(count);
+        }
+    });
+});

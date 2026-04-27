@@ -83,11 +83,12 @@ export function initializeWildBattleParticipation(playerMonster, wildMonster = n
  * @param {object} params.encounter - Encontro atual
  * @param {object} params.player - Jogador atual
  * @param {object} params.playerMonster - Monstrinho do jogador
- * @param {number} params.d20Roll - Resultado do dado
+ * @param {number} params.d20Roll - Resultado do dado de ataque
+ * @param {number} [params.defenderRoll] - Resultado do dado de defesa (opcional)
  * @param {object} params.dependencies - Dependências externas
  * @returns {object} { success: boolean, result?: string, reason?: string }
  */
-export function executeWildAttack({ encounter, player, playerMonster, d20Roll, dependencies }) {
+export function executeWildAttack({ encounter, player, playerMonster, d20Roll, defenderRoll, dependencies }) {
     try {
         if (!encounter?.wildMonster) {
             return { success: false, reason: 'no_encounter' };
@@ -112,8 +113,12 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
         // Verificar crítico/falha
         const critResult = processCritical(d20Roll, player, encounter);
         
+        // Retrocompatibilidade: quando não informado explicitamente, usa 1 (equivalente
+        // ao modelo antigo sem dado de defesa explícito, favorecendo acerto base).
+        const wildDefenseRoll = Number.isInteger(defenderRoll) ? defenderRoll : 1;
+
         // FASE 1: Ataque do jogador
-        encounter.log.push(`🎲 ${player.name}'s ${playerMonster.name} rolls ${d20Roll} (ATK: ${playerMonster.atk})`);
+        encounter.log.push(`🎲 ${player.name}'s ${playerMonster.name} ATK ${d20Roll} vs DEF ${wildDefenseRoll} (${encounter.wildMonster.name})`);
         
         // Gravar roll no histórico
         if (dependencies.recordD20Roll) {
@@ -132,8 +137,18 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
         // d20=1 sempre erra, d20=20 sempre acerta
         const playerHit = critResult.isFail1 ? false : (
             critResult.isCrit20 ? true : 
-            WildCore.checkHit(d20Roll, playerMonster, encounter.wildMonster, dependencies.classAdvantages, playerSpdBonus)
+            WildCore.checkHitDiceClash(d20Roll, wildDefenseRoll, playerMonster, encounter.wildMonster, dependencies.classAdvantages, playerSpdBonus)
         );
+
+        if (dependencies.ui?.updateDiceClash) {
+            dependencies.ui.updateDiceClash({
+                attackerLabel: `ATK ${playerMonster.name}`,
+                defenderLabel: `DEF ${encounter.wildMonster.name}`,
+                attackRoll: d20Roll,
+                defenseRoll: wildDefenseRoll,
+                rolling: false
+            });
+        }
         
         // Tocar som
         WildUI.playAttackFeedback(d20Roll, playerHit, critResult.isCrit20, dependencies.audio);
@@ -390,12 +405,23 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
     
     // Usar rollEnemyD20 centralizado (injeta dependencies.rollD20 ou fallback Math.random)
     const enemyRoll = rollEnemyD20(dependencies);
+    const defenseRoll = rollEnemyD20(dependencies);
     const alwaysMiss = (enemyRoll === 1);
     const isCrit = (enemyRoll === 20);
     // Fase 11.2: bônus de agilidade por SPD para o inimigo (contra o jogador)
     const enemySpdBonusSkill = WildCore.getSpdAdvantage(wildMonster, playerMonster);
-    const enemyHit = !alwaysMiss && (isCrit || WildCore.checkHit(enemyRoll, wildMonster, playerMonster, dependencies.classAdvantages, enemySpdBonusSkill));
-    encounter.log.push(`🎲 ${wildMonster.name} rolls ${enemyRoll}`);
+    const enemyHit = !alwaysMiss && (isCrit || WildCore.checkHitDiceClash(enemyRoll, defenseRoll, wildMonster, playerMonster, dependencies.classAdvantages, enemySpdBonusSkill));
+    encounter.log.push(`🎲 ${wildMonster.name} ATK ${enemyRoll} vs DEF ${defenseRoll} (${playerMonster.name})`);
+
+    if (dependencies.ui?.updateDiceClash) {
+        dependencies.ui.updateDiceClash({
+            attackerLabel: `ATK ${wildMonster.name}`,
+            defenderLabel: `DEF ${playerMonster.name}`,
+            attackRoll: enemyRoll,
+            defenseRoll,
+            rolling: false
+        });
+    }
     
     // Gravar roll
     if (dependencies.recordD20Roll) {
@@ -525,12 +551,23 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
 function processEnemyBasicAttack(encounter, wildMonster, playerMonster, dependencies) {
     // Usar rollEnemyD20 centralizado (injeta dependencies.rollD20 ou fallback Math.random)
     const enemyRoll = rollEnemyD20(dependencies);
+    const defenseRoll = rollEnemyD20(dependencies);
     const alwaysMiss = (enemyRoll === 1);
     const isCrit = (enemyRoll === 20);
     // Fase 11.2: bônus de agilidade por SPD para o inimigo (contra o jogador)
     const enemySpdBonusBasic = WildCore.getSpdAdvantage(wildMonster, playerMonster);
-    const enemyHit = !alwaysMiss && (isCrit || WildCore.checkHit(enemyRoll, wildMonster, playerMonster, dependencies.classAdvantages, enemySpdBonusBasic));
-    encounter.log.push(`🎲 Wild ${wildMonster.name} rolls ${enemyRoll} (ATK: ${wildMonster.atk})`);
+    const enemyHit = !alwaysMiss && (isCrit || WildCore.checkHitDiceClash(enemyRoll, defenseRoll, wildMonster, playerMonster, dependencies.classAdvantages, enemySpdBonusBasic));
+    encounter.log.push(`🎲 Wild ${wildMonster.name} ATK ${enemyRoll} vs DEF ${defenseRoll} (${playerMonster.name})`);
+
+    if (dependencies.ui?.updateDiceClash) {
+        dependencies.ui.updateDiceClash({
+            attackerLabel: `ATK ${wildMonster.name}`,
+            defenderLabel: `DEF ${playerMonster.name}`,
+            attackRoll: enemyRoll,
+            defenseRoll,
+            rolling: false
+        });
+    }
     
     // Gravar roll
     if (dependencies.recordD20Roll) {
