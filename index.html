@@ -1015,6 +1015,7 @@
         window.clearAllData = clearAllData;
         window.attackWild = attackWild;
         window.useItemInBattle = useItemInBattle;
+        window.useReviveFromResult = useReviveFromResult;
         window.attemptCapture = attemptCapture;
         window.fleeEncounter = fleeEncounter;
         window.useSkillWild = useSkillWild;
@@ -7788,12 +7789,20 @@
                                 </div>
                             </div>`;
                     }
+                    // Botão de reviver: visível no painel de derrota se houver Pena Reviva disponível
+                    const reviveQty = player?.inventory?.['IT_REV_01'] || 0;
+                    const canReviveInResult = result === 'defeat' && reviveQty > 0 && playerMonster && encounter.wildMonster?.hp > 0;
+                    const reviveBtnHtml = canReviveInResult
+                        ? `<button class="btn btn-warning" onclick="useReviveFromResult()" style="box-shadow:0 4px 14px rgba(253,203,110,0.40)">🪶 Reviver (${reviveQty}x)</button>`
+                        : '';
+
                     panel.innerHTML = `
                         <div class="battle-arena battle-arena--centered">
                             <h3 class="battle-result-title">${resultEmoji} ${resultTitle}</h3>
                             ${xpBar}
                             <div class="battle-log-compact battle-log-result">${logHtml}</div>
-                            <div class="flex-center mt-12">
+                            <div class="flex-center mt-12" style="gap:8px">
+                                ${reviveBtnHtml}
                                 <button class="btn btn-primary btn-large" onclick="closeBattleResult()">✅ Continuar</button>
                             </div>
                         </div>`;
@@ -7932,9 +7941,15 @@
                     { id: 'IT_HEAL_02', emoji: '🍖', name: 'Ração Revigorante' },
                     { id: 'IT_HEAL_03', emoji: '✨', name: 'Elixir Máximo' },
                 ];
+                const WILD_REVIVE_ITEMS = [
+                    { id: 'IT_REV_01', emoji: '🪶', name: 'Pena Reviva' },
+                ];
                 const availableHeals = player ? WILD_HEAL_ITEMS.filter(h => (player.inventory?.[h.id] || 0) > 0) : [];
+                const availableRevives = player ? WILD_REVIVE_ITEMS.filter(r => (player.inventory?.[r.id] || 0) > 0) : [];
+                const isMonsterKO = playerMonster && playerMonster.hp <= 0;
                 const canHeal = playerMonster && playerMonster.hp > 0 && playerMonster.hp < playerMonster.hpMax;
                 const tutItem = tutorialAllows("item");
+
 
                 const html = `
                     <div class="battle-arena">
@@ -8094,17 +8109,32 @@
 
                             <!-- Itens de cura + Sistema de captura (separados visualmente) -->
                             <div class="battle-sec-panel">
-                                ${availableHeals.length > 0 ? `
+                                ${availableHeals.length > 0 && !isMonsterKO ? `
                                 <div class="battle-sec-sub">💚 Cura</div>
                                 <div class="battle-heal-items-row">
                                     ${availableHeals.map(h => {
                                         const qty = player.inventory?.[h.id] || 0;
                                         const canUse = canHeal && qty > 0;
                                         return `<button class="btn btn-success"
-                                                onclick="useItemInBattle('${h.id}')"
+                                                data-item-id="${h.id}"
+                                                onclick="useItemInBattle(this.dataset.itemId)"
                                                 ${!canUse || !tutItem ? 'disabled' : ''}
                                                 ${!tutItem ? 'title="Tutorial: ainda não liberado"' : `title="${h.name} (${qty}x)"`}>
                                             ${h.emoji} ${qty}x
+                                        </button>`;
+                                    }).join('')}
+                                </div>
+                                <div class="battle-sec-divider"></div>` : ''}
+                                ${availableRevives.length > 0 && isMonsterKO ? `
+                                <div class="battle-sec-sub">🪶 Reviver</div>
+                                <div class="battle-heal-items-row">
+                                    ${availableRevives.map(r => {
+                                        const qty = player.inventory?.[r.id] || 0;
+                                        return `<button class="btn btn-warning"
+                                                data-item-id="${r.id}"
+                                                onclick="useItemInBattle(this.dataset.itemId)"
+                                                title="${r.name} (${qty}x) — Restaura 40% HP">
+                                            ${r.emoji} ${qty}x
                                         </button>`;
                                     }).join('')}
                                 </div>
@@ -8433,16 +8463,25 @@
                 const playerMonster = _getActiveMonsterOfPlayer(player);
                 if (!playerMonster) { mmAlert('Jogador não tem monstrinhos no time', 'error'); return; }
 
-                if (playerMonster.hp <= 0) {
-                    mmAlert('❌ Não pode usar item! Monstrinho está desmaiado (HP = 0).', 'error'); return;
-                }
-                if (playerMonster.hp >= playerMonster.hpMax) {
-                    mmAlert('⚠️ HP já está no máximo! Não é necessário usar item de cura.', 'warning'); return;
-                }
-
                 player.inventory = player.inventory || {};
                 const itemDef = getItemDef(itemId);
                 const itemName = itemDef?.name || itemId;
+                const isRevive = itemDef?.type === 'revive';
+
+                // Validação prévia (executeWildItemUse valida novamente internamente)
+                if (isRevive) {
+                    if (playerMonster.hp > 0) {
+                        mmAlert(`⚠️ ${playerMonster.name} não está desmaiado!`, 'warning'); return;
+                    }
+                } else {
+                    if (playerMonster.hp <= 0) {
+                        mmAlert('❌ Monstrinho desmaiado! Use uma 🪶 Pena Reviva.', 'error'); return;
+                    }
+                    if (playerMonster.hp >= playerMonster.hpMax) {
+                        mmAlert('⚠️ HP já está no máximo! Não é necessário usar item de cura.', 'warning'); return;
+                    }
+                }
+
                 if ((player.inventory[itemId] || 0) <= 0) {
                     mmAlert(`❌ Você não tem ${itemName} disponível!`, 'error'); return;
                 }
@@ -8475,7 +8514,28 @@
             }
         }
 
-        // ===== COMBAT WILD 1v1 - Wrapper de Compatibilidade =====
+        /**
+         * Revive o monstrinho ativo a partir do painel de resultado de derrota.
+         * Usa IT_REV_01 (Pena Reviva) e reabre o encontro como ativo.
+         */
+        function useReviveFromResult() {
+            try {
+                const encounter = GameState.currentEncounter;
+                if (!encounter) return;
+                const playerId = encounter.selectedPlayerId;
+                const player = GameState.players.find(p => p.id === playerId);
+                if (!player) return;
+                const playerMonster = _getActiveMonsterOfPlayer(player);
+                if (!playerMonster) return;
+
+                useItemInBattle('IT_REV_01');
+            } catch (error) {
+                showError('Failed to revive monster', error.stack);
+            }
+        }
+        window.useReviveFromResult = useReviveFromResult;
+
+
         // Mantém API pública, delega para módulo Combat
         function attackWild() {
             try {
@@ -15343,6 +15403,7 @@
         window.clearAllData = clearAllData;
         window.attackWild = attackWild;
         window.useItemInBattle = useItemInBattle;
+        window.useReviveFromResult = useReviveFromResult;
         window.attemptCapture = attemptCapture;
         window.fleeEncounter = fleeEncounter;
         window.useSkillWild = useSkillWild;

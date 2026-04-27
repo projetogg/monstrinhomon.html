@@ -1031,14 +1031,29 @@ export function executeWildItemUse({ encounter, player, playerMonster, itemId, d
         // Obter definição do item
         const itemDef = dependencies.getItemDef(itemId);
         const itemName  = itemDef?.name  || itemId;
+        const itemType  = itemDef?.type  || 'heal';
         const healPct   = Number(itemDef?.heal_pct) || 0.30;
         const healMin   = Number(itemDef?.heal_min)  || 30;
         const itemEmoji = itemDef?.emoji || '💚';
 
-        // Verificar se HP já está cheio antes de qualquer outra validação
-        if (playerMonster.hp >= playerMonster.hpMax) {
-            encounter.log.push(`⚠️ ${playerMonster.name} já está com HP cheio!`);
-            return { success: false, result: 'invalid' };
+        const isRevive = itemType === 'revive';
+
+        // Reviver: só pode usar em monstrinho desmaiado (HP = 0)
+        if (isRevive) {
+            if (playerMonster.hp > 0) {
+                encounter.log.push(`⚠️ ${playerMonster.name} não está desmaiado!`);
+                return { success: false, result: 'invalid' };
+            }
+        } else {
+            // Cura: não pode usar se HP já está cheio ou se está desmaiado
+            if (playerMonster.hp <= 0) {
+                encounter.log.push(`⚠️ ${playerMonster.name} está desmaiado! Use uma Pena Reviva.`);
+                return { success: false, result: 'invalid' };
+            }
+            if (playerMonster.hp >= playerMonster.hpMax) {
+                encounter.log.push(`⚠️ ${playerMonster.name} já está com HP cheio!`);
+                return { success: false, result: 'invalid' };
+            }
         }
 
         // Consumir 1 unidade do item
@@ -1052,6 +1067,40 @@ export function executeWildItemUse({ encounter, player, playerMonster, itemId, d
         encounter.log.push(
             `${itemEmoji} ${player.name} usou ${itemName}! (Restam: ${player.inventory[itemId]})`
         );
+
+        // Reviver: restaurar HP e remover status fainted
+        if (isRevive) {
+            const healAmount = Math.max(healMin, Math.floor(playerMonster.hpMax * healPct));
+            playerMonster.hp = Math.min(playerMonster.hpMax, healAmount);
+            playerMonster.status = 'active';
+            if (playerMonster.eneMax) {
+                playerMonster.ene = Math.min(playerMonster.eneMax, Math.floor(playerMonster.eneMax * 0.20));
+            }
+            encounter.log.push(
+                `🪶 ${playerMonster.name} foi revivido com ${playerMonster.hp} HP!`
+            );
+
+            // Amizade
+            if (dependencies.updateFriendship) dependencies.updateFriendship(playerMonster, 'useHealItem');
+
+            // Tutorial hook
+            if (dependencies.tutorialOnAction) dependencies.tutorialOnAction('item');
+
+            // Som de cura
+            if (dependencies.audio?.playSfx) dependencies.audio.playSfx('heal');
+
+            // Callback visual
+            if (dependencies.onHealVisualFeedback) dependencies.onHealVisualFeedback(playerMonster.hp);
+
+            // Após reviver: se o encontro estava em derrota, reabrir como ativo
+            if (encounter.result === 'defeat') {
+                encounter.result = null;
+                encounter.active = true;
+            }
+
+            return { success: true, result: 'revived', actualHeal: playerMonster.hp };
+        }
+
 
         // Aplicar cura
         const healAmount = Math.max(healMin, Math.floor(playerMonster.hpMax * healPct));
