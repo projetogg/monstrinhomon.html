@@ -1103,12 +1103,28 @@
 
             // Fechar ao clicar no backdrop
             modal.onclick = (e) => { if (e.target === modal) closePlayerProfile(); };
+
+            // Fechar com tecla Escape
+            function _onEsc(e) {
+                if (e.key === 'Escape') {
+                    closePlayerProfile();
+                    document.removeEventListener('keydown', _onEsc);
+                }
+            }
+            if (modal._escHandler) document.removeEventListener('keydown', modal._escHandler);
+            modal._escHandler = _onEsc;
+            document.addEventListener('keydown', _onEsc);
         }
 
         /** Fecha o modal de perfil do jogador. */
         function closePlayerProfile() {
             const modal = document.getElementById('playerProfileModal');
-            if (modal) modal.classList.remove('show');
+            if (!modal) return;
+            modal.classList.remove('show');
+            if (modal._escHandler) {
+                document.removeEventListener('keydown', modal._escHandler);
+                modal._escHandler = null;
+            }
         }
 
         /**
@@ -1181,7 +1197,7 @@
                 const hpPct = Math.max(0, Math.min(100, (hp / hpMax) * 100));
                 const isKO  = hp <= 0;
                 const monEmoji = mon.emoji || MM_TABLES.CLASS_EMOJI[mon.class] || '👾';
-                const isActive = i === (player.activeIndex ?? 0);
+                const isActive = mon && i === (player.activeIndex ?? 0);
                 teamSlotsHtml += `
                 <div class="ppm-team-slot${isKO ? ' ppm-team-slot--ko' : ''}">
                     <div class="ppm-team-slot-emoji">${monEmoji}${isActive ? ' ▶' : ''}</div>
@@ -15157,6 +15173,8 @@
         window.groupMovePosition = groupMovePosition;
         window.cancelTargetSelection = cancelTargetSelection;
         window.onDiceRollInput = onDiceRollInput;
+        window.openPlayerProfile  = openPlayerProfile;
+        window.closePlayerProfile = closePlayerProfile;
 
         // Initialize on load
         // PR-BOOT-FIX: Usa readyState para evitar race condition caso o evento

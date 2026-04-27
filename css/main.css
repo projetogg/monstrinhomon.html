@@ -6423,7 +6423,7 @@ img.monster-visual--variant-battle {
     margin-bottom: 5px;
 }
 .battle-log-compact > div { padding: 3px 6px; border-bottom: 1px solid rgba(0,0,0,0.06); border-radius: 4px; margin: 1px 0; }
-.battle-log-compact > div:last-child { font-weight: bold; color: #1a1a1a; }
+.battle-log-compact > div:last-child:not([class*="blog-"]) { font-weight: bold; color: #1a1a1a; }
 .battle-log-compact > div.blog-dmg    { color: #c0392b; background: rgba(192,57,43,0.07); }
 .battle-log-compact > div.blog-crit   { color: #e67e22; font-weight: bold; background: rgba(255,200,60,0.15); border-left: 3px solid #f39c12; }
 .battle-log-compact > div.blog-heal   { color: #27ae60; background: rgba(39,174,96,0.08); }
