@@ -460,6 +460,21 @@
         "buy": 80,
         "sell": 25
       }
+    },
+    {
+      "id": "IT_REV_01",
+      "name": "Pena Reviva",
+      "description": "Revive um monstrinho desmaiado com 40% do HP máximo. Usado durante ou após a batalha.",
+      "type": "revive",
+      "heal_pct": 0.4,
+      "heal_min": 40,
+      "emoji": "🪶",
+      "stackable": true,
+      "maxStack": 10,
+      "price": {
+        "buy": 300,
+        "sell": 80
+      }
     }
   ]
 }
