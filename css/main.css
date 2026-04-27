@@ -7142,3 +7142,187 @@ img.monster-visual--variant-battle {
     flex-shrink: 0;
 }
 .group-player-profile-btn:hover { background: rgba(108,92,231,0.12); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODAL DE DETALHES DO MONSTRINHO
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+#monsterDetailModal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    z-index: 9200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    backdrop-filter: blur(4px);
+}
+#monsterDetailModal.show { display: flex; }
+
+.mpm-card {
+    background: #fff;
+    border-radius: 24px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    display: flex;
+    flex-direction: column;
+    scrollbar-width: thin;
+}
+
+/* Cabeçalho com gradiente de classe do monstrinho */
+.mpm-header {
+    border-radius: 24px 24px 0 0;
+    padding: 20px 20px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: linear-gradient(135deg, #636e72, #b2bec3);
+    color: #fff;
+    position: relative;
+}
+.mpm-header[data-class="Guerreiro"]  { background: linear-gradient(135deg, var(--class-guerreiro), #e17055); }
+.mpm-header[data-class="Mago"]       { background: linear-gradient(135deg, var(--class-mago), #a29bfe); }
+.mpm-header[data-class="Curandeiro"] { background: linear-gradient(135deg, var(--class-curandeiro), #55efc4); }
+.mpm-header[data-class="Bárbaro"]    { background: linear-gradient(135deg, var(--class-barbaro), #fdcb6e); }
+.mpm-header[data-class="Ladino"]     { background: linear-gradient(135deg, var(--class-ladino), #636e72); }
+.mpm-header[data-class="Bardo"]      { background: linear-gradient(135deg, var(--class-bardo), #fd79a8); }
+.mpm-header[data-class="Caçador"]    { background: linear-gradient(135deg, var(--class-cacador), #00cec9); }
+
+.mpm-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.22);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+}
+.mpm-header-info { flex: 1; min-width: 0; }
+.mpm-monster-name {
+    font-size: 18px;
+    font-weight: 800;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mpm-monster-meta { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+.mpm-body { padding: 18px 20px 22px; display: flex; flex-direction: column; gap: 14px; }
+
+/* Badges de raridade/shiny no cabeçalho */
+.mpm-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.mpm-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.25);
+    letter-spacing: 0.3px;
+}
+.mpm-badge--shiny { background: rgba(253,203,110,0.55); color: #fff; }
+
+/* Seção de título */
+.mpm-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #636e72;
+    margin-bottom: 4px;
+}
+
+/* Barras HP / ENE */
+.mpm-bars { display: flex; flex-direction: column; gap: 8px; }
+.mpm-bar-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.mpm-bar-label { width: 32px; font-weight: 700; flex-shrink: 0; }
+.mpm-bar-track {
+    flex: 1;
+    height: 10px;
+    background: #ecf0f1;
+    border-radius: 5px;
+    overflow: hidden;
+}
+.mpm-bar-fill { height: 100%; border-radius: 5px; transition: width 0.3s; }
+.mpm-bar-fill--hp   { background: linear-gradient(90deg, #00b894, #55efc4); }
+.mpm-bar-fill--ene  { background: linear-gradient(90deg, #6c5ce7, #a29bfe); }
+.mpm-bar-fill--xp   { background: linear-gradient(90deg, #fdcb6e, #f39c12); }
+.mpm-bar-value { font-size: 11px; color: #636e72; min-width: 55px; text-align: right; flex-shrink: 0; }
+
+/* Grade de stats */
+.mpm-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+.mpm-stat-cell {
+    background: #f8f9ff;
+    border-radius: 10px;
+    padding: 8px 4px;
+    text-align: center;
+    border: 1px solid #e0e3ff;
+}
+.mpm-stat-value { font-size: 18px; font-weight: 800; color: #2d3436; }
+.mpm-stat-label { font-size: 10px; color: #636e72; margin-top: 1px; }
+
+/* Lista de habilidades */
+.mpm-skills { display: flex; flex-direction: column; gap: 6px; }
+.mpm-skill-item {
+    background: #f8f9ff;
+    border-left: 3px solid var(--primary);
+    border-radius: 0 10px 10px 0;
+    padding: 8px 12px;
+    font-size: 12px;
+}
+.mpm-skill-name { font-weight: 700; }
+.mpm-skill-cost { font-size: 10px; color: #6c5ce7; margin-left: 4px; }
+.mpm-skill-desc { font-size: 11px; color: #636e72; margin-top: 2px; }
+.mpm-no-skills  { font-size: 13px; color: #636e72; text-align: center; padding: 4px 0; }
+
+/* Evolução */
+.mpm-evo-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    background: #fff9e6;
+    border: 1px solid #fdcb6e;
+    border-radius: 10px;
+    padding: 8px 12px;
+}
+.mpm-evo-arrow { font-size: 18px; color: #f39c12; }
+.mpm-evo-label { flex: 1; }
+.mpm-evo-level { font-size: 11px; color: #e17055; font-weight: 700; }
+
+/* Amizade */
+.mpm-friendship {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff0f5;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 12px;
+    border: 1px solid #fdbed3;
+}
+.mpm-friendship-icon { font-size: 20px; }
+.mpm-friendship-info { flex: 1; }
+.mpm-friendship-bar-track { height: 6px; background: #ecf0f1; border-radius: 3px; margin-top: 3px; overflow: hidden; }
+.mpm-friendship-bar-fill  { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #fd79a8, #e84393); }
+
+/* Botão de detalhe nos slots */
+.box-slot-detail-btn {
+    background: none;
+    border: none;
+    padding: 2px 6px;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 8px;
+    color: var(--primary);
+    transition: background 0.15s;
+}
+.box-slot-detail-btn:hover { background: rgba(108,92,231,0.12); }
