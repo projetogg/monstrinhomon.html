@@ -78,6 +78,32 @@ export function checkHit(d20Roll, attacker, defender, classAdvantages, spdBonus 
     }
 }
 
+/**
+ * Resolve acerto em confronto de dados (ataque vs defesa).
+ * Fórmula: (d20A + ATK + bônus + SPD) >= (d20D + DEF)
+ *
+ * @param {number} attackRoll
+ * @param {number} defenseRoll
+ * @param {object} attacker
+ * @param {object} defender
+ * @param {object} classAdvantages
+ * @param {number} spdBonus
+ * @returns {boolean}
+ */
+export function checkHitDiceClash(attackRoll, defenseRoll, attacker, defender, classAdvantages, spdBonus = 0) {
+    if (!attacker || !defender) return false;
+    const atkMod = attacker.atk || 5;
+    const defValue = defender.def || 3;
+    const classAdv = classAdvantages?.[attacker.class];
+    let atkBonus = 0;
+    if (classAdv?.strong === defender.class) atkBonus = 2;
+    else if (classAdv?.weak === defender.class) atkBonus = -2;
+
+    const offensiveTotal = attackRoll + atkMod + atkBonus + spdBonus;
+    const defensiveTotal = defenseRoll + defValue;
+    return offensiveTotal >= defensiveTotal;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // SISTEMA DE SPD — Fase 11.2
 //
