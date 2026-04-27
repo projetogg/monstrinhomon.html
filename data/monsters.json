@@ -813,7 +813,6 @@
       "baseSpd": 6,
       "baseEne": 10,
       "emoji": "🌼",
-      "image": "assets/monsters/MON_031.png",
       "evolvesTo": "MON_031B",
       "evolvesAt": 12
     },
@@ -854,7 +853,6 @@
       "baseSpd": 5,
       "baseEne": 12,
       "emoji": "💧",
-      "image": "assets/monsters/MON_032.png",
       "evolvesTo": "MON_032B",
       "evolvesAt": 14
     },

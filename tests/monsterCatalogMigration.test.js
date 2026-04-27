@@ -33,8 +33,8 @@ describe('monsters.json — carregamento', () => {
         expect(monstersMap.size).toBeGreaterThan(0);
     });
 
-    it('contém exatamente 59 templates', () => {
-        expect(monstersArray.length).toBe(59);
+    it('contém exatamente 64 templates', () => {
+        expect(monstersArray.length).toBe(64);
     });
 
     it('todos os IDs são únicos', () => {
@@ -47,7 +47,7 @@ describe('monsters.json — carregamento', () => {
 // ─── Campos obrigatórios ──────────────────────────────────────────────────────
 
 describe('monsters.json — campos obrigatórios', () => {
-    it.each(REQUIRED_FIELDS)('campo "%s" presente em todos os 59 monstros', (field) => {
+    it.each(REQUIRED_FIELDS)('campo "%s" presente em todos os 64 monstros', (field) => {
         const missing = monstersArray.filter(m => m[field] === undefined || m[field] === null || m[field] === '');
         expect(missing.map(m => m.id)).toEqual([]);
     });
@@ -92,11 +92,11 @@ describe('monsters.json — consistência de evoluções', () => {
         expect(invalid.map(m => m.id)).toEqual([]);
     });
 
-    it('35 monstros têm evolvesTo e 24 são estágios finais (incluindo 8 Lendários)', () => {
+    it('38 monstros têm evolvesTo e 26 são estágios finais (incluindo 8 Lendários)', () => {
         const withEvo   = monstersArray.filter(m => m.evolvesTo).length;
         const finalStage = monstersArray.filter(m => !m.evolvesTo).length;
-        expect(withEvo).toBe(35);
-        expect(finalStage).toBe(24);
+        expect(withEvo).toBe(38);
+        expect(finalStage).toBe(26);
     });
 });
 
