@@ -102,84 +102,108 @@
                 </span>
             </div>
 
-            <!-- Grid principal do dashboard -->
-            <div class="dashboard-grid">
+            <!-- Hub Principal: Banner de Missão + Monstrinho Ativo + Ações Rápidas -->
+            <div id="homeHubContainer">
+                <!-- Banner de missão ativa (renderizado via JS: renderHomeHub()) -->
+                <div id="homeHubBanner"></div>
 
-                <!-- Linha 1: 4 cards de resumo (1 col cada em tablet+) -->
+                <!-- Card do monstrinho ativo (renderizado via JS) -->
+                <div id="homeHubMonster"></div>
 
-                <!-- Card: Estatísticas da Sessão -->
-                <div class="card dashboard-card">
-                    <h3 class="card-title">📊 Sessão</h3>
-                    <div id="homeStats" class="home-stats-row">
-                        <div class="home-stat-item">
-                            <span class="home-stat-value" id="statPlayers">0</span>
-                            <span class="home-stat-label">Jogadores</span>
-                        </div>
-                        <div class="home-stat-item">
-                            <span class="home-stat-value" id="statMonsters">0</span>
-                            <span class="home-stat-label">Monstros</span>
-                        </div>
-                        <div class="home-stat-item">
-                            <span class="home-stat-value" id="statSession">—</span>
-                            <span class="home-stat-label">Ativa</span>
-                        </div>
-                    </div>
+                <!-- Ações Rápidas primárias -->
+                <div class="home-quick-actions">
+                    <button class="home-quick-btn" onclick="switchTab('encounter')">
+                        <span class="home-quick-btn__icon">⚔️</span>
+                        <span>Batalhar</span>
+                    </button>
+                    <button class="home-quick-btn" onclick="switchTab('box')">
+                        <span class="home-quick-btn__icon">🎒</span>
+                        <span>Equipe</span>
+                    </button>
+                    <button class="home-quick-btn" onclick="switchTab('shop')">
+                        <span class="home-quick-btn__icon">🛒</span>
+                        <span>Loja</span>
+                    </button>
                 </div>
-
-                <!-- Card: Missões Ativas (máx 2 entradas + contador) -->
-                <div class="card dashboard-card">
-                    <h3 class="card-title">📋 Missões</h3>
-                    <div id="questTrackerContent">
-                        <p class="text-muted">Nenhuma quest ativa.</p>
-                    </div>
-                </div>
-
-                <!-- Card: Monstrodex -->
-                <div class="card dashboard-card">
-                    <h3 class="card-title">📖 Monstrodex</h3>
-                    <div id="monstrodexStats"></div>
-                </div>
-
-                <!-- Card: Conquistas (mini-grid 3×2) -->
-                <div class="card dashboard-card">
-                    <h3 class="card-title">🏆 Conquistas</h3>
-                    <div id="achievementsStats"></div>
-                </div>
-
-                <!-- Linha 2: Painel Mestre (span 2) + Ações Rápidas (span 2) -->
-
-                <!-- Card: Painel Mestre — layout horizontal compacto -->
-                <div class="card dashboard-card dashboard-card--mestre">
-                    <div class="mestre-card-inner">
-                        <div class="mestre-card-info">
-                            <h3 class="card-title">🧑‍🏫 Painel Mestre</h3>
-                            <p class="mestre-card-desc">Sessão, quests e terapia</p>
-                        </div>
-                        <button class="btn btn-mestre" onclick="mmOpenMestre()">Abrir</button>
-                    </div>
-                </div>
-
-                <!-- Card: Ações Rápidas — faixa compacta de atalhos -->
-                <div class="card dashboard-card dashboard-card--actions">
-                    <h3 class="card-title">⚡ Ir para</h3>
-                    <div class="quick-actions">
-                        <button class="quick-action-btn quick-action--grupo" onclick="switchTab('players')">
-                            <span class="qa-icon">👥</span>
-                            <span class="qa-label">Grupo</span>
-                        </button>
-                        <button class="quick-action-btn quick-action--batalha" onclick="switchTab('encounter')">
-                            <span class="qa-icon">🗺️</span>
-                            <span class="qa-label">Mundo</span>
-                        </button>
-                        <button class="quick-action-btn quick-action--dex" onclick="switchTab('partyDex')">
-                            <span class="qa-icon">📘</span>
-                            <span class="qa-label">Dex</span>
-                        </button>
-                    </div>
-                </div>
-
             </div>
 
+            <!-- Dados da Sessão (acordeão colapsável) -->
+            <details class="home-stats-accordion" id="homeStatsAccordion">
+                <summary>📊 Dados da Sessão</summary>
+                <div class="home-stats-accordion__body">
+                    <!-- Grid de cards de dados -->
+                    <div class="dashboard-grid">
+                        <!-- Card: Estatísticas da Sessão -->
+                        <div class="card dashboard-card">
+                            <h3 class="card-title">📊 Sessão</h3>
+                            <div id="homeStats" class="home-stats-row">
+                                <div class="home-stat-item">
+                                    <span class="home-stat-value" id="statPlayers">0</span>
+                                    <span class="home-stat-label">Jogadores</span>
+                                </div>
+                                <div class="home-stat-item">
+                                    <span class="home-stat-value" id="statMonsters">0</span>
+                                    <span class="home-stat-label">Monstros</span>
+                                </div>
+                                <div class="home-stat-item">
+                                    <span class="home-stat-value" id="statSession">—</span>
+                                    <span class="home-stat-label">Ativa</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card: Missões Ativas (máx 2 entradas + contador) -->
+                        <div class="card dashboard-card">
+                            <h3 class="card-title">📋 Missões</h3>
+                            <div id="questTrackerContent">
+                                <p class="text-muted">Nenhuma quest ativa.</p>
+                            </div>
+                        </div>
+
+                        <!-- Card: Monstrodex -->
+                        <div class="card dashboard-card">
+                            <h3 class="card-title">📖 Monstrodex</h3>
+                            <div id="monstrodexStats"></div>
+                        </div>
+
+                        <!-- Card: Conquistas (mini-grid 3×2) -->
+                        <div class="card dashboard-card">
+                            <h3 class="card-title">🏆 Conquistas</h3>
+                            <div id="achievementsStats"></div>
+                        </div>
+
+                        <!-- Card: Painel Mestre -->
+                        <div class="card dashboard-card dashboard-card--mestre">
+                            <div class="mestre-card-inner">
+                                <div class="mestre-card-info">
+                                    <h3 class="card-title">🧑‍🏫 Painel Mestre</h3>
+                                    <p class="mestre-card-desc">Sessão, quests e terapia</p>
+                                </div>
+                                <button class="btn btn-mestre" onclick="mmOpenMestre()">Abrir</button>
+                            </div>
+                        </div>
+
+                        <!-- Card: Ações Rápidas secundárias -->
+                        <div class="card dashboard-card dashboard-card--actions">
+                            <h3 class="card-title">⚡ Ir para</h3>
+                            <div class="quick-actions">
+                                <button class="quick-action-btn quick-action--grupo" onclick="switchTab('players')">
+                                    <span class="qa-icon">👥</span>
+                                    <span class="qa-label">Grupo</span>
+                                </button>
+                                <button class="quick-action-btn quick-action--batalha" onclick="switchTab('encounter')">
+                                    <span class="qa-icon">🗺️</span>
+                                    <span class="qa-label">Mundo</span>
+                                </button>
+                                <button class="quick-action-btn quick-action--dex" onclick="switchTab('partyDex')">
+                                    <span class="qa-icon">📘</span>
+                                    <span class="qa-label">Dex</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </details>
 
         </div>
 
@@ -323,6 +347,12 @@
                     <button class="btn btn-sm" onclick="backToWorldMap()" aria-label="Voltar ao mapa">← Mapa</button>
                     <h3 id="bossNodeTitle" style="margin:0;flex:1;text-align:center">👑 Chefe</h3>
                 </div>
+                <!-- Breadcrumb de navegação -->
+                <nav class="mm-breadcrumb" aria-label="Localização">
+                    <button class="mm-breadcrumb-item" onclick="backToWorldMap()">🗺️ Mapa</button>
+                    <span class="mm-breadcrumb-sep">›</span>
+                    <span class="mm-breadcrumb-item mm-breadcrumb-item--current" id="bossNodeBreadcrumb">👑 Guardião</span>
+                </nav>
                 <div class="wm-boss-panel">
                     <div class="wm-boss-panel__icon" id="bossNodeIcon">👑</div>
                     <!-- Contexto de região/arco (PR-10) -->
@@ -357,6 +387,12 @@
                     <button class="btn btn-sm" onclick="backToWorldMap()" aria-label="Voltar ao mapa">← Mapa</button>
                     <h3 id="locationSpotsTitle" style="margin:0;flex:1;text-align:center">Local</h3>
                 </div>
+                <!-- Breadcrumb de navegação -->
+                <nav class="mm-breadcrumb" aria-label="Localização">
+                    <button class="mm-breadcrumb-item" onclick="backToWorldMap()">🗺️ Mapa</button>
+                    <span class="mm-breadcrumb-sep">›</span>
+                    <span class="mm-breadcrumb-item mm-breadcrumb-item--current" id="locationSpotsBreadcrumb">Local</span>
+                </nav>
                 <p id="locationSpotsDesc" class="text-small text-muted" style="margin:4px 0 12px"></p>
                 <!-- PR-07: Quest hint inline para quests ativas neste local -->
                 <div id="locationQuestHint" class="location-quest-hint is-hidden" aria-live="polite"></div>
@@ -370,9 +406,17 @@
                  ═══════════════════════════════════════════════════════════ -->
             <div class="card encounter-setup is-hidden" id="wildSetupPanel">
                 <div class="wm-header">
-                    <button class="btn btn-sm" onclick="backToWorldMap()" aria-label="Voltar ao mapa">← Mapa</button>
+                    <button class="btn btn-sm" onclick="backToSpots()" aria-label="Voltar aos spots">← Voltar</button>
                     <h3 id="wildSetupTitle" style="margin:0;flex:1;text-align:center">Spot</h3>
                 </div>
+                <!-- Breadcrumb de navegação -->
+                <nav class="mm-breadcrumb" aria-label="Localização">
+                    <button class="mm-breadcrumb-item" onclick="backToWorldMap()">🗺️ Mapa</button>
+                    <span class="mm-breadcrumb-sep">›</span>
+                    <button class="mm-breadcrumb-item" onclick="backToSpots()" id="wildSetupBreadcrumbLocation">Local</button>
+                    <span class="mm-breadcrumb-sep">›</span>
+                    <span class="mm-breadcrumb-item mm-breadcrumb-item--current" id="wildSetupBreadcrumbSpot">Spot</span>
+                </nav>
                 <p id="wildSetupDesc" class="text-small text-muted" style="margin:4px 0 12px"></p>
                 <div class="encounter-setup-inline">
                     <label>👤 Jogador:</label>
@@ -456,42 +500,45 @@
         </div>
 
         <div id="tabShop" class="tab-content">
-            <h2>Loja de Itens 🛒</h2>
-            
-            <div class="card">
-                <h3>👤 Selecionar Jogador</h3>
-                <div class="mb-10">
-                    <label><strong>Comprar para:</strong></label>
-                    <select id="shopPlayerSelect" onchange="onShopPlayerChange()">
-                        <option value="">-- Selecione um Jogador --</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="card">
-                <h3>💰 Informações do Jogador</h3>
-                <div id="shopPlayerInfo">
-                    <p>Selecione um jogador para comprar itens.</p>
+            <h2>🛒 Loja de Itens</h2>
+
+            <!-- Seletor de jogador compacto -->
+            <div class="card shop-player-header">
+                <div class="shop-player-row">
+                    <div class="shop-player-select-group">
+                        <label><strong>🎒 Comprar para:</strong></label>
+                        <select id="shopPlayerSelect" onchange="onShopPlayerChange()">
+                            <option value="">-- Selecione um Jogador --</option>
+                        </select>
+                    </div>
+                    <div id="shopPlayerInfo" class="shop-player-money">
+                        <p class="text-muted">Selecione um jogador.</p>
+                    </div>
                 </div>
             </div>
 
-            <div class="card">
-                <h3>💼 Seu Inventário</h3>
-                <div id="shopPlayerInventory">
-                    <p>Seu inventário está vazio.</p>
+            <!-- Layout 2 colunas: Inventário | Loja -->
+            <div class="shop-layout">
+                <!-- Coluna 1: Inventário do jogador -->
+                <div class="card shop-inventory-col">
+                    <h3 class="shop-col-title">💼 Inventário</h3>
+                    <div id="shopPlayerInventory">
+                        <p class="text-muted">Selecione um jogador.</p>
+                    </div>
                 </div>
-            </div>
 
-            <div class="card">
-                <h3>🛒 Itens Disponíveis para Compra</h3>
-                <div id="shopItemsList">
-                    <p>Carregando itens...</p>
+                <!-- Coluna 2: Itens disponíveis -->
+                <div class="card shop-items-col">
+                    <h3 class="shop-col-title">🛒 Disponível</h3>
+                    <div id="shopItemsList">
+                        <p class="text-muted">Carregando itens...</p>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div id="tabBox" class="tab-content">
-            <h2>Box (PC) 📦</h2>
+            <h2>📦 Box</h2>
 
             <div class="card">
                 <h3>📍 Status</h3>
@@ -510,7 +557,20 @@
             </div>
 
             <div class="card">
-                <h3>📦 Monstrinhos na Box</h3>
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+                    <h3 style="margin:0">📦 Monstrinhos na Box</h3>
+                    <div class="box-filter-bar" id="boxFilterBar">
+                        <span class="box-filter-label">Filtrar:</span>
+                        <button class="box-filter-chip box-filter-chip--active" data-filter="all" onclick="boxSetFilter('all')">Todos</button>
+                        <button class="box-filter-chip" data-filter="Guerreiro" onclick="boxSetFilter('Guerreiro')">⚔️ Guerreiro</button>
+                        <button class="box-filter-chip" data-filter="Mago" onclick="boxSetFilter('Mago')">🔮 Mago</button>
+                        <button class="box-filter-chip" data-filter="Curandeiro" onclick="boxSetFilter('Curandeiro')">💚 Curandeiro</button>
+                        <button class="box-filter-chip" data-filter="Bárbaro" onclick="boxSetFilter('Bárbaro')">🪓 Bárbaro</button>
+                        <button class="box-filter-chip" data-filter="Ladino" onclick="boxSetFilter('Ladino')">🗡️ Ladino</button>
+                        <button class="box-filter-chip" data-filter="Bardo" onclick="boxSetFilter('Bardo')">🎵 Bardo</button>
+                        <button class="box-filter-chip" data-filter="Caçador" onclick="boxSetFilter('Caçador')">🏹 Caçador</button>
+                    </div>
+                </div>
                 <div id="boxMonstersList" class="box-grid">
                     <div class="tab-loading"><span class="tab-loading-icon" aria-hidden="true">⏳</span> Carregando Box...</div>
                 </div>
@@ -616,12 +676,12 @@
 
     <div id="mmMenu" class="mm-overlay">
         <div class="mm-card">
-            <div class="mm-title">Menu Principal</div>
+            <div class="mm-title">🎮 Monstrinhomon</div>
             <!-- Grupo principal: jogar -->
             <button id="mmBtnContinue" class="mm-btn mm-btn--primary" onclick="mmContinue()">📖 Continuar</button>
             <button class="mm-btn mm-btn--secondary" onclick="mmOpenSlotPickerForNewGame()">🎮 Novo Jogo</button>
-            <!-- Separador -->
-            <div class="mm-divider"></div>
+            <!-- Separador com label -->
+            <div class="mm-divider-labeled">gerenciar</div>
             <!-- Grupo secundário: gerenciar -->
             <button class="mm-btn mm-btn--ghost" onclick="mmOpenSaves()">📂 Gerenciar Saves</button>
             <button class="mm-btn mm-btn--ghost" onclick="mmStartTutorial()">🎓 Tutorial</button>
@@ -631,10 +691,10 @@
                 <div class="mm-divider"></div>
                 <button class="mm-btn mm-btn--mestre" onclick="mmOpenTherapistPanel()">🧑‍🏫 Painel do Mestre</button>
             </div>
-            <!-- Ação destrutiva discreta -->
-            <div class="mm-row mt-6">
+            <!-- Ações: fechar e apagar save separados com borda e espaço extra -->
+            <div class="mm-danger-row">
                 <button class="mm-btn mm-btn--ghost" onclick="mmCloseAllOverlays()">✕ Fechar</button>
-                <button class="mm-btn mm-btn--ghost mm-btn--danger-ghost" onclick="mmResetSaveConfirm()">🗑️ Apagar Save</button>
+                <button class="mm-btn mm-btn--ghost mm-btn--danger-ghost" onclick="mmResetSaveConfirm()" aria-label="Apagar save — ação irreversível que apaga todos os dados do navegador" title="Ação irreversível: apaga o save do navegador">⚠️ Apagar Save</button>
             </div>
         </div>
     </div>
@@ -1479,9 +1539,9 @@
                     { tier: 3, name: 'Escudo III', type: 'BUFF', cost: 8, power: 4, buffType: 'DEF', target: 'self', duration: 3, desc: 'Escudo poderoso.' }
                 ],
                 'Provocar': [
-                    null, // S0 não tem
-                    { tier: 2, name: 'Provocar I', type: 'TAUNT', cost: 4, power: 0, desc: 'Provoca o inimigo.' },
-                    { tier: 3, name: 'Provocar II', type: 'TAUNT', cost: 6, power: 0, desc: 'Provoca intensamente.' }
+                    { tier: 1, name: 'Provocar I', type: 'TAUNT', cost: 4, power: 0, target: 'enemy', desc: 'Provoca o inimigo, forçando-o a atacar.' },
+                    { tier: 2, name: 'Provocar II', type: 'TAUNT', cost: 5, power: 0, target: 'enemy', desc: 'Provoca intensamente.' },
+                    { tier: 3, name: 'Provocar III', type: 'TAUNT', cost: 6, power: 0, target: 'enemy', desc: 'Provocação ensurdecedora.' }
                 ]
             },
             // CURANDEIRO
@@ -1495,6 +1555,11 @@
                     { tier: 1, name: 'Bênção I', type: 'BUFF', cost: 4, power: 2, buffType: 'ATK', target: 'ally', duration: 2, desc: 'Aumenta ATK do aliado.' },
                     { tier: 2, name: 'Bênção II', type: 'BUFF', cost: 6, power: 3, buffType: 'ATK', target: 'ally', duration: 2, desc: 'Aumenta muito o ATK.' },
                     { tier: 3, name: 'Bênção III', type: 'BUFF', cost: 8, power: 4, buffType: 'DEF', target: 'ally', duration: 3, desc: 'Bênção poderosa (DEF).' }
+                ],
+                'Purificação': [
+                    null, // S0: sem Purificação no stage 0
+                    { tier: 2, name: 'Purificação I', type: 'HEAL', cost: 6, power: 15, target: 'ally', cleanse: 1, desc: 'Cura moderada e remove 1 status negativo.' },
+                    { tier: 3, name: 'Purificação II', type: 'HEAL', cost: 9, power: 25, target: 'ally', cleanse: 99, desc: 'Cura poderosa e remove todos os status negativos.' }
                 ]
             },
             // MAGO
@@ -1526,6 +1591,11 @@
                     { tier: 1, name: 'Golpe Brutal I', type: 'DAMAGE', cost: 6, power: 18, desc: 'Golpe brutal.' },
                     { tier: 2, name: 'Golpe Brutal II', type: 'DAMAGE', cost: 8, power: 26, desc: 'Golpe muito brutal.' },
                     { tier: 3, name: 'Golpe Brutal III', type: 'DAMAGE', cost: 12, power: 34, desc: 'Golpe devastador.' }
+                ],
+                'Grito de Guerra': [
+                    null, // S0: Grito de Guerra não disponível no stage 0
+                    { tier: 2, name: 'Grito de Guerra I', type: 'BUFF', cost: 6, power: 2, buffType: 'ATK', target: 'ally', duration: 1, desc: 'Aumenta ATK de todos os aliados por 1 turno.' },
+                    { tier: 3, name: 'Grito de Guerra II', type: 'BUFF', cost: 9, power: 3, buffType: 'ATK', target: 'ally', duration: 2, desc: 'Grito que aumenta ATK de todos os aliados por 2 turnos.' }
                 ]
             },
             // LADINO
@@ -1536,9 +1606,14 @@
                     { tier: 3, name: 'Ataque Preciso III', type: 'DAMAGE', cost: 8, power: 26, desc: 'Ataque extremamente preciso.' }
                 ],
                 'Enfraquecer': [
-                    null, // S0 não tem
+                    null, // S0: Enfraquecer não disponível no stage 0 (substituído por Sombra Evasiva)
                     { tier: 2, name: 'Enfraquecer I', type: 'BUFF', cost: 4, power: -2, buffType: 'ATK', target: 'enemy', duration: 1, desc: 'Reduz ATK do inimigo.' },
                     { tier: 3, name: 'Enfraquecer II', type: 'BUFF', cost: 6, power: -3, buffType: 'ATK', target: 'enemy', duration: 2, desc: 'Enfraquece muito o inimigo.' }
+                ],
+                'Sombra Evasiva': [
+                    { tier: 1, name: 'Sombra Evasiva I', type: 'BUFF', cost: 3, power: 2, buffType: 'SPD', target: 'self', duration: 2, desc: 'Aumenta a velocidade.' },
+                    { tier: 2, name: 'Sombra Evasiva II', type: 'BUFF', cost: 5, power: 3, buffType: 'SPD', target: 'self', duration: 2, desc: 'Velocidade aumentada.' },
+                    { tier: 3, name: 'Sombra Evasiva III', type: 'BUFF', cost: 7, power: 4, buffType: 'SPD', target: 'self', duration: 3, desc: 'Velocidade máxima.' }
                 ]
             },
             // BARDO
@@ -1567,9 +1642,9 @@
                     { tier: 3, name: 'Flecha Poderosa III', type: 'DAMAGE', cost: 8, power: 26, desc: 'Flecha devastadora.' }
                 ],
                 'Armadilha': [
-                    null, // S0 não tem
-                    { tier: 2, name: 'Armadilha I', type: 'BUFF', cost: 4, power: -2, buffType: 'SPD', target: 'enemy', duration: 1, desc: 'Reduz SPD do inimigo.' },
-                    { tier: 3, name: 'Armadilha II', type: 'BUFF', cost: 6, power: -3, buffType: 'SPD', target: 'enemy', duration: 2, desc: 'Armadilha poderosa.' }
+                    { tier: 1, name: 'Armadilha I', type: 'BUFF', cost: 3, power: -2, buffType: 'SPD', target: 'enemy', duration: 1, desc: 'Arma uma armadilha que reduz SPD.' },
+                    { tier: 2, name: 'Armadilha II', type: 'BUFF', cost: 4, power: -2, buffType: 'SPD', target: 'enemy', duration: 1, desc: 'Armadilha mais eficaz.' },
+                    { tier: 3, name: 'Armadilha III', type: 'BUFF', cost: 7, power: -3, buffType: 'SPD', target: 'enemy', duration: 2, desc: 'Armadilha poderosa.' }
                 ]
             },
             // ANIMALISTA
@@ -1583,6 +1658,11 @@
                     { tier: 1, name: 'Instinto Selvagem I', type: 'BUFF', cost: 4, power: 2, buffType: 'DEF', target: 'self', duration: 2, desc: 'Aumenta DEF.' },
                     { tier: 2, name: 'Instinto Selvagem II', type: 'BUFF', cost: 6, power: 2, buffType: 'SPD', target: 'self', duration: 2, desc: 'Aumenta SPD.' },
                     { tier: 3, name: 'Instinto Selvagem III', type: 'BUFF', cost: 8, power: 3, buffType: 'DEF', target: 'self', duration: 3, desc: 'Instinto aguçado.' }
+                ],
+                'Simbiose Natural': [
+                    null, // S0: Simbiose Natural não disponível no stage 0
+                    { tier: 2, name: 'Simbiose Natural I', type: 'DAMAGE', cost: 6, power: 15, selfHeal: 8, desc: 'Ataque que drena energia e cura o próprio Monstrinho.' },
+                    { tier: 3, name: 'Simbiose Natural II', type: 'DAMAGE', cost: 8, power: 20, selfHeal: 12, desc: 'Ataque poderoso que regenera bastante HP.' }
                 ]
             }
         };
@@ -4179,6 +4259,13 @@
                         
                         defender.hp = Math.max(0, defender.hp - skillDamage);
                         encounter.log.push(`💥 ${defender.name} recebe ${skillDamage} de dano!`);
+
+                        // Simbiose Natural: cura o atacante ao causar dano
+                        if (skill.selfHeal && skill.selfHeal > 0) {
+                            const heal = Math.min(skill.selfHeal, attacker.hpMax - attacker.hp);
+                            attacker.hp = Math.min(attacker.hpMax, attacker.hp + heal);
+                            if (heal > 0) encounter.log.push(`💚 ${attacker.name} recupera ${heal} HP pela Simbiose!`);
+                        }
                         break;
                         
                     case 'HEAL':
@@ -4187,6 +4274,23 @@
                         const target = (skill.target === 'ally' || skill.target === 'self') ? attacker : defender;
                         target.hp = Math.min(target.hpMax, target.hp + healAmount);
                         encounter.log.push(`💚 ${target.name} recupera ${healAmount} HP!`);
+
+                        // Purificação: remover buffs negativos (status negativos) do alvo
+                        if (skill.cleanse && skill.cleanse > 0 && target.buffs) {
+                            const negBefore = target.buffs.filter(b => b.power < 0).length;
+                            if (skill.cleanse >= 99) {
+                                target.buffs = target.buffs.filter(b => b.power >= 0);
+                            } else {
+                                let removed = 0;
+                                target.buffs = target.buffs.filter(b => {
+                                    if (b.power < 0 && removed < skill.cleanse) { removed++; return false; }
+                                    return true;
+                                });
+                            }
+                            const negAfter = target.buffs.filter(b => b.power < 0).length;
+                            const cleansed = negBefore - negAfter;
+                            if (cleansed > 0) encounter.log.push(`✨ ${cleansed} status negativo(s) removido(s) de ${target.name}!`);
+                        }
                         break;
                         
                     case 'BUFF':
@@ -6780,6 +6884,54 @@
                 setTimeout(() => fill.classList.remove('hp-bar-fill--damage'), 400);
             }
         }
+
+        /**
+         * Aplica animação de shake ao receber dano em um elemento de combate.
+         * @param {string|HTMLElement} target - ID ou elemento
+         */
+        function _shakeElement(target) {
+            try {
+                const el = typeof target === 'string' ? document.getElementById(target) : target;
+                if (!el) return;
+                el.classList.remove('shake-damage');
+                void el.offsetWidth; // Força reflow do browser para reiniciar a animação CSS do zero
+                el.classList.add('shake-damage');
+                setTimeout(() => el.classList.remove('shake-damage'), 450);
+            } catch (e) {
+                // silencioso — animação opcional
+            }
+        }
+
+        /**
+         * Exibe confetes animados de vitória (leve, ~18 partículas, 2.5 s).
+         * Não exibido se prefers-reduced-motion estiver ativo.
+         * Usa as cores do design system (--primary, --secondary, --success, --warning, --danger).
+         */
+        function _showConfetti() {
+            try {
+                if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+                // Cores espelhadas das variáveis CSS do design system (--primary, --secondary, --success, --warning, --danger, etc.)
+                const CONFETTI_COLORS = ['#6c5ce7','#fd79a8','#00b894','#fdcb6e','#d63031','#74b9ff','#a29bfe'];
+                for (let i = 0; i < 18; i++) {
+                    setTimeout(() => {
+                        const p = document.createElement('div');
+                        p.className = 'confetti-particle';
+                        p.style.cssText = [
+                            `left:${10 + Math.random() * 80}%`,
+                            `background:${CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)]}`,
+                            `width:${6 + Math.random() * 8}px`,
+                            `height:${6 + Math.random() * 8}px`,
+                            `animation-duration:${1.5 + Math.random() * 1.5}s`,
+                            `animation-delay:${Math.random() * 0.5}s`,
+                        ].join(';');
+                        document.body.appendChild(p);
+                        setTimeout(() => p.remove(), 3500);
+                    }, i * 60);
+                }
+            } catch (e) {
+                // silencioso — animação opcional
+            }
+        }
         
         /**
          * Armazena o último roll de d20 no encounter
@@ -7399,15 +7551,25 @@
                                 </div>
                             </div>`;
                     }
+                    // Cor de fundo do painel conforme resultado
+                    const resultBg = result === 'victory'
+                        ? 'background:linear-gradient(135deg,rgba(0,184,148,0.18),rgba(0,206,201,0.12));border:1px solid rgba(0,184,148,0.3)'
+                        : result === 'defeat'
+                        ? 'background:linear-gradient(135deg,rgba(214,48,49,0.15),rgba(253,121,168,0.08));border:1px solid rgba(214,48,49,0.25)'
+                        : 'background:rgba(255,255,255,0.05)';
                     panel.innerHTML = `
-                        <div class="battle-arena battle-arena--centered">
-                            <h3 class="battle-result-title">${resultEmoji} ${resultTitle}</h3>
+                        <div class="battle-arena battle-arena--centered" style="${resultBg};border-radius:16px;padding:20px">
+                            <h3 class="battle-result-title" style="font-size:28px">${resultEmoji} ${resultTitle}</h3>
                             ${xpBar}
                             <div class="battle-log-compact battle-log-result">${logHtml}</div>
                             <div class="flex-center mt-12">
                                 <button class="btn btn-primary btn-large" onclick="closeBattleResult()">✅ Continuar</button>
                             </div>
                         </div>`;
+                    // Confetes de vitória
+                    if (result === 'victory') {
+                        _showConfetti();
+                    }
                     // Exibir toasts/modal de evolução e level-up mesmo no painel de resultado
                     maybeToastFromLog(encounter);
                     maybeSfxFromLog(encounter);
@@ -7597,6 +7759,7 @@
                                             ? '<span style="color:#27ae60">🌿 Calmo/Rendido!</span>'
                                             : `${rd.emoji} <strong>${rd.text}</strong> — ${scoreNow}/${neededNow} pts`
                                         }
+                                        ${scoreNow >= neededNow ? '<div class="capture-ready-badge">✅ Capturável!</div>' : ''}
                                     </div>
                                 </div>
                             </div>
@@ -7695,7 +7858,7 @@
                                     : `<button class="btn btn-danger" onclick="attackWild()" style="box-shadow:0 4px 14px rgba(214,48,49,0.45)">⚔️ Atacar</button>`
                                 }
                                 ${hasAnyOrb
-                                    ? `<button class="btn btn-success" onclick="attemptCapture()" style="box-shadow:0 4px 14px rgba(0,184,148,0.45)" ${tutorialAllows("capture") ? "" : "disabled title='Tutorial: ainda não liberado'"}>🎯 Capturar</button>`
+                                    ? `<button class="btn btn-success${scoreNow >= neededNow ? ' btn-capture--ready' : ''}" onclick="attemptCapture()" style="box-shadow:0 4px 14px rgba(0,184,148,0.45)" ${tutorialAllows("capture") ? "" : "disabled title='Tutorial: ainda não liberado'"}>🎯 Capturar</button>`
                                     : `<button class="btn btn-success opacity-50" disabled title="Sem ClasterOrbs">🎯 Capturar</button>`
                                 }
                                 <button class="btn btn-warning" onclick="fleeEncounter()" style="box-shadow:0 4px 14px rgba(253,203,110,0.40)" ${tutorialAllows("flee") ? "" : "disabled title='Tutorial: ainda não liberado'"}>🏃 Fugir</button>
@@ -8250,9 +8413,15 @@
                 // 7. Atualizar UI (1 vez só ao final)
                 saveToLocalStorage();
                 renderEncounter();
-                // Animar HP bar se o inimigo tomou dano
+                // Animar HP bar se o inimigo tomou dano + shake no box inimigo
                 if (result.damageDealt > 0) {
                     _flashBattleHpBar('wildEnemyHpRow', 'wildEnemyHpFill');
+                    _shakeElement('wildEnemyBox');
+                }
+                // Animar HP bar do jogador se tomou contra-ataque + shake no box do jogador
+                if (result.playerDamageDealt > 0 || result.enemyDamage > 0) {
+                    _flashBattleHpBar('wildPlayerHpRow', 'wildPlayerHpFill');
+                    _shakeElement('wildPlayerBox');
                 }
                 
             } catch (error) {
@@ -8858,6 +9027,11 @@
 
                 const playerSlots = (GameState.sharedBox || []).filter(s => s.ownerPlayerId === viewedPlayerId);
 
+                // Aplicar filtro de classe se selecionado
+                const filteredSlots = _boxFilter === 'all'
+                    ? playerSlots
+                    : playerSlots.filter(s => s.monster?.class === _boxFilter);
+
                 // D1: Estado vazio com CTA
                 if (playerSlots.length === 0) {
                     boxList.innerHTML = `
@@ -8870,12 +9044,17 @@
                     return;
                 }
 
-                // D4: Paginação
-                const totalPages = Math.ceil(playerSlots.length / BOX_PAGE_SIZE);
+                if (filteredSlots.length === 0) {
+                    boxList.innerHTML = `<p class="text-center text-muted">Nenhum monstrinho ${_boxFilter !== 'all' ? 'da classe <strong>' + escapeHtml(_boxFilter) + '</strong>' : ''} na Box.</p>`;
+                    return;
+                }
+
+                // D4: Paginação (sobre slots filtrados)
+                const totalPages = Math.ceil(filteredSlots.length / BOX_PAGE_SIZE);
                 let page = Math.max(0, Math.min(GameState.ui.boxPageIndex || 0, totalPages - 1));
                 GameState.ui.boxPageIndex = page;
                 const pageStart = page * BOX_PAGE_SIZE;
-                const pageSlots = playerSlots.slice(pageStart, pageStart + BOX_PAGE_SIZE);
+                const pageSlots = filteredSlots.slice(pageStart, pageStart + BOX_PAGE_SIZE);
 
                 // D4: Box cheia — aviso
                 const boxFullWarning = viewedPlayerBoxCount >= BOX_MAX_TOTAL
@@ -8883,12 +9062,13 @@
                     : '';
 
                 // D4: Controles de paginação
+                const filterNote = _boxFilter !== 'all' ? ` (filtrado: ${escapeHtml(_boxFilter)})` : '';
                 const paginationHtml = totalPages > 1 ? `
                     <div class="box-pagination">
                         <button class="btn btn-sm" onclick="boxPageNav(-1)" ${page === 0 ? 'disabled' : ''}>◀ Anterior</button>
-                        <span class="box-pagination-label">Página ${page + 1} / ${totalPages} (${playerSlots.length} monstrinhos)</span>
+                        <span class="box-pagination-label">Página ${page + 1} / ${totalPages} (${filteredSlots.length} monstrinhos${filterNote})</span>
                         <button class="btn btn-sm" onclick="boxPageNav(1)" ${page >= totalPages - 1 ? 'disabled' : ''}>Próximo ▶</button>
-                    </div>` : `<p class="box-pagination-label text-center">${playerSlots.length} monstrinho${playerSlots.length !== 1 ? 's' : ''} na Box</p>`;
+                    </div>` : `<p class="box-pagination-label text-center">${filteredSlots.length} monstrinho${filteredSlots.length !== 1 ? 's' : ''} na Box${filterNote}</p>`;
 
                 boxList.innerHTML = boxFullWarning + paginationHtml;
 
@@ -8947,12 +9127,34 @@
         /** D4: Navega entre páginas da Box */
         function boxPageNav(delta) {
             const playerSlots = (GameState.sharedBox || []).filter(s => s.ownerPlayerId === GameState.ui.boxViewedPlayerId);
-            const totalPages = Math.max(1, Math.ceil(playerSlots.length / BOX_PAGE_SIZE));
+            const filteredForNav = _boxFilter === 'all'
+                ? playerSlots
+                : playerSlots.filter(s => s.monster?.class === _boxFilter);
+            const totalPages = Math.max(1, Math.ceil(filteredForNav.length / BOX_PAGE_SIZE));
             GameState.ui.boxPageIndex = Math.max(0, Math.min((GameState.ui.boxPageIndex || 0) + delta, totalPages - 1));
             saveToLocalStorage();
             renderBoxTab();
         }
         window.boxPageNav = boxPageNav;
+
+        // Estado de filtro da Box
+        let _boxFilter = 'all';
+
+        /**
+         * Define o filtro ativo da Box por classe e re-renderiza.
+         * @param {string} filter - 'all' ou nome de classe
+         */
+        function boxSetFilter(filter) {
+            _boxFilter = filter || 'all';
+            // Atualizar chips de filtro
+            document.querySelectorAll('#boxFilterBar .box-filter-chip').forEach(chip => {
+                chip.classList.toggle('box-filter-chip--active', chip.dataset.filter === _boxFilter);
+            });
+            // Resetar página ao mudar filtro
+            if (GameState.ui) GameState.ui.boxPageIndex = 0;
+            renderBoxTab();
+        }
+        window.boxSetFilter = boxSetFilter;
 
         /**
          * Send monster from team to box
@@ -9479,12 +9681,10 @@
                     return;
                 }
                 
-                // Display player info
+                // Display player info (versão compacta)
                 const money = player.money || 0;
-                playerInfo.innerHTML = `
-                    <p><strong>Jogador:</strong> ${player.name} (${player.class || 'Sem classe'})</p>
-                    <p><strong>💰 Dinheiro:</strong> ${money}</p>
-                `;
+                const afterlife = player.afterlifeCurrency || 0;
+                playerInfo.innerHTML = `<strong>${escapeHtml(player.name)}</strong> (${escapeHtml(player.class || '?')}) &nbsp;💰 ${money}&nbsp;&nbsp;⭐ ${afterlife}`;
                 
                 // PR13B: Render player inventory for selling
                 if (inventoryContainer) {
@@ -10854,8 +11054,11 @@
             const loc = (_wm.locationsData ?? []).find(l => l.id === locationId);
             const title = document.getElementById('locationSpotsTitle');
             const desc  = document.getElementById('locationSpotsDesc');
-            if (title) title.textContent = `${window.WorldMap.BIOME_EMOJI[loc?.biome ?? ''] ?? '🗺️'} ${loc?.name ?? locationId}`;
+            const breadcrumb = document.getElementById('locationSpotsBreadcrumb');
+            const locDisplayName = `${window.WorldMap?.BIOME_EMOJI[loc?.biome ?? ''] ?? '🗺️'} ${loc?.name ?? locationId}`;
+            if (title) title.textContent = locDisplayName;
             if (desc)  desc.textContent  = loc?.description ?? '';
+            if (breadcrumb) breadcrumb.textContent = locDisplayName;
 
             // PR-07: Quest hint no painel de spots se houver quest ativa neste local
             _renderLocationQuestHint(locationId);
@@ -11449,8 +11652,19 @@
             const spot  = window.WorldMap.findSpot(spotId, _wm.locationsData ?? []);
             const title = document.getElementById('wildSetupTitle');
             const desc  = document.getElementById('wildSetupDesc');
-            if (title) title.textContent = `${spot?.icon ?? ''} ${spot?.name ?? spotId}`;
+            const spotDisplayName = `${spot?.icon ?? ''} ${spot?.name ?? spotId}`;
+            if (title) title.textContent = spotDisplayName;
             if (desc)  desc.textContent  = spot?.description ?? '';
+
+            // Atualizar breadcrumbs
+            const bcLocation = document.getElementById('wildSetupBreadcrumbLocation');
+            const bcSpot     = document.getElementById('wildSetupBreadcrumbSpot');
+            if (bcLocation) {
+                // Pegar nome do local pai a partir do selectedLocationId
+                const loc = (_wm.locationsData ?? []).find(l => l.id === _wm.selectedLocationId);
+                bcLocation.textContent = loc ? `${window.WorldMap?.BIOME_EMOJI[loc.biome ?? ''] ?? '🗺️'} ${loc.name}` : 'Local';
+            }
+            if (bcSpot) bcSpot.textContent = spotDisplayName;
 
             // Atualizar dropdown de jogadores
             _wmUpdatePlayerDropdown();
@@ -11884,14 +12098,131 @@
 
                 // FASE UX: Renderizar painel de quests ativas
                 renderQuestTrackerPanel();
+
+                // UX Sprint: Renderizar Hub Principal (banner + monstrinho ativo)
+                renderHomeHub();
             } catch (error) {
                 console.error('Failed to update home stats:', error);
             }
         }
 
         /**
-         * FASE 1 POKEMON: Renderiza seção de Monstródex
+         * UX Sprint — Renderiza o Hub Principal da Home.
+         * Banner de missão ativa + card do monstrinho ativo do jogador em perspectiva.
          */
+        function renderHomeHub() {
+            try {
+                const bannerEl  = document.getElementById('homeHubBanner');
+                const monsterEl = document.getElementById('homeHubMonster');
+                if (!bannerEl && !monsterEl) return;
+
+                const players = GameState.players || [];
+                const hasPlayers = players.length > 0;
+
+                // ── Banner de Missão / Estado ────────────────────────────────
+                if (bannerEl) {
+                    if (!hasPlayers) {
+                        bannerEl.innerHTML = `
+                            <div class="home-hub-empty-banner">
+                                <span style="font-size:32px">🧑‍🏫</span>
+                                <p>Nenhum jogador ainda — abra o <strong>Painel Mestre</strong> para começar!</p>
+                                <button class="home-hub-banner__btn" style="margin-top:10px" onclick="mmOpenMestre()">Abrir Painel Mestre</button>
+                            </div>`;
+                    } else {
+                        // Pegar missão ativa do jogador em perspectiva (ou do primeiro)
+                        const perspId = GameState.ui?.perspectivePlayerId;
+                        const player = (perspId && players.find(p => p.id === perspId)) || players[0];
+                        let bannerHtml = '';
+
+                        if (window.GameFlow && player) {
+                            const summary = window.GameFlow.getActiveQuestsSummary(player);
+                            if (summary && summary.length > 0) {
+                                const { quest, progress, needed } = summary[0];
+                                const pct = needed > 0 ? Math.min(100, Math.round((progress / needed) * 100)) : 100;
+                                const questName = quest?.name || quest?.title || 'Missão ativa';
+                                bannerHtml = `
+                                    <div class="home-hub-banner">
+                                        <span class="home-hub-banner__icon">📋</span>
+                                        <div class="home-hub-banner__info">
+                                            <div class="home-hub-banner__title">${escapeHtml(questName)}</div>
+                                            <div class="home-hub-banner__progress">${progress}/${needed} — ${pct}% completo</div>
+                                            <div class="home-hub-banner__bar-track">
+                                                <div class="home-hub-banner__bar-fill" style="width:${pct}%"></div>
+                                            </div>
+                                        </div>
+                                        <button class="home-hub-banner__btn" onclick="switchTab('encounter')">▶ Jogar!</button>
+                                    </div>`;
+                            } else {
+                                bannerHtml = `
+                                    <div class="home-hub-banner">
+                                        <span class="home-hub-banner__icon">🗺️</span>
+                                        <div class="home-hub-banner__info">
+                                            <div class="home-hub-banner__title">Pronto para explorar?</div>
+                                            <div class="home-hub-banner__progress">Escolha um local e inicie uma batalha!</div>
+                                        </div>
+                                        <button class="home-hub-banner__btn" onclick="switchTab('encounter')">▶ Explorar!</button>
+                                    </div>`;
+                            }
+                        } else {
+                            bannerHtml = `
+                                <div class="home-hub-banner">
+                                    <span class="home-hub-banner__icon">⚔️</span>
+                                    <div class="home-hub-banner__info">
+                                        <div class="home-hub-banner__title">Bora batalhar!</div>
+                                    </div>
+                                    <button class="home-hub-banner__btn" onclick="switchTab('encounter')">▶ Ir!</button>
+                                </div>`;
+                        }
+                        bannerEl.innerHTML = bannerHtml;
+                    }
+                }
+
+                // ── Card do Monstrinho Ativo ──────────────────────────────────
+                if (monsterEl) {
+                    if (!hasPlayers) {
+                        monsterEl.innerHTML = '';
+                        return;
+                    }
+                    const perspId = GameState.ui?.perspectivePlayerId;
+                    const player = (perspId && players.find(p => p.id === perspId)) || players[0];
+                    if (!player) { monsterEl.innerHTML = ''; return; }
+
+                    const activeMon = typeof _getActiveMonsterOfPlayer === 'function'
+                        ? _getActiveMonsterOfPlayer(player) : null;
+
+                    if (!activeMon) {
+                        monsterEl.innerHTML = `
+                            <div class="home-hub-empty-banner">
+                                <span style="font-size:28px">🥚</span>
+                                <p>${escapeHtml(player.name)} não tem monstrinho ativo ainda.</p>
+                            </div>`;
+                        return;
+                    }
+
+                    const hpPct = activeMon.hpMax > 0
+                        ? Math.max(0, Math.round((activeMon.hp / activeMon.hpMax) * 100)) : 0;
+                    const hpClass = hpPct > 50 ? 'high' : hpPct > 25 ? 'mid' : 'low';
+                    const emoji = activeMon.emoji || activeMon.icon || '🐾';
+                    const rarBadge = activeMon.rarity
+                        ? `<span class="badge-raridade badge-raridade--${(activeMon.rarity || '').toLowerCase().replace(/[^a-z]/g, '')}">${activeMon.rarity}</span>` : '';
+
+                    monsterEl.innerHTML = `
+                        <div class="home-hub-monster">
+                            <div class="home-hub-monster__emoji">${emoji}</div>
+                            <div class="home-hub-monster__info">
+                                <div class="home-hub-monster__name">${escapeHtml(activeMon.name)} ${rarBadge}</div>
+                                <div class="home-hub-monster__meta">Nível ${activeMon.level || 1} · ${escapeHtml(activeMon.class || '')} · ${escapeHtml(player.name)}</div>
+                                <div class="home-hub-monster__hp-track">
+                                    <div class="home-hub-monster__hp-fill home-hub-monster__hp-fill--${hpClass}" style="width:${hpPct}%"></div>
+                                </div>
+                                <div class="home-hub-monster__hp-val">❤️ ${activeMon.hp}/${activeMon.hpMax} HP (${hpPct}%)</div>
+                            </div>
+                        </div>`;
+                }
+            } catch (err) {
+                console.error('[renderHomeHub] erro:', err);
+            }
+        }
         function renderMonstrodex() {
             try {
                 const container = document.getElementById('monstrodexStats');

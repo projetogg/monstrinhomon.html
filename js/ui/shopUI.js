@@ -20,6 +20,15 @@ const TIER_COLORS = {
     'lendario': '#f39c12'
 };
 
+// Categorias de itens compráveis (tipo → label de exibição)
+const ITEM_CATEGORY_LABELS = {
+    'held':    { label: '⚔️ Equipamentos', order: 1 },
+    'capture': { label: '🪃 Captura',       order: 2 },
+    'heal':    { label: '🍖 Consumíveis',   order: 3 },
+    'egg':     { label: '🥚 Ovos',          order: 4 },
+    '?':       { label: '📦 Outros',        order: 5 },
+};
+
 /**
  * Retorna a cor de destaque do tier de um item.
  * @param {string} tier - Tier do item
@@ -50,61 +59,83 @@ export function renderShopItems(items, config = {}) {
         return '<p>Nenhum item disponível para compra.</p>';
     }
 
-    // Ordena por preço crescente
-    const sorted = [...buyableItems].sort((a, b) => a.price.buy - b.price.buy);
+    // Agrupa itens por categoria (held, capture, heal, egg, ?)
+    const groups = {};
+    for (const item of buyableItems) {
+        const cat = item.type || item.category || '?';
+        if (!groups[cat]) groups[cat] = [];
+        groups[cat].push(item);
+    }
 
-    let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">';
+    // Ordena grupos por ordem de exibição
+    const sortedCats = Object.keys(groups).sort((a, b) => {
+        const oa = (ITEM_CATEGORY_LABELS[a] || ITEM_CATEGORY_LABELS['?']).order;
+        const ob = (ITEM_CATEGORY_LABELS[b] || ITEM_CATEGORY_LABELS['?']).order;
+        return oa - ob;
+    });
 
-    for (const item of sorted) {
-        const price     = item.price.buy;
-        const canAfford = money >= price;
-        const owned     = inventory[item.id] || 0;
-        const tierColor = getTierColor(item.tier);
-        const isEgg     = item.category === 'egg';
+    let html = '';
 
-        const tierBadge = isEgg
-            ? '<p style="font-size: 0.9em; color: #666; font-weight: bold;">🥚 OVO</p>'
-            : item.tier
-                ? `<p style="font-size: 0.9em; color: #666;">
-                    <span style="color: ${tierColor}; font-weight: bold; text-transform: uppercase;">${item.tier}</span>
+    for (const cat of sortedCats) {
+        const catInfo = ITEM_CATEGORY_LABELS[cat] || ITEM_CATEGORY_LABELS['?'];
+        const catItems = [...groups[cat]].sort((a, b) => a.price.buy - b.price.buy);
+
+        html += `<div class="shop-category-section">
+            <h4 class="shop-category-title">${catInfo.label}</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem;">`;
+
+        for (const item of catItems) {
+            const price     = item.price.buy;
+            const canAfford = money >= price;
+            const owned     = inventory[item.id] || 0;
+            const tierColor = getTierColor(item.tier);
+            const isEgg     = item.type === 'egg' || item.category === 'egg';
+
+            const tierBadge = isEgg
+                ? '<span class="shop-badge" style="background:#f39c12;">🥚 OVO</span>'
+                : item.tier
+                    ? `<span class="shop-badge" style="background:${tierColor};">${item.tier.toUpperCase()}</span>`
+                    : '';
+
+            const statsBadge = item.stats
+                ? `<p class="shop-item-stats">
+                    ${item.stats.atk > 0 ? `⚔️ ATK +${item.stats.atk}` : ''}
+                    ${item.stats.atk > 0 && item.stats.def > 0 ? ' · ' : ''}
+                    ${item.stats.def > 0 ? `🛡️ DEF +${item.stats.def}` : ''}
                    </p>`
                 : '';
 
-        const statsBadge = item.stats
-            ? `<p style="font-size: 0.85em; color: #555;">
-                <strong>Stats:</strong>
-                ${item.stats.atk > 0 ? `⚔️ ATK +${item.stats.atk}` : ''}${item.stats.atk > 0 && item.stats.def > 0 ? ' ' : ''}${item.stats.def > 0 ? `🛡️ DEF +${item.stats.def}` : ''}
-               </p>`
-            : '';
+            const breakBadge = item.break?.enabled
+                ? `<p class="shop-item-break">⚠️ Pode quebrar (${Math.round(item.break.chance * 100)}%)</p>`
+                : '';
 
-        const breakBadge = item.break?.enabled
-            ? `<p style="font-size: 0.85em; color: #e74c3c;">⚠️ Pode quebrar (${Math.round(item.break.chance * 100)}%)</p>`
-            : '';
-
-        html += `
-            <div class="card" style="margin: 0; padding: 1rem; border-left: 4px solid ${tierColor};">
-                <h4 style="margin-top: 0;">${item.name}</h4>
-                ${tierBadge}
-                <p style="font-size: 0.9em;">${item.description}</p>
-                ${statsBadge}
-                ${breakBadge}
-                <p style="font-size: 0.85em; color: #555;"><strong>Você tem:</strong> ${owned}x</p>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
-                    <strong style="font-size: 1.1em;">💰 ${price}</strong>
-                    <button
-                        class="btn ${canAfford ? 'btn-success' : 'btn-secondary'}"
-                        onclick="buyItem('${playerId}', '${item.id}')"
-                        ${!canAfford ? 'disabled' : ''}
-                        style="${!canAfford ? 'opacity: 0.5; cursor: not-allowed;' : ''}"
-                    >
-                        ${canAfford ? '✓ Comprar' : '✗ Sem dinheiro'}
-                    </button>
+            html += `
+                <div class="shop-item-card" style="border-left: 3px solid ${tierColor};">
+                    <div class="shop-item-header">
+                        <span class="shop-item-name">${item.name}</span>
+                        ${tierBadge}
+                    </div>
+                    <p class="shop-item-desc">${item.description}</p>
+                    ${statsBadge}${breakBadge}
+                    <div class="shop-item-footer">
+                        <span class="shop-item-owned">Você tem: ${owned}×</span>
+                        <div class="shop-item-buy">
+                            <strong class="shop-item-price">💰 ${price}</strong>
+                            <button
+                                class="btn btn-sm ${canAfford ? 'btn-success' : 'btn-secondary'}"
+                                onclick="buyItem('${playerId}', '${item.id}')"
+                                ${!canAfford ? 'disabled' : ''}
+                                title="${!canAfford ? 'Ouro insuficiente' : 'Comprar ' + item.name}"
+                            >${canAfford ? '+ Comprar' : '✗ Sem ouro'}</button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+        }
+
+        html += '</div></div>';
     }
 
-    html += '</div>';
     return html;
 }
 
