@@ -194,8 +194,17 @@ function validateStarterConsistency(state) {
     if (player.starterMonsterId !== expectedStarterId) {
         return { ok: false, reason: 'starter_metadata_mismatch' };
     }
-    if (!starter || starter.templateId !== expectedStarterId || starter.class !== player.class || (starter.hp || 0) <= 0) {
-        return { ok: false, reason: 'starter_instance_mismatch' };
+    if (!starter) {
+        return { ok: false, reason: 'starter_instance_missing' };
+    }
+    if (starter.templateId !== expectedStarterId) {
+        return { ok: false, reason: 'starter_instance_template_mismatch' };
+    }
+    if (starter.class !== player.class) {
+        return { ok: false, reason: 'starter_instance_class_mismatch' };
+    }
+    if ((starter.hp || 0) <= 0) {
+        return { ok: false, reason: 'starter_instance_hp_invalid' };
     }
 
     return { ok: true, reason: null };
@@ -426,7 +435,7 @@ describe('Smoke MVP 0.3 — Wild Loop mínimo', () => {
         expect(continuedState.currentEncounter.active).toBe(false);
     });
 
-    it('starter errado falha na validação mínima do fluxo', () => {
+    it('deve falhar validação quando starterMonsterId não corresponde à classe do jogador', () => {
         const state = makeInitialGameState();
         state.players[0].starterMonsterId = 'MON_001';
 
