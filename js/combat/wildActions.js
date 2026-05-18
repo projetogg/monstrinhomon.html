@@ -94,6 +94,7 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
             return { success: false, reason: 'no_encounter' };
         }
 
+        // Segurança de estado: monstrinho ativo desmaiado não pode iniciar ação.
         if (!playerMonster || (playerMonster.hp || 0) <= 0) {
             encounter.log = encounter.log || [];
             encounter.log.push('⚠️ Ação inválida: monstrinho ativo sem HP.');

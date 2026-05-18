@@ -466,6 +466,8 @@ describe('Smoke MVP 0.3 — Wild Loop mínimo', () => {
             },
             dependencies: {
                 ...makeWildDeps(state),
+                // HP cheio + agressividade máxima => score próximo de 0.
+                // threshold alto garante falha de captura; rollD20=1 evita derrota no contra-ataque.
                 captureThreshold: 95,
                 rollD20: () => 1,
             },
@@ -526,13 +528,13 @@ describe('Smoke MVP 0.3 — Wild Loop mínimo', () => {
         const state = makeInitialGameState();
         const { localStorage, SaveLayer } = await installStorageStack(state);
 
-        localStorage.setItem('monstrinhomon_state', '{ json-invalido');
+        localStorage.setItem('monstrinhomon_state', '{ json-inválido');
         const loaded = SaveLayer.loadActiveGame();
 
         expect(loaded.loaded).toBe(false);
         expect(loaded.state).toBeNull();
         expect(loaded.notes.some(note => note.includes('Corrupted save'))).toBe(true);
-        expect(localStorage.getItem('monstrinhomon_corrupted_backup')).toBe('{ json-invalido');
+        expect(localStorage.getItem('monstrinhomon_corrupted_backup')).toBe('{ json-inválido');
     });
 
     it('monstro ativo com 0 HP não deve executar ação de ataque', () => {
