@@ -350,7 +350,7 @@ describe('executeWildCaptureAction', () => {
     it('reduz agressividade e retorna ongoing se não terminou', () => {
         const wild = makeWild({ aggression: 80 });
         const enc  = makeEncounter(wild);
-        const pm   = makePlayerMon();
+        const pm   = makePlayerMon({ class: 'Curandeiro' });
         const deps = makeCaptureActionDeps({
             rollD20: () => 1, // inimigo falha
         });
@@ -364,7 +364,7 @@ describe('executeWildCaptureAction', () => {
     it('retorna behavioral_resolve quando aggression <= aggrTerminal', () => {
         const wild = makeWild({ aggression: 5 }); // já baixo, ação vai resolver
         const enc  = makeEncounter(wild);
-        const pm   = makePlayerMon();
+        const pm   = makePlayerMon({ class: 'Curandeiro' });
         const deps = makeCaptureActionDeps({ aggrTerminal: 20 });
 
         const r = executeWildCaptureAction({ encounter: enc, player: makePlayer({ class: 'Curandeiro' }), playerMonster: pm, dependencies: deps });
@@ -379,7 +379,7 @@ describe('executeWildCaptureAction', () => {
         const enc  = makeEncounter(wild);
         const deps = makeCaptureActionDeps({ aggrTerminal: 20 });
 
-        executeWildCaptureAction({ encounter: enc, player: makePlayer({ class: 'Curandeiro' }), playerMonster: makePlayerMon(), dependencies: deps });
+        executeWildCaptureAction({ encounter: enc, player: makePlayer({ class: 'Curandeiro' }), playerMonster: makePlayerMon({ class: 'Curandeiro' }), dependencies: deps });
 
         expect(enc.active).toBe(true);
     });
@@ -389,7 +389,7 @@ describe('executeWildCaptureAction', () => {
         const enc  = makeEncounter(wild);
         const deps = makeCaptureActionDeps({ aggrTerminal: 20 });
 
-        executeWildCaptureAction({ encounter: enc, player: makePlayer({ class: 'Curandeiro' }), playerMonster: makePlayerMon(), dependencies: deps });
+        executeWildCaptureAction({ encounter: enc, player: makePlayer({ class: 'Curandeiro' }), playerMonster: makePlayerMon({ class: 'Curandeiro' }), dependencies: deps });
 
         expect(deps.handleVictoryRewards).toHaveBeenCalledWith(enc);
         expect(deps.tutorialOnAction).toHaveBeenCalledWith('capture');
@@ -398,7 +398,7 @@ describe('executeWildCaptureAction', () => {
     it('não contra-ataca após resolução comportamental (selvagem está calmo)', () => {
         const wild = makeWild({ aggression: 5, atk: 999 });
         const enc  = makeEncounter(wild);
-        const pm   = makePlayerMon({ hp: 80 });
+        const pm   = makePlayerMon({ hp: 80, class: 'Curandeiro' });
         const deps = makeCaptureActionDeps({ aggrTerminal: 20, rollD20: () => 20 });
 
         executeWildCaptureAction({ encounter: enc, player: makePlayer({ class: 'Curandeiro' }), playerMonster: pm, dependencies: deps });
@@ -410,7 +410,7 @@ describe('executeWildCaptureAction', () => {
     it('inimigo contra-ataca com turno completo após ação comportamental sem resolução', () => {
         const wild = makeWild({ aggression: 80, atk: 999, def: 1 });
         const enc  = makeEncounter(wild);
-        const pm   = makePlayerMon({ hp: 80, def: 1 });
+        const pm   = makePlayerMon({ hp: 80, def: 1, class: 'Curandeiro' });
         const deps = makeCaptureActionDeps({ rollD20: () => 15, getBasicPower: () => 50 });
 
         executeWildCaptureAction({ encounter: enc, player: makePlayer({ class: 'Curandeiro' }), playerMonster: pm, dependencies: deps });
@@ -422,7 +422,7 @@ describe('executeWildCaptureAction', () => {
     it('retorna defeat quando inimigo mata jogador no contra-ataque', () => {
         const wild = makeWild({ aggression: 80, atk: 999, def: 1 });
         const enc  = makeEncounter(wild);
-        const pm   = makePlayerMon({ hp: 1, def: 1 });
+        const pm   = makePlayerMon({ hp: 1, def: 1, class: 'Curandeiro' });
         const deps = makeCaptureActionDeps({ rollD20: () => 20, getBasicPower: () => 1000 });
 
         const r = executeWildCaptureAction({ encounter: enc, player: makePlayer({ class: 'Curandeiro' }), playerMonster: pm, dependencies: deps });
@@ -446,7 +446,7 @@ describe('executeWildCaptureAction', () => {
         const enc  = makeEncounter(wild);
         const deps = makeCaptureActionDeps({ rollD20: () => 1 });
 
-        executeWildCaptureAction({ encounter: enc, player: makePlayer({ class: 'Curandeiro' }), playerMonster: makePlayerMon(), dependencies: deps });
+        executeWildCaptureAction({ encounter: enc, player: makePlayer({ class: 'Curandeiro' }), playerMonster: makePlayerMon({ class: 'Curandeiro' }), dependencies: deps });
 
         const logText = enc.log.join(' ');
         expect(logText).toContain('Agressividade');
@@ -461,7 +461,7 @@ describe('executeWildCaptureAction', () => {
             const wild = makeWild({ aggression: 80 });
             const enc  = makeEncounter(wild);
             const deps = makeCaptureActionDeps({ rollD20: () => 1 });
-            executeWildCaptureAction({ encounter: enc, player: makePlayer({ class: cls }), playerMonster: makePlayerMon(), dependencies: deps });
+            executeWildCaptureAction({ encounter: enc, player: makePlayer({ class: cls }), playerMonster: makePlayerMon({ class: cls }), dependencies: deps });
             expect(wild.aggression).toBeLessThan(80);
         }
     });
@@ -754,11 +754,12 @@ describe('F1 — CLASS_COMBAT_PASSIVES no wild combat', () => {
 
         const pmNeutral = { id: 'pm1', name: 'PM', class: 'Bardo', hp: 80, hpMax: 80, atk: 7, def: 4, ene: 10, eneMax: 20, buffs: [] };
         const pmLadino = { ...pmNeutral, id: 'pm2', class: 'Ladino' };
-        const player = { id: 'p1', name: 'J', class: 'Guerreiro', inventory: {}, team: [], money: 0 };
+        const playerNeutral = { id: 'p1', name: 'J', class: 'Bardo', inventory: {}, team: [], money: 0 };
+        const playerLadino = { id: 'p1', name: 'J', class: 'Ladino', inventory: {}, team: [], money: 0 };
 
         const deps = makeBasicDeps();
-        executeWildAttack({ encounter: encNeutral, player, playerMonster: pmNeutral, d20Roll: 15, dependencies: deps });
-        executeWildAttack({ encounter: encLadino, player, playerMonster: pmLadino, d20Roll: 15, dependencies: deps });
+        executeWildAttack({ encounter: encNeutral, player: playerNeutral, playerMonster: pmNeutral, d20Roll: 15, dependencies: deps });
+        executeWildAttack({ encounter: encLadino, player: playerLadino, playerMonster: pmLadino, d20Roll: 15, dependencies: deps });
 
         const dmgNeutral = 100 - wildNeutral.hp;
         const dmgLadino  = 100 - wildNeutral2.hp;
@@ -774,7 +775,7 @@ describe('F1 — CLASS_COMBAT_PASSIVES no wild combat', () => {
         const encB = { id: 'enc2', type: 'wild', active: true, wildMonster: wildBardo,     selectedPlayerId: 'p1', log: [], rewardsGranted: false };
 
         const pm     = { id: 'pm1', name: 'PM', class: 'Bardo', hp: 80, hpMax: 80, atk: 7, def: 4, ene: 10, eneMax: 20, buffs: [] };
-        const player = { id: 'p1', name: 'J', class: 'Guerreiro', inventory: {}, team: [], money: 0 };
+        const player = { id: 'p1', name: 'J', class: 'Bardo', inventory: {}, team: [], money: 0 };
         const deps   = makeBasicDeps();
 
         executeWildAttack({ encounter: encG, player, playerMonster: pm, d20Roll: 15, dependencies: { ...deps } });
@@ -790,7 +791,7 @@ describe('F1 — CLASS_COMBAT_PASSIVES no wild combat', () => {
         const wild = { id: 'w1', name: 'W', class: 'Bardo', hp: 100, hpMax: 100, atk: 4, def: 5, poder: 8, ene: 5, eneMax: 20, aggression: 60, buffs: [], skill: null };
         const enc  = { id: 'enc1', type: 'wild', active: true, wildMonster: wild, selectedPlayerId: 'p1', log: [], rewardsGranted: false };
         const pm   = { id: 'pm1', name: 'PM', class: 'Ladino', hp: 80, hpMax: 80, atk: 7, def: 4, ene: 10, eneMax: 20, buffs: [] };
-        const player = { id: 'p1', name: 'J', class: 'Guerreiro', inventory: {}, team: [], money: 0 };
+        const player = { id: 'p1', name: 'J', class: 'Ladino', inventory: {}, team: [], money: 0 };
         const deps = makeBasicDeps();
 
         const defBefore = wild.def;
@@ -804,7 +805,7 @@ describe('F1 — CLASS_COMBAT_PASSIVES no wild combat', () => {
         const wild = { id: 'w1', name: 'W', class: 'Bardo', hp: 200, hpMax: 200, atk: 4, def: 5, poder: 8, ene: 5, eneMax: 20, aggression: 60, buffs: [], skill: null };
         const enc  = { id: 'enc1', type: 'wild', active: true, wildMonster: wild, selectedPlayerId: 'p1', log: [], rewardsGranted: false };
         const pm   = { id: 'pm1', name: 'PM', class: 'Ladino', hp: 80, hpMax: 80, atk: 7, def: 4, ene: 10, eneMax: 20, buffs: [] };
-        const player = { id: 'p1', name: 'J', class: 'Guerreiro', inventory: {}, team: [], money: 0 };
+        const player = { id: 'p1', name: 'J', class: 'Ladino', inventory: {}, team: [], money: 0 };
         const deps = makeBasicDeps({ rollD20: () => 15 });
 
         executeWildAttack({ encounter: enc, player, playerMonster: pm, d20Roll: 15, dependencies: deps });

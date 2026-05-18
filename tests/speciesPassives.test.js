@@ -271,7 +271,9 @@ function makeEncounter(wild) {
 }
 
 function makePlayer() {
-    return { id: 'p1', name: 'Jogador', class: 'Guerreiro', inventory: {}, team: [], money: 0 };
+    // Em batalha, jogador só pode usar monstrinhos da mesma classe (GAME_RULES.md).
+    // Estes cenários de integração usam playerMonster classe Bardo.
+    return { id: 'p1', name: 'Jogador', class: 'Bardo', inventory: {}, team: [], money: 0 };
 }
 
 describe('speciesPassives — integração executeWildAttack (shieldhorn defensor)', () => {
