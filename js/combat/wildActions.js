@@ -64,6 +64,51 @@ function rollEnemyD20(dependencies) {
 }
 
 /**
+ * Valida se o monstrinho do jogador pode executar uma ação em combate wild.
+ * Regras:
+ * - Monstrinho deve existir e estar vivo (HP > 0)
+ * - Restrição de classe (GAME_RULES.md): em batalha, só pode usar monstrinhos
+ *   da mesma classe do jogador, salvo exceção explícita em modo debug/mestre.
+ *
+ * @param {object} encounter
+ * @param {object} player
+ * @param {object} playerMonster
+ * @param {object} dependencies
+ * @returns {{ ok: boolean, reason?: string }}
+ */
+function validateWildPlayerActor(encounter, player, playerMonster, dependencies) {
+    // encounter.log pode não existir em chamadas diretas por testes
+    const log = encounter?.log;
+    const pushLog = (msg) => {
+        if (Array.isArray(log)) log.push(msg);
+    };
+
+    if (!playerMonster || typeof playerMonster !== 'object') {
+        pushLog('⚠️ Ação inválida: nenhum monstrinho ativo selecionado.');
+        return { ok: false, reason: 'no_player_monster' };
+    }
+
+    const hp = Number(playerMonster.hp) || 0;
+    if (hp <= 0) {
+        pushLog(`⚠️ Ação inválida: ${playerMonster.name || 'Monstrinho'} está desmaiado (HP=0).`);
+        return { ok: false, reason: 'player_monster_fainted' };
+    }
+
+    const allowCrossClassBattle = dependencies?.allowCrossClassBattle === true;
+    const playerClass = player?.class;
+    const monClass = playerMonster?.class;
+    if (!allowCrossClassBattle && playerClass && monClass && playerClass !== monClass) {
+        pushLog(
+            `⚠️ Regra de classe: ${player?.name || 'Jogador'} só pode usar monstrinhos da classe ${playerClass} em batalha. ` +
+            `(${playerMonster.name || 'Monstrinho'} é ${monClass})`
+        );
+        return { ok: false, reason: 'class_mismatch' };
+    }
+
+    return { ok: true };
+}
+
+/**
  * Inicializa participação de batalha para wild 1v1
  * Deve ser chamado no início do encounter
  * 
@@ -102,6 +147,11 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
         }
         
         encounter.log = encounter.log || [];
+
+        const actorValidation = validateWildPlayerActor(encounter, player, playerMonster, dependencies);
+        if (!actorValidation.ok) {
+            return { success: false, reason: actorValidation.reason || 'invalid_player' };
+        }
         
         // PR11B: Marcar que o monstro do jogador participou (executou ação)
         markAsParticipated(playerMonster);
@@ -791,6 +841,11 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
 
         encounter.log = encounter.log || [];
 
+        const actorValidation = validateWildPlayerActor(encounter, player, playerMonster, dependencies);
+        if (!actorValidation.ok) {
+            return { success: false, result: 'invalid' };
+        }
+
         // Validar ENE suficiente antes de regen (regen acontece no início do turno)
         const skills = dependencies.getMonsterSkills(playerMonster);
         if (!skills || skillIndex >= skills.length || !skills[skillIndex]) {
@@ -986,6 +1041,11 @@ export function executeWildCaptureAction({ encounter, player, playerMonster, dep
 
         encounter.log = encounter.log || [];
 
+        const actorValidation = validateWildPlayerActor(encounter, player, playerMonster, dependencies);
+        if (!actorValidation.ok) {
+            return { success: false, result: 'invalid' };
+        }
+
         // Obter ação da classe do jogador
         const action = dependencies.captureActions?.[player.class];
         if (!action) return { success: false, result: 'invalid' };
@@ -1071,6 +1131,11 @@ export function executeWildItemUse({ encounter, player, playerMonster, itemId, d
         if (!wildMonster) return { success: false, result: 'invalid' };
 
         encounter.log = encounter.log || [];
+
+        const actorValidation = validateWildPlayerActor(encounter, player, playerMonster, dependencies);
+        if (!actorValidation.ok) {
+            return { success: false, result: 'invalid' };
+        }
 
         // Obter definição do item
         const itemDef = dependencies.getItemDef(itemId);
@@ -1292,6 +1357,11 @@ export function executeWildCapture({ encounter, player, playerMonster, orbInfo, 
         if (!monster) return { success: false, captured: false, result: 'no_encounter' };
 
         encounter.log = encounter.log || [];
+
+        const actorValidation = validateWildPlayerActor(encounter, player, playerMonster, dependencies);
+        if (!actorValidation.ok) {
+            return { success: false, captured: false, result: 'invalid' };
+        }
 
         // 1. Consumir 1 orb
         player.inventory = player.inventory || {};

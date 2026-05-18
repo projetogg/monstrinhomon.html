@@ -487,7 +487,7 @@ describe('shadowsting vs bellwave — distinção preservada', () => {
 
         const deps = makeSkillDeps([NOTA_DISCORDANTE], vi.fn(() => true));
 
-        executeWildSkill({ encounter: enc, player: makePlayer(), playerMonster: pm, skillIndex: 0, dependencies: deps });
+        executeWildSkill({ encounter: enc, player: makePlayer({ class: pm.class }), playerMonster: pm, skillIndex: 0, dependencies: deps });
 
         // bellwave: debuff carrega ritmo
         expect(enc.passiveState?.bellwaveRhythmCharged).toBe(true);
@@ -527,7 +527,7 @@ describe('shadowsting vs bellwave — distinção preservada', () => {
 
         const deps = makeSkillDeps([NOTA_DISCORDANTE], vi.fn(() => true));
 
-        executeWildSkill({ encounter: enc, player: makePlayer(), playerMonster: pm, skillIndex: 0, dependencies: deps });
+        executeWildSkill({ encounter: enc, player: makePlayer({ class: pm.class }), playerMonster: pm, skillIndex: 0, dependencies: deps });
 
         expect(enc.passiveState?.shadowstingDebuffCharged).toBeFalsy();
         expect(enc.passiveState?.bellwaveRhythmCharged).toBe(true);
@@ -546,7 +546,7 @@ describe('shadowsting vs bellwave — distinção preservada', () => {
         const encB = makeEncounter(makeWild());
         const DAMAGE_SKILL = { id: 'sk_dmg', name: 'Golpe', type: 'DAMAGE', cost: 4, power: 15 };
         const depsB = makeSkillDeps([DAMAGE_SKILL], vi.fn(() => true));
-        executeWildSkill({ encounter: encB, player: makePlayer(), playerMonster: pmB, skillIndex: 0, dependencies: depsB });
+        executeWildSkill({ encounter: encB, player: makePlayer({ class: pmB.class }), playerMonster: pmB, skillIndex: 0, dependencies: depsB });
         expect(encB.passiveState?.bellwaveRhythmCharged).toBe(true);
     });
 
