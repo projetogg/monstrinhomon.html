@@ -9,7 +9,8 @@
     "test:coverage": "vitest run --coverage",
     "coverage": "vitest run --coverage",
     "validate-data": "node scripts/validate-data.mjs",
-    "validate:monster-assets": "node scripts/validate-monster-assets.mjs"
+    "validate:monster-assets": "node scripts/validate-monster-assets.mjs",
+    "test:wild-loop": "vitest run tests/wildLoopSmoke.test.js"
   },
   "keywords": [
     "game",
