@@ -62,3 +62,10 @@ Após o MVP 0.3 ser repetível, a próxima fase recomendada é:
 ```text
 MVP 0.4 — Cartas Básicas e Interface de Decisão
 ```
+
+## Comandos de validação do fluxo mínimo
+
+```bash
+npm test                 # suíte Vitest atual
+npm run test:wild-loop   # smoke E2E Playwright (fluxo real da UI)
+```
