@@ -2,9 +2,18 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
-const REPO_ROOT = path.resolve(new URL('..', import.meta.url).pathname);
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const safeTestMonsterHp = 1000;
+const guaranteedCaptureThreshold = 0;
+// Hosts externos de tipografia esperados (bloqueados de propósito no teste).
+const expectedBlockedHosts = new Set(['fonts.googleapis.com', 'fonts.gstatic.com']);
+// Mensagem esperada quando os hosts externos permitidos são bloqueados pelo route.abort().
+const allowedConsoleErrorPatterns = [
+    /^Failed to load resource: net::ERR_FAILED$/,
+];
 
 const MIME_TYPES = {
     '.css': 'text/css; charset=utf-8',
@@ -68,14 +77,20 @@ function startStaticServer(rootDir) {
 }
 
 async function run() {
-    const { baseUrl, close } = await startStaticServer(REPO_ROOT);
+    const { baseUrl, close } = await startStaticServer(repoRoot);
     const browser = await chromium.launch({ headless: true });
     const context = await browser.newContext();
     const page = await context.newPage();
     const blockedHosts = new Set();
-    page.on('pageerror', (error) => console.error('pageerror:', error.message));
+    const pageErrors = [];
+    const consoleErrors = [];
+    page.on('pageerror', (error) => {
+        pageErrors.push(error.message);
+        console.error('pageerror:', error.message);
+    });
     page.on('console', (msg) => {
         if (msg.type() === 'error') {
+            consoleErrors.push(msg.text());
             console.error('console.error:', msg.text());
         }
     });
@@ -83,7 +98,7 @@ async function run() {
     await page.route('**/*', async (route) => {
         const url = new URL(route.request().url());
         const isHttp = url.protocol === 'http:' || url.protocol === 'https:';
-        const isLocal = url.hostname === '127.0.0.1' || url.hostname === 'localhost';
+        const isLocal = ['127.0.0.1', 'localhost', '::1'].includes(url.hostname);
         if (isHttp && !isLocal) {
             blockedHosts.add(url.hostname);
             await route.abort();
@@ -119,14 +134,21 @@ async function run() {
         await page.locator('#mmStarterFlow button:has-text("Chocar o Ovo")').click();
         await page.locator('#mmStarterFlow button:has-text("Começar Aventura")').click();
         await page.locator('#mmStartChoice button:has-text("Pular")').click();
-        await page.waitForTimeout(250);
+        await page.waitForFunction(() => {
+            const choice = document.getElementById('mmStartChoice');
+            return !!choice && !choice.classList.contains('show');
+        }, null, { timeout: 10000 });
         const setupSave = await page.evaluate(() => {
             const raw = localStorage.getItem('monstrinhomon_state');
             if (!raw) return null;
             const parsed = JSON.parse(raw);
             return parsed?.state ?? parsed;
         });
-        assert((setupSave?.players?.length ?? 0) >= 1, 'Novo jogo não criou jogadores via fluxo de UI');
+        const setupPlayersCount = setupSave?.players?.length ?? 0;
+        assert(
+            setupPlayersCount >= 1,
+            `Novo jogo não criou jogadores via fluxo de UI (encontrado: ${setupPlayersCount}, esperado: >= 1)`
+        );
 
         await page.getByRole('button', { name: /Mundo/ }).click();
         await page.waitForFunction(() => typeof window.showWorldMap === 'function', null, { timeout: 10000 });
@@ -149,27 +171,33 @@ async function run() {
                 captureAttempts: save?.stats?.captureAttempts ?? 0,
             };
         });
-        await page.evaluate(() => {
+        await page.evaluate((testMonsterHp) => {
             const enc = window.GameState?.currentEncounter;
             if (!enc?.wildMonster) return;
-            enc.wildMonster.hpMax = Math.max(1000, Number(enc.wildMonster.hpMax) || 1000);
+            enc.wildMonster.hpMax = Math.max(testMonsterHp, Number(enc.wildMonster.hpMax) || testMonsterHp);
             enc.wildMonster.hp = enc.wildMonster.hpMax;
             if (typeof window.renderEncounter === 'function') window.renderEncounter();
-        });
+        }, safeTestMonsterHp);
+        const logCountBeforeAttack = await page.locator('#combatLog > div').count();
 
         await page.locator('#encounterPanel button:has-text("Atacar")').first().click();
-        await page.waitForTimeout(250);
-        await page.evaluate(() => {
+        await page.waitForFunction(
+            (previousCount) => document.querySelectorAll('#combatLog > div').length > previousCount,
+            logCountBeforeAttack,
+            { timeout: 10000 }
+        );
+        await page.evaluate((guaranteedThreshold) => {
             const enc = window.GameState?.currentEncounter;
             if (!enc?.wildMonster) return;
-            enc.wildMonster.hp = Math.max(1, Math.min(enc.wildMonster.hp || 1, 1));
+            // Deixar o alvo em estado de captura para reduzir instabilidade no smoke E2E.
+            enc.wildMonster.hp = 1;
             enc.wildMonster.aggression = 0;
             const rarity = enc.wildMonster.rarity || 'Comum';
             if (!window.GameState.config) window.GameState.config = {};
             if (!window.GameState.config.captureScoreThreshold) window.GameState.config.captureScoreThreshold = {};
-            window.GameState.config.captureScoreThreshold[rarity] = 0;
+            window.GameState.config.captureScoreThreshold[rarity] = guaranteedThreshold;
             if (typeof window.renderEncounter === 'function') window.renderEncounter();
-        });
+        }, guaranteedCaptureThreshold);
         await page.locator('#encounterPanel button:has-text("Capturar")').first().click();
         await page.waitForFunction(
             (initialCaptureAttempts) => {
@@ -191,7 +219,10 @@ async function run() {
                 captureAttempts: save?.stats?.captureAttempts ?? 0,
             };
         });
-        assert(afterBattleState.captureAttempts >= beforeBattleState.captureAttempts + 1, 'A tentativa de captura não foi registrada');
+        assert(
+            afterBattleState.captureAttempts >= beforeBattleState.captureAttempts + 1,
+            `A tentativa de captura não foi registrada (antes: ${beforeBattleState.captureAttempts}, depois: ${afterBattleState.captureAttempts})`
+        );
 
         const battleContinueButton = page.locator('#encounterPanel button:has-text("Continuar")').first();
         if (await battleContinueButton.isVisible().catch(() => false)) {
@@ -217,12 +248,19 @@ async function run() {
             const save = parsed?.state ?? parsed ?? {};
             return save?.stats?.captureAttempts ?? 0;
         });
-        assert(persistedCaptureAttempts >= beforeBattleState.captureAttempts + 1, 'Save/Continue não preservou tentativa de captura');
+        assert(
+            persistedCaptureAttempts >= beforeBattleState.captureAttempts + 1,
+            `Save/Continue não preservou tentativa de captura (antes: ${beforeBattleState.captureAttempts}, persistido: ${persistedCaptureAttempts})`
+        );
 
-        const allowedBlockedHosts = new Set(['fonts.googleapis.com', 'fonts.gstatic.com']);
         for (const host of blockedHosts) {
-            assert(allowedBlockedHosts.has(host), `Dependência externa inesperada: ${host}`);
+            assert(expectedBlockedHosts.has(host), `Dependência externa inesperada: ${host}`);
         }
+        const unexpectedConsoleErrors = consoleErrors.filter((msg) =>
+            !allowedConsoleErrorPatterns.some((pattern) => pattern.test(msg))
+        );
+        assert(pageErrors.length === 0, `Erros JavaScript na página: ${pageErrors.join(' | ')}`);
+        assert(unexpectedConsoleErrors.length === 0, `Console errors inesperados: ${unexpectedConsoleErrors.join(' | ')}`);
         console.log('✅ E2E Wild Loop smoke passou (Playwright)');
     } finally {
         await context.close();
