@@ -183,6 +183,24 @@ function makeInitialGameState() {
     };
 }
 
+function validateStarterConsistency(state) {
+    const player = state?.players?.[0];
+    const starter = player?.team?.[0];
+    const expectedStarterId = STARTER_BY_CLASS[player?.class]?.monsterId;
+
+    if (!player?.starterGranted || !expectedStarterId) {
+        return { ok: false, reason: 'starter_missing' };
+    }
+    if (player.starterMonsterId !== expectedStarterId) {
+        return { ok: false, reason: 'starter_metadata_mismatch' };
+    }
+    if (!starter || starter.templateId !== expectedStarterId || starter.class !== player.class || (starter.hp || 0) <= 0) {
+        return { ok: false, reason: 'starter_instance_mismatch' };
+    }
+
+    return { ok: true, reason: null };
+}
+
 function startSmokeWildBattle(state) {
     const player = state.players[0];
     const wild = createMonsterInstanceFromTemplate('MON_029', 3, {
@@ -311,7 +329,9 @@ describe('Smoke MVP 0.3 — Wild Loop mínimo', () => {
         const state = makeInitialGameState();
         const player = state.players[0];
         const starter = player.team[0];
+        const starterValidation = validateStarterConsistency(state);
 
+        expect(starterValidation.ok).toBe(true);
         expect(player.class).toBe('Mago');
         expect(player.starterGranted).toBe(true);
         expect(player.starterMonsterId).toBe('MON_013');
@@ -404,5 +424,150 @@ describe('Smoke MVP 0.3 — Wild Loop mínimo', () => {
         expect(continuedState.monstrodex.seen).toContain('MON_029');
         expect(continuedState.monstrodex.captured).toContain('MON_029');
         expect(continuedState.currentEncounter.active).toBe(false);
+    });
+
+    it('starter errado falha na validação mínima do fluxo', () => {
+        const state = makeInitialGameState();
+        state.players[0].starterMonsterId = 'MON_001';
+
+        const starterValidation = validateStarterConsistency(state);
+        expect(starterValidation.ok).toBe(false);
+        expect(starterValidation.reason).toBe('starter_metadata_mismatch');
+    });
+
+    it('captura falha consome orb e mantém encounter ativo', () => {
+        const state = makeInitialGameState();
+        const player = state.players[0];
+        const starter = player.team[0];
+        const encounter = startSmokeWildBattle(state);
+        const orbsBeforeCapture = player.inventory.CLASTERORB_COMUM;
+
+        encounter.wildMonster.hp = encounter.wildMonster.hpMax;
+        encounter.wildMonster.aggression = 100;
+
+        const captureResult = executeWildCapture({
+            encounter,
+            player,
+            playerMonster: starter,
+            orbInfo: {
+                id: 'CLASTERORB_COMUM',
+                name: 'ClasterOrb Comum',
+                emoji: '⚪',
+                capture_bonus_pp: 0,
+            },
+            dependencies: {
+                ...makeWildDeps(state),
+                captureThreshold: 95,
+                rollD20: () => 1,
+            },
+        });
+
+        expect(captureResult.success).toBe(true);
+        expect(captureResult.captured).toBe(false);
+        expect(captureResult.result).toBe('ongoing');
+        expect(player.inventory.CLASTERORB_COMUM).toBe(orbsBeforeCapture - 1);
+        expect(encounter.active).toBe(true);
+    });
+
+    it('com time cheio, captura bem-sucedida envia monstro para box', () => {
+        const state = makeInitialGameState();
+        const player = state.players[0];
+        const encounter = startSmokeWildBattle(state);
+        const starter = player.team[0];
+
+        while (player.team.length < state.config.maxTeamSize) {
+            player.team.push(
+                createMonsterInstanceFromTemplate('MON_001', 3, {
+                    instanceId: `mi_smoke_fill_${player.team.length}`,
+                    ownerId: player.id,
+                })
+            );
+        }
+
+        encounter.wildMonster.hp = 0;
+        encounter.wildMonster.aggression = 0;
+        const teamSizeBeforeCapture = player.team.length;
+        const boxSizeBeforeCapture = state.sharedBox.length;
+
+        const captureResult = executeWildCapture({
+            encounter,
+            player,
+            playerMonster: starter,
+            orbInfo: {
+                id: 'CLASTERORB_COMUM',
+                name: 'ClasterOrb Comum',
+                emoji: '⚪',
+                capture_bonus_pp: 0,
+            },
+            dependencies: {
+                ...makeWildDeps(state),
+                captureThreshold: 35,
+            },
+        });
+
+        expect(captureResult.success).toBe(true);
+        expect(captureResult.captured).toBe(true);
+        expect(player.team.length).toBe(teamSizeBeforeCapture);
+        expect(state.sharedBox.length).toBe(boxSizeBeforeCapture + 1);
+        expect(state.sharedBox.at(-1).ownerId).toBe(player.id);
+        expect(state.sharedBox.at(-1).monster.templateId).toBe('MON_029');
+    });
+
+    it('save corrompido aciona fallback seguro no continue', async () => {
+        const state = makeInitialGameState();
+        const { localStorage, SaveLayer } = await installStorageStack(state);
+
+        localStorage.setItem('monstrinhomon_state', '{ json-invalido');
+        const loaded = SaveLayer.loadActiveGame();
+
+        expect(loaded.loaded).toBe(false);
+        expect(loaded.state).toBeNull();
+        expect(loaded.notes.some(note => note.includes('Corrupted save'))).toBe(true);
+        expect(localStorage.getItem('monstrinhomon_corrupted_backup')).toBe('{ json-invalido');
+    });
+
+    it('monstro ativo com 0 HP não deve executar ação de ataque', () => {
+        const state = makeInitialGameState();
+        const player = state.players[0];
+        const starter = player.team[0];
+        const encounter = startSmokeWildBattle(state);
+
+        starter.hp = 0;
+        const attackResult = executeWildAttack({
+            encounter,
+            player,
+            playerMonster: starter,
+            d20Roll: 15,
+            defenderRoll: 1,
+            dependencies: makeWildDeps(state),
+        });
+
+        expect(attackResult.success).toBe(false);
+        expect(attackResult.reason).toBe('invalid_actor');
+    });
+
+    it('wild encounter inválido falha de forma segura', () => {
+        const state = makeInitialGameState();
+        const player = state.players[0];
+        const starter = player.team[0];
+        const invalidEncounter = {
+            id: 'enc_smoke_invalid',
+            type: 'wild',
+            active: true,
+            log: [],
+        };
+
+        const attackResult = executeWildAttack({
+            encounter: invalidEncounter,
+            player,
+            playerMonster: starter,
+            d20Roll: 15,
+            defenderRoll: 1,
+            dependencies: makeWildDeps(state),
+        });
+
+        expect(attackResult.success).toBe(false);
+        expect(attackResult.reason).toBe('no_encounter');
+        expect(invalidEncounter.active).toBe(true);
     });
 });

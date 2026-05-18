@@ -93,6 +93,12 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
         if (!encounter?.wildMonster) {
             return { success: false, reason: 'no_encounter' };
         }
+
+        if (!playerMonster || (playerMonster.hp || 0) <= 0) {
+            encounter.log = encounter.log || [];
+            encounter.log.push('⚠️ Ação inválida: monstrinho ativo sem HP.');
+            return { success: false, reason: 'invalid_actor' };
+        }
         
         encounter.log = encounter.log || [];
         
