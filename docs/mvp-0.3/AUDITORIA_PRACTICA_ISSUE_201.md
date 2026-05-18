@@ -56,7 +56,9 @@ Nenhuma falha funcional P0/P1/P2 foi reproduzida neste roteiro.
 
 ## Evidência
 
-- Screenshot da execução: `/tmp/wild-loop-auditoria-ui.png`
+- Screenshot versionada: `docs/mvp-0.3/evidencias/wild-loop-auditoria-ui.png`
+
+![Evidência de execução do Wild Loop](./evidencias/wild-loop-auditoria-ui.png)
 
 ## Próximas issues recomendadas
 
