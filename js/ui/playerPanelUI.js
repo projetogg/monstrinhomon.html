@@ -73,6 +73,7 @@ export function renderMonsterCard(monster, options = {}) {
                     </div>
                 </div>
                 ${renderSpeciesIdentityBlock(monster)}
+                ${monster.id ? `<button class="box-slot-detail-btn" data-monster-id="${safeText(monster.id)}" style="width:100%;margin-top:4px" onclick="window.openMonsterDetail && window.openMonsterDetail(this.dataset.monsterId)" title="Ver detalhes completos">👁️ Ver detalhes</button>` : ''}
             </div>
         `;
     } catch (error) {
@@ -217,6 +218,7 @@ export function renderPlayerTeamSection(player, deps = {}) {
             <div class="group-player-header">
                 <span class="group-player-name">${player.name}</span>
                 <div class="badge badge-${playerClass}" data-class="${playerClass}">${playerClass}</div>
+                <button class="group-player-profile-btn" data-player-id="${safeText(player.id)}" onclick="window.openPlayerProfile && window.openPlayerProfile(this.dataset.playerId)" title="Ver perfil">👤</button>
             </div>
             <div class="group-player-stats">
                 <span class="group-stat-pill">💰 ${player.money || 0}</span>
