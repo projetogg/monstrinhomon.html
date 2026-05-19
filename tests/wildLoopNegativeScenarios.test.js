@@ -183,6 +183,27 @@ describe('Wild Loop MVP 0.3 — cenários negativos essenciais', () => {
         expect(encounter.active).toBe(true);
     });
 
+    it('allowCrossClassBattle=true deve permitir ação mesmo com classe diferente', () => {
+        const player = makePlayer({ class: 'Mago' });
+        const wrongStarter = makeMonsterInstance(STARTER_BY_CLASS.Guerreiro.monsterId, {
+            instanceId: 'mi_wrong_starter_debug',
+        });
+        const encounter = makeEncounter();
+        const wildHpBefore = encounter.wildMonster.hp;
+
+        const r = executeWildAttack({
+            encounter,
+            player,
+            playerMonster: wrongStarter,
+            d20Roll: 15,
+            defenderRoll: 1,
+            dependencies: makeWildDeps({ allowCrossClassBattle: true }),
+        });
+
+        expect(r.success).toBe(true);
+        expect(encounter.wildMonster.hp).toBeLessThan(wildHpBefore);
+    });
+
     it('captura falha consome orb e mantém encounter ativo', () => {
         const player = makePlayer({ inventory: { CLASTERORB_COMUM: 2 } });
         const playerMonster = makeMonsterInstance(STARTER_BY_CLASS[player.class].monsterId, {
@@ -317,4 +338,3 @@ describe('Wild Loop MVP 0.3 — cenários negativos essenciais', () => {
         }).not.toThrow();
     });
 });
-
