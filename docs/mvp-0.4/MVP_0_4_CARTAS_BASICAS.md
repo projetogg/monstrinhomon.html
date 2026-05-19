@@ -30,9 +30,11 @@ Adicionar uma camada inicial de cartas ao Wild Loop, com UX simples e segura, ma
 
 ## 4) Modelo canônico de carta (proposto)
 
+O exemplo abaixo usa o mesmo padrão de IDs da matriz de cartas básicas por classe: `CARD_<CLASSE_PTBR>_<NOME_CURTO>`.
+
 ```json
 {
-  "id": "CARD_WARRIOR_BASIC_STRIKE",
+  "id": "CARD_GUERREIRO_GOLPE_FIRME",
   "name": "Golpe Firme",
   "class": "Guerreiro",
   "cost": 1,
