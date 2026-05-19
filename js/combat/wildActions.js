@@ -1358,7 +1358,8 @@ export function executeWildCapture({ encounter, player, playerMonster, orbInfo, 
 
         const availableOrbQty = Number(player?.inventory?.[orbInfo?.id]) || 0;
         if (availableOrbQty <= 0) {
-            encounter.log.push(`⚠️ ${player.name} não possui ${orbInfo?.name || 'orb de captura'} disponível.`);
+            const playerName = player?.name || 'Jogador';
+            encounter.log.push(`⚠️ ${playerName} não possui ${orbInfo?.name || 'orb de captura'} disponível.`);
             return { success: false, captured: false, result: 'invalid', reason: 'no_capture_item' };
         }
 
