@@ -138,13 +138,6 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
         if (!encounter?.wildMonster) {
             return { success: false, reason: 'no_encounter' };
         }
-
-        // Segurança de estado: monstrinho ativo desmaiado não pode iniciar ação.
-        if (!playerMonster || (playerMonster.hp || 0) <= 0) {
-            encounter.log = encounter.log || [];
-            encounter.log.push('⚠️ Ação inválida: monstrinho ativo sem HP.');
-            return { success: false, reason: 'invalid_actor' };
-        }
         
         encounter.log = encounter.log || [];
 
@@ -1363,9 +1356,15 @@ export function executeWildCapture({ encounter, player, playerMonster, orbInfo, 
             return { success: false, captured: false, result: 'invalid' };
         }
 
+        const availableOrbQty = Number(player?.inventory?.[orbInfo?.id]) || 0;
+        if (availableOrbQty <= 0) {
+            encounter.log.push(`⚠️ ${player.name} não possui ${orbInfo?.name || 'orb de captura'} disponível.`);
+            return { success: false, captured: false, result: 'invalid', reason: 'no_capture_item' };
+        }
+
         // 1. Consumir 1 orb
         player.inventory = player.inventory || {};
-        player.inventory[orbInfo.id] = (player.inventory[orbInfo.id] || 1) - 1;
+        player.inventory[orbInfo.id] = availableOrbQty - 1;
         encounter.log.push(
             `${orbInfo.emoji} ${player.name} usou ${orbInfo.name}! (Restam: ${player.inventory[orbInfo.id]})`
         );

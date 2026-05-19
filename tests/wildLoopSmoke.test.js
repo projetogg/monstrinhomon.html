@@ -554,7 +554,7 @@ describe('Smoke MVP 0.3 — Wild Loop mínimo', () => {
         });
 
         expect(attackResult.success).toBe(false);
-        expect(attackResult.reason).toBe('invalid_actor');
+        expect(attackResult.reason).toBe('player_monster_fainted');
     });
 
     it('wild encounter inválido falha de forma segura', () => {

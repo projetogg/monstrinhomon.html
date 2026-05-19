@@ -340,12 +340,8 @@ describe('Negative MVP 0.3 — Cenários de Falha', () => {
                 dependencies: makeWildDeps(state),
             });
 
-            // O ataque ainda funciona (captura permite qualquer classe)
-            // mas em um contexto real, a UI deveria bloquear isso
-            expect(attackResult.success).toBe(true);
-
-            // Documentar que a regra de classe deve ser validada na camada de UI
-            // O sistema permite tecnicamente, mas a UI deve restringir
+            expect(attackResult.success).toBe(false);
+            expect(attackResult.reason).toBe('class_mismatch');
         });
     });
 
@@ -521,12 +517,9 @@ describe('Negative MVP 0.3 — Cenários de Falha', () => {
                 dependencies: makeWildDeps(state),
             });
 
-            // O sistema ainda executa, mas o resultado deve indicar falha
-            // Em um contexto real, a UI deve prevenir essa ação
             expect(starter.hp).toBe(0);
-            expect(attackResult.success).toBe(true); // a função executa
-
-            // Documentar que validações de HP devem ocorrer antes de chamar a função
+            expect(attackResult.success).toBe(false);
+            expect(attackResult.reason).toBe('player_monster_fainted');
         });
     });
 
@@ -608,7 +601,7 @@ describe('Negative MVP 0.3 — Cenários de Falha', () => {
     });
 
     describe('Inventário vazio', () => {
-        it('deve tratar inventário vazio como tendo 1 orb disponível (fallback)', () => {
+        it('deve bloquear captura quando não há orb disponível', () => {
             const state = makeInitialGameState('Mago');
             const player = state.players[0];
             const starter = player.team[0];
@@ -634,12 +627,11 @@ describe('Negative MVP 0.3 — Cenários de Falha', () => {
                 },
             });
 
-            // A função executa e trata 0 como 1 (fallback || 1)
-            // Então: (0 || 1) - 1 = 0
             expect(player.inventory.CLASTERORB_COMUM).toBe(0);
-
-            // Documentar que validações de inventário devem ocorrer na UI antes de permitir ação
-            expect(captureResult.success).toBe(true);
+            expect(captureResult.success).toBe(false);
+            expect(captureResult.captured).toBe(false);
+            expect(captureResult.result).toBe('invalid');
+            expect(captureResult.reason).toBe('no_capture_item');
         });
     });
 });
