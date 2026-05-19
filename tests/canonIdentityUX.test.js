@@ -67,8 +67,8 @@ function makeEncounter(wild, overrides = {}) {
     };
 }
 
-function makePlayer() {
-    return { name: 'Jogador', class: 'Guerreiro', inventory: {}, money: 0 };
+function makePlayer(overrides = {}) {
+    return { name: 'Jogador', class: 'Guerreiro', inventory: {}, money: 0, ...overrides };
 }
 
 const CLASS_ADV = {};
@@ -321,7 +321,7 @@ describe('executeWildSkill — moonquill: log SPD com identidade (Fase 14)', () 
 
         executeWildSkill({
             encounter: enc,
-            player: makePlayer(),
+            player: makePlayer({ class: pm.class }),
             playerMonster: pm,
             skillIndex: 0,
             dependencies: deps,
@@ -359,7 +359,7 @@ describe('executeWildSkill — shadowsting: mensagem de carga amigável (Fase 14
 
         executeWildSkill({
             encounter: enc,
-            player: makePlayer(),
+            player: makePlayer({ class: pm.class }),
             playerMonster: pm,
             skillIndex: 0,
             dependencies: deps,
@@ -393,7 +393,7 @@ describe('executeWildSkill — shadowsting: mensagem de carga amigável (Fase 14
 
         executeWildSkill({
             encounter: enc,
-            player: makePlayer(),
+            player: makePlayer({ class: pm.class }),
             playerMonster: pm,
             skillIndex: 0,
             dependencies: deps,
@@ -431,7 +431,7 @@ describe('executeWildSkill — bellwave: mensagem de ritmo amigável (Fase 14)',
 
         executeWildSkill({
             encounter: enc,
-            player: makePlayer(),
+            player: makePlayer({ class: pm.class }),
             playerMonster: pm,
             skillIndex: 0,
             dependencies: deps,
@@ -463,7 +463,7 @@ describe('executeWildSkill — bellwave: mensagem de ritmo amigável (Fase 14)',
 
         executeWildSkill({
             encounter: enc,
-            player: makePlayer(),
+            player: makePlayer({ class: pm.class }),
             playerMonster: pm,
             skillIndex: 0,
             dependencies: deps,
@@ -508,7 +508,7 @@ describe('useSkill (via executeWildSkill) — badge kit_swap no log (Fase 14)', 
 
         executeWildSkill({
             encounter: enc,
-            player: makePlayer(),
+            player: makePlayer({ class: pm.class }),
             playerMonster: pm,
             skillIndex: 0,
             dependencies: deps,
@@ -544,7 +544,7 @@ describe('useSkill (via executeWildSkill) — badge kit_swap no log (Fase 14)', 
 
         executeWildSkill({
             encounter: enc,
-            player: makePlayer(),
+            player: makePlayer({ class: pm.class }),
             playerMonster: pm,
             skillIndex: 0,
             dependencies: deps,
@@ -576,7 +576,7 @@ describe('useSkill (via executeWildSkill) — badge kit_swap no log (Fase 14)', 
 
         executeWildSkill({
             encounter: enc,
-            player: makePlayer(),
+            player: makePlayer({ class: pm.class }),
             playerMonster: pm,
             skillIndex: 0,
             dependencies: deps,
@@ -641,7 +641,7 @@ describe('executeWildSkill — emberfang: log ATK skill com identidade (Fase 14)
 
         executeWildSkill({
             encounter: enc,
-            player: makePlayer(),
+            player: makePlayer({ class: pm.class }),
             playerMonster: pm,
             skillIndex: 0,
             dependencies: deps,
@@ -679,7 +679,7 @@ describe('Retrocompatibilidade — monsters sem canonSpeciesId (Fase 14)', () =>
         const SKILL = { name: 'Golpe', type: 'DAMAGE', power: 15, cost: 3 };
         const deps = makeSkillDeps(vi.fn(() => true), { _skills: [SKILL], rollD20: () => 1 });
         expect(() =>
-            executeWildSkill({ encounter: enc, player: makePlayer(), playerMonster: pm, skillIndex: 0, dependencies: deps })
+            executeWildSkill({ encounter: enc, player: makePlayer({ class: pm.class }), playerMonster: pm, skillIndex: 0, dependencies: deps })
         ).not.toThrow();
     });
 

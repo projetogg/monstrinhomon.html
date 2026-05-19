@@ -393,7 +393,7 @@ describe('Trilha Comportamental — ação de captura não requer d20', () => {
     it('useCaptureAction reduz agressividade sem input de dado', () => {
         const wild = makeWild({ hp: 80, aggression: 100 });
         const enc = makeEncounter(wild);
-        const playerMon = makePlayerMon();
+        const playerMon = makePlayerMon({ class: 'Curandeiro' });
         const player = makePlayer({ class: 'Curandeiro' });
 
         const result = executeWildCaptureAction({
@@ -420,7 +420,7 @@ describe('Trilha Comportamental — ação de captura não requer d20', () => {
     it('quando agressividade chega a 0 → encounter.behaviorallyResolved = true', () => {
         const wild = makeWild({ hp: 80, aggression: 10 }); // quase calmo
         const enc = makeEncounter(wild);
-        const playerMon = makePlayerMon();
+        const playerMon = makePlayerMon({ class: 'Curandeiro' });
         const player = makePlayer({ class: 'Curandeiro' }); // -40 aggr → de 10 para ≤0
 
         const result = executeWildCaptureAction({
@@ -440,7 +440,7 @@ describe('Trilha Comportamental — ação de captura não requer d20', () => {
     it('após resolução comportamental, agressividade fica em 0', () => {
         const wild = makeWild({ hp: 80, aggression: 5 });
         const enc = makeEncounter(wild);
-        const playerMon = makePlayerMon();
+        const playerMon = makePlayerMon({ class: 'Curandeiro' });
         const player = makePlayer({ class: 'Curandeiro' });
 
         executeWildCaptureAction({
@@ -459,7 +459,7 @@ describe('Trilha Comportamental — ação de captura não requer d20', () => {
         // Testamos que não crasha e retorna um resultado coerente.
         const wild = makeWild({ hp: 80, aggression: 0 });
         const enc = makeEncounter(wild, { behaviorallyResolved: true });
-        const playerMon = makePlayerMon();
+        const playerMon = makePlayerMon({ class: 'Curandeiro' });
         const player = makePlayer({ class: 'Curandeiro' });
 
         const result = executeWildCaptureAction({
@@ -741,7 +741,7 @@ describe('Tutorial — compatibilidade com sistema real', () => {
         // o jogador AINDA precisa usar a orb → encounter deve ficar ativo
         const wild = makeWild({ hp: 80, aggression: 5 });
         const enc = makeEncounter(wild);
-        const playerMon = makePlayerMon();
+        const playerMon = makePlayerMon({ class: 'Curandeiro' });
         const player = makePlayer({ class: 'Curandeiro' });
 
         const result = executeWildCaptureAction({

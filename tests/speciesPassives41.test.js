@@ -364,7 +364,7 @@ describe('speciesPassives 4.1 — moonquill integração executeWildSkill', () =
             rollD20: () => 1,
         });
 
-        executeWildSkill({ encounter: enc, player: makePlayer(), playerMonster: pm, skillIndex: 0, dependencies: deps });
+        executeWildSkill({ encounter: enc, player: makePlayer({ class: pm.class }), playerMonster: pm, skillIndex: 0, dependencies: deps });
 
         // Deve ter buff de SPD adicionado
         const spdBuff = pm.buffs.find(b => b.type === 'spd' && b.source === 'moonquill_passive');
@@ -382,7 +382,7 @@ describe('speciesPassives 4.1 — moonquill integração executeWildSkill', () =
             rollD20: () => 1,
         });
 
-        executeWildSkill({ encounter: enc, player: makePlayer(), playerMonster: pm, skillIndex: 0, dependencies: deps });
+        executeWildSkill({ encounter: enc, player: makePlayer({ class: pm.class }), playerMonster: pm, skillIndex: 0, dependencies: deps });
 
         const hasMoonLog = enc.log.some(l => l.includes('✨') && l.includes('SPD'));
         expect(hasMoonLog).toBe(true);
@@ -398,7 +398,7 @@ describe('speciesPassives 4.1 — moonquill integração executeWildSkill', () =
             rollD20: () => 1,
         });
 
-        executeWildSkill({ encounter: enc, player: makePlayer(), playerMonster: pm, skillIndex: 0, dependencies: deps });
+        executeWildSkill({ encounter: enc, player: makePlayer({ class: pm.class }), playerMonster: pm, skillIndex: 0, dependencies: deps });
 
         const spdBuff = pm.buffs.find(b => b.type === 'spd' && b.source === 'moonquill_passive');
         expect(spdBuff).toBeUndefined();
@@ -413,7 +413,7 @@ describe('speciesPassives 4.1 — moonquill integração executeWildSkill', () =
             rollD20: () => 1,
         });
 
-        executeWildSkill({ encounter: enc, player: makePlayer(), playerMonster: pm, skillIndex: 0, dependencies: deps });
+        executeWildSkill({ encounter: enc, player: makePlayer({ class: pm.class }), playerMonster: pm, skillIndex: 0, dependencies: deps });
 
         const spdBuff = pm.buffs.find(b => b.source === 'moonquill_passive');
         expect(spdBuff).toBeUndefined();
@@ -433,7 +433,7 @@ describe('speciesPassives 4.1 — moonquill integração executeWildSkill', () =
             rollD20: () => 1,
         });
 
-        executeWildSkill({ encounter: enc, player: makePlayer(), playerMonster: pm, skillIndex: 0, dependencies: deps });
+        executeWildSkill({ encounter: enc, player: makePlayer({ class: pm.class }), playerMonster: pm, skillIndex: 0, dependencies: deps });
 
         const spdBuff = pm.buffs.find(b => b.source === 'moonquill_passive');
         expect(spdBuff).toBeUndefined();
@@ -448,7 +448,7 @@ describe('speciesPassives 4.1 — moonquill integração executeWildSkill', () =
             rollD20: () => 1,
         });
 
-        executeWildSkill({ encounter: enc, player: makePlayer(), playerMonster: pm, skillIndex: 0, dependencies: deps });
+        executeWildSkill({ encounter: enc, player: makePlayer({ class: pm.class }), playerMonster: pm, skillIndex: 0, dependencies: deps });
 
         expect(pm.buffs.find(b => b.source === 'moonquill_passive')).toBeUndefined();
     });
@@ -462,7 +462,7 @@ describe('speciesPassives 4.1 — moonquill integração executeWildSkill', () =
             rollD20: () => 1,
         });
 
-        executeWildSkill({ encounter: enc, player: makePlayer(), playerMonster: pm, skillIndex: 0, dependencies: deps });
+        executeWildSkill({ encounter: enc, player: makePlayer({ class: pm.class }), playerMonster: pm, skillIndex: 0, dependencies: deps });
 
         const spdBuff = pm.buffs.find(b => b.source === 'moonquill_passive');
         expect(spdBuff.duration).toBe(1);
