@@ -2,262 +2,247 @@
 
 ## 1. Resumo executivo
 
-**Decisão atual: NO-GO para iniciar MVP 0.4.**
+**Decisão atual: GO com ressalvas para preparar o MVP 0.4.**
 
-O MVP 0.3 está funcional no fluxo principal e com documentação/auditoria sólidas, porém existem bloqueios objetivos antes de cartas: `npm test` falhando no branch atual, workflow de testes recente falhando em `main` após merges de cenários negativos, comportamento permissivo de captura sem orb (`|| 1`) e desalinhamento entre testes legados e runtime hardenizado.
+O MVP 0.3 foi estabilizado no fluxo principal do Wild Loop e agora possui auditoria prática, smoke test positivo, cenários negativos e hardening de runtime para casos críticos de captura, classe e HP 0.
+
+O projeto pode avançar para a **preparação documental e técnica do MVP 0.4 — Cartas Básicas e Interface de Decisão**, desde que o PR atual seja finalizado corretamente: sair de draft, ter workflow autorizado/concluído e ser mergeado sem regressões.
+
+Esta decisão **não autoriza ainda implementar deckbuilding completo, batalha em grupo, boss ou cartas avançadas**. Autoriza apenas planejar e iniciar o escopo mínimo de cartas básicas depois do merge deste PR.
 
 ## 2. Estado atual do MVP 0.3
 
 ### Fatos verificados
 
-- **Documentação MVP 0.3 concluída** (PR #200, mergeado).
-- **Auditoria prática concluída** (Issue #201 fechada + PR #202 mergeado).
-- **Smoke test positivo do Wild Loop concluído** (PR #203 mergeado, `tests/wildLoopSmoke.test.js`).
-- **Cenários negativos adicionados** (PR #208 e PR #209 mergeados).
-- **Hardening de runtime introduzido** em `js/combat/wildActions.js` via PR #209 (validação de ator/classe).
-- **Validações locais executadas nesta análise**:
-  - `npm run test:wild-loop`: **passou** (com erros de recurso externo no console do E2E).
-  - `npm test`: **falhou** (3 testes).
-  - `npm run validate-data`: **passou** (8 warnings já conhecidos de faixa de `baseHp`).
-  - `npm run validate:monster-assets`: **passou sem warnings**.
-- **Workflow `.github/workflows/tests.yml` (npm test) com falhas recentes em `main`**:
-  - run `26059146093` (merge PR #209): failure
-  - run `26059125254` (merge PR #208): failure
+- **Documentação MVP 0.3 concluída** — PR #200 mergeado.
+- **Auditoria prática concluída** — Issue #201 fechada e PR #202 mergeado.
+- **Smoke test positivo do Wild Loop concluído** — PR #203 mergeado com `tests/wildLoopSmoke.test.js`.
+- **Cenários negativos mínimos adicionados** — testes negativos do Wild Loop foram incorporados e atualizados.
+- **Hardening de runtime em `js/combat/wildActions.js`** — ações wild agora têm validações mais explícitas para classe, ator inválido/HP 0 e captura sem orb.
+- **Captura sem orb indisponível foi endurecida** — não deve mais usar fallback permissivo `|| 1` para permitir captura sem item.
+- **`allowCrossClassBattle` passou a ter cobertura dedicada** — exceção explícita para cenários de debug/mestre/teste, sem liberar cross-class por padrão.
+- **Validações reportadas no PR atual:**
+  - `npm test`: passou.
+  - `npm run test:wild-loop`: passou.
+  - `npm run validate-data`: passou, com warnings conhecidos de balanceamento/baseHp.
+  - `npm run validate:monster-assets`: passou.
+  - `parallel_validation`: executado com feedback aplicável tratado.
+
+### Linha de base histórica anterior às correções deste PR
+
+Antes das correções consolidadas neste PR, havia bloqueios reais:
+
+- `npm test` falhando por divergência entre testes negativos e runtime endurecido;
+- workflow recente falhando após merges de cenários negativos;
+- captura sem orb ainda sujeita a fallback permissivo;
+- ausência de teste dedicado para `allowCrossClassBattle`;
+- divergência de contrato para HP 0/ator inválido.
+
+Esses pontos motivaram este PR. Eles **não devem continuar sendo descritos como bloqueadores atuais** se as validações do PR permanecerem verdes.
 
 ### Inferência técnica
 
-- O fluxo mínimo do jogo existe e roda, mas a baseline de qualidade para avançar milestone ainda não está estável porque a suíte principal e CI estão quebradas por inconsistências entre testes/expectativas.
+O MVP 0.3 está suficientemente protegido para servir de base ao MVP 0.4, desde que o merge preserve os resultados de teste e o branch principal permaneça verde.
 
 ### Recomendação
 
-- Fechar os bloqueadores de teste e regras de robustez de captura antes de iniciar qualquer escopo de cartas.
+- Finalizar este PR como estabilização pré-MVP 0.4.
+- Após merge, abrir o escopo formal do MVP 0.4 sem implementar cartas avançadas.
+- Manter issues P3/P4 para melhorias futuras, como Playwright E2E e redução de warnings não bloqueantes.
 
-### PRs recentes — decisão operacional
+## 3. Análise do PR/branch de estabilização pré-MVP 0.4
 
-- **PR #200:** manter como base documental (ok).
-- **PR #202:** manter como referência de auditoria (ok).
-- **PR #203:** manter como proteção de smoke positivo (ok).
-- **PR #207:** já mergeado; mudança de guarda de ator foi absorvida.
-- **PR #208 e #209:** já mergeados, porém com efeito colateral de instabilidade em suíte/CI; **não repetir merges similares sem reconciliação**.
-- **Ação recomendada:** abrir PR de estabilização (testes + contrato de erro + orb indisponível) antes de qualquer PR de cartas.
+### Arquivos alterados
 
-## 3. Análise do PR/branch de cenários negativos
-
-### Arquivos alterados (PR #209)
-
-- `js/combat/wildActions.js` (**runtime**)
-- `tests/wildLoopNegativeScenarios.test.js` (novo)
-- `tests/wildPlayerActions.test.js`
-- `tests/firstCombatAudit.test.js`
-- `tests/canonIdentityUX.test.js`
-- `tests/shadowstingLoop.test.js`
-- `tests/speciesPassives.test.js`
-- `tests/speciesPassives41.test.js`
+- `docs/mvp-0.4/PRE_MVP_0_4_ACTION_PLAN.md`
+- `js/combat/wildActions.js`
+- `tests/wildLoopNegative.test.js`
+- `tests/wildLoopNegativeScenarios.test.js`
+- `tests/wildLoopSmoke.test.js`
 
 ### Houve alteração de runtime?
 
 **Sim.**
 
-- Adição de `validateWildPlayerActor(...)` em `wildActions.js`.
-- Aplicação da validação em `executeWildAttack`, `executeWildSkill`, `executeWildCaptureAction`, `executeWildItemUse`, `executeWildCapture`.
-- Introdução explícita de escape controlado: `dependencies.allowCrossClassBattle === true`.
+A alteração de runtime é intencional e limitada ao hardening do Wild Loop antes do MVP 0.4.
+
+Mudanças principais:
+
+- bloqueio de captura sem orb disponível;
+- remoção do comportamento permissivo que tratava inventário `0` como se houvesse `1` orb;
+- alinhamento do contrato de erro para ator inválido/HP 0;
+- preservação da restrição de classe no pipeline wild;
+- manutenção de escape controlado por `dependencies.allowCrossClassBattle === true`.
 
 ### A alteração é aceitável?
 
-- **Parcialmente aceitável.** O hardening é coerente com regra canônica (classe em batalha + bloqueio de ator inválido/HP 0), mas a integração ficou inconsistente com testes legados e com motivo de erro esperado em parte da suíte (`invalid_actor` vs `player_monster_fainted`).
+**Sim, com ressalva de revisão final.**
 
-### Riscos observados
+A alteração é aceitável porque fecha riscos P1 antes de cartas, não altera balanceamento, não muda fórmula de dano e não adiciona sistemas novos. Ela deve ser mergeada apenas se os testes completos e o workflow do PR permanecerem verdes/autorizados.
 
-- Duplicidade de suíte negativa (`wildLoopNegative.test.js` e `wildLoopNegativeScenarios.test.js`) com expectativas conflitantes.
-- Teste legado documentando comportamento indesejado (`fallback || 1` para orb indisponível).
-- Escape `allowCrossClassBattle` existe no runtime, porém sem teste dedicado.
+### Riscos resolvidos por este PR
 
-### Cobertura já presente
+- Captura sem orb não deve mais ser permitida.
+- Inventário de orb não deve ficar negativo por fallback indevido.
+- HP 0 não deve executar ação wild válida.
+- Cross-class continua bloqueado por padrão.
+- Cross-class pode ser permitido apenas por escape explícito controlado.
+- Testes negativos deixam de documentar comportamento indesejado como aceitável.
 
-- starter errado bloqueado (novo teste)
-- captura falha consome orb e mantém encounter ativo
-- team cheio envia para box
-- save corrompido cai em fallback seguro
-- encounter inválido falha com segurança
-- HP 0 bloqueia ação (com divergência de reason entre testes)
+### Cobertura consolidada
 
-### Cobertura faltante
-
-- teste dedicado para `allowCrossClassBattle === true`
-- teste que garanta bloqueio explícito quando orb indisponível/zero (sem fallback permissivo)
-- consolidação de uma única suíte negativa canônica
+- starter errado / classe incompatível;
+- exceção `allowCrossClassBattle`;
+- captura falha consumindo orb e mantendo encounter ativo;
+- captura sem orb indisponível;
+- team cheio enviando captura para box;
+- save corrompido com fallback seguro;
+- HP 0 bloqueando ação;
+- encounter inválido falhando sem crash;
+- smoke test positivo do Wild Loop.
 
 ### Verificação dos pontos críticos obrigatórios
 
-| Ponto | Status | Evidência resumida |
+| Ponto | Status pós-PR | Evidência resumida |
 |---|---|---|
-| PR negativo altera runtime? | **Sim** | `js/combat/wildActions.js` alterado no PR #209 |
-| Hardening em `wildActions.js` é pequeno/justificado? | **Parcialmente** | mudança focada em validação de ator/classe, mas com regressões de suíte |
-| Restrição de classe no pipeline wild | **Implementada** | `validateWildPlayerActor` bloqueia `class_mismatch` |
-| Escape `allowCrossClassBattle === true` | **Implementado** | flag presente no runtime |
-| Escape está testado? | **Não** | sem teste dedicado encontrado |
-| Ativo com HP 0 não age | **Sim** | retorna falha (`invalid_actor`) em `executeWildAttack` |
-| Captura com orb indisponível protegida | **Não** | consumo usa fallback permissivo (`|| 1`) |
-| Inventário 0 orb tratado como 1 por fallback | **Sim (risco)** | comportamento explícito em runtime e teste legado |
-| Captura falha consome orb e mantém encounter | **Sim** | coberto em smoke/negativo |
-| Team cheio envia para box | **Sim** | coberto em smoke/negativo |
-| Save corrompido faz fallback seguro | **Sim** | `storage.js` + testes de smoke/negativo |
-| Encounter inválido falha seguro | **Sim** | testes smoke/negativo |
-| `npm run test:wild-loop` | **Passou** | execução local desta análise |
-| `npm test` | **Falhou** | 3 falhas em testes negativos |
-| `npm run validate-data` | **Passou com warnings** | 8 warnings de `baseHp` |
-| `npm run validate:monster-assets` | **Passou** | sem warnings |
-| Warnings conhecidos pré-MVP 0.4 | **Sim** | recurso externo + `SKILL_DEFS_FALLBACK` |
-| Risco de source of truth duplicado | **Sim** | duas suítes negativas conflitantes |
-| Risco de teste documentar bug | **Sim** | teste legado aceita fallback indevido de orb |
-| Bloqueador P0/P1 antes de cartas | **Sim (P1)** | CI/testes falhando + proteção de orb incompleta |
+| PR altera runtime? | **Sim, intencionalmente** | `js/combat/wildActions.js` endurecido |
+| Mudança é pequena/justificada? | **Sim** | foco em captura, classe e HP 0 |
+| Restrição de classe no pipeline wild | **Implementada** | bloqueio por padrão |
+| Escape `allowCrossClassBattle === true` | **Implementado e testado** | teste dedicado adicionado |
+| Ativo com HP 0 não age | **Coberto** | contrato de erro alinhado nos testes |
+| Captura com orb indisponível protegida | **Coberta** | sem fallback permissivo |
+| Inventário 0 tratado como 1 por fallback | **Resolvido** | captura sem orb bloqueada |
+| Captura falha consome orb e mantém encounter | **Coberto** | teste negativo |
+| Team cheio envia para box | **Coberto** | teste negativo |
+| Save corrompido faz fallback seguro | **Coberto** | teste negativo/smoke |
+| Encounter inválido falha seguro | **Coberto** | teste negativo/smoke |
+| `npm run test:wild-loop` | **Reportado como verde** | validação do PR |
+| `npm test` | **Reportado como verde** | validação do PR |
+| `npm run validate-data` | **Passou com warnings conhecidos** | warnings de baseHp não bloqueantes |
+| `npm run validate:monster-assets` | **Reportado como verde** | validação do PR |
+| Risco de source of truth duplicado | **Reduzido** | testes alinhados ao contrato atual |
+| Risco de teste documentar bug | **Reduzido** | fallback permissivo deixou de ser esperado |
+| Bloqueador P0/P1 antes de cartas | **Nenhum conhecido após merge verde** | manter vigilância até workflow final |
 
 ## 4. Riscos antes do MVP 0.4
 
-| Risco | Severidade | Evidência | Recomendação |
+| Risco | Severidade | Estado atual | Recomendação |
 |---|---|---|---|
-| `npm test` falhando no branch atual | P1 | Falhas em `tests/wildLoopNegative.test.js` e `tests/wildLoopNegativeScenarios.test.js` | Corrigir/alinhar expectativas e estabilizar suíte antes de MVP 0.4 |
-| Workflow de testes falhando em `main` após PRs negativos | P1 | Runs `26059146093` e `26059125254` (workflow `Tests (Vitest)`) | Abrir issue de estabilização CI e corrigir imediatamente |
-| Captura sem orb pode ser tratada como disponível (`(x || 1) - 1`) | P1 | `js/combat/wildActions.js` linha de consumo de orb com fallback `|| 1` | Hardening para bloquear captura sem item disponível + teste |
-| Duplicidade de source of truth em testes negativos | P2 | `tests/wildLoopNegative.test.js` e `tests/wildLoopNegativeScenarios.test.js` coexistem com regras conflitantes | Escolher suíte canônica e remover/ajustar a redundante |
-| Teste documentando bug/comportamento não desejado | P2 | `wildLoopNegative.test.js` valida fallback de orb inexistente como "ok" | Reescrever cenário para refletir regra correta de inventário |
-| Escape cross-class sem teste | P2 | `allowCrossClassBattle` presente em runtime e sem cobertura | Criar teste explícito de opt-in debug/mestre |
-| Divergência de reason para HP 0 (`invalid_actor` x `player_monster_fainted`) | P3 | Falha de asserção em teste negativo novo | Padronizar contrato de retorno e atualizar testes/docs |
-| Warning de recurso externo no smoke E2E | P3 | `npm run test:wild-loop` exibiu `Failed to load resource` | Abrir issue de robustez de recurso externo/fallback |
-| Warning de fallback de skills já auditado | P4 | `AUDITORIA_PRACTICA_ISSUE_201.md` aponta `SKILL_DEFS_FALLBACK` | Registrar melhoria futura de init/timing sem bloquear MVP 0.4 |
+| Workflow do PR ainda exigir ação manual | P2 | `action_required` pode bloquear evidência de CI | Autorizar/aguardar workflow antes do merge |
+| Documento ficar desatualizado em relação ao código | P2 | Corrigido neste commit documental | Manter este arquivo sincronizado com o gate real |
+| Warnings de `baseHp` no `validate-data` | P3 | Conhecido, não bloqueante | Abrir issue de balanceamento/dados depois do MVP 0.4 inicial |
+| Recurso externo/fontes gerando ruído em ambiente headless | P3 | Não bloqueante | Abrir issue de fallback/localização de recurso externo |
+| `SKILL_DEFS_FALLBACK`/timing de skills | P4 | Não bloqueante | Registrar melhoria futura antes de cartas avançadas |
+| Playwright E2E ainda não cobre UI completa | P4 | Aceitável para agora | Planejar promoção para E2E quando a UI de cartas estabilizar |
+| MVP 0.4 expandir escopo além de cartas básicas | P2 | Risco de produção | Congelar fora de escopo no plano do MVP 0.4 |
 
-## 5. Issues obrigatórias antes do MVP 0.4
+## 5. Issues recomendadas após merge
 
-### Issue 1 — Bloquear captura com orb indisponível
-- **Objetivo:** impedir tentativa de captura sem orb no inventário.
-- **Contexto:** runtime usa fallback permissivo com `|| 1`.
-- **Arquivos prováveis:** `js/combat/wildActions.js`, `tests/wildLoopNegativeScenarios.test.js`.
+### Issue 1 — Criar escopo formal do MVP 0.4 — Cartas Básicas
+
+- **Objetivo:** documentar o escopo mínimo de cartas antes de qualquer implementação.
+- **Contexto:** o Wild Loop está protegido; a próxima evolução deve ser carta básica, não deckbuilding completo.
+- **Arquivos prováveis:** `docs/mvp-0.4/README.md`, `docs/mvp-0.4/MVP_0_4_CARTAS_BASICAS.md`.
 - **Critérios de aceite:**
-  - captura sem orb retorna erro válido (sem consumo negativo/permissivo);
-  - encounter mantém estado consistente;
-  - cobertura de teste positiva/negativa.
-- **Fora de escopo:** balanceamento de captura.
-- **Severidade:** **P1**.
+  - definir 1 carta básica por classe;
+  - definir mão inicial mínima;
+  - definir ENE/custo visível;
+  - definir fora de escopo;
+  - definir testes obrigatórios;
+  - não implementar runtime ainda.
+- **Fora de escopo:** deckbuilding completo, boss, grupo, campanha.
+- **Severidade:** P2 como controle de escopo.
 
-### Issue 2 — Testar exceção `allowCrossClassBattle`
-- **Objetivo:** validar escape controlado para modo debug/mestre.
-- **Contexto:** flag existe no runtime e não está coberta.
-- **Arquivos prováveis:** `tests/wildLoopNegativeScenarios.test.js` (ou suíte canônica equivalente), `tests/wildPlayerActions.test.js`.
+### Issue 2 — Reduzir warnings não bloqueantes de recurso externo
+
+- **Objetivo:** reduzir ruído no console/ambiente headless.
+- **Contexto:** auditorias anteriores observaram falhas não críticas de recurso externo.
+- **Arquivos prováveis:** `index.html`, CSS/fontes, docs de auditoria.
 - **Critérios de aceite:**
-  - sem flag: bloqueia classe errada;
-  - com `allowCrossClassBattle === true`: permite ação.
-- **Fora de escopo:** liberar cross-class por padrão.
-- **Severidade:** **P2**.
+  - documentar origem;
+  - manter fallback local ou tolerância explícita;
+  - não bloquear testes.
+- **Fora de escopo:** refactor visual.
+- **Severidade:** P3.
 
-### Issue 3 — Confirmar bloqueio de ação com HP 0 e contrato de reason
-- **Objetivo:** consolidar comportamento canônico para ator desmaiado.
-- **Contexto:** runtime bloqueia, mas testes divergem no `reason`.
-- **Arquivos prováveis:** `js/combat/wildActions.js`, `tests/wildLoopNegative*.test.js`.
+### Issue 3 — Revisar warning/fallback de skills antes de cartas avançadas
+
+- **Objetivo:** entender o `SKILL_DEFS_FALLBACK` e evitar que ele atrapalhe cartas.
+- **Contexto:** cartas dependerão mais de skills/habilidades; warnings de timing devem ser compreendidos antes de expansão.
+- **Arquivos prováveis:** `js/data/skillsLoader.js`, `js/data/*`, inicialização em `index.html`.
 - **Critérios de aceite:**
-  - HP 0 não executa ação em nenhuma rota wild;
-  - `reason` documentado e único.
-- **Fora de escopo:** UX completa de troca automática.
-- **Severidade:** **P1**.
+  - origem documentada;
+  - decisão clara: corrigir agora, tolerar ou adiar;
+  - sem mudança grande antes do MVP 0.4 básico.
+- **Fora de escopo:** reescrever sistema de skills.
+- **Severidade:** P4 agora, pode virar P2 antes de cartas avançadas.
 
-### Issue 4 — Documentar hardening de `wildActions.js` (PR #209)
-- **Objetivo:** registrar mudança de regra técnica e contrato de erros.
-- **Contexto:** runtime mudou além de testes.
-- **Arquivos prováveis:** `docs/mvp-0.3/*` e/ou `docs/AUDIT_REPORT.md`.
+### Issue 4 — Planejar Playwright E2E para Wild Loop + Cartas
+
+- **Objetivo:** promover o smoke test de integração para E2E quando a UI estiver pronta.
+- **Contexto:** Vitest/integration protege o núcleo, mas não substitui UI real.
+- **Arquivos prováveis:** `e2e/*`, configuração Playwright, workflow dedicado.
 - **Critérios de aceite:**
-  - documento descreve validações de ator/classe e escape debug;
-  - vínculo com testes canônicos.
-- **Fora de escopo:** refactor do combate.
-- **Severidade:** **P3**.
-
-### Issue 5 — Manter smoke test positivo do Wild Loop
-- **Objetivo:** garantir proteção contínua do caminho feliz.
-- **Contexto:** smoke já existe e precisa permanecer verde.
-- **Arquivos prováveis:** `tests/wildLoopSmoke.test.js`, `e2e/wildLoopSmoke.e2e.mjs`.
-- **Critérios de aceite:** `npm run test:wild-loop` e/ou equivalente definido continuam passando.
-- **Fora de escopo:** deckbuilding/cartas.
-- **Severidade:** **P1**.
-
-### Issue 6 — Manter cenários negativos mínimos sem duplicidade
-- **Objetivo:** consolidar suíte negativa mínima sem conflito.
-- **Contexto:** existem duas suítes negativas com expectativas incompatíveis.
-- **Arquivos prováveis:** `tests/wildLoopNegative.test.js`, `tests/wildLoopNegativeScenarios.test.js`.
-- **Critérios de aceite:**
-  - uma fonte de verdade para negativos;
-  - `npm test` verde.
-- **Fora de escopo:** aumento grande de cobertura fora do wild loop mínimo.
-- **Severidade:** **P1**.
-
-### Issue 7 — Registrar warnings não bloqueantes (recurso externo + fallback skills)
-- **Objetivo:** rastrear ruídos de execução para melhoria incremental.
-- **Contexto:** warnings observados em auditoria e smoke E2E.
-- **Arquivos prováveis:** `index.html`, `js/data/skillsLoader.js`, docs de auditoria.
-- **Critérios de aceite:** issues abertas com reprodução, impacto e proposta.
-- **Fora de escopo:** remoção total de logs diagnósticos.
-- **Severidade:** **P3/P4**.
-
-### Issue 8 — Issue futura para Playwright E2E do Wild Loop completo
-- **Objetivo:** cobertura ponta-a-ponta robusta da UI real.
-- **Contexto:** smoke atual é misto (Vitest + script E2E dedicado).
-- **Arquivos prováveis:** `e2e/*`, workflow dedicado.
-- **Critérios de aceite:** cenário headless estável no CI.
-- **Fora de escopo:** ampliar para campanha/boss.
-- **Severidade:** **P4**.
-
-### Issue 9 — Issue futura de escopo MVP 0.4 (cartas básicas)
-- **Objetivo:** abrir o escopo de cartas só após gate técnico prévio.
-- **Contexto:** próxima milestone já definida em docs do MVP 0.3.
-- **Arquivos prováveis:** `docs/mvp-0.4/*`, backlog de produto.
-- **Critérios de aceite:** escopo mínimo, fora de escopo e critérios de pronto documentados.
-- **Fora de escopo:** implementação de runtime nesta issue.
-- **Severidade:** **P4**.
+  - fluxo headless estável;
+  - sem dependência de rede externa;
+  - rodar em CI.
+- **Fora de escopo:** implementar antes da UI mínima de cartas.
+- **Severidade:** P4.
 
 ## 6. Critérios de pronto para iniciar MVP 0.4
 
-- [x] PR de smoke test mergeado.
 - [x] PR de auditoria mergeado.
-- [ ] PR de cenários negativos mergeado ou justificado.
-- [ ] `npm test` passa.
-- [x] `npm run test:wild-loop` passa.
-- [x] `npm run validate-data` passa.
-- [x] `npm run validate:monster-assets` passa.
-- [ ] Sem P0/P1 aberto.
-- [ ] Orb indisponível protegida.
+- [x] PR de smoke test mergeado.
+- [x] Cenários negativos mínimos criados e alinhados.
+- [x] Captura sem orb protegida.
+- [x] Inventário 0 não é tratado como 1 orb disponível.
 - [x] HP 0 não executa ação.
-- [x] Restrição de classe testada.
-- [ ] Exceção `allowCrossClassBattle` testada, se existir.
+- [x] Restrição de classe coberta.
+- [x] Exceção `allowCrossClassBattle` coberta.
 - [x] Save corrompido com fallback seguro.
 - [x] Captura falha e team cheio cobertos.
-- [x] Plano do MVP 0.4 documentado.
+- [x] `npm test` reportado como verde no PR.
+- [x] `npm run test:wild-loop` reportado como verde no PR.
+- [x] `npm run validate-data` reportado como verde, com warnings conhecidos.
+- [x] `npm run validate:monster-assets` reportado como verde.
+- [ ] Workflow do PR autorizado/concluído no GitHub.
+- [ ] PR #210 marcado como ready for review.
+- [ ] PR #210 mergeado na `main`.
+- [ ] Escopo formal do MVP 0.4 criado antes de implementar cartas.
 
 ## 7. Ordem recomendada de execução
 
-1. **Estabilizar CI imediatamente**: alinhar testes negativos com runtime atual (sem alterar regra canônica indevidamente).
-2. **Resolver orb indisponível (P1)** com hardening + teste dedicado.
-3. **Padronizar contrato de erro para HP 0** (`reason`) e atualizar testes/documentação.
-4. **Adicionar teste de `allowCrossClassBattle`** (sem abrir loophole em produção).
-5. **Consolidar suíte negativa única** (evitar source of truth duplicada).
-6. **Rodar validação completa e garantir verde**:
-   - `npm run test:wild-loop`
-   - `npm test`
-   - `npm run validate-data`
-   - `npm run validate:monster-assets`
-7. **Abrir/atualizar issues P3/P4** (warnings de recurso externo, fallback skills, E2E futuro).
-8. **Concluir documento de escopo técnico do MVP 0.4** (sem implementação de cartas).
-9. **Somente então iniciar implementação de Cartas Básicas**.
+1. Resolver/autorizar o workflow do PR #210.
+2. Marcar o PR #210 como ready for review.
+3. Fazer merge do PR #210 se o workflow permanecer verde.
+4. Abrir issue documental do MVP 0.4 — Cartas Básicas e Interface de Decisão.
+5. Criar documento de escopo do MVP 0.4 com fora de escopo rígido.
+6. Definir modelo mínimo de carta antes de runtime.
+7. Implementar a primeira carta básica por classe em PR pequeno.
+8. Proteger cartas com testes antes de deckbuilding.
+9. Só depois discutir grupo, boss, campanha e dashboards.
 
 ## 8. Decisão GO/NO-GO
 
-**NO-GO (neste momento).**
+**GO com ressalvas para preparação do MVP 0.4.**
 
 ### Justificativa técnica
 
-- Gate básico de qualidade não foi atingido: `npm test` e workflow principal de testes estão falhando.
-- Há risco funcional real no pipeline de captura (orb indisponível com fallback permissivo).
-- Há inconsistência de contratos de erro e duplicidade de suites negativas, aumentando risco de regressão silenciosa.
+O Wild Loop do MVP 0.3 possui proteção suficiente para permitir a próxima etapa de planejamento e escopo do MVP 0.4. O PR atual fecha os bloqueios que justificavam o NO-GO anterior: captura sem orb, contrato de HP 0, exceção cross-class e testes negativos desalinhados.
 
-### Condição para reclassificar para GO com ressalvas
+### Ressalvas
 
-- `npm test` verde em branch e CI (`main`),
-- hardening de orb indisponível validado por teste,
-- escape `allowCrossClassBattle` coberto,
-- suíte negativa consolidada sem conflitos.
+- Não iniciar implementação de cartas antes do merge deste PR.
+- Não iniciar deckbuilding completo.
+- Não iniciar grupo/boss/campanha.
+- Não tratar warnings P3/P4 como bloqueadores, mas registrar issues para acompanhamento.
+- Manter `npm test` e `npm run test:wild-loop` verdes em toda alteração do MVP 0.4.
+
+### Condição para GO pleno
+
+O estado passa de **GO com ressalvas** para **GO pleno para implementação inicial de cartas básicas** quando:
+
+- PR #210 estiver mergeado na `main`;
+- workflow do PR estiver autorizado/concluído;
+- não houver P0/P1 aberto;
+- documento de escopo do MVP 0.4 estiver criado e aprovado.
