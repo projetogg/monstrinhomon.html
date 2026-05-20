@@ -20,7 +20,19 @@
 
 ## 2.1 Remoção segura
 
-**Situação atual:** nenhum item aprovado para remoção automática neste ciclo.
+**Candidatos para PR separado (baixo risco, com allowlist estrita e gates completos):**
+
+- `XP_TABLE.csv`
+- `_DV.csv`
+- `MASTER_CONTROLS.csv`
+- `TEST_SCENARIO.csv`
+- `README.csv`
+- `.merge-status`
+- `docs/migration_phase1_id_remap.json`
+- `docs/migration_phase1_runtime_candidate.json`
+- `docs/migration_phase1_runtime_candidate_reconciled.json`
+
+**Observação:** estes itens **não devem ser removidos automaticamente** no mesmo PR documental. A remoção deve ocorrer em PR separado, pequeno, com validação antes e depois.
 
 ---
 
