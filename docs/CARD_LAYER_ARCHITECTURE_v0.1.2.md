@@ -3,12 +3,12 @@
 **Status:** Aprovado para implementação Fase 1  
 **Versão:** 0.1.2  
 **Data:** 2026-05-19  
-**Substitui:** `CARD_LAYER_ARCHITECTURE_v0.1.1.md`  
+**Origem:** consolida a auditoria da Fase 0 e as decisões de arquitetura discutidas antes da implementação.  
 **Convive com:** `docs/PATCH_CANONICO_COMBATE_V2.2.md`, `docs/AUTHORITY_MAP.md`, `docs/AUDIT_FASE_0_RESPOSTAS.md`, `docs/PENDENCIAS_TECNICAS.md`
 
 ---
 
-## Changelog v0.1.1 → v0.1.2
+## Mudanças consolidadas nesta versão
 
 1. **K-condicional definitiva:** confirmado por evidência que o runtime já resolve `kitSwap`. Card Layer opera em modo passivo absoluto.
 2. **Slot 4 do Guerreiro:** confirmado que slot 4 base não existe em `data/skills.json`. Fase 1 oficialmente tem 3 Cards, não 4.
