@@ -40,14 +40,15 @@ describe('basicCardHandUI — preview seguro (MVP 0.4)', () => {
         });
     });
 
-    it('habilita execução apenas para Golpe Firme do Guerreiro com ENE suficiente', () => {
+    it('mantém Golpe Firme em preview na UI mesmo com ENE suficiente', () => {
         const [card] = buildBasicCardHandViewModel('Guerreiro', { currentEne: 1 });
+        expect(card.id).toBe('CARD_GUERREIRO_GOLPE_FIRME');
         expect(card.canAfford).toBe(true);
-        expect(card.enabled).toBe(true);
-        expect(card.executable).toBe(true);
-        expect(card.previewOnly).toBe(false);
+        expect(card.enabled).toBe(false);
+        expect(card.executable).toBe(false);
+        expect(card.previewOnly).toBe(true);
         expect(card.availability).toBe('preview_available');
-        expect(card.disabledReason).toContain('Pronta para usar');
+        expect(card.disabledReason).toContain('execução preparada');
     });
 
     it('marca canAfford=false quando ENE é insuficiente e traz razão clara', () => {
