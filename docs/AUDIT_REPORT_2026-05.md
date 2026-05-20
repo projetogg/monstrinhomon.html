@@ -1,25 +1,56 @@
-# 🔎 Relatório de Auditoria Técnica — Arquivos Obsoletos/Desatualizados (2026-05)
+# Relatório de Auditoria Técnica — 2026-05
 
-**Data**: 2026-05-20  
-**Escopo**: auditoria documental (sem remoções/movimentações neste PR)  
-**Objetivo**: registrar classificação de arquivos candidatos a remoção e riscos arquiteturais identificados.
-
----
-
-## ✅ Regras de Classificação (para este relatório)
-
-- **Remoção segura**: candidato a remoção em PR separado, com gates de CI e validação manual mínima.
-- **Revisão humana**: exige decisão de autoridade (produto/design/governança) antes de mexer.
-- **Não remover**: referência confirmada em runtime *ou* ativo para governança/compatibilidade.
-- **Deprecated/Referência**: não é fonte de verdade do runtime atual; manter por histórico/consulta até plano de limpeza.
+**Data:** 2026-05-20  
+**Escopo:** classificação de arquivos obsoletos/desatualizados e plano seguro de execução em PRs (apenas documental).
 
 ---
 
-## 📌 Correções de classificação (decisões já aprovadas)
+## 1) Correções de classificação aplicadas
 
-### 1) `design/canon/` (misto: runtime + referência/deprecated)
+1. `/design/canon` foi reclassificado como **misto**:
+   - parte **ativa em runtime** (carregada por `js/canon/canonLoader.js`);
+   - parte **referencial/deprecated** (mantida para histórico e governança técnica).
+2. `docs/archive/` saiu de “remoção segura” para **revisão humana** (risco de governança documental).
+3. `progression.config.json` foi para **revisão humana / manter até decisão de autoridade** (sem referência direta confirmada em runtime).
+4. A duplicidade de **Evolution** foi elevada para **risco alto**.
 
-**Parte carregada pelo runtime via `js/canon/canonLoader.js` → Não remover**
+---
+
+## 2) Classificação consolidada
+
+## 2.1 Remoção segura
+
+**Candidatos para PR separado (baixo risco, com allowlist estrita e gates completos):**
+
+- `XP_TABLE.csv`
+- `_DV.csv`
+- `MASTER_CONTROLS.csv`
+- `TEST_SCENARIO.csv`
+- `README.csv`
+- `.merge-status`
+- `docs/migration_phase1_id_remap.json`
+- `docs/migration_phase1_runtime_candidate.json`
+- `docs/migration_phase1_runtime_candidate_reconciled.json`
+
+**Observação:** estes itens **não devem ser removidos automaticamente** no mesmo PR documental. A remoção deve ocorrer em PR separado, pequeno, com validação antes e depois.
+
+---
+
+## 2.2 Revisão humana (manter até decisão)
+
+- `docs/archive/**`  
+  Motivo: risco de perda de trilha histórica e governança documental.
+- `/progression.config.json`  
+  Motivo: arquivo válido, porém sem consumo direto confirmado em runtime.
+- `/design/canon/**` (subconjunto não carregado por `canonLoader`)  
+  Motivo: material de referência e transição arquitetural; precisa decisão explícita antes de remoção.
+
+---
+
+## 2.3 Não remover (ativo em runtime)
+
+Arquivos do cânone carregados pelo `canonLoader`:
+
 - `design/canon/classes.json`
 - `design/canon/class_matchups.json`
 - `design/canon/skills_mvp_phase1.json`
@@ -27,107 +58,73 @@
 - `design/canon/evolution_lines.json`
 - `design/canon/level_progression.json`
 
-**Demais arquivos em `design/canon/` → Deprecated/Referência (até revisão)**
-- Motivo: coexistem documentos/artefatos de design que não são consumidos pelo runtime atual, mas podem ser usados como referência de decisões e de migração.
-- Regra: qualquer remoção deve ocorrer *após* validação de dependências internas de documentação e confirmação de que não são “source of truth” operacional.
+Também não remover:
 
-### 2) `docs/archive/` → Revisão humana (não classificar como remoção segura)
-
-- Motivo: risco de governança documental (histórico de decisões, rastreabilidade e auditoria).  
-- Diretriz: tratar como acervo; qualquer limpeza precisa de curadoria explícita (critérios + “o que substitui o quê”).
-
-### 3) `progression.config.json` → Revisão humana / Manter até decisão de autoridade
-
-- Motivo: **não há referência direta confirmada em runtime** no estado atual do repositório.  
-- Risco: remoção sem decisão pode descartar uma configuração “pretendida” (ou gerar perda de contexto de design).
-- Ação requerida: decisão formal (manter/migrar para `data/`/deletar) antes de qualquer mudança.
+- `js/canon/canonLoader.js` (carregamento canônico)
 
 ---
 
-## 🧾 Inventário por categoria (auditável)
+## 2.4 Deprecated / referência (não remover automaticamente)
 
-### Remoção segura (candidatos)
+Itens mantidos como referência técnica/histórica, mas não classificados como núcleo runtime:
 
-- Nenhum candidato **confirmado** nesta auditoria sem revisão adicional.
-
-> Observação: candidatos “seguros” **ainda exigem PR separado** com gates + smoke mínimo.
-
-### Revisão humana
-
-- `docs/archive/` (governança documental)
-- `progression.config.json` (sem referência confirmada em runtime; depende de autoridade)
-
-### Não remover
-
-- `design/canon/` (subconjunto carregado pelo `canonLoader`, listado acima)
-
-### Deprecated/Referência
-
-- `design/canon/` (demais arquivos não carregados hoje; manter como referência até plano de limpeza)
+- `design/canon/CANON_DECISIONS.md`
+- `design/canon/PHASE1_IMPLEMENTATION_NOTES.md`
+- `design/canon/PHASE2_IMPLEMENTATION_NOTES.md`
+- `design/canon/BOOT_INTEGRATION_NOTES.md`
+- `design/canon/IMPLEMENTATION_PLAN.md`
+- `design/canon/DATA_SCHEMA.md`
+- `design/canon/combat_rules.json`
+- `design/canon/mvp_plan.json`
+- `design/canon/skills.json`
 
 ---
 
-## ⚠️ Riscos arquiteturais (alto impacto)
+## 3) Riscos arquiteturais prioritários
 
-### Risco 1 — Sistemas paralelos de Trade (importante)
+### Risco Alto A — Sistemas paralelos de Evolution
 
-- Sintoma: coexistem implementações em caminhos distintos.
-  - `js/trade/tradeSystem.js`
-  - `js/combat/tradeSystem.js` (consumido por `js/ui/tradeUI.js`)
-- Risco: divergência de regras, bugs “fantasma” (corrige em um módulo, mas runtime usa outro), e testes cobrindo apenas uma via.
-- Mitigação sugerida: escolher **um** módulo como fonte de verdade e criar camada de compatibilidade (se necessário) antes de remover o outro.
+Há múltiplas implementações/fontes coexistindo (ex.: fluxo inline em `index.html`, módulos `js/data/evolutionSystem.js` e `js/progression/evolutionSystem.js`, além da camada canônica em `design/canon/evolution_lines.json` via `canonLoader`).
 
-### Risco 2 — Sistemas paralelos de Evolution (RISCO ALTO)
+**Impacto:** divergência de regra, manutenção cara e risco de inconsistência entre evolução exibida e evolução aplicada.
 
-- Sintoma: múltiplas implementações de evolução + dados canônicos paralelos.
-  - `js/data/evolutionSystem.js`
-  - `js/progression/evolutionSystem.js`
-  - `design/canon/evolution_lines.json` (linha evolutiva canônica)
-- Risco: múltiplas fontes de verdade (regra/dados) com chance alta de inconsistência funcional e de progressão, especialmente em saves antigos.
-- Mitigação sugerida (pré-requisito): definir autoridade (runtime atual vs canon) e criar “plano de unificação” com testes de regressão e migração de save.
+### Risco Alto B — Sistemas paralelos de Trade
+
+Há dois sistemas de trade em paralelo (`js/trade/tradeSystem.js` e `js/combat/tradeSystem.js`) com regras e contratos distintos.
+
+**Impacto:** comportamento não determinístico por caminho de chamada, aumento de regressões e dificuldade de auditoria funcional.
 
 ---
 
-## 🧩 Plano seguro de PRs (sem quebrar runtime)
+## 4) Plano seguro em PRs
 
-### PR 1 — (este PR) Relatório documental
+### PR 1 — Congelamento de classificação (documental)
 
-- Adiciona este relatório em `docs/AUDIT_REPORT_2026-05.md`.
-- Não altera runtime, testes, dados nem `package.json`.
+- Consolidar labels de inventário: remoção segura, revisão humana, não remover e deprecated.
+- Não remover/mover arquivos.
 
-### PR 2 — Remoções seguras (somente itens marcados “Remoção segura”)
+### PR 2 — Guardrails de validação obrigatórios
 
-**Gates obrigatórios para merge (exigidos):**
+Este PR deve exigir os seguintes gates:
+
 - `npm test`
 - `npm run test:wild-loop`
 - `npm run test:wild-loop:vitest`
 - `npm run validate-data`
 - `npm run validate:monster-assets`
 
-**Escopo permitido:**
-- remover apenas arquivos classificados como “Remoção segura”
-- sem refactors de lógica (apenas remoção + ajustes mínimos de imports, se existirem)
+### PR 3 — Decisão de autoridade sobre revisão humana
 
-### PR 3 — Governança de `docs/archive/` (curadoria)
+- Deliberação explícita para `docs/archive/**` e `progression.config.json`.
+- Só permitir remoções após ata de decisão e checklist de rastreabilidade.
 
-- Definir política: o que fica em archive, o que sobe para docs, e como indexar/buscar.
-- Resultado esperado: critérios claros e checklist para futuras limpezas.
+### PR 4 — Consolidação arquitetural (trade/evolution)
 
-### PR 4 — Decisão sobre `progression.config.json`
-
-- Decisão por autoridade (manter/migrar/deletar).
-- Se migrar: definir local final e garantir compatibilidade documental (e eventual loader futuro).
-
-### PR 5 — Unificação Trade/Evolution (alto risco)
-
-- Somente após PRs 2–4 e com plano de migração/testes.
-- Objetivo: eliminar duplicidade e deixar **uma** fonte de verdade por sistema.
+- Definir fonte única por domínio (Trade e Evolution).
+- Manter adaptadores temporários apenas com prazo de remoção definido.
 
 ---
 
-## Critérios de aceite (para este relatório)
+## 5) Conclusão
 
-- Relatório separa: remoção segura, revisão humana, não remover, deprecated.
-- `design/canon/`, `docs/archive/` e `progression.config.json` classificados conforme decisões já aprovadas.
-- Duplicidade de Evolution marcada como **risco alto**.
-- PR 2 lista explicitamente os gates obrigatórios.
+Este ciclo **não autoriza remoção automática**. O relatório consolida as correções de classificação e formaliza os dois riscos arquiteturais críticos (Trade e Evolution), com plano de PRs seguro e verificável.
