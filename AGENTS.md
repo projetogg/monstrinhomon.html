@@ -1,321 +1,30 @@
 # Monstrinhomon — Agent Instructions
 
+> **Aviso canônico — 2026-05-19**  
+> Este arquivo é um guia operacional para agentes e colaboradores. Em caso de conflito, a autoridade atual está em:
+>
+> 1. `docs/PATCH_CANONICO_COMBATE_V2.2.md` — fórmula e regras de combate.
+> 2. `GAME_RULES.md` — regras gerais, observando seções marcadas como legado revogado.
+> 3. `docs/AUTHORITY_MAP.md` — mapa de autoridade entre runtime, design e legado.
+> 4. `data/skills.json` — fonte runtime canônica das skills.
+> 5. `docs/CARD_LAYER_ARCHITECTURE_v0.1.2.md` — arquitetura da Card Layer visual.
+>
+> CSVs na raiz, quando existirem, devem ser tratados como legado/histórico salvo evidência explícita de carregamento em runtime.
+
+---
+
 ## Visão geral
-Este repositório contém o jogo Monstrinhomon (RPG infantil estilo "monstros capturáveis" + turnos).
-O jogo NÃO usa elementos (fogo/água/etc). O sistema é baseado em CLASSES.
 
-## Regras oficiais do sistema (não mudar sem atualizar docs + dados)
+Este repositório contém o jogo **Monstrinhomon**, um RPG infantil/terapêutico de monstros capturáveis, classes, turnos, evolução e progressão.
 
-### Classes
-- Monstrinhos têm CLASSE (ex.: Guerreiro, Mago, Curandeiro, Bárbaro, Ladino, Bardo, Caçador).
-- Jogadores também têm CLASSE.
+O jogo **não usa tipos elementais** como fogo/água. A identidade principal usa **classes**.
 
-### Captura vs batalha (regra-chave)
-- **CAPTURA**: qualquer jogador pode capturar Monstrinhos de QUALQUER classe.
-- **BATALHA**: o jogador só pode USAR em combate Monstrinhos da MESMA classe do jogador.
-  - Objetivo: incentivar trocas entre jogadores.
-- **Exceção**: somente "Mestre/Debug" pode liberar cross-class em batalha.
+---
 
-### Dano (aprovado)
-- **Acerto**: d20 + ATK >= DEF
-- **Dano**: max(1, ATK + PODER - DEF)
+## Classes atuais
 
-### Captura (SEM dado)
-- Captura é **determinística** (sem rolagem).
-- Critério base: HP% do alvo + raridade + bônus do item de captura.
-- Regra: captura bem-sucedida se HP% <= Threshold_final
-- **Threshold_final** = min(0.95, (Base_threshold_por_raridade + Item_bonus + Status_bonus) * capture_multiplier)
-- Status_bonus inicialmente = 0 (se existir status depois, criar tabela explícita).
+Classes vigentes do projeto:
 
-### Vantagens de Classe
-O sistema possui um ciclo de vantagens entre as classes:
-- Guerreiro > Ladino
-- Ladino > Mago
-- Mago > Bárbaro
-- Bárbaro > Caçador
-- Caçador > Bardo
-- Bardo > Curandeiro
-- Curandeiro > Guerreiro
-
-Quando um Monstrinho ataca outro com vantagem de classe:
-- +2 bônus de ataque
-- +10% multiplicador de dano
-
-Quando ataca em desvantagem:
-- -2 penalidade de ataque
-- -10% multiplicador de dano
-
-## Dados do jogo
-
-### Localização e formato
-- Dados ficam em `/data` (CSV/JSON).
-- IDs são **imutáveis e únicos** (ex.: MON_001, ITM_001, SKL_001).
-- **Nunca renomear IDs**. Se mudar algo, criar novo ID e manter o antigo para compatibilidade.
-
-### Estrutura de dados
-
-#### Monstrinhos (catalog)
-- `id`: identificador único (ex: m_luma, m_trok)
-- `name`: nome do Monstrinho
-- `class`: classe (Mago, Guerreiro, Curandeiro, Bárbaro, Ladino, Bardo, Caçador)
-- `rarity`: raridade (Comum, Incomum, Raro, Místico, Lendário)
-- `baseHp`: HP base no nível 1
-
-#### Classes de Jogador (playerClasses)
-- `id`: identificador único (ex: pc_mago, pc_guerreiro)
-- `name`: nome da classe
-- `allowed`: array de classes de Monstrinhos que podem ser usadas em batalha
-
-#### Itens (ITEMS)
-- `name`: nome do item
-- `type`: tipo (captura, cura, tatico)
-- `bonus`: bônus de captura (se aplicável)
-- `heal`: percentual de cura (se aplicável)
-- `fleeBonus`: bônus de fuga (se aplicável)
-- `shield`: redução de dano (se aplicável)
-- `reroll`: permite re-rolagem (se aplicável)
-
-## Padrões de código
-
-### Linguagem e estilo
-- Preferir **JS simples** (sem frameworks) e código legível.
-- Comentários e mensagens em **PT-BR**.
-- Evitar dependências pesadas; preferir arquivos pequenos.
-- Usar nomes de variáveis descritivos em inglês ou português consistente.
-
-### Estrutura do código
-- Funções devem ter uma responsabilidade clara.
-- Evitar duplicação de código.
-- Manter funções pequenas e focadas.
-- Adicionar comentários quando a lógica for complexa.
-
-### Ao implementar algo novo
-Sempre atualizar também:
-1. A validação de dados (IDs, campos obrigatórios)
-2. A tela/fluxo de teste (primeira quest + primeiro combate)
-3. Documentação relevante (se houver)
-
-## Como validar mudanças
-
-### Fluxo mínimo obrigatório
-Não quebrar o fluxo mínimo:
-1. Iniciar jogo
-2. Primeira quest
-3. Primeiro combate
-4. Recompensa + tentativa de captura
-
-### Testes
-- Garantir que o jogo abre em navegador (`index.html`) sem erros de console.
-- Testar criação de nova sessão.
-- Testar criação de jogadores.
-- Testar combate básico.
-- Testar sistema de captura (determinístico).
-
-### Console do navegador
-- Sempre verificar console para erros JavaScript.
-- Não deixar warnings não resolvidos.
-
-## Segurança / limites
-
-### Segredos e credenciais
-- **Nunca inserir chaves/segredos no repo**.
-- Não commitar tokens, API keys ou senhas.
-- Usar variáveis de ambiente quando necessário.
-
-### Ações destrutivas
-- **Não executar ações destrutivas** (deletar pastas/dados) sem confirmar no PR.
-- Sempre fazer backup antes de mudanças significativas.
-- Usar git para rastrear mudanças.
-
-## Sistema de Terapia
-
-O jogo possui um sistema de terapia para uso terapêutico com crianças:
-
-### Objetivos Terapêuticos
-- Cada objetivo tem um peso (w) que determina pontos de medalha (pm).
-- Tipos: BINARY (0 ou 1) ou contínuo.
-- Exemplos: "Esperou a vez", "Gentileza", "Controle de impulso", "Elogiou colega".
-
-### Sistema de Medalhas
-- Bronze: 5 pontos
-- Prata: 12 pontos
-- Ouro: 25 pontos
-
-### Recompensas
-- Medalhas concedem moeda "pós-vida" (afterlife).
-- Bronze: 1 moeda, Prata: 3 moedas, Ouro: 7 moedas.
-- XP adicional para Monstrinhos ativos.
-
-## Multiplicadores e Constantes
-
-### Raridade
-```javascript
-RARITY_PWR = {
-  Comum: 1.00,
-  Incomum: 1.08,
-  Raro: 1.18,
-  Místico: 1.32,
-  Lendário: 1.50
-}
-
-RARITY_XP = {
-  Comum: 1.00,
-  Incomum: 1.05,
-  Raro: 1.10,
-  Místico: 1.15,
-  Lendário: 1.25
-}
-```
-
-### Captura Base (%)
-```javascript
-CAPTURE_BASE = {
-  Comum: 60,
-  Incomum: 45,
-  Raro: 30,
-  Místico: 18,
-  Lendário: 10
-}
-```
-
-### Fuga Base (%)
-```javascript
-FLEE_BASE = {
-  Comum: 10,
-  Incomum: 12,
-  Raro: 15,
-  Místico: 18,
-  Lendário: 25
-}
-```
-
-## Progressão e Níveis
-
-### XP para próximo nível
-Fórmula: `Math.round(40 + 6*L + 0.6*(L*L))`
-
-Onde L é o nível atual.
-
-### Level Up
-- HP máximo aumenta: `hpMax * 1.04 + 2`
-- HP atual aumenta proporcionalmente
-- Limite máximo: nível 100
-
-### Multiplicador de Nível
-```javascript
-levelMult(attL, defL, expo) {
-  const ratio = attL / defL;
-  return clamp(Math.pow(ratio, expo), 0.05, 1.80);
-}
-```
-
-## Configurações
-
-### Constantes do sistema
-- `levelExpo`: 1.5 (exponente para cálculo de nível)
-- `enemyHealThreshold`: 0.30 (30% HP para inimigo considerar curar)
-- `enemyHealChance`: 0.60 (60% chance de curar quando abaixo do threshold)
-- `bossHealChance`: 0.85 (85% para bosses)
-
-### DC de Fuga
-- Normal: 12
-- Intimidating: 16
-- Elite: 18
-
-### XP de Batalha Base
-- `battleXpBase`: 15
-
-## Convenções Git
-
-### Commits
-- Mensagens em português.
-- Commits atômicos e descritivos.
-- Usar prefixos: ✨ (nova feature), 🐛 (bugfix), 📝 (docs), ♻️ (refactor), ✅ (testes)
-
-### Pull Requests
-- Descrever mudanças claramente.
-- Incluir capturas de tela se houver mudanças visuais.
-- Referenciar issues relacionadas.
-
-## Arquitetura
-
-### Storage
-- Usa `localStorage` para persistência.
-- Chave: `mm_mvp_v1`
-- Estrutura: JSON com deep merge para compatibilidade
-
-### Estado Global
-```javascript
-state = {
-  therapist: boolean,
-  ui: { tab, selectedPlayer, encounterMode, battleKind },
-  config: { ... },
-  data: {
-    sessions: [],
-    activeSessionId: string,
-    players: [],
-    playerClasses: [],
-    catalog: [],
-    instances: [],
-    therapyObjectives: []
-  }
-}
-```
-
-### Funções Principais
-- `load()`: carrega estado do localStorage
-- `save()`: salva estado no localStorage
-- `render()`: atualiza UI baseado no estado
-- `createInstance()`: cria instância de Monstrinho
-- `addXP()`: adiciona XP e processa level up
-- `computeDamage()`: calcula dano de ataque
-- `captureChance()`: calcula chance de captura
-- `monsterFleeChance()`: calcula chance de fuga
-
-## Debugging
-
-### Modo Debug
-- Terapeuta pode habilitar "Modo Terapeuta" no header.
-- Permite funcionalidades especiais para testes.
-
-### Console Helpers
-- `state`: acessa estado global
-- `save()`: força salvamento
-- `render()`: força re-render
-
-## Melhores Práticas
-
-1. **Sempre testar no navegador** após mudanças
-2. **Verificar localStorage** para entender estado
-3. **Usar console.log** para debug, remover antes do commit
-4. **Manter compatibilidade** com dados salvos
-5. **Documentar regras novas** neste arquivo
-6. **Não quebrar fluxo existente** sem discussão prévia
-7. **Preferir simplicidade** sobre complexidade
-8. **Código legível** > código "inteligente"
-9. **Testar edge cases** (nível 1, nível 100, HP 0, etc)
-10. **Validar inputs** do usuário
-
-## Glossário
-
-- **MI**: Monster Instance (instância de Monstrinho)
-- **PM**: Pontos de Medalha
-- **HP**: Health Points
-- **XP**: Experience Points
-- **DC**: Difficulty Class
-- **ATK**: Attack
-- **DEF**: Defense
-- **d20**: Dado de 20 faces (físico, criança rola)
-
-## Referências Rápidas
-
-### IDs Padrão
-- Sessão: `sess_*`
-- Jogador: `player_*`
-- Instância de Monstrinho: `mi_*`
-- Encontro: `enc_*`
-
-### Classes Disponíveis
 1. Mago
 2. Curandeiro
 3. Guerreiro
@@ -323,8 +32,199 @@ state = {
 5. Ladino
 6. Bardo
 7. Caçador
+8. Animalista
+
+Observação: Animalista é tratado como classe neutra no ciclo de vantagens, salvo regra canônica mais específica.
+
+---
+
+## Regra de autoridade
+
+Em caso de conflito:
+
+```text
+runtime vence design;
+design vence legado;
+Card Layer nunca vence mecânica.
+```
+
+### Fontes principais
+
+| Domínio | Fonte |
+|---|---|
+| Fórmula de combate | `docs/PATCH_CANONICO_COMBATE_V2.2.md` |
+| Regras gerais | `GAME_RULES.md` |
+| Skills runtime | `data/skills.json` via `js/data/skillsLoader.js` |
+| Pipeline de skills | `getMonsterSkills` em `index.html` |
+| Progressão de slots | `js/canon/slotUnlocks.js` + `design/canon/level_progression.json` |
+| Kit swaps | `js/canon/kitSwap.js` |
+| Monstrinhos runtime | `data/monsters.json` |
+| Card Layer visual | `docs/CARD_LAYER_ARCHITECTURE_v0.1.2.md` |
+
+---
+
+## Regras de captura e batalha
+
+- **Captura:** jogadores podem capturar Monstrinhomons de qualquer classe, conforme regras atuais do runtime.
+- **Batalha:** uso de Monstrinhomons deve respeitar a classe do jogador, salvo exceções de Mestre/Debug ou regra canônica mais recente.
+- **Batalhas em grupo, captura, fuga e vantagem de classe:** consultar `GAME_RULES.md` e documentação canônica associada.
+
+---
+
+## Card Layer — restrições especiais
+
+A Card Layer é uma camada visual/organizacional acima das skills runtime.
+
+Durante a Fase 1:
+
+- Não implementar deck, mão, ciclo, compra ou descarte.
+- Não implementar Talent Cards.
+- Não implementar Signature Cards mecânicas.
+- Não alterar `data/skills.json`.
+- Não alterar fórmula de combate, energia, atributos, posicionamento, vantagens ou captura.
+- Não chamar `applyKitSwaps` dentro da Card Layer.
+- Não duplicar campos mecânicos em `data/cards.json`.
+- Não renderizar placeholder de slot 4 em produção.
+
+A Fase 1 deve começar somente com os 3 Cards confirmados do Guerreiro:
+
+- `Golpe de Espada`
+- `Escudo`
+- `Provocar`
+
+---
+
+## Dados do jogo
+
+### Fontes atuais
+
+- `data/monsters.json` — monstrinhos runtime.
+- `data/skills.json` — skills runtime canônicas.
+- `data/items.json` e demais arquivos em `data/` — dados consumidos pelo jogo.
+- `design/canon/*` — camada de design/cânone, nem sempre fonte direta de runtime.
+
+### IDs
+
+- IDs devem ser estáveis.
+- Não renomear IDs sem migração explícita.
+- Se uma mudança quebrar compatibilidade com saves antigos, documentar a migração.
+
+---
+
+## Padrões de código
+
+- Preferir JavaScript simples, legível e com poucas dependências.
+- Comentários e mensagens em PT-BR.
+- Funções com responsabilidade clara.
+- Evitar duplicação.
+- Evitar soluções “inteligentes” demais quando uma solução simples é suficiente.
+- Não adicionar framework pesado sem justificativa.
+
+---
+
+## Ao implementar algo novo
+
+Sempre verificar se precisa atualizar:
+
+1. Dados e validação.
+2. Documentação relevante.
+3. Testes unitários/regressão.
+4. Fluxo mínimo de jogo.
+5. UI/UX, se houver mudança visual.
+
+Mudanças em combate, progressão, captura, skills ou Card Layer exigem atenção especial ao `docs/AUTHORITY_MAP.md`.
+
+---
+
+## Validação mínima
+
+Não quebrar o fluxo mínimo:
+
+1. Iniciar jogo.
+2. Criar/carregar sessão.
+3. Criar jogador.
+4. Entrar em combate.
+5. Executar ação de combate.
+6. Encerrar combate.
+7. Receber recompensa/captura quando aplicável.
+
+Também verificar:
+
+- Console do navegador sem erros críticos.
+- Testes automatizados existentes.
+- Compatibilidade com `localStorage` e saves existentes.
+
+---
+
+## Segurança e limites
+
+- Nunca inserir chaves, tokens, senhas ou segredos no repo.
+- Não executar ações destrutivas sem documentação e aprovação no PR.
+- Não remover arquivos de dados/documentação sem verificar dependências.
+- Preferir PRs pequenos e reversíveis.
+
+---
+
+## Sistema terapêutico
+
+O jogo tem uso terapêutico com crianças. Toda alteração visual ou de regra deve considerar:
+
+- Clareza para criança.
+- Baixa carga cognitiva.
+- Evitar promessas visuais falsas.
+- Utilidade para mediação terapêutica.
+- Facilidade de rollback em sessão.
+
+---
+
+## Convenções Git
+
+### Commits
+
+- Mensagens em português.
+- Commits atômicos e descritivos.
+- Prefixos sugeridos:
+  - ✨ nova feature
+  - 🐛 correção
+  - 📝 documentação
+  - ♻️ refatoração
+  - ✅ testes
+
+### Pull Requests
+
+PRs devem incluir:
+
+- Resumo claro.
+- Arquivos alterados.
+- Como testar.
+- Riscos e rollback.
+- Screenshots se houver mudança visual.
+
+---
+
+## Debugging
+
+- Usar modo terapeuta/debug quando aplicável.
+- Verificar `state`, `save()` e `render()` se expostos no console.
+- Remover logs de debug antes do merge, salvo logs intencionais de diagnóstico.
+
+---
+
+## Referências rápidas
+
+### Classes disponíveis
+
+1. Mago
+2. Curandeiro
+3. Guerreiro
+4. Bárbaro
+5. Ladino
+6. Bardo
+7. Caçador
+8. Animalista
 
 ### Raridades
+
 1. Comum
 2. Incomum
 3. Raro
@@ -333,5 +233,5 @@ state = {
 
 ---
 
-**Última atualização**: 2026-01-25
-**Versão**: 1.0.0
+**Última atualização:** 2026-05-19  
+**Versão:** 2.0.0 — alinhada ao canon v2 e à Fase 0 da Card Layer
