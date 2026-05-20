@@ -1,6 +1,7 @@
 import { getBasicCardsByClass } from '../data/basicCards.js';
 
 const PREVIEW_AVAILABLE_REASON = 'ENE suficiente — execução em breve.';
+const EXECUTABLE_READY_REASON = 'Pronta para usar.';
 const INSUFFICIENT_ENE_REASON = 'Precisa de mais ENE.';
 
 function normalizeCurrentEne(currentEne) {
@@ -23,7 +24,7 @@ export function buildBasicCardHandViewModel(className, options = {}) {
 
     const cards = getBasicCardsByClass(className);
     const currentEne = normalizeCurrentEne(options?.currentEne);
-    const previewOnly = true;
+    const isWarriorCardEnabled = className === 'Guerreiro';
 
     return cards.map(card => {
         const canAfford = currentEne >= card.cost;
@@ -38,11 +39,13 @@ export function buildBasicCardHandViewModel(className, options = {}) {
             childText: card.childText,
             runtimeAction: card.runtimeAction,
             canAfford,
-            previewOnly,
-            executable: false,
-            enabled: false,
+            previewOnly: !isWarriorCardEnabled || card.id !== 'CARD_GUERREIRO_GOLPE_FIRME',
+            executable: isWarriorCardEnabled && card.id === 'CARD_GUERREIRO_GOLPE_FIRME' && canAfford,
+            enabled: isWarriorCardEnabled && card.id === 'CARD_GUERREIRO_GOLPE_FIRME' && canAfford,
             availability,
-            disabledReason: canAfford ? PREVIEW_AVAILABLE_REASON : INSUFFICIENT_ENE_REASON,
+            disabledReason: canAfford
+                ? (isWarriorCardEnabled && card.id === 'CARD_GUERREIRO_GOLPE_FIRME' ? EXECUTABLE_READY_REASON : PREVIEW_AVAILABLE_REASON)
+                : INSUFFICIENT_ENE_REASON,
         };
     });
 }

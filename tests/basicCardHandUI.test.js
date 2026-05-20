@@ -40,14 +40,14 @@ describe('basicCardHandUI — preview seguro (MVP 0.4)', () => {
         });
     });
 
-    it('marca canAfford=true quando ENE é suficiente, mas mantém sem execução', () => {
+    it('habilita execução apenas para Golpe Firme do Guerreiro com ENE suficiente', () => {
         const [card] = buildBasicCardHandViewModel('Guerreiro', { currentEne: 1 });
         expect(card.canAfford).toBe(true);
-        expect(card.enabled).toBe(false);
-        expect(card.executable).toBe(false);
-        expect(card.previewOnly).toBe(true);
+        expect(card.enabled).toBe(true);
+        expect(card.executable).toBe(true);
+        expect(card.previewOnly).toBe(false);
         expect(card.availability).toBe('preview_available');
-        expect(card.disabledReason).toContain('ENE suficiente');
+        expect(card.disabledReason).toContain('Pronta para usar');
     });
 
     it('marca canAfford=false quando ENE é insuficiente e traz razão clara', () => {
@@ -61,11 +61,8 @@ describe('basicCardHandUI — preview seguro (MVP 0.4)', () => {
         expect(card.disabledReason).toContain('Precisa de mais ENE');
     });
 
-    it('mantém previewOnly=true mesmo se opção externa tentar desativar preview', () => {
-        const [card] = buildBasicCardHandViewModel('Guerreiro', {
-            currentEne: 10,
-            previewOnly: false,
-        });
+    it('mantém outras cartas em preview, mesmo com ENE suficiente', () => {
+        const [card] = buildBasicCardHandViewModel('Mago', { currentEne: 10 });
 
         expect(card.canAfford).toBe(true);
         expect(card.previewOnly).toBe(true);
