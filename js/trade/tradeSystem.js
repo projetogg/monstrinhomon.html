@@ -1,9 +1,21 @@
 /**
- * TRADE SYSTEM — Sistema de Troca entre Jogadores (FASE O)
+ * TRADE SYSTEM — LEGADO / COMPATIBILIDADE TEMPORÁRIA (FASE O)
+ *
+ * ATENÇÃO ARQUITETURAL:
+ *   Este módulo NÃO é mais a fonte canônica de Trade.
+ *   A fonte canônica definida pela auditoria é `js/combat/tradeSystem.js`,
+ *   usada pelo painel principal de trocas via `js/ui/tradeUI.js`.
+ *
+ * Papel atual deste arquivo:
+ *   - manter compatibilidade com o fluxo legado de modal unilateral;
+ *   - preservar testes regressivos enquanto o modal não for migrado;
+ *   - servir como comparação temporária durante a consolidação de Trade.
+ *
+ * Não expandir este módulo com novas regras.
+ * Novas regras de Trade devem entrar no módulo canônico `js/combat/tradeSystem.js`.
  *
  * Módulo puro: não acessa estado global, não toca DOM, não chama save().
- * Implementa a regra canônica: jogadores trocam Monstrinhos para poder usá-los
- * em batalha (cada jogador só usa Monstrinhos da própria classe em combate).
+ * Implementa a regra legada de transferência unilateral de um Monstrinho.
  *
  * Funções exportadas:
  *   validateTrade(fromPlayer, toPlayer, instanceId, playersData)
