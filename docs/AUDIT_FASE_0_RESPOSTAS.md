@@ -21,11 +21,11 @@ Convenção: `[FATO]` `[INFERÊNCIA]` `[HIPÓTESE]` `[RISCO]` `[RECOMENDAÇÃO]`
 
 [FATO] Os outputs confirmam três pontos centrais:
 
-1. Runtime já entrega skills resolvidas via `KitSwap.getEffectiveSkills` dentro de `getMonsterSkills`. Card Layer opera em modo passivo.
+1. Runtime já entrega skills **efetivas para exibição** via `KitSwap.getEffectiveSkills` dentro de `getMonsterSkills`. A normalização operacional de combate ocorre depois, em `resolveMonsterSkills()`/`normalizeSkill`. A Card Layer opera em modo passivo e consome a lista efetiva preservando `groupKey`/`stageIndex`.
 2. Slot 4 base do Guerreiro não existe em `data/skills.json`. Fase 1 confirma 3 Cards, não 4.
 3. CSVs são referência histórica em comentários, não loader ativo de combate/skills.
 
-[OPINIÃO DE DESIGN] A descoberta mais importante é que o `cardResolver` não precisa ser um resolvedor real; ele deve ser adaptador fino sobre o runtime atual.
+[OPINIÃO DE DESIGN] A descoberta mais importante é que o `cardResolver` não precisa ser um resolvedor mecânico; ele deve ser adaptador fino sobre o runtime atual de skills efetivas para apresentação.
 
 ---
 
@@ -40,7 +40,7 @@ Convenção: `[FATO]` `[INFERÊNCIA]` `[HIPÓTESE]` `[RISCO]` `[RECOMENDAÇÃO]`
 | 2 — skills runtime | `js/data/skillsLoader.js` 240–261 | `buildSkillDefs()` monta `SKILL_DEFS = { [class]: { [groupKey]: [stage0, ...] } }`. | D-H, schema |
 | 2 — skills runtime | `index.html` 1931–1937 | `SKILL_DEFS` global + `SKILL_DEFS_FALLBACK`. | fallback |
 | 2 — skills runtime | `index.html` 2325–2333 | Comentário confirma: `SKILL_DEFS` é runtime canônico; `SKILLS_CATALOG` é referência. | D-H, AUTHORITY_MAP |
-| 2 — skills runtime | `index.html` 4520–4536 | Pipeline `getMonsterSkills → SKILL_DEFS → KitSwap.getEffectiveSkills → normalize`. | arquitetura |
+| 2 — skills runtime | `index.html` 4520–4536 | Pipeline de exibição: `getMonsterSkills → SKILL_DEFS → KitSwap.getEffectiveSkills`; normalização de combate fica em `resolveMonsterSkills()`/`normalizeSkill`. | arquitetura |
 | 2 — skills runtime | `index.html` 4565 | `_source = skill_defs` ou `kit_swap`. | diagnóstico |
 | 3 — slot 4 | `data/skills.json` | `(sem matches)` para assinatura/slot 4. | D-A |
 | 4 — CSV legado | `dropSystem.js`, `encounterPool.js`, `questSystem.js`, `index.html` | CSVs aparecem como origem histórica/documental. | D-G |
@@ -81,7 +81,7 @@ Convenção: `[FATO]` `[INFERÊNCIA]` `[HIPÓTESE]` `[RISCO]` `[RECOMENDAÇÃO]`
 
 **Evidência:** `getMonsterSkills` chama `KitSwap.getEffectiveSkills`; `createInstance` aplica `KitSwap.applyKitSwaps`; `_kitSwapId` confirmado.
 
-**Conclusão:** Runtime já canaliza skills por kitSwap.
+**Conclusão:** Runtime já canaliza skills por kitSwap antes da Card Layer.
 
 **Impacto:** `cardResolver` opera em modo passivo absoluto. Card Layer nunca chama `applyKitSwaps`.
 
@@ -103,23 +103,27 @@ Convenção: `[FATO]` `[INFERÊNCIA]` `[HIPÓTESE]` `[RISCO]` `[RECOMENDAÇÃO]`
 
 **Status:** [RESOLVIDA — POSITIVA]
 
-**Evidência:** Pipeline: `getMonsterSkills → SKILL_DEFS → KitSwap.getEffectiveSkills → normalize`.
+**Evidência:** Pipeline de apresentação: `getMonsterSkills → SKILL_DEFS → KitSwap.getEffectiveSkills`. A normalização operacional para combate ocorre em `resolveMonsterSkills()`/`normalizeSkill`, não dentro de `getMonsterSkills`.
 
-**Conclusão:** Runtime já entrega skills ativas para o monstro/nivel atual.
+**Conclusão:** Runtime já entrega uma lista efetiva de skills para o monstro/nível atual, preservando `groupKey` e `stageIndex` para uso visual. A forma normalizada de combate é responsabilidade de outro ponto do runtime.
 
-**Impacto:** Card Layer não decide stage ativo; usa `skill.stageIndex` já resolvido.
+**Impacto:** Card Layer não decide stage ativo; usa `skill.stageIndex` da lista efetiva retornada por `getMonsterSkills` e não consome a forma normalizada de combate como fonte principal de Card.
 
 ---
 
 # 4. Arquitetura final recomendada
 
 ```text
-[runtime atual]
+[runtime atual — fonte para Card Layer]
 getMonsterSkills(monster)
   → SKILL_DEFS[class][groupKey]
   → KitSwap.getEffectiveSkills(instance, skills)
-  → normalize()
-  → retorna skills resolvidas
+  → retorna skills efetivas para apresentação, preservando groupKey/stageIndex
+
+[runtime atual — execução de combate]
+resolveMonsterSkills(...)
+  → normalizeSkill(...)
+  → retorna forma operacional normalizada para cálculo/execução de combate
 
 [Card Layer]
 cardResolver.resolveCardsForMonster(monster)
