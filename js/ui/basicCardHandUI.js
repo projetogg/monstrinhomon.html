@@ -16,7 +16,6 @@ function normalizeCurrentEne(currentEne) {
  * @param {string} className
  * @param {object} [options]
  * @param {number} [options.currentEne=0]
- * @param {boolean} [options.previewOnly=true]
  * @returns {Array<object>}
  */
 export function buildBasicCardHandViewModel(className, options = {}) {
@@ -24,7 +23,7 @@ export function buildBasicCardHandViewModel(className, options = {}) {
 
     const cards = getBasicCardsByClass(className);
     const currentEne = normalizeCurrentEne(options?.currentEne);
-    const previewOnly = options?.previewOnly !== false;
+    const previewOnly = true;
 
     return cards.map(card => {
         const canAfford = currentEne >= card.cost;
