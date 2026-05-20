@@ -8018,7 +8018,8 @@
                 // Converte nome de classe para CSS slug sem acentos (ex: 'Caçador' → 'cacador')
                 const classToCssSlug = cls => (cls || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-                const basicCardHand = buildBasicCardHandViewModel(player?.class);
+                const currentEne = Number.isFinite(Number(playerMonster?.ene)) ? Number(playerMonster?.ene) : 0;
+                const basicCardHand = buildBasicCardHandViewModel(player?.class, { currentEne, previewOnly: true });
                 const cardTypeLabel = type => {
                     const map = {
                         attack: 'Ataque',
@@ -8031,12 +8032,12 @@
                 };
                 const basicCardsPreviewHtml = basicCardHand.length > 0
                     ? basicCardHand.map(card => `
-                        <article class="battle-card-preview" aria-disabled="true">
+                        <article class="battle-card-preview ${card.canAfford ? 'battle-card-preview--available' : 'battle-card-preview--insufficient'}" aria-disabled="true">
                             <h4>${card.name}</h4>
                             <div class="battle-card-preview-meta">ENE: ${card.cost} · Classe: ${card.class}</div>
                             <div class="battle-card-preview-meta">Tipo: ${cardTypeLabel(card.type)}</div>
                             <p class="battle-card-preview-text">"${card.childText}"</p>
-                            <div class="battle-card-preview-status">Status: Em breve — carta ainda não conectada.</div>
+                            <div class="battle-card-preview-status">Status: ${card.disabledReason}</div>
                         </article>
                     `).join('')
                     : '<div class="battle-card-preview-empty">Sem cartas básicas de preview para a classe atual.</div>';
