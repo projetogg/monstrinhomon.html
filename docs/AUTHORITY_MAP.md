@@ -25,8 +25,9 @@ A Card Layer é uma camada visual/organizacional. Ela não decide dano, custo, a
 | Domínio | Autoridade | Status | Observações |
 |---|---|---|---|
 | Fórmula de combate, faixas, ModNível | `docs/PATCH_CANONICO_COMBATE_V2.2.md` | Autoridade máxima | Não alterar pela Card Layer. |
-| Mecânica runtime de skills | `data/skills.json` via `js/data/skillsLoader.js` | Confirmado | Fonte canônica de skills usadas em combate. |
-| Pipeline runtime de skills | `getMonsterSkills` em `index.html` linhas 4475–4575 | Confirmado | Fluxo: `SKILL_DEFS` → `KitSwap.getEffectiveSkills` → `normalize`. |
+| Mecânica runtime de skills | `data/skills.json` via `js/data/skillsLoader.js` | Confirmado | Fonte canônica das skills usadas pelo runtime. |
+| Lista efetiva de skills para apresentação | `getMonsterSkills` em `index.html` linhas 4475–4575 | Confirmado | Fluxo: `SKILL_DEFS` → `KitSwap.getEffectiveSkills`; preserva `groupKey`/`stageIndex` para Card Layer. |
+| Forma operacional de skills para combate | `resolveMonsterSkills()` / `normalizeSkill()` | Confirmado | Normaliza a skill para cálculo/execução de combate. Não é a fonte visual primária da Card Layer. |
 | Catálogo de design de skills | `design/canon/skills.json` | Referência de design | Não é fonte mecânica direta da UI de combate. |
 | Quantidade de slots por nível | `js/canon/slotUnlocks.js` + `design/canon/level_progression.json` | Confirmado | `getUnlockedSlotsForLevel(level)` retorna número de slots. |
 | Upgrades intermediários | `design/canon/level_progression.json` | Confirmado | Lv 10 e Lv 22 atualizam estágios, não liberam slot novo. |
@@ -35,8 +36,8 @@ A Card Layer é uma camada visual/organizacional. Ela não decide dano, custo, a
 | Card Layer visual | `docs/CARD_LAYER_ARCHITECTURE_v0.1.2.md` | Canônico para Fase 1 | Camada visual acima do runtime. |
 | CSVs raiz | Legado inerte | Confirmado | Referência histórica; não carregados no runtime de combate/skills. |
 | `GAME_RULES.md` §3–§10 | Legado revogado | Já marcado no arquivo | Não usar como fonte atual quando houver doc canônico mais recente. |
-| `AGENTS.md` | Suplementar | Precisa atualização | Deve apontar para docs v2 atuais. |
-| `PROXIMOS_PASSOS.md` | Pré-v2.x | Legado | Substituído por aviso e cópia em `docs/legacy/`. |
+| `AGENTS.md` | Suplementar atualizado neste PR | Alinhado ao canon v2 para escopo da Card Layer | Mantém papel de guia operacional; autoridade principal continua nos docs canônicos. |
+| `PROXIMOS_PASSOS.md` | Legado / redirecionamento | Atualizado neste PR | Conteúdo histórico preservado em `docs/legacy/PROXIMOS_PASSOS_2026-01.md`. |
 
 ---
 
@@ -44,10 +45,11 @@ A Card Layer é uma camada visual/organizacional. Ela não decide dano, custo, a
 
 A Card Layer deve usar o seguinte fluxo de autoridade:
 
-1. **Skill executada em combate:** objeto retornado pelo runtime (`getMonsterSkills`).
-2. **Mecânica da skill:** `data/skills.json`.
-3. **Representação visual da skill:** `data/cards.json` futuro, conforme `CARD_LAYER_ARCHITECTURE_v0.1.2.md`.
-4. **Fallback visual:** placeholder da Card Layer, sem alteração mecânica.
+1. **Fonte visual da Card:** skill efetiva retornada por `getMonsterSkills`, preservando `class`, `groupKey`, `stageIndex`, `tier` e marcadores como `_kitSwapId`.
+2. **Mecânica da skill:** `data/skills.json` e pipeline de combate atual; a Card não redefine nenhum campo mecânico.
+3. **Execução de combate:** forma operacional normalizada por `resolveMonsterSkills()` / `normalizeSkill()` quando o combate for executar a ação.
+4. **Representação visual da skill:** `data/cards.json` futuro, conforme `CARD_LAYER_ARCHITECTURE_v0.1.2.md`.
+5. **Fallback visual:** placeholder da Card Layer, sem alteração mecânica.
 
 ---
 
