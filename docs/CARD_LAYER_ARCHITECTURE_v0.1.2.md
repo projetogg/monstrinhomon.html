@@ -13,7 +13,7 @@
 1. **K-condicional definitiva:** confirmado por evidência que o runtime já resolve `kitSwap`. Card Layer opera em modo passivo absoluto.
 2. **Slot 4 do Guerreiro:** confirmado que slot 4 base não existe em `data/skills.json`. Fase 1 oficialmente tem 3 Cards, não 4.
 3. **Métrica UX Fase 1:** ajustada para identificação por ícone + layout, não por arte autoral.
-4. **Pipeline runtime canonizado:** `getMonsterSkills → SKILL_DEFS → KitSwap.getEffectiveSkills → normalize`.
+4. **Pipeline runtime separado:** `getMonsterSkills → SKILL_DEFS → KitSwap.getEffectiveSkills` entrega a lista efetiva para apresentação; `resolveMonsterSkills()` / `normalizeSkill()` normalizam para execução de combate.
 5. **Schema final:** `default_stageIndex + stages`, não `default_tier + tiers`.
 6. **groupKey legível:** exemplo correto: `Golpe de Espada`, não `GOLPE_DE_ESPADA`.
 7. **source_skill_id por entrada de stage**, não na raiz da Card.
@@ -59,7 +59,8 @@ Ver `docs/AUTHORITY_MAP.md` para versão canônica. Resumo:
 |---|---|
 | Fórmula de combate | `docs/PATCH_CANONICO_COMBATE_V2.2.md` |
 | Mecânica runtime de skills | `data/skills.json` via `js/data/skillsLoader.js` |
-| Pipeline de resolução de skills | `getMonsterSkills` em `index.html` |
+| Lista efetiva de skills para apresentação | `getMonsterSkills` em `index.html` |
+| Forma operacional de skills para combate | `resolveMonsterSkills()` / `normalizeSkill()` |
 | Quantidade de slots por nível | `js/canon/slotUnlocks.js` |
 | Variações por espécie | `js/canon/kitSwap.js` |
 | Card Layer visual | Este documento |
@@ -110,17 +111,22 @@ Entidade futura em `data/talent_cards.json`, equipável entre batalhas, se playt
 ## 4.1 Pipeline integrado
 
 ```text
-[Runtime existente — intocado]
+[Runtime existente — fonte visual efetiva]
 getMonsterSkills(monster)
   → SKILL_DEFS[class][groupKey]
   → KitSwap.getEffectiveSkills()
-  → normalize()
-  → retorna [skill1, skill2, ...]
+  → retorna skills efetivas para apresentação
+  → preserva class/groupKey/stageIndex/tier/_kitSwapId
+
+[Runtime existente — execução de combate]
+resolveMonsterSkills(...)
+  → normalizeSkill(...)
+  → retorna forma operacional normalizada para cálculo/execução de combate
 
 [Card Layer — nova]
 cardResolver.resolveCardsForMonster(monster)
   → chama getMonsterSkills(monster)
-  → para cada skill, chama cardLayer.findCardForSkill(skill)
+  → para cada skill efetiva, chama cardLayer.findCardForSkill(skill)
   → retorna [{ card, stage, skill }]
 
 cardLayer.findCardForSkill(skill)
@@ -133,26 +139,29 @@ cardRenderer.renderCard(card, stage, runtimeContext)
   → consulta runtimeContext apenas para estado visual
 ```
 
+**Nota importante:** a Card Layer deve consumir a skill efetiva de apresentação, porque ela preserva `groupKey` e `stageIndex`. A forma normalizada de combate é autoridade para execução, mas não deve ser a fonte visual primária da Card.
+
 ## 4.2 `cardResolver.js` — adaptador fino
 
 Responsabilidade: traduzir o output de `getMonsterSkills(monster)` em estrutura consumível pelo `cardRenderer`.
 
 Faz:
 
-- Chama `getMonsterSkills(monster)`.
-- Para cada skill, delega a `cardLayer.findCardForSkill(skill)`.
+- Chama `getMonsterSkills(monster)` ou recebe essa função por injeção de dependência.
+- Para cada skill efetiva, delega a `cardLayer.findCardForSkill(skill)`.
 - Empacota resultado.
 
 Nunca faz:
 
 - Chamar `applyKitSwaps`.
+- Chamar `normalizeSkill()` ou `resolveMonsterSkills()` para decidir apresentação visual.
 - Modificar skills.
 - Decidir qual `stageIndex` está ativo.
 - Calcular dano, custo, alvo ou efeito.
 
 ## 4.3 `cardLayer.js` — apresentação pura
 
-Responsabilidade: dado uma skill resolvida, encontrar a Card visual correspondente.
+Responsabilidade: dado uma skill efetiva, encontrar a Card visual correspondente.
 
 Faz:
 
@@ -163,6 +172,7 @@ Faz:
 Nunca faz:
 
 - Chamar `applyKitSwaps`.
+- Chamar `normalizeSkill()`.
 - Modificar skill.
 - Decidir qual skill mostrar.
 
@@ -332,11 +342,11 @@ Regras finais:
 
 ## 7.1 Com `slotUnlocks.js`
 
-`cardResolver` não precisa chamar `getUnlockedSlotsForLevel` diretamente. O array retornado por `getMonsterSkills(monster)` já deve conter apenas skills desbloqueadas para o nível atual.
+`cardResolver` não precisa chamar `getUnlockedSlotsForLevel` diretamente. O array retornado por `getMonsterSkills(monster)` já deve conter as skills efetivas para o monstro no nível atual.
 
 ## 7.2 Com `level_progression.json`
 
-`cardResolver` não consulta diretamente. Runtime já interpretou upgrades e refletiu no `stageIndex` da skill retornada.
+`cardResolver` não consulta diretamente. Runtime já interpreta upgrades e reflete isso no `stageIndex` da skill efetiva retornada.
 
 ## 7.3 Com `kitSwap.js`
 
@@ -509,6 +519,8 @@ Reconhecimento por arte autoral fica para Fase 1b/Fase 2.
 # 15. Glossário
 
 - **Skill:** entidade canônica em `data/skills.json`; define mecânica.
+- **Skill efetiva:** skill retornada por `getMonsterSkills`, após seleção por classe/nível e aplicação de kitSwap, preservando `groupKey`/`stageIndex`.
+- **Skill normalizada:** forma operacional gerada por `resolveMonsterSkills()` / `normalizeSkill()` para execução do combate.
 - **Card:** representação visual de uma skill; sem mecânica.
 - **Signature Card:** carta ligada a Monstrinhomon específico; Fase 2 visual-only.
 - **Talent Card:** carta equipável; Fase 3+, se justificado.
