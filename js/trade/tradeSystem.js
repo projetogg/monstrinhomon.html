@@ -18,9 +18,9 @@
  * Implementa a regra legada de transferência unilateral de um Monstrinho.
  *
  * Funções exportadas:
- *   validateTrade(fromPlayer, toPlayer, instanceId, playersData)
- *   proposeTradeAction(fromPlayer, toPlayer, instanceId, playersData)
- *   acceptTrade(tradeProposal, playersData)
+ *   validateTrade(fromPlayer, toPlayer, instanceId, context?)
+ *   proposeTradeAction(fromPlayer, toPlayer, instanceId, context?)
+ *   acceptTrade(trade, fromPlayer, toPlayer, context?)
  */
 
 // ─── Códigos de erro ─────────────────────────────────────────────────────────
