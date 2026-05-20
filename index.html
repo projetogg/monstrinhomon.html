@@ -939,6 +939,7 @@
         // Shop UI (Fase Z)
         import * as ShopUI from './js/ui/shopUI.js';
         import * as SavesUI from './js/ui/savesUI.js';
+        import { buildBasicCardHandViewModel } from './js/ui/basicCardHandUI.js';
 
         // Map Unlock System (FASE XIV)
         import * as MapUnlockSystem from './js/encounter/mapUnlockSystem.js';
@@ -8017,6 +8018,29 @@
                 // Converte nome de classe para CSS slug sem acentos (ex: 'Caçador' → 'cacador')
                 const classToCssSlug = cls => (cls || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
+                const basicCardHand = buildBasicCardHandViewModel(player?.class);
+                const cardTypeLabel = type => {
+                    const map = {
+                        attack: 'Ataque',
+                        heal: 'Cura',
+                        utility: 'Utilidade',
+                        support: 'Suporte',
+                        capture_support: 'Suporte de Captura'
+                    };
+                    return map[type] || type;
+                };
+                const basicCardsPreviewHtml = basicCardHand.length > 0
+                    ? basicCardHand.map(card => `
+                        <article class="battle-card-preview" aria-disabled="true">
+                            <h4>${card.name}</h4>
+                            <div class="battle-card-preview-meta">ENE: ${card.cost} · Classe: ${card.class}</div>
+                            <div class="battle-card-preview-meta">Tipo: ${cardTypeLabel(card.type)}</div>
+                            <p class="battle-card-preview-text">"${card.childText}"</p>
+                            <div class="battle-card-preview-status">Status: Em breve — carta ainda não conectada.</div>
+                        </article>
+                    `).join('')
+                    : '<div class="battle-card-preview-empty">Sem cartas básicas de preview para a classe atual.</div>';
+
                 // Preview do d20: calcula o valor mínimo necessário para acertar e dano estimado
                 const d20HintHtml = (() => {
                     if (!playerMonster || !monster) return '';
@@ -8363,6 +8387,14 @@
                                         🤝 ${captureAction.name} <small>(↓ Agressividade)</small>
                                     </button>
                                 </div>` : ''}
+                            </div>
+                        </div>
+
+                        <div class="battle-card-hand-preview" aria-live="polite">
+                            <div class="battle-card-hand-preview-title">🃏 Mão de cartas (Preview)</div>
+                            <div class="battle-card-hand-preview-subtitle">Visual apenas nesta etapa do MVP 0.4.</div>
+                            <div class="battle-card-hand-preview-list">
+                                ${basicCardsPreviewHtml}
                             </div>
                         </div>
 
