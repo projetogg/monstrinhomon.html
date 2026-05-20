@@ -55,7 +55,8 @@ Card Layer nunca vence mecânica.
 | Fórmula de combate | `docs/PATCH_CANONICO_COMBATE_V2.2.md` |
 | Regras gerais | `GAME_RULES.md` |
 | Skills runtime | `data/skills.json` via `js/data/skillsLoader.js` |
-| Pipeline de skills | `getMonsterSkills` em `index.html` |
+| Lista efetiva de skills para apresentação | `getMonsterSkills` em `index.html` |
+| Forma operacional de skills para combate | `resolveMonsterSkills()` / `normalizeSkill()` |
 | Progressão de slots | `js/canon/slotUnlocks.js` + `design/canon/level_progression.json` |
 | Kit swaps | `js/canon/kitSwap.js` |
 | Monstrinhos runtime | `data/monsters.json` |
