@@ -61,6 +61,18 @@ describe('basicCardHandUI — preview seguro (MVP 0.4)', () => {
         expect(card.disabledReason).toContain('Precisa de mais ENE');
     });
 
+    it('mantém previewOnly=true mesmo se opção externa tentar desativar preview', () => {
+        const [card] = buildBasicCardHandViewModel('Guerreiro', {
+            currentEne: 10,
+            previewOnly: false,
+        });
+
+        expect(card.canAfford).toBe(true);
+        expect(card.previewOnly).toBe(true);
+        expect(card.enabled).toBe(false);
+        expect(card.executable).toBe(false);
+    });
+
     it('trata ENE ausente, nula ou inválida de forma segura', () => {
         const [noOptions] = buildBasicCardHandViewModel('Bárbaro');
         const [nullEne] = buildBasicCardHandViewModel('Bárbaro', { currentEne: null });
