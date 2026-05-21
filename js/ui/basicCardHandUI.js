@@ -1,6 +1,6 @@
 import { getBasicCardsByClass } from '../data/basicCards.js';
 
-const PREVIEW_AVAILABLE_REASON = 'ENE suficiente — execução em breve.';
+const PREVIEW_AVAILABLE_REASON = 'ENE suficiente — execução preparada para próxima etapa.';
 const INSUFFICIENT_ENE_REASON = 'Precisa de mais ENE.';
 
 function normalizeCurrentEne(currentEne) {
@@ -12,6 +12,10 @@ function normalizeCurrentEne(currentEne) {
 /**
  * Monta a mão de cartas em formato seguro para visualização (preview).
  * Não executa efeitos, não altera estado e não consome ENE.
+ *
+ * Observação MVP 0.4:
+ * A action de Golpe Firme pode existir/testar em camada de combate,
+ * mas esta UI permanece preview até o wiring de clique ser implementado.
  *
  * @param {string} className
  * @param {object} [options]
