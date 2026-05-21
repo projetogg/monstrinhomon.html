@@ -1,4 +1,4 @@
-const VALID_MONSTER_CLASSES = new Set([
+export const VALID_MONSTER_CLASSES = new Set([
     'Guerreiro',
     'Mago',
     'Curandeiro',
@@ -68,4 +68,20 @@ export function resolveMonsterCurrentEne(monster) {
     const parsed = Number(monster.ene ?? monster.currentEne ?? monster.energy ?? 0);
     if (!Number.isFinite(parsed) || parsed < 0) return 0;
     return parsed;
+}
+
+export function normalizeMonsterBattleRuntime(monster, options = {}) {
+    const resolvedClass = resolveMonsterEffectiveClass(monster, options);
+    const currentEne = resolveMonsterCurrentEne(monster);
+
+    if (monster && typeof monster === 'object') {
+        if (resolvedClass.value && monster.class !== resolvedClass.value) {
+            monster.class = resolvedClass.value;
+        }
+        if (monster.ene !== currentEne) {
+            monster.ene = currentEne;
+        }
+    }
+
+    return { resolvedClass, currentEne };
 }

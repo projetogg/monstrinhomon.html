@@ -1,5 +1,5 @@
 import { getBasicCardById } from '../data/basicCards.js';
-import { resolveMonsterCurrentEne, resolveMonsterEffectiveClass } from './monsterRuntimeFields.js';
+import { normalizeMonsterBattleRuntime } from './monsterRuntimeFields.js';
 
 export const SUPPORTED_WILD_CARD_ID = 'CARD_GUERREIRO_GOLPE_FIRME';
 
@@ -17,13 +17,13 @@ export function executeBasicCardAction({ cardId, player, playerMonster, encounte
   if (player.class !== 'Guerreiro') return { success: false, reason: 'class_mismatch' };
 
   if (!playerMonster || typeof playerMonster !== 'object') return { success: false, reason: 'invalid_player_monster' };
-  const resolvedClass = resolveMonsterEffectiveClass(playerMonster, {
+  const normalizedMonster = normalizeMonsterBattleRuntime(playerMonster, {
     resolveMonsterTemplate: dependencies.resolveMonsterTemplate,
   });
-  if (resolvedClass.value !== 'Guerreiro') return { success: false, reason: 'class_mismatch' };
+  if (normalizedMonster.resolvedClass.value !== 'Guerreiro') return { success: false, reason: 'class_mismatch' };
   if (!isAlive(playerMonster)) return { success: false, reason: 'player_monster_fainted' };
 
-  const currentEne = resolveMonsterCurrentEne(playerMonster);
+  const currentEne = normalizedMonster.currentEne;
   if (currentEne < card.cost) return { success: false, reason: 'insufficient_ene' };
 
   if (!encounter || encounter.active !== true) return { success: false, reason: 'invalid_encounter' };
@@ -31,13 +31,6 @@ export function executeBasicCardAction({ cardId, player, playerMonster, encounte
 
   const executeWildAttack = dependencies.executeWildAttack;
   if (typeof executeWildAttack !== 'function') return { success: false, reason: 'missing_attack_pipeline' };
-
-  if (playerMonster.class !== resolvedClass.value) {
-    playerMonster.class = resolvedClass.value;
-  }
-  if (playerMonster.ene !== currentEne) {
-    playerMonster.ene = currentEne;
-  }
 
   // Consome ENE só após validações; se pipeline falhar, rollback para consistência.
   playerMonster.ene = currentEne - card.cost;

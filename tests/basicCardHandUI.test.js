@@ -142,6 +142,31 @@ describe('basicCardHandUI - wiring seguro (MVP 0.4)', () => {
         expect(card.availability).toBe('ready');
     });
 
+    it('diagnostica sucesso quando a classe efetiva vem do template canônico', () => {
+        const ctx = makeReadyContext({
+            playerMonster: {
+                class: 'Neutro',
+                templateId: 'MON_001',
+            },
+        });
+
+        const diagnostics = inspectBasicCardReadiness({
+            cardId: 'CARD_GUERREIRO_GOLPE_FIRME',
+            player: ctx.player,
+            playerMonster: ctx.playerMonster,
+            encounter: ctx.encounter,
+            actionHandlersConnected: true,
+            resolveMonsterTemplate: (templateId) => (
+                templateId === 'MON_001' ? { id: 'MON_001', class: 'Guerreiro' } : null
+            ),
+        });
+
+        expect(diagnostics.readiness).toEqual({ ok: true, reason: 'ready' });
+        expect(diagnostics.checks.playerMonsterClass).toBe('Guerreiro');
+        expect(diagnostics.checks.playerMonsterClassSource).toBe('catalog');
+        expect(diagnostics.checks.playerMonsterEneOk).toBe(true);
+    });
+
     it('bloqueia Golpe Firme quando ENE e insuficiente', () => {
         const ctx = makeReadyContext({ playerMonster: { ene: 0 } });
         const [card] = buildBasicCardHandViewModel('Guerreiro', {
