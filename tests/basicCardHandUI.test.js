@@ -142,6 +142,39 @@ describe('basicCardHandUI - wiring seguro (MVP 0.4)', () => {
         expect(card.availability).toBe('ready');
     });
 
+    it('marca Golpe Firme como executavel com shape totalmente legado — sem ene, sem class, so templateId+currentEne', () => {
+        // Cenário que reproduz o bug reportado: instância saiu do save sem `ene` nem
+        // `class` diretos; só tem `templateId` e `currentEne` (legados).
+        const playerMonster = {
+            id: 'M_legacy',
+            templateId: 'MON_001',
+            hp: 20,
+            currentEne: 2,
+            // sem `ene`, sem `class`
+        };
+        const ctx = {
+            player: { id: 'P1', class: 'Guerreiro' },
+            playerMonster,
+            encounter: { active: true, wildMonster: { id: 'W1', hp: 15 } },
+        };
+        const resolveMonsterTemplate = vi.fn((templateId) => (
+            templateId === 'MON_001' ? { id: 'MON_001', class: 'Guerreiro' } : null
+        ));
+
+        const [card] = buildBasicCardHandViewModel('Guerreiro', {
+            actionHandlersConnected: true,
+            ...ctx,
+            resolveMonsterTemplate,
+        });
+
+        expect(card.id).toBe('CARD_GUERREIRO_GOLPE_FIRME');
+        expect(card.canAfford).toBe(true);
+        expect(card.enabled).toBe(true);
+        expect(card.executable).toBe(true);
+        expect(card.previewOnly).toBe(false);
+        expect(card.availability).toBe('ready');
+    });
+
     it('diagnostica sucesso quando a classe efetiva vem do template canônico', () => {
         const ctx = makeReadyContext({
             playerMonster: {

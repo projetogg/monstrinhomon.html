@@ -8023,7 +8023,7 @@
                 // Converte nome de classe para CSS slug sem acentos (ex: 'Caçador' → 'cacador')
                 const classToCssSlug = cls => (cls || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-                const currentEne = Number.isFinite(Number(playerMonster?.ene)) ? Number(playerMonster?.ene) : 0;
+                const currentEne = Number.isFinite(Number(playerMonster?.ene ?? playerMonster?.currentEne)) ? Number(playerMonster?.ene ?? playerMonster?.currentEne) : 0;
                 const basicCardHand = buildBasicCardHandViewModel(player?.class, {
                     currentEne,
                     actionHandlersConnected: true,

@@ -124,11 +124,15 @@ export function buildBasicCardHandViewModel(className, options = {}) {
     if (!className || typeof className !== 'string') return [];
 
     const cards = getBasicCardsByClass(className);
-    const currentEne = resolveMonsterCurrentEne({ ene: options?.currentEne });
     const actionHandlersConnected = options?.actionHandlersConnected === true;
     const resolveMonsterTemplate = options?.resolveMonsterTemplate;
     const resolvedPlayerMonsterClass = resolveMonsterEffectiveClass(options?.playerMonster, { resolveMonsterTemplate });
+    // Preferir ENE efetiva do monstrinho (resolve ene/currentEne/energy);
+    // cair para options.currentEne apenas quando não há playerMonster (modo preview sem contexto real).
     const resolvedPlayerMonsterEne = resolveMonsterCurrentEne(options?.playerMonster);
+    const currentEne = options?.playerMonster
+        ? resolvedPlayerMonsterEne
+        : resolveMonsterCurrentEne({ ene: options?.currentEne });
 
     return cards.map(card => {
         const canAfford = currentEne >= card.cost;
