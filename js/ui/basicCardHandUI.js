@@ -37,6 +37,8 @@ export function getBasicCardReadiness({
     encounter,
     actionHandlersConnected = false,
     resolveMonsterTemplate,
+    resolvedPlayerMonsterClass,
+    resolvedPlayerMonsterEne,
 } = {}) {
     const diagnostics = inspectBasicCardReadiness({
         cardId,
@@ -45,6 +47,8 @@ export function getBasicCardReadiness({
         encounter,
         actionHandlersConnected,
         resolveMonsterTemplate,
+        resolvedPlayerMonsterClass,
+        resolvedPlayerMonsterEne,
     });
     return diagnostics.readiness;
 }
@@ -56,10 +60,13 @@ export function inspectBasicCardReadiness({
     encounter,
     actionHandlersConnected = false,
     resolveMonsterTemplate,
+    resolvedPlayerMonsterClass,
+    resolvedPlayerMonsterEne,
 } = {}) {
     const card = getBasicCardById(cardId);
-    const playerMonsterClass = resolveMonsterEffectiveClass(playerMonster, { resolveMonsterTemplate });
-    const currentEne = resolveMonsterCurrentEne(playerMonster);
+    const playerMonsterClass = resolvedPlayerMonsterClass
+        ?? resolveMonsterEffectiveClass(playerMonster, { resolveMonsterTemplate });
+    const currentEne = resolvedPlayerMonsterEne ?? resolveMonsterCurrentEne(playerMonster);
     const checks = {
         cardFound: !!card,
         cardSupported: card?.id === SUPPORTED_WILD_CARD_ID,
@@ -121,6 +128,8 @@ export function buildBasicCardHandViewModel(className, options = {}) {
     const currentEne = resolveMonsterCurrentEne({ ene: options?.currentEne });
     const actionHandlersConnected = options?.actionHandlersConnected === true;
     const resolveMonsterTemplate = options?.resolveMonsterTemplate;
+    const resolvedPlayerMonsterClass = resolveMonsterEffectiveClass(options?.playerMonster, { resolveMonsterTemplate });
+    const resolvedPlayerMonsterEne = resolveMonsterCurrentEne(options?.playerMonster);
 
     return cards.map(card => {
         const canAfford = currentEne >= card.cost;
@@ -131,6 +140,8 @@ export function buildBasicCardHandViewModel(className, options = {}) {
             encounter: options?.encounter,
             actionHandlersConnected,
             resolveMonsterTemplate,
+            resolvedPlayerMonsterClass,
+            resolvedPlayerMonsterEne,
         });
 
         const executable = canAfford && readiness.ok;

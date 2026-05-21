@@ -93,7 +93,7 @@ describe('basicCardHandUI - wiring seguro (MVP 0.4)', () => {
         expect(card.availability).toBe('preview_available');
     });
 
-    it('diagnostica class_mismatch quando a instancia ativa cai em fallback Neutro', () => {
+    it('diagnostica class_mismatch quando a instancia ativa permanece sem classe resolvida', () => {
         const ctx = makeReadyContext({
             playerMonster: {
                 class: 'Neutro',

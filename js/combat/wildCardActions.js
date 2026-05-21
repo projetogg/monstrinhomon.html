@@ -1,5 +1,5 @@
 import { getBasicCardById } from '../data/basicCards.js';
-import { normalizeMonsterBattleRuntime } from './monsterRuntimeFields.js';
+import { normalizeMonsterBattleRuntimeInPlace } from './monsterRuntimeFields.js';
 
 export const SUPPORTED_WILD_CARD_ID = 'CARD_GUERREIRO_GOLPE_FIRME';
 
@@ -17,7 +17,7 @@ export function executeBasicCardAction({ cardId, player, playerMonster, encounte
   if (player.class !== 'Guerreiro') return { success: false, reason: 'class_mismatch' };
 
   if (!playerMonster || typeof playerMonster !== 'object') return { success: false, reason: 'invalid_player_monster' };
-  const normalizedMonster = normalizeMonsterBattleRuntime(playerMonster, {
+  const normalizedMonster = normalizeMonsterBattleRuntimeInPlace(playerMonster, {
     resolveMonsterTemplate: dependencies.resolveMonsterTemplate,
   });
   if (normalizedMonster.resolvedClass.value !== 'Guerreiro') return { success: false, reason: 'class_mismatch' };

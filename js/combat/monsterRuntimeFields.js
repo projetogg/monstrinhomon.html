@@ -70,7 +70,7 @@ export function resolveMonsterCurrentEne(monster) {
     return parsed;
 }
 
-export function normalizeMonsterBattleRuntime(monster, options = {}) {
+export function normalizeMonsterBattleRuntimeInPlace(monster, options = {}) {
     const resolvedClass = resolveMonsterEffectiveClass(monster, options);
     const currentEne = resolveMonsterCurrentEne(monster);
 
