@@ -8030,6 +8030,7 @@
                     player,
                     playerMonster,
                     encounter,
+                    resolveMonsterTemplate: getMonsterTemplate,
                 });
                 const cardTypeLabel = type => {
                     const map = {
@@ -9001,6 +9002,7 @@
                     player,
                     playerMonster,
                     encounter,
+                    resolveMonsterTemplate: getMonsterTemplate,
                 }).find(card => card.id === cardId);
 
                 if (!cardViewModel?.enabled) {
@@ -9025,6 +9027,7 @@
                     defenderRoll: rollContext.defenderRoll,
                     executeWildAttack: Combat.Wild.Actions.executeWildAttack,
                     dependencies,
+                    resolveMonsterTemplate: getMonsterTemplate,
                 });
 
                 if (!result.success) {

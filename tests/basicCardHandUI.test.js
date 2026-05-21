@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
     buildBasicCardHandViewModel,
+    inspectBasicCardReadiness,
     executeBasicCardFromHand,
     getBasicCardActionFeedback,
 } from '../js/ui/basicCardHandUI.js';
@@ -92,6 +93,55 @@ describe('basicCardHandUI - wiring seguro (MVP 0.4)', () => {
         expect(card.availability).toBe('preview_available');
     });
 
+    it('diagnostica class_mismatch quando a instancia ativa cai em fallback Neutro', () => {
+        const ctx = makeReadyContext({
+            playerMonster: {
+                class: 'Neutro',
+                templateId: 'MON_001',
+            },
+        });
+
+        const diagnostics = inspectBasicCardReadiness({
+            cardId: 'CARD_GUERREIRO_GOLPE_FIRME',
+            player: ctx.player,
+            playerMonster: ctx.playerMonster,
+            encounter: ctx.encounter,
+            actionHandlersConnected: true,
+        });
+
+        expect(diagnostics.readiness).toEqual({ ok: false, reason: 'class_mismatch' });
+        expect(diagnostics.checks.playerMonsterClass).toBe(null);
+        expect(diagnostics.checks.playerMonsterClassSource).toBe('unresolved');
+        expect(diagnostics.checks.playerMonsterEneOk).toBe(true);
+        expect(diagnostics.checks.encounterValid).toBe(true);
+        expect(diagnostics.checks.wildMonsterHpOk).toBe(true);
+    });
+
+    it('marca Golpe Firme como executavel com shape real legado quando a classe vem do template', () => {
+        const ctx = makeReadyContext({
+            playerMonster: {
+                class: 'Neutro',
+                templateId: 'MON_001',
+            },
+        });
+        const resolveMonsterTemplate = vi.fn((templateId) => (
+            templateId === 'MON_001' ? { id: 'MON_001', class: 'Guerreiro' } : null
+        ));
+
+        const [card] = buildBasicCardHandViewModel('Guerreiro', {
+            currentEne: ctx.playerMonster.ene,
+            actionHandlersConnected: true,
+            ...ctx,
+            resolveMonsterTemplate,
+        });
+
+        expect(resolveMonsterTemplate).toHaveBeenCalledWith('MON_001');
+        expect(card.enabled).toBe(true);
+        expect(card.executable).toBe(true);
+        expect(card.previewOnly).toBe(false);
+        expect(card.availability).toBe('ready');
+    });
+
     it('bloqueia Golpe Firme quando ENE e insuficiente', () => {
         const ctx = makeReadyContext({ playerMonster: { ene: 0 } });
         const [card] = buildBasicCardHandViewModel('Guerreiro', {
@@ -164,6 +214,7 @@ describe('basicCardHandUI - wiring seguro (MVP 0.4)', () => {
             executeWildAttack,
             dependencies,
             executeBasicCardActionImpl,
+            resolveMonsterTemplate: () => ({ id: 'MON_001', class: 'Guerreiro' }),
         });
 
         expect(result.success).toBe(true);
@@ -219,6 +270,32 @@ describe('basicCardHandUI - wiring seguro (MVP 0.4)', () => {
         expect(result).toEqual({ success: false, reason: 'insufficient_ene' });
         expect(executeBasicCardActionImpl).not.toHaveBeenCalled();
         expect(executeWildAttack).not.toHaveBeenCalled();
+    });
+
+    it('helper aceita ENE legado via currentEne no monstrinho quando o template resolve Guerreiro', () => {
+        const ctx = makeReadyContext({
+            playerMonster: {
+                class: 'Neutro',
+                ene: undefined,
+                currentEne: 2,
+                templateId: 'MON_001',
+            },
+        });
+        const executeWildAttack = vi.fn(() => ({ success: true, result: 'ongoing' }));
+        const executeBasicCardActionImpl = vi.fn(() => ({ success: true, reason: 'card_executed' }));
+
+        const result = executeBasicCardFromHand({
+            cardId: 'CARD_GUERREIRO_GOLPE_FIRME',
+            ...ctx,
+            d20Roll: 12,
+            defenderRoll: 4,
+            executeWildAttack,
+            executeBasicCardActionImpl,
+            resolveMonsterTemplate: () => ({ id: 'MON_001', class: 'Guerreiro' }),
+        });
+
+        expect(result.success).toBe(true);
+        expect(executeBasicCardActionImpl).toHaveBeenCalledTimes(1);
     });
 
     it('traduz motivos tecnicos para feedback seguro', () => {

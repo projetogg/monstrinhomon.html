@@ -1,17 +1,12 @@
 import { getBasicCardById, getBasicCardsByClass } from '../data/basicCards.js';
 import { executeBasicCardAction, SUPPORTED_WILD_CARD_ID } from '../combat/wildCardActions.js';
+import { resolveMonsterCurrentEne, resolveMonsterEffectiveClass } from '../combat/monsterRuntimeFields.js';
 
 const READY_REASON = 'Pronta para usar - custa 1 ENE.';
 const PREVIEW_AVAILABLE_REASON = 'Execução em breve.';
 const INSUFFICIENT_ENE_REASON = 'Precisa de mais ENE.';
 const UNAVAILABLE_REASON = 'A carta não pode ser usada nesta batalha.';
 const FAINTED_REASON = 'Esse monstrinho não pode agir agora.';
-
-function normalizeCurrentEne(currentEne) {
-    const parsed = Number(currentEne);
-    if (!Number.isFinite(parsed) || parsed < 0) return 0;
-    return parsed;
-}
 
 function isAlive(monster) {
     return !!monster && Number(monster.hp) > 0;
@@ -41,26 +36,65 @@ export function getBasicCardReadiness({
     playerMonster,
     encounter,
     actionHandlersConnected = false,
+    resolveMonsterTemplate,
+} = {}) {
+    const diagnostics = inspectBasicCardReadiness({
+        cardId,
+        player,
+        playerMonster,
+        encounter,
+        actionHandlersConnected,
+        resolveMonsterTemplate,
+    });
+    return diagnostics.readiness;
+}
+
+export function inspectBasicCardReadiness({
+    cardId,
+    player,
+    playerMonster,
+    encounter,
+    actionHandlersConnected = false,
+    resolveMonsterTemplate,
 } = {}) {
     const card = getBasicCardById(cardId);
-    if (!card) return { ok: false, reason: 'card_not_found' };
-    if (card.id !== SUPPORTED_WILD_CARD_ID) return { ok: false, reason: 'unsupported_card' };
-    if (!actionHandlersConnected) return { ok: false, reason: 'handler_not_connected' };
+    const playerMonsterClass = resolveMonsterEffectiveClass(playerMonster, { resolveMonsterTemplate });
+    const currentEne = resolveMonsterCurrentEne(playerMonster);
+    const checks = {
+        cardFound: !!card,
+        cardSupported: card?.id === SUPPORTED_WILD_CARD_ID,
+        actionHandlersConnected: actionHandlersConnected === true,
+        playerValid: !!player && typeof player === 'object',
+        playerClass: player?.class || null,
+        playerClassOk: player?.class === 'Guerreiro',
+        playerMonsterValid: !!playerMonster && typeof playerMonster === 'object',
+        playerMonsterClass: playerMonsterClass.value,
+        playerMonsterClassSource: playerMonsterClass.source,
+        playerMonsterClassOk: playerMonsterClass.value === 'Guerreiro',
+        playerMonsterHp: Number(playerMonster?.hp) || 0,
+        playerMonsterHpOk: isAlive(playerMonster),
+        playerMonsterEne: currentEne,
+        playerMonsterEneOk: !!card && currentEne >= card.cost,
+        encounterValid: !!encounter && encounter.active === true,
+        wildMonsterHp: Number(encounter?.wildMonster?.hp) || 0,
+        wildMonsterHpOk: isAlive(encounter?.wildMonster),
+    };
 
-    if (!player || typeof player !== 'object') return { ok: false, reason: 'invalid_player' };
-    if (player.class !== 'Guerreiro') return { ok: false, reason: 'class_mismatch' };
+    let readiness;
+    if (!checks.cardFound) readiness = { ok: false, reason: 'card_not_found' };
+    else if (!checks.cardSupported) readiness = { ok: false, reason: 'unsupported_card' };
+    else if (!checks.actionHandlersConnected) readiness = { ok: false, reason: 'handler_not_connected' };
+    else if (!checks.playerValid) readiness = { ok: false, reason: 'invalid_player' };
+    else if (!checks.playerClassOk) readiness = { ok: false, reason: 'class_mismatch' };
+    else if (!checks.playerMonsterValid) readiness = { ok: false, reason: 'invalid_player_monster' };
+    else if (!checks.playerMonsterClassOk) readiness = { ok: false, reason: 'class_mismatch' };
+    else if (!checks.playerMonsterHpOk) readiness = { ok: false, reason: 'player_monster_fainted' };
+    else if (!checks.playerMonsterEneOk) readiness = { ok: false, reason: 'insufficient_ene' };
+    else if (!checks.encounterValid) readiness = { ok: false, reason: 'invalid_encounter' };
+    else if (!checks.wildMonsterHpOk) readiness = { ok: false, reason: 'invalid_wild_monster' };
+    else readiness = { ok: true, reason: 'ready' };
 
-    if (!playerMonster || typeof playerMonster !== 'object') return { ok: false, reason: 'invalid_player_monster' };
-    if (playerMonster.class !== 'Guerreiro') return { ok: false, reason: 'class_mismatch' };
-    if (!isAlive(playerMonster)) return { ok: false, reason: 'player_monster_fainted' };
-
-    const currentEne = normalizeCurrentEne(playerMonster.ene);
-    if (currentEne < card.cost) return { ok: false, reason: 'insufficient_ene' };
-
-    if (!encounter || encounter.active !== true) return { ok: false, reason: 'invalid_encounter' };
-    if (!isAlive(encounter.wildMonster)) return { ok: false, reason: 'invalid_wild_monster' };
-
-    return { ok: true, reason: 'ready' };
+    return { readiness, checks };
 }
 
 /**
@@ -84,8 +118,9 @@ export function buildBasicCardHandViewModel(className, options = {}) {
     if (!className || typeof className !== 'string') return [];
 
     const cards = getBasicCardsByClass(className);
-    const currentEne = normalizeCurrentEne(options?.currentEne);
+    const currentEne = resolveMonsterCurrentEne({ ene: options?.currentEne });
     const actionHandlersConnected = options?.actionHandlersConnected === true;
+    const resolveMonsterTemplate = options?.resolveMonsterTemplate;
 
     return cards.map(card => {
         const canAfford = currentEne >= card.cost;
@@ -95,6 +130,7 @@ export function buildBasicCardHandViewModel(className, options = {}) {
             playerMonster: options?.playerMonster,
             encounter: options?.encounter,
             actionHandlersConnected,
+            resolveMonsterTemplate,
         });
 
         const executable = canAfford && readiness.ok;
@@ -145,6 +181,7 @@ export function executeBasicCardFromHand({
     executeWildAttack,
     dependencies = {},
     executeBasicCardActionImpl = executeBasicCardAction,
+    resolveMonsterTemplate,
 } = {}) {
     const readiness = getBasicCardReadiness({
         cardId,
@@ -152,6 +189,7 @@ export function executeBasicCardFromHand({
         playerMonster,
         encounter,
         actionHandlersConnected: true,
+        resolveMonsterTemplate,
     });
 
     if (!readiness.ok) {
@@ -177,6 +215,7 @@ export function executeBasicCardFromHand({
         encounter,
         dependencies: {
             executeWildAttack: executeWildAttackForCard,
+            resolveMonsterTemplate,
         },
     });
 }

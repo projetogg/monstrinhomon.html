@@ -55,6 +55,31 @@ describe('executeBasicCardAction', () => {
     expect(executeWildAttack).not.toHaveBeenCalled();
   });
 
+  it('executa com shape legado quando a classe efetiva vem do template canônico', () => {
+    const ctx = makeBase();
+    ctx.playerMonster.class = 'Neutro';
+    ctx.playerMonster.templateId = 'MON_001';
+    delete ctx.playerMonster.ene;
+    ctx.playerMonster.currentEne = 3;
+    const executeWildAttack = vi.fn(() => ({ success: true, result: 'ongoing' }));
+
+    const result = executeBasicCardAction({
+      cardId: SUPPORTED_WILD_CARD_ID,
+      ...ctx,
+      dependencies: {
+        executeWildAttack,
+        resolveMonsterTemplate: (templateId) => templateId === 'MON_001'
+          ? { id: 'MON_001', class: 'Guerreiro' }
+          : null,
+      }
+    });
+
+    expect(result.success).toBe(true);
+    expect(ctx.playerMonster.class).toBe('Guerreiro');
+    expect(ctx.playerMonster.ene).toBe(2);
+    expect(executeWildAttack).toHaveBeenCalledTimes(1);
+  });
+
   it('retorna card_not_found para carta inexistente', () => {
     const ctx = makeBase();
     const result = executeBasicCardAction({ cardId: 'CARD_X', ...ctx, dependencies: { executeWildAttack: vi.fn() } });
