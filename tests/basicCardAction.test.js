@@ -45,6 +45,16 @@ describe('executeBasicCardAction', () => {
     expect(ctx.playerMonster.ene).toBe(3);
   });
 
+  it('não executa quando a classe do monstrinho não é Guerreiro', () => {
+    const ctx = makeBase();
+    ctx.playerMonster.class = 'Mago';
+    const executeWildAttack = vi.fn();
+    const result = executeBasicCardAction({ cardId: SUPPORTED_WILD_CARD_ID, ...ctx, dependencies: { executeWildAttack } });
+    expect(result.reason).toBe('class_mismatch');
+    expect(ctx.playerMonster.ene).toBe(3);
+    expect(executeWildAttack).not.toHaveBeenCalled();
+  });
+
   it('retorna card_not_found para carta inexistente', () => {
     const ctx = makeBase();
     const result = executeBasicCardAction({ cardId: 'CARD_X', ...ctx, dependencies: { executeWildAttack: vi.fn() } });
@@ -81,6 +91,13 @@ describe('executeBasicCardAction', () => {
     const ctx = makeBase();
     const result = executeBasicCardAction({ cardId: SUPPORTED_WILD_CARD_ID, ...ctx, dependencies: { executeWildAttack: () => ({ success: false, reason: 'x' }) } });
     expect(result.reason).toBe('attack_pipeline_failed');
+    expect(ctx.playerMonster.ene).toBe(3);
+  });
+
+  it('não consome ENE se o pipeline de ataque não foi fornecido', () => {
+    const ctx = makeBase();
+    const result = executeBasicCardAction({ cardId: SUPPORTED_WILD_CARD_ID, ...ctx, dependencies: {} });
+    expect(result.reason).toBe('missing_attack_pipeline');
     expect(ctx.playerMonster.ene).toBe(3);
   });
 });
