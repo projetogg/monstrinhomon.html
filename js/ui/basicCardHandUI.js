@@ -64,8 +64,7 @@ export function inspectBasicCardReadiness({
     resolvedPlayerMonsterEne,
 } = {}) {
     const card = getBasicCardById(cardId);
-    const playerMonsterClass = resolvedPlayerMonsterClass
-        ?? resolveMonsterEffectiveClass(playerMonster, { resolveMonsterTemplate });
+    const playerMonsterClass = resolvedPlayerMonsterClass || resolveMonsterEffectiveClass(playerMonster, { resolveMonsterTemplate });
     const currentEne = resolvedPlayerMonsterEne ?? resolveMonsterCurrentEne(playerMonster);
     const checks = {
         cardFound: !!card,

@@ -93,7 +93,7 @@ describe('basicCardHandUI - wiring seguro (MVP 0.4)', () => {
         expect(card.availability).toBe('preview_available');
     });
 
-    it('diagnostica class_mismatch quando a instancia ativa permanece sem classe resolvida', () => {
+    it('diagnostica class_mismatch quando a instância ativa permanece sem classe resolvida', () => {
         const ctx = makeReadyContext({
             playerMonster: {
                 class: 'Neutro',
@@ -278,7 +278,7 @@ describe('basicCardHandUI - wiring seguro (MVP 0.4)', () => {
         expect(executeWildAttack).not.toHaveBeenCalled();
     });
 
-    it('helper nao chama action quando ENE e insuficiente', () => {
+    it('helper nao chama action quando ENE é insuficiente', () => {
         const ctx = makeReadyContext({ playerMonster: { ene: 0 } });
         const executeWildAttack = vi.fn();
         const executeBasicCardActionImpl = vi.fn();

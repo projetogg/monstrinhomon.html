@@ -50,6 +50,8 @@ export function resolveMonsterEffectiveClass(monster, options = {}) {
         return { value: templateClass, source: 'template.class' };
     }
 
+    // Compatibilidade: `templateId` é o campo canônico atual; `monsterId`, `baseId`
+    // e `idBase` ainda aparecem em saves/fluxos legados já cobertos por migração.
     const templateId = monster.templateId ?? monster.monsterId ?? monster.baseId ?? monster.idBase ?? null;
     const resolveMonsterTemplate = options.resolveMonsterTemplate;
     if (templateId && typeof resolveMonsterTemplate === 'function') {
@@ -70,6 +72,11 @@ export function resolveMonsterCurrentEne(monster) {
     return parsed;
 }
 
+/**
+ * Normaliza em-place apenas os campos mínimos exigidos pelo card/combate.
+ * É seguro usar antes de ações porque preserva o mesmo objeto referenciado
+ * pelo runtime e evita divergência entre UI, action e pipeline compartilhado.
+ */
 export function normalizeMonsterBattleRuntimeInPlace(monster, options = {}) {
     const resolvedClass = resolveMonsterEffectiveClass(monster, options);
     const currentEne = resolveMonsterCurrentEne(monster);
