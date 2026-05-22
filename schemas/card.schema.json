@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "schemas/card.schema.json",
+  "title": "Monstrinhomon Card Layer Skill Card",
+  "type": "object",
+  "required": ["$schema", "version", "cards"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "const": "schemas/card.schema.json"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "cards": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/card"
+      }
+    }
+  },
+  "$defs": {
+    "card": {
+      "type": "object",
+      "required": [
+        "id",
+        "card_type",
+        "class",
+        "groupKey",
+        "display_slot",
+        "category_visual",
+        "icon_key",
+        "fallback_art_ref",
+        "tags",
+        "default_stageIndex",
+        "stages"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+_card$"
+        },
+        "card_type": {
+          "type": "string",
+          "const": "skill"
+        },
+        "class": {
+          "type": "string",
+          "enum": [
+            "Guerreiro",
+            "Mago",
+            "Curandeiro",
+            "Bárbaro",
+            "Ladino",
+            "Bardo",
+            "Caçador",
+            "Animalista"
+          ]
+        },
+        "groupKey": {
+          "type": "string",
+          "minLength": 1
+        },
+        "display_slot": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "category_visual": {
+          "type": "string",
+          "enum": [
+            "ataque",
+            "defesa",
+            "suporte",
+            "movimento",
+            "preparacao",
+            "utilidade",
+            "controle",
+            "cura"
+          ]
+        },
+        "icon_key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fallback_art_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "default_stageIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "stages": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {
+            "pattern": "^[0-9]+$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/stage"
+          }
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "stage": {
+      "type": "object",
+      "required": [
+        "source_skill_id",
+        "runtime_stageIndex",
+        "runtime_tier",
+        "title",
+        "text_child",
+        "text_technical",
+        "art_ref"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "source_skill_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "runtime_stageIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "runtime_tier": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 30
+        },
+        "text_child": {
+          "type": "string",
+          "maxLength": 140
+        },
+        "text_technical": {
+          "type": "string",
+          "pattern": "^Mecânica em data/skills\\.json#[A-Z0-9_]+\\.$"
+        },
+        "art_ref": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

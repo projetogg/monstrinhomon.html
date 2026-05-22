@@ -1,0 +1,129 @@
+{
+  "$schema": "schemas/card.schema.json",
+  "version": "0.1.2",
+  "cards": [
+    {
+      "id": "warrior_golpe_de_espada_card",
+      "card_type": "skill",
+      "class": "Guerreiro",
+      "groupKey": "Golpe de Espada",
+      "display_slot": 1,
+      "category_visual": "ataque",
+      "icon_key": "icon_sword",
+      "fallback_art_ref": "assets/cards/_fallback/warrior_attack.svg",
+      "tags": ["fisico", "corpo_a_corpo"],
+      "default_stageIndex": 0,
+      "stages": {
+        "0": {
+          "source_skill_id": "GOLPE_DE_ESPADA_0",
+          "runtime_stageIndex": 0,
+          "runtime_tier": 1,
+          "title": "Golpe de Espada I",
+          "text_child": "Ataque um inimigo pertinho.",
+          "text_technical": "Mecânica em data/skills.json#GOLPE_DE_ESPADA_0.",
+          "art_ref": "assets/cards/warrior_golpe_de_espada_0.svg"
+        },
+        "1": {
+          "source_skill_id": "GOLPE_DE_ESPADA_1",
+          "runtime_stageIndex": 1,
+          "runtime_tier": 2,
+          "title": "Golpe de Espada II",
+          "text_child": "Ataque forte de pertinho.",
+          "text_technical": "Mecânica em data/skills.json#GOLPE_DE_ESPADA_1.",
+          "art_ref": "assets/cards/warrior_golpe_de_espada_1.svg"
+        },
+        "2": {
+          "source_skill_id": "GOLPE_DE_ESPADA_2",
+          "runtime_stageIndex": 2,
+          "runtime_tier": 3,
+          "title": "Golpe de Espada III",
+          "text_child": "Faça um golpe poderoso de perto.",
+          "text_technical": "Mecânica em data/skills.json#GOLPE_DE_ESPADA_2.",
+          "art_ref": "assets/cards/warrior_golpe_de_espada_2.svg"
+        }
+      }
+    },
+    {
+      "id": "warrior_escudo_card",
+      "card_type": "skill",
+      "class": "Guerreiro",
+      "groupKey": "Escudo",
+      "display_slot": 2,
+      "category_visual": "defesa",
+      "icon_key": "icon_shield",
+      "fallback_art_ref": "assets/cards/_fallback/warrior_defense.svg",
+      "tags": ["protecao", "defesa"],
+      "default_stageIndex": 0,
+      "stages": {
+        "0": {
+          "source_skill_id": "ESCUDO_0",
+          "runtime_stageIndex": 0,
+          "runtime_tier": 1,
+          "title": "Escudo I",
+          "text_child": "Proteja-se melhor neste turno.",
+          "text_technical": "Mecânica em data/skills.json#ESCUDO_0.",
+          "art_ref": "assets/cards/warrior_escudo_0.svg"
+        },
+        "1": {
+          "source_skill_id": "ESCUDO_1",
+          "runtime_stageIndex": 1,
+          "runtime_tier": 2,
+          "title": "Escudo II",
+          "text_child": "Fique mais protegido na rodada.",
+          "text_technical": "Mecânica em data/skills.json#ESCUDO_1.",
+          "art_ref": "assets/cards/warrior_escudo_1.svg"
+        },
+        "2": {
+          "source_skill_id": "ESCUDO_2",
+          "runtime_stageIndex": 2,
+          "runtime_tier": 3,
+          "title": "Escudo III",
+          "text_child": "Monte uma defesa bem forte.",
+          "text_technical": "Mecânica em data/skills.json#ESCUDO_2.",
+          "art_ref": "assets/cards/warrior_escudo_2.svg"
+        }
+      }
+    },
+    {
+      "id": "warrior_provocar_card",
+      "card_type": "skill",
+      "class": "Guerreiro",
+      "groupKey": "Provocar",
+      "display_slot": 3,
+      "category_visual": "controle",
+      "icon_key": "icon_taunt",
+      "fallback_art_ref": "assets/cards/_fallback/warrior_control.svg",
+      "tags": ["controle", "atencao"],
+      "default_stageIndex": 0,
+      "stages": {
+        "0": {
+          "source_skill_id": "PROVOCAR_0",
+          "runtime_stageIndex": 0,
+          "runtime_tier": 1,
+          "title": "Provocar I",
+          "text_child": "Chame a atenção do inimigo.",
+          "text_technical": "Mecânica em data/skills.json#PROVOCAR_0.",
+          "art_ref": "assets/cards/warrior_provocar_0.svg"
+        },
+        "1": {
+          "source_skill_id": "PROVOCAR_1",
+          "runtime_stageIndex": 1,
+          "runtime_tier": 2,
+          "title": "Provocar II",
+          "text_child": "Faça o inimigo olhar para você.",
+          "text_technical": "Mecânica em data/skills.json#PROVOCAR_1.",
+          "art_ref": "assets/cards/warrior_provocar_1.svg"
+        },
+        "2": {
+          "source_skill_id": "PROVOCAR_2",
+          "runtime_stageIndex": 2,
+          "runtime_tier": 3,
+          "title": "Provocar III",
+          "text_child": "Segure a atenção do inimigo.",
+          "text_technical": "Mecânica em data/skills.json#PROVOCAR_2.",
+          "art_ref": "assets/cards/warrior_provocar_2.svg"
+        }
+      }
+    }
+  ]
+}
