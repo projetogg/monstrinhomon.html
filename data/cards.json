@@ -19,7 +19,7 @@
           "runtime_stageIndex": 0,
           "runtime_tier": 1,
           "title": "Golpe de Espada I",
-          "text_child": "Ataque um inimigo pertinho.",
+          "text_child": "Ataque um inimigo de perto.",
           "text_technical": "Mecânica em data/skills.json#GOLPE_DE_ESPADA_0.",
           "art_ref": "assets/cards/warrior_golpe_de_espada_0.svg"
         },
@@ -28,7 +28,7 @@
           "runtime_stageIndex": 1,
           "runtime_tier": 2,
           "title": "Golpe de Espada II",
-          "text_child": "Ataque forte de pertinho.",
+          "text_child": "Ataque forte de perto.",
           "text_technical": "Mecânica em data/skills.json#GOLPE_DE_ESPADA_1.",
           "art_ref": "assets/cards/warrior_golpe_de_espada_1.svg"
         },
@@ -37,7 +37,7 @@
           "runtime_stageIndex": 2,
           "runtime_tier": 3,
           "title": "Golpe de Espada III",
-          "text_child": "Faça um golpe poderoso de perto.",
+          "text_child": "Aplique um golpe poderoso de perto.",
           "text_technical": "Mecânica em data/skills.json#GOLPE_DE_ESPADA_2.",
           "art_ref": "assets/cards/warrior_golpe_de_espada_2.svg"
         }

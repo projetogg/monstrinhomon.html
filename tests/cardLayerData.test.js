@@ -54,7 +54,14 @@ function listForbiddenFields(obj, prefix = '') {
       found.push(currentPath);
     }
 
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
+    if (Array.isArray(value)) {
+      value.forEach((item, index) => {
+        found.push(...listForbiddenFields(item, `${currentPath}[${index}]`));
+      });
+      continue;
+    }
+
+    if (value && typeof value === 'object') {
       found.push(...listForbiddenFields(value, currentPath));
     }
   }
@@ -71,7 +78,7 @@ describe('Card Layer Fase 1A — contrato de dados canônico do Guerreiro', () =
   });
 
   it('contém exatamente 3 cards, IDs únicos e os IDs esperados', () => {
-    expect(cardsData.cards).toHaveLength(3);
+    expect(cardsData.cards).toHaveLength(EXPECTED_CARD_IDS.length);
 
     const ids = cardsData.cards.map(card => card.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -88,7 +95,6 @@ describe('Card Layer Fase 1A — contrato de dados canônico do Guerreiro', () =
   it('slots são somente 1, 2 ou 3 e não existe slot 4', () => {
     const slots = cardsData.cards.map(card => card.display_slot).sort((a, b) => a - b);
     expect(slots).toEqual([1, 2, 3]);
-    expect(slots.includes(4)).toBe(false);
   });
 
   it('category_visual pertence ao enum permitido e fallback/art_ref existem', () => {
@@ -128,10 +134,32 @@ describe('Card Layer Fase 1A — contrato de dados canônico do Guerreiro', () =
     }
   });
 
-  it('text_child respeita limite infantil (<= 140) e text_technical aponta para skill real', () => {
+  it('skills referenciadas mantêm campos mecânicos obrigatórios no runtime', () => {
+    const skillsById = new Map(skillsData.skills.map(skill => [skill.id, skill]));
+
+    for (const card of cardsData.cards) {
+      for (const stage of Object.values(card.stages)) {
+        const skill = skillsById.get(stage.source_skill_id);
+
+        expect(typeof skill.power).toBe('number');
+        expect(typeof skill.energy_cost).toBe('number');
+        expect(typeof skill.accuracy).toBe('number');
+        expect(typeof skill.target).toBe('string');
+      }
+    }
+  });
+
+  it('text_child respeita limite infantil (<= 140)', () => {
     for (const card of cardsData.cards) {
       for (const stage of Object.values(card.stages)) {
         expect(stage.text_child.length).toBeLessThanOrEqual(140);
+      }
+    }
+  });
+
+  it('text_technical aponta para skill real sem duplicar mecânica', () => {
+    for (const card of cardsData.cards) {
+      for (const stage of Object.values(card.stages)) {
         expect(stage.text_technical).toBe(`Mecânica em data/skills.json#${stage.source_skill_id}.`);
       }
     }
