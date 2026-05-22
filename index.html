@@ -939,7 +939,11 @@
         // Shop UI (Fase Z)
         import * as ShopUI from './js/ui/shopUI.js';
         import * as SavesUI from './js/ui/savesUI.js';
-        import { buildBasicCardHandViewModel } from './js/ui/basicCardHandUI.js';
+        import {
+            buildBasicCardHandViewModel,
+            executeBasicCardFromHand,
+            getBasicCardActionFeedback,
+        } from './js/ui/basicCardHandUI.js';
 
         // Map Unlock System (FASE XIV)
         import * as MapUnlockSystem from './js/encounter/mapUnlockSystem.js';
@@ -1090,6 +1094,7 @@
         window.importData = importData;
         window.clearAllData = clearAllData;
         window.attackWild = attackWild;
+        window.useBasicCardFromHand = useBasicCardFromHand;
         window.useItemInBattle = useItemInBattle;
         window.useReviveFromResult = useReviveFromResult;
         window.attemptCapture = attemptCapture;
@@ -8018,8 +8023,15 @@
                 // Converte nome de classe para CSS slug sem acentos (ex: 'Caçador' → 'cacador')
                 const classToCssSlug = cls => (cls || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-                const currentEne = Number.isFinite(Number(playerMonster?.ene)) ? Number(playerMonster?.ene) : 0;
-                const basicCardHand = buildBasicCardHandViewModel(player?.class, { currentEne, previewOnly: true });
+                const currentEne = Number.isFinite(Number(playerMonster?.ene ?? playerMonster?.currentEne)) ? Number(playerMonster?.ene ?? playerMonster?.currentEne) : 0;
+                const basicCardHand = buildBasicCardHandViewModel(player?.class, {
+                    currentEne,
+                    actionHandlersConnected: true,
+                    player,
+                    playerMonster,
+                    encounter,
+                    resolveMonsterTemplate: getMonsterTemplate,
+                });
                 const cardTypeLabel = type => {
                     const map = {
                         attack: 'Ataque',
@@ -8031,15 +8043,30 @@
                     return map[type] || type;
                 };
                 const basicCardsPreviewHtml = basicCardHand.length > 0
-                    ? basicCardHand.map(card => `
-                        <article class="battle-card-preview ${card.canAfford ? 'battle-card-preview--available' : 'battle-card-preview--insufficient'}" aria-disabled="true">
+                    ? basicCardHand.map(card => {
+                        const stateClass = card.availability === 'ready'
+                            ? 'battle-card-preview--ready'
+                            : card.availability === 'insufficient_ene'
+                                ? 'battle-card-preview--insufficient'
+                                : card.availability === 'coming_soon'
+                                    ? 'battle-card-preview--coming-soon'
+                                    : 'battle-card-preview--available';
+                        return `
+                        <button type="button"
+                                class="battle-card-preview ${stateClass}"
+                                data-card-id="${card.id}"
+                                onclick="useBasicCardFromHand(this.dataset.cardId)"
+                                ${card.enabled ? '' : 'disabled'}
+                                aria-disabled="${card.enabled ? 'false' : 'true'}"
+                                title="${card.disabledReason}">
                             <h4>${card.name}</h4>
                             <div class="battle-card-preview-meta">ENE: ${card.cost} · Classe: ${card.class}</div>
                             <div class="battle-card-preview-meta">Tipo: ${cardTypeLabel(card.type)}</div>
                             <p class="battle-card-preview-text">"${card.childText}"</p>
                             <div class="battle-card-preview-status">Status: ${card.disabledReason}</div>
-                        </article>
-                    `).join('')
+                        </button>
+                    `;
+                    }).join('')
                     : '<div class="battle-card-preview-empty">Sem cartas básicas de preview para a classe atual.</div>';
 
                 // Preview do d20: calcula o valor mínimo necessário para acertar e dano estimado
@@ -8392,8 +8419,8 @@
                         </div>
 
                         <div class="battle-card-hand-preview" aria-live="polite">
-                            <div class="battle-card-hand-preview-title">🃏 Mão de cartas (Preview)</div>
-                            <div class="battle-card-hand-preview-subtitle">Visual apenas nesta etapa do MVP 0.4.</div>
+                            <div class="battle-card-hand-preview-title">🃏 Mão de cartas</div>
+                            <div class="battle-card-hand-preview-subtitle">Golpe Firme pode ser usado; outras cartas chegam em breve.</div>
                             <div class="battle-card-hand-preview-list">
                                 ${basicCardsPreviewHtml}
                             </div>
@@ -8827,6 +8854,73 @@
             });
         }
 
+        async function _resolveWildAttackDice(playerMonster, wildMonster) {
+            const diceMode = getCombatDiceMode();
+            const manualRolls = Combat.Wild.UI.getCombatInputRolls();
+            let d20Roll = manualRolls.attackRoll;
+            let defenderRoll = manualRolls.defenseRoll;
+
+            if (diceMode === 'manual') {
+                if (!d20Roll || !defenderRoll) {
+                    mmAlert('🎲 Modo manual: informe os dois dados (ATK e DEF) entre 1 e 20 antes de atacar.', 'error');
+                    return null;
+                }
+            } else {
+                d20Roll = _rollD20();
+                defenderRoll = _rollD20();
+            }
+
+            await _animateDiceClash({
+                attackerLabel: `ATK ${playerMonster.name}`,
+                defenderLabel: `DEF ${wildMonster.name}`,
+                attackRoll: d20Roll,
+                defenseRoll: defenderRoll
+            });
+            if (diceMode === 'manual') {
+                Combat.Wild.UI.clearCombatInput();
+            }
+
+            return { d20Roll, defenderRoll };
+        }
+
+        function _buildWildAttackDependencies() {
+            return {
+                classAdvantages: GameState.config?.classAdvantages || {},
+                getBasicPower: (monsterClass) => MM_TABLES.getBasicAttackPower(monsterClass),
+                eneRegenData: ENE_REGEN_BY_CLASS,
+                recordD20Roll: recordD20Roll,
+                audio: Audio,
+                ui: {
+                    flashTarget: flashTarget,
+                    showFloatingText: showFloatingText,
+                    updateDiceClash: _updateDiceClashUI
+                },
+                tutorialOnAction: tutorialOnAction,
+                updateFriendship: updateFriendship,
+                updateMultipleFriendshipEvents: updateMultipleFriendshipEvents,
+                handleVictoryRewards: handleVictoryRewards,
+                updateStats: updateStats,
+                showToast: showToast
+            };
+        }
+
+        function _finalizeWildAttackResult(result, encounter) {
+            if (result.result === 'victory' || result.result === 'defeat') {
+                encounter.result = result.result;
+            }
+
+            saveToLocalStorage();
+            renderEncounter();
+            if (result.damageDealt > 0) {
+                _flashBattleHpBar('wildEnemyHpRow', 'wildEnemyHpFill');
+                _shakeElement('wildEnemyBox');
+            }
+            if (result.playerDamageDealt > 0 || result.enemyDamage > 0) {
+                _flashBattleHpBar('wildPlayerHpRow', 'wildPlayerHpFill');
+                _shakeElement('wildPlayerBox');
+            }
+        }
+
         // ===== COMBAT WILD 1v1 - Wrapper de Compatibilidade =====        // Mantém API pública, delega para módulo Combat
         async function attackWild() {
             try {
@@ -8854,58 +8948,19 @@
                 }
                 
                 // 2. Resolver dados (manual ou automático)
-                const diceMode = getCombatDiceMode();
-                const manualRolls = Combat.Wild.UI.getCombatInputRolls();
-                let d20Roll = manualRolls.attackRoll;
-                let defenderRoll = manualRolls.defenseRoll;
-
-                if (diceMode === 'manual') {
-                    if (!d20Roll || !defenderRoll) {
-                        mmAlert('🎲 Modo manual: informe os dois dados (ATK e DEF) entre 1 e 20 antes de atacar.', 'error');
-                        return;
-                    }
-                } else {
-                    d20Roll = _rollD20();
-                    defenderRoll = _rollD20();
-                }
-
-                await _animateDiceClash({
-                    attackerLabel: `ATK ${playerMonster.name}`,
-                    defenderLabel: `DEF ${encounter.wildMonster.name}`,
-                    attackRoll: d20Roll,
-                    defenseRoll: defenderRoll
-                });
-                if (diceMode === 'manual') {
-                    Combat.Wild.UI.clearCombatInput();
-                }
+                const rollContext = await _resolveWildAttackDice(playerMonster, encounter.wildMonster);
+                if (!rollContext) return;
                 
                 // 3. Preparar dependências
-                const dependencies = {
-                    classAdvantages: GameState.config?.classAdvantages || {},
-                    getBasicPower: (monsterClass) => MM_TABLES.getBasicAttackPower(monsterClass),
-                    eneRegenData: ENE_REGEN_BY_CLASS,
-                    recordD20Roll: recordD20Roll,
-                    audio: Audio,
-                    ui: {
-                        flashTarget: flashTarget,
-                        showFloatingText: showFloatingText,
-                        updateDiceClash: _updateDiceClashUI
-                    },
-                    tutorialOnAction: tutorialOnAction,
-                    updateFriendship: updateFriendship,
-                    updateMultipleFriendshipEvents: updateMultipleFriendshipEvents,
-                    handleVictoryRewards: handleVictoryRewards,
-                    updateStats: updateStats,
-                    showToast: showToast
-                };
+                const dependencies = _buildWildAttackDependencies();
                 
                 // 4. Executar combate via módulo
                 const result = Combat.Wild.Actions.executeWildAttack({
                     encounter,
                     player,
                     playerMonster,
-                    d20Roll,
-                    defenderRoll,
+                    d20Roll: rollContext.d20Roll,
+                    defenderRoll: rollContext.defenderRoll,
                     dependencies
                 });
                 
@@ -8915,31 +8970,78 @@
                     return;
                 }
                 
-                // 6. BUG FIX: Não limpar o encounter imediatamente ao terminar.
-                // O encounter fica inativo (active=false) e é renderizado pelo
-                // renderWildEncounter mostrando o painel de resultado com XP ganho.
-                // O jogador clica em "Continuar" para fechar (closeBattleResult).
-                if (result.result === 'victory' || result.result === 'defeat') {
-                    encounter.result = result.result;
-                    // Não nullar: GameState.currentEncounter = null aqui
-                }
-                
-                // 7. Atualizar UI (1 vez só ao final)
-                saveToLocalStorage();
-                renderEncounter();
-                // Animar HP bar se o inimigo tomou dano + shake no box inimigo
-                if (result.damageDealt > 0) {
-                    _flashBattleHpBar('wildEnemyHpRow', 'wildEnemyHpFill');
-                    _shakeElement('wildEnemyBox');
-                }
-                // Animar HP bar do jogador se tomou contra-ataque + shake no box do jogador
-                if (result.playerDamageDealt > 0 || result.enemyDamage > 0) {
-                    _flashBattleHpBar('wildPlayerHpRow', 'wildPlayerHpFill');
-                    _shakeElement('wildPlayerBox');
-                }
+                // 6. Atualizar UI (1 vez só ao final), preservando painel de resultado.
+                _finalizeWildAttackResult(result, encounter);
                 
             } catch (error) {
                 showError('Attack failed', error.stack);
+            }
+        }
+
+        async function useBasicCardFromHand(cardId) {
+            const cardButton = document.querySelector(`.battle-card-preview[data-card-id="${cardId}"]`);
+            try {
+                const encounter = GameState.currentEncounter;
+                if (!encounter?.wildMonster) {
+                    mmAlert(getBasicCardActionFeedback('invalid_encounter'), 'warning');
+                    return;
+                }
+
+                const playerId = encounter.selectedPlayerId;
+                const player = GameState.players.find(p => p.id === playerId);
+                if (!player) {
+                    mmAlert(getBasicCardActionFeedback('invalid_player'), 'warning');
+                    return;
+                }
+
+                const playerMonster = _getActiveMonsterOfPlayer(player);
+                const currentEne = Number.isFinite(Number(playerMonster?.ene)) ? Number(playerMonster?.ene) : 0;
+                const cardViewModel = buildBasicCardHandViewModel(player.class, {
+                    currentEne,
+                    actionHandlersConnected: true,
+                    player,
+                    playerMonster,
+                    encounter,
+                    resolveMonsterTemplate: getMonsterTemplate,
+                }).find(card => card.id === cardId);
+
+                if (!cardViewModel?.enabled) {
+                    mmAlert(cardViewModel?.disabledReason || getBasicCardActionFeedback('unsupported_card'), 'warning');
+                    return;
+                }
+
+                if (cardButton) cardButton.disabled = true;
+                const rollContext = await _resolveWildAttackDice(playerMonster, encounter.wildMonster);
+                if (!rollContext) {
+                    if (cardButton) cardButton.disabled = false;
+                    return;
+                }
+
+                const dependencies = _buildWildAttackDependencies();
+                const result = executeBasicCardFromHand({
+                    cardId,
+                    player,
+                    playerMonster,
+                    encounter,
+                    d20Roll: rollContext.d20Roll,
+                    defenderRoll: rollContext.defenderRoll,
+                    executeWildAttack: Combat.Wild.Actions.executeWildAttack,
+                    dependencies,
+                    resolveMonsterTemplate: getMonsterTemplate,
+                });
+
+                if (!result.success) {
+                    if (cardButton) cardButton.disabled = false;
+                    mmAlert(getBasicCardActionFeedback(result.reason), 'warning');
+                    return;
+                }
+
+                encounter.log = encounter.log || [];
+                encounter.log.push(`🃏 ${cardViewModel.name} foi usado!`);
+                _finalizeWildAttackResult(result.attackResult, encounter);
+            } catch (error) {
+                if (cardButton) cardButton.disabled = false;
+                showError('Card action failed', error.stack);
             }
         }
 
@@ -15918,6 +16020,7 @@
         window.importData = importData;
         window.clearAllData = clearAllData;
         window.attackWild = attackWild;
+        window.useBasicCardFromHand = useBasicCardFromHand;
         window.useItemInBattle = useItemInBattle;
         window.useReviveFromResult = useReviveFromResult;
         window.attemptCapture = attemptCapture;

@@ -1,4 +1,5 @@
 import { getBasicCardById } from '../data/basicCards.js';
+import { normalizeMonsterBattleRuntimeInPlace } from './monsterRuntimeFields.js';
 
 export const SUPPORTED_WILD_CARD_ID = 'CARD_GUERREIRO_GOLPE_FIRME';
 
@@ -16,10 +17,13 @@ export function executeBasicCardAction({ cardId, player, playerMonster, encounte
   if (player.class !== 'Guerreiro') return { success: false, reason: 'class_mismatch' };
 
   if (!playerMonster || typeof playerMonster !== 'object') return { success: false, reason: 'invalid_player_monster' };
-  if (playerMonster.class !== 'Guerreiro') return { success: false, reason: 'class_mismatch' };
+  const normalizedMonster = normalizeMonsterBattleRuntimeInPlace(playerMonster, {
+    resolveMonsterTemplate: dependencies.resolveMonsterTemplate,
+  });
+  if (normalizedMonster.resolvedClass.value !== 'Guerreiro') return { success: false, reason: 'class_mismatch' };
   if (!isAlive(playerMonster)) return { success: false, reason: 'player_monster_fainted' };
 
-  const currentEne = Number(playerMonster.ene) || 0;
+  const currentEne = normalizedMonster.currentEne;
   if (currentEne < card.cost) return { success: false, reason: 'insufficient_ene' };
 
   if (!encounter || encounter.active !== true) return { success: false, reason: 'invalid_encounter' };
