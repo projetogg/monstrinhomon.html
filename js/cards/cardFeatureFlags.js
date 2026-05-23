@@ -20,3 +20,30 @@ export const CARD_LAYER_FEATURE_FLAGS = Object.freeze({
     /** Quando true, renderiza placeholder visual para slots vazios (dev only). */
     devShowMissingSlots: false,
 });
+
+/**
+ * Resolve flags efetivas da Card Layer para runtime sem persistir estado.
+ * Aceita override temporário por query param `cardLayerPilot`.
+ */
+export function getEffectiveCardLayerFlags(
+    baseFlags = CARD_LAYER_FEATURE_FLAGS,
+    locationSearch = ''
+) {
+    const safeBaseFlags = (baseFlags && typeof baseFlags === 'object')
+        ? baseFlags
+        : CARD_LAYER_FEATURE_FLAGS;
+
+    let forcePilot = false;
+    try {
+        const params = new URLSearchParams(typeof locationSearch === 'string' ? locationSearch : '');
+        const rawValue = (params.get('cardLayerPilot') || '').trim().toLowerCase();
+        forcePilot = rawValue === '1' || rawValue === 'true';
+    } catch (_) {
+        forcePilot = false;
+    }
+
+    return {
+        ...safeBaseFlags,
+        enabled: safeBaseFlags.enabled === true || forcePilot,
+    };
+}

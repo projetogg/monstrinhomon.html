@@ -944,7 +944,7 @@
             executeBasicCardFromHand,
             getBasicCardActionFeedback,
         } from './js/ui/basicCardHandUI.js';
-        import { CARD_LAYER_FEATURE_FLAGS } from './js/cards/cardFeatureFlags.js';
+        import { CARD_LAYER_FEATURE_FLAGS, getEffectiveCardLayerFlags } from './js/cards/cardFeatureFlags.js';
         import { loadCardCatalog, getCardCatalogSync } from './js/cards/cardLayer.js';
         import { resolveCardsForMonster } from './js/cards/cardResolver.js';
         import { renderCardGrid } from './js/cards/cardRenderer.js';
@@ -8146,7 +8146,7 @@
                 const skillsUi = playerMonster ? (() => {
                     const tutorialAllowsSkill = tutorialAllows("skill");
                     return buildWildSkillGridHtml(playerMonster, {
-                        flags: CARD_LAYER_FEATURE_FLAGS,
+                        flags: getEffectiveCardLayerFlags(CARD_LAYER_FEATURE_FLAGS, window.location?.search || ''),
                         catalog: getCardCatalogSync(),
                         getMonsterSkills,
                         resolveMonsterSkills,
