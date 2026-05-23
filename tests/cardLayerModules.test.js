@@ -13,6 +13,11 @@ import { renderCardGrid } from '../js/cards/cardRenderer.js';
 const ROOT = resolve(import.meta.dirname, '..');
 const cardsData = JSON.parse(readFileSync(resolve(ROOT, 'data/cards.json'), 'utf8'));
 
+function getSkillButtonTag(html, skillIndex) {
+  const match = String(html || '').match(new RegExp(`<button[^>]*data-skill-index="${skillIndex}"[^>]*>`));
+  return match ? match[0] : '';
+}
+
 describe('Card Layer Fase 1B — módulos visuais puros', () => {
   beforeEach(() => {
     clearCardCatalogCache();
@@ -86,9 +91,11 @@ describe('Card Layer Fase 1B — módulos visuais puros', () => {
     expect(html).toContain('onclick="useSkillWild(0)"');
     expect(html).toContain('Golpe de Espada I');
     expect(html).toContain('Escudo I');
-    expect(html).toMatch(/data-skill-index="0"[^>]*onclick="useSkillWild\(0\)"/);
-    expect(html).not.toMatch(/data-skill-index="0"[^>]*disabled/);
-    expect(html).toMatch(/data-skill-index="1"[^>]*disabled/);
+    const firstSkillBtn = getSkillButtonTag(html, 0);
+    const secondSkillBtn = getSkillButtonTag(html, 1);
+    expect(firstSkillBtn).toContain('onclick="useSkillWild(0)"');
+    expect(firstSkillBtn.includes('disabled')).toBe(false);
+    expect(secondSkillBtn.includes('disabled')).toBe(true);
   });
 
   it('renderCardGrid desabilita botões quando tutorial está bloqueado', () => {
@@ -107,7 +114,8 @@ describe('Card Layer Fase 1B — módulos visuais puros', () => {
       canUseSkillNow: () => true,
     });
 
-    expect(html).toMatch(/data-skill-index="0"[^>]*disabled/);
+    const firstSkillBtn = getSkillButtonTag(html, 0);
+    expect(firstSkillBtn.includes('disabled')).toBe(true);
     expect(html).toContain('Tutorial: ainda não liberado');
   });
 
@@ -128,7 +136,9 @@ describe('Card Layer Fase 1B — módulos visuais puros', () => {
       canUseSkillNow: () => false,
     });
 
-    expect(html).toMatch(/data-skill-index="0"[^>]*disabled/);
-    expect(html).toMatch(/data-skill-index="1"[^>]*disabled/);
+    const firstSkillBtn = getSkillButtonTag(html, 0);
+    const secondSkillBtn = getSkillButtonTag(html, 1);
+    expect(firstSkillBtn.includes('disabled')).toBe(true);
+    expect(secondSkillBtn.includes('disabled')).toBe(true);
   });
 });

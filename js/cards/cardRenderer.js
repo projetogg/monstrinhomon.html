@@ -3,6 +3,9 @@
  * Não busca dados e não executa efeitos.
  */
 
+const OFFENSIVE_TARGETS = new Set(['enemy', 'area', 'inimigo', 'área', 'todos']);
+const DEFENSIVE_TARGETS = new Set(['self', 'ally', 'aliado']);
+
 export function escapeHtml(value) {
     return String(value ?? '')
         .replaceAll('&', '&amp;')
@@ -13,10 +16,10 @@ export function escapeHtml(value) {
 }
 
 export function getSkillButtonClass(skill) {
-    const target = String(skill?.target || '');
+    const target = String(skill?.target || '').trim().toLowerCase();
     const skillType = String(skill?.type || '').toUpperCase();
-    const isOffensive = target === 'enemy' || target === 'area' || target === 'Inimigo' || target === 'Área'
-        || (target !== 'self' && target !== 'ally' && target !== 'Self' && target !== 'Aliado' && skillType === 'DAMAGE');
+    const isOffensive = OFFENSIVE_TARGETS.has(target)
+        || (!DEFENSIVE_TARGETS.has(target) && skillType === 'DAMAGE');
     return isOffensive ? 'btn-skill-offensive' : 'btn-skill-defensive';
 }
 

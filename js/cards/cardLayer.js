@@ -51,7 +51,7 @@ export async function loadCardCatalog({ fetchImpl = fetch, path = CARD_DATA_PATH
 
     const response = await fetchImpl(path);
     if (!response.ok) {
-        throw new Error(`Falha ao carregar cards.json (${response.status})`);
+        throw new Error(`Falha ao carregar ${path} (${response.status})`);
     }
     const payload = await response.json();
     cardCatalogCache = payload;

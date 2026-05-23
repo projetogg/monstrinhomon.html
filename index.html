@@ -2578,7 +2578,7 @@
                 // Card Layer Fase 1B: preload de cards.json (não bloqueante)
                 CardLayer.loadCardCatalog().catch((error) => {
                     const message = String(error?.message || error || '');
-                    const isNetworkError = /Failed to fetch|NetworkError|HTTP\s\d+/.test(message);
+                    const isNetworkError = /Failed to fetch|NetworkError|Falha ao carregar/i.test(message);
                     const kind = isNetworkError ? 'carregar' : 'processar';
                     console.warn(`[CardLayer] Falha ao ${kind} cards.json (fallback para UI legada):`, message);
                 });
@@ -7967,7 +7967,7 @@
             return { ...mon, image: tmpl.image };
         }
 
-        const _cardLayerUnmappedLogCache = new Set();
+        const cardLayerUnmappedLogCache = new Set();
 
         function getCardLayerRuntimeConfig() {
             const defaults = {
@@ -8031,8 +8031,8 @@
                     if (!entry.mapped) {
                         const skillName = entry.skill?.name || entry.skill?.groupKey || entry.skill?.id || `#${entry.skillIndex}`;
                         const logKey = `${playerMonster?.class || 'unknown'}::${skillName}::${entry.reason || 'unknown'}`;
-                        if (_cardLayerUnmappedLogCache.has(logKey)) return;
-                        _cardLayerUnmappedLogCache.add(logKey);
+                        if (cardLayerUnmappedLogCache.has(logKey)) return;
+                        cardLayerUnmappedLogCache.add(logKey);
                         console.warn(`[CardLayer] Skill sem mapeamento visual: ${skillName} (${entry.reason || 'unknown'})`);
                     }
                 });
