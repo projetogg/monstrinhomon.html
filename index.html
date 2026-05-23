@@ -8144,7 +8144,7 @@
 
                 // Habilidades — Fase 1C: Card Layer visual do Guerreiro com fallback total para UI legada.
                 const skillsUi = playerMonster ? (() => {
-                    const tutAllows = tutorialAllows("skill");
+                    const tutorialAllowsSkill = tutorialAllows("skill");
                     return buildWildSkillGridHtml(playerMonster, {
                         flags: CARD_LAYER_FEATURE_FLAGS,
                         catalog: getCardCatalogSync(),
@@ -8153,7 +8153,7 @@
                         resolveCardsForMonster,
                         renderCardGrid,
                         canUseSkillNow,
-                        tutorialAllows: tutAllows,
+                        tutorialAllows: tutorialAllowsSkill,
                         logger: console,
                     });
                 })() : { mode: 'legacy', html: '<small style="opacity:0.5">—</small>', reason: 'no_monster' };

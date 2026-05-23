@@ -6,8 +6,27 @@
 
 import { CARD_LAYER_FEATURE_FLAGS } from './cardFeatureFlags.js';
 
-function toClassName(value) {
+const OFFENSIVE_TARGETS = new Set(['enemy', 'inimigo', 'area', 'área']);
+const DEFENSIVE_TARGETS = new Set(['self', 'ally', 'aliado']);
+
+function normalizeClassValue(value) {
     return String(value || '').trim();
+}
+
+function normalizeTarget(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+}
+
+function readSkillName(skill) {
+    return skill?.name || skill?.nome || String(skill?.id || 'Habilidade');
+}
+
+function readSkillCost(skill) {
+    return Number(skill?.cost ?? skill?.energy_cost ?? skill?.eneCost ?? 0) || 0;
 }
 
 export function renderLegacyWildSkillGrid(skills, runtimeContext = {}) {
@@ -22,16 +41,16 @@ export function renderLegacyWildSkillGrid(skills, runtimeContext = {}) {
         const skill = safeSkills[idx];
         if (!skill) return '<div class="btn-skill-empty" aria-hidden="true"></div>';
 
-        const name = skill.name || skill.nome || String(skill.id || 'Habilidade');
-        const cost = Number(skill.cost ?? skill.energy_cost ?? skill.eneCost ?? 0) || 0;
+        const name = readSkillName(skill);
+        const cost = readSkillCost(skill);
         const icon = skill.icon || '';
         const kitBadge = skill._kitSwapId ? (skill._kitSwapId.endsWith('_ii') ? ' ⭐' : ' 🌟') : '';
         const label = [icon, name].filter(Boolean).join(' ') + kitBadge;
         const canUse = canUseSkillNow(skill, playerMonster) && Number(playerMonster?.hp || 0) > 0;
-        const target = skill.target || '';
+        const target = normalizeTarget(skill.target);
         const skillType = (skill.type || '').toUpperCase();
-        const isOff = (target === 'enemy' || target === 'area' || target === 'Inimigo' || target === 'Área')
-            || (target !== 'self' && target !== 'ally' && target !== 'Self' && target !== 'Aliado' && skillType === 'DAMAGE');
+        const isOff = OFFENSIVE_TARGETS.has(target)
+            || (!DEFENSIVE_TARGETS.has(target) && skillType === 'DAMAGE');
         const btnClass = isOff ? 'btn-skill-offensive' : 'btn-skill-defensive';
         const skillDesc = skill.desc || '';
         const skillMeta = [skill.category, skill.status ? `→ ${skill.status}` : null].filter(Boolean).join(' · ');
@@ -52,7 +71,7 @@ export function renderLegacyWildSkillGrid(skills, runtimeContext = {}) {
 
 export function canUseCardLayerPilot(monster, flags = CARD_LAYER_FEATURE_FLAGS) {
     if (!flags || flags.enabled !== true) return false;
-    const monsterClass = toClassName(monster?.class);
+    const monsterClass = normalizeClassValue(monster?.class);
     if (!monsterClass) return false;
     if (!Array.isArray(flags.pilotClasses) || flags.pilotClasses.length === 0) return false;
     return flags.pilotClasses.includes(monsterClass);
@@ -101,7 +120,7 @@ export function buildWildSkillGridHtml(monster, options = {}) {
         const unmappedEntries = entries.filter(entry => !entry?.mapped);
         if (unmappedEntries.length > 0 && flags.logUnmappedSkills && typeof logger?.warn === 'function') {
             logger.warn('[CardLayer][Fase1C] Skills sem card mapeado; fallback para UI legada.', {
-                class: monster?.class,
+                monsterClass: monster?.class,
                 reasons: unmappedEntries.map(entry => entry.reason || 'unmapped'),
             });
         }
@@ -142,13 +161,13 @@ export function wireCardLayerSkillButtons(rootElement, onUseSkill) {
     let wiredCount = 0;
 
     buttons.forEach((button) => {
-        if (!button || button.dataset?.cardLayerBound === 'true') return;
-        if (!button.dataset) button.dataset = {};
+        if (!button || !button.dataset) return;
+        if (button.dataset.cardLayerBound === 'true') return;
         button.dataset.cardLayerBound = 'true';
         wiredCount += 1;
         button.addEventListener('click', () => {
             const parsed = Number.parseInt(button.dataset.skillIndex, 10);
-            if (!Number.isInteger(parsed) || parsed < 0) return;
+            if (Number.isNaN(parsed) || parsed < 0) return;
             onUseSkill(parsed);
         });
     });

@@ -131,11 +131,14 @@ describe('Card Layer Fase 1C — piloto visual no Wild Loop', () => {
 
     const wiredCount = wireCardLayerSkillButtons(root, (skillIndex) => calls.push(skillIndex));
     expect(wiredCount).toBe(1);
+    expect(fakeButton.dataset.cardLayerBound).toBe('true');
     expect(typeof listeners.click).toBe('function');
     listeners.click();
     expect(calls).toEqual([2]);
 
     const wiredAgain = wireCardLayerSkillButtons(root, (skillIndex) => calls.push(skillIndex));
     expect(wiredAgain).toBe(0);
+    listeners.click();
+    expect(calls).toEqual([2, 2]);
   });
 });
