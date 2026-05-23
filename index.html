@@ -944,9 +944,19 @@
             executeBasicCardFromHand,
             getBasicCardActionFeedback,
         } from './js/ui/basicCardHandUI.js';
+        import { CARD_LAYER_FEATURE_FLAGS } from './js/cards/cardFeatureFlags.js';
+        import { loadCardCatalog, getCardCatalogSync } from './js/cards/cardLayer.js';
+        import { resolveCardsForMonster } from './js/cards/cardResolver.js';
+        import { renderCardGrid } from './js/cards/cardRenderer.js';
+        import { buildWildSkillGridHtml, wireCardLayerSkillButtons } from './js/cards/cardWildPilot.js';
 
         // Map Unlock System (FASE XIV)
         import * as MapUnlockSystem from './js/encounter/mapUnlockSystem.js';
+
+        // Card Layer Fase 1C — catálogo visual é opcional e sempre com fallback para a UI legada.
+        loadCardCatalog().catch((error) => {
+            console.warn('[CardLayer][Fase1C] Falha ao carregar data/cards.json; mantendo UI legada.', error);
+        });
 
         // Canon Loader — Fases 1 e 2: carrega dados canônicos (classes, matchups, skills MVP, species, evolution, progression)
         import * as CanonLoader from './js/canon/canonLoader.js';
@@ -8132,40 +8142,22 @@
                     return '';
                 };
 
-                // Habilidades — usa resolveMonsterSkills() como único ponto de entrada canônico.
-                // Retorna skills normalizadas (formato operacional único do skillResolver).
-                const skillsHtml = playerMonster ? (() => {
-                    const skills = resolveMonsterSkills(playerMonster);
-                    const tutAllows = tutorialAllows("skill");
-                    // Gera sempre 4 slots para o grid 2×2 ficar consistente
-                    const slots = [0, 1, 2, 3].map(idx => {
-                        const skill = skills[idx];
-                        if (!skill) return `<div class="btn-skill-empty" aria-hidden="true"></div>`;
-                        const name = skill.name || skill.nome || String(skill.id);
-                        const cost = Number(skill.cost ?? skill.energy_cost ?? skill.eneCost ?? 0) || 0;
-                        const icon = skill.icon || '';
-                        const kitBadge = skill._kitSwapId ? (skill._kitSwapId.endsWith('_ii') ? ' ⭐' : ' 🌟') : '';
-                        const label = [icon, name].filter(Boolean).join(' ') + kitBadge;
-                        const canUse = canUseSkillNow(skill, playerMonster) && playerMonster.hp > 0;
-                        // Categorização ofensivo vs defensivo (inline, sem módulo externo)
-                        const t = skill.target || '';
-                        const skillType = (skill.type || '').toUpperCase();
-                        const isOff = (t === 'enemy' || t === 'area' || t === 'Inimigo' || t === 'Área')
-                                   || (t !== 'self' && t !== 'ally' && t !== 'Self' && t !== 'Aliado' && skillType === 'DAMAGE');
-                        const btnClass = isOff ? 'btn-skill-offensive' : 'btn-skill-defensive';
-                        const skillDesc = skill.desc || '';
-                        const skillMeta = [skill.category, skill.status ? `→ ${skill.status}` : null].filter(Boolean).join(' · ');
-                        const tooltip = !tutAllows
-                            ? 'Tutorial: ainda não liberado'
-                            : (!canUse
-                                ? `ENE insuficiente (${Number(playerMonster.ene) || 0}/${cost})`
-                                : (skillMeta ? `${skillDesc}\n${skillMeta}` : skillDesc));
-                        return `<button class="${btnClass}" onclick="useSkillWild(${idx})"
-                                ${!canUse || !tutAllows ? 'disabled' : ''}
-                                title="${tooltip}">${label}</button>`;
+                // Habilidades — Fase 1C: Card Layer visual do Guerreiro com fallback total para UI legada.
+                const skillsUi = playerMonster ? (() => {
+                    const tutorialAllowsSkill = tutorialAllows("skill");
+                    return buildWildSkillGridHtml(playerMonster, {
+                        flags: CARD_LAYER_FEATURE_FLAGS,
+                        catalog: getCardCatalogSync(),
+                        getMonsterSkills,
+                        resolveMonsterSkills,
+                        resolveCardsForMonster,
+                        renderCardGrid,
+                        canUseSkillNow,
+                        tutorialAllows: tutorialAllowsSkill,
+                        logger: console,
                     });
-                    return `<div class="skill-grid">${slots.join('')}</div>`;
-                })() : '<small style="opacity:0.5">—</small>';
+                })() : { mode: 'legacy', html: '<small style="opacity:0.5">—</small>', reason: 'no_monster' };
+                const skillsHtml = skillsUi.html;
 
                 // Itens de cura
                 const WILD_HEAL_ITEMS = [
@@ -8438,6 +8430,10 @@
                 `;
                 
                 panel.innerHTML = html;
+
+                if (skillsUi.mode === 'card-layer') {
+                    wireCardLayerSkillButtons(panel, (skillIndex) => useSkillWild(skillIndex));
+                }
                 
                 // Atualizar threshold inicial
                 setTimeout(() => updateCaptureThreshold(), 100);
