@@ -338,3 +338,11 @@ $ npm run validate:monster-assets
 ---
 
 **Próximo passo:** Executar PR-A1 (atualização documental) como primeiro passo seguro e reversível.
+
+---
+
+## Histórico de Revisões
+
+| Versão | Data | Autor | Descrição |
+|---|---|---|---|
+| 1.0.0 | 2026-05-23 | Copilot (auditoria automatizada) | Relatório inicial — 17 domínios, 10 riscos, 6 concorrências, 9 testes faltantes |
