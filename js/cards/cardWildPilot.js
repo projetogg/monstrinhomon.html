@@ -5,13 +5,13 @@
  */
 
 import { CARD_LAYER_FEATURE_FLAGS } from './cardFeatureFlags.js';
+import {
+    resolveMonsterEffectiveClass,
+    resolveMonsterCurrentEne,
+} from '../combat/monsterRuntimeFields.js';
 
 const OFFENSIVE_TARGETS = new Set(['enemy', 'inimigo', 'area', 'área']);
 const DEFENSIVE_TARGETS = new Set(['self', 'ally', 'aliado']);
-
-function normalizeClassValue(value) {
-    return String(value || '').trim();
-}
 
 function normalizeTarget(value) {
     return String(value || '')
@@ -54,7 +54,7 @@ export function renderLegacyWildSkillGrid(skills, runtimeContext = {}) {
         const btnClass = isOff ? 'btn-skill-offensive' : 'btn-skill-defensive';
         const skillDesc = skill.desc || '';
         const skillMeta = [skill.category, skill.status ? `→ ${skill.status}` : null].filter(Boolean).join(' · ');
-        const currentEne = Number(playerMonster?.ene) || 0;
+        const currentEne = resolveMonsterCurrentEne(playerMonster);
         const tooltip = !tutorialAllows
             ? 'Tutorial: ainda não liberado'
             : (!canUse
@@ -71,7 +71,7 @@ export function renderLegacyWildSkillGrid(skills, runtimeContext = {}) {
 
 export function canUseCardLayerPilot(monster, flags = CARD_LAYER_FEATURE_FLAGS) {
     if (!flags || flags.enabled !== true) return false;
-    const monsterClass = normalizeClassValue(monster?.class);
+    const { value: monsterClass } = resolveMonsterEffectiveClass(monster);
     if (!monsterClass) return false;
     if (!Array.isArray(flags.pilotClasses) || flags.pilotClasses.length === 0) return false;
     return flags.pilotClasses.includes(monsterClass);
@@ -120,7 +120,7 @@ export function buildWildSkillGridHtml(monster, options = {}) {
         const unmappedEntries = entries.filter(entry => !entry?.mapped);
         if (unmappedEntries.length > 0 && flags.logUnmappedSkills && typeof logger?.warn === 'function') {
             logger.warn('[CardLayer][Fase1C] Skills sem card mapeado; fallback para UI legada.', {
-                monsterClass: monster?.class,
+                monsterClass: resolveMonsterEffectiveClass(monster).value ?? monster?.class,
                 reasons: unmappedEntries.map(entry => entry.reason || 'unmapped'),
             });
         }
