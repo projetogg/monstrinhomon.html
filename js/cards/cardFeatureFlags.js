@@ -4,7 +4,7 @@
  * Não deve ser importado por módulos de mecânica ou combate.
  */
 
-export const CARD_LAYER_FEATURE_FLAGS = {
+export const CARD_LAYER_FEATURE_FLAGS = Object.freeze({
     /** Habilita Card Layer visual no Wild Loop. Fase 1B: desligado por padrão. */
     enabled: false,
 
@@ -19,4 +19,4 @@ export const CARD_LAYER_FEATURE_FLAGS = {
 
     /** Quando true, renderiza placeholder visual para slots vazios (dev only). */
     devShowMissingSlots: false,
-};
+});
