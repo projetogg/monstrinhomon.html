@@ -2580,7 +2580,7 @@
                     const message = String(error?.message || error || '');
                     const isNetworkError = /Failed to fetch|NetworkError|HTTP\s\d+/.test(message);
                     const kind = isNetworkError ? 'carregar' : 'processar';
-                    console.warn(`[CardLayer] Falha ao ${kind} cards.json:`, message);
+                    console.warn(`[CardLayer] Falha ao ${kind} cards.json (fallback para UI legada):`, message);
                 });
                 
                 // PR12A: Preload items from JSON in background (non-blocking)
@@ -7967,6 +7967,8 @@
             return { ...mon, image: tmpl.image };
         }
 
+        const _cardLayerUnmappedLogCache = new Set();
+
         function getCardLayerRuntimeConfig() {
             const defaults = {
                 enabled: false,
@@ -8028,6 +8030,9 @@
                 cardEntries.forEach((entry) => {
                     if (!entry.mapped) {
                         const skillName = entry.skill?.name || entry.skill?.groupKey || entry.skill?.id || `#${entry.skillIndex}`;
+                        const logKey = `${playerMonster?.class || 'unknown'}::${skillName}::${entry.reason || 'unknown'}`;
+                        if (_cardLayerUnmappedLogCache.has(logKey)) return;
+                        _cardLayerUnmappedLogCache.add(logKey);
                         console.warn(`[CardLayer] Skill sem mapeamento visual: ${skillName} (${entry.reason || 'unknown'})`);
                     }
                 });

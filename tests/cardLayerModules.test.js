@@ -90,4 +90,45 @@ describe('Card Layer Fase 1B — módulos visuais puros', () => {
     expect(html).not.toMatch(/data-skill-index="0"[^>]*disabled/);
     expect(html).toMatch(/data-skill-index="1"[^>]*disabled/);
   });
+
+  it('renderCardGrid desabilita botões quando tutorial está bloqueado', () => {
+    const entries = resolveCardsForMonster(
+      { id: 'mi_warrior' },
+      {
+        getMonsterSkills: () => ([
+          { class: 'Guerreiro', groupKey: 'Golpe de Espada', stageIndex: 0, name: 'Golpe de Espada I', cost: 1, target: 'enemy', type: 'DAMAGE' },
+        ]),
+      }
+    ).filter(entry => entry.mapped);
+
+    const html = renderCardGrid(entries, {
+      monster: { hp: 20, ene: 10 },
+      tutorialAllows: false,
+      canUseSkillNow: () => true,
+    });
+
+    expect(html).toMatch(/data-skill-index="0"[^>]*disabled/);
+    expect(html).toContain('Tutorial: ainda não liberado');
+  });
+
+  it('renderCardGrid respeita canUseSkillNow false para todas as skills', () => {
+    const entries = resolveCardsForMonster(
+      { id: 'mi_warrior' },
+      {
+        getMonsterSkills: () => ([
+          { class: 'Guerreiro', groupKey: 'Golpe de Espada', stageIndex: 0, name: 'Golpe de Espada I', cost: 1, target: 'enemy', type: 'DAMAGE' },
+          { class: 'Guerreiro', groupKey: 'Escudo', stageIndex: 0, name: 'Escudo I', cost: 1, target: 'self', type: 'BUFF' },
+        ]),
+      }
+    ).filter(entry => entry.mapped);
+
+    const html = renderCardGrid(entries, {
+      monster: { hp: 20, ene: 10 },
+      tutorialAllows: true,
+      canUseSkillNow: () => false,
+    });
+
+    expect(html).toMatch(/data-skill-index="0"[^>]*disabled/);
+    expect(html).toMatch(/data-skill-index="1"[^>]*disabled/);
+  });
 });

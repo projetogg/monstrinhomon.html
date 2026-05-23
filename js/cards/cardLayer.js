@@ -41,6 +41,11 @@ function getStage(card, stageIndex) {
     return { stage: null, usedDefaultStage: false, reason: 'missing_stage_and_default' };
 }
 
+function parseStageIndex(rawStageIndex) {
+    const parsed = Number(rawStageIndex);
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
 export async function loadCardCatalog({ fetchImpl = fetch, path = CARD_DATA_PATH } = {}) {
     if (cardCatalogCache) return cardCatalogCache;
 
@@ -90,8 +95,7 @@ export function findCardForSkill(skill, options = {}) {
         return { card: null, stage: null, reason: 'unmapped_class_group', usedDefaultStage: false };
     }
 
-    const parsedStageIndex = Number(skill.stageIndex);
-    const stageIndex = Number.isFinite(parsedStageIndex) ? parsedStageIndex : 0;
+    const stageIndex = parseStageIndex(skill.stageIndex);
     const stageResult = getStage(card, stageIndex);
     if (!stageResult.stage) {
         return {

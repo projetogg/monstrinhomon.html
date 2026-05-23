@@ -3,7 +3,7 @@
  * Não busca dados e não executa efeitos.
  */
 
-function escapeHtml(value) {
+export function escapeHtml(value) {
     return String(value ?? '')
         .replaceAll('&', '&amp;')
         .replaceAll('<', '&lt;')
