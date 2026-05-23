@@ -947,6 +947,7 @@
         import * as CardLayer from './js/cards/cardLayer.js';
         import * as CardResolver from './js/cards/cardResolver.js';
         import * as CardRenderer from './js/cards/cardRenderer.js';
+        import { getSkillButtonClass } from './js/cards/cardRenderer.js';
 
         // Map Unlock System (FASE XIV)
         import * as MapUnlockSystem from './js/encounter/mapUnlockSystem.js';
@@ -2576,7 +2577,10 @@
 
                 // Card Layer Fase 1B: preload de cards.json (não bloqueante)
                 CardLayer.loadCardCatalog().catch((error) => {
-                    console.warn('[CardLayer] Falha no preload de cards.json:', error?.message || error);
+                    const message = String(error?.message || error || '');
+                    const isNetworkError = /Failed to fetch|NetworkError|HTTP\s\d+/.test(message);
+                    const kind = isNetworkError ? 'carregar' : 'processar';
+                    console.warn(`[CardLayer] Falha ao ${kind} cards.json:`, message);
                 });
                 
                 // PR12A: Preload items from JSON in background (non-blocking)
@@ -8000,11 +8004,7 @@
                 const kitBadge = skill._kitSwapId ? (skill._kitSwapId.endsWith('_ii') ? ' ⭐' : ' 🌟') : '';
                 const label = [icon, name].filter(Boolean).join(' ') + kitBadge;
                 const canUse = canUseSkillNow(skill, playerMonster) && playerMonster.hp > 0;
-                const t = skill.target || '';
-                const skillType = (skill.type || '').toUpperCase();
-                const isOff = (t === 'enemy' || t === 'area' || t === 'Inimigo' || t === 'Área')
-                           || (t !== 'self' && t !== 'ally' && t !== 'Self' && t !== 'Aliado' && skillType === 'DAMAGE');
-                const btnClass = isOff ? 'btn-skill-offensive' : 'btn-skill-defensive';
+                const btnClass = getSkillButtonClass(skill);
                 const skillDesc = skill.desc || '';
                 const skillMeta = [skill.category, skill.status ? `→ ${skill.status}` : null].filter(Boolean).join(' · ');
                 const tooltip = !tutAllows

@@ -86,6 +86,8 @@ describe('Card Layer Fase 1B — módulos visuais puros', () => {
     expect(html).toContain('onclick="useSkillWild(0)"');
     expect(html).toContain('Golpe de Espada I');
     expect(html).toContain('Escudo I');
-    expect(html).toContain('disabled');
+    expect(html).toMatch(/data-skill-index="0"[^>]*onclick="useSkillWild\(0\)"/);
+    expect(html).not.toMatch(/data-skill-index="0"[^>]*disabled/);
+    expect(html).toMatch(/data-skill-index="1"[^>]*disabled/);
   });
 });

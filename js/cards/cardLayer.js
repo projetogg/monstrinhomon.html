@@ -90,8 +90,9 @@ export function findCardForSkill(skill, options = {}) {
         return { card: null, stage: null, reason: 'unmapped_class_group', usedDefaultStage: false };
     }
 
-    const stageIndex = Number(skill.stageIndex ?? 0);
-    const stageResult = getStage(card, Number.isFinite(stageIndex) ? stageIndex : 0);
+    const parsedStageIndex = Number(skill.stageIndex);
+    const stageIndex = Number.isFinite(parsedStageIndex) ? parsedStageIndex : 0;
+    const stageResult = getStage(card, stageIndex);
     if (!stageResult.stage) {
         return {
             card,

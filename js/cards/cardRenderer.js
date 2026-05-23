@@ -12,7 +12,7 @@ function escapeHtml(value) {
         .replaceAll("'", '&#39;');
 }
 
-function resolveButtonKind(skill) {
+export function getSkillButtonClass(skill) {
     const target = String(skill?.target || '');
     const skillType = String(skill?.type || '').toUpperCase();
     const isOffensive = target === 'enemy' || target === 'area' || target === 'Inimigo' || target === 'Área'
@@ -41,7 +41,7 @@ export function renderCard(cardEntry, runtimeContext = {}) {
             ? `ENE insuficiente (${currentEne}/${cost})`
             : stageText);
 
-    return `<button class="${resolveButtonKind(skill)} card-layer-skill"
+    return `<button class="${getSkillButtonClass(skill)} card-layer-skill"
         data-card-id="${escapeHtml(card?.id || '')}"
         data-skill-index="${Number(skillIndex) || 0}"
         onclick="useSkillWild(${Number(skillIndex) || 0})"
