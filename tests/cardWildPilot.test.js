@@ -6,6 +6,7 @@ import { setCardCatalogForTests, clearCardCatalogCache } from '../js/cards/cardL
 import { resolveCardsForMonster } from '../js/cards/cardResolver.js';
 import { renderCardGrid } from '../js/cards/cardRenderer.js';
 import { buildWildSkillGridHtml, wireCardLayerSkillButtons } from '../js/cards/cardWildPilot.js';
+import { resolveMonsterCurrentEne } from '../js/combat/monsterRuntimeFields.js';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const cardsData = JSON.parse(readFileSync(resolve(ROOT, 'data/cards.json'), 'utf8'));
@@ -140,5 +141,93 @@ describe('Card Layer Fase 1C — piloto visual no Wild Loop', () => {
     expect(wiredAgain).toBe(0);
     listeners.click();
     expect(calls).toEqual([2, 2]);
+  });
+
+  it('catálogo ausente usa UI legada com reason catalog_unavailable', () => {
+    const result = buildWildSkillGridHtml(makeWarriorMonster(), {
+      flags: { enabled: true, pilotClasses: ['Guerreiro'], fallbackToSkillUI: true, logUnmappedSkills: true },
+      catalog: null,
+      resolveMonsterSkills: () => ([
+        { name: 'Golpe de Espada I', cost: 4, target: 'enemy', type: 'DAMAGE', desc: 'Ataque' },
+      ]),
+      getMonsterSkills: () => makeWarriorRawSkills(),
+      resolveCardsForMonster,
+      renderCardGrid,
+      canUseSkillNow: () => true,
+      tutorialAllows: true,
+      logger: { warn: () => {} },
+    });
+
+    expect(result.mode).toBe('legacy');
+    expect(result.reason).toBe('catalog_unavailable');
+    expect(result.html).toContain('<div class="skill-grid">');
+    expect(result.html).toContain('onclick="useSkillWild(0)"');
+  });
+
+  it('Card Layer não executa mecânica de combate diretamente', () => {
+    const rawSkills = makeWarriorRawSkills();
+    const result = buildWildSkillGridHtml(makeWarriorMonster(), {
+      flags: { enabled: true, pilotClasses: ['Guerreiro'], fallbackToSkillUI: true, logUnmappedSkills: true },
+      catalog: cardsData,
+      resolveMonsterSkills: () => rawSkills,
+      getMonsterSkills: () => rawSkills,
+      resolveCardsForMonster,
+      renderCardGrid,
+      canUseSkillNow: () => true,
+      tutorialAllows: true,
+      logger: { warn: () => {} },
+    });
+
+    expect(result.mode).toBe('card-layer');
+    // HTML gerado não pode conter chamadas diretas de execução de combate
+    expect(result.html).not.toContain('executeWildAttack');
+    expect(result.html).not.toContain('executeBasicCardAction');
+    expect(result.html).not.toContain('useSkillWild');
+    expect(result.html).not.toContain('CardLayer.execute');
+    expect(result.html).not.toContain('executeWild');
+  });
+
+  it('shape legado com monsterClass ativa Card Layer para Guerreiro', () => {
+    const legacyMonster = { id: 'mi_legacy', monsterClass: 'Guerreiro', hp: 30, ene: 8 };
+    const rawSkills = makeWarriorRawSkills();
+    const result = buildWildSkillGridHtml(legacyMonster, {
+      flags: { enabled: true, pilotClasses: ['Guerreiro'], fallbackToSkillUI: true, logUnmappedSkills: true },
+      catalog: cardsData,
+      resolveMonsterSkills: () => rawSkills,
+      getMonsterSkills: () => rawSkills,
+      resolveCardsForMonster,
+      renderCardGrid,
+      canUseSkillNow: () => true,
+      tutorialAllows: true,
+      logger: { warn: () => {} },
+    });
+
+    expect(result.mode).toBe('card-layer');
+    expect(result.html).toContain('skill-grid--card-layer');
+  });
+
+  it('shape legado com currentEne exibe ENE corretamente na UI legada', () => {
+    const legacyMonster = { id: 'mi_legacy', class: 'Guerreiro', hp: 30, currentEne: 3 };
+    const rawSkills = [
+      { name: 'Golpe de Espada I', cost: 6, target: 'enemy', type: 'DAMAGE', desc: 'Ataque' },
+    ];
+    const result = buildWildSkillGridHtml(legacyMonster, {
+      flags: { enabled: false, pilotClasses: ['Guerreiro'], fallbackToSkillUI: true, logUnmappedSkills: true },
+      catalog: cardsData,
+      resolveMonsterSkills: () => rawSkills,
+      getMonsterSkills: () => rawSkills,
+      resolveCardsForMonster,
+      renderCardGrid,
+      // cost=6 > currentEne=3, portanto canUseSkillNow retorna false
+      canUseSkillNow: (skill, mon) => resolveMonsterCurrentEne(mon) >= (skill?.cost || 0),
+      tutorialAllows: true,
+      logger: { warn: () => {} },
+    });
+
+    expect(result.mode).toBe('legacy');
+    // botão deve estar desabilitado pois ENE 3 < custo 6
+    expect(result.html).toContain('disabled');
+    // tooltip deve conter ENE insuficiente com valor correto (3/6)
+    expect(result.html).toContain('ENE insuficiente (3/6)');
   });
 });
