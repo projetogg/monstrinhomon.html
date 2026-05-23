@@ -8,7 +8,8 @@ import {
   clearCardCatalogCache,
 } from '../js/cards/cardLayer.js';
 import { resolveCardsForMonster } from '../js/cards/cardResolver.js';
-import { renderCardGrid } from '../js/cards/cardRenderer.js';
+import { renderCardGrid, buildCardViewModel } from '../js/cards/cardRenderer.js';
+import { CARD_LAYER_FEATURE_FLAGS } from '../js/cards/cardFeatureFlags.js';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const cardsData = JSON.parse(readFileSync(resolve(ROOT, 'data/cards.json'), 'utf8'));
@@ -23,6 +24,19 @@ describe('Card Layer Fase 1B — módulos visuais puros', () => {
     clearCardCatalogCache();
     setCardCatalogForTests(cardsData);
   });
+
+  // ── Feature Flags ──────────────────────────────────────────────────────────
+
+  it('CARD_LAYER_FEATURE_FLAGS tem enabled: false por padrão', () => {
+    expect(CARD_LAYER_FEATURE_FLAGS.enabled).toBe(false);
+    expect(Array.isArray(CARD_LAYER_FEATURE_FLAGS.pilotClasses)).toBe(true);
+    expect(CARD_LAYER_FEATURE_FLAGS.pilotClasses).toContain('Guerreiro');
+    expect(CARD_LAYER_FEATURE_FLAGS.fallbackToSkillUI).toBe(true);
+    expect(CARD_LAYER_FEATURE_FLAGS.logUnmappedSkills).toBe(true);
+    expect(CARD_LAYER_FEATURE_FLAGS.devShowMissingSlots).toBe(false);
+  });
+
+  // ── cardLayer ──────────────────────────────────────────────────────────────
 
   it('findCardForSkill resolve card/stage por class + groupKey + stageIndex', () => {
     const result = findCardForSkill({
@@ -49,18 +63,25 @@ describe('Card Layer Fase 1B — módulos visuais puros', () => {
     expect(result.reason).toBe('missing_stage_fallback_to_default');
   });
 
-  it('resolveCardsForMonster preserva skillIndex e status de mapeamento', () => {
+  // ── cardResolver ───────────────────────────────────────────────────────────
+
+  it('resolveCardsForMonster usa getMonsterSkills por injeção e não chama runtime', () => {
+    let calledWith = null;
     const entries = resolveCardsForMonster(
-      { id: 'mi_test' },
+      { id: 'mi_test', class: 'Guerreiro' },
       {
-        getMonsterSkills: () => ([
-          { class: 'Guerreiro', groupKey: 'Golpe de Espada', stageIndex: 0, name: 'Golpe de Espada I' },
-          { class: 'Guerreiro', groupKey: 'Escudo', stageIndex: 2, name: 'Escudo III' },
-          { class: 'Mago', groupKey: 'Inexistente', stageIndex: 0, name: 'Sem Card' },
-        ]),
+        getMonsterSkills: (mon) => {
+          calledWith = mon;
+          return [
+            { class: 'Guerreiro', groupKey: 'Golpe de Espada', stageIndex: 0, name: 'Golpe de Espada I' },
+            { class: 'Guerreiro', groupKey: 'Escudo', stageIndex: 2, name: 'Escudo III' },
+            { class: 'Mago', groupKey: 'Inexistente', stageIndex: 0, name: 'Sem Card' },
+          ];
+        },
       }
     );
 
+    expect(calledWith?.id).toBe('mi_test');
     expect(entries).toHaveLength(3);
     expect(entries[0].skillIndex).toBe(0);
     expect(entries[0].mapped).toBe(true);
@@ -70,7 +91,14 @@ describe('Card Layer Fase 1B — módulos visuais puros', () => {
     expect(entries[2].reason).toBe('unmapped_class_group');
   });
 
-  it('renderCardGrid gera botões visuais sem tocar mecânica', () => {
+  it('resolveCardsForMonster retorna [] quando getMonsterSkills não é injetado', () => {
+    const entries = resolveCardsForMonster({ id: 'mi_test' }, {});
+    expect(entries).toEqual([]);
+  });
+
+  // ── cardRenderer — visual-only puro ───────────────────────────────────────
+
+  it('renderCardGrid NÃO contém onclick nem useSkillWild (visual-only puro)', () => {
     const entries = resolveCardsForMonster(
       { id: 'mi_warrior' },
       {
@@ -88,14 +116,27 @@ describe('Card Layer Fase 1B — módulos visuais puros', () => {
     });
 
     expect(html).toContain('skill-grid--card-layer');
-    expect(html).toContain('onclick="useSkillWild(0)"');
     expect(html).toContain('Golpe de Espada I');
     expect(html).toContain('Escudo I');
-    const firstSkillBtn = getSkillButtonTag(html, 0);
-    const secondSkillBtn = getSkillButtonTag(html, 1);
-    expect(firstSkillBtn).toContain('onclick="useSkillWild(0)"');
-    expect(firstSkillBtn.includes('disabled')).toBe(false);
-    expect(secondSkillBtn.includes('disabled')).toBe(true);
+    // Garantia de visual-only: sem handler executável
+    expect(html).not.toContain('onclick');
+    expect(html).not.toContain('useSkillWild');
+  });
+
+  it('renderCardGrid emite data-skill-index para wiring futuro (Fase 1C)', () => {
+    const entries = resolveCardsForMonster(
+      { id: 'mi_warrior' },
+      {
+        getMonsterSkills: () => ([
+          { class: 'Guerreiro', groupKey: 'Golpe de Espada', stageIndex: 0, name: 'Golpe de Espada I', cost: 1, target: 'enemy', type: 'DAMAGE' },
+        ]),
+      }
+    ).filter(entry => entry.mapped);
+
+    const html = renderCardGrid(entries, { monster: { hp: 20, ene: 10 } });
+
+    expect(html).toContain('data-skill-index="0"');
+    expect(html).toContain('data-card-id="warrior_golpe_de_espada_card"');
   });
 
   it('renderCardGrid desabilita botões quando tutorial está bloqueado', () => {
@@ -140,5 +181,27 @@ describe('Card Layer Fase 1B — módulos visuais puros', () => {
     const secondSkillBtn = getSkillButtonTag(html, 1);
     expect(firstSkillBtn.includes('disabled')).toBe(true);
     expect(secondSkillBtn.includes('disabled')).toBe(true);
+  });
+
+  it('buildCardViewModel retorna view model puro sem HTML (sem onclick)', () => {
+    const entries = resolveCardsForMonster(
+      { id: 'mi_warrior' },
+      {
+        getMonsterSkills: () => ([
+          { class: 'Guerreiro', groupKey: 'Golpe de Espada', stageIndex: 0, name: 'Golpe de Espada I', cost: 2, target: 'enemy', type: 'DAMAGE' },
+        ]),
+      }
+    ).filter(entry => entry.mapped);
+
+    const vm = buildCardViewModel(entries[0], { monster: { hp: 20, ene: 5 }, tutorialAllows: true, canUseSkillNow: () => true });
+
+    expect(typeof vm).toBe('object');
+    expect(vm.skillIndex).toBe(0);
+    expect(vm.cardId).toBe('warrior_golpe_de_espada_card');
+    expect(vm.disabled).toBe(false);
+    expect(vm.stageTitle).toBeTruthy();
+    // view model não é HTML — sem markup
+    expect(typeof vm.stageTitle).toBe('string');
+    expect(vm.stageTitle).not.toContain('<');
   });
 });

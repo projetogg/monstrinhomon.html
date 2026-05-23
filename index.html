@@ -944,10 +944,6 @@
             executeBasicCardFromHand,
             getBasicCardActionFeedback,
         } from './js/ui/basicCardHandUI.js';
-        import * as CardLayer from './js/cards/cardLayer.js';
-        import * as CardResolver from './js/cards/cardResolver.js';
-        import * as CardRenderer from './js/cards/cardRenderer.js';
-        import { getSkillButtonClass } from './js/cards/cardRenderer.js';
 
         // Map Unlock System (FASE XIV)
         import * as MapUnlockSystem from './js/encounter/mapUnlockSystem.js';
@@ -1030,11 +1026,6 @@
 
         // FASE R: Friendship System disponível globalmente
         window.FriendshipSystem = FriendshipSystem;
-
-        // Card Layer (Fase 1B) — módulos visuais puros
-        window.CardLayer = CardLayer;
-        window.CardResolver = CardResolver;
-        window.CardRenderer = CardRenderer;
 
         // FASE T: Shiny System disponível globalmente
         window.ShinySystem = ShinySystem;
@@ -1908,14 +1899,6 @@
                     useHealItem: 5,     // Usar item de cura (alto para recompensar cuidado)
                     levelUp: 3,         // Subir de nível (moderado, progressão natural)
                     faint: -3           // Desmaiar (punitivo)
-                },
-                // Card Layer Fase 1B (visual-only)
-                cardLayer: {
-                    enabled: false,
-                    pilotClasses: ['Guerreiro'],
-                    fallbackToSkillUI: true,
-                    logUnmappedSkills: true,
-                    devShowMissingSlots: false
                 }
             }
         };
@@ -2574,14 +2557,6 @@
                 
                 // Inicializa SKILL_DEFS com fallback até loadSkills() completar
                 initSkillDefs();
-
-                // Card Layer Fase 1B: preload de cards.json (não bloqueante)
-                CardLayer.loadCardCatalog().catch((error) => {
-                    const message = String(error?.message || error || '');
-                    const isNetworkError = /Failed to fetch|NetworkError|Falha ao carregar/i.test(message);
-                    const kind = isNetworkError ? 'carregar' : 'processar';
-                    console.warn(`[CardLayer] Falha ao ${kind} cards.json (fallback para UI legada):`, message);
-                });
                 
                 // PR12A: Preload items from JSON in background (non-blocking)
                 if (window.Data && window.Data.loadItems) {
@@ -3065,13 +3040,6 @@
                 friendshipConfig: {
                     battleWin: 2, battleLoss: -5, useHealItem: 5,
                     levelUp: 3, faint: -3
-                },
-                cardLayer: {
-                    enabled: false,
-                    pilotClasses: ['Guerreiro'],
-                    fallbackToSkillUI: true,
-                    logUnmappedSkills: true,
-                    devShowMissingSlots: false
                 }
             };
             if (!state.config || typeof state.config !== 'object') {
@@ -7967,88 +7935,6 @@
             return { ...mon, image: tmpl.image };
         }
 
-        const cardLayerUnmappedLogCache = new Set();
-
-        function getCardLayerRuntimeConfig() {
-            const defaults = {
-                enabled: false,
-                pilotClasses: ['Guerreiro'],
-                fallbackToSkillUI: true,
-                logUnmappedSkills: true,
-                devShowMissingSlots: false,
-            };
-            const saved = GameState?.config?.cardLayer;
-            if (!saved || typeof saved !== 'object') return defaults;
-            return {
-                ...defaults,
-                ...saved,
-                pilotClasses: Array.isArray(saved.pilotClasses) && saved.pilotClasses.length > 0
-                    ? saved.pilotClasses
-                    : defaults.pilotClasses,
-            };
-        }
-
-        function shouldUseCardLayerForMonster(monster) {
-            if (!monster || typeof monster !== 'object') return false;
-            const cfg = getCardLayerRuntimeConfig();
-            if (cfg.enabled !== true) return false;
-            const pilotClasses = Array.isArray(cfg.pilotClasses) ? cfg.pilotClasses : [];
-            return pilotClasses.includes(monster.class);
-        }
-
-        function renderLegacySkillGrid(skills, playerMonster, tutAllows) {
-            const slots = [0, 1, 2, 3].map(idx => {
-                const skill = skills[idx];
-                if (!skill) return `<div class="btn-skill-empty" aria-hidden="true"></div>`;
-                const name = skill.name || skill.nome || String(skill.id);
-                const cost = Number(skill.cost ?? skill.energy_cost ?? skill.eneCost ?? 0) || 0;
-                const icon = skill.icon || '';
-                const kitBadge = skill._kitSwapId ? (skill._kitSwapId.endsWith('_ii') ? ' ⭐' : ' 🌟') : '';
-                const label = [icon, name].filter(Boolean).join(' ') + kitBadge;
-                const canUse = canUseSkillNow(skill, playerMonster) && playerMonster.hp > 0;
-                const btnClass = getSkillButtonClass(skill);
-                const skillDesc = skill.desc || '';
-                const skillMeta = [skill.category, skill.status ? `→ ${skill.status}` : null].filter(Boolean).join(' · ');
-                const tooltip = !tutAllows
-                    ? 'Tutorial: ainda não liberado'
-                    : (!canUse
-                        ? `ENE insuficiente (${Number(playerMonster.ene) || 0}/${cost})`
-                        : (skillMeta ? `${skillDesc}\n${skillMeta}` : skillDesc));
-                return `<button class="${btnClass}" onclick="useSkillWild(${idx})"
-                        ${!canUse || !tutAllows ? 'disabled' : ''}
-                        title="${tooltip}">${label}</button>`;
-            });
-            return `<div class="skill-grid">${slots.join('')}</div>`;
-        }
-
-        function renderCardLayerSkillGrid(playerMonster, tutAllows) {
-            const cfg = getCardLayerRuntimeConfig();
-            const cardEntries = CardResolver.resolveCardsForMonster(playerMonster, { getMonsterSkills });
-            if (!cardEntries.length) return '';
-
-            if (cfg.logUnmappedSkills) {
-                cardEntries.forEach((entry) => {
-                    if (!entry.mapped) {
-                        const skillName = entry.skill?.name || entry.skill?.groupKey || entry.skill?.id || `#${entry.skillIndex}`;
-                        const logKey = `${playerMonster?.class || 'unknown'}::${skillName}::${entry.reason || 'unknown'}`;
-                        if (cardLayerUnmappedLogCache.has(logKey)) return;
-                        cardLayerUnmappedLogCache.add(logKey);
-                        console.warn(`[CardLayer] Skill sem mapeamento visual: ${skillName} (${entry.reason || 'unknown'})`);
-                    }
-                });
-            }
-
-            const mappedEntries = cardEntries.filter(entry => entry.mapped);
-            if (!mappedEntries.length) return '';
-
-            const html = CardRenderer.renderCardGrid(mappedEntries, {
-                monster: playerMonster,
-                tutorialAllows: tutAllows,
-                canUseSkillNow,
-            });
-            return html || '';
-        }
-
         function renderWildEncounter(panel, encounter) {
             try {
                 const monster = enrichMonsterVisual(encounter.wildMonster);
@@ -8251,11 +8137,34 @@
                 const skillsHtml = playerMonster ? (() => {
                     const skills = resolveMonsterSkills(playerMonster);
                     const tutAllows = tutorialAllows("skill");
-                    if (shouldUseCardLayerForMonster(playerMonster)) {
-                        const cardLayerGrid = renderCardLayerSkillGrid(playerMonster, tutAllows);
-                        if (cardLayerGrid) return cardLayerGrid;
-                    }
-                    return renderLegacySkillGrid(skills, playerMonster, tutAllows);
+                    // Gera sempre 4 slots para o grid 2×2 ficar consistente
+                    const slots = [0, 1, 2, 3].map(idx => {
+                        const skill = skills[idx];
+                        if (!skill) return `<div class="btn-skill-empty" aria-hidden="true"></div>`;
+                        const name = skill.name || skill.nome || String(skill.id);
+                        const cost = Number(skill.cost ?? skill.energy_cost ?? skill.eneCost ?? 0) || 0;
+                        const icon = skill.icon || '';
+                        const kitBadge = skill._kitSwapId ? (skill._kitSwapId.endsWith('_ii') ? ' ⭐' : ' 🌟') : '';
+                        const label = [icon, name].filter(Boolean).join(' ') + kitBadge;
+                        const canUse = canUseSkillNow(skill, playerMonster) && playerMonster.hp > 0;
+                        // Categorização ofensivo vs defensivo (inline, sem módulo externo)
+                        const t = skill.target || '';
+                        const skillType = (skill.type || '').toUpperCase();
+                        const isOff = (t === 'enemy' || t === 'area' || t === 'Inimigo' || t === 'Área')
+                                   || (t !== 'self' && t !== 'ally' && t !== 'Self' && t !== 'Aliado' && skillType === 'DAMAGE');
+                        const btnClass = isOff ? 'btn-skill-offensive' : 'btn-skill-defensive';
+                        const skillDesc = skill.desc || '';
+                        const skillMeta = [skill.category, skill.status ? `→ ${skill.status}` : null].filter(Boolean).join(' · ');
+                        const tooltip = !tutAllows
+                            ? 'Tutorial: ainda não liberado'
+                            : (!canUse
+                                ? `ENE insuficiente (${Number(playerMonster.ene) || 0}/${cost})`
+                                : (skillMeta ? `${skillDesc}\n${skillMeta}` : skillDesc));
+                        return `<button class="${btnClass}" onclick="useSkillWild(${idx})"
+                                ${!canUse || !tutAllows ? 'disabled' : ''}
+                                title="${tooltip}">${label}</button>`;
+                    });
+                    return `<div class="skill-grid">${slots.join('')}</div>`;
                 })() : '<small style="opacity:0.5">—</small>';
 
                 // Itens de cura
