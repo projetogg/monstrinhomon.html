@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -9,7 +9,7 @@ import {
 } from '../js/cards/cardLayer.js';
 import { resolveCardsForMonster } from '../js/cards/cardResolver.js';
 import { renderCardGrid, buildCardViewModel } from '../js/cards/cardRenderer.js';
-import { CARD_LAYER_FEATURE_FLAGS } from '../js/cards/cardFeatureFlags.js';
+import { CARD_LAYER_FEATURE_FLAGS, getEffectiveCardLayerFlags } from '../js/cards/cardFeatureFlags.js';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const cardsData = JSON.parse(readFileSync(resolve(ROOT, 'data/cards.json'), 'utf8'));
@@ -34,6 +34,64 @@ describe('Card Layer Fase 1B — módulos visuais puros', () => {
     expect(CARD_LAYER_FEATURE_FLAGS.fallbackToSkillUI).toBe(true);
     expect(CARD_LAYER_FEATURE_FLAGS.logUnmappedSkills).toBe(true);
     expect(CARD_LAYER_FEATURE_FLAGS.devShowMissingSlots).toBe(false);
+  });
+
+  it('getEffectiveCardLayerFlags mantém enabled=false sem query param', () => {
+    const flags = getEffectiveCardLayerFlags(CARD_LAYER_FEATURE_FLAGS, '');
+    expect(flags.enabled).toBe(false);
+  });
+
+  it('getEffectiveCardLayerFlags ativa enabled com ?cardLayerPilot=1', () => {
+    const flags = getEffectiveCardLayerFlags(CARD_LAYER_FEATURE_FLAGS, '?cardLayerPilot=1');
+    expect(flags.enabled).toBe(true);
+  });
+
+  it('getEffectiveCardLayerFlags ativa enabled com ?cardLayerPilot=true', () => {
+    const flags = getEffectiveCardLayerFlags(CARD_LAYER_FEATURE_FLAGS, '?cardLayerPilot=true');
+    expect(flags.enabled).toBe(true);
+  });
+
+  it('getEffectiveCardLayerFlags não muta CARD_LAYER_FEATURE_FLAGS', () => {
+    const snapshot = {
+      enabled: CARD_LAYER_FEATURE_FLAGS.enabled,
+      pilotClasses: [...CARD_LAYER_FEATURE_FLAGS.pilotClasses],
+      fallbackToSkillUI: CARD_LAYER_FEATURE_FLAGS.fallbackToSkillUI,
+      logUnmappedSkills: CARD_LAYER_FEATURE_FLAGS.logUnmappedSkills,
+      devShowMissingSlots: CARD_LAYER_FEATURE_FLAGS.devShowMissingSlots,
+    };
+
+    const effective = getEffectiveCardLayerFlags(CARD_LAYER_FEATURE_FLAGS, '?cardLayerPilot=1');
+
+    expect(CARD_LAYER_FEATURE_FLAGS.enabled).toBe(snapshot.enabled);
+    expect(CARD_LAYER_FEATURE_FLAGS.pilotClasses).toEqual(snapshot.pilotClasses);
+    expect(CARD_LAYER_FEATURE_FLAGS.fallbackToSkillUI).toBe(snapshot.fallbackToSkillUI);
+    expect(CARD_LAYER_FEATURE_FLAGS.logUnmappedSkills).toBe(snapshot.logUnmappedSkills);
+    expect(CARD_LAYER_FEATURE_FLAGS.devShowMissingSlots).toBe(snapshot.devShowMissingSlots);
+    expect(effective).not.toBe(CARD_LAYER_FEATURE_FLAGS);
+  });
+
+  it('getEffectiveCardLayerFlags preserva campos e não persiste em localStorage/save', () => {
+    const previousLocalStorage = globalThis.localStorage;
+    const localStorageAccessSpy = vi.fn(() => {
+      throw new Error('localStorage não deve ser acessado por getEffectiveCardLayerFlags');
+    });
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      get: localStorageAccessSpy,
+    });
+
+    const flags = getEffectiveCardLayerFlags(CARD_LAYER_FEATURE_FLAGS, '?cardLayerPilot=1');
+
+    expect(flags.pilotClasses).toEqual(CARD_LAYER_FEATURE_FLAGS.pilotClasses);
+    expect(flags.fallbackToSkillUI).toBe(CARD_LAYER_FEATURE_FLAGS.fallbackToSkillUI);
+    expect(flags.logUnmappedSkills).toBe(CARD_LAYER_FEATURE_FLAGS.logUnmappedSkills);
+    expect(flags.devShowMissingSlots).toBe(CARD_LAYER_FEATURE_FLAGS.devShowMissingSlots);
+    expect(localStorageAccessSpy).not.toHaveBeenCalled();
+
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      value: previousLocalStorage,
+    });
   });
 
   // ── cardLayer ──────────────────────────────────────────────────────────────
