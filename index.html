@@ -13346,7 +13346,11 @@
                 return window.TradeUI.getTradeableMonsters(player, sharedBox) || [];
             }
 
-            return (player.team || []).filter(Boolean);
+            const teamMons = (player.team || []).filter(Boolean);
+            const boxMons = (sharedBox || [])
+                .filter(slot => slot?.ownerPlayerId === player.id && slot?.monster)
+                .map(slot => ({ ...slot.monster, _boxSlotId: slot.slotId }));
+            return [...teamMons, ...boxMons];
         }
 
         /**
@@ -13497,7 +13501,7 @@
                     targetInstanceId: toInstanceId,
                     inBattle: !!GameState.currentBattle,
                     sharedBox: GameState.sharedBox || [],
-                    therapyLog: _getSessionTherapyLog(),
+                    therapyLog: _getSessionTherapyLog() || null,
                 };
                 const proposal = window.TradeSystem.proposeTradeAction(fromPlayer, toPlayer, instanceId, tradeContext);
                 if (!proposal.ok) {

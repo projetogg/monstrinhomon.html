@@ -45,7 +45,11 @@ export const TRADE_ERROR = {
  * @param {Object} player
  * @param {string} instanceId
  * @param {Array} sharedBox
- * @returns {{ monster: Object|null, teamIndex: number, fromBox: boolean }}
+ * @returns {{
+ *   monster: Object|null,
+ *   teamIndex: number, // índice no time; -1 quando veio da Box ou não encontrado
+ *   fromBox: boolean
+ * }}
  */
 function findMonsterLocation(player, instanceId, sharedBox = []) {
     const team = Array.isArray(player?.team) ? player.team : [];
@@ -193,7 +197,7 @@ export function acceptTrade(trade, fromPlayer, toPlayer, context = {}) {
 
         const result = executeCanonicalTrade(fromPlayer, offered.monster, toPlayer, requested.monster, therapyLog, sharedBox);
         if (!result.success) {
-            return { ok: false, error: result.log?.[0] || TRADE_ERROR.MONSTER_NOT_FOUND, monsterName: null };
+            return { ok: false, error: result.log?.[0] || 'TRADE_FAILED', monsterName: null };
         }
 
         return {
