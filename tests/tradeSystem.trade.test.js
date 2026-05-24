@@ -215,3 +215,70 @@ describe('acceptTrade — transferência de monstro', () => {
         expect(result.error).toBe(TRADE_ERROR.INVALID_PLAYER);
     });
 });
+
+describe('acceptTrade — adapter legado para bilateral canônico', () => {
+    it('executa troca bilateral quando targetInstanceId é informado', () => {
+        const fromMon1 = makeMon('mi_001', 'Guerreiro', 30);
+        const fromMon2 = makeMon('mi_002', 'Mago', 30);
+        const toMon1 = makeMon('mi_101', 'Mago', 30);
+        const toMon2 = makeMon('mi_102', 'Guerreiro', 30);
+        const from = makePlayer('p1', 'Mago', [fromMon1, fromMon2]);
+        const to = makePlayer('p2', 'Guerreiro', [toMon1, toMon2]);
+
+        const proposal = proposeTradeAction(from, to, 'mi_001', { targetInstanceId: 'mi_101' });
+        expect(proposal.ok).toBe(true);
+
+        const result = acceptTrade(proposal.trade, from, to, { sharedBox: [] });
+        expect(result.ok).toBe(true);
+        expect(from.team.some(m => m.id === 'mi_101')).toBe(true);
+        expect(to.team.some(m => m.id === 'mi_001')).toBe(true);
+    });
+
+    it('bloqueia adapter bilateral quando alvo não existe', () => {
+        const fromMon1 = makeMon('mi_001', 'Guerreiro', 30);
+        const fromMon2 = makeMon('mi_002', 'Mago', 30);
+        const toMon1 = makeMon('mi_101', 'Mago', 30);
+        const toMon2 = makeMon('mi_102', 'Guerreiro', 30);
+        const from = makePlayer('p1', 'Mago', [fromMon1, fromMon2]);
+        const to = makePlayer('p2', 'Guerreiro', [toMon1, toMon2]);
+
+        const proposal = proposeTradeAction(from, to, 'mi_001', { targetInstanceId: 'mi_inexistente' });
+        const result = acceptTrade(proposal.trade, from, to, { sharedBox: [] });
+
+        expect(result.ok).toBe(false);
+        expect(result.error).toBe(TRADE_ERROR.MONSTER_NOT_FOUND);
+    });
+
+    it('bloqueia adapter bilateral quando um dos monstrinhos está KO', () => {
+        const fromMon1 = makeMon('mi_001', 'Guerreiro', 0);
+        const fromMon2 = makeMon('mi_002', 'Mago', 30);
+        const toMon1 = makeMon('mi_101', 'Mago', 30);
+        const toMon2 = makeMon('mi_102', 'Guerreiro', 30);
+        const from = makePlayer('p1', 'Mago', [fromMon1, fromMon2]);
+        const to = makePlayer('p2', 'Guerreiro', [toMon1, toMon2]);
+
+        const proposal = proposeTradeAction(from, to, 'mi_001', { targetInstanceId: 'mi_101' });
+        expect(proposal.ok).toBe(false);
+        expect(proposal.error).toBe(TRADE_ERROR.MONSTER_KO);
+    });
+
+    it('executa troca bilateral com monstrinho da box via adapter', () => {
+        const fromMon1 = makeMon('mi_001', 'Guerreiro', 30);
+        const fromMon2 = makeMon('mi_002', 'Mago', 30);
+        const toTeamMon = makeMon('mi_101', 'Mago', 30);
+        const toTeamMon2 = makeMon('mi_102', 'Guerreiro', 30);
+        const from = makePlayer('p1', 'Mago', [fromMon1, fromMon2]);
+        const to = makePlayer('p2', 'Guerreiro', [toTeamMon, toTeamMon2]);
+        const sharedBox = [
+            { slotId: 'slot_p2', ownerPlayerId: 'p2', monster: makeMon('mi_box', 'Mago', 30) },
+        ];
+
+        const proposal = proposeTradeAction(from, to, 'mi_001', { targetInstanceId: 'mi_box' });
+        expect(proposal.ok).toBe(true);
+
+        const result = acceptTrade(proposal.trade, from, to, { sharedBox });
+        expect(result.ok).toBe(true);
+        expect(from.team.some(m => m.id === 'mi_box')).toBe(true);
+        expect(to.team.some(m => m.id === 'mi_001')).toBe(true);
+    });
+});

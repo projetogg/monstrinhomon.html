@@ -18,10 +18,11 @@ Hoje, **os dois sistemas estão ativos em runtime** em fluxos diferentes:
    - `js/ui/tradeUI.js` importa `../combat/tradeSystem.js`.
    - `index.html` chama `window.TradeUI.executeTrade(...)` no `tradeAccept()`.
 
-2. **Fluxo legado de modal de troca unilateral (`openTradeModal/executeTradeFromModal`)**  
-   Usa `js/trade/tradeSystem.js`.
+2. **Fluxo legado de modal (`openTradeModal/executeTradeFromModal`) com compatibilidade temporária**  
+   Usa `js/trade/tradeSystem.js` como adapter.
    - `index.html` importa `./js/trade/tradeSystem.js` como `window.TradeSystem`.
-   - `executeTradeFromModal()` chama `window.TradeSystem.proposeTradeAction(...)` e `window.TradeSystem.acceptTrade(...)`.
+   - `executeTradeFromModal()` continua chamando `window.TradeSystem.proposeTradeAction(...)` e `window.TradeSystem.acceptTrade(...)`.
+   - Quando há `targetInstanceId` no contexto do modal, o módulo legado encaminha para a lógica canônica de `js/combat/tradeSystem.js`.
 
 ## 2) Qual sistema é coberto por testes
 
@@ -71,18 +72,18 @@ Justificativa:
 - cobre cenário mais completo (troca bilateral + Box + sugestões);
 - possui cobertura de testes de hardening para Box e cenários de borda.
 
-`js/trade/tradeSystem.js` passa a ser **legado/compatibilidade temporária** para o modal antigo até migração completa.
+`js/trade/tradeSystem.js` permanece **legado/compatibilidade temporária** para o modal antigo, operando como adapter para o canônico no caminho bilateral do modal.
 
 ## 5) Plano de migração incremental (sem remover módulo agora)
 
-1. Criar um adapter de compatibilidade no fluxo do modal para chamar a lógica canônica (ou migrar modal para o mesmo fluxo da aba Trade).
-2. Cobrir com testes de integração o fluxo do modal já apontando para a lógica canônica.
-3. Garantir paridade funcional mínima:
+1. ✅ Criado adapter de compatibilidade no fluxo do modal para chamar a lógica canônica quando há contraparte bilateral.
+2. ✅ Cobertura de testes atualizada para garantir o caminho adapter → canônico.
+3. Paridade funcional mínima (status):
    - erro de jogador inválido;
    - erro de instância inválida;
    - bloqueio em batalha/KO quando aplicável;
    - persistência (`saveGame`) e atualização de lista/UI após sucesso.
-4. Só após paridade comprovada:
+4. Próximo passo para remoção do legado:
    - remover chamadas diretas de `window.TradeSystem` em `index.html`;
    - marcar `js/trade/tradeSystem.js` como removível/deprecated;
    - manter testes regressivos cobrindo o fluxo real.
