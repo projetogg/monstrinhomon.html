@@ -32,7 +32,7 @@ import {
 /**
  * Simula o ciclo save/load via JSON round-trip.
  * Equivale ao que StorageManager.saveState() + loadState() faz no browser:
- * serializa com JSON.stringify e re-hidrta com JSON.parse.
+ * serializa com JSON.stringify e re-hidrata com JSON.parse.
  */
 function saveLoadRoundTrip(state) {
     return JSON.parse(JSON.stringify(state));
