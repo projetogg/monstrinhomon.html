@@ -13330,6 +13330,57 @@
         // ============================================================================
 
         /**
+         * Retorna monstrinhos elegíveis para o modal legado.
+         * Prioriza a lista canônica (TradeUI.getTradeableMonsters) e faz fallback
+         * para o time local quando necessário para manter compatibilidade temporária.
+         *
+         * @param {string} playerId
+         * @returns {Array<object>}
+         */
+        function getLegacyTradeModalCandidates(playerId) {
+            const player = (GameState.players || []).find(p => p?.id === playerId);
+            if (!player) return [];
+            const sharedBox = GameState.sharedBox || [];
+
+            if (window.TradeUI?.getTradeableMonsters) {
+                return window.TradeUI.getTradeableMonsters(player, sharedBox) || [];
+            }
+
+            const teamMons = (player.team || []).filter(Boolean);
+            const boxMons = (sharedBox || [])
+                .filter(slot => slot?.ownerPlayerId === player.id && slot?.monster)
+                .map(slot => ({ ...slot.monster, _boxSlotId: slot.slotId }));
+            return [...teamMons, ...boxMons];
+        }
+
+        /**
+         * Atualiza o select de monstrinho do destinatário dentro do modal de troca.
+         * Efeito colateral: manipula o DOM (`#tradeRecipientMonsterSelect`).
+         */
+        function updateTradeRecipientMonsterOptions() {
+            const recipientSelect = document.getElementById('tradeRecipientSelect');
+            const targetSelect = document.getElementById('tradeRecipientMonsterSelect');
+            if (!recipientSelect || !targetSelect) return;
+
+            const recipientId = recipientSelect.value;
+            const candidates = getLegacyTradeModalCandidates(recipientId);
+
+            if (candidates.length === 0) {
+                targetSelect.innerHTML = '<option value="">Nenhum Monstrinho elegível</option>';
+                targetSelect.disabled = true;
+                return;
+            }
+
+            targetSelect.disabled = false;
+            targetSelect.innerHTML = candidates.map(mon => {
+                const label = mon._boxSlotId ? '📦 Box' : '🏅 Time';
+                const monId = mon.id || mon.instanceId;
+                const monName = mon.nickname || mon.name || monId;
+                return `<option value="${monId}">${monName} (${mon.class || '?'}) — ${label}</option>`;
+            }).join('');
+        }
+
+        /**
          * Abre o modal de troca de Monstrinho entre jogadores.
          * @param {string} fromPlayerId  - ID do jogador cedente
          * @param {string} instanceId    - ID da instância do Monstrinho a trocar
@@ -13361,9 +13412,22 @@
                     return;
                 }
 
+                const initialRecipientId = recipients[0]?.id || null;
+                const initialCandidates = getLegacyTradeModalCandidates(initialRecipientId);
+                if (!initialCandidates.length) {
+                    showToast('Destinatário não possui monstrinhos elegíveis para troca', 'warning');
+                    return;
+                }
+
                 const options = recipients.map(p =>
                     `<option value="${p.id}">${p.name}</option>`
                 ).join('');
+                const targetOptions = initialCandidates.map(mon => {
+                    const label = mon._boxSlotId ? '📦 Box' : '🏅 Time';
+                    const monId = mon.id || mon.instanceId;
+                    const monName = mon.nickname || mon.name || monId;
+                    return `<option value="${monId}">${monName} (${mon.class || '?'}) — ${label}</option>`;
+                }).join('');
 
                 const overlay = document.createElement('div');
                 overlay.className = 'mm-alert-overlay';
@@ -13374,8 +13438,13 @@
                         <p class="mm-alert-msg"><strong>Trocar ${mon.nickname || mon.name}</strong><br>
                         De: <strong>${fromPlayer.name}</strong><br>
                         Para:</p>
-                        <select id="tradeRecipientSelect" class="form-control mt-5" style="width:100%;padding:6px;border-radius:6px;">
+                        <select id="tradeRecipientSelect" class="form-control mt-5" style="width:100%;padding:6px;border-radius:6px;"
+                            onchange="window.updateTradeRecipientMonsterOptions && window.updateTradeRecipientMonsterOptions()">
                             ${options}
+                        </select>
+                        <p class="mm-alert-msg" style="margin-top:8px;">Monstrinho do destinatário (troca bilateral canônica):</p>
+                        <select id="tradeRecipientMonsterSelect" class="form-control mt-5" style="width:100%;padding:6px;border-radius:6px;">
+                            ${targetOptions}
                         </select>
                         <div style="display:flex;gap:8px;margin-top:12px;justify-content:center;">
                             <button class="mm-alert-btn mm-alert-btn--success"
@@ -13407,10 +13476,15 @@
         function executeTradeFromModal(fromPlayerId, instanceId) {
             try {
                 const toPlayerId = document.getElementById('tradeRecipientSelect')?.value;
+                const toInstanceId = document.getElementById('tradeRecipientMonsterSelect')?.value;
                 document.getElementById('tradeModalOverlay')?.remove();
 
                 if (!toPlayerId) {
                     showToast('Selecione o destinatário', 'warning');
+                    return;
+                }
+                if (!toInstanceId) {
+                    showToast('Selecione o monstrinho do destinatário', 'warning');
                     return;
                 }
 
@@ -13422,8 +13496,14 @@
                     return;
                 }
 
-                // Construir proposta e aceitar
-                const proposal = window.TradeSystem.proposeTradeAction(fromPlayer, toPlayer, instanceId);
+                // Construir proposta e aceitar (adapter legado -> canônico bilateral)
+                const tradeContext = {
+                    targetInstanceId: toInstanceId,
+                    inBattle: !!GameState.currentBattle,
+                    sharedBox: GameState.sharedBox || [],
+                    therapyLog: _getSessionTherapyLog() || null,
+                };
+                const proposal = window.TradeSystem.proposeTradeAction(fromPlayer, toPlayer, instanceId, tradeContext);
                 if (!proposal.ok) {
                     const msgs = {
                         MONSTER_NOT_FOUND:  'Monstrinho não encontrado',
@@ -13432,17 +13512,19 @@
                         SAME_PLAYER:        'Não pode trocar consigo mesmo',
                         INVALID_PLAYER:     'Jogador inválido',
                         INVALID_INSTANCE:   'Instância inválida',
+                        EMPTY_TEAM:         'Jogador precisa ter pelo menos 2 Monstrinhos no time para trocar',
                     };
                     showToast(msgs[proposal.error] || `Troca inválida: ${proposal.error}`, 'error');
                     return;
                 }
 
-                const result = window.TradeSystem.acceptTrade(proposal.trade, fromPlayer, toPlayer);
+                const result = window.TradeSystem.acceptTrade(proposal.trade, fromPlayer, toPlayer, tradeContext);
                 if (!result.ok) {
                     const msgs = {
                         MONSTER_NOT_FOUND:  'Monstrinho não encontrado',
                         MONSTER_IN_BATTLE:  'Monstro entrou em batalha — troca cancelada',
                         MONSTER_KO:         'Monstro desmaiou — troca cancelada',
+                        EMPTY_TEAM:         'Jogador ficou sem time mínimo para trocar',
                     };
                     showToast(msgs[result.error] || `Falha na troca: ${result.error}`, 'error');
                     return;
@@ -13450,7 +13532,9 @@
 
                 saveGame();
                 updatePlayersList();
-                showToast(`🔄 ${result.monsterName} foi para ${toPlayer.name}!`, 'success');
+                renderTradeTab();
+                updateBoxTabBadge();
+                showToast(`🔄 Troca concluída: ${result.monsterName} ↔ ${toPlayer.name}`, 'success');
             } catch (error) {
                 console.error('[Trade] Falha ao executar troca:', error);
                 showToast('Erro inesperado na troca', 'error');
@@ -13459,6 +13543,7 @@
 
         window.openTradeModal        = openTradeModal;
         window.executeTradeFromModal = executeTradeFromModal;
+        window.updateTradeRecipientMonsterOptions = updateTradeRecipientMonsterOptions;
         window.openTradePanel        = openTradePanel;
         window.confirmTrade          = confirmTrade;
         window.tradeConfirm          = tradeConfirm;

@@ -26,11 +26,13 @@ const REPO_ROOT = new URL('..', import.meta.url);
 const readRepoFile = (relativePath) => fs.readFileSync(new URL(relativePath, REPO_ROOT), 'utf8');
 
 describe('Trade arquitetura — runtime e cobertura', () => {
-    it('index.html mantém fluxo legado via window.TradeSystem para modal', () => {
+    it('index.html mantém compatibilidade do modal via window.TradeSystem com contexto bilateral', () => {
         const indexHtml = readRepoFile('index.html');
         expect(indexHtml).toContain("import * as TradeSystem from './js/trade/tradeSystem.js';");
         expect(indexHtml).toContain('window.TradeSystem.proposeTradeAction(');
         expect(indexHtml).toContain('window.TradeSystem.acceptTrade(');
+        expect(indexHtml).toContain('targetInstanceId: toInstanceId');
+        expect(indexHtml).toContain('sharedBox: GameState.sharedBox || []');
     });
 
     it('TradeUI aponta para sistema canônico em js/combat/tradeSystem.js', () => {
@@ -73,5 +75,12 @@ describe('Trade arquitetura — diferenças de API', () => {
         expect(typeof validateTradeLegacy).toBe('function');
         expect(typeof proposeTradeAction).toBe('function');
         expect(typeof acceptTrade).toBe('function');
+    });
+
+    it('módulo legado está adaptado para consumir lógica canônica quando bilateral', () => {
+        const legacySource = readRepoFile('js/trade/tradeSystem.js');
+        expect(legacySource).toContain("from '../combat/tradeSystem.js'");
+        expect(legacySource).toContain('validateCanonicalTrade');
+        expect(legacySource).toContain('executeCanonicalTrade');
     });
 });
