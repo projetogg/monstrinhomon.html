@@ -63,6 +63,23 @@ describe('Trade arquitetura — runtime e cobertura', () => {
     });
 });
 
+describe('Trade arquitetura — módulo legado marcado como deprecated', () => {
+    it('js/trade/tradeSystem.js contém aviso @deprecated explícito', () => {
+        const legacySource = readRepoFile('js/trade/tradeSystem.js');
+        expect(legacySource).toContain('@deprecated');
+    });
+
+    it('js/trade/tradeSystem.js contém aviso de compatibilidade temporária', () => {
+        const legacySource = readRepoFile('js/trade/tradeSystem.js');
+        expect(legacySource.toLowerCase()).toContain('compatibilidade temporária');
+    });
+
+    it('js/trade/tradeSystem.js ainda importa o canônico (é um adapter, não foi removida a ponte)', () => {
+        const legacySource = readRepoFile('js/trade/tradeSystem.js');
+        expect(legacySource).toContain("from '../combat/tradeSystem.js'");
+    });
+});
+
 describe('Trade arquitetura — diferenças de API', () => {
     it('módulo canônico expõe API bilateral com Box/sugestões', () => {
         expect(typeof validateTradeCombat).toBe('function');

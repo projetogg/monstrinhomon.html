@@ -74,19 +74,34 @@ Justificativa:
 
 `js/trade/tradeSystem.js` permanece **legado/compatibilidade temporária** para o modal antigo, operando como adapter para o canônico no caminho bilateral do modal.
 
-## 5) Plano de migração incremental (sem remover módulo agora)
+## 5) Histórico de migração incremental
 
 1. ✅ Criado adapter de compatibilidade no fluxo do modal para chamar a lógica canônica quando há contraparte bilateral.
 2. ✅ Cobertura de testes atualizada para garantir o caminho adapter → canônico.
-3. Paridade funcional mínima (status):
-   - erro de jogador inválido;
-   - erro de instância inválida;
-   - bloqueio em batalha/KO quando aplicável;
-   - persistência (`saveGame`) e atualização de lista/UI após sucesso.
-4. Próximo passo para remoção do legado:
-   - remover chamadas diretas de `window.TradeSystem` em `index.html`;
-   - marcar `js/trade/tradeSystem.js` como removível/deprecated;
-   - manter testes regressivos cobrindo o fluxo real.
+3. ✅ Testes de persistência/save-load pós-trade adicionados (`tests/tradeSaveLoad.test.js`).
+4. ✅ `js/trade/tradeSystem.js` formalmente marcado como `@deprecated` / adapter temporário.
+   - Aviso `@deprecated` inserido no topo do arquivo.
+   - Documentado que novas regras não devem entrar no módulo legado.
+   - Documentado que trocas bilaterais com `targetInstanceId` são encaminhadas para o canônico.
+
+## 6) Status atual (pós-depreciação formal)
+
+- `js/trade/tradeSystem.js` está marcado como `@deprecated` e adapter temporário.
+- Nenhuma nova regra de Trade deve ser adicionada ao módulo legado.
+- Qualquer fluxo novo deve usar `js/combat/tradeSystem.js` diretamente.
+- A **remoção** do módulo legado é etapa futura separada (ver condições abaixo).
+
+## 7) Condições mínimas para remoção futura do módulo legado
+
+Antes de remover `js/trade/tradeSystem.js`, devem estar atendidas **todas** as condições:
+
+1. Nenhuma chamada direta restante de `window.TradeSystem` fora do adapter (verificar `index.html`).
+2. Modal antigo (`openTradeModal` / `executeTradeFromModal`) migrado para o sistema canônico ou substituído.
+3. Testes E2E/save-load verdes (incluindo `tests/tradeSaveLoad.test.js`).
+4. Documentação atualizada (este arquivo + `PROXIMOS_PASSOS.md` ou equivalente).
+5. CI verde em todas as suítes de Trade.
+
+A remoção do legado **não deve acontecer** no mesmo PR da depreciação.
 
 ## Testes mínimos que precisam existir antes de remoção do módulo legado
 
