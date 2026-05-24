@@ -23,6 +23,11 @@
  *   acceptTrade(tradeProposal, playersData)
  */
 
+import {
+    validateTrade as validateCanonicalTrade,
+    executeTrade as executeCanonicalTrade,
+} from '../combat/tradeSystem.js';
+
 // ─── Códigos de erro ─────────────────────────────────────────────────────────
 
 export const TRADE_ERROR = {
@@ -33,6 +38,25 @@ export const TRADE_ERROR = {
     MONSTER_KO:           'MONSTER_KO',
     INVALID_INSTANCE:     'INVALID_INSTANCE',
 };
+
+function _findMonsterLocation(player, instanceId, sharedBox = []) {
+    const team = Array.isArray(player?.team) ? player.team : [];
+    const teamIndex = team.findIndex(m => m && (m.id === instanceId || m.instanceId === instanceId));
+    if (teamIndex >= 0) {
+        return { monster: team[teamIndex], teamIndex, fromBox: false };
+    }
+
+    const slot = sharedBox.find(s =>
+        s?.ownerPlayerId === player?.id &&
+        s?.monster &&
+        (s.monster.id === instanceId || s.monster.instanceId === instanceId)
+    );
+    if (slot?.monster) {
+        return { monster: slot.monster, teamIndex: -1, fromBox: true };
+    }
+
+    return { monster: null, teamIndex: -1, fromBox: false };
+}
 
 // ─── validateTrade ────────────────────────────────────────────────────────────
 
@@ -107,6 +131,7 @@ export function proposeTradeAction(fromPlayer, toPlayer, instanceId, context = {
         fromPlayerId: fromPlayer.id,
         toPlayerId:   toPlayer.id,
         instanceId,
+        targetInstanceId: typeof context.targetInstanceId === 'string' ? context.targetInstanceId : null,
         monsterName:  mon.nickname || mon.name || instanceId,
         createdAt:    Date.now(),
     };
@@ -129,6 +154,45 @@ export function proposeTradeAction(fromPlayer, toPlayer, instanceId, context = {
 export function acceptTrade(trade, fromPlayer, toPlayer, context = {}) {
     if (!trade || !fromPlayer || !toPlayer) {
         return { ok: false, error: TRADE_ERROR.INVALID_PLAYER, monsterName: null };
+    }
+
+    if (trade.targetInstanceId) {
+        const sharedBox = Array.isArray(context.sharedBox) ? context.sharedBox : [];
+        const therapyLog = Array.isArray(context.therapyLog) ? context.therapyLog : null;
+        const inBattle = !!context.inBattle;
+
+        const offered = _findMonsterLocation(fromPlayer, trade.instanceId, sharedBox);
+        const requested = _findMonsterLocation(toPlayer, trade.targetInstanceId, sharedBox);
+        if (!offered.monster || !requested.monster) {
+            return { ok: false, error: TRADE_ERROR.MONSTER_NOT_FOUND, monsterName: null };
+        }
+
+        if (inBattle && !offered.fromBox && fromPlayer.activeIndex === offered.teamIndex) {
+            return { ok: false, error: TRADE_ERROR.MONSTER_IN_BATTLE, monsterName: null };
+        }
+        if (inBattle && !requested.fromBox && toPlayer.activeIndex === requested.teamIndex) {
+            return { ok: false, error: TRADE_ERROR.MONSTER_IN_BATTLE, monsterName: null };
+        }
+
+        if (Number(offered.monster.hp) <= 0 || Number(requested.monster.hp) <= 0) {
+            return { ok: false, error: TRADE_ERROR.MONSTER_KO, monsterName: null };
+        }
+
+        const validation = validateCanonicalTrade(fromPlayer, offered.monster, toPlayer, requested.monster, sharedBox);
+        if (!validation.valid) {
+            return { ok: false, error: validation.reason || TRADE_ERROR.MONSTER_NOT_FOUND, monsterName: null };
+        }
+
+        const result = executeCanonicalTrade(fromPlayer, offered.monster, toPlayer, requested.monster, therapyLog, sharedBox);
+        if (!result.success) {
+            return { ok: false, error: result.log?.[0] || TRADE_ERROR.MONSTER_NOT_FOUND, monsterName: null };
+        }
+
+        return {
+            ok: true,
+            error: null,
+            monsterName: offered.monster.nickname || offered.monster.name || trade.instanceId,
+        };
     }
 
     // Re-validar no momento da aceitação (estado pode ter mudado)
