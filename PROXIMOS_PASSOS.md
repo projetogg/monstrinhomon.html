@@ -7,14 +7,19 @@
 
 ## Fontes atuais
 
-Para decisões atuais, consultar:
+> **Aviso de atualização — 2026-05:** este arquivo é legado e serve apenas como redirecionamento.
 
-1. `GAME_RULES.md`
-2. `docs/PATCH_CANONICO_COMBATE_V2.2.md`
-3. `docs/AUTHORITY_MAP.md`
-4. `docs/CARD_LAYER_ARCHITECTURE_v0.1.2.md`
-5. `docs/AUDIT_FASE_0_RESPOSTAS.md`
-6. `docs/PENDENCIAS_TECNICAS.md`
+Para decisões atuais, consultar nesta ordem:
+
+1. `docs/AUDIT_GENERAL_RISKS_2026-05.md`
+2. `docs/AUTHORITY_MAP.md`
+3. `AGENTS.md`
+4. `data/skills.json`
+5. `docs/PATCH_CANONICO_COMBATE_V2.2.md`
+6. `GAME_RULES.md` (respeitando trechos marcados como legado revogado)
+7. `docs/CARD_LAYER_ARCHITECTURE_v0.1.2.md`
+8. `docs/AUDIT_FASE_0_RESPOSTAS.md`
+9. `docs/PENDENCIAS_TECNICAS.md`
 
 ## Próxima etapa ativa
 
