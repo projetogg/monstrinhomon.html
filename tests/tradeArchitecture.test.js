@@ -26,7 +26,7 @@ const REPO_ROOT = new URL('..', import.meta.url);
 const readRepoFile = (relativePath) => fs.readFileSync(new URL(relativePath, REPO_ROOT), 'utf8');
 
 describe('Trade arquitetura — runtime e cobertura', () => {
-    it('index.html mantém compatibilidade de modal via window.TradeSystem com contexto bilateral', () => {
+    it('index.html mantém compatibilidade do modal via window.TradeSystem com contexto bilateral', () => {
         const indexHtml = readRepoFile('index.html');
         expect(indexHtml).toContain("import * as TradeSystem from './js/trade/tradeSystem.js';");
         expect(indexHtml).toContain('window.TradeSystem.proposeTradeAction(');

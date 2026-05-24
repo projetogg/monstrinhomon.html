@@ -13330,9 +13330,12 @@
         // ============================================================================
 
         /**
-         * Abre o modal de troca de Monstrinho entre jogadores.
-         * @param {string} fromPlayerId  - ID do jogador cedente
-         * @param {string} instanceId    - ID da instância do Monstrinho a trocar
+         * Retorna monstrinhos elegíveis para o modal legado.
+         * Prioriza a lista canônica (TradeUI.getTradeableMonsters) e faz fallback
+         * para o time local quando necessário para manter compatibilidade temporária.
+         *
+         * @param {string} playerId
+         * @returns {Array<object>}
          */
         function getLegacyTradeModalCandidates(playerId) {
             const player = (GameState.players || []).find(p => p?.id === playerId);
@@ -13346,6 +13349,10 @@
             return (player.team || []).filter(Boolean);
         }
 
+        /**
+         * Atualiza o select de monstrinho do destinatário dentro do modal de troca.
+         * Efeito colateral: manipula o DOM (`#tradeRecipientMonsterSelect`).
+         */
         function updateTradeRecipientMonsterOptions() {
             const recipientSelect = document.getElementById('tradeRecipientSelect');
             const targetSelect = document.getElementById('tradeRecipientMonsterSelect');
@@ -13369,6 +13376,11 @@
             }).join('');
         }
 
+        /**
+         * Abre o modal de troca de Monstrinho entre jogadores.
+         * @param {string} fromPlayerId  - ID do jogador cedente
+         * @param {string} instanceId    - ID da instância do Monstrinho a trocar
+         */
         function openTradeModal(fromPlayerId, instanceId) {
             try {
                 if (!window.TradeSystem) {
@@ -13399,7 +13411,7 @@
                 const initialRecipientId = recipients[0]?.id || null;
                 const initialCandidates = getLegacyTradeModalCandidates(initialRecipientId);
                 if (!initialCandidates.length) {
-                    showToast('Destinatário sem monstrinhos elegíveis para troca canônica', 'warning');
+                    showToast('Destinatário não possui monstrinhos elegíveis para troca', 'warning');
                     return;
                 }
 

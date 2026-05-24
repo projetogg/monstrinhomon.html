@@ -39,7 +39,15 @@ export const TRADE_ERROR = {
     INVALID_INSTANCE:     'INVALID_INSTANCE',
 };
 
-function _findMonsterLocation(player, instanceId, sharedBox = []) {
+/**
+ * Localiza um monstrinho por ID no time ou na Box compartilhada do jogador.
+ *
+ * @param {Object} player
+ * @param {string} instanceId
+ * @param {Array} sharedBox
+ * @returns {{ monster: Object|null, teamIndex: number, fromBox: boolean }}
+ */
+function findMonsterLocation(player, instanceId, sharedBox = []) {
     const team = Array.isArray(player?.team) ? player.team : [];
     const teamIndex = team.findIndex(m => m && (m.id === instanceId || m.instanceId === instanceId));
     if (teamIndex >= 0) {
@@ -161,8 +169,8 @@ export function acceptTrade(trade, fromPlayer, toPlayer, context = {}) {
         const therapyLog = Array.isArray(context.therapyLog) ? context.therapyLog : null;
         const inBattle = !!context.inBattle;
 
-        const offered = _findMonsterLocation(fromPlayer, trade.instanceId, sharedBox);
-        const requested = _findMonsterLocation(toPlayer, trade.targetInstanceId, sharedBox);
+        const offered = findMonsterLocation(fromPlayer, trade.instanceId, sharedBox);
+        const requested = findMonsterLocation(toPlayer, trade.targetInstanceId, sharedBox);
         if (!offered.monster || !requested.monster) {
             return { ok: false, error: TRADE_ERROR.MONSTER_NOT_FOUND, monsterName: null };
         }

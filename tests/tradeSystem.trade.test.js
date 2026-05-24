@@ -216,7 +216,7 @@ describe('acceptTrade — transferência de monstro', () => {
     });
 });
 
-describe('acceptTrade — adapter legado para canônico bilateral', () => {
+describe('acceptTrade — adapter legado para bilateral canônico', () => {
     it('executa troca bilateral quando targetInstanceId é informado', () => {
         const fromMon1 = makeMon('mi_001', 'Guerreiro', 30);
         const fromMon2 = makeMon('mi_002', 'Mago', 30);
