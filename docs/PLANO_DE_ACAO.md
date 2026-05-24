@@ -1,5 +1,19 @@
 # 🎯 PLANO DE AÇÃO — MONSTRINHOMON
 
+> **Aviso de atualização — 2026-05:**  
+> Este documento contém **planejamento histórico/legado** e inclui trechos desatualizados que não devem ser usados como estado atual do projeto. Em caso de conflito, consultar:  
+> 1. `docs/AUDIT_GENERAL_RISKS_2026-05.md`  
+> 2. `docs/AUTHORITY_MAP.md`  
+> 3. `AGENTS.md`  
+> 4. `data/skills.json`  
+> 5. `docs/PATCH_CANONICO_COMBATE_V2.2.md`
+>
+> **Trechos abaixo marcados como “Problema” refletem diagnóstico antigo. Estado atual:**
+> - `data/skills.json` contém **65 skills** e cobre as **8 classes**.
+> - `SKILL_DEFS` não deve ser tratado como fonte canônica primária de dados.
+> - CSVs na raiz são **legado/histórico** e não fonte runtime de combate/skills.
+> - Card Layer é camada visual/organizacional e **não altera mecânica de combate**.
+
 > **Objetivo**: Este documento é um prompt estruturado para guiar uma IA (ou desenvolvedor)
 > na implementação das próximas funcionalidades do Monstrinhomon.
 > Cada seção contém: contexto, estrutura exata, regras, exemplos e critérios de aceitação.

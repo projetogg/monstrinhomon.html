@@ -2,9 +2,11 @@
 
 **Data:** 2026-05-19  
 **Status:** Canônico para a Fase 0 da Card Layer.  
-**Relacionado:** `docs/CARD_LAYER_ARCHITECTURE_v0.1.2.md`, `docs/AUDIT_FASE_0_RESPOSTAS.md`, `docs/PENDENCIAS_TECNICAS.md`.
+**Relacionado:** `docs/AUDIT_GENERAL_RISKS_2026-05.md`, `docs/CARD_LAYER_ARCHITECTURE_v0.1.2.md`, `docs/AUDIT_FASE_0_RESPOSTAS.md`, `docs/PENDENCIAS_TECNICAS.md`.
 
 Este documento define quais arquivos vencem em caso de conflito entre runtime, design, documentos antigos e legado.
+
+> **Nota de governança (2026-05):** `docs/AUDIT_GENERAL_RISKS_2026-05.md` é o relatório diagnóstico geral mais recente e deve ser usado para triagem de drift documental e riscos transversais.
 
 ---
 
