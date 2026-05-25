@@ -6,6 +6,13 @@
  * - cobertura de testes existente
  * - diferença de API entre módulos
  * - fonte canônica via TradeUI
+ *
+ * GUARDRAIL DE REMOÇÃO (adicionado em 2026-05-25):
+ * Os testes da seção "módulo legado — guardrails de remoção segura"
+ * garantem que as pré-condições documentadas em
+ * docs/trade_legacy_removal_plan.md continuem satisfeitas enquanto
+ * o módulo legado existir.
+ * NÃO remover esses guardrails até que o módulo legado seja removido.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -99,5 +106,46 @@ describe('Trade arquitetura — diferenças de API', () => {
         expect(legacySource).toContain("from '../combat/tradeSystem.js'");
         expect(legacySource).toContain('validateCanonicalTrade');
         expect(legacySource).toContain('executeCanonicalTrade');
+    });
+});
+
+describe('Trade arquitetura — módulo legado — guardrails de remoção segura', () => {
+    // ATENÇÃO: estes testes garantem que o legado NÃO seja removido prematuramente.
+    // Remover estes testes somente após confirmar pré-condições de
+    // docs/trade_legacy_removal_plan.md Seção 5.
+
+    it('window.TradeSystem ainda é exposto como compatibilidade temporária em index.html', () => {
+        // Pré-condição de remoção: nenhuma chamada runtime depender de window.TradeSystem.
+        // Enquanto isso não for verdade, este teste deve continuar verde.
+        const indexHtml = readRepoFile('index.html');
+        expect(indexHtml).toContain('window.TradeSystem = TradeSystem');
+    });
+
+    it('openTradeModal ainda existe como ponto de entrada do modal legado', () => {
+        // Pré-condição de remoção: openTradeModal migrado para caminho canônico (PR-A).
+        const indexHtml = readRepoFile('index.html');
+        expect(indexHtml).toContain('function openTradeModal(');
+        expect(indexHtml).toContain('window.openTradeModal');
+    });
+
+    it('executeTradeFromModal ainda existe como executor do modal legado', () => {
+        // Pré-condição de remoção: executeTradeFromModal migrado para caminho canônico (PR-A).
+        const indexHtml = readRepoFile('index.html');
+        expect(indexHtml).toContain('function executeTradeFromModal(');
+        expect(indexHtml).toContain('window.executeTradeFromModal');
+    });
+
+    it('js/trade/tradeSystem.js ainda existe (não foi removido prematuramente)', () => {
+        // Pré-condição de remoção: todas as condições da Seção 5 de
+        // docs/trade_legacy_removal_plan.md cumpridas (PR-C).
+        const legacySource = readRepoFile('js/trade/tradeSystem.js');
+        expect(legacySource).toBeTruthy();
+    });
+
+    it('plano de remoção do legado existe e documenta o processo', () => {
+        // Garante que docs/trade_legacy_removal_plan.md existe.
+        const plan = readRepoFile('docs/trade_legacy_removal_plan.md');
+        expect(plan).toContain('Plano de Remoção Segura do Legado de Trade');
+        expect(plan).toContain('Pré-condições para remoção futura');
     });
 });
