@@ -13475,6 +13475,13 @@
          */
         function executeTradeFromModal(fromPlayerId, instanceId) {
             try {
+                const hasSameMonsterId = (monster, monsterId) => {
+                    if (!monster) return false;
+                    return monster.id === monsterId || monster.instanceId === monsterId;
+                };
+                const findMonsterById = (monsters, monsterId) =>
+                    (monsters || []).find(mon => hasSameMonsterId(mon, monsterId));
+
                 const toPlayerId = document.getElementById('tradeRecipientSelect')?.value;
                 const toInstanceId = document.getElementById('tradeRecipientMonsterSelect')?.value;
                 document.getElementById('tradeModalOverlay')?.remove();
@@ -13497,9 +13504,8 @@
                 }
 
                 const box = GameState.sharedBox || [];
-                const fromMon = (fromPlayer.team || []).find(m => m && (m.id === instanceId || m.instanceId === instanceId));
-                const toMon = getLegacyTradeModalCandidates(toPlayerId)
-                    .find(m => m && (m.id === toInstanceId || m.instanceId === toInstanceId));
+                const fromMon = findMonsterById(fromPlayer.team, instanceId);
+                const toMon = findMonsterById(getLegacyTradeModalCandidates(toPlayerId), toInstanceId);
 
                 if (!fromMon || !toMon) {
                     showToast('Monstrinho não encontrado', 'error');
@@ -13509,8 +13515,8 @@
                 const inBattle = !!GameState.currentBattle;
                 const fromActive = Number(fromPlayer.activeIndex ?? 0);
                 const toActive = Number(toPlayer.activeIndex ?? 0);
-                const fromTeamIdx = (fromPlayer.team || []).findIndex(m => m && (m.id === fromMon.id || m.instanceId === fromMon.instanceId));
-                const toTeamIdx = (toPlayer.team || []).findIndex(m => m && (m.id === toMon.id || m.instanceId === toMon.instanceId));
+                const fromTeamIdx = (fromPlayer.team || []).findIndex(m => hasSameMonsterId(m, fromMon.id || fromMon.instanceId));
+                const toTeamIdx = (toPlayer.team || []).findIndex(m => hasSameMonsterId(m, toMon.id || toMon.instanceId));
                 if (inBattle && fromTeamIdx >= 0 && fromTeamIdx === fromActive) {
                     showToast('Não é possível trocar monstro em batalha', 'error');
                     return;
@@ -13525,12 +13531,14 @@
                     return;
                 }
 
-                if (window.TradeUI?.validateTrade) {
-                    const validation = window.TradeUI.validateTrade(fromPlayer, fromMon, toPlayer, toMon, box);
-                    if (!validation?.valid) {
-                        showToast(validation?.reason || 'Troca inválida', 'error');
-                        return;
-                    }
+                if (!window.TradeUI?.validateTrade) {
+                    showToast('Validação de troca não disponível', 'error');
+                    return;
+                }
+                const validation = window.TradeUI.validateTrade(fromPlayer, fromMon, toPlayer, toMon, box);
+                if (!validation?.valid) {
+                    showToast(validation?.reason || 'Troca inválida', 'error');
+                    return;
                 }
 
                 const therapyLog = _getSessionTherapyLog() || null;
