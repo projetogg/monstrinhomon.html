@@ -1,4 +1,6 @@
 /**
+ * @deprecated COMPATIBILIDADE TEMPORÁRIA — NÃO ADICIONAR NOVAS REGRAS AQUI.
+ *
  * TRADE SYSTEM — LEGADO / COMPATIBILIDADE TEMPORÁRIA (FASE O)
  *
  * ATENÇÃO ARQUITETURAL:
@@ -9,10 +11,11 @@
  * Papel atual deste arquivo:
  *   - manter compatibilidade com o fluxo legado de modal unilateral;
  *   - preservar testes regressivos enquanto o modal não for migrado;
- *   - servir como comparação temporária durante a consolidação de Trade.
+ *   - servir como adapter temporário: trocas bilaterais com `targetInstanceId`
+ *     são encaminhadas para `js/combat/tradeSystem.js`.
  *
- * Não expandir este módulo com novas regras.
- * Novas regras de Trade devem entrar no módulo canônico `js/combat/tradeSystem.js`.
+ * Novas regras de Trade NÃO devem ser adicionadas aqui.
+ * Qualquer fluxo novo deve usar `js/combat/tradeSystem.js` diretamente.
  *
  * Módulo puro: não acessa estado global, não toca DOM, não chama save().
  * Implementa a regra legada de transferência unilateral de um Monstrinho.
