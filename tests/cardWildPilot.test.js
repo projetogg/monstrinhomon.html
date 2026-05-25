@@ -45,7 +45,7 @@ describe('Card Layer Fase 1C — piloto visual no Wild Loop', () => {
     });
 
     expect(result.mode).toBe('legacy');
-    expect(result.html).toContain('<div class="skill-grid">');
+    expect(result.html).toContain('skill-grid--legacy');
     expect(result.html).toContain('onclick="useSkillWild(0)"');
   });
 
@@ -160,7 +160,8 @@ describe('Card Layer Fase 1C — piloto visual no Wild Loop', () => {
 
     expect(result.mode).toBe('legacy');
     expect(result.reason).toBe('catalog_unavailable');
-    expect(result.html).toContain('<div class="skill-grid">');
+    expect(result.html).toContain('card-layer-qa-diagnostic');
+    expect(result.html).toContain('skill-grid--legacy');
     expect(result.html).toContain('onclick="useSkillWild(0)"');
   });
 
@@ -179,7 +180,6 @@ describe('Card Layer Fase 1C — piloto visual no Wild Loop', () => {
     });
 
     expect(result.mode).toBe('card-layer');
-    // HTML gerado não pode conter chamadas diretas de execução de combate
     expect(result.html).not.toContain('executeWildAttack');
     expect(result.html).not.toContain('executeBasicCardAction');
     expect(result.html).not.toContain('useSkillWild');
@@ -218,16 +218,13 @@ describe('Card Layer Fase 1C — piloto visual no Wild Loop', () => {
       getMonsterSkills: () => rawSkills,
       resolveCardsForMonster,
       renderCardGrid,
-      // cost=6 > currentEne=3, portanto canUseSkillNow retorna false
       canUseSkillNow: (skill, mon) => resolveMonsterCurrentEne(mon) >= (skill?.cost || 0),
       tutorialAllows: true,
       logger: { warn: () => {} },
     });
 
     expect(result.mode).toBe('legacy');
-    // botão deve estar desabilitado pois ENE 3 < custo 6
     expect(result.html).toContain('disabled');
-    // tooltip deve conter ENE insuficiente com valor correto (3/6)
     expect(result.html).toContain('ENE insuficiente (3/6)');
   });
 });

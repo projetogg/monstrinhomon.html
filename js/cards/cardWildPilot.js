@@ -12,6 +12,17 @@ import {
 
 const OFFENSIVE_TARGETS = new Set(['enemy', 'inimigo', 'area', 'área']);
 const DEFENSIVE_TARGETS = new Set(['self', 'ally', 'aliado']);
+const QA_DIAGNOSTIC_REASONS = Object.freeze({
+    pilot_disabled: 'Flag desligada ou classe fora do piloto.',
+    catalog_unavailable: 'Catálogo visual data/cards.json ainda não carregou.',
+    missing_card_layer_dependencies: 'Dependências da Card Layer não estão disponíveis.',
+    empty_card_entries: 'Nenhuma entrada visual foi resolvida para as skills.',
+    unmapped_skills_fallback: 'Uma ou mais skills não têm card visual mapeado.',
+    no_mapped_entries: 'Nenhuma skill mapeada para card visual.',
+    empty_card_html: 'Renderer não gerou HTML de cards.',
+    card_layer_error: 'Erro ao renderizar Card Layer; fallback seguro acionado.',
+    missing_resolveMonsterSkills: 'Resolver legado de skills ausente.',
+});
 
 function normalizeTarget(value) {
     return String(value || '')
@@ -27,6 +38,65 @@ function readSkillName(skill) {
 
 function readSkillCost(skill) {
     return Number(skill?.cost ?? skill?.energy_cost ?? skill?.eneCost ?? 0) || 0;
+}
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+}
+
+function shouldShowQaDiagnostic(flags) {
+    if (!flags || flags.enabled !== true) return false;
+    if (typeof window === 'undefined') return true;
+    try {
+        const params = new URLSearchParams(window.location?.search || '');
+        return params.get('cardLayerPilot') === '1'
+            || String(params.get('cardLayerPilot') || '').toLowerCase() === 'true';
+    } catch (_) {
+        return true;
+    }
+}
+
+function renderCardLayerQaDiagnostic({ mode, reason, monster, entries = [] }, flags) {
+    if (!shouldShowQaDiagnostic(flags)) return '';
+    const { value: monsterClass } = resolveMonsterEffectiveClass(monster);
+    const unmapped = Array.isArray(entries)
+        ? entries.filter(entry => !entry?.mapped).map(entry => {
+            const skillName = readSkillName(entry?.skill);
+            const entryReason = entry?.reason || 'sem motivo informado';
+            return `${skillName}: ${entryReason}`;
+        })
+        : [];
+    const reasonText = QA_DIAGNOSTIC_REASONS[reason] || reason || 'sem diagnóstico';
+    const details = unmapped.length > 0
+        ? `<div class="card-layer-qa-diagnostic__details">${escapeHtml(unmapped.join(' | '))}</div>`
+        : '';
+
+    return `<div class="card-layer-qa-diagnostic" data-card-layer-mode="${escapeHtml(mode || 'legacy')}" data-card-layer-reason="${escapeHtml(reason || '')}">
+        <strong>🧪 Card Layer QA:</strong>
+        <span>${escapeHtml(mode === 'card-layer' ? 'ativa' : 'fallback legado')}</span>
+        <small>motivo: ${escapeHtml(reasonText)} · classe: ${escapeHtml(monsterClass || 'não resolvida')}</small>
+        ${details}
+    </div>`;
+}
+
+function withQaDiagnostic(result, flags, monster, entries = []) {
+    if (!result || result.mode === 'card-layer') return result;
+    const diagnostic = renderCardLayerQaDiagnostic({
+        mode: result.mode,
+        reason: result.reason,
+        monster,
+        entries,
+    }, flags);
+    if (!diagnostic) return result;
+    return {
+        ...result,
+        html: `${diagnostic}${result.html || ''}`,
+    };
 }
 
 export function renderLegacyWildSkillGrid(skills, runtimeContext = {}) {
@@ -66,7 +136,7 @@ export function renderLegacyWildSkillGrid(skills, runtimeContext = {}) {
                 title="${tooltip}">${label}</button>`;
     });
 
-    return `<div class="skill-grid">${slots.join('')}</div>`;
+    return `<div class="skill-grid skill-grid--legacy">${slots.join('')}</div>`;
 }
 
 export function canUseCardLayerPilot(monster, flags = CARD_LAYER_FEATURE_FLAGS) {
@@ -87,7 +157,7 @@ export function buildWildSkillGridHtml(monster, options = {}) {
     const logger = options.logger || console;
 
     if (typeof resolveMonsterSkills !== 'function') {
-        return { mode: 'legacy', html: '<div class="skill-grid"></div>', reason: 'missing_resolveMonsterSkills' };
+        return withQaDiagnostic({ mode: 'legacy', html: '<div class="skill-grid"></div>', reason: 'missing_resolveMonsterSkills' }, flags, monster);
     }
 
     const skills = resolveMonsterSkills(monster) || [];
@@ -98,23 +168,23 @@ export function buildWildSkillGridHtml(monster, options = {}) {
     });
 
     if (!canUseCardLayerPilot(monster, flags)) {
-        return { mode: 'legacy', html: legacyHtml, reason: 'pilot_disabled' };
+        return withQaDiagnostic({ mode: 'legacy', html: legacyHtml, reason: 'pilot_disabled' }, flags, monster);
     }
 
     if (!catalog || !Array.isArray(catalog.cards) || catalog.cards.length === 0) {
-        return { mode: 'legacy', html: legacyHtml, reason: 'catalog_unavailable' };
+        return withQaDiagnostic({ mode: 'legacy', html: legacyHtml, reason: 'catalog_unavailable' }, flags, monster);
     }
 
     if (typeof getMonsterSkills !== 'function'
         || typeof resolveCardsForMonster !== 'function'
         || typeof renderCardGrid !== 'function') {
-        return { mode: 'legacy', html: legacyHtml, reason: 'missing_card_layer_dependencies' };
+        return withQaDiagnostic({ mode: 'legacy', html: legacyHtml, reason: 'missing_card_layer_dependencies' }, flags, monster);
     }
 
     try {
         const entries = resolveCardsForMonster(monster, { getMonsterSkills });
         if (!Array.isArray(entries) || entries.length === 0) {
-            return { mode: 'legacy', html: legacyHtml, reason: 'empty_card_entries' };
+            return withQaDiagnostic({ mode: 'legacy', html: legacyHtml, reason: 'empty_card_entries' }, flags, monster, entries);
         }
 
         const unmappedEntries = entries.filter(entry => !entry?.mapped);
@@ -126,12 +196,12 @@ export function buildWildSkillGridHtml(monster, options = {}) {
         }
 
         if (unmappedEntries.length > 0 && flags.fallbackToSkillUI !== false) {
-            return { mode: 'legacy', html: legacyHtml, reason: 'unmapped_skills_fallback' };
+            return withQaDiagnostic({ mode: 'legacy', html: legacyHtml, reason: 'unmapped_skills_fallback' }, flags, monster, entries);
         }
 
         const mappedEntries = entries.filter(entry => entry?.mapped);
         if (mappedEntries.length === 0) {
-            return { mode: 'legacy', html: legacyHtml, reason: 'no_mapped_entries' };
+            return withQaDiagnostic({ mode: 'legacy', html: legacyHtml, reason: 'no_mapped_entries' }, flags, monster, entries);
         }
 
         const cardHtml = renderCardGrid(mappedEntries, {
@@ -141,15 +211,16 @@ export function buildWildSkillGridHtml(monster, options = {}) {
         });
 
         if (!cardHtml) {
-            return { mode: 'legacy', html: legacyHtml, reason: 'empty_card_html' };
+            return withQaDiagnostic({ mode: 'legacy', html: legacyHtml, reason: 'empty_card_html' }, flags, monster, entries);
         }
 
-        return { mode: 'card-layer', html: cardHtml, reason: null };
+        const diagnostic = renderCardLayerQaDiagnostic({ mode: 'card-layer', reason: 'active', monster, entries }, flags);
+        return { mode: 'card-layer', html: `${diagnostic}${cardHtml}`, reason: null };
     } catch (error) {
         if (typeof logger?.warn === 'function') {
             logger.warn('[CardLayer][Fase1C] Falha ao renderizar piloto; fallback para UI legada.', error);
         }
-        return { mode: 'legacy', html: legacyHtml, reason: 'card_layer_error' };
+        return withQaDiagnostic({ mode: 'legacy', html: legacyHtml, reason: 'card_layer_error' }, flags, monster);
     }
 }
 
