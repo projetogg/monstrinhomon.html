@@ -41,11 +41,13 @@
 | `js/trade/tradeSystem.js` marcado como `@deprecated` | ✅ |
 | Testes de arquitetura guardam o estado atual | ✅ |
 | Testes de save/load pós-trade adicionados | ✅ |
-| Modal migrado para caminho canônico | ❌ (pendente — este plano orienta) |
+| Modal migrado para caminho canônico | ✅ (PR-A: `executeTradeFromModal` usa `window.TradeUI.executeTrade`) |
 | `window.TradeSystem` removido | ❌ (pendente) |
 | `js/trade/tradeSystem.js` removido | ❌ (pendente) |
 
 > **Regra:** a remoção do legado não deve acontecer sem cumprir todas as pré-condições da Seção 5.
+
+> **Atualização PR-A:** o modal legado deixou de chamar diretamente `window.TradeSystem.proposeTradeAction(...)` e `window.TradeSystem.acceptTrade(...)` no runtime do `index.html`.
 
 ---
 

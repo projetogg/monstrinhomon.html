@@ -13387,7 +13387,7 @@
          */
         function openTradeModal(fromPlayerId, instanceId) {
             try {
-                if (!window.TradeSystem) {
+                if (!window.TradeUI?.executeTrade) {
                     showToast('Sistema de troca não disponível', 'error');
                     return;
                 }
@@ -13475,6 +13475,13 @@
          */
         function executeTradeFromModal(fromPlayerId, instanceId) {
             try {
+                const hasSameMonsterId = (monster, monsterId) => {
+                    if (!monster) return false;
+                    return monster.id === monsterId || monster.instanceId === monsterId;
+                };
+                const findMonsterById = (monsters, monsterId) =>
+                    (monsters || []).find(mon => hasSameMonsterId(mon, monsterId));
+
                 const toPlayerId = document.getElementById('tradeRecipientSelect')?.value;
                 const toInstanceId = document.getElementById('tradeRecipientMonsterSelect')?.value;
                 document.getElementById('tradeModalOverlay')?.remove();
@@ -13496,37 +13503,48 @@
                     return;
                 }
 
-                // Construir proposta e aceitar (adapter legado -> canônico bilateral)
-                const tradeContext = {
-                    targetInstanceId: toInstanceId,
-                    inBattle: !!GameState.currentBattle,
-                    sharedBox: GameState.sharedBox || [],
-                    therapyLog: _getSessionTherapyLog() || null,
-                };
-                const proposal = window.TradeSystem.proposeTradeAction(fromPlayer, toPlayer, instanceId, tradeContext);
-                if (!proposal.ok) {
-                    const msgs = {
-                        MONSTER_NOT_FOUND:  'Monstrinho não encontrado',
-                        MONSTER_IN_BATTLE:  'Não é possível trocar monstro em batalha',
-                        MONSTER_KO:         'Não é possível trocar monstro desmaiado',
-                        SAME_PLAYER:        'Não pode trocar consigo mesmo',
-                        INVALID_PLAYER:     'Jogador inválido',
-                        INVALID_INSTANCE:   'Instância inválida',
-                        EMPTY_TEAM:         'Jogador precisa ter pelo menos 2 Monstrinhos no time para trocar',
-                    };
-                    showToast(msgs[proposal.error] || `Troca inválida: ${proposal.error}`, 'error');
+                const box = GameState.sharedBox || [];
+                const fromMon = findMonsterById(fromPlayer.team, instanceId);
+                const toMon = findMonsterById(getLegacyTradeModalCandidates(toPlayerId), toInstanceId);
+
+                if (!fromMon || !toMon) {
+                    showToast('Monstrinho não encontrado', 'error');
                     return;
                 }
 
-                const result = window.TradeSystem.acceptTrade(proposal.trade, fromPlayer, toPlayer, tradeContext);
-                if (!result.ok) {
-                    const msgs = {
-                        MONSTER_NOT_FOUND:  'Monstrinho não encontrado',
-                        MONSTER_IN_BATTLE:  'Monstro entrou em batalha — troca cancelada',
-                        MONSTER_KO:         'Monstro desmaiou — troca cancelada',
-                        EMPTY_TEAM:         'Jogador ficou sem time mínimo para trocar',
-                    };
-                    showToast(msgs[result.error] || `Falha na troca: ${result.error}`, 'error');
+                const inBattle = !!GameState.currentBattle;
+                const fromActive = Number(fromPlayer.activeIndex ?? 0);
+                const toActive = Number(toPlayer.activeIndex ?? 0);
+                const fromTeamIdx = (fromPlayer.team || []).findIndex(m => hasSameMonsterId(m, fromMon.id || fromMon.instanceId));
+                const toTeamIdx = (toPlayer.team || []).findIndex(m => hasSameMonsterId(m, toMon.id || toMon.instanceId));
+                if (inBattle && fromTeamIdx >= 0 && fromTeamIdx === fromActive) {
+                    showToast('Não é possível trocar monstro em batalha', 'error');
+                    return;
+                }
+                if (inBattle && toTeamIdx >= 0 && toTeamIdx === toActive) {
+                    showToast('Monstro entrou em batalha — troca cancelada', 'error');
+                    return;
+                }
+
+                if (Number(fromMon.hp) <= 0 || Number(toMon.hp) <= 0) {
+                    showToast('Não é possível trocar monstro desmaiado', 'error');
+                    return;
+                }
+
+                if (!window.TradeUI?.validateTrade) {
+                    showToast('Validação de troca não disponível', 'error');
+                    return;
+                }
+                const validation = window.TradeUI.validateTrade(fromPlayer, fromMon, toPlayer, toMon, box);
+                if (!validation?.valid) {
+                    showToast(validation?.reason || 'Troca inválida', 'error');
+                    return;
+                }
+
+                const therapyLog = _getSessionTherapyLog() || null;
+                const result = window.TradeUI.executeTrade(fromPlayer, fromMon, toPlayer, toMon, therapyLog, box);
+                if (!result.success) {
+                    showToast(result.log?.[0] || 'Falha na troca', 'error');
                     return;
                 }
 
@@ -13534,7 +13552,8 @@
                 updatePlayersList();
                 renderTradeTab();
                 updateBoxTabBadge();
-                showToast(`🔄 Troca concluída: ${result.monsterName} ↔ ${toPlayer.name}`, 'success');
+                const fromMonName = fromMon.nickname || fromMon.name || fromMon.id || instanceId;
+                showToast(`🔄 Troca concluída: ${fromMonName} ↔ ${toPlayer.name}`, 'success');
             } catch (error) {
                 console.error('[Trade] Falha ao executar troca:', error);
                 showToast('Erro inesperado na troca', 'error');
