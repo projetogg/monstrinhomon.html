@@ -111,3 +111,11 @@ Antes de remover `js/trade/tradeSystem.js`, deve existir cobertura que valide no
 - confirmação de troca com persistência;
 - comportamento com monstros de time e da Box;
 - mensagens de erro equivalentes para fluxos atualmente atendidos pelo modal legado.
+
+## Próximos passos
+
+O mapeamento detalhado de todas as referências restantes ao legado e o plano completo de PRs para remoção segura estão em:
+
+`docs/trade_legacy_removal_plan.md`
+
+Esse documento classifica cada chamada, lista os riscos de remoção prematura, define pré-condições e propõe os PRs-A, B e C para a remoção incremental.
