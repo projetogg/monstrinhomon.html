@@ -19,10 +19,10 @@ Hoje, **os dois sistemas estão ativos em runtime** em fluxos diferentes:
    - `index.html` chama `window.TradeUI.executeTrade(...)` no `tradeAccept()`.
 
 2. **Fluxo legado de modal (`openTradeModal/executeTradeFromModal`) com compatibilidade temporária**  
-   Usa `js/trade/tradeSystem.js` como adapter.
-   - `index.html` importa `./js/trade/tradeSystem.js` como `window.TradeSystem`.
-   - `executeTradeFromModal()` continua chamando `window.TradeSystem.proposeTradeAction(...)` e `window.TradeSystem.acceptTrade(...)`.
-   - Quando há `targetInstanceId` no contexto do modal, o módulo legado encaminha para a lógica canônica de `js/combat/tradeSystem.js`.
+   Mantém o ponto de entrada antigo, mas executa troca pelo caminho canônico.
+   - `index.html` importa `./js/trade/tradeSystem.js` como `window.TradeSystem` por compatibilidade temporária.
+   - `executeTradeFromModal()` usa `window.TradeUI.executeTrade(...)` e não chama mais `window.TradeSystem.proposeTradeAction(...)`/`acceptTrade(...)`.
+   - O módulo legado permanece disponível para cobertura regressiva e etapas futuras de remoção (PR-B/PR-C).
 
 ## 2) Qual sistema é coberto por testes
 
@@ -83,6 +83,7 @@ Justificativa:
    - Aviso `@deprecated` inserido no topo do arquivo.
    - Documentado que novas regras não devem entrar no módulo legado.
    - Documentado que trocas bilaterais com `targetInstanceId` são encaminhadas para o canônico.
+5. ✅ Modal legado migrado no runtime para executar via `TradeUI` (PR-A), removendo chamada direta a `window.TradeSystem.proposeTradeAction/acceptTrade`.
 
 ## 6) Status atual (pós-depreciação formal)
 
