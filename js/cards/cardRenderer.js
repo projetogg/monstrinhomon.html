@@ -11,6 +11,28 @@
 const OFFENSIVE_TARGETS = new Set(['enemy', 'area', 'inimigo', 'área', 'todos']);
 const DEFENSIVE_TARGETS = new Set(['self', 'ally', 'aliado']);
 
+const CARD_LAYER_QA_STYLE = `<style data-card-layer-qa-style="true">
+.skill-grid--card-layer{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(190px,1fr))!important;gap:10px!important;align-items:stretch!important;}
+.card-layer-skill{min-height:118px!important;padding:12px!important;border-radius:14px!important;border:1px solid rgba(255,255,255,.18)!important;background:rgba(255,255,255,.08)!important;color:#fff!important;text-align:left!important;display:flex!important;flex-direction:column!important;justify-content:space-between!important;gap:8px!important;box-shadow:0 6px 16px rgba(0,0,0,.22)!important;white-space:normal!important;line-height:1.25!important;}
+.card-layer-skill:not(:disabled){cursor:pointer!important;}
+.card-layer-skill:disabled{opacity:.55!important;cursor:not-allowed!important;filter:saturate(.6)!important;}
+.card-layer-skill--attack{background:linear-gradient(135deg,rgba(214,48,49,.85),rgba(225,112,85,.45))!important;border-color:rgba(255,118,117,.65)!important;}
+.card-layer-skill--defense{background:linear-gradient(135deg,rgba(255,255,255,.92),rgba(220,224,235,.78))!important;color:#111!important;border-color:rgba(255,255,255,.85)!important;}
+.card-layer-skill--control{background:linear-gradient(135deg,rgba(108,92,231,.85),rgba(0,206,201,.45))!important;border-color:rgba(162,155,254,.65)!important;}
+.card-layer-skill--heal{background:linear-gradient(135deg,rgba(0,184,148,.82),rgba(85,239,196,.42))!important;border-color:rgba(85,239,196,.65)!important;}
+.card-layer-skill__top{display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:8px!important;font-weight:900!important;font-size:14px!important;}
+.card-layer-skill__top small{font-size:11px!important;font-weight:900!important;padding:3px 7px!important;border-radius:999px!important;background:rgba(0,0,0,.22)!important;white-space:nowrap!important;color:inherit!important;}
+.card-layer-skill--defense .card-layer-skill__top small{background:rgba(0,0,0,.08)!important;}
+.card-layer-skill__text{font-size:12px!important;opacity:.95!important;font-weight:700!important;}
+.card-layer-skill__meta{display:flex!important;flex-wrap:wrap!important;gap:5px!important;font-size:10px!important;opacity:.86!important;}
+.card-layer-skill__meta span{padding:2px 6px!important;border-radius:999px!important;background:rgba(0,0,0,.18)!important;}
+.card-layer-skill--defense .card-layer-skill__meta span{background:rgba(0,0,0,.08)!important;}
+.card-layer-qa-diagnostic{margin:0 0 10px 0!important;padding:9px 11px!important;border-radius:12px!important;border:1px dashed rgba(253,203,110,.75)!important;background:rgba(253,203,110,.14)!important;color:#fff!important;font-size:12px!important;display:flex!important;flex-direction:column!important;gap:3px!important;}
+.card-layer-qa-diagnostic small{opacity:.86!important;}
+.card-layer-qa-diagnostic__details{font-size:11px!important;opacity:.84!important;}
+@media(max-width:760px){.skill-grid--card-layer{grid-template-columns:1fr!important}.card-layer-skill{min-height:105px!important}}
+</style>`;
+
 export function escapeHtml(value) {
     return String(value ?? '')
         .replaceAll('&', '&amp;')
@@ -131,5 +153,5 @@ export function renderCardGrid(cardEntries, runtimeContext = {}) {
     if (!Array.isArray(cardEntries) || cardEntries.length === 0) return '';
     const cardsHtml = cardEntries.map(entry => renderCard(entry, runtimeContext)).filter(Boolean).join('');
     if (!cardsHtml) return '';
-    return `<div class="skill-grid skill-grid--card-layer">${cardsHtml}</div>`;
+    return `${CARD_LAYER_QA_STYLE}<div class="skill-grid skill-grid--card-layer">${cardsHtml}</div>`;
 }
