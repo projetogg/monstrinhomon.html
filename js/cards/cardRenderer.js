@@ -28,6 +28,14 @@ export function getSkillButtonClass(skill) {
     return isOffensive ? 'btn-skill-offensive' : 'btn-skill-defensive';
 }
 
+function getCardToneClass(cardEntry) {
+    const category = String(cardEntry?.card?.category_visual || '').toLowerCase();
+    if (category.includes('defesa')) return 'card-layer-skill--defense';
+    if (category.includes('controle')) return 'card-layer-skill--control';
+    if (category.includes('cura')) return 'card-layer-skill--heal';
+    return 'card-layer-skill--attack';
+}
+
 /**
  * Constrói um view model puro para um card entry.
  * Não contém handler executável — o integrador decide como ligar o clique.
@@ -47,10 +55,13 @@ export function buildCardViewModel(cardEntry, runtimeContext = {}) {
     const tutorialAllows = runtimeContext.tutorialAllows !== false;
     const canUse = canUseSkillNow(skill, skillMonster) && (Number(skillMonster?.hp || 0) > 0);
     const cost = Number(skill.cost ?? skill.energy_cost ?? skill.eneCost ?? 0) || 0;
-    const currentEne = Number(skillMonster?.ene) || 0;
+    const currentEne = Number(skillMonster?.ene ?? skillMonster?.currentEne ?? skillMonster?.energy ?? 0) || 0;
     const stageTitle = stage?.title || card?.groupKey || skill.name || 'Habilidade';
     const stageText = stage?.text_child || skill.desc || '';
-    const icon = card?.icon_key ? `🃏 ${card.icon_key}` : '🃏';
+    const iconKey = card?.icon_key || '';
+    const categoryVisual = card?.category_visual || 'habilidade';
+    const visualSource = cardEntry.cardAliasApplied ? 'kit swap' : 'skill';
+    const icon = iconKey ? `🃏 ${iconKey}` : '🃏';
     const tooltip = !tutorialAllows
         ? 'Tutorial: ainda não liberado'
         : (!canUse
@@ -61,10 +72,16 @@ export function buildCardViewModel(cardEntry, runtimeContext = {}) {
         skillIndex: Number(skillIndex) || 0,
         cardId: card?.id || '',
         buttonClass: getSkillButtonClass(skill),
+        toneClass: getCardToneClass(cardEntry),
         stageTitle,
         stageText,
         icon,
+        iconKey,
+        categoryVisual,
+        visualSource,
+        runtimeSkillName: skill.name || skill.nome || skill.id || 'Skill',
         cost,
+        currentEne,
         tooltip,
         canUse,
         tutorialAllows,
@@ -84,13 +101,21 @@ export function renderCard(cardEntry, runtimeContext = {}) {
     const vm = buildCardViewModel(cardEntry, runtimeContext);
     if (!vm) return '';
 
-    return `<button class="${vm.buttonClass} card-layer-skill"
+    return `<button class="${vm.buttonClass} card-layer-skill ${vm.toneClass}"
         data-card-id="${escapeHtml(vm.cardId)}"
         data-skill-index="${vm.skillIndex}"
         ${vm.disabled ? 'disabled' : ''}
         title="${escapeHtml(vm.tooltip)}">
-        <strong>${escapeHtml(vm.stageTitle)}</strong>
-        <small>${escapeHtml(vm.icon)} · ENE ${vm.cost}</small>
+        <span class="card-layer-skill__top">
+            <strong>${escapeHtml(vm.stageTitle)}</strong>
+            <small>ENE ${vm.cost}</small>
+        </span>
+        <span class="card-layer-skill__text">${escapeHtml(vm.stageText)}</span>
+        <span class="card-layer-skill__meta">
+            <span>${escapeHtml(vm.categoryVisual)}</span>
+            <span>${escapeHtml(vm.runtimeSkillName)}</span>
+            <span>${escapeHtml(vm.visualSource)}</span>
+        </span>
     </button>`;
 }
 
