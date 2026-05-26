@@ -11,10 +11,15 @@
 
 Este relatório permanece como **diagnóstico histórico** da data original (2026-05-23).
 
-Atualização de status relevante:
+Atualizações de status relevantes:
 - **R01 (Trade com dois sistemas ativos)** foi mitigado/encerrado pela trilha PR-A → PR-B → PR-C.
-- No estado atual, `window.TradeSystem` permanece ausente e `js/trade/tradeSystem.js` foi removido.
-- A fonte canônica de Trade é `js/combat/tradeSystem.js` via `js/ui/tradeUI.js`.
+  No estado atual, `window.TradeSystem` permanece ausente e `js/trade/tradeSystem.js` foi removido.
+  A fonte canônica de Trade é `js/combat/tradeSystem.js` via `js/ui/tradeUI.js`.
+- **R02 (Fórmula de combate diverge do Patch v2.2)** foi auditado em profundidade.
+  Resultado: Group Combat está alinhado; Wild Combat diverge significativamente (fórmula unilateral,
+  sem ModNível, sem 5 faixas, crítico diferente). ENE regen diverge em 7/8 classes.
+  Relatório completo em `docs/combat_formula_audit_2026-05.md`.
+  Testes de caracterização em `tests/combatFormulaAudit.test.js`.
 
 ---
 
