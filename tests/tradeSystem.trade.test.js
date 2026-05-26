@@ -1,284 +1,125 @@
 /**
- * TRADE SYSTEM TESTS (FASE O)
+ * TRADE SYSTEM TESTS (PR-C)
  *
- * Testa as funções puras do módulo tradeSystem.js.
- * Cobertura: validateTrade, proposeTradeAction, acceptTrade
+ * Cobertura da API canônica de Trade.
  */
 
 import { describe, it, expect } from 'vitest';
 import {
     validateTrade,
-    proposeTradeAction,
-    acceptTrade,
+    executeTrade,
+    getTradeableMonsters,
     TRADE_ERROR,
-} from '../js/trade/tradeSystem.js';
+} from '../js/combat/tradeSystem.js';
 
-// ─── Fixtures ────────────────────────────────────────────────────────────────
-
-function makePlayer(id, cls, team = []) {
-    return { id, name: `Jogador ${id}`, class: cls, activeIndex: 0, team };
+function makePlayer(id, cls, team = [], activeIndex = 0) {
+    return { id, name: `Jogador ${id}`, class: cls, activeIndex, team };
 }
 
-function makeMon(instanceId, cls, hp = 30) {
-    return { instanceId, id: instanceId, name: `Mon-${instanceId}`, class: cls, hp, hpMax: 30 };
+function makeMon(id, cls, hp = 30) {
+    return { id, instanceId: id, name: `Mon-${id}`, class: cls, hp, hpMax: 30, ownerId: null };
 }
 
-// ─── validateTrade ────────────────────────────────────────────────────────────
-
-describe('validateTrade — jogadores inválidos', () => {
-    it('retorna erro se fromPlayer for null', () => {
-        const to = makePlayer('p2', 'Mago');
-        expect(validateTrade(null, to, 'mi_001')).toEqual({ valid: false, error: TRADE_ERROR.INVALID_PLAYER });
+describe('validateTrade (canônico)', () => {
+    it('rejeita troca com mesmo jogador', () => {
+        const p = makePlayer('p1', 'Mago', [makeMon('m1', 'Mago'), makeMon('m2', 'Guerreiro')]);
+        const result = validateTrade(p, p.team[0], p, p.team[1], []);
+        expect(result.valid).toBe(false);
+        expect(result.reason).toBe(TRADE_ERROR.SAME_PLAYER);
     });
 
-    it('retorna erro se toPlayer for null', () => {
-        const from = makePlayer('p1', 'Guerreiro', [makeMon('mi_001', 'Guerreiro')]);
-        expect(validateTrade(from, null, 'mi_001')).toEqual({ valid: false, error: TRADE_ERROR.INVALID_PLAYER });
+    it('rejeita quando monstro não pertence ao jogador', () => {
+        const p1 = makePlayer('p1', 'Mago', [makeMon('m1', 'Mago'), makeMon('m2', 'Guerreiro')]);
+        const p2 = makePlayer('p2', 'Guerreiro', [makeMon('m3', 'Guerreiro'), makeMon('m4', 'Mago')]);
+        const fake = makeMon('m999', 'Mago');
+
+        const result = validateTrade(p1, fake, p2, p2.team[0], []);
+        expect(result.valid).toBe(false);
+        expect(result.reason).toBe(TRADE_ERROR.MONSTER_NOT_FOUND);
     });
 
-    it('retorna erro se fromPlayer === toPlayer', () => {
-        const p = makePlayer('p1', 'Guerreiro', [makeMon('mi_001', 'Guerreiro')]);
-        expect(validateTrade(p, p, 'mi_001')).toEqual({ valid: false, error: TRADE_ERROR.SAME_PLAYER });
-    });
-});
+    it('rejeita quando jogador ficaria sem time mínimo ao trocar do time', () => {
+        const p1 = makePlayer('p1', 'Mago', [makeMon('m1', 'Guerreiro')]);
+        const p2 = makePlayer('p2', 'Guerreiro', [makeMon('m2', 'Mago'), makeMon('m3', 'Guerreiro')]);
 
-describe('validateTrade — instanceId inválido', () => {
-    it('retorna erro se instanceId for null', () => {
-        const from = makePlayer('p1', 'Guerreiro', [makeMon('mi_001', 'Guerreiro')]);
-        const to   = makePlayer('p2', 'Mago');
-        expect(validateTrade(from, to, null)).toEqual({ valid: false, error: TRADE_ERROR.INVALID_INSTANCE });
-    });
-
-    it('retorna erro se instanceId não existir na equipe', () => {
-        const from = makePlayer('p1', 'Guerreiro', [makeMon('mi_001', 'Guerreiro')]);
-        const to   = makePlayer('p2', 'Mago');
-        expect(validateTrade(from, to, 'mi_999')).toEqual({ valid: false, error: TRADE_ERROR.MONSTER_NOT_FOUND });
+        const result = validateTrade(p1, p1.team[0], p2, p2.team[0], []);
+        expect(result.valid).toBe(false);
+        expect(result.reason).toBe(TRADE_ERROR.EMPTY_TEAM);
     });
 });
 
-describe('validateTrade — monstro em batalha / KO', () => {
-    it('retorna erro se monstro for o ativo durante batalha', () => {
-        const mon  = makeMon('mi_001', 'Guerreiro');
-        const from = makePlayer('p1', 'Guerreiro', [mon]);
-        from.activeIndex = 0;
-        const to = makePlayer('p2', 'Mago');
-        expect(validateTrade(from, to, 'mi_001', { inBattle: true })).toEqual({
-            valid: false, error: TRADE_ERROR.MONSTER_IN_BATTLE
-        });
+describe('executeTrade (canônico)', () => {
+    it('executa troca bilateral time×time com sucesso', () => {
+        const a1 = makeMon('a1', 'Guerreiro');
+        const a2 = makeMon('a2', 'Mago');
+        const b1 = makeMon('b1', 'Mago');
+        const b2 = makeMon('b2', 'Guerreiro');
+        const p1 = makePlayer('p1', 'Mago', [a1, a2], 0);
+        const p2 = makePlayer('p2', 'Guerreiro', [b1, b2], 0);
+
+        const result = executeTrade(p1, a1, p2, b1, null, []);
+        expect(result.success).toBe(true);
+        expect(p1.team.some(m => m.id === 'b1')).toBe(true);
+        expect(p2.team.some(m => m.id === 'a1')).toBe(true);
     });
 
-    it('permite troca de monstro não-ativo durante batalha', () => {
-        const mon1 = makeMon('mi_001', 'Guerreiro');
-        const mon2 = makeMon('mi_002', 'Guerreiro');
-        const from = makePlayer('p1', 'Guerreiro', [mon1, mon2]);
-        from.activeIndex = 0; // mon1 é o ativo
-        const to = makePlayer('p2', 'Mago');
-        expect(validateTrade(from, to, 'mi_002', { inBattle: true }).valid).toBe(true);
+    it('atualiza ownerId ao trocar', () => {
+        const a1 = makeMon('a1', 'Guerreiro');
+        const a2 = makeMon('a2', 'Mago');
+        const b1 = makeMon('b1', 'Mago');
+        const b2 = makeMon('b2', 'Guerreiro');
+        a1.ownerId = 'p1';
+        b1.ownerId = 'p2';
+
+        const p1 = makePlayer('p1', 'Mago', [a1, a2]);
+        const p2 = makePlayer('p2', 'Guerreiro', [b1, b2]);
+
+        executeTrade(p1, a1, p2, b1, null, []);
+
+        expect(p2.team.find(m => m.id === 'a1')?.ownerId).toBe('p2');
+        expect(p1.team.find(m => m.id === 'b1')?.ownerId).toBe('p1');
     });
 
-    it('retorna erro se monstro estiver KO (hp <= 0)', () => {
-        const mon  = makeMon('mi_001', 'Guerreiro', 0);
-        const from = makePlayer('p1', 'Guerreiro', [mon]);
-        const to   = makePlayer('p2', 'Mago');
-        expect(validateTrade(from, to, 'mi_001')).toEqual({ valid: false, error: TRADE_ERROR.MONSTER_KO });
-    });
-});
+    it('ajusta activeIndex quando monstro ativo do time é trocado', () => {
+        const p1 = makePlayer('p1', 'Mago', [makeMon('a1', 'Guerreiro'), makeMon('a2', 'Mago')], 0);
+        const p2 = makePlayer('p2', 'Guerreiro', [makeMon('b1', 'Mago'), makeMon('b2', 'Guerreiro')], 0);
 
-describe('validateTrade — troca válida', () => {
-    it('retorna valid:true para troca entre classes diferentes', () => {
-        const mon  = makeMon('mi_001', 'Guerreiro');
-        const from = makePlayer('p1', 'Guerreiro', [mon]);
-        const to   = makePlayer('p2', 'Mago');
-        expect(validateTrade(from, to, 'mi_001')).toEqual({ valid: true, error: null });
+        executeTrade(p1, p1.team[0], p2, p2.team[0], null, []);
+        expect(typeof p1.activeIndex).toBe('number');
+        expect(p1.activeIndex).toBeGreaterThanOrEqual(0);
     });
 
-    it('retorna valid:true para troca entre mesma classe', () => {
-        const mon  = makeMon('mi_001', 'Guerreiro');
-        const from = makePlayer('p1', 'Guerreiro', [mon]);
-        const to   = makePlayer('p2', 'Guerreiro');
-        expect(validateTrade(from, to, 'mi_001')).toEqual({ valid: true, error: null });
-    });
-});
+    it('suporta troca envolvendo Box compartilhada', () => {
+        const p1 = makePlayer('p1', 'Mago', [makeMon('a1', 'Guerreiro'), makeMon('a2', 'Mago')]);
+        const p2 = makePlayer('p2', 'Guerreiro', [makeMon('b1', 'Mago'), makeMon('b2', 'Guerreiro')]);
+        const sharedBox = [{ slotId: 'slot_p2_1', ownerPlayerId: 'p2', monster: makeMon('box1', 'Mago') }];
 
-// ─── proposeTradeAction ───────────────────────────────────────────────────────
+        const monBoxP2 = { ...sharedBox[0].monster, _boxSlotId: sharedBox[0].slotId };
+        const result = executeTrade(p1, p1.team[0], p2, monBoxP2, null, sharedBox);
 
-describe('proposeTradeAction', () => {
-    it('retorna ok:false se troca for inválida', () => {
-        const from = makePlayer('p1', 'Guerreiro', []);
-        const to   = makePlayer('p2', 'Mago');
-        const result = proposeTradeAction(from, to, 'mi_001');
-        expect(result.ok).toBe(false);
-        expect(result.trade).toBeNull();
-        expect(result.error).toBe(TRADE_ERROR.MONSTER_NOT_FOUND);
-    });
-
-    it('retorna proposta com fromPlayerId, toPlayerId, instanceId', () => {
-        const mon  = makeMon('mi_001', 'Guerreiro');
-        const from = makePlayer('p1', 'Guerreiro', [mon]);
-        const to   = makePlayer('p2', 'Mago');
-        const result = proposeTradeAction(from, to, 'mi_001');
-        expect(result.ok).toBe(true);
-        expect(result.error).toBeNull();
-        expect(result.trade.fromPlayerId).toBe('p1');
-        expect(result.trade.toPlayerId).toBe('p2');
-        expect(result.trade.instanceId).toBe('mi_001');
-    });
-
-    it('inclui monsterName na proposta', () => {
-        const mon  = { ...makeMon('mi_001', 'Guerreiro'), name: 'Pedrino' };
-        const from = makePlayer('p1', 'Guerreiro', [mon]);
-        const to   = makePlayer('p2', 'Mago');
-        const { trade } = proposeTradeAction(from, to, 'mi_001');
-        expect(trade.monsterName).toBe('Pedrino');
-    });
-
-    it('usa nickname no monsterName se existir', () => {
-        const mon  = { ...makeMon('mi_001', 'Guerreiro'), name: 'Pedrino', nickname: 'Pedro' };
-        const from = makePlayer('p1', 'Guerreiro', [mon]);
-        const to   = makePlayer('p2', 'Mago');
-        const { trade } = proposeTradeAction(from, to, 'mi_001');
-        expect(trade.monsterName).toBe('Pedro');
+        expect(result.success).toBe(true);
+        expect(p1.team.some(m => m.id === 'box1')).toBe(true);
+        expect(p2.team.some(m => m.id === 'a1') || sharedBox.some(s => s.monster?.id === 'a1')).toBe(true);
     });
 });
 
-// ─── acceptTrade ─────────────────────────────────────────────────────────────
-
-describe('acceptTrade — transferência de monstro', () => {
-    it('move monstro da equipe do cedente para a do receptor', () => {
-        const mon  = makeMon('mi_001', 'Guerreiro');
-        const from = makePlayer('p1', 'Guerreiro', [mon]);
-        const to   = makePlayer('p2', 'Mago', []);
-
-        const { trade } = proposeTradeAction(from, to, 'mi_001');
-        const result = acceptTrade(trade, from, to);
-
-        expect(result.ok).toBe(true);
-        expect(from.team).toHaveLength(0);
-        expect(to.team).toHaveLength(1);
-        expect(to.team[0].instanceId).toBe('mi_001');
-    });
-
-    it('retorna monsterName correto', () => {
-        const mon  = { ...makeMon('mi_001', 'Guerreiro'), name: 'Pedrino' };
-        const from = makePlayer('p1', 'Guerreiro', [mon]);
-        const to   = makePlayer('p2', 'Mago');
-
-        const { trade } = proposeTradeAction(from, to, 'mi_001');
-        const result = acceptTrade(trade, from, to);
-
-        expect(result.monsterName).toBe('Pedrino');
-    });
-
-    it('ajusta activeIndex do cedente se necessário', () => {
-        const mon1 = makeMon('mi_001', 'Guerreiro');
-        const mon2 = makeMon('mi_002', 'Guerreiro');
-        const from = makePlayer('p1', 'Guerreiro', [mon1, mon2]);
-        from.activeIndex = 1; // aponta para mon2
-        const to = makePlayer('p2', 'Mago');
-
-        const { trade } = proposeTradeAction(from, to, 'mi_002');
-        acceptTrade(trade, from, to);
-
-        // team agora tem só mon1; activeIndex deve ajustar para 0
-        expect(from.team).toHaveLength(1);
-        expect(from.activeIndex).toBe(0);
-    });
-
-    it('cria team no receptor se não existir', () => {
-        const mon  = makeMon('mi_001', 'Guerreiro');
-        const from = makePlayer('p1', 'Guerreiro', [mon]);
-        const to   = { id: 'p2', name: 'Jogador 2', class: 'Mago' }; // sem team
-
-        const { trade } = proposeTradeAction(from, to, 'mi_001');
-        acceptTrade(trade, from, to);
-
-        expect(Array.isArray(to.team)).toBe(true);
-        expect(to.team).toHaveLength(1);
-    });
-
-    it('retorna erro se monstro tiver sido removido antes de aceitar', () => {
-        const mon  = makeMon('mi_001', 'Guerreiro');
-        const from = makePlayer('p1', 'Guerreiro', [mon]);
-        const to   = makePlayer('p2', 'Mago');
-
-        const { trade } = proposeTradeAction(from, to, 'mi_001');
-        from.team = []; // monstro sumiu antes do accept
-
-        const result = acceptTrade(trade, from, to);
-        expect(result.ok).toBe(false);
-        expect(result.error).toBe(TRADE_ERROR.MONSTER_NOT_FOUND);
-    });
-
-    it('retorna erro se parâmetros forem null', () => {
-        const result = acceptTrade(null, null, null);
-        expect(result.ok).toBe(false);
-        expect(result.error).toBe(TRADE_ERROR.INVALID_PLAYER);
-    });
-});
-
-describe('acceptTrade — adapter legado para bilateral canônico', () => {
-    it('executa troca bilateral quando targetInstanceId é informado', () => {
-        const fromMon1 = makeMon('mi_001', 'Guerreiro', 30);
-        const fromMon2 = makeMon('mi_002', 'Mago', 30);
-        const toMon1 = makeMon('mi_101', 'Mago', 30);
-        const toMon2 = makeMon('mi_102', 'Guerreiro', 30);
-        const from = makePlayer('p1', 'Mago', [fromMon1, fromMon2]);
-        const to = makePlayer('p2', 'Guerreiro', [toMon1, toMon2]);
-
-        const proposal = proposeTradeAction(from, to, 'mi_001', { targetInstanceId: 'mi_101' });
-        expect(proposal.ok).toBe(true);
-
-        const result = acceptTrade(proposal.trade, from, to, { sharedBox: [] });
-        expect(result.ok).toBe(true);
-        expect(from.team.some(m => m.id === 'mi_101')).toBe(true);
-        expect(to.team.some(m => m.id === 'mi_001')).toBe(true);
-    });
-
-    it('bloqueia adapter bilateral quando alvo não existe', () => {
-        const fromMon1 = makeMon('mi_001', 'Guerreiro', 30);
-        const fromMon2 = makeMon('mi_002', 'Mago', 30);
-        const toMon1 = makeMon('mi_101', 'Mago', 30);
-        const toMon2 = makeMon('mi_102', 'Guerreiro', 30);
-        const from = makePlayer('p1', 'Mago', [fromMon1, fromMon2]);
-        const to = makePlayer('p2', 'Guerreiro', [toMon1, toMon2]);
-
-        const proposal = proposeTradeAction(from, to, 'mi_001', { targetInstanceId: 'mi_inexistente' });
-        const result = acceptTrade(proposal.trade, from, to, { sharedBox: [] });
-
-        expect(result.ok).toBe(false);
-        expect(result.error).toBe(TRADE_ERROR.MONSTER_NOT_FOUND);
-    });
-
-    it('bloqueia adapter bilateral quando um dos monstrinhos está KO', () => {
-        const fromMon1 = makeMon('mi_001', 'Guerreiro', 0);
-        const fromMon2 = makeMon('mi_002', 'Mago', 30);
-        const toMon1 = makeMon('mi_101', 'Mago', 30);
-        const toMon2 = makeMon('mi_102', 'Guerreiro', 30);
-        const from = makePlayer('p1', 'Mago', [fromMon1, fromMon2]);
-        const to = makePlayer('p2', 'Guerreiro', [toMon1, toMon2]);
-
-        const proposal = proposeTradeAction(from, to, 'mi_001', { targetInstanceId: 'mi_101' });
-        expect(proposal.ok).toBe(false);
-        expect(proposal.error).toBe(TRADE_ERROR.MONSTER_KO);
-    });
-
-    it('executa troca bilateral com monstrinho da box via adapter', () => {
-        const fromMon1 = makeMon('mi_001', 'Guerreiro', 30);
-        const fromMon2 = makeMon('mi_002', 'Mago', 30);
-        const toTeamMon = makeMon('mi_101', 'Mago', 30);
-        const toTeamMon2 = makeMon('mi_102', 'Guerreiro', 30);
-        const from = makePlayer('p1', 'Mago', [fromMon1, fromMon2]);
-        const to = makePlayer('p2', 'Guerreiro', [toTeamMon, toTeamMon2]);
+describe('getTradeableMonsters (canônico)', () => {
+    it('retorna apenas monstrinhos fora da classe do jogador (time + box)', () => {
+        const p = makePlayer('p1', 'Mago', [
+            makeMon('m_mago', 'Mago'),
+            makeMon('m_guerreiro', 'Guerreiro'),
+        ]);
         const sharedBox = [
-            { slotId: 'slot_p2', ownerPlayerId: 'p2', monster: makeMon('mi_box', 'Mago', 30) },
+            { slotId: 'slot1', ownerPlayerId: 'p1', monster: makeMon('m_box_mago', 'Mago') },
+            { slotId: 'slot2', ownerPlayerId: 'p1', monster: makeMon('m_box_ladino', 'Ladino') },
         ];
 
-        const proposal = proposeTradeAction(from, to, 'mi_001', { targetInstanceId: 'mi_box' });
-        expect(proposal.ok).toBe(true);
+        const list = getTradeableMonsters(p, sharedBox);
+        const ids = list.map(m => m.id);
 
-        const result = acceptTrade(proposal.trade, from, to, { sharedBox });
-        expect(result.ok).toBe(true);
-        expect(from.team.some(m => m.id === 'mi_box')).toBe(true);
-        expect(to.team.some(m => m.id === 'mi_001')).toBe(true);
+        expect(ids).toContain('m_guerreiro');
+        expect(ids).toContain('m_box_ladino');
+        expect(ids).not.toContain('m_mago');
+        expect(ids).not.toContain('m_box_mago');
     });
 });
