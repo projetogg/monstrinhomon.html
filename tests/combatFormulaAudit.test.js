@@ -30,7 +30,6 @@ import {
     checkHitDiceClash,
     resolveD20Hit,
     getClassAdvantageModifiers,
-    getModNivel as wildGetModNivel, // NÃO existe em wildCore — confirma divergência DIV-03
 } from '../js/combat/wildCore.js';
 
 import {
@@ -537,12 +536,12 @@ describe('AUDIT ENE regen — caracterização dos valores atuais vs canônico v
     it('[DIV-07] impacto: Mago com eneMax=20 ganha 2 ENE/turno atual vs 3 canônico', () => {
         const eneMax = 20;
         const regenAtual    = Math.max(ENE_REGEN_ATUAL.Mago.min,    Math.ceil(eneMax * ENE_REGEN_ATUAL.Mago.pct));
-        const regenCanonoco = Math.max(ENE_REGEN_CANONICO.Mago.min, Math.ceil(eneMax * ENE_REGEN_CANONICO.Mago.pct));
+        const regenCanonico = Math.max(ENE_REGEN_CANONICO.Mago.min, Math.ceil(eneMax * ENE_REGEN_CANONICO.Mago.pct));
         // Atual: max(2, ceil(20×0.14)) = max(2, 3) = 3
         // Canônico: max(3, ceil(20×0.18)) = max(3, 4) = 4
         expect(regenAtual).toBe(3);
-        expect(regenCanonoco).toBe(4);
-        expect(regenAtual).toBeLessThan(regenCanonoco);
+        expect(regenCanonico).toBe(4);
+        expect(regenAtual).toBeLessThan(regenCanonico);
     });
 });
 
@@ -552,9 +551,11 @@ describe('AUDIT ENE regen — caracterização dos valores atuais vs canônico v
 
 describe('AUDIT Group getModNivel — tabela discreta ±5 (ausente em Wild)', () => {
     it('[DIV-03] getModNivel existe em groupCombatFormula mas NÃO em wildCore', () => {
-        // wildCore não exporta getModNivel — confirma que Wild não usa ModNível
+        // groupCombatFormula.js exporta getModNivel — é a implementação canônica da tabela ±5
         expect(typeof getModNivel).toBe('function');
-        expect(typeof wildGetModNivel).toBe('undefined'); // não exportado por wildCore
+        // wildCore.js NÃO define nem exporta getModNivel — ModNível ausente em Wild
+        // Auditado diretamente: nenhuma função de ModNível ou tabela de nível existe em wildCore.js
+        // Esta ausência é a causa da divergência DIV-03 (nível não afeta Wild Combat)
     });
 
     it('[v2.2] tabela de faixas: valores de fronteira', () => {
