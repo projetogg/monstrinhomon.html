@@ -954,9 +954,25 @@
         import * as MapUnlockSystem from './js/encounter/mapUnlockSystem.js';
 
         // Card Layer Fase 1C — catálogo visual é opcional e sempre com fallback para a UI legada.
-        loadCardCatalog().catch((error) => {
-            console.warn('[CardLayer][Fase1C] Falha ao carregar data/cards.json; mantendo UI legada.', error);
-        });
+        // QA determinístico: quando o catálogo terminar de carregar, forçar um único re-render
+        // seguro se já existir encounter em tela (evita ficar "preso" no fallback inicial).
+        loadCardCatalog()
+            .then(() => {
+                try {
+                    const encounter = GameState?.currentEncounter;
+                    const shouldRerender = !!encounter
+                        && (encounter.type === 'wild' || encounter.type === 'group_trainer' || encounter.type === 'boss');
+                    if (shouldRerender && typeof renderEncounter === 'function') {
+                        console.info('[CardLayerQA] catalog loaded; re-rendering encounter once.');
+                        renderEncounter();
+                    }
+                } catch (error) {
+                    console.warn('[CardLayerQA] Falha ao re-renderizar após loadCardCatalog.', error);
+                }
+            })
+            .catch((error) => {
+                console.warn('[CardLayer][Fase1C] Falha ao carregar data/cards.json; mantendo UI legada.', error);
+            });
 
         // Canon Loader — Fases 1 e 2: carrega dados canônicos (classes, matchups, skills MVP, species, evolution, progression)
         import * as CanonLoader from './js/canon/canonLoader.js';
