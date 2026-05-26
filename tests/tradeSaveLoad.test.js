@@ -26,7 +26,11 @@ import {
  *   histórica (proposta/aceite) sem reintroduzir dependência de runtime legado.
  * - A intenção é preservar os cenários originais que validavam o padrão de
  *   adaptação durante a migração, agora exercendo a API canônica por baixo.
+ * - Abordagem temporária: remover estes shims quando todos os cenários deste
+ *   arquivo forem migrados para `validateTrade/executeTrade` diretos.
  */
+// Mantemos códigos legados aqui porque o canônico não expõe INVALID_* nem MONSTER_KO.
+// Eles são necessários apenas para assertions históricas deste arquivo.
 const TRADE_ERROR_LEGACY = {
     INVALID_PLAYER:       'INVALID_PLAYER',
     SAME_PLAYER:          'SAME_PLAYER',
@@ -228,7 +232,7 @@ const makeBoxSlot = (slotId, ownerId, monster) => ({
 
 // ─── 1. Trade bilateral via helper de compatibilidade de teste ────────────────
 
-describe('Persistência — fluxo bilateral com shims de compatibilidade de teste', () => {
+describe('Persistência — fluxo bilateral (compatibilidade)', () => {
     it('executa troca time×time com sucesso pelo adapter', () => {
         const monA = makeMon('mi_a1', 'Guerreiro', { ownerId: 'pA' });
         const monA2 = makeMon('mi_a2', 'Mago', { ownerId: 'pA' });
