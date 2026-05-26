@@ -19,6 +19,14 @@ import {
     executeTrade,
 } from '../js/combat/tradeSystem.js';
 
+/**
+ * Shim de compatibilidade para cenários legados de persistência:
+ * - O módulo legado real foi removido no PR-C.
+ * - Estes helpers são restritos ao escopo de teste para manter cobertura
+ *   histórica (proposta/aceite) sem reintroduzir dependência de runtime legado.
+ * - A intenção é preservar os cenários originais que validavam o padrão de
+ *   adaptação durante a migração, agora exercendo a API canônica por baixo.
+ */
 const TRADE_ERROR_LEGACY = {
     INVALID_PLAYER:       'INVALID_PLAYER',
     SAME_PLAYER:          'SAME_PLAYER',
@@ -220,7 +228,7 @@ const makeBoxSlot = (slotId, ownerId, monster) => ({
 
 // ─── 1. Trade bilateral via helper de compatibilidade de teste ────────────────
 
-describe('Compatibilidade de teste — troca bilateral via acceptTrade com targetInstanceId', () => {
+describe('Persistência — fluxo bilateral com shims de compatibilidade de teste', () => {
     it('executa troca time×time com sucesso pelo adapter', () => {
         const monA = makeMon('mi_a1', 'Guerreiro', { ownerId: 'pA' });
         const monA2 = makeMon('mi_a2', 'Mago', { ownerId: 'pA' });

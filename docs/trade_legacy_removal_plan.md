@@ -88,6 +88,8 @@ Itens ainda ativos e necessários:
 - `docs/trade_source_of_truth_audit.md` (auditoria viva)
 - `docs/AUDIT_GENERAL_RISKS_2026-05.md` (histórico + atualização de status)
 
+> Observação: os 3 itens de modal acima não são permanentes; representam a próxima trilha de simplificação de UI legado em PR próprio, fora do escopo do PR-C, a ser rastreada em issue/plano dedicado.
+
 ---
 
 **Última atualização:** 2026-05-26  
