@@ -949,6 +949,7 @@
         import { resolveCardsForMonster } from './js/cards/cardResolver.js';
         import { renderCardGrid } from './js/cards/cardRenderer.js';
         import { buildWildSkillGridHtml, wireCardLayerSkillButtons } from './js/cards/cardWildPilot.js';
+        import { buildCardLayerUrlQaBanner } from './js/cards/cardLayerQaBanner.js';
 
         // Map Unlock System (FASE XIV)
         import * as MapUnlockSystem from './js/encounter/mapUnlockSystem.js';
@@ -8155,10 +8156,12 @@
                 };
 
                 // Habilidades — Fase 1C: Card Layer visual do Guerreiro com fallback total para UI legada.
+                const cardLayerSearch = window.location?.search || '';
+                const effectiveCardLayerFlags = getEffectiveCardLayerFlags(CARD_LAYER_FEATURE_FLAGS, cardLayerSearch);
                 const skillsUi = playerMonster ? (() => {
                     const tutorialAllowsSkill = tutorialAllows("skill");
                     return buildWildSkillGridHtml(playerMonster, {
-                        flags: getEffectiveCardLayerFlags(CARD_LAYER_FEATURE_FLAGS, window.location?.search || ''),
+                        flags: effectiveCardLayerFlags,
                         catalog: getCardCatalogSync(),
                         getMonsterSkills,
                         resolveMonsterSkills,
@@ -8169,6 +8172,15 @@
                         logger: console,
                     });
                 })() : { mode: 'legacy', html: '<small style="opacity:0.5">—</small>', reason: 'no_monster' };
+                const cardLayerQaBannerHtml = buildCardLayerUrlQaBanner({
+                    search: cardLayerSearch,
+                    baseFlags: CARD_LAYER_FEATURE_FLAGS,
+                    effectiveFlags: effectiveCardLayerFlags,
+                    catalog: getCardCatalogSync(),
+                    skillsUi,
+                    playerMonster,
+                    skills: playerMonster ? (resolveMonsterSkills(playerMonster) || []) : [],
+                });
                 const skillsHtml = skillsUi.html;
 
                 // Itens de cura
@@ -8362,6 +8374,7 @@
                             <!-- Habilidades -->
                             <div class="battle-sec-panel" style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.12)">
                                 <div class="battle-sec-title" style="opacity:0.9;font-size:12px;margin-bottom:10px">⚡ HABILIDADES</div>
+                                ${cardLayerQaBannerHtml}
                                 ${skillsHtml}
                             </div>
 
