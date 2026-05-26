@@ -3,6 +3,7 @@
  *
  * Testes para o banner de QA independente da Card Layer.
  * Cobertura: shouldShowUrlQaBanner, buildCardLayerUrlQaBanner
+ * Inclui cobertura explícita dos gatilhos por query param (cardLayerPilot=1/true).
  */
 
 import { describe, it, expect } from 'vitest';
