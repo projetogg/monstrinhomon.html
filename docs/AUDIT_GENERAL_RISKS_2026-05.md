@@ -7,6 +7,17 @@
 
 ---
 
+## Nota de atualização (2026-05-26)
+
+Este relatório permanece como **diagnóstico histórico** da data original (2026-05-23).
+
+Atualização de status relevante:
+- **R01 (Trade com dois sistemas ativos)** foi mitigado/encerrado pela trilha PR-A → PR-B → PR-C.
+- No estado atual, `window.TradeSystem` permanece ausente e `js/trade/tradeSystem.js` foi removido.
+- A fonte canônica de Trade é `js/combat/tradeSystem.js` via `js/ui/tradeUI.js`.
+
+---
+
 ## 1. Resumo Executivo
 
 O projeto Monstrinhomon está em estado funcional sólido: **5547 testes passam** (Vitest), validação de dados OK (64 monstros, 65 skills, 26 itens, 29 nós do mapa) e assets visuais consistentes (23/23).
@@ -345,4 +356,5 @@ $ npm run validate:monster-assets
 
 | Versão | Data | Autor | Descrição |
 |---|---|---|---|
+| 1.0.1 | 2026-05-26 | Copilot (PR-C Trade) | Nota de atualização: R01 (Trade paralelo) encerrado após remoção do legado |
 | 1.0.0 | 2026-05-23 | Copilot (auditoria automatizada) | Relatório inicial — 17 domínios, 10 riscos, 6 concorrências, 9 testes faltantes |
