@@ -26,10 +26,8 @@
 
 `js/trade/tradeSystem.js` está marcado como **`@deprecated` / adapter temporário**.
 
-- Importado em `index.html` como `window.TradeSystem` para compatibilidade do modal antigo.
-- O modal legado (`openTradeModal` / `executeTradeFromModal`) ainda chama:
-  - `window.TradeSystem.proposeTradeAction(...)`
-  - `window.TradeSystem.acceptTrade(...)`
+- Não é mais importado em `index.html` nem exposto como `window.TradeSystem`.
+- O modal legado (`openTradeModal` / `executeTradeFromModal`) continua existindo, mas usa `window.TradeUI.validateTrade(...)` e `window.TradeUI.executeTrade(...)`.
 - Quando `targetInstanceId` está presente no contexto, o adapter delega para `js/combat/tradeSystem.js`.
 - Nenhuma nova regra de Trade deve ser adicionada ao módulo legado.
 
@@ -41,11 +39,15 @@
 | `js/trade/tradeSystem.js` marcado como `@deprecated` | ✅ |
 | Testes de arquitetura guardam o estado atual | ✅ |
 | Testes de save/load pós-trade adicionados | ✅ |
-| Modal migrado para caminho canônico | ❌ (pendente — este plano orienta) |
-| `window.TradeSystem` removido | ❌ (pendente) |
+| Modal migrado para caminho canônico | ✅ (PR-A: `executeTradeFromModal` usa `window.TradeUI.executeTrade`) |
+| `window.TradeSystem` removido | ✅ (PR-B) |
 | `js/trade/tradeSystem.js` removido | ❌ (pendente) |
 
 > **Regra:** a remoção do legado não deve acontecer sem cumprir todas as pré-condições da Seção 5.
+
+> **Atualização PR-A:** o modal legado deixou de chamar diretamente `window.TradeSystem.proposeTradeAction(...)` e `window.TradeSystem.acceptTrade(...)` no runtime do `index.html`.
+
+> **Atualização PR-B:** `index.html` deixou de importar `./js/trade/tradeSystem.js` e não expõe mais `window.TradeSystem`. O arquivo legado permanece no repositório para cobertura regressiva até o PR-C.
 
 ---
 
@@ -57,11 +59,8 @@ Varredura completa dos símbolos: `window.TradeSystem`, `openTradeModal`, `execu
 
 | Referência | Arquivo | Linha (aprox.) | Tipo de uso | Status | Ação futura |
 |---|---|---|---|---|---|
-| `import * as TradeSystem from './js/trade/tradeSystem.js'` | `index.html` | 1010 | import | Compatibilidade temporária | Remover após PR-A |
-| `window.TradeSystem = TradeSystem` | `index.html` | 1025 | global window | Compatibilidade temporária | Remover após PR-B |
-| `if (!window.TradeSystem)` | `index.html` | 13390 | fallback/guard | Compatibilidade temporária | Remover em PR-A |
-| `window.TradeSystem.proposeTradeAction(...)` | `index.html` | 13506 | runtime | Candidato à migração | Migrar em PR-A |
-| `window.TradeSystem.acceptTrade(...)` | `index.html` | 13521 | runtime | Candidato à migração | Migrar em PR-A |
+| `import * as TradeSystem from './js/trade/tradeSystem.js'` | `index.html` | removido no PR-B | import | Removido do runtime | Manter ausente |
+| `window.TradeSystem = TradeSystem` | `index.html` | removido no PR-B | global window | Removido do runtime | Manter ausente |
 | `validateTrade` (export) | `js/trade/tradeSystem.js` | 88 | export legado | Adapter | Não remover até PR-C |
 | `proposeTradeAction` (export) | `js/trade/tradeSystem.js` | 136 | export legado | Adapter | Não remover até PR-C |
 | `acceptTrade` (export) | `js/trade/tradeSystem.js` | 169 | export legado | Adapter | Não remover até PR-C |
@@ -77,19 +76,18 @@ Varredura completa dos símbolos: `window.TradeSystem`, `openTradeModal`, `execu
 
 | Referência | Arquivo | Linha (aprox.) | Tipo de uso | Status | Ação futura |
 |---|---|---|---|---|---|
-| `function openTradeModal(...)` | `index.html` | 13388 | runtime (definição) | Candidato à migração | Migrar em PR-A |
-| `window.openTradeModal = openTradeModal` | `index.html` | 13544 | global window | Candidato à migração | Remover em PR-A após migração |
-| `onclick="executeTradeFromModal(...)"` | `index.html` | 13451 | runtime (HTML inline) | Candidato à migração | Atualizar em PR-A |
-| `function executeTradeFromModal(...)` | `index.html` | 13476 | runtime (definição) | Candidato à migração | Migrar em PR-A |
-| `window.executeTradeFromModal = executeTradeFromModal` | `index.html` | 13545 | global window | Candidato à migração | Remover em PR-A após migração |
-| `function updateTradeRecipientMonsterOptions()` | `index.html` | 13360 | runtime (definição) | Candidato à migração | Migrar em PR-A |
-| `window.updateTradeRecipientMonsterOptions = ...` | `index.html` | 13546 | global window | Candidato à migração | Remover em PR-A após migração |
-| `openTrade: 'openTradeModal'` | `index.html` | 13159 | runtime (actionNames) | Candidato à migração | Migrar em PR-A |
-| `openTrade: 'openTradeModal'` | `index.html` | 13206 | runtime (actionNames) | Candidato à migração | Migrar em PR-A |
-| `actionNames.openTrade \|\| 'openTradeModal'` | `js/ui/playerPanelUI.js` | 102 | runtime (fallback) | Candidato à migração | Manter fallback até PR-A |
-| `window.TradeSystem.proposeTradeAction(...)` em tests | `tests/tradeArchitecture.test.js` | 32 | teste de guarda | Guardrail | Não remover |
-| `window.TradeSystem.acceptTrade(...)` em tests | `tests/tradeArchitecture.test.js` | 33 | teste de guarda | Guardrail | Não remover |
-| `targetInstanceId: toInstanceId` | `index.html` | 13501 | runtime (adapter key) | Candidato à migração | Migrar com PR-A |
+| `function openTradeModal(...)` | `index.html` | 13388 | runtime (definição) | Compatibilidade temporária remanescente | Remover/substituir em PR-C |
+| `window.openTradeModal = openTradeModal` | `index.html` | 13544 | global window | Compatibilidade temporária remanescente | Remover em PR-C |
+| `onclick="executeTradeFromModal(...)"` | `index.html` | 13451 | runtime (HTML inline) | Compatibilidade temporária remanescente | Atualizar/remover em PR-C |
+| `function executeTradeFromModal(...)` | `index.html` | 13476 | runtime (definição) | Compatibilidade temporária remanescente | Remover/substituir em PR-C |
+| `window.executeTradeFromModal = executeTradeFromModal` | `index.html` | 13545 | global window | Compatibilidade temporária remanescente | Remover em PR-C |
+| `function updateTradeRecipientMonsterOptions()` | `index.html` | 13360 | runtime (definição) | Compatibilidade temporária remanescente | Remover/substituir em PR-C |
+| `window.updateTradeRecipientMonsterOptions = ...` | `index.html` | 13546 | global window | Compatibilidade temporária remanescente | Remover em PR-C |
+| `openTrade: 'openTradeModal'` | `index.html` | 13159 | runtime (actionNames) | Compatibilidade temporária remanescente | Atualizar em PR-C |
+| `openTrade: 'openTradeModal'` | `index.html` | 13206 | runtime (actionNames) | Compatibilidade temporária remanescente | Atualizar em PR-C |
+| `actionNames.openTrade \|\| 'openTradeModal'` | `js/ui/playerPanelUI.js` | 102 | runtime (fallback) | Compatibilidade temporária remanescente | Remover fallback em PR-C |
+| ausência de `window.TradeSystem` | `tests/tradeArchitecture.test.js` | 39–41, 121–126 | teste de guarda | Guardrail pós-PR-B | Manter |
+| `targetInstanceId: toInstanceId` | `index.html` | 13501 | runtime (adapter key) | Compatibilidade temporária remanescente | Remover junto do modal em PR-C |
 
 ### 2.3 Referências ao sistema canônico (`js/combat/tradeSystem.js`)
 
@@ -124,19 +122,17 @@ Varredura completa dos símbolos: `window.TradeSystem`, `openTradeModal`, `execu
 
 | Chamada | Pode remover agora? | Por quê | Risco | PR recomendado |
 |---|---|---|---|---|
-| `import * as TradeSystem from './js/trade/tradeSystem.js'` em `index.html` | ❌ Não | Toda a cadeia do modal depende desta importação | 🔴 Quebra modal imediatamente | PR-A (após migração do modal) |
-| `window.TradeSystem = TradeSystem` | ❌ Não | `openTradeModal` e `executeTradeFromModal` dependem em runtime | 🔴 Quebra modal imediatamente | PR-B |
-| `window.TradeSystem.proposeTradeAction(...)` | ❌ Não | Ponto central do fluxo legado ainda ativo | 🔴 Quebra modal imediatamente | PR-A |
-| `window.TradeSystem.acceptTrade(...)` | ❌ Não | Efetivação da troca pelo modal | 🔴 Quebra modal imediatamente | PR-A |
+| `import * as TradeSystem from './js/trade/tradeSystem.js'` em `index.html` | ✅ Sim | PR-B já removeu o import sem quebrar o modal | 🟢 Concluído | PR-B |
+| `window.TradeSystem = TradeSystem` | ✅ Sim | PR-B já removeu a exposição global; modal usa `TradeUI` | 🟢 Concluído | PR-B |
 | `openTradeModal` (função) | ❌ Não | Botão 🔄 no painel do jogador aponta para ela | 🔴 Quebra interação do usuário | PR-A |
 | `executeTradeFromModal` (função) | ❌ Não | Chamada inline do HTML no botão de confirmação | 🔴 Quebra interação do usuário | PR-A |
 | `updateTradeRecipientMonsterOptions` (função) | ❌ Não | Usado no modal para popular select de monstrinhos | 🔴 Quebra UX do modal | PR-A |
 | `actionNames.openTrade: 'openTradeModal'` em `index.html` | ❌ Não | `playerPanelUI.js` recebe este nome para gerar botão | 🔴 Quebra botão de troca no painel | PR-A |
 | `actionNames.openTrade || 'openTradeModal'` em `playerPanelUI.js` | ❌ Não | Fallback para geração do botão no painel de time | 🟡 Quebra botão se sem alternativa | PR-A |
 | `targetInstanceId` no contexto do `executeTradeFromModal` | ❌ Não | Chave que aciona caminho bilateral do adapter | 🔴 Sem ela, trocas bilaterais regridem para unilateral | PR-A |
-| `js/trade/tradeSystem.js` (arquivo) | ❌ Não | Todas as dependências acima dependem dele | 🔴 Remove todo o modal | PR-C (última etapa) |
-| `proposeTradeAction` export | ❌ Não | Chamado em runtime por `executeTradeFromModal` | 🔴 | PR-C |
-| `acceptTrade` export | ❌ Não | Chamado em runtime por `executeTradeFromModal` | 🔴 | PR-C |
+| `js/trade/tradeSystem.js` (arquivo) | ❌ Não | Ainda sustenta regressão, adapter bilateral e a remoção controlada | 🔴 Remover agora quebra cobertura e rollback | PR-C (última etapa) |
+| `proposeTradeAction` export | ❌ Não | Ainda é coberto por testes legados e contrato do adapter | 🟡 Quebra regressão | PR-C |
+| `acceptTrade` export | ❌ Não | Ainda é coberto por testes legados e pelo adapter bilateral | 🟡 Quebra regressão | PR-C |
 | `validateTrade` export (legado) | ❌ Não | Usado pelos testes de regressão do módulo legado | 🟡 Quebra testes | PR-C |
 | `from '../js/trade/tradeSystem.js'` em testes | ❌ Não | Cobertura de regressão ativa; remover perde rastreabilidade | 🟡 Perde cobertura | PR-C |
 | `validateCanonicalTrade` / `executeCanonicalTrade` no adapter | ❌ Não | São a ponte do adapter para o canônico | 🟡 Adapter deixa de funcionar | PR-C |
@@ -147,17 +143,15 @@ Varredura completa dos símbolos: `window.TradeSystem`, `openTradeModal`, `execu
 
 1. **Quebrar o modal antigo:** `openTradeModal` e `executeTradeFromModal` são os únicos pontos de entrada do fluxo legado de troca para o usuário a partir do painel de time. Remover sem migrar deixa o botão 🔄 sem ação.
 
-2. **Quebrar scripts globais em `index.html`:** `window.TradeSystem`, `window.openTradeModal`, `window.executeTradeFromModal` e `window.updateTradeRecipientMonsterOptions` são expostos globalmente. Qualquer script inline ou callback de event listener que os chame quebraria silenciosamente.
+2. **Quebrar scripts globais ainda ativos em `index.html`:** `window.openTradeModal`, `window.executeTradeFromModal` e `window.updateTradeRecipientMonsterOptions` continuam expostos e são usados por HTML inline/callbacks do modal. Removê-los prematuramente quebraria o fluxo legado.
 
-3. **Quebrar testes arquiteturais:** `tests/tradeArchitecture.test.js` verifica explicitamente que `index.html` contém `window.TradeSystem.proposeTradeAction(` e `window.TradeSystem.acceptTrade(`. Remover o runtime quebraria esses testes antes de atualizá-los.
+3. **Quebrar guardrails arquiteturais remanescentes:** `tests/tradeArchitecture.test.js` agora verifica explicitamente que `window.TradeSystem` permanece ausente e que o modal segue ligado ao caminho canônico. Remover ou enfraquecer esses guardrails antes do PR-C perde proteção contra regressão arquitetural.
 
 4. **Quebrar compatibilidade de fluxo:** o adapter em `js/trade/tradeSystem.js` é a única ponte que garante que trocas bilaterais (com `targetInstanceId`) do modal antigo resultem no comportamento canônico correto. Sem ele, qualquer fluxo residual que ainda use o modal regridia para transferência unilateral.
 
 5. **Perder cobertura de regressão:** `tests/tradeSystem.trade.test.js` e `tests/tradeUI.test.js` cobrem o contrato da API legada. Sem eles, mudanças silenciosas no comportamento esperado poderiam passar despercebidas.
 
-6. **Deixar `window.TradeSystem` indefinido:** qualquer código externo, script de diagnóstico ou ferramenta que leia `window.TradeSystem` em runtime encontraria `undefined` e poderia lançar erros não tratados.
-
-7. **Remover adapter antes de migrar a UI:** o modal HTML está hardcoded com `onclick="executeTradeFromModal(...)"`. Remover o adapter antes de atualizar o HTML deixaria o botão sem destino.
+6. **Remover adapter antes de migrar/remover a UI legada:** o modal HTML está hardcoded com `onclick="executeTradeFromModal(...)"`. Remover o arquivo legado antes do PR-C deixaria a trilha de regressão e comparação arquitetural incompleta.
 
 ---
 
@@ -165,17 +159,17 @@ Varredura completa dos símbolos: `window.TradeSystem`, `openTradeModal`, `execu
 
 A remoção de `js/trade/tradeSystem.js` e dos símbolos dependentes **só poderá acontecer quando todas as condições abaixo estiverem atendidas:**
 
-1. Nenhuma chamada runtime depender de `window.TradeSystem` (verificar `index.html` e qualquer script inline).
-2. `openTradeModal` e `executeTradeFromModal` forem migrados para `TradeUI` ou chamada canônica direta em `js/combat/tradeSystem.js`.
-3. O HTML do modal tiver sido atualizado para não mais usar `onclick="executeTradeFromModal(...)"`.
-4. `updateTradeRecipientMonsterOptions` for migrado para usar `window.TradeUI.getTradeableMonsters` como fonte primária sem fallback legado.
-5. `playerPanelUI.js` usar um nome de ação canônico para o botão 🔄 (sem fallback para `'openTradeModal'`).
-6. Todos os testes de Trade passarem após cada etapa de migração, incluindo `tests/tradeSaveLoad.test.js`.
-7. `tests/tradeArchitecture.test.js` for atualizado para verificar a arquitetura pós-migração (sem referências ao modal legado).
-8. `tests/tradeSystem.trade.test.js` e `tests/tradeUI.test.js` forem migrados para cobrir o fluxo canônico equivalente.
+1. `window.TradeSystem` deve permanecer ausente do runtime (verificar `index.html` e os guardrails).
+2. `openTradeModal` e `executeTradeFromModal` precisam estar migrados/removidos sem quebrar o fluxo do usuário.
+3. O HTML do modal deve deixar de usar `onclick="executeTradeFromModal(...)"`.
+4. `updateTradeRecipientMonsterOptions` deve deixar de ser necessário ou ser movido para um ponto canônico sem fallback legado.
+5. `playerPanelUI.js` deve usar um nome de ação canônico para o botão 🔄 (sem fallback para `'openTradeModal'`).
+6. Todos os testes de Trade devem passar após cada etapa, incluindo `tests/tradeSaveLoad.test.js`.
+7. `tests/tradeArchitecture.test.js` deve permanecer alinhado ao estado pós-PR-B e depois ser atualizado novamente no PR-C.
+8. `tests/tradeSystem.trade.test.js` e `tests/tradeUI.test.js` devem ser migrados/removidos somente quando houver cobertura equivalente do fluxo canônico.
 9. Documentação atualizada: `docs/trade_source_of_truth_audit.md`, `docs/AUDIT_GENERAL_RISKS_2026-05.md`, este arquivo.
-10. CI completo estar verde (`npm test` + `npm run validate-data`).
-11. Existir possibilidade de rollback simples (PR isolado, reversível).
+10. CI completo deve estar verde (`npm test` + `npm run validate-data`).
+11. Deve existir possibilidade de rollback simples (PR isolado, reversível).
 
 ---
 
@@ -202,17 +196,20 @@ A remoção de `js/trade/tradeSystem.js` e dos símbolos dependentes **só poder
 
 ### PR-B — Remover `window.TradeSystem`
 
-**Escopo:**
-- Remover `import * as TradeSystem from './js/trade/tradeSystem.js'` de `index.html`.
-- Remover `window.TradeSystem = TradeSystem` de `index.html`.
-- Atualizar `tests/tradeArchitecture.test.js` para não mais verificar a presença de `window.TradeSystem.proposeTradeAction(` e `window.TradeSystem.acceptTrade(`.
+**Status:** ✅ concluído
 
-**Critério de aceitação:**
+**Escopo executado:**
+- Removido `import * as TradeSystem from './js/trade/tradeSystem.js'` de `index.html`.
+- Removido `window.TradeSystem = TradeSystem` de `index.html`.
+- Atualizado `tests/tradeArchitecture.test.js` para verificar a ausência de `window.TradeSystem` no runtime.
+
+**Resultado:**
 - Nenhum fluxo runtime referencia `window.TradeSystem`.
-- Testes arquiteturais passam com nova asserção.
-- CI verde.
+- `executeTradeFromModal` continua existindo e usando `TradeUI`.
+- `js/trade/tradeSystem.js` permanece existente para regressão e remoção futura.
+- CI deve permanecer verde.
 
-**Pré-requisito:** PR-A concluído e CI verde.
+**Próximo passo:** PR-C — remover `js/trade/tradeSystem.js`.
 
 ---
 
@@ -231,7 +228,7 @@ A remoção de `js/trade/tradeSystem.js` e dos símbolos dependentes **só poder
 - Documentação atualizada e consistente.
 - CI verde.
 
-**Pré-requisito:** PR-B concluído, CI verde, pelo menos um ciclo estável sem o arquivo em produção.
+**Pré-requisito:** PR-B concluído, CI verde, pelo menos um ciclo estável sem `window.TradeSystem` no runtime.
 
 ---
 
@@ -262,12 +259,11 @@ Os itens a seguir **não devem ser removidos** neste PR nem em nenhum PR futuro 
 | Item | Justificativa |
 |---|---|
 | `js/trade/tradeSystem.js` | Adapter ativo; modal runtime depende dele |
-| `window.TradeSystem` | Guard em `openTradeModal` e chamadas em `executeTradeFromModal` dependem |
 | `openTradeModal` | Botão 🔄 no painel de time aponta para esta função |
 | `executeTradeFromModal` | Botão de confirmação no HTML do modal chama esta função via `onclick` |
 | `updateTradeRecipientMonsterOptions` | Atualiza o `<select>` de monstrinhos do destinatário no modal |
-| `proposeTradeAction` (export do legado) | Chamado em runtime por `executeTradeFromModal` |
-| `acceptTrade` (export do legado) | Chamado em runtime por `executeTradeFromModal` |
+| `proposeTradeAction` (export do legado) | Mantido para regressão do módulo legado até o PR-C |
+| `acceptTrade` (export do legado) | Mantido para regressão do módulo legado até o PR-C |
 | `tests/tradeSystem.trade.test.js` | Regressão do contrato legado; remover perde rastreabilidade |
 | `tests/tradeUI.test.js` | Regressão do fluxo UI via API legada |
 | `tests/tradeSaveLoad.test.js` | Cobertura de persistência do adapter bilateral |
@@ -279,12 +275,12 @@ Os itens a seguir **não devem ser removidos** neste PR nem em nenhum PR futuro 
 
 ## Notas de rollback
 
-Este PR é estritamente documental. Não altera comportamento de runtime.  
-Rollback: reverter o PR. Sem impacto em saves, estado do jogo ou fluxo de Trade.
+PR-B remove apenas a exposição global `window.TradeSystem` no runtime e não remove o arquivo legado.  
+Rollback: reverter o PR. Como `js/trade/tradeSystem.js` continua existindo, a restauração do import/global é direta e sem migração de dados.
 
 Se em um PR futuro (PR-A, PR-B ou PR-C) algo quebrar, o rollback é o revert do respectivo PR. Como cada PR é pequeno e atômico, o rollback não afeta os demais.
 
 ---
 
 **Última atualização:** 2026-05-25  
-**Versão:** 1.0.0 — mapeamento inicial pós-depreciação do legado
+**Versão:** 1.1.0 — PR-B concluído, runtime sem `window.TradeSystem`

@@ -33,13 +33,16 @@ const REPO_ROOT = new URL('..', import.meta.url);
 const readRepoFile = (relativePath) => fs.readFileSync(new URL(relativePath, REPO_ROOT), 'utf8');
 
 describe('Trade arquitetura — runtime e cobertura', () => {
-    it('index.html mantém compatibilidade do modal via window.TradeSystem com contexto bilateral', () => {
+    it('index.html mantém modal legado com execução canônica via TradeUI sem expor TradeSystem', () => {
         const indexHtml = readRepoFile('index.html');
-        expect(indexHtml).toContain("import * as TradeSystem from './js/trade/tradeSystem.js';");
-        expect(indexHtml).toContain('window.TradeSystem.proposeTradeAction(');
-        expect(indexHtml).toContain('window.TradeSystem.acceptTrade(');
-        expect(indexHtml).toContain('targetInstanceId: toInstanceId');
-        expect(indexHtml).toContain('sharedBox: GameState.sharedBox || []');
+        expect(indexHtml).not.toContain("import * as TradeSystem from './js/trade/tradeSystem.js';");
+        expect(indexHtml).not.toContain('window.TradeSystem = TradeSystem');
+        expect(indexHtml).not.toContain('window.TradeSystem');
+        expect(indexHtml).not.toContain('window.TradeSystem.proposeTradeAction(');
+        expect(indexHtml).not.toContain('window.TradeSystem.acceptTrade(');
+        expect(indexHtml).toContain('function executeTradeFromModal(');
+        expect(indexHtml).toContain('window.TradeUI.executeTrade(');
+        expect(indexHtml).toContain('getLegacyTradeModalCandidates(toPlayerId)');
     });
 
     it('TradeUI aponta para sistema canônico em js/combat/tradeSystem.js', () => {
@@ -114,22 +117,23 @@ describe('Trade arquitetura — módulo legado — guardrails de remoção segur
     // Remover estes testes somente após confirmar pré-condições de
     // docs/trade_legacy_removal_plan.md Seção 5.
 
-    it('window.TradeSystem ainda é exposto como compatibilidade temporária em index.html', () => {
-        // Pré-condição de remoção: nenhuma chamada runtime depender de window.TradeSystem.
-        // Enquanto isso não for verdade, este teste deve continuar verde.
+    it('window.TradeSystem não é mais exposto em index.html após o PR-B', () => {
+        // Guardrail pós-PR-B: o runtime não deve voltar a expor o global legado.
         const indexHtml = readRepoFile('index.html');
-        expect(indexHtml).toContain('window.TradeSystem = TradeSystem');
+        expect(indexHtml).not.toContain("import * as TradeSystem from './js/trade/tradeSystem.js';");
+        expect(indexHtml).not.toContain('window.TradeSystem = TradeSystem');
+        expect(indexHtml).not.toContain('window.TradeSystem');
     });
 
     it('openTradeModal ainda existe como ponto de entrada do modal legado', () => {
-        // Pré-condição de remoção: openTradeModal migrado para caminho canônico (PR-A).
+        // Remover somente quando a trilha residual do modal puder sair com segurança (PR-C).
         const indexHtml = readRepoFile('index.html');
         expect(indexHtml).toContain('function openTradeModal(');
         expect(indexHtml).toContain('window.openTradeModal');
     });
 
     it('executeTradeFromModal ainda existe como executor do modal legado', () => {
-        // Pré-condição de remoção: executeTradeFromModal migrado para caminho canônico (PR-A).
+        // Pré-condição de remoção: executeTradeFromModal removido/substituído após migração concluída.
         const indexHtml = readRepoFile('index.html');
         expect(indexHtml).toContain('function executeTradeFromModal(');
         expect(indexHtml).toContain('window.executeTradeFromModal');

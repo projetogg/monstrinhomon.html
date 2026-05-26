@@ -11,7 +11,7 @@ Sem remoção de módulo e sem mudança de regra de troca.
 
 ## 1) Qual sistema é runtime ativo
 
-Hoje, **os dois sistemas estão ativos em runtime** em fluxos diferentes:
+Hoje, **o runtime ativo de Trade é o sistema canônico**:
 
 1. **Fluxo principal da aba Trade (painel de troca com confirmação entre 2 lados)**  
    Usa `js/combat/tradeSystem.js` por meio de `js/ui/tradeUI.js`.
@@ -19,10 +19,10 @@ Hoje, **os dois sistemas estão ativos em runtime** em fluxos diferentes:
    - `index.html` chama `window.TradeUI.executeTrade(...)` no `tradeAccept()`.
 
 2. **Fluxo legado de modal (`openTradeModal/executeTradeFromModal`) com compatibilidade temporária**  
-   Usa `js/trade/tradeSystem.js` como adapter.
-   - `index.html` importa `./js/trade/tradeSystem.js` como `window.TradeSystem`.
-   - `executeTradeFromModal()` continua chamando `window.TradeSystem.proposeTradeAction(...)` e `window.TradeSystem.acceptTrade(...)`.
-   - Quando há `targetInstanceId` no contexto do modal, o módulo legado encaminha para a lógica canônica de `js/combat/tradeSystem.js`.
+   Mantém o ponto de entrada antigo, mas executa troca pelo caminho canônico.
+   - `index.html` **não importa mais** `./js/trade/tradeSystem.js` nem expõe `window.TradeSystem`.
+   - `executeTradeFromModal()` usa `window.TradeUI.executeTrade(...)` e `window.TradeUI.validateTrade(...)`.
+   - O arquivo `js/trade/tradeSystem.js` permanece no repositório para cobertura regressiva, comparação arquitetural e remoção controlada no PR-C.
 
 ## 2) Qual sistema é coberto por testes
 
@@ -83,23 +83,27 @@ Justificativa:
    - Aviso `@deprecated` inserido no topo do arquivo.
    - Documentado que novas regras não devem entrar no módulo legado.
    - Documentado que trocas bilaterais com `targetInstanceId` são encaminhadas para o canônico.
+5. ✅ Modal legado migrado no runtime para executar via `TradeUI` (PR-A), removendo chamada direta a `window.TradeSystem.proposeTradeAction/acceptTrade`.
+6. ✅ `window.TradeSystem` removido do runtime no `index.html` (PR-B), mantendo o arquivo legado para testes e remoção futura controlada.
 
 ## 6) Status atual (pós-depreciação formal)
 
 - `js/trade/tradeSystem.js` está marcado como `@deprecated` e adapter temporário.
 - Nenhuma nova regra de Trade deve ser adicionada ao módulo legado.
 - Qualquer fluxo novo deve usar `js/combat/tradeSystem.js` diretamente.
+- `index.html` não importa mais `./js/trade/tradeSystem.js` e não expõe `window.TradeSystem`.
 - A **remoção** do módulo legado é etapa futura separada (ver condições abaixo).
 
 ## 7) Condições mínimas para remoção futura do módulo legado
 
 Antes de remover `js/trade/tradeSystem.js`, devem estar atendidas **todas** as condições:
 
-1. Nenhuma chamada direta restante de `window.TradeSystem` fora do adapter (verificar `index.html`).
-2. Modal antigo (`openTradeModal` / `executeTradeFromModal`) migrado para o sistema canônico ou substituído.
-3. Testes E2E/save-load verdes (incluindo `tests/tradeSaveLoad.test.js`).
-4. Documentação atualizada (este arquivo + `PROXIMOS_PASSOS.md` ou equivalente).
-5. CI verde em todas as suítes de Trade.
+1. `window.TradeSystem` deve permanecer ausente do runtime (verificar `index.html`).
+2. `js/trade/tradeSystem.js` deve continuar existindo até a remoção controlada do PR-C.
+3. Modal antigo (`openTradeModal` / `executeTradeFromModal`) precisa permanecer funcional via `TradeUI` até sua retirada/substituição.
+4. Testes E2E/save-load verdes (incluindo `tests/tradeSaveLoad.test.js`).
+5. Documentação atualizada (este arquivo + plano de remoção e docs correlatos).
+6. CI verde em todas as suítes de Trade.
 
 A remoção do legado **não deve acontecer** no mesmo PR da depreciação.
 
