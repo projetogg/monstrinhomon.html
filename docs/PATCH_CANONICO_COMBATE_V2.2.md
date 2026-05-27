@@ -246,27 +246,57 @@ DanoFinal = max(minDano, floor(DanoBase × mult_faixa))
 
 ## BLOCO 7 — PASSIVAS DE CLASSE (v1)
 
-### 7.1 Conflito
+### 7.1 Status canônico
 
-| Passiva | Presente no código | Presente nos documentos canônicos |
+| Passiva | Presente no código | Status canônico v2.2 |
 |---|---|---|
-| Guerreiro −15% dano recebido | ✅ `wildActions.js` e `groupActions.js` | ❌ Nenhum documento menciona |
-| Bárbaro −10% dano recebido | ✅ | ❌ |
-| Curandeiro −10% dano recebido | ✅ | ❌ |
-| Ladino +10% dano causado | ✅ | ❌ |
-| Ladino −1 DEF inimigo no primeiro ataque básico | ✅ `passiveState.ladinoFirstStrikeDone` | ❌ |
+| Guerreiro −15% dano recebido | ✅ `wildActions.js` e `groupActions.js` | ✅ Mantida como conceito; valor atual requer recalibração futura |
+| Bárbaro −10% dano recebido | ✅ | ✅ Mantida como conceito; valor atual requer recalibração futura |
+| Curandeiro −10% dano recebido | ✅ | ✅ Mantida como conceito; valor atual requer recalibração futura |
+| Ladino +10% dano causado | ✅ | ✅ Mantida como conceito; valor atual requer recalibração futura |
+| Ladino −1 DEF inimigo no primeiro ataque básico | ✅ `passiveState.ladinoFirstStrikeDone` | ✅ Mantida como conceito; forma final requer explicitação documental |
 
-> Estas passivas foram implementadas sem formalização no Documento Mestre. Não contradizem nenhuma regra documentada, mas também não têm autoridade canônica.
+> As passivas de classe passam a ser parte oficial do sistema Monstrinhomon. Elas não viram cartas neste momento e permanecem como camada canônica complementar da fórmula v2.2.
 
 ### 7.2 Decisão
 
-🟡 **DECISÃO DO AUTOR NECESSÁRIA (bloqueante — ver §DECISÕES):**
+✅ **DECISÃO B RESOLVIDA — PASSIVAS DE CLASSE:**
 
-> **Opção A:** formalizar como regra canônica (adicionar ao GAME_RULES.md e Matriz Mestra)  
-> **Opção B:** revogar — o sistema v2.1 já tem `ModClasse (+2/−2 RC, ×1.10/×0.90 dano)` como representação de identidade de classe  
-> **Opção C:** manter como mecânica de "passiva de espécie" futura, não de classe genérica
+> As passivas de classe serão mantidas como parte oficial do sistema Monstrinhomon.  
+> Elas não serão transformadas em cartas neste momento.  
+> Elas passam a ser uma camada canônica complementar da fórmula v2.2.  
+> As passivas devem ser fracas, explícitas, previsíveis, documentadas e testáveis.
 
-**Congelado:** passivas de classe v1 **permanecem ativas no código** até decisão explícita. Nenhuma nova passiva de classe deve ser criada enquanto as existentes não forem formalizadas ou revogadas.
+**Diretriz canônica inicial:** passivas percentuais devem começar em torno de **3% a 5%**, não **10% ou mais**.
+
+**Regra de contenção:** passivas acima de **5%** só devem existir se forem fortemente condicionais, situacionais ou limitadas.
+
+As passivas devem reforçar a identidade da classe sem substituir:
+- atributos;
+- cartas;
+- habilidades;
+- posicionamento;
+- vantagem/desvantagem de classe;
+- ModNível;
+- decisões táticas;
+- gestão de ENE.
+
+A passiva deve ser sentida ao longo do tempo, mas raramente decidir uma luta sozinha.
+
+### 7.3 Diretriz inicial de design (PR futuro)
+
+> Esta tabela é diretriz de design para PR futuro. Não implementar agora.
+
+| Classe | Diretriz de passiva fraca |
+|---|---|
+| Guerreiro | Redução pequena de dano recebido, inicialmente ~5% |
+| Bárbaro | Bônus pequeno de dano sob condição de risco, inicialmente ~5% quando HP ≤ 50% |
+| Ladino | Bônus pequeno em acerto forte, inicialmente ~5% |
+| Curandeiro | Bônus pequeno em cura realizada, inicialmente ~5% |
+| Mago | Bônus pequeno em habilidade ofensiva/mágica, inicialmente ~5% |
+| Caçador | Bônus situacional de precisão/RC em posição favorável, preferencialmente +1 RC condicional |
+| Bardo | Bônus pequeno em buff, não +1 turno automático neste momento |
+| Animalista | Bônus pequeno conforme forma/estado, sem acumular defesa e dano ao mesmo tempo |
 
 ---
 
@@ -481,7 +511,7 @@ IA inimiga escolhe alvo:
 | **ENE regen** | ✅ RESOLVIDO | Tabela §BLOCO 4 |
 | **PWR básico** | 🟡 AUTOR (BLOQUEANTE) | Dependente de decisão sobre calibração do catálogo |
 | **Atributos do catálogo** | 🟡 AUTOR (BLOQUEANTE) | Recalibrar para v2.1 ou manter atual + ajustar PWR |
-| **Passivas de classe v1** | 🟡 AUTOR (BLOQUEANTE) | Formalizar ou revogar — não criar novas enquanto existentes |
+| **Passivas de classe v1** | ✅ RESOLVIDO | Mantidas como camada canônica fraca/recalibrada; não viram cartas neste momento |
 | **Posicionamento** | ✅ RESOLVIDO | 3 linhas, máx 2/linha, bônus +0/+1/+2 |
 | **Alcance por classe** | ✅ RESOLVIDO | Tabela §BLOCO 9 |
 | **ModPosição no d20D** | ✅ RESOLVIDO | +0/+1/+2 com condição de cobertura |
@@ -524,16 +554,18 @@ IA inimiga escolhe alvo:
 
 ---
 
-### 🔴 DECISÃO BLOQUEANTE B — Passivas de classe v1
+### ✅ DECISÃO RESOLVIDA B — Passivas de classe v1
 
-**Pergunta:** as passivas (Guerreiro −15%, Bárbaro −10%, Curandeiro −10%, Ladino +10%) são regra oficial ou legado a revogar?
+**Resposta:** as passivas de classe são regra oficial do Monstrinhomon e permanecem no sistema como camada complementar da fórmula v2.2.
 
-**Opções:**
-- A: formalizar no GAME_RULES.md e na Matriz Mestra
-- B: revogar — o sistema v2.1 tem ModClasse como representação de identidade
-- C: manter como passiva de espécie futura, não de classe genérica
+**Diretrizes aprovadas:**
+- não transformar em cartas neste momento;
+- não remover neste momento;
+- recalibrar para impacto fraco, explícito, previsível e testável;
+- iniciar passivas percentuais na faixa de 3% a 5%;
+- permitir valores acima de 5% apenas com condição, limitação ou situacionalidade forte.
 
-**Impacto se não decidido:** ao migrar para a fórmula v2.1, essas passivas podem se acumular com os ModClasse novos, causando double-counting de identidade de classe.
+**Impacto da decisão:** a migração futura do Wild Combat deve preservar o conceito de passivas, mas recalibrar os valores para evitar double-counting e impedir que a passiva decida combates sozinha.
 
 ---
 
@@ -555,9 +587,9 @@ IA inimiga escolhe alvo:
 
 ## PRÓXIMA AÇÃO
 
-**Antes de qualquer Fase 0 de código:** o autor responde às Decisões A e B.
+**Antes de qualquer Fase 0 de código:** o autor responde à Decisão A. A Decisão B já foi resolvida neste PR.
 
-Com A e B respondidas, o plano de implementação pode avançar sem ambiguidade canônica na seguinte sequência:
+Com A respondida e B já resolvida, o plano de implementação pode avançar sem ambiguidade canônica na seguinte sequência:
 
 ```
 Fase 0B  — Higiene arquitetônica
