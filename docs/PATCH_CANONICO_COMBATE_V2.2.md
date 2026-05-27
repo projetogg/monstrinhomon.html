@@ -5,6 +5,11 @@
 > **Status:** Errata vinculante — substitui qualquer leitura ambígua dos documentos anteriores  
 > **Escopo:** combate, atributos, habilidades, boss, posicionamento — sem alterar regras de captura, terapia ou economia
 
+> **Nota de auditoria (2026-05-26):** Este documento foi auditado contra o runtime atual.  
+> Resultado: **Group Combat alinhado** (`groupCombatFormula.js`). **Wild Combat diverge** (fórmula unilateral v1, sem ModNível, sem 5 faixas, crítico como auto-acerto + power×1.5).  
+> ENE regen diverge em 7 das 8 classes. Boss multipliers não confirmados.  
+> Detalhes completos em `docs/combat_formula_audit_2026-05.md`.
+
 ---
 
 ## MÉTODO: como este patch foi produzido
