@@ -14,7 +14,7 @@
 | Runtime alinhado ao Patch v2.2? | **Parcialmente.** Group Combat está alinhado. Wild Combat **não está**. |
 | Divergência é real, documental ou incerta? | **Real** para Wild Combat. **Documental** para passivas de classe e boss. |
 | Há risco crítico? | **Sim.** Wild Combat usa fórmula diferente do canônico v2.2 — diverge em acerto, dano, crítico e ModNível. |
-| O que deve ser corrigido primeiro? | Wild Combat: migrar para fórmula bilateral de RC + 5 faixas + `floor(DEF/2)`. Decidir antes se as passivas de classe v1 são mantidas ou revogadas (Decisão B do Patch v2.2). |
+| O que deve ser corrigido primeiro? | Wild Combat: migrar para fórmula bilateral de RC + 5 faixas + `floor(DEF/2)`, preservando as passivas de classe como camada canônica fraca/recalibrada (Decisão B resolvida). |
 
 ### Situação geral
 
@@ -22,7 +22,7 @@
 - **Wild Combat** (`wildCore.js` + `wildActions.js`): usa fórmula unilateral antiga — `d20 + ATK >= DEF`, dano `ATK + PWR - DEF`, crítico como auto-acerto + `PWR × 1.5`, sem ModNível, sem 5 faixas. **Não alinhado.**
 - **ENE regen**: código usa valores antigos (14% Mago/Curandeiro) vs canônico v2.2 (18%). Ambos os modos afetados.
 - **Boss**: multiplicadores `HP×2.5, ATK×1.5, DEF×1.5` canônicos não foram confirmados como implementados no runtime.
-- **Passivas de classe v1**: Guerreiro −15% / Bárbaro −10% / Curandeiro −10% / Ladino +10% presentes em código (Wild e Group) mas sem formalização no Patch v2.2 — marcadas como "decisão do autor pendente".
+- **Passivas de classe**: Guerreiro −15% / Bárbaro −10% / Curandeiro −10% / Ladino +10% presentes em código (Wild e Group). A Decisão B foi resolvida: elas serão mantidas como camada canônica complementar, mas os valores atuais ainda exigem PR próprio de recalibração. Diretriz inicial: passivas percentuais devem começar em torno de 3% a 5%, com valores acima de 5% apenas sob condição/limitação forte.
 
 ---
 
@@ -140,7 +140,7 @@ Fase 2 (HP ≤ 50%): ATK adicional +20%
 ### 3.8 Interpretações e pontos ambíguos
 
 - **Contato Neutralizado sem regra de nível especial**: o Patch v2.2 §1.3 é ambíguo sobre o resultado padrão ser 0 ou 1 — a `groupCombatFormula.js` interpreta como: se atacante não está ≥10 lv abaixo, retorna 1 (minor contact).
-- **Passivas de classe v1**: Patch v2.2 BLOCO 7 classifica como "decisão do autor pendente" — não são regra canônica confirmada nem revogada.
+- **Passivas de classe**: a Decisão B foi resolvida no Patch v2.2 — elas permanecem como regra canônica complementar, com exigência de passivas fracas, explícitas, previsíveis, documentadas e testáveis. A faixa inicial recomendada para percentuais é de 3% a 5%.
 - **PWR básico e calibração do catálogo**: DECISÃO BLOQUEANTE A do Patch v2.2 — ainda não resolvida.
 
 ---
@@ -184,7 +184,7 @@ Fase 2 (HP ≤ 50%): ATK adicional +20%
 | DIV-06 | 🟠 Alto | Wild — 5 faixas RC | 5 faixas: Falha/Contato/Reduzido/Normal/Forte com multiplicadores | Hit/miss binário (mais crítico) | Wild não tem multiplicadores de faixa — Acerto Forte (×1.25) não existe em Wild | Alta |
 | DIV-07 | 🟡 Médio | ENE Regen | Mago/Curandeiro: 18%, min 3; Bardo/Caçador/Ladino: 14%, min 2; Animalista/Bárbaro: 12%, min 2 | Código (visto em `combatQuantitativeAudit.test.js`): Mago/Curandeiro: 14%, min 2; Bardo/Caçador/Ladino: 12%, min 2; Animalista/Bárbaro: 10%, min 1 | Skills mais lentas para todos — Mago e Curandeiro mais afetados | Alta (confirmado em docs) |
 | DIV-08 | 🟡 Médio | Boss — HP×2.5/ATK×1.5/DEF×1.5 | Boss mínimo: HP×2.5, ATK×1.5, DEF×1.5 vs inimigo padrão do nível | `calibrateEnemyHP` aplica reduções para múltiplos inimigos, mas não multiplicadores de boss | Boss pode não ter stats canônicos | Média (bossSystem.js não foi auditado em detalhe) |
-| DIV-09 | 🟡 Médio | Passivas de classe v1 | Não existe regra canônica formalmente aprovada para estas passivas | Guerreiro−15%, Bárbaro−10%, Curandeiro−10%, Ladino+10% implementados em Wild e Group | Se fórmula for migrada para v2.2, passivas de classe podem se acumular com ModClasse (+2/−2 RC) | Alta (decidir antes de migrar) |
+| DIV-09 | 🟡 Médio | Passivas de classe | Decisão B resolvida: passivas serão mantidas como camada canônica fraca/recalibrada | Runtime ainda usa valores antigos (Guerreiro−15%, Bárbaro−10%, Curandeiro−10%, Ladino+10%) em Wild e Group | Sem recalibração própria, os valores atuais podem gerar double-counting com ModClasse e impacto excessivo | Alta (recalibrar em PR próprio) |
 | DIV-10 | 🔵 Baixo | Wild — d20=1 vs Patch | Patch v2.2: d20A=1 → −6 RC (o resultado pode ainda ser acerto em RC favorável) | Wild: d20=1 → sempre erra (auto-miss) | Divergência de regra: no canônico, d20=1 é penalidade severa de RC, não auto-miss | Média |
 | DIV-11 | 🔵 Baixo | Wild — SPD bônus extra | Patch v2.2 não menciona bônus ±1 de SPD relativo no hit check | `getSpdAdvantage` → ±1 no `checkHit`/`checkHitDiceClash` (Fase 11.2) | Mecânica extra-canônica adicionada após o Patch v2.2 — não é divergência problemática, mas não tem autoridade canônica | Média |
 | DIV-12 | 🔵 Baixo | Group vs Wild — consistência | Mesmo confronto deveria produzir resultados comparáveis entre modos | Wild usa fórmula v1; Group usa fórmula v2.2 — combates idênticos produzem resultados muito diferentes | Jogadores percebem experiências diferentes em Wild vs Group | Alta |
@@ -212,17 +212,24 @@ Arquivo criado: `tests/combatFormulaAudit.test.js`
 
 ## 7. Próximos PRs recomendados
 
-### PR imediato recomendado — Decisão de design (precede código)
-**Antes de qualquer PR de correção de fórmula**, o autor deve responder às Decisões Bloqueantes do Patch v2.2:
+### PR imediato recomendado — Preparação para correção Wild
+**Antes de qualquer PR de correção de fórmula**, o autor ainda deve responder à Decisão Bloqueante A do Patch v2.2:
 - **Decisão A**: recalibrar catálogo para v2.1 ou manter atual + ajustar PWR?
-- **Decisão B**: passivas de classe v1 são formalizadas, revogadas ou viram passivas de espécie?
+- **Decisão B**: resolvida — passivas de classe serão mantidas como camada canônica fraca/recalibrada.
 
-### PR de correção — Wild Combat (após decisões A e B)
-**Escopo:** migrar Wild Combat para fórmula bilateral canônica.
+### PR de correção — Wild Combat (após decisão A)
+**Escopo:** migrar Wild Combat para fórmula bilateral canônica sem remover o conceito de passivas.
 - Implementar `resolveConfrontation` em Wild (ou reutilizar `groupCombatFormula.js`)
 - Migrar `calcDamage` Wild para `PWR + ATK + ModNível − floor(DEF/2)` × mult_faixa
 - Ajustar crítico: d20=20 → +4 RC + 20% dano (não auto-hit + power×1.5)
 - Ajustar d20=1: penalidade de RC (não auto-miss)
+- Preservar o conceito de passivas
+- Recalibrar valores para impacto baixo, preferencialmente na faixa inicial de 3% a 5%
+- Evitar bônus escondidos fortes
+- Aplicar passivas de forma consistente entre Wild e Group
+- Não transformar passivas em cartas neste momento
+- Não remover passivas
+- Não tratar os valores atuais do runtime como definitivos sem PR próprio de recalibração
 - **RISCO**: alterar Wild sem Group pode aumentar divergência DIV-12 temporariamente
 
 ### PR de alinhamento Wild vs Group
@@ -261,7 +268,7 @@ Este PR diagnóstico **não alterou**:
 - `js/combat/bossSystem.js` — não alterado (auditoria pendente)
 - Qualquer dado JSON (`data/skills.json`, `data/monsters.json`, etc.)
 - ENE regen em `index.html` — divergência documentada, não corrigida
-- Passivas de classe v1 — aguardam Decisão B do Patch v2.2
+- Passivas de classe — mantidas; valores atuais ainda não são definitivos sem PR próprio de recalibração
 - PWR básico — aguarda Decisão A do Patch v2.2
 
 ---
@@ -275,11 +282,11 @@ Este PR diagnóstico **não alterou**:
 | ENE regen | **Divergência real documentada**: Patch v2.2 BLOCO 4 identificou os valores errados e prescreveu correção — código não foi atualizado. |
 | Crítico Wild (power×1.5 vs +4 RC+20%) | **Divergência real + decisão de design pendente**: o modelo de crítico Wild diverge do canônico, mas há uma decisão de UX (bônus aleatório) ainda não resolvida pelo autor. |
 | Boss multipliers | **Ausência de teste + incerteza**: não foi possível confirmar se HP×2.5/ATK×1.5/DEF×1.5 estão implementados. Auditoria de `bossSystem.js` é necessária. |
-| Passivas de classe v1 | **Divergência intencional + necessidade de decisão de design**: as passivas existem no código mas não têm autoridade canônica. Aguardam Decisão B. |
+| Passivas de classe | **Divergência documental resolvida + recalibração pendente**: as passivas agora têm autoridade canônica, mas os valores atuais do runtime não devem ser tratados como definitivos sem PR próprio de recalibração. |
 | d20=1 auto-miss vs −6 RC | **Divergência menor/intencional**: Wild simplifica como auto-miss. O canônico é penalidade de RC. Pode ser aceito como simplificação para o contexto do jogo. |
 | SPD bônus ±1 extra-canônico | **Feature extra não documentada**: adicionada na Fase 11.2 após o Patch v2.2. Não é bug, mas não tem autoridade canônica. |
 
-**Conclusão principal:** O principal problema é que a migração do Wild Combat para a fórmula bilateral canônica (Patch v2.2) nunca foi realizada. O Group Combat foi migrado com sucesso. A recomendação é: (1) o autor decide as Questões A e B do Patch v2.2; (2) Wild Combat é migrado para a fórmula bilateral; (3) ENE regen é corrigido; (4) comparação Wild vs Group é validada com testes.
+**Conclusão principal:** O principal problema é que a migração do Wild Combat para a fórmula bilateral canônica (Patch v2.2) nunca foi realizada. O Group Combat foi migrado com sucesso. A recomendação é: (1) o autor decide a Questão A do Patch v2.2; (2) o próximo PR Wild preserve o conceito de passivas, mas recalibre seus valores para impacto baixo; (3) ENE regen seja corrigido; (4) a comparação Wild vs Group seja validada com testes.
 
 ---
 
