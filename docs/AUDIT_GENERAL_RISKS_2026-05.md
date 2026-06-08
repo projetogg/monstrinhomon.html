@@ -20,6 +20,9 @@ Atualizações de status relevantes:
   sem ModNível, sem 5 faixas, crítico diferente). ENE regen diverge em 7/8 classes.
   Relatório completo em `docs/combat_formula_audit_2026-05.md`.
   Testes de caracterização em `tests/combatFormulaAudit.test.js`.
+  Nota: a Decisão B foi tomada — passivas de classe serão mantidas, mas deverão ser fracas/recalibradas,
+  preferencialmente na faixa inicial de 3% a 5%. Implementação e recalibração ficam para PR futuro,
+  não para este PR.
 
 ---
 
@@ -45,7 +48,7 @@ Nenhum bug de perda de save, soft-lock ou recompensa duplicada grave foi confirm
 | # | Risco | Severidade | Domínio | Arquivo(s) | Status |
 |---|---|---|---|---|---|
 | R01 | Trade: dois sistemas ativos em runtime (bilateral vs unilateral) | 🔴 Crítico | Trade | `js/combat/tradeSystem.js`, `js/trade/tradeSystem.js`, `index.html` | Aberto |
-| R02 | Fórmula de combate runtime diverge do Patch Canônico v2.2 | 🔴 Crítico | Combate | `js/combat/wildCore.js`, `docs/PATCH_CANONICO_COMBATE_V2.2.md` | Aberto — decisão arquitetural |
+| R02 | Fórmula de combate runtime diverge do Patch Canônico v2.2 | 🔴 Crítico | Combate | `js/combat/wildCore.js`, `docs/PATCH_CANONICO_COMBATE_V2.2.md` | Aberto — auditado; Decisão B resolvida |
 | R03 | Drift documental em `PLANO_DE_ACAO.md` (17 skills → 65 reais) | 🔴 Alto | Documentação | `docs/PLANO_DE_ACAO.md` | Aberto |
 | R04 | Evolução: módulo legado com HP% vs cura total coexiste | 🟡 Alto | Evolução | `js/data/evolutionSystem.js`, `js/progression/evolutionSystem.js` | Mitigado por teste-guarda |
 | R05 | `encounter.active` não verificado em handlers Wild Combat | 🟡 Alto | Combate | `js/combat/wildActions.js` | Aberto |
@@ -331,7 +334,7 @@ Os 3 riscos reais que exigem ação são:
 2. **`encounter.active` não verificado nos handlers Wild** — risco de ação pós-fim de batalha.
 3. **Drift documental do `PLANO_DE_ACAO.md`** — pode induzir agente ou desenvolvedor a refazer trabalho que já existe.
 
-O sistema de combate diverge do Patch Canônico v2.2 nas faixas de dano e ModNível, mas isso é uma **decisão arquitetural pendente**, não um bug — o runtime funciona conforme implementado. Não deve ser alterado sem especificação completa e testes quantitativos.
+O sistema de combate diverge do Patch Canônico v2.2 nas faixas de dano e ModNível, mas isso continua sendo uma mudança arquitetural controlada — o runtime funciona conforme implementado e não deve ser alterado sem especificação completa e testes quantitativos. Dentro desse contexto, a Decisão B já foi resolvida: as passivas de classe serão mantidas, porém recalibradas em PR futuro.
 
 **Recomendação:** Executar PRs A1→A3→A2 como prioridade imediata. Demais PRs podem seguir em cadência normal.
 
