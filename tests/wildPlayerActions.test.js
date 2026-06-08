@@ -94,6 +94,11 @@ function makeBaseDeps(overrides = {}) {
     };
 }
 
+function makeDeterministicRollSequence(rolls, fallback = 10) {
+    let idx = 0;
+    return () => (idx < rolls.length ? rolls[idx++] : fallback);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // BLOCO 1: resolveD20Hit (wildCore.js)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -153,7 +158,7 @@ describe('executeWildEnemyFullTurn', () => {
         const wild = makeWild();
         const pm   = makePlayerMon();
         const enc  = makeEncounter(wild);
-        const deps = makeBaseDeps({ rollD20: () => 1 });
+        const deps = makeBaseDeps({ rollD20: makeDeterministicRollSequence([1, 20], 20) });
 
         const r = executeWildEnemyFullTurn({ encounter: enc, wildMonster: wild, playerMonster: pm, dependencies: deps });
         expect(r.defeated).toBe(false);
@@ -517,7 +522,7 @@ describe('executeWildItemUse', () => {
         const enc  = makeEncounter(wild);
         const pm   = makePlayerMon({ hp: 79, hpMax: 80 });
         const player = makePlayer({ inventory: { IT_HEAL_01: 1 } });
-        const deps = makeItemDeps({ rollD20: () => 1 });
+        const deps = makeItemDeps({ rollD20: makeDeterministicRollSequence([1, 20], 20) });
 
         executeWildItemUse({ encounter: enc, player, playerMonster: pm, itemId: ITEM_ID, dependencies: deps });
 
@@ -680,25 +685,25 @@ describe('Arquitetura: turno completo vs reação imediata', () => {
 
 describe('Regressão d20 crítico e falha no turno completo', () => {
 
-    it('d20=1 no turno completo do inimigo: sem dano ao jogador (falha crítica)', () => {
-        const wild = makeWild({ atk: 999 });
+    it('d20=1 no turno completo: penalidade de RC, mas pode errar em cenário defensivo forte', () => {
+        const wild = makeWild({ atk: 6 });
         const pm   = makePlayerMon({ hp: 80 });
         const enc  = makeEncounter(wild);
-        const deps = makeBaseDeps({ rollD20: () => 1 });
+        const deps = makeBaseDeps({ rollD20: makeDeterministicRollSequence([1, 20], 20) });
 
         executeWildEnemyFullTurn({ encounter: enc, wildMonster: wild, playerMonster: pm, dependencies: deps });
         expect(pm.hp).toBe(80);
     });
 
-    it('d20=20 no turno completo: sempre acerta (crítico)', () => {
+    it('d20=20 no turno completo não é auto-acerto em cenário extremamente desfavorável', () => {
         const wild = makeWild({ atk: 1, def: 100 }); // sem vantagem de atk
         const pm   = makePlayerMon({ hp: 80, def: 100 }); // DEF altíssima
         const enc  = makeEncounter(wild);
-        const deps = makeBaseDeps({ rollD20: () => 20 });
+        const deps = makeBaseDeps({ rollD20: makeDeterministicRollSequence([20, 20], 20) });
 
         executeWildEnemyFullTurn({ encounter: enc, wildMonster: wild, playerMonster: pm, dependencies: deps });
-        // d20=20 garante acerto, dano mínimo = 1
-        expect(pm.hp).toBeLessThan(80);
+        // v2.2: nat20 = +4 RC, não auto-hit
+        expect(pm.hp).toBe(80);
     });
 
     it('d20=1 em executeWildSkill: inimigo falha, jogador não perde HP no counter', () => {
@@ -707,7 +712,7 @@ describe('Regressão d20 crítico e falha no turno completo', () => {
         const pm   = makePlayerMon({ hp: 80, ene: 10 });
 
         const deps = {
-            ...makeBaseDeps({ rollD20: () => 1 }),
+            ...makeBaseDeps({ rollD20: makeDeterministicRollSequence([1, 20], 20) }),
             getMonsterSkills: () => [{ id: 'sk1', name: 'Golpe', cost: 5, power: 15 }],
             useSkill: vi.fn((a, s, t, e) => { t.hp = Math.max(0, t.hp - 10); return true; }),
             handleVictoryRewards: vi.fn(),

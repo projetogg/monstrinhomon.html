@@ -40,6 +40,7 @@ import {
     RC_CATEGORY,
     RC_MULTIPLIER,
 } from '../js/combat/groupCombatFormula.js';
+import { executeWildAttack } from '../js/combat/wildActions.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FIXTURES COMPARTILHADOS
@@ -570,5 +571,92 @@ describe('AUDIT Group getModNivel — tabela discreta ±5 (ausente em Wild)', ()
         expect(getModNivel(10)).toBe(3);
         expect(getModNivel(15)).toBe(4);
         expect(getModNivel(20)).toBe(5);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BLOCO 11 — Wild runtime (wildActions) após migração v2.2
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('AUDIT Wild runtime v2.2 — executeWildAttack alinhado ao canônico', () => {
+    function makeDeps() {
+        return {
+            classAdvantages,
+            getBasicPower: () => 7,
+            eneRegenData: {},
+            rollD20: () => 10,
+            audio: { playSfx: () => {} },
+            ui: { flashTarget: () => {}, showFloatingText: () => {}, updateDiceClash: () => {} },
+        };
+    }
+
+    function runWildAttack({ d20A, d20D, playerMonster = {}, wildMonster = {} }) {
+        const encounter = {
+            active: true,
+            selectedPlayerId: 'p1',
+            wildMonster: {
+                id: 'w1',
+                name: 'Wild',
+                class: 'Mago',
+                level: 1,
+                hp: 100,
+                hpMax: 100,
+                atk: 6,
+                def: 10,
+                ene: 10,
+                eneMax: 20,
+                buffs: [],
+                ...wildMonster,
+            },
+            log: [],
+        };
+        const player = { id: 'p1', name: 'Player', class: 'Mago', inventory: {} };
+        const playerMon = {
+            id: 'pm1',
+            name: 'Hero',
+            class: 'Mago',
+            level: 1,
+            hp: 100,
+            hpMax: 100,
+            atk: 7,
+            def: 4,
+            ene: 10,
+            eneMax: 20,
+            buffs: [],
+            ...playerMonster,
+        };
+
+        executeWildAttack({
+            encounter,
+            player,
+            playerMonster: playerMon,
+            d20Roll: d20A,
+            defenderRoll: d20D,
+            dependencies: makeDeps(),
+        });
+        return encounter.wildMonster.hp;
+    }
+
+    it('[MIG-01] Wild usa confronto bilateral: d20D alto pode evitar dano', () => {
+        const hpLowDefRoll = runWildAttack({ d20A: 10, d20D: 5 });
+        const hpHighDefRoll = runWildAttack({ d20A: 10, d20D: 20 });
+        expect(hpLowDefRoll).toBeLessThan(100);
+        expect(hpHighDefRoll).toBe(100);
+    });
+
+    it('[MIG-02] nat20 no Wild não é auto-acerto', () => {
+        const hpAfterNat20 = runWildAttack({
+            d20A: 20,
+            d20D: 20,
+            playerMonster: { atk: 1 },
+            wildMonster: { def: 30 },
+        });
+        expect(hpAfterNat20).toBe(100);
+    });
+
+    it('[MIG-03] Wild runtime aplica ModNível na migração v2.2', () => {
+        const hpSameLevel = runWildAttack({ d20A: 10, d20D: 5, playerMonster: { level: 1 }, wildMonster: { level: 1 } });
+        const hpHighLevel = runWildAttack({ d20A: 10, d20D: 5, playerMonster: { level: 15 }, wildMonster: { level: 1 } });
+        expect(hpHighLevel).toBeLessThan(hpSameLevel);
     });
 });
