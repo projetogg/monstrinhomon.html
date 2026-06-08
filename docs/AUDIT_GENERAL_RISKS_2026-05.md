@@ -16,8 +16,9 @@ Atualizações de status relevantes:
   No estado atual, `window.TradeSystem` permanece ausente e `js/trade/tradeSystem.js` foi removido.
   A fonte canônica de Trade é `js/combat/tradeSystem.js` via `js/ui/tradeUI.js`.
 - **R02 (Fórmula de combate diverge do Patch v2.2)** foi auditado em profundidade.
-  Resultado: Group Combat está alinhado; Wild Combat diverge significativamente (fórmula unilateral,
-  sem ModNível, sem 5 faixas, crítico diferente). ENE regen diverge em 7/8 classes.
+  **Atualização 2026-06:** Group Combat permanece alinhado e a **fórmula base de Wild Combat foi alinhada**
+  (RC bilateral, ModNível, 5 faixas, `ceil(DEF/2)`, `floor(DEF/2)`, crítico v2.2 sem auto-hit).
+  Pendências em R02: ENE regen (7/8 classes), boss e recalibração de passivas.
   Relatório completo em `docs/combat_formula_audit_2026-05.md`.
   Testes de caracterização em `tests/combatFormulaAudit.test.js`.
   Nota: a Decisão B foi tomada — passivas de classe serão mantidas, mas deverão ser fracas/recalibradas,
@@ -48,7 +49,7 @@ Nenhum bug de perda de save, soft-lock ou recompensa duplicada grave foi confirm
 | # | Risco | Severidade | Domínio | Arquivo(s) | Status |
 |---|---|---|---|---|---|
 | R01 | Trade: dois sistemas ativos em runtime (bilateral vs unilateral) | 🔴 Crítico | Trade | `js/combat/tradeSystem.js`, `js/trade/tradeSystem.js`, `index.html` | Aberto |
-| R02 | Fórmula de combate runtime diverge do Patch Canônico v2.2 | 🔴 Crítico | Combate | `js/combat/wildCore.js`, `docs/PATCH_CANONICO_COMBATE_V2.2.md` | Aberto — auditado; Decisão B resolvida |
+| R02 | Fórmula de combate runtime diverge do Patch Canônico v2.2 | 🔴 Crítico | Combate | `js/combat/wildCore.js`, `docs/PATCH_CANONICO_COMBATE_V2.2.md` | Em correção — fórmula base Wild alinhada; ENE/boss/passivas pendentes |
 | R03 | Drift documental em `PLANO_DE_ACAO.md` (17 skills → 65 reais) | 🔴 Alto | Documentação | `docs/PLANO_DE_ACAO.md` | Aberto |
 | R04 | Evolução: módulo legado com HP% vs cura total coexiste | 🟡 Alto | Evolução | `js/data/evolutionSystem.js`, `js/progression/evolutionSystem.js` | Mitigado por teste-guarda |
 | R05 | `encounter.active` não verificado em handlers Wild Combat | 🟡 Alto | Combate | `js/combat/wildActions.js` | Aberto |
@@ -334,7 +335,7 @@ Os 3 riscos reais que exigem ação são:
 2. **`encounter.active` não verificado nos handlers Wild** — risco de ação pós-fim de batalha.
 3. **Drift documental do `PLANO_DE_ACAO.md`** — pode induzir agente ou desenvolvedor a refazer trabalho que já existe.
 
-O sistema de combate diverge do Patch Canônico v2.2 nas faixas de dano e ModNível, mas isso continua sendo uma mudança arquitetural controlada — o runtime funciona conforme implementado e não deve ser alterado sem especificação completa e testes quantitativos. Dentro desse contexto, a Decisão B já foi resolvida: as passivas de classe serão mantidas, porém recalibradas em PR futuro.
+O sistema de combate teve atualização de status: a fórmula base de Wild foi alinhada ao Patch Canônico v2.2 em PR posterior a esta auditoria histórica. Permanecem como pendências técnicas separadas: ENE regen, boss e recalibração de passivas de classe (Decisão B).
 
 **Recomendação:** Executar PRs A1→A3→A2 como prioridade imediata. Demais PRs podem seguir em cadência normal.
 

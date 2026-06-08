@@ -368,7 +368,8 @@ describe('Smoke MVP 0.3 — Wild Loop mínimo', () => {
 
         expect(attackResult.success).toBe(true);
         expect(encounter.wildMonster.hp).toBeLessThan(hpBeforeAttack);
-        expect(starter.hp).toBe(playerHpBeforeAttack);
+        // v2.2: após o ataque do jogador, o selvagem pode contra-atacar no mesmo fluxo.
+        expect(starter.hp).toBeLessThanOrEqual(playerHpBeforeAttack);
         expect(encounter.log.some(line => line.includes('acerta') || line.includes('Causa'))).toBe(true);
 
         let terminalResult = attackResult.result;

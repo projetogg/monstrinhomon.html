@@ -132,7 +132,7 @@ describe('Primeiro Combate Selvagem — fluxo básico não quebra', () => {
         expect(result.success).toBe(true);
     });
 
-    it('ataque com d20=20 (crítico) sempre acerta e reduz HP do selvagem', () => {
+    it('ataque com d20=20 aplica bônus de RC, mas não é auto-acerto', () => {
         const wild = makeWild({ hp: 100, hpMax: 100, def: 999 }); // def altíssima
         const enc = makeEncounter(wild);
         const playerMon = makePlayerMon({ atk: 1 });
@@ -144,11 +144,11 @@ describe('Primeiro Combate Selvagem — fluxo básico não quebra', () => {
         });
 
         expect(result.success).toBe(true);
-        // d20=20 deve sempre acertar, independente de DEF
-        expect(enc.wildMonster.hp).toBeLessThan(100);
+        // v2.2: nat20 = +4 RC, não hit garantido contra DEF extrema
+        expect(enc.wildMonster.hp).toBe(100);
     });
 
-    it('ataque com d20=1 (falha crítica) nunca reduz HP do selvagem', () => {
+    it('ataque com d20=1 aplica penalidade de RC, mas pode causar dano em cenário favorável', () => {
         const wild = makeWild({ hp: 100, hpMax: 100, def: 1 }); // DEF baixa
         const enc = makeEncounter(wild);
         const playerMon = makePlayerMon({ atk: 999 }); // ATK enorme mas d20=1 falha
@@ -159,8 +159,7 @@ describe('Primeiro Combate Selvagem — fluxo básico não quebra', () => {
             dependencies: makeDeps({ rollD20: () => 1 }), // inimigo também falha
         });
 
-        // d20=1 = falha crítica, HP selvagem não cai
-        expect(enc.wildMonster.hp).toBe(100);
+        expect(enc.wildMonster.hp).toBeLessThan(100);
     });
 
     it('quando selvagem chega a HP 0 o resultado é victory e encounter fica inativo', () => {
@@ -268,7 +267,7 @@ describe('D20 Manual — comportamento previsível e justo', () => {
         expect(result.hit).toBe(false);
     });
 
-    it('d20=1 do inimigo não deve causar dano ao jogador (falha crítica inimiga)', () => {
+    it('d20=1 do inimigo também não é auto-miss quando ATK é extrema', () => {
         // Simula contra-ataque do inimigo com d20=1
         // Usando executeWildEnemyFullTurn com rollD20=()=>1
         const wild = makeWild({ hp: 100, atk: 999, poder: 999 });
@@ -283,11 +282,10 @@ describe('D20 Manual — comportamento previsível e justo', () => {
             dependencies: makeDeps({ rollD20: () => 1 }), // inimigo falha crítico
         });
 
-        // Dano zero: d20=1 inimigo não causa dano
-        expect(playerMon.hp).toBe(hpBefore);
+        expect(playerMon.hp).toBeLessThan(hpBefore);
     });
 
-    it('d20=20 do inimigo sempre causa dano ao jogador (crítico inimigo)', () => {
+    it('d20=20 do inimigo não garante dano contra defesa extrema', () => {
         const wild = makeWild({ hp: 100, atk: 6, poder: 5 });
         const enc = makeEncounter(wild);
         const playerMon = makePlayerMon({ hp: 80, hpMax: 80, def: 999 }); // DEF enorme mas crítico sempre acerta
@@ -303,8 +301,7 @@ describe('D20 Manual — comportamento previsível e justo', () => {
             }),
         });
 
-        // d20=20 inimigo deve sempre acertar
-        expect(playerMon.hp).toBeLessThan(hpBefore);
+        expect(playerMon.hp).toBe(hpBefore);
     });
 });
 
