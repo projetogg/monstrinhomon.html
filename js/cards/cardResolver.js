@@ -17,6 +17,33 @@ const KIT_SWAP_CARD_IDENTITY_ALIASES = Object.freeze({
         stageIndex: 0,
         cardAliasReason: 'kit_swap_visual_alias',
     }),
+    /**
+     * shieldhorn_heavy_strike_ii é a versão II do kit swap do Ferrozimon/Cavalheiromon.
+     * Mapeia visualmente para o estágio II de Golpe de Espada (stageIndex: 1).
+     */
+    shieldhorn_heavy_strike_ii: Object.freeze({
+        class: 'Guerreiro',
+        groupKey: 'Golpe de Espada',
+        stageIndex: 1,
+        cardAliasReason: 'kit_swap_visual_alias',
+    }),
+});
+
+/**
+ * Mapa de inferência visual por nome para skills canônicas do Guerreiro.
+ * Usado apenas quando a skill chega sem class e/ou groupKey.
+ * Apenas visual — não altera mecânica nem skill original.
+ */
+const WARRIOR_SKILL_NAME_VISUAL_MAP = Object.freeze({
+    'Escudo I':            Object.freeze({ class: 'Guerreiro', groupKey: 'Escudo',        stageIndex: 0 }),
+    'Escudo II':           Object.freeze({ class: 'Guerreiro', groupKey: 'Escudo',        stageIndex: 1 }),
+    'Escudo III':          Object.freeze({ class: 'Guerreiro', groupKey: 'Escudo',        stageIndex: 2 }),
+    'Golpe de Espada I':   Object.freeze({ class: 'Guerreiro', groupKey: 'Golpe de Espada', stageIndex: 0 }),
+    'Golpe de Espada II':  Object.freeze({ class: 'Guerreiro', groupKey: 'Golpe de Espada', stageIndex: 1 }),
+    'Golpe de Espada III': Object.freeze({ class: 'Guerreiro', groupKey: 'Golpe de Espada', stageIndex: 2 }),
+    'Provocar I':          Object.freeze({ class: 'Guerreiro', groupKey: 'Provocar',      stageIndex: 0 }),
+    'Provocar II':         Object.freeze({ class: 'Guerreiro', groupKey: 'Provocar',      stageIndex: 1 }),
+    'Provocar III':        Object.freeze({ class: 'Guerreiro', groupKey: 'Provocar',      stageIndex: 2 }),
 });
 
 function normalizeStageIndex(value, fallback = 0) {
@@ -27,10 +54,13 @@ function normalizeStageIndex(value, fallback = 0) {
 /**
  * Resolve a identidade visual de uma skill efetiva sem modificar a skill original.
  *
- * Skills vindas de kit swap podem não carregar class/groupKey/stageIndex, ou podem
- * carregar uma identidade diferente da skill canônica substituída. Para a Fase 1C,
- * apenas aliases explícitos e seguros são aceitos. Kit swaps desconhecidos continuam
- * sem mapeamento e acionam fallback legado.
+ * Prioridade de resolução:
+ * 1. Alias explícito de kit swap (KIT_SWAP_CARD_IDENTITY_ALIASES).
+ * 2. Inferência por nome canônico do Guerreiro quando class/groupKey ausentes
+ *    (WARRIOR_SKILL_NAME_VISUAL_MAP). Apenas visual — entry.skill não é mutada.
+ *
+ * Kit swaps desconhecidos e skills sem mapeamento por nome continuam sem
+ * identidade visual e acionam fallback legado.
  */
 export function resolveCardSkillIdentity(skill) {
     if (!skill || typeof skill !== 'object') return skill;
@@ -48,6 +78,25 @@ export function resolveCardSkillIdentity(skill) {
             _cardLayerAliasReason: alias.cardAliasReason,
             _cardLayerAliasSource: kitSwapId,
         };
+    }
+
+    const hasClass = String(skill.class || '').trim() !== '';
+    const hasGroupKey = String(skill.groupKey || '').trim() !== '';
+
+    if (!hasClass || !hasGroupKey) {
+        const skillName = String(skill.name || '').trim();
+        const inferred = skillName ? WARRIOR_SKILL_NAME_VISUAL_MAP[skillName] : null;
+
+        if (inferred) {
+            return {
+                ...skill,
+                class: inferred.class,
+                groupKey: inferred.groupKey,
+                stageIndex: normalizeStageIndex(skill.stageIndex, inferred.stageIndex),
+                _visualIdentityInferred: true,
+                _visualIdentityReason: 'warrior_skill_name_alias',
+            };
+        }
     }
 
     return skill;
