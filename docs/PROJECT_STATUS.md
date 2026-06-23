@@ -1,8 +1,8 @@
 # Monstrinhomon - Estado do Projeto
 
-**Verificado em:** 2026-06-22  
+**Verificado em:** 2026-06-23  
 **Branch oficial examinada:** `main`  
-**Commit-base:** `8b27a3a5702bf114dcb1a337bd9029c53579ac5f`  
+**Marco documental:** PR #257 mergeado em `25f7c655997e0a565502075923dc9791b414489c`  
 **Escopo:** este arquivo descreve o repositorio; nao cria regras do jogo.
 
 ## Baseline atual
@@ -12,6 +12,7 @@
 - Testes Vitest, validadores de dados/assets e smoke tests definidos em `package.json`.
 - GitHub como fonte tecnica oficial.
 - Google Drive como espaco de produto, discussao, playtest, observacao e referencia visual.
+- Portal do Drive e estrutura documental inicial criados e classificados em 2026-06-23.
 
 ## Implementado na main
 
@@ -25,6 +26,17 @@
 | Card Layer | piloto atras de feature flag/query param | `js/cards/*` |
 | Save/load | camadas complementares de persistencia | `js/saveLayer.js`, `js/storage.js` e testes |
 
+## Estado do Drive
+
+- `00 - Portal do Projeto` aponta para as fontes oficiais do GitHub.
+- A Dex v3 foi preservada como proposta editorial ativa em `02 - Decisoes em Discussao/Em elaboracao`.
+- O catalogo visual e o acervo de imagens foram classificados em `06 - Referencias Visuais`.
+- Bases antigas foram movidas para `99 - Arquivo Historico`.
+- A especificacao que tratava a planilha como fonte do runtime foi marcada como substituida.
+- A Dex v3 registra 44 nomes como `canonical` e 34 como `needs_verification`.
+
+A marcacao editorial nao altera o runtime. Nomes divergentes da `main` exigem decisao e PR tecnico especifico.
+
 ## Divergencias conhecidas
 
 | ID | Regra pretendida | Comportamento da main | Estado |
@@ -34,15 +46,16 @@
 | DIV-PASSIVE-01 | impacto inicialmente fraco, em torno de 3% a 5% | runtime ainda possui valores de 10% a 15% | aberto |
 | DIV-BOSS-01 | multiplicadores canonicos de boss | implementacao nao foi confirmada integralmente | investigar |
 | DIV-CARDS-01 | skills efetivas do Guerreiro mapearem de forma confiavel | lacunas de identidade permanecem na main | PR #256 em draft |
+| DIV-NAMES-01 | 44 nomes aprovados editorialmente na Dex v3 | a `main` pode usar nomes diferentes | mapear divergencias antes de qualquer migracao |
 
 ## Pull requests abertos relevantes
 
 Pull requests abaixo nao integram o baseline oficial.
 
-| PR | Tema | Estado em 2026-06-22 | Possivel impacto |
+| PR | Tema | Estado em 2026-06-23 | Possivel impacto |
 |---|---|---|---|
-| #255 | migracao da formula Wild para v2.2 | aberto, draft | combate e testes |
-| #256 | identidade visual das skills do Guerreiro | aberto, draft | Card Resolver e testes |
+| #255 | migracao da formula Wild para v2.2 | aberto, draft, mergeable | combate e testes |
+| #256 | identidade visual das skills do Guerreiro | aberto, draft, mergeable | Card Resolver e testes |
 
 ## Decisoes pendentes
 
@@ -50,7 +63,7 @@ Pull requests abaixo nao integram o baseline oficial.
 - `DEC-COMBAT-D`: destino do premio aleatorio de UX no critico.
 - `DEC-AUTH-01`: separar formalmente autoridade normativa e descritiva.
 - `DEC-AUTH-02`: identificar e versionar o "Documento Mestre" citado pelo Patch v2.2.
-- `DEC-DRIVE-01`: definir se alguma planilha v3 do Drive permanece como proposta ativa.
+- `DEC-DRIVE-01`: revisar os 34 nomes editoriais ainda em `needs_verification`.
 
 ## Validacao
 
@@ -67,7 +80,7 @@ Execute `npm run test:wild-loop` quando as dependencias do Playwright estiverem 
 
 ## Limites desta fotografia
 
-A suite nao foi executada novamente durante a auditoria documental que originou este arquivo. O checkout por terminal nao estava disponivel; foram usados a `main`, os arquivos acessiveis e o historico do GitHub.
+A suite nao foi executada novamente durante esta atualizacao documental. Nenhum codigo, dado runtime, teste ou asset foi alterado.
 
 ## Gatilhos para revisao
 
@@ -75,6 +88,7 @@ Atualizar este arquivo quando ocorrer:
 
 - merge ou fechamento dos PRs #255 ou #256;
 - mudanca relevante em codigo ou dados runtime;
-- aprovacao de uma decisao listada;
+- aprovacao dos nomes editoriais pendentes;
+- PR de migracao de nomes para o runtime;
 - alteracao dos comandos oficiais de teste;
 - novo marco tecnico que torne esta fotografia materialmente incorreta.
