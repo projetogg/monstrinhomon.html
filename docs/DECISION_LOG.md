@@ -7,7 +7,7 @@ Este arquivo e um indice. Regras detalhadas permanecem no documento canonico ou 
 - `PENDING`: exige decisao humana.
 - `APPROVED`: decisao humana registrada, ainda sem implementacao completa.
 - `IMPLEMENTED`: aprovada e presente na `main`.
-- `PARTIAL`: apenas parte da decisao esta na `main`.
+- `PARTIAL`: apenas parte da decisao esta na `main` ou parte do escopo permanece aberta.
 - `SUPERSEDED`: substituida por outra decisao.
 - `REJECTED`: explicitamente nao adotada.
 
@@ -23,7 +23,14 @@ Este arquivo e um indice. Regras detalhadas permanecem no documento canonico ou 
 | `DEC-TRADE-01` | 2026-05-26 | IMPLEMENTED | Trade | manter um unico caminho runtime de Trade | PR #250 e testes arquiteturais | mergeado na `main` |
 | `DEC-AUTH-01` | - | PENDING | governanca | separar autoridade normativa de autoridade descritiva | auditoria de governanca 2026-06-22 | nao adotada |
 | `DEC-AUTH-02` | - | PENDING | governanca | identificar e versionar o "Documento Mestre" citado pelo Patch | auditoria de governanca 2026-06-22 | nao adotada |
-| `DEC-DRIVE-01` | - | PENDING | catalogo | selecionar ou arquivar as propostas v3 do Drive | auditoria de governanca 2026-06-22 | nenhuma mudanca runtime autorizada |
+| `DEC-DRIVE-01` | 2026-06-23 | PARTIAL | catalogo editorial | manter a Dex v3 como proposta editorial ativa; classificar o restante do acervo do Drive | [documento de decisao no Drive](https://docs.google.com/document/d/1N4msx5Wa_IazEwj5k9fYcOD9JwZBJJ86iFkfptifpDA/edit) | Drive organizado; 44 nomes marcados `canonical`, 34 ainda em `needs_verification`; nenhuma mudanca runtime autorizada |
+
+## Limites da DEC-DRIVE-01
+
+- `canonical` na Dex v3 significa aprovacao editorial do nome, nao implementacao tecnica.
+- A Dex v3 nao possui autoridade sobre codigo, IDs runtime, atributos, classes, raridades, evolucao, dual class, sprites ou estado de importacao.
+- Uma divergencia de nome em relacao a `main` exige decisao registrada, migracao em PR proprio e testes adequados.
+- Os 34 nomes em `needs_verification` continuam abertos e devem ser revisados por familia.
 
 ## Regra de interpretacao
 
