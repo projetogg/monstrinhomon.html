@@ -128,6 +128,54 @@ describe('buildRuntimeSkillDefs', () => {
         });
     });
 
+    describe('preservação de identidade canônica para Card Layer', () => {
+        it('deve preservar class no objeto de skill resultante', () => {
+            const result = buildRuntimeSkillDefs(MINIMAL_SKILLS);
+            expect(result['Guerreiro']['Escudo'][0].class).toBe('Guerreiro');
+            expect(result['Curandeiro']['Cura'][0].class).toBe('Curandeiro');
+        });
+        it('deve preservar groupKey no objeto de skill resultante', () => {
+            const result = buildRuntimeSkillDefs(MINIMAL_SKILLS);
+            expect(result['Guerreiro']['Escudo'][0].groupKey).toBe('Escudo');
+            expect(result['Guerreiro']['Provocar'][1].groupKey).toBe('Provocar');
+        });
+        it('deve preservar stageIndex no objeto de skill resultante', () => {
+            const result = buildRuntimeSkillDefs(MINIMAL_SKILLS);
+            expect(result['Guerreiro']['Escudo'][0].stageIndex).toBe(0);
+            expect(result['Guerreiro']['Escudo'][1].stageIndex).toBe(1);
+            expect(result['Guerreiro']['Escudo'][2].stageIndex).toBe(2);
+        });
+        it('deve preservar id no objeto de skill resultante', () => {
+            const result = buildRuntimeSkillDefs(MINIMAL_SKILLS);
+            expect(result['Guerreiro']['Escudo'][0].id).toBe('ESCUDO_0');
+            expect(result['Guerreiro']['Escudo'][1].id).toBe('ESCUDO_1');
+            expect(result['Guerreiro']['Escudo'][2].id).toBe('ESCUDO_2');
+        });
+        it('deve preservar identidade canônica nas três skills do Guerreiro quando usando skills.json completo', async () => {
+            const { readFile } = await import('fs/promises');
+            const { fileURLToPath } = await import('url');
+            const { dirname, join } = await import('path');
+            const dir = dirname(fileURLToPath(import.meta.url));
+            const raw = await readFile(join(dir, '../data/skills.json'), 'utf-8');
+            const data = JSON.parse(raw);
+            const result = buildRuntimeSkillDefs(data.skills);
+
+            const escudo = result['Guerreiro']['Escudo'][0];
+            expect(escudo.class).toBe('Guerreiro');
+            expect(escudo.groupKey).toBe('Escudo');
+            expect(escudo.stageIndex).toBe(0);
+
+            const golpe = result['Guerreiro']['Golpe de Espada'][0];
+            expect(golpe.class).toBe('Guerreiro');
+            expect(golpe.groupKey).toBe('Golpe de Espada');
+            expect(golpe.stageIndex).toBe(0);
+
+            const provocar = result['Guerreiro']['Provocar'][0];
+            expect(provocar.class).toBe('Guerreiro');
+            expect(provocar.groupKey).toBe('Provocar');
+            expect(provocar.stageIndex).toBe(0);
+        });
+    });
     describe('Map input', () => {
         it('deve aceitar Map como input (do skillsCache)', () => {
             const map = new Map(MINIMAL_SKILLS.map(s => [s.id, s]));
