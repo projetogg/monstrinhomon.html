@@ -66,12 +66,21 @@ function makeEncounter(wild, overrides = {}) {
 
 const ITEM_DEF = { name: 'Petisco', emoji: '🍖', heal_pct: 0.30, heal_min: 5 };
 
+function makeAlternatingExtremeRolls() {
+    let useAttackRoll = true;
+    return () => {
+        const value = useAttackRoll ? 1 : 20;
+        useAttackRoll = !useAttackRoll;
+        return value;
+    };
+}
+
 function makeItemDeps(overrides = {}) {
     return {
         eneRegenData: {},
         classAdvantages: {},
         getBasicPower: () => 10,
-        rollD20: () => 1, // inimigo falha por padrão
+        rollD20: makeAlternatingExtremeRolls(), // 1/20 força falha total no contra-ataque
         getItemDef: () => ITEM_DEF,
         updateFriendship: vi.fn(),
         tutorialOnAction: vi.fn(),
@@ -544,11 +553,11 @@ describe('speciesPassives 4.1 — impacto shieldhorn (simulação de 100 ataques
         const avgWithPassive = totalWithPassive / 100;
         const avgMitigation = avgWithout - avgWithPassive;
 
-        // Com d20=15 e stats fixos: dano sem passiva = 14, com passiva = 13
-        expect(avgWithout).toBe(14);
-        expect(avgWithPassive).toBe(13);
+        // Com fórmula v2.2 no cenário atual: dano sem passiva = 20, com passiva = 19
+        expect(avgWithout).toBe(20);
+        expect(avgWithPassive).toBe(19);
         expect(avgMitigation).toBe(1); // exatamente 1 ponto por ataque
-        expect(avgMitigation / avgWithout).toBeCloseTo(0.0714, 2); // ~7.14% de mitigação
+        expect(avgMitigation / avgWithout).toBeCloseTo(0.05, 2); // ~5% de mitigação
     });
 
     it('shieldhorn impacto: aceitável — mitiga < 10% do dano em stats típicos', () => {
@@ -618,8 +627,8 @@ describe('speciesPassives 4.1 — impacto emberfang (simulação de 100 ataques)
         const avgBonus = avgWithPassive - avgWithout;
 
         // Fase 4.2: emberfang não dispara em ataque básico → dano idêntico
-        expect(avgWithout).toBe(14);
-        expect(avgWithPassive).toBe(14); // sem bônus em ataque básico
+        expect(avgWithout).toBe(20);
+        expect(avgWithPassive).toBe(20); // sem bônus em ataque básico
         expect(avgBonus).toBe(0);
     });
 
@@ -633,8 +642,8 @@ describe('speciesPassives 4.1 — impacto emberfang (simulação de 100 ataques)
         const hpBefore = wild.hp;
         executeWildAttack({ encounter: enc, player, playerMonster: pm, d20Roll: 15, dependencies: makeDepsForSimulation(1) });
         const damage = hpBefore - wild.hp;
-        // HP = 70% exato → passiva NÃO dispara → dano = 14 (sem bônus)
-        expect(damage).toBe(14);
+        // HP = 70% exato → passiva NÃO dispara → dano sem bônus no cenário atual
+        expect(damage).toBe(20);
     });
 
     it('emberfang impacto: aceitável — aumenta < 10% do dano em stats típicos', () => {
@@ -681,10 +690,10 @@ describe('speciesPassives 4.1 — regressão passivas Fase 4.0', () => {
         const player = { id: 'p', name: 'J', class: 'Bardo', inventory: {}, team: [], money: 0 };
         const deps = makeDepsForSimulation(1);
 
-        // Dano esperado: 7+10-3=14 → com shieldhorn: 13
+        // Dano esperado no cenário atual: 20 → com shieldhorn: 19
         const hpBefore = wild.hp;
         executeWildAttack({ encounter: enc, player, playerMonster: pm, d20Roll: 15, dependencies: deps });
-        expect(hpBefore - wild.hp).toBe(13);
+        expect(hpBefore - wild.hp).toBe(19);
     });
 
     it('emberfang em ataque básico NÃO adiciona bônus após adição de floracura/moonquill (Fase 4.2)', () => {
@@ -699,10 +708,10 @@ describe('speciesPassives 4.1 — regressão passivas Fase 4.0', () => {
         const player = { id: 'p', name: 'J', class: 'Bardo', inventory: {}, team: [], money: 0 };
         const deps = makeDepsForSimulation(1);
 
-        // HP 100% > 70% mas é ataque básico → emberfang NÃO dispara: 7+10-3=14
+        // HP 100% > 70% mas é ataque básico → emberfang NÃO dispara
         const hpBefore = wild.hp;
         executeWildAttack({ encounter: enc, player, playerMonster: pm, d20Roll: 15, dependencies: deps });
-        expect(hpBefore - wild.hp).toBe(14); // sem bônus de emberfang em ataque básico
+        expect(hpBefore - wild.hp).toBe(20); // sem bônus de emberfang em ataque básico
     });
 
     it('sem canonSpeciesId: nenhuma passiva de Fase 4.1 interfere no combate padrão', () => {

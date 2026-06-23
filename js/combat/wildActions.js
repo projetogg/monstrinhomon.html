@@ -9,6 +9,7 @@ import * as WildCore from './wildCore.js';
 import * as WildUI from './wildUI.js';
 import { initializeBattleParticipation, markAsParticipated, processBattleItemBreakage } from './itemBreakage.js';
 import { fireCombatEvent, ON_ATTACK, ON_HIT, ON_KO, ON_TURN_START, ON_HEAL_ITEM, ON_SKILL_USED } from './combatEvents.js';
+import { resolveConfrontation, computeGroupDamage, RC_CATEGORY } from './groupCombatFormula.js';
 
 // ── F1: Passivas de Classe em combate selvagem ────────────────────────────────
 // Espelha CLASS_COMBAT_PASSIVES de groupActions.js para consistência entre modos.
@@ -61,6 +62,14 @@ function rollEnemyD20(dependencies) {
         return dependencies.rollD20();
     }
     return Math.floor(Math.random() * 20) + 1;
+}
+
+function getRCLabel(category) {
+    if (category === RC_CATEGORY.ACERTO_FORTE) return 'Acerto Forte ×1.25';
+    if (category === RC_CATEGORY.ACERTO_NORMAL) return 'Acerto Normal ×1.00';
+    if (category === RC_CATEGORY.ACERTO_REDUZIDO) return 'Acerto Reduzido ×0.60';
+    if (category === RC_CATEGORY.CONTATO_NEUTRALIZADO) return 'Contato Neutralizado';
+    return 'Falha Total';
 }
 
 /**
@@ -163,9 +172,8 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
         // Verificar crítico/falha
         const critResult = processCritical(d20Roll, player, encounter);
         
-        // Retrocompatibilidade: quando não informado explicitamente, usa 1 (equivalente
-        // ao modelo antigo sem dado de defesa explícito, favorecendo acerto base).
-        const wildDefenseRoll = Number.isInteger(defenderRoll) ? defenderRoll : 1;
+        // Fórmula v2.2: Wild usa d20 defensivo bilateral.
+        const wildDefenseRoll = Number.isInteger(defenderRoll) ? defenderRoll : rollEnemyD20(dependencies);
 
         // FASE 1: Ataque do jogador
         encounter.log.push(`🎲 ${player.name}'s ${playerMonster.name} ATK ${d20Roll} vs DEF ${wildDefenseRoll} (${encounter.wildMonster.name})`);
@@ -184,11 +192,28 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
             encounter.log.push(`⚡ Agilidade: ${playerMonster.name} ${playerSpdBonus > 0 ? '+1' : '-1'} (SPD ${playerEffSpd} vs ${wildEffSpd})`);
         }
 
-        // d20=1 sempre erra, d20=20 sempre acerta
-        const playerHit = critResult.isFail1 ? false : (
-            critResult.isCrit20 ? true : 
-            WildCore.checkHitDiceClash(d20Roll, wildDefenseRoll, playerMonster, encounter.wildMonster, dependencies.classAdvantages, playerSpdBonus)
+        const atkMods = WildCore.getBuffModifiers(playerMonster);
+        const defMods = WildCore.getBuffModifiers(encounter.wildMonster);
+        const effectiveAtk = Math.max(1, playerMonster.atk + atkMods.atk);
+        const effectiveDef = Math.max(1, encounter.wildMonster.def + defMods.def);
+        const classAdv = WildCore.getClassAdvantageModifiers(
+            playerMonster.class,
+            encounter.wildMonster.class,
+            dependencies.classAdvantages
         );
+        const confrontResult = resolveConfrontation({
+            d20A: d20Roll,
+            d20D: wildDefenseRoll,
+            atkAtk: effectiveAtk,
+            atkDef: effectiveDef,
+            atkLvl: Number(playerMonster.level) || 1,
+            defLvl: Number(encounter.wildMonster.level) || 1,
+            classModAtk: classAdv.atkBonus,
+            posMod: 0,
+            buffOff: playerSpdBonus,
+            buffDef: 0,
+        });
+        const playerHit = confrontResult.category !== RC_CATEGORY.FALHA_TOTAL;
 
         if (dependencies.ui?.updateDiceClash) {
             dependencies.ui.updateDiceClash({
@@ -201,17 +226,11 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
         }
         
         // Tocar som
-        WildUI.playAttackFeedback(d20Roll, playerHit, critResult.isCrit20, dependencies.audio);
+        WildUI.playAttackFeedback(d20Roll, playerHit, confrontResult.d20ANatural, dependencies.audio);
         
         if (playerHit) {
-            // Calcular dano
             let power = dependencies.getBasicPower(playerMonster.class);
-            if (critResult.isCrit20 && critResult.critBonus === 'double_power') {
-                power = Math.round(power * 1.5); // A1: crit ×1.5 (era ×2)
-            }
-            
-            const atkMods = WildCore.getBuffModifiers(playerMonster);
-            let effectiveAtk = Math.max(1, playerMonster.atk + atkMods.atk);
+            let effectiveAtkForDamage = effectiveAtk;
 
             // Passiva canônica — atacante (emberfang: não dispara em ataque básico;
             // swiftclaw: +1 ATK no primeiro ataque do combate;
@@ -226,7 +245,7 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
                 hasBellwaveRhythmCharge: !!passiveStateAtk.bellwaveRhythmCharged, // Fase 11
             });
             if (atkPassive?.atkBonus) {
-                effectiveAtk = Math.max(1, effectiveAtk + atkPassive.atkBonus);
+                effectiveAtkForDamage = Math.max(1, effectiveAtkForDamage + atkPassive.atkBonus);
                 const atkLabel = _passiveLabel(playerMonster.canonSpeciesId, 'on_attack');
                 encounter.log.push(
                     atkLabel
@@ -237,22 +256,20 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
                 passiveStateAtk.shadowstingDebuffCharged = false; // Fase 10: consome carga de debuff
                 passiveStateAtk.bellwaveRhythmCharged = false; // Fase 11: consome carga de ritmo
             }
-            
-            const defMods = WildCore.getBuffModifiers(encounter.wildMonster);
-            const effectiveDef = Math.max(1, encounter.wildMonster.def + defMods.def);
-            
-            const classAdv = WildCore.getClassAdvantageModifiers(
-                playerMonster.class,
-                encounter.wildMonster.class,
-                dependencies.classAdvantages
-            );
-            
-            let damage = WildCore.calcDamage({
-                atk: effectiveAtk,
-                def: effectiveDef,
-                power: power,
-                damageMult: classAdv.damageMult
+
+            const lvlDiff = (Number(playerMonster.level) || 1) - (Number(encounter.wildMonster.level) || 1);
+            const { damage: baseDamage } = computeGroupDamage({
+                pwr: power,
+                atk: effectiveAtkForDamage,
+                lvlDiff,
+                defEnemy: effectiveDef,
+                damageMult: classAdv.damageMult,
+                critBonus: confrontResult.critDmgBonus,
+                category: confrontResult.category,
+                d20ANatural: confrontResult.d20ANatural,
+                d20DNatural: confrontResult.d20DNatural,
             });
+            let damage = baseDamage;
 
             // Passiva canônica — defensor (shieldhorn: -1 dano; jogador só ataca 1x por turno)
             const defPassive = fireCombatEvent(encounter.wildMonster, ON_HIT, {
@@ -295,6 +312,7 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
             // Aplicar dano
             encounter.wildMonster.hp = WildCore.applyDamageToHP(encounter.wildMonster.hp, damage);
             encounter.log.push(`💥 ${playerMonster.name} acerta! Causa ${damage} de dano!`);
+            encounter.log.push(`🎲 RC ${confrontResult.rc} → ${getRCLabel(confrontResult.category)}`);
             
             // PR11B: Marcar que o monstro selvagem participou (recebeu dano)
             markAsParticipated(encounter.wildMonster);
@@ -313,11 +331,7 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
             }
         } else {
             // Miss
-            if (critResult.isFail1) {
-                encounter.log.push(`💀 FALHA CRÍTICA! Ataque erra automaticamente!`);
-            } else {
-                encounter.log.push(`❌ ${playerMonster.name} misses!`);
-            }
+            encounter.log.push(`❌ ${playerMonster.name} erra! RC ${confrontResult.rc} (${getRCLabel(confrontResult.category)})`);
             
             WildUI.showMissFeedback('wildPlayerBox', dependencies.ui);
         }
@@ -401,11 +415,11 @@ function processCritical(d20Roll, player, encounter) {
     if (result.isCrit20) {
         encounter.log.push(`⭐ CRÍTICO 20! ⭐`);
         
-        // Escolher bônus aleatório
+        // Bônus de UX separado da fórmula v2.2 (não altera dano/RC; apenas log/recompensa)
         const bonusRoll = Math.floor(Math.random() * 3);
         if (bonusRoll === 0) {
-            result.critBonus = 'double_power';
-            encounter.log.push(`💥 Poder dobrado neste ataque!`);
+            result.critBonus = 'inspiration';
+            encounter.log.push(`🔥 Momento de inspiração!`);
         } else if (bonusRoll === 1) {
             result.critBonus = 'item';
             player.inventory = player.inventory || {};
@@ -456,11 +470,30 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
     // Usar rollEnemyD20 centralizado (injeta dependencies.rollD20 ou fallback Math.random)
     const enemyRoll = rollEnemyD20(dependencies);
     const defenseRoll = rollEnemyD20(dependencies);
-    const alwaysMiss = (enemyRoll === 1);
-    const isCrit = (enemyRoll === 20);
     // Fase 11.2: bônus de agilidade por SPD para o inimigo (contra o jogador)
     const enemySpdBonusSkill = WildCore.getSpdAdvantage(wildMonster, playerMonster);
-    const enemyHit = !alwaysMiss && (isCrit || WildCore.checkHitDiceClash(enemyRoll, defenseRoll, wildMonster, playerMonster, dependencies.classAdvantages, enemySpdBonusSkill));
+    const atkMods = WildCore.getBuffModifiers(wildMonster);
+    const defMods = WildCore.getBuffModifiers(playerMonster);
+    const effectiveAtk = Math.max(1, wildMonster.atk + atkMods.atk);
+    const effectiveDef = Math.max(1, playerMonster.def + defMods.def);
+    const classAdv = WildCore.getClassAdvantageModifiers(
+        wildMonster.class,
+        playerMonster.class,
+        dependencies.classAdvantages
+    );
+    const confrontResult = resolveConfrontation({
+        d20A: enemyRoll,
+        d20D: defenseRoll,
+        atkAtk: effectiveAtk,
+        atkDef: effectiveDef,
+        atkLvl: Number(wildMonster.level) || 1,
+        defLvl: Number(playerMonster.level) || 1,
+        classModAtk: classAdv.atkBonus,
+        posMod: 0,
+        buffOff: enemySpdBonusSkill,
+        buffDef: 0,
+    });
+    const enemyHit = confrontResult.category !== RC_CATEGORY.FALHA_TOTAL;
     encounter.log.push(`🎲 ${wildMonster.name} ATK ${enemyRoll} vs DEF ${defenseRoll} (${playerMonster.name})`);
 
     if (dependencies.ui?.updateDiceClash) {
@@ -475,7 +508,7 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
     
     // Gravar roll
     if (dependencies.recordD20Roll) {
-        const enemyRollType = isCrit ? 'crit' : alwaysMiss ? 'fail' : 'normal';
+        const enemyRollType = enemyRoll === 20 ? 'crit' : enemyRoll === 1 ? 'fail' : 'normal';
         dependencies.recordD20Roll(encounter, wildMonster.name, enemyRoll, enemyRollType);
     }
 
@@ -507,8 +540,7 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
     }
 
     if (enemyHit) {
-        const atkMods = WildCore.getBuffModifiers(wildMonster);
-        let effectiveAtk = Math.max(1, wildMonster.atk + atkMods.atk);
+        let effectiveAtkForDamage = effectiveAtk;
 
         // Passiva canônica — atacante selvagem (emberfang: +1 ATK em skill ofensiva com HP > 70%)
         const atkPassive = fireCombatEvent(wildMonster, ON_ATTACK, {
@@ -516,7 +548,7 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
             isOffensiveSkill: wildSkill.type === 'DAMAGE', // Fase 4.2: emberfang só em skill ofensiva
         });
         if (atkPassive?.atkBonus) {
-            effectiveAtk = Math.max(1, effectiveAtk + atkPassive.atkBonus);
+            effectiveAtkForDamage = Math.max(1, effectiveAtkForDamage + atkPassive.atkBonus);
             const wildAtkLabel = _passiveLabel(wildMonster.canonSpeciesId, 'on_attack');
             encounter.log.push(
                 wildAtkLabel
@@ -524,22 +556,19 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
                     : `✨ Passiva ${wildMonster.name}: +${atkPassive.atkBonus} ATK`
             );
         }
-        
-        const defMods = WildCore.getBuffModifiers(playerMonster);
-        const effectiveDef = Math.max(1, playerMonster.def + defMods.def);
-        
-        const classAdv = WildCore.getClassAdvantageModifiers(
-            wildMonster.class,
-            playerMonster.class,
-            dependencies.classAdvantages
-        );
-        
-        let damage = WildCore.calcDamage({
-            atk: effectiveAtk,
-            def: effectiveDef,
-            power: wildSkill.power,
-            damageMult: classAdv.damageMult
+        const lvlDiff = (Number(wildMonster.level) || 1) - (Number(playerMonster.level) || 1);
+        const { damage: baseDamage } = computeGroupDamage({
+            pwr: wildSkill.power,
+            atk: effectiveAtkForDamage,
+            lvlDiff,
+            defEnemy: effectiveDef,
+            damageMult: classAdv.damageMult,
+            critBonus: confrontResult.critDmgBonus,
+            category: confrontResult.category,
+            d20ANatural: confrontResult.d20ANatural,
+            d20DNatural: confrontResult.d20DNatural,
         });
+        let damage = baseDamage;
 
         // Passiva canônica — defensor (shieldhorn: -1 dano no primeiro hit do turno)
         const passiveState = encounter.passiveState || (encounter.passiveState = {});
@@ -575,21 +604,18 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
         
         playerMonster.hp = WildCore.applyDamageToHP(playerMonster.hp, damage);
         encounter.log.push(`💥 ${wildSkill.name} acerta! Causa ${damage} de dano!`);
+        encounter.log.push(`🎲 RC ${confrontResult.rc} → ${getRCLabel(confrontResult.category)}`);
         
         // PR11B: Marcar que o jogador participou (recebeu dano)
         markAsParticipated(playerMonster);
         // PR11B: Marcar que o selvagem participou (causou dano)
         markAsParticipated(wildMonster);
         
-        WildUI.showDamageFeedback('wildPlayerBox', damage, isCrit, dependencies.ui);
+        WildUI.showDamageFeedback('wildPlayerBox', damage, confrontResult.d20ANatural, dependencies.ui);
         
         return { defeated: playerMonster.hp <= 0 };
     } else {
-        if (alwaysMiss) {
-            encounter.log.push(`💀 FALHA CRÍTICA! ${wildMonster.name} erra!`);
-        } else {
-            encounter.log.push(`❌ ${wildSkill.name} erra!`);
-        }
+        encounter.log.push(`❌ ${wildSkill.name} erra! RC ${confrontResult.rc} (${getRCLabel(confrontResult.category)})`);
         WildUI.showMissFeedback('wildEnemyBox', dependencies.ui);
         return { defeated: false };
     }
@@ -602,11 +628,30 @@ function processEnemyBasicAttack(encounter, wildMonster, playerMonster, dependen
     // Usar rollEnemyD20 centralizado (injeta dependencies.rollD20 ou fallback Math.random)
     const enemyRoll = rollEnemyD20(dependencies);
     const defenseRoll = rollEnemyD20(dependencies);
-    const alwaysMiss = (enemyRoll === 1);
-    const isCrit = (enemyRoll === 20);
     // Fase 11.2: bônus de agilidade por SPD para o inimigo (contra o jogador)
     const enemySpdBonusBasic = WildCore.getSpdAdvantage(wildMonster, playerMonster);
-    const enemyHit = !alwaysMiss && (isCrit || WildCore.checkHitDiceClash(enemyRoll, defenseRoll, wildMonster, playerMonster, dependencies.classAdvantages, enemySpdBonusBasic));
+    const atkMods = WildCore.getBuffModifiers(wildMonster);
+    const defMods = WildCore.getBuffModifiers(playerMonster);
+    const effectiveAtk = Math.max(1, wildMonster.atk + atkMods.atk);
+    const effectiveDef = Math.max(1, playerMonster.def + defMods.def);
+    const classAdv = WildCore.getClassAdvantageModifiers(
+        wildMonster.class,
+        playerMonster.class,
+        dependencies.classAdvantages
+    );
+    const confrontResult = resolveConfrontation({
+        d20A: enemyRoll,
+        d20D: defenseRoll,
+        atkAtk: effectiveAtk,
+        atkDef: effectiveDef,
+        atkLvl: Number(wildMonster.level) || 1,
+        defLvl: Number(playerMonster.level) || 1,
+        classModAtk: classAdv.atkBonus,
+        posMod: 0,
+        buffOff: enemySpdBonusBasic,
+        buffDef: 0,
+    });
+    const enemyHit = confrontResult.category !== RC_CATEGORY.FALHA_TOTAL;
     encounter.log.push(`🎲 Wild ${wildMonster.name} ATK ${enemyRoll} vs DEF ${defenseRoll} (${playerMonster.name})`);
 
     if (dependencies.ui?.updateDiceClash) {
@@ -621,14 +666,12 @@ function processEnemyBasicAttack(encounter, wildMonster, playerMonster, dependen
     
     // Gravar roll
     if (dependencies.recordD20Roll) {
-        const enemyRollType = isCrit ? 'crit' : alwaysMiss ? 'fail' : 'normal';
+        const enemyRollType = enemyRoll === 20 ? 'crit' : enemyRoll === 1 ? 'fail' : 'normal';
         dependencies.recordD20Roll(encounter, wildMonster.name, enemyRoll, enemyRollType);
     }
     
     if (enemyHit) {
-        // Calcular ATK efetivo explicitamente para permitir injeção de passivas
-        const atkMods = WildCore.getBuffModifiers(wildMonster);
-        let effectiveAtk = Math.max(1, wildMonster.atk + atkMods.atk);
+        let effectiveAtkForDamage = effectiveAtk;
 
         // Passiva canônica — atacante selvagem (emberfang: não dispara em ataque básico)
         const atkPassive = fireCombatEvent(wildMonster, ON_ATTACK, {
@@ -636,7 +679,7 @@ function processEnemyBasicAttack(encounter, wildMonster, playerMonster, dependen
             isOffensiveSkill: false, // Fase 4.2: ataque básico → emberfang não dispara
         });
         if (atkPassive?.atkBonus) {
-            effectiveAtk = Math.max(1, effectiveAtk + atkPassive.atkBonus);
+            effectiveAtkForDamage = Math.max(1, effectiveAtkForDamage + atkPassive.atkBonus);
             const basicAtkLabel = _passiveLabel(wildMonster.canonSpeciesId, 'on_attack');
             encounter.log.push(
                 basicAtkLabel
@@ -645,22 +688,21 @@ function processEnemyBasicAttack(encounter, wildMonster, playerMonster, dependen
             );
         }
 
-        const defMods = WildCore.getBuffModifiers(playerMonster);
-        const effectiveDef = Math.max(1, playerMonster.def + defMods.def);
-
-        const classAdv = WildCore.getClassAdvantageModifiers(
-            wildMonster.class,
-            playerMonster.class,
-            dependencies.classAdvantages
-        );
         const basicPower = dependencies.getBasicPower(wildMonster.class);
 
-        let damage = WildCore.calcDamage({
-            atk: effectiveAtk,
-            def: effectiveDef,
-            power: basicPower,
-            damageMult: classAdv.damageMult
+        const lvlDiff = (Number(wildMonster.level) || 1) - (Number(playerMonster.level) || 1);
+        const { damage: baseDamage } = computeGroupDamage({
+            pwr: basicPower,
+            atk: effectiveAtkForDamage,
+            lvlDiff,
+            defEnemy: effectiveDef,
+            damageMult: classAdv.damageMult,
+            critBonus: confrontResult.critDmgBonus,
+            category: confrontResult.category,
+            d20ANatural: confrontResult.d20ANatural,
+            d20DNatural: confrontResult.d20DNatural,
         });
+        let damage = baseDamage;
 
         // Passiva canônica — defensor (shieldhorn: -1 dano no primeiro hit do turno)
         const passiveState = encounter.passiveState || (encounter.passiveState = {});
@@ -696,21 +738,18 @@ function processEnemyBasicAttack(encounter, wildMonster, playerMonster, dependen
 
         playerMonster.hp = WildCore.applyDamageToHP(playerMonster.hp, damage);
         encounter.log.push(`💥 ${wildMonster.name} acerta! Causa ${damage} de dano!`);
+        encounter.log.push(`🎲 RC ${confrontResult.rc} → ${getRCLabel(confrontResult.category)}`);
         
         // PR11B: Marcar que o jogador participou (recebeu dano)
         markAsParticipated(playerMonster);
         // PR11B: Marcar que o selvagem participou (causou dano)
         markAsParticipated(wildMonster);
         
-        WildUI.showDamageFeedback('wildPlayerBox', damage, isCrit, dependencies.ui);
+        WildUI.showDamageFeedback('wildPlayerBox', damage, confrontResult.d20ANatural, dependencies.ui);
         
         return { defeated: playerMonster.hp <= 0 };
     } else {
-        if (alwaysMiss) {
-            encounter.log.push(`💀 FALHA CRÍTICA! ${wildMonster.name} erra!`);
-        } else {
-            encounter.log.push(`❌ ${wildMonster.name} misses!`);
-        }
+        encounter.log.push(`❌ ${wildMonster.name} erra! RC ${confrontResult.rc} (${getRCLabel(confrontResult.category)})`);
         WildUI.showMissFeedback('wildEnemyBox', dependencies.ui);
         return { defeated: false };
     }

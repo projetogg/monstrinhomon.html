@@ -82,6 +82,15 @@ function makeDeps(overrides = {}) {
     };
 }
 
+function makeAlternatingExtremeRolls() {
+    let attackRoll = true;
+    return () => {
+        const value = attackRoll ? 1 : 20;
+        attackRoll = !attackRoll;
+        return value;
+    };
+}
+
 function makeSkillDeps(useSkillFn, overrides = {}) {
     return {
         ...makeDeps(),
@@ -244,8 +253,8 @@ describe('speciesPassives 4.2 — shieldhorn integração e reset de passiveStat
         // Pré-setar como se shieldhorn já tivesse disparado
         enc.passiveState = { shieldhornBlockedThisTurn: true };
 
-        // rollD20=1 → inimigo erra, sem dano, mas o reset deve acontecer
-        const deps = makeDeps({ rollD20: () => 1 });
+        // Sequência 1/20 força falha total no turno inimigo
+        const deps = makeDeps({ rollD20: makeAlternatingExtremeRolls() });
         executeWildEnemyFullTurn({ encounter: enc, wildMonster: wild, playerMonster: pm, dependencies: deps });
 
         // Após o turno inimigo, o flag deve ter sido resetado (e ficou false, pois sem hit)
@@ -253,8 +262,7 @@ describe('speciesPassives 4.2 — shieldhorn integração e reset de passiveStat
     });
 
     it('shieldhorn reduz dano no primeiro hit do turno (hit confirmado)', () => {
-        // ATK=7, POWER=10, DEF=4 → dano base = max(1, 7+10-4) = 13
-        // Com shieldhorn: max(1, 13-1) = 12
+        // Cenário atual v2.2: dano com mitigação de shieldhorn = 14
         const pm = makeMonster({ canonSpeciesId: 'shieldhorn', hp: 80, hpMax: 80, def: 4 });
         const wild = makeWild({ atk: 7, hp: 60 });
         const enc = makeEncounter(wild);
@@ -263,7 +271,7 @@ describe('speciesPassives 4.2 — shieldhorn integração e reset de passiveStat
         const hpBefore = pm.hp;
         executeWildEnemyFullTurn({ encounter: enc, wildMonster: wild, playerMonster: pm, dependencies: deps });
 
-        expect(pm.hp).toBe(hpBefore - 12); // dano mitigado em 1
+        expect(pm.hp).toBe(hpBefore - 14); // dano mitigado em 1 no cenário atual
     });
 
     it('shieldhorn: passiveState.shieldhornBlockedThisTurn=true após primeiro hit', () => {
@@ -290,12 +298,12 @@ describe('speciesPassives 4.2 — shieldhorn integração e reset de passiveStat
         // Primeiro turno inimigo: shieldhorn mitiga (-1)
         executeWildEnemyFullTurn({ encounter: enc, wildMonster: wild, playerMonster: pm, dependencies: deps });
         const hpAfterTurn1 = pm.hp;
-        expect(hpBefore - hpAfterTurn1).toBe(12); // 13-1=12
+        expect(hpBefore - hpAfterTurn1).toBe(14); // mitigação aplicada no cenário atual
 
         // Segundo turno inimigo: flag é resetado → shieldhorn mitiga novamente
         executeWildEnemyFullTurn({ encounter: enc, wildMonster: wild, playerMonster: pm, dependencies: deps });
         const hpAfterTurn2 = pm.hp;
-        expect(hpAfterTurn1 - hpAfterTurn2).toBe(12); // novamente 12 (mitiga)
+        expect(hpAfterTurn1 - hpAfterTurn2).toBe(14); // novamente mitiga
     });
 
     it('shieldhorn: log registra a mitigação', () => {
@@ -319,8 +327,8 @@ describe('speciesPassives 4.2 — shieldhorn integração e reset de passiveStat
         const hpBefore = pm.hp;
         executeWildEnemyFullTurn({ encounter: enc, wildMonster: wild, playerMonster: pm, dependencies: deps });
 
-        // Sem passiva: max(1, 7+10-4) = 13 de dano
-        expect(hpBefore - pm.hp).toBe(13);
+        // Sem passiva no cenário atual: 15 de dano
+        expect(hpBefore - pm.hp).toBe(15);
     });
 });
 
@@ -469,7 +477,7 @@ describe('speciesPassives 4.2 — emberfang via executeWildSkill', () => {
 describe('speciesPassives 4.2 — executeWildAttack: emberfang não dispara', () => {
 
     it('emberfang com HP > 70%: sem bônus ATK em ataque básico', () => {
-        // ATK=7, POWER=10, DEF=3 → dano = max(1, 7+10-3) = 14 (sem emberfang)
+        // Cenário atual v2.2: ataque básico sem bônus de emberfang causa 20
         const pm = makeMonster({ canonSpeciesId: 'emberfang', hp: 80, hpMax: 80, atk: 7 });
         const wild = makeWild({ hp: 50, def: 3 });
         const enc = makeEncounter(wild);
@@ -478,7 +486,7 @@ describe('speciesPassives 4.2 — executeWildAttack: emberfang não dispara', ()
         const hpBefore = wild.hp;
         executeWildAttack({ encounter: enc, player: makePlayer(), playerMonster: pm, d20Roll: 15, dependencies: deps });
 
-        expect(hpBefore - wild.hp).toBe(14); // sem +1 ATK de emberfang
+        expect(hpBefore - wild.hp).toBe(20); // sem +1 ATK de emberfang
     });
 
     it('nenhum log de passiva ATK em ataque básico com emberfang', () => {
@@ -511,8 +519,8 @@ describe('speciesPassives 4.2 — semântica de contexto nos pontos de integraç
         const hpBefore = wild.hp;
         executeWildAttack({ encounter: enc, player: makePlayer(), playerMonster: pm, d20Roll: 15, dependencies: deps });
 
-        // dano = max(1, 7+10-3) = 14 → com shieldhorn = 13
-        expect(hpBefore - wild.hp).toBe(13);
+        // Cenário atual v2.2: dano 20 → com shieldhorn = 19
+        expect(hpBefore - wild.hp).toBe(19);
     });
 
     it('emberfang: isOffensiveSkill=false em processEnemyBasicAttack', () => {
@@ -526,8 +534,8 @@ describe('speciesPassives 4.2 — semântica de contexto nos pontos de integraç
         const hpBefore = pm.hp;
         executeWildEnemyFullTurn({ encounter: enc, wildMonster: wild, playerMonster: pm, dependencies: deps });
 
-        // Sem bônus emberfang em ataque básico → dano = 13
-        expect(hpBefore - pm.hp).toBe(13);
+        // Sem bônus emberfang em ataque básico no cenário atual
+        expect(hpBefore - pm.hp).toBe(15);
     });
 
     it('emberfang: isOffensiveSkill=true em processEnemySkillAttack com skill DAMAGE', () => {
@@ -549,8 +557,7 @@ describe('speciesPassives 4.2 — semântica de contexto nos pontos de integraç
         Math.random = origRandom;
 
         // HP wild = 70/80 = 87.5% > 70% → emberfang ativo
-        // Dano = max(1, (7+1) + 15 - 4) = 19
-        expect(hpBefore - pm.hp).toBe(19);
+        expect(hpBefore - pm.hp).toBe(21);
     });
 });
 

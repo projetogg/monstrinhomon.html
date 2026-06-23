@@ -140,10 +140,10 @@ describe('executeWildAttack — ataque básico', () => {
         expect(enc.wildMonster.hp).toBeLessThan(100);
     });
 
-    it('d20=1 (falha crítica) não deve reduzir HP do selvagem', () => {
+    it('d20=1 aplica penalidade severa de RC, mas não é auto-miss', () => {
         const wild = makeWild({ hp: 100, hpMax: 100, def: 3 });
         const enc = makeEncounter(wild);
-        const playerMon = makePlayer({ atk: 100 }); // ATK altíssimo mas não importa (d20=1 falha)
+        const playerMon = makePlayer({ atk: 100 }); // ATK altíssimo ainda pode superar a defesa mesmo com -6 RC
         const player = { id: 'p1', name: 'Jogador', class: 'Guerreiro', inventory: {} };
         const deps = makeDeps({
             rollD20: () => 1, // enemy also rolls 1 = critical fail
@@ -151,8 +151,8 @@ describe('executeWildAttack — ataque básico', () => {
 
         executeWildAttack({ encounter: enc, player, playerMonster: playerMon, d20Roll: 1, dependencies: deps });
 
-        // HP do selvagem não deve ter caído (d20=1 = falha crítica do jogador)
-        expect(enc.wildMonster.hp).toBe(100);
+        // v2.2: d20A=1 é -6 RC (não falha automática)
+        expect(enc.wildMonster.hp).toBeLessThan(100);
     });
 
     it('deve retornar result:victory quando selvagem chega a HP 0', () => {
@@ -565,22 +565,20 @@ describe('Regressão — coerência tutorial vs sistema real', () => {
 
 describe('Contra-ataque selvagem — regressão de consistência', () => {
 
-    it('inimigo com d20=1 (falha crítica) não deve causar dano ao jogador', () => {
+    it('inimigo com d20=1 também não é auto-miss na fórmula v2.2', () => {
         const wild = makeWild({ hp: 100, atk: 100, def: 1 }); // ataque altíssimo mas roll=1
         const enc = makeEncounter(wild);
         const playerMon = makePlayer({ hp: 80 });
         const player = { id: 'p1', name: 'Jogador', class: 'Guerreiro', inventory: {} };
         const deps = makeDeps({
-            rollD20: () => 1, // enemy sempre rola 1 (falha crítica)
+            rollD20: () => 1, // atacante e defensor rolam 1; com ATK alto ainda pode haver dano
         });
 
         // Jogador ataca e erra (d20=1), inimigo contra-ataca com d20=1 → falha crítica
         executeWildAttack({ encounter: enc, player, playerMonster: playerMon, d20Roll: 1, dependencies: deps });
 
-        // HP do jogador não deve ter mudado (inimigo falhou)
-        // Nota: o HP pode mudar por outros motivos (itens) mas não pelo ataque do d20=1
-        // Verificamos que não houve derrota (jogador ainda vivo)
-        expect(playerMon.hp).toBeGreaterThan(0);
+        // Com v2.2, d20A=1 aplica -6 RC; não impede dano automaticamente.
+        expect(playerMon.hp).toBeLessThan(80);
     });
 
     it('inimigo com d20=20 (crítico) deve causar mais dano que um acerto normal', () => {

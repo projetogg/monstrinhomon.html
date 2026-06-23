@@ -286,13 +286,13 @@ describe('speciesPassives — integração executeWildAttack (shieldhorn defenso
         const player = makePlayer();
         const deps = makeDependencies({ rollD20: () => 15 }); // garante acerto
 
-        // Dano esperado sem passiva: max(1, 7 + 10 - 3) = 14
-        // Com shieldhorn: max(1, 14 - 1) = 13
+        // Base v2.2 no cenário atual: dano sem passiva = 16
+        // Com shieldhorn: 15
         executeWildAttack({ encounter: enc, player, playerMonster: playerMon, d20Roll: 15, dependencies: deps });
 
         const hpAfter = enc.wildMonster.hp;
-        // HP inicial 50, esperado 50-13 = 37 (com passiva) vs 50-14 = 36 (sem)
-        expect(hpAfter).toBe(37); // passiva reduziu 1 ponto de dano
+        // HP inicial 50, esperado 50-15 = 35 (com passiva) vs 50-16 = 34 (sem)
+        expect(hpAfter).toBe(35); // passiva reduziu 1 ponto de dano
     });
 
     it('log de combate deve registrar a passiva shieldhorn', () => {
@@ -315,10 +315,10 @@ describe('speciesPassives — integração executeWildAttack (shieldhorn defenso
         const player = makePlayer();
         const deps = makeDependencies({ rollD20: () => 15 });
 
-        // Dano esperado: max(1, 7 + 10 - 3) = 14 → HP = 50 - 14 = 36
+        // Dano esperado no runtime v2.2 atual: 16 → HP = 34
         executeWildAttack({ encounter: enc, player, playerMonster: playerMon, d20Roll: 15, dependencies: deps });
 
-        expect(enc.wildMonster.hp).toBe(36);
+        expect(enc.wildMonster.hp).toBe(34);
     });
 });
 
@@ -332,10 +332,10 @@ describe('speciesPassives — integração executeWildAttack (emberfang atacante
         const player = makePlayer();
         const deps = makeDependencies({ rollD20: () => 15 });
 
-        // Sem bônus de emberfang em ataque básico: max(1, 7 + 10 - 3) = 14 → HP = 36
+        // Sem bônus de emberfang em ataque básico: dano 16 → HP = 34
         executeWildAttack({ encounter: enc, player, playerMonster: playerMon, d20Roll: 15, dependencies: deps });
 
-        expect(enc.wildMonster.hp).toBe(36); // sem +1 ATK de emberfang em ataque básico
+        expect(enc.wildMonster.hp).toBe(34); // sem +1 ATK de emberfang em ataque básico
     });
 
     it('log de combate NÃO deve registrar emberfang em ataque básico (Fase 4.2)', () => {
@@ -358,10 +358,10 @@ describe('speciesPassives — integração executeWildAttack (emberfang atacante
         const enc = makeEncounter(wild);
         const deps = makeDependencies({ rollD20: () => 15 });
 
-        // Sem passiva (70% não > 70%): max(1, 7 + 10 - 3) = 14 → HP = 36
+        // Sem passiva (70% não > 70%): dano 16 → HP = 34
         executeWildAttack({ encounter: enc, player: makePlayer(), playerMonster: playerMon, d20Roll: 15, dependencies: deps });
 
-        expect(enc.wildMonster.hp).toBe(36);
+        expect(enc.wildMonster.hp).toBe(34);
     });
 
     it('playerMonster emberfang com HP < 70% NÃO recebe bônus', () => {
@@ -371,10 +371,10 @@ describe('speciesPassives — integração executeWildAttack (emberfang atacante
         const enc = makeEncounter(wild);
         const deps = makeDependencies({ rollD20: () => 15 });
 
-        // Sem passiva: max(1, 7 + 10 - 3) = 14 → HP = 36
+        // Sem passiva: dano 16 → HP = 34
         executeWildAttack({ encounter: enc, player: makePlayer(), playerMonster: playerMon, d20Roll: 15, dependencies: deps });
 
-        expect(enc.wildMonster.hp).toBe(36);
+        expect(enc.wildMonster.hp).toBe(34);
     });
 });
 
@@ -387,13 +387,13 @@ describe('speciesPassives — sem regressão em combate padrão', () => {
         const player = makePlayer();
         const deps = makeDependencies({ rollD20: () => 15 });
 
-        // Dano esperado: max(1, 7 + 10 - 3) = 14
+        // Dano esperado no runtime v2.2 atual: 16
         executeWildAttack({ encounter: enc, player, playerMonster: playerMon, d20Roll: 15, dependencies: deps });
 
-        expect(enc.wildMonster.hp).toBe(36); // 50 - 14 = 36 — sem alteração
+        expect(enc.wildMonster.hp).toBe(34); // 50 - 16 = 34 — sem alteração
     });
 
-    it('miss (d20=1) não aplica passiva e não altera HP', () => {
+    it('d20=1 aplica penalidade de RC e não bloqueia passivas por si só', () => {
         const playerMon = makePlayerMon({ canonSpeciesId: 'emberfang', hp: 80, hpMax: 80 });
         const wild = makeWild({ canonSpeciesId: 'shieldhorn', hp: 50, hpMax: 80 });
         const enc = makeEncounter(wild);
@@ -401,10 +401,9 @@ describe('speciesPassives — sem regressão em combate padrão', () => {
         // rollD20=1 para o player, e () => 1 também para inimigo (falha ambos)
         const deps = makeDependencies({ rollD20: () => 1 });
 
-        // d20=1 = falha crítica — player erra; inimigo também rola 1 (miss)
+        // v2.2: d20A=1 = -6 RC, não falha automática
         executeWildAttack({ encounter: enc, player, playerMonster: playerMon, d20Roll: 1, dependencies: deps });
 
-        // HP do wild não deve mudar (player errou)
-        expect(enc.wildMonster.hp).toBe(50);
+        expect(enc.wildMonster.hp).toBe(42);
     });
 });
