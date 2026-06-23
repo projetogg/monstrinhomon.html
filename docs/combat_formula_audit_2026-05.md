@@ -2,8 +2,22 @@
 
 **Data:** 2026-05-26  
 **PR:** `test(combat): auditar fórmula runtime contra Patch v2.2`  
-**Status:** Diagnóstico — sem alteração de fórmula neste PR  
+**Status:** Diagnóstico histórico + atualização de status (2026-06)  
 **Auditor:** Agente técnico (Copilot)
+
+---
+
+## Nota de status (2026-06)
+
+- **Wild Combat (fórmula base): corrigido neste PR** para o modelo canônico v2.2 no runtime de execução (`wildActions.js`), com:
+  - RC bilateral (`d20A`/`d20D`);
+  - `ceil(DEF/2)` no confronto;
+  - `floor(DEF/2)` no dano;
+  - `ModNível`;
+  - 5 faixas de RC;
+  - crítico v2.2 (`nat20` = +4 RC e +20% dano final, sem auto-hit).
+- **Passivas de classe:** preservadas sem recalibração neste PR.
+- **Pendências mantidas fora de escopo:** ENE regen, boss e recalibração das passivas (PR dedicado posterior).
 
 ---
 

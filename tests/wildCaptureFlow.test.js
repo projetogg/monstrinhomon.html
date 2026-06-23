@@ -384,7 +384,7 @@ describe('executeWildCapture — falha de captura', () => {
         expect(playerMon.hp).toBeLessThan(80);
     });
 
-    it('d20=1 no contra-ataque (falha crítica) não causa dano ao jogador', () => {
+    it('d20=1 no contra-ataque aplica penalidade de RC, mas não é auto-miss', () => {
         const wild = makeWild({ hp: 100, aggression: 100, atk: 100 });
         const enc = makeEncounter(wild);
         const player = makePlayer();
@@ -393,8 +393,7 @@ describe('executeWildCapture — falha de captura', () => {
 
         executeWildCapture({ encounter: enc, player, playerMonster: playerMon, orbInfo: ORB_COMUM, dependencies: deps });
 
-        // d20=1 = falha crítica → sem dano
-        expect(playerMon.hp).toBe(80);
+        expect(playerMon.hp).toBeLessThan(80);
     });
 
     it('NÃO contra-ataca se playerMonster for null', () => {
@@ -691,7 +690,7 @@ describe('executeWildCapture — regressão: contra-ataque usa dependency inject
         const deps = makeDeps({
             rollD20: () => {
                 rollCount++;
-                return 1; // falha crítica
+                return 1; // penalidade de RC (não auto-miss)
             },
         });
 
@@ -699,7 +698,6 @@ describe('executeWildCapture — regressão: contra-ataque usa dependency inject
 
         // rollD20 deve ter sido chamado ao menos 1 vez (contra-ataque)
         expect(rollCount).toBeGreaterThan(0);
-        // HP intacto (d20=1 → falha crítica)
-        expect(playerMon.hp).toBe(80);
+        expect(playerMon.hp).toBeLessThan(80);
     });
 });
