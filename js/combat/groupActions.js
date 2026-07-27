@@ -369,13 +369,36 @@ export function executePlayerAttackGroup(deps, targetEnemyIndex = null) {
         return true;
     }
 
+    // PR-02: passiva de espécie do atacante
+    // DEC-SPECIES-ATK-01: o bônus modifica o ATK usado na fórmula de dano,
+    // sem alterar retroativamente a categoria de RC já resolvida.
+    const passiveStateAtk = enc.passiveState || (enc.passiveState = {});
+    const atkSpeciesPassive = fireCombatEvent(mon, ON_ATTACK, {
+        hpPct: (Number(mon.hpMax) || 1) > 0 ? (Number(mon.hp) || 0) / (Number(mon.hpMax) || 1) : 0,
+        isOffensiveSkill: false,
+        isFirstAttackOfCombat: !passiveStateAtk.swiftclawFirstStrikeDone,
+        hasShadowstingCharge: !!passiveStateAtk.shadowstingDebuffCharged,
+        hasBellwaveRhythmCharge: !!passiveStateAtk.bellwaveRhythmCharged,
+    });
+    let effectiveAtkForDamage = effectiveAtk;
+    if (atkSpeciesPassive?.atkBonus) {
+        effectiveAtkForDamage = Math.max(
+            1,
+            effectiveAtkForDamage + atkSpeciesPassive.atkBonus,
+        );
+        helpers.log(enc, `✨ Passiva ${monName}: +${atkSpeciesPassive.atkBonus} ATK`);
+        passiveStateAtk.swiftclawFirstStrikeDone = true;
+        passiveStateAtk.shadowstingDebuffCharged = false;
+        passiveStateAtk.bellwaveRhythmCharged = false;
+    }
+
     // Calcular dano via fórmula canônica
     const basicPower = helpers.getBasicAttackPower(mon.class);
     const lvlDiff = (Number(mon.level) || 1) - (Number(enemy.level) || 1);
 
     const { damage: baseDmg, isIlusory } = computeGroupDamage({
         pwr: basicPower,
-        atk: effectiveAtk,
+        atk: effectiveAtkForDamage,
         lvlDiff,
         defEnemy: effectiveDef,
         damageMult: classAdv.damageMult,
@@ -394,23 +417,6 @@ export function executePlayerAttackGroup(deps, targetEnemyIndex = null) {
     }
     // Passiva Caçador: +2 dano plano vs alvo HP < 50%
     dmg = applyHunterWeakTargetBonus(dmg, enemy, atkClassPassive);
-
-    // PR-02: passiva de espécie do atacante
-    const passiveStateAtk = enc.passiveState || (enc.passiveState = {});
-    const atkSpeciesPassive = fireCombatEvent(mon, ON_ATTACK, {
-        hpPct: (Number(mon.hpMax) || 1) > 0 ? (Number(mon.hp) || 0) / (Number(mon.hpMax) || 1) : 0,
-        isOffensiveSkill: false,
-        isFirstAttackOfCombat: !passiveStateAtk.swiftclawFirstStrikeDone,
-        hasShadowstingCharge: !!passiveStateAtk.shadowstingDebuffCharged,
-        hasBellwaveRhythmCharge: !!passiveStateAtk.bellwaveRhythmCharged,
-    });
-    if (atkSpeciesPassive?.atkBonus) {
-        dmg = Math.max(1, dmg + atkSpeciesPassive.atkBonus);
-        helpers.log(enc, `✨ Passiva ${monName}: +${atkSpeciesPassive.atkBonus} ATK`);
-        passiveStateAtk.swiftclawFirstStrikeDone = true;
-        passiveStateAtk.shadowstingDebuffCharged = false;
-        passiveStateAtk.bellwaveRhythmCharged = false;
-    }
 
     // A4: Passiva defensiva do defensor
     const defClassPassive = CLASS_COMBAT_PASSIVES[enemy.class];

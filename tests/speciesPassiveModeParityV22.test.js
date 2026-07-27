@@ -316,11 +316,22 @@ describe('Passivas de espécie v2.2 — integração estrutural Wild e Group', (
     }
   });
 
-  it('caracteriza o estágio divergente de aplicação de atkBonus', () => {
+  it('aplica atkBonus ao ATK efetivo antes da fórmula nos dois modos', () => {
     expect(wildBasic).toContain(
       'effectiveAtkForDamage = Math.max(1, effectiveAtkForDamage + atkPassive.atkBonus)',
     );
-    expect(groupBasic).toContain(
+
+    const groupBonusIndex = groupBasic.indexOf(
+      'effectiveAtkForDamage + atkSpeciesPassive.atkBonus',
+    );
+    const groupDamageIndex = groupBasic.indexOf(
+      'const { damage: baseDmg, isIlusory } = computeGroupDamage({',
+    );
+
+    expect(groupBonusIndex).toBeGreaterThanOrEqual(0);
+    expect(groupDamageIndex).toBeGreaterThan(groupBonusIndex);
+    expect(groupBasic).toContain('atk: effectiveAtkForDamage');
+    expect(groupBasic).not.toContain(
       'dmg = Math.max(1, dmg + atkSpeciesPassive.atkBonus)',
     );
   });
@@ -339,7 +350,7 @@ describe('Passivas de espécie v2.2 — integração estrutural Wild e Group', (
 });
 
 describe('Passivas de espécie v2.2 — efeitos observáveis por modo', () => {
-  it('DRIFT: wildpace pode ser neutralizado pelo arredondamento no Wild, mas soma +1 final no Group', () => {
+  it('PARITY: wildpace entra no ATK antes da fórmula nos dois modos', () => {
     const wildBase = runWildBasic({
       playerMonster: makeMonster({ hp: 30, canonSpeciesId: null }),
       enemy: makeEnemy(),
@@ -366,7 +377,9 @@ describe('Passivas de espécie v2.2 — efeitos observáveis por modo', () => {
     });
 
     expect(wildPassive.damage - wildBase.damage).toBe(0);
-    expect(groupPassive.damage - groupBase.damage).toBe(1);
+    expect(groupPassive.damage - groupBase.damage).toBe(0);
+    expect(groupBase.damage).toBe(wildBase.damage);
+    expect(groupPassive.damage).toBe(wildPassive.damage);
   });
 
   it('DRIFT: a ordem de shieldhorn e resistência de Guerreiro muda o dano em cenário de fronteira', () => {
