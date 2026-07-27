@@ -16,8 +16,12 @@ on:
     paths:
       - "js/combat/combatSimulationHarness.js"
       - "js/combat/groupCombatFormula.js"
+      - "js/combat/groupActions.js"
+      - "js/combat/groupCore.js"
+      - "js/combat/wildActions.js"
       - "scripts/simulate-combat-v2-2.mjs"
       - "tests/combatSimulationHarnessV22.test.js"
+      - "tests/combatHarnessRuntimeParityV22.test.js"
       - "data/monsters.json"
       - "data/skills.json"
       - "design/canon/class_matchups.json"
@@ -50,6 +54,9 @@ jobs:
 
       - name: Testar harness
         run: npm run test:combat-simulation-v2-2
+
+      - name: Testar paridade com Wild e Group
+        run: npm run test:combat-parity-v2-2
 
       - name: Gerar baseline reproduzível
         run: >-
