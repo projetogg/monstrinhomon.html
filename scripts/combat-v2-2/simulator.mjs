@@ -602,7 +602,9 @@ export function runBaseline({
 
   return {
     metadata: {
-      generatedAt: new Date().toISOString(),
+      generatedAt: process.env.SOURCE_DATE_EPOCH
+        ? new Date(Number(process.env.SOURCE_DATE_EPOCH) * 1000).toISOString()
+        : new Date().toISOString(),
       seed,
       iterationsPerScenario: iterations,
       scenarioCount: selectedScenarios.length,
