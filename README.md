@@ -11,6 +11,7 @@ Antes de usar planos ou auditorias antigas como contexto atual, consulte:
 - [Roadmap](docs/ROADMAP.md)
 - [Mapa de autoridade](docs/AUTHORITY_MAP.md)
 - [Registro de decisoes](docs/DECISION_LOG.md)
+- [Portal do Projeto no Google Drive](https://docs.google.com/document/d/1FrUHQEqemHX0eDXFq27ZNfKnzzmaag5MBc-ScWc-V5A/edit)
 
 ## Fontes oficiais
 
