@@ -336,14 +336,14 @@ describe('Passivas de espécie v2.2 — integração estrutural Wild e Group', (
     );
   });
 
-  it('caracteriza a ordem divergente entre shieldhorn e passiva defensiva de classe', () => {
-    const wildSpeciesIndex = wildBasic.indexOf('const defPassive = fireCombatEvent');
+  it('aplica resistência de classe antes de shieldhorn nos dois modos', () => {
     const wildClassIndex = wildBasic.indexOf('const defClassPassive = CLASS_COMBAT_PASSIVES');
+    const wildSpeciesIndex = wildBasic.indexOf('const defPassive = fireCombatEvent');
     const groupClassIndex = groupBasic.indexOf('const defClassPassive = CLASS_COMBAT_PASSIVES');
     const groupSpeciesIndex = groupBasic.indexOf('const defSpeciesPassive = fireCombatEvent');
 
-    expect(wildSpeciesIndex).toBeGreaterThanOrEqual(0);
-    expect(wildClassIndex).toBeGreaterThan(wildSpeciesIndex);
+    expect(wildClassIndex).toBeGreaterThanOrEqual(0);
+    expect(wildSpeciesIndex).toBeGreaterThan(wildClassIndex);
     expect(groupClassIndex).toBeGreaterThanOrEqual(0);
     expect(groupSpeciesIndex).toBeGreaterThan(groupClassIndex);
   });
@@ -382,7 +382,7 @@ describe('Passivas de espécie v2.2 — efeitos observáveis por modo', () => {
     expect(groupPassive.damage).toBe(wildPassive.damage);
   });
 
-  it('DRIFT: a ordem de shieldhorn e resistência de Guerreiro muda o dano em cenário de fronteira', () => {
+  it('PARITY: shieldhorn reduz após a resistência de Guerreiro nos dois modos', () => {
     const attacker = () => makeMonster({
       class: 'Mago',
       atk: 1,
@@ -421,9 +421,11 @@ describe('Passivas de espécie v2.2 — efeitos observáveis por modo', () => {
     });
 
     expect(wildBase.damage).toBe(3);
-    expect(wildShield.damage).toBe(3);
+    expect(wildShield.damage).toBe(2);
     expect(groupBase.damage).toBe(3);
     expect(groupShield.damage).toBe(2);
+    expect(wildBase.damage).toBe(groupBase.damage);
+    expect(wildShield.damage).toBe(groupShield.damage);
   });
 
   it('PARITY: floracura concede +3 HP e consome o estado de primeira cura nos dois modos', () => {
