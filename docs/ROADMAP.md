@@ -5,17 +5,37 @@
 
 ## Agora
 
+### Corrigir os drifts aprovados das passivas de especie
+
+**Resultado esperado:** Wild e Group passam a executar o pipeline aprovado em `docs/DECISAO_PIPELINE_PASSIVAS_ESPECIE_2026-07.md`, sem recalibrar valores e sem combinar dominios.
+
+**Sequencia obrigatoria:**
+
+1. `fix(combat): aplicar atkBonus de especie antes da formula no Group`;
+2. `fix(combat): alinhar ordem defensiva do shieldhorn no Wild`;
+3. `fix(combat): despachar passivas de especie nas skills Group`;
+4. reexecutar a matriz de paridade das passivas;
+5. revisar a baseline quantitativa somente depois da paridade.
+
+**Limites:**
+
+- um drift principal por PR;
+- nenhum ajuste no valor das passivas;
+- nenhuma alteracao simultanea de PWR, critico, ENE ou boss;
+- converter testes de caracterizacao em testes de paridade apenas quando a correcao correspondente entrar.
+
 ### Validar o nucleo jogavel v2.2
 
 **Resultado esperado:** obter evidencia quantitativa e de playtest suficiente para decidir calibracao de PWR, critico, passivas, energia e bosses sem alterar varios dominios ao mesmo tempo.
 
 **Entregas:**
 
-1. executar o protocolo em `docs/VALIDACAO_NUCLEO_JOGAVEL_V2_2.md`;
-2. registrar simulacoes reproduziveis por classe, nivel e encontro;
-3. usar `docs/PLAYTEST_TEMPLATE_V2_2.md` em playtest mediado;
-4. separar bugs, balanceamento, UX e decisoes humanas;
-5. recomendar somente um proximo PR.
+1. manter o harness e as matrizes de paridade reproduziveis;
+2. corrigir os drifts de integracao ja decididos;
+3. registrar simulacoes reproduziveis por classe, nivel e encontro;
+4. usar `docs/PLAYTEST_TEMPLATE_V2_2.md` em playtest mediado;
+5. separar bugs, balanceamento, UX e decisoes humanas;
+6. recomendar somente um proximo PR.
 
 **Criterios de saida:**
 
@@ -23,6 +43,7 @@
 - taxa de vitoria por cenario registrada;
 - impacto de critico, vantagem, passivas e ENE medido;
 - Wild e Group comparados em condicoes equivalentes;
+- drifts de passivas aprovados corrigidos ou explicitamente excluidos da analise;
 - boss avaliado separadamente;
 - ao menos um playtest padronizado registrado;
 - `DEC-COMBAT-A` e `DEC-COMBAT-D` possuem evidencia suficiente para decisao humana ou sao explicitamente mantidas como pendentes.
@@ -48,6 +69,15 @@ O Drive nao deve manter copias concorrentes das regras tecnicas do GitHub.
 A aprovacao editorial de um nome nao autoriza migracao automatica para o runtime.
 
 ## Concluido recentemente
+
+### Caracterizacao do combate v2.2
+
+- PR #259 integrou o protocolo de validacao;
+- PR #260 criou o harness inicial;
+- PR #262 consolidou um unico harness oficial;
+- PR #263 validou a formula-base contra Wild e Group;
+- PR #264 caracterizou as oito passivas de especie;
+- `DEC-SPECIES-ATK-01` e `DEC-SPECIES-DEF-01` definem os pipelines pretendidos, ainda nao implementados integralmente.
 
 ### Governanca compartilhada inicial
 
@@ -93,11 +123,11 @@ A aprovacao editorial de um nome nao autoriza migracao automatica para o runtime
 - nao migrar atributos, evolucoes ou classes no mesmo PR;
 - cada migracao deve declarar compatibilidade de saves, referencias e assets.
 
-### Tratar energia, boss e passivas separadamente
+### Tratar energia, boss e recalibracao de passivas separadamente
 
-**Resultado esperado:** regeneracao de ENE, boss e recalibracao de passivas recebem investigacoes e PRs pequenos independentes.
+**Resultado esperado:** regeneracao de ENE, boss e valores das passivas recebem investigacoes e PRs pequenos independentes.
 
-Nao combinar esses dominios em um unico PR amplo de balanceamento.
+As correcoes de pipeline aprovadas nao equivalem a recalibracao dos valores.
 
 ### QA publicado da Card Layer
 
@@ -119,6 +149,8 @@ A expansao para outras classes depende desse QA e de criterio explicito para enc
 
 | Decisao | Responsavel | Estado | Bloqueia |
 |---|---|---|---|
+| etapa de `atkBonus` de especie | autor humano | APPROVED em `DEC-SPECIES-ATK-01`; implementacao pendente | paridade das passivas ofensivas |
+| ordem de `shieldhorn` e resistencia de classe | autor humano | APPROVED em `DEC-SPECIES-DEF-01`; implementacao pendente | paridade das passivas defensivas |
 | PWR e calibracao do catalogo | autor humano | pendente de validacao v2.2 | balanceamento final do combate |
 | premio aleatorio do critico | autor humano | pendente de validacao v2.2 | comportamento final do critico |
 | valores das passivas de classe | autor humano | decisao conceitual parcial; valores divergentes | calibracao das passivas |

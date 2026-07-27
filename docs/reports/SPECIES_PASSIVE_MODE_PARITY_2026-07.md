@@ -2,9 +2,11 @@
 
 ## Status
 
-Relatório de caracterização do combate v2.2, baseado na `main` após o merge do PR #263.
+Relatório de caracterização do combate v2.2, baseado na `main` após o merge do PR #264.
 
-Este documento não altera regras, não escolhe qual modo representa a intenção canônica e não autoriza balanceamento.
+As decisões de pipeline foram aprovadas em `docs/DECISAO_PIPELINE_PASSIVAS_ESPECIE_2026-07.md`. Os drifts continuam presentes no runtime até os PRs corretivos correspondentes.
+
+Este documento não altera valores, gatilhos ou balanceamento.
 
 ## Fontes
 
@@ -14,6 +16,7 @@ Este documento não altera regras, não escolhe qual modo representa a intençã
 - `js/combat/groupActions.js`
 - `js/combat/groupCore.js`
 - `js/combat/groupCombatFormula.js`
+- `docs/DECISAO_PIPELINE_PASSIVAS_ESPECIE_2026-07.md`
 
 ## Método
 
@@ -89,6 +92,38 @@ Nos dois modos, o primeiro item de cura:
 - marca `floracuraHealUsed`;
 - impede nova ativação no mesmo combate.
 
+## Decisões canônicas aprovadas
+
+### DEC-SPECIES-ATK-01
+
+O `atkBonus` de espécie modifica o ATK efetivo antes da fórmula de dano.
+
+```text
+ATK base
+→ modificadores de buffs
+→ atkBonus de espécie
+→ fórmula de dano
+→ multiplicador da categoria de RC
+→ mitigação defensiva
+→ dano final
+```
+
+Para esta decisão específica, o Wild é a referência atual e o Group permanece divergente até correção própria.
+
+### DEC-SPECIES-DEF-01
+
+Reduções percentuais de classe são aplicadas antes das reduções planas de espécie.
+
+```text
+dano calculado
+→ resistência percentual da classe
+→ redução plana de shieldhorn
+→ mínimo de 1
+→ aplicação ao HP
+```
+
+Para esta decisão específica, o Group é a referência atual e o Wild permanece divergente até correção própria.
+
 ## Limites
 
 Esta etapa não cobre integralmente:
@@ -101,21 +136,28 @@ Esta etapa não cobre integralmente:
 - skills de área;
 - passivas em boss;
 - interação com Card Layer;
-- decisão sobre qual ordem ou etapa é canônica.
+- recalibração dos valores das passivas.
 
-## Próxima decisão
+As decisões aprovadas não resolvem automaticamente:
+
+- o despacho de eventos de espécie nas skills Group;
+- o estágio incorreto de `atkBonus` no Group;
+- a ordem defensiva divergente no Wild.
+
+## Sequência técnica aprovada
 
 As divergências não devem ser corrigidas em bloco.
 
-A sequência recomendada é:
+A sequência é:
 
-1. decidir a etapa canônica de aplicação de `atkBonus` de espécie;
-2. decidir a ordem canônica de mitigação de `shieldhorn` e resistência de classe;
-3. criar um PR isolado para despachar eventos de espécie no caminho de skills Group;
-4. somente depois revisar a baseline quantitativa.
+1. `fix(combat): aplicar atkBonus de espécie antes da fórmula no Group`;
+2. `fix(combat): alinhar ordem defensiva do shieldhorn no Wild`;
+3. `fix(combat): despachar passivas de espécie nas skills Group`;
+4. executar novamente a matriz de paridade;
+5. somente depois revisar a baseline quantitativa.
 
 ## Classificação final
 
-**A. Contrato compartilhado; drifts de integração isolados.**
+**A. Decisões canônicas registradas; correções técnicas podem começar.**
 
-A classificação confirma que o resolver comum está estável, mas impede interpretar Wild e Group como equivalentes para passivas de espécie até que as decisões acima sejam tomadas.
+A classificação confirma que o contrato comum continua estável e que os pipelines desejados estão definidos. Wild e Group ainda não devem ser tratados como equivalentes para passivas de espécie até a integração dos PRs corretivos.
