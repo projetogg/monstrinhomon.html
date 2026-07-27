@@ -271,6 +271,19 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
             });
             let damage = baseDamage;
 
+            // F1: Passiva de classe do atacante (Ladino +10% dano)
+            const atkClassPassive = CLASS_COMBAT_PASSIVES[playerMonster.class];
+            if (atkClassPassive?.attackBonus) {
+                damage = Math.max(1, Math.round(damage * (1 + atkClassPassive.attackBonus)));
+            }
+
+            // F1: Passiva de classe do defensor (Guerreiro/Bárbaro/Curandeiro)
+            // DEC-SPECIES-DEF-01: mitigação percentual ocorre antes da redução plana de espécie.
+            const defClassPassive = CLASS_COMBAT_PASSIVES[encounter.wildMonster.class];
+            if (defClassPassive?.defenseBonus) {
+                damage = Math.max(1, Math.round(damage * (1 - defClassPassive.defenseBonus)));
+            }
+
             // Passiva canônica — defensor (shieldhorn: -1 dano; jogador só ataca 1x por turno)
             const defPassive = fireCombatEvent(encounter.wildMonster, ON_HIT, {
                 hpPct: encounter.wildMonster.hpMax > 0 ? encounter.wildMonster.hp / encounter.wildMonster.hpMax : 0,
@@ -287,18 +300,6 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
                     );
                 }
                 damage = reducedDamage;
-            }
-
-            // F1: Passiva de classe do atacante (Ladino +10% dano)
-            const atkClassPassive = CLASS_COMBAT_PASSIVES[playerMonster.class];
-            if (atkClassPassive?.attackBonus) {
-                damage = Math.max(1, Math.round(damage * (1 + atkClassPassive.attackBonus)));
-            }
-
-            // F1: Passiva de classe do defensor (Guerreiro/Bárbaro/Curandeiro)
-            const defClassPassive = CLASS_COMBAT_PASSIVES[encounter.wildMonster.class];
-            if (defClassPassive?.defenseBonus) {
-                damage = Math.max(1, Math.round(damage * (1 - defClassPassive.defenseBonus)));
             }
             
             // F2: Ladino — debuff de DEF (-1) no primeiro ataque básico do combate
