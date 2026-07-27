@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
+  applyEneRegen,
   buildBaselineScenarios,
   buildClassAdvantages,
   createSeededRng,
@@ -55,6 +56,12 @@ describe('Combat Simulation Harness v2.2', () => {
     expect(template).toEqual(snapshot);
   });
 
+  it('limita a regeneração à capacidade restante da barra de ENE', () => {
+    expect(applyEneRegen(0, 4, 2)).toEqual({ energy: 2, gained: 2 });
+    expect(applyEneRegen(3, 4, 2)).toEqual({ energy: 4, gained: 1 });
+    expect(applyEneRegen(4, 4, 2)).toEqual({ energy: 4, gained: 0 });
+  });
+
   it('constrói a matriz mínima em níveis 1, 5, 10, 15 e 30', () => {
     const scenarios = buildBaselineScenarios({ monstersJson, skillsJson, matchupsJson });
     expect(scenarios.length).toBe(90);
@@ -73,6 +80,19 @@ describe('Combat Simulation Harness v2.2', () => {
     const first = simulateScenario(scenario, { runs: 50, seed: 'reproducivel' });
     const second = simulateScenario(scenario, { runs: 50, seed: 'reproducivel' });
     expect(second).toEqual(first);
+  });
+
+  it('não contabiliza ENE nominal acima do máximo em perfil básico', () => {
+    const scenario = buildBaselineScenarios({
+      monstersJson,
+      skillsJson,
+      matchupsJson,
+      levels: [1],
+    }).find(row => row.playerActionProfile === 'basic');
+    const runs = 20;
+    const result = simulateScenario(scenario, { runs, seed: 'ene-cap' });
+    const maximumPossibleGain = runs * (scenario.player.eneMax + scenario.enemy.eneMax);
+    expect(result.summary.actions.eneRegenerated).toBeLessThanOrEqual(maximumPossibleGain);
   });
 
   it('produz métricas válidas e contagens de confronto coerentes', () => {
