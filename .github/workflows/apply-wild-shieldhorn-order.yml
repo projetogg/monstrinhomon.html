@@ -1,0 +1,171 @@
+name: Apply Wild shieldhorn order
+
+on:
+  push:
+    branches:
+      - codex/wild-shieldhorn-order
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/wild-shieldhorn-order
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Aplicar patch determinístico
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          wild_path = Path('js/combat/wildActions.js')
+          test_path = Path('tests/speciesPassiveModeParityV22.test.js')
+
+          wild = wild_path.read_text()
+          tests = test_path.read_text()
+
+          old_wild = '''            // Passiva canônica — defensor (shieldhorn: -1 dano; jogador só ataca 1x por turno)
+            const defPassive = fireCombatEvent(encounter.wildMonster, ON_HIT, {
+                hpPct: encounter.wildMonster.hpMax > 0 ? encounter.wildMonster.hp / encounter.wildMonster.hpMax : 0,
+                isFirstHitThisTurn: true, // Fase 4.2: jogador ataca apenas uma vez por turno
+            });
+            if (defPassive?.damageReduction) {
+                const reducedDamage = Math.max(1, damage - defPassive.damageReduction);
+                if (reducedDamage < damage) {
+                    const shieldLabel = _passiveLabel(encounter.wildMonster.canonSpeciesId, 'on_hit_received');
+                    encounter.log.push(
+                        shieldLabel
+                            ? `🛡️ Passiva ${encounter.wildMonster.name} (${shieldLabel}): -${damage - reducedDamage} dano`
+                            : `🛡️ Passiva ${encounter.wildMonster.name}: -${damage - reducedDamage} dano`
+                    );
+                }
+                damage = reducedDamage;
+            }
+
+            // F1: Passiva de classe do atacante (Ladino +10% dano)
+            const atkClassPassive = CLASS_COMBAT_PASSIVES[playerMonster.class];
+            if (atkClassPassive?.attackBonus) {
+                damage = Math.max(1, Math.round(damage * (1 + atkClassPassive.attackBonus)));
+            }
+
+            // F1: Passiva de classe do defensor (Guerreiro/Bárbaro/Curandeiro)
+            const defClassPassive = CLASS_COMBAT_PASSIVES[encounter.wildMonster.class];
+            if (defClassPassive?.defenseBonus) {
+                damage = Math.max(1, Math.round(damage * (1 - defClassPassive.defenseBonus)));
+            }
+'''
+
+          new_wild = '''            // F1: Passiva de classe do atacante (Ladino +10% dano)
+            const atkClassPassive = CLASS_COMBAT_PASSIVES[playerMonster.class];
+            if (atkClassPassive?.attackBonus) {
+                damage = Math.max(1, Math.round(damage * (1 + atkClassPassive.attackBonus)));
+            }
+
+            // F1: Passiva de classe do defensor (Guerreiro/Bárbaro/Curandeiro)
+            // DEC-SPECIES-DEF-01: mitigação percentual ocorre antes da redução plana de espécie.
+            const defClassPassive = CLASS_COMBAT_PASSIVES[encounter.wildMonster.class];
+            if (defClassPassive?.defenseBonus) {
+                damage = Math.max(1, Math.round(damage * (1 - defClassPassive.defenseBonus)));
+            }
+
+            // Passiva canônica — defensor (shieldhorn: -1 dano; jogador só ataca 1x por turno)
+            const defPassive = fireCombatEvent(encounter.wildMonster, ON_HIT, {
+                hpPct: encounter.wildMonster.hpMax > 0 ? encounter.wildMonster.hp / encounter.wildMonster.hpMax : 0,
+                isFirstHitThisTurn: true, // Fase 4.2: jogador ataca apenas uma vez por turno
+            });
+            if (defPassive?.damageReduction) {
+                const reducedDamage = Math.max(1, damage - defPassive.damageReduction);
+                if (reducedDamage < damage) {
+                    const shieldLabel = _passiveLabel(encounter.wildMonster.canonSpeciesId, 'on_hit_received');
+                    encounter.log.push(
+                        shieldLabel
+                            ? `🛡️ Passiva ${encounter.wildMonster.name} (${shieldLabel}): -${damage - reducedDamage} dano`
+                            : `🛡️ Passiva ${encounter.wildMonster.name}: -${damage - reducedDamage} dano`
+                    );
+                }
+                damage = reducedDamage;
+            }
+'''
+
+          if wild.count(old_wild) != 1:
+              raise SystemExit(f'bloco Wild esperado {wild.count(old_wild)} vez(es), esperado 1')
+          wild = wild.replace(old_wild, new_wild)
+
+          old_structure = '''  it('caracteriza a ordem divergente entre shieldhorn e passiva defensiva de classe', () => {
+    const wildSpeciesIndex = wildBasic.indexOf('const defPassive = fireCombatEvent');
+    const wildClassIndex = wildBasic.indexOf('const defClassPassive = CLASS_COMBAT_PASSIVES');
+    const groupClassIndex = groupBasic.indexOf('const defClassPassive = CLASS_COMBAT_PASSIVES');
+    const groupSpeciesIndex = groupBasic.indexOf('const defSpeciesPassive = fireCombatEvent');
+
+    expect(wildSpeciesIndex).toBeGreaterThanOrEqual(0);
+    expect(wildClassIndex).toBeGreaterThan(wildSpeciesIndex);
+    expect(groupClassIndex).toBeGreaterThanOrEqual(0);
+    expect(groupSpeciesIndex).toBeGreaterThan(groupClassIndex);
+  });
+'''
+
+          new_structure = '''  it('aplica resistência de classe antes de shieldhorn nos dois modos', () => {
+    const wildClassIndex = wildBasic.indexOf('const defClassPassive = CLASS_COMBAT_PASSIVES');
+    const wildSpeciesIndex = wildBasic.indexOf('const defPassive = fireCombatEvent');
+    const groupClassIndex = groupBasic.indexOf('const defClassPassive = CLASS_COMBAT_PASSIVES');
+    const groupSpeciesIndex = groupBasic.indexOf('const defSpeciesPassive = fireCombatEvent');
+
+    expect(wildClassIndex).toBeGreaterThanOrEqual(0);
+    expect(wildSpeciesIndex).toBeGreaterThan(wildClassIndex);
+    expect(groupClassIndex).toBeGreaterThanOrEqual(0);
+    expect(groupSpeciesIndex).toBeGreaterThan(groupClassIndex);
+  });
+'''
+
+          if tests.count(old_structure) != 1:
+              raise SystemExit(f'bloco estrutural esperado {tests.count(old_structure)} vez(es), esperado 1')
+          tests = tests.replace(old_structure, new_structure)
+
+          replacements = {
+              "it('DRIFT: a ordem de shieldhorn e resistência de Guerreiro muda o dano em cenário de fronteira', () => {":
+                  "it('PARITY: shieldhorn reduz após a resistência de Guerreiro nos dois modos', () => {",
+              '    expect(wildShield.damage).toBe(3);': '    expect(wildShield.damage).toBe(2);',
+              '''    expect(groupShield.damage).toBe(2);
+  });''': '''    expect(groupShield.damage).toBe(2);
+    expect(wildBase.damage).toBe(groupBase.damage);
+    expect(wildShield.damage).toBe(groupShield.damage);
+  });''',
+          }
+
+          for old, new in replacements.items():
+              count = tests.count(old)
+              if count != 1:
+                  raise SystemExit(f'trecho de teste esperado {count} vez(es), esperado 1: {old[:70]!r}')
+              tests = tests.replace(old, new)
+
+          wild_path.write_text(wild)
+          test_path.write_text(tests)
+          PY
+
+      - name: Validar escopo específico
+        run: |
+          npm run test:species-passive-parity-v2-2
+          npm run test:combat-parity-v2-2
+          npm run test:combat-simulation-v2-2
+
+      - name: Remover automação temporária e publicar patch
+        run: |
+          rm .github/workflows/apply-wild-shieldhorn-order.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/combat/wildActions.js tests/speciesPassiveModeParityV22.test.js .github/workflows/apply-wild-shieldhorn-order.yml
+          git commit -m "fix(combat): alinhar ordem defensiva do shieldhorn no Wild"
+          git push origin HEAD:codex/wild-shieldhorn-order
