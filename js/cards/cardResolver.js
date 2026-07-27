@@ -17,6 +17,16 @@ const KIT_SWAP_CARD_IDENTITY_ALIASES = Object.freeze({
         stageIndex: 0,
         cardAliasReason: 'kit_swap_visual_alias',
     }),
+    /**
+     * shieldhorn_heavy_strike_ii é a versão II do kit swap do Ferrozimon/Cavalheiromon.
+     * Mapeia visualmente para o estágio II de Golpe de Espada (stageIndex: 1).
+     */
+    shieldhorn_heavy_strike_ii: Object.freeze({
+        class: 'Guerreiro',
+        groupKey: 'Golpe de Espada',
+        stageIndex: 1,
+        cardAliasReason: 'kit_swap_visual_alias',
+    }),
 });
 
 function normalizeStageIndex(value, fallback = 0) {
@@ -31,6 +41,10 @@ function normalizeStageIndex(value, fallback = 0) {
  * carregar uma identidade diferente da skill canônica substituída. Para a Fase 1C,
  * apenas aliases explícitos e seguros são aceitos. Kit swaps desconhecidos continuam
  * sem mapeamento e acionam fallback legado.
+ *
+ * Skills canônicas (Guerreiro e demais classes) devem chegar com class/groupKey/stageIndex
+ * preservados pelo runtime (buildRuntimeSkillDefs). O resolver não decide stageIndex
+ * por conta própria — esse contrato pertence ao loader/runtime.
  */
 export function resolveCardSkillIdentity(skill) {
     if (!skill || typeof skill !== 'object') return skill;

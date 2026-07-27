@@ -17,6 +17,15 @@ function makeHeavyStrike() {
   };
 }
 
+function makeHeavyStrikeII() {
+  return {
+    _kitSwapId: 'shieldhorn_heavy_strike_ii',
+    name: 'Golpe Pesado II',
+    type: 'DAMAGE',
+    cost: 7,
+  };
+}
+
 describe('Card Layer — Warrior kit swap visual alias', () => {
   beforeEach(() => {
     clearCardCatalogCache();
@@ -49,6 +58,35 @@ describe('Card Layer — Warrior kit swap visual alias', () => {
     expect(entries[0].stage.source_skill_id).toBe('GOLPE_DE_ESPADA_0');
     expect(entries[0].skill).toBe(heavyStrike);
     expect(entries[0].lookupSkill).not.toBe(heavyStrike);
+    expect(entries[0].cardAliasApplied).toBe(true);
+  });
+
+  it('maps shieldhorn_heavy_strike_ii to Guerreiro + Golpe de Espada + stageIndex 1', () => {
+    const skill = makeHeavyStrikeII();
+    const identity = resolveCardSkillIdentity(skill);
+
+    expect(identity).not.toBe(skill);
+    expect(identity.class).toBe('Guerreiro');
+    expect(identity.groupKey).toBe('Golpe de Espada');
+    expect(identity.stageIndex).toBe(1);
+    expect(identity._cardLayerAlias).toBe(true);
+    expect(identity._cardLayerAliasSource).toBe('shieldhorn_heavy_strike_ii');
+    expect(skill.class).toBeUndefined();
+    expect(skill.groupKey).toBeUndefined();
+  });
+
+  it('resolves Golpe Pesado II (_kitSwapId: shieldhorn_heavy_strike_ii) to warrior_golpe_de_espada_card stage GOLPE_DE_ESPADA_1', () => {
+    const heavyStrikeII = makeHeavyStrikeII();
+    const entries = resolveCardsForMonster({ id: 'mi_cavalheiromon', class: 'Guerreiro' }, {
+      getMonsterSkills: () => [heavyStrikeII],
+    });
+
+    expect(entries).toHaveLength(1);
+    expect(entries[0].mapped).toBe(true);
+    expect(entries[0].card.id).toBe('warrior_golpe_de_espada_card');
+    expect(entries[0].stage.source_skill_id).toBe('GOLPE_DE_ESPADA_1');
+    expect(entries[0].skill).toBe(heavyStrikeII);
+    expect(entries[0].lookupSkill).not.toBe(heavyStrikeII);
     expect(entries[0].cardAliasApplied).toBe(true);
   });
 

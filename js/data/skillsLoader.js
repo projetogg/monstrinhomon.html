@@ -263,14 +263,20 @@ export function buildRuntimeSkillDefs(skillsData) {
         if (!defs[cls]) defs[cls] = {};
         if (!defs[cls][grp]) defs[cls][grp] = [null, null, null];
 
-        // Converter para formato SKILL_DEFS runtime
+        // Converter para formato SKILL_DEFS runtime.
+        // Preservar class, groupKey e stageIndex para que a Card Layer possa
+        // identificar o card visual sem duplicar lógica de mapeamento no renderer.
         const runtimeSkill = {
+            id: skill.id,
             tier: idx + 1,
             name: skill.name,
             type: skill.type,
             cost: skill.energy_cost,
             power: skill.power,
-            desc: skill.desc || ''
+            desc: skill.desc || '',
+            class: cls,
+            groupKey: grp,
+            stageIndex: idx,
         };
 
         // target (opcional — presente em BUFF/HEAL/TAUNT mas não em DAMAGE)
