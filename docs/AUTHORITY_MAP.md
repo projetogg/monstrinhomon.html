@@ -13,13 +13,14 @@ Este documento define quais arquivos vencem em caso de conflito entre runtime, d
 ## 1. Regra geral de conflito
 
 ```text
-Runtime vence design quando descrevemos o estado implementado.
-Decisão canônica aprovada vence runtime quando definimos o comportamento pretendido.
+Runtime vence design.
 Design vence legado.
 Card Layer nunca vence mecânica.
 ```
 
 A Card Layer é uma camada visual/organizacional. Ela não decide dano, custo, alvo, fórmula, progressão, energia, captura, vantagem de classe ou qualquer efeito mecânico.
+
+A regra geral acima permanece sujeita às decisões pendentes `DEC-AUTH-01` e `DEC-AUTH-02`. Este documento não resolve essas pendências neste PR.
 
 ---
 
@@ -28,7 +29,7 @@ A Card Layer é uma camada visual/organizacional. Ela não decide dano, custo, a
 | Domínio | Autoridade | Status | Observações |
 |---|---|---|---|
 | Fórmula de combate, faixas, ModNível | `docs/PATCH_CANONICO_COMBATE_V2.2.md` | Autoridade máxima | Não alterar pela Card Layer. |
-| Pipeline das passivas de espécie | `docs/DECISAO_PIPELINE_PASSIVAS_ESPECIE_2026-07.md` | Decisão aprovada | Define a etapa de `atkBonus` e a ordem entre resistência percentual e `shieldhorn`; runtime ainda possui drifts até PRs próprios. |
+| Pipeline pretendido das passivas de espécie | `docs/DECISAO_PIPELINE_PASSIVAS_ESPECIE_2026-07.md` | Decisão aprovada | Define a etapa de `atkBonus` e a ordem entre resistência percentual e `shieldhorn`; o runtime continua descritivo e divergente até PRs próprios. |
 | Mecânica runtime de skills | `data/skills.json` via `js/data/skillsLoader.js` | Confirmado | Fonte canônica das skills usadas pelo runtime. |
 | Lista efetiva de skills para apresentação | `getMonsterSkills` em `index.html` linhas 4475–4575 | Confirmado | Fluxo: `SKILL_DEFS` → `KitSwap.getEffectiveSkills`; preserva `groupKey`/`stageIndex` para Card Layer. |
 | Forma operacional de skills para combate | `resolveMonsterSkills()` / `normalizeSkill()` | Confirmado | Normaliza a skill para cálculo/execução de combate. Não é a fonte visual primária da Card Layer. |
