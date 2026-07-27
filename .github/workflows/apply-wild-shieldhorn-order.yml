@@ -4,13 +4,17 @@ on:
   push:
     branches:
       - codex/wild-shieldhorn-order
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
 
 permissions:
   contents: write
 
 jobs:
   patch-and-validate:
-    if: github.actor != 'github-actions[bot]'
+    if: github.actor != 'github-actions[bot]' && (github.head_ref == 'codex/wild-shieldhorn-order' || github.ref_name == 'codex/wild-shieldhorn-order')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
