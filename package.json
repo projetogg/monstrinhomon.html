@@ -11,7 +11,9 @@
     "validate-data": "node scripts/validate-data.mjs",
     "validate:monster-assets": "node scripts/validate-monster-assets.mjs",
     "test:wild-loop": "node e2e/wildLoopSmoke.e2e.mjs",
-    "test:wild-loop:vitest": "vitest run tests/wildLoopSmoke.test.js"
+    "test:wild-loop:vitest": "vitest run tests/wildLoopSmoke.test.js",
+    "test:combat-sim-v2-2": "vitest run tests/combatSimulationHarnessV22.test.js",
+    "simulate:combat-v2-2": "node scripts/combat-v2-2/run-baseline.mjs"
   },
   "keywords": [
     "game",
