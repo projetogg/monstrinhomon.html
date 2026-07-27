@@ -133,6 +133,14 @@ export function calculateEneRegen(className, eneMax, table = DEFAULT_ENE_REGEN) 
   return Math.max(config.min, Math.floor(Math.max(0, eneMax) * config.pct));
 }
 
+export function applyEneRegen(currentEnergy, eneMax, regenAmount) {
+  const current = Math.max(0, Number(currentEnergy) || 0);
+  const maximum = Math.max(0, Number(eneMax) || 0);
+  const offered = Math.max(0, Number(regenAmount) || 0);
+  const energy = Math.min(maximum, current + offered);
+  return { energy, gained: Math.max(0, energy - current) };
+}
+
 function applyClassPassives(damage, attackerClass, defenderClass, passives) {
   let result = damage;
   const attackBonus = passives?.[attackerClass]?.attackBonus;
@@ -286,9 +294,13 @@ export function simulateScenario(scenario, options = {}) {
 
     while (player.hp > 0 && enemy.hp > 0 && turns < maxTurns) {
       turns += 1;
-      const playerRegen = calculateEneRegen(player.class, player.eneMax);
-      playerEne = Math.min(player.eneMax, playerEne + playerRegen);
-      counters.eneRegenerated += playerRegen;
+      const playerRegen = applyEneRegen(
+        playerEne,
+        player.eneMax,
+        calculateEneRegen(player.class, player.eneMax),
+      );
+      playerEne = playerRegen.energy;
+      counters.eneRegenerated += playerRegen.gained;
       const playerAction = chooseAction(player, scenario.playerActionProfile ?? 'basic', scenario.playerSkill, playerEne);
       playerEne -= Number(playerAction.cost ?? 0);
       counters.eneSpent += Number(playerAction.cost ?? 0);
@@ -304,9 +316,13 @@ export function simulateScenario(scenario, options = {}) {
       });
       if (enemy.hp <= 0) break;
 
-      const enemyRegen = calculateEneRegen(enemy.class, enemy.eneMax);
-      enemyEne = Math.min(enemy.eneMax, enemyEne + enemyRegen);
-      counters.eneRegenerated += enemyRegen;
+      const enemyRegen = applyEneRegen(
+        enemyEne,
+        enemy.eneMax,
+        calculateEneRegen(enemy.class, enemy.eneMax),
+      );
+      enemyEne = enemyRegen.energy;
+      counters.eneRegenerated += enemyRegen.gained;
       const enemyAction = chooseAction(enemy, scenario.enemyActionProfile ?? 'basic', scenario.enemySkill, enemyEne);
       enemyEne -= Number(enemyAction.cost ?? 0);
       counters.eneSpent += Number(enemyAction.cost ?? 0);
