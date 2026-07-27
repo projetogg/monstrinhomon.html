@@ -1,0 +1,65 @@
+name: Temp Apply Shieldhorn Order v2.2
+
+on:
+  push:
+    branches:
+      - codex/shieldhorn-order-wild-v2-2
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-test:
+    if: ${{ !contains(github.event.head_commit.message, 'fix(combat): alinhar ordem defensiva do shieldhorn no Wild') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Aplicar patch isolado
+        run: node scripts/tmp/apply-shieldhorn-order-v2-2.mjs
+
+      - name: Testar paridade das passivas
+        run: npm run test:species-passive-parity-v2-2
+
+      - name: Testar paridade do combate
+        run: npm run test:combat-parity-v2-2
+
+      - name: Testar simulador do combate
+        run: npm run test:combat-simulation-v2-2
+
+      - name: Executar suíte completa
+        run: npm test
+
+      - name: Validar dados
+        run: npm run validate-data
+
+      - name: Validar assets
+        run: npm run validate:monster-assets
+
+      - name: Executar smoke Wild
+        run: npm run test:wild-loop:vitest
+
+      - name: Commitar patch validado
+        run: |
+          rm -f scripts/tmp/apply-shieldhorn-order-v2-2.mjs
+          rm -f .github/workflows/tmp-apply-shieldhorn-order-v2-2.yml
+          rmdir scripts/tmp 2>/dev/null || true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "fix(combat): alinhar ordem defensiva do shieldhorn no Wild"
+          git push
