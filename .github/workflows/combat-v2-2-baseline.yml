@@ -1,0 +1,65 @@
+name: Combat v2.2 Baseline
+
+on:
+  workflow_dispatch:
+    inputs:
+      iterations:
+        description: Iterações por cenário
+        required: false
+        default: '1000'
+      seed:
+        description: Seed determinística
+        required: false
+        default: '2202'
+  pull_request:
+    paths:
+      - 'scripts/combat-v2-2/**'
+      - 'tests/combatSimulationHarnessV22.test.js'
+      - 'data/monsters.json'
+      - 'data/skills.json'
+      - 'design/canon/class_matchups.json'
+      - 'js/combat/groupCombatFormula.js'
+      - 'package.json'
+      - '.github/workflows/combat-v2-2-baseline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test simulation harness
+        run: npm run test:combat-sim-v2-2
+
+      - name: Generate deterministic baseline
+        env:
+          ITERATIONS: ${{ github.event.inputs.iterations || '1000' }}
+          SEED: ${{ github.event.inputs.seed || '2202' }}
+        run: |
+          npm run simulate:combat-v2-2 -- \
+            --iterations "$ITERATIONS" \
+            --seed "$SEED" \
+            --json artifacts/combat-v2-2/baseline.json \
+            --markdown artifacts/combat-v2-2/baseline.md
+
+      - name: Upload baseline artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: combat-v2-2-baseline-${{ github.sha }}
+          path: artifacts/combat-v2-2/
+          if-no-files-found: error
+          retention-days: 30
