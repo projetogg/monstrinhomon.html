@@ -14,6 +14,8 @@ on:
   pull_request:
     branches: [ "main" ]
     paths:
+      - "js/canon/speciesPassives.js"
+      - "js/combat/combatEvents.js"
       - "js/combat/combatSimulationHarness.js"
       - "js/combat/groupCombatFormula.js"
       - "js/combat/groupActions.js"
@@ -22,6 +24,7 @@ on:
       - "scripts/simulate-combat-v2-2.mjs"
       - "tests/combatSimulationHarnessV22.test.js"
       - "tests/combatHarnessRuntimeParityV22.test.js"
+      - "tests/speciesPassiveModeParityV22.test.js"
       - "data/monsters.json"
       - "data/skills.json"
       - "design/canon/class_matchups.json"
@@ -57,6 +60,9 @@ jobs:
 
       - name: Testar paridade com Wild e Group
         run: npm run test:combat-parity-v2-2
+
+      - name: Testar paridade das passivas de espécie
+        run: npm run test:species-passive-parity-v2-2
 
       - name: Gerar baseline reproduzível
         run: >-
