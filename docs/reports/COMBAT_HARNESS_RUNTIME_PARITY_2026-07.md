@@ -18,11 +18,11 @@ Este documento não altera regras e não autoriza balanceamento.
 
 Os testes usam combatentes equivalentes, atributos explícitos, buffs vazios, posição frontal, ausência de passivas de espécie e dados determinísticos.
 
-O harness recebe seeds conhecidas e os testes confirmam os dois primeiros resultados de d20 antes da comparação.
+O harness recebe seeds conhecidas e os testes confirmam os dois primeiros resultados de d20 antes da comparação. O RC e a categoria exatos do ataque do jogador são capturados diretamente da chamada do harness a `resolveConfrontation()`; o contra-ataque inimigo não pode satisfazer essa verificação por engano.
 
 ## Matriz de caracterização
 
-| ID | Comparação | Classificação esperada |
+| ID | Comparação | Classificação |
 |---|---|---|
 | PAR-01 | ataque básico neutro | `PARITY` |
 | PAR-02 | d20A natural 1 | `PARITY` |
@@ -57,6 +57,12 @@ Com ENE máxima 20 e taxa de 14%, o harness oferece 2 pontos e o Wild oferece 3 
 
 A ação Group recebe a regeneração por dependência. A origem concreta dessa dependência deve ser rastreada em etapa posterior antes de classificar sua paridade.
 
+## Validação
+
+A matriz determinística, a baseline, a suíte Vitest, o smoke Wild, as validações de dados e assets e o E2E Wild concluíram com sucesso no PR.
+
+Os testes confirmaram paridade da fórmula-base nos dez cenários comparáveis e mantiveram os dois drifts como diferenças reproduzíveis, sem alterar runtime ou dados.
+
 ## Limites
 
 Ainda não são comparados:
@@ -74,12 +80,8 @@ Ainda não são comparados:
 
 Wild e Group aplicam algumas passivas de espécie em ordens diferentes. Isso deve ser avaliado em um PR isolado para não confundir fórmula-base com orquestração.
 
-## Critério de conclusão
+## Conclusão
 
-A conclusão deste estágio deve ser uma das seguintes:
+**A. Fórmula-base do harness fiel; drifts de orquestração permanecem isolados.**
 
-- **A. Fórmula-base do harness fiel; drifts de orquestração permanecem isolados**;
-- **B. Harness precisa de correção antes da análise da baseline**;
-- **C. Evidência insuficiente para concluir a paridade**.
-
-A classificação final depende dos checks publicados no PR.
+Essa classificação autoriza a análise da baseline apenas para os componentes cobertos pela matriz. Ela não autoriza mudanças de balanceamento nem afirma paridade de skills, suporte, passivas de espécie, ENE completa, IA, boss ou ordem de turnos.
