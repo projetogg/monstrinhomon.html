@@ -3,24 +3,26 @@ name: Combat v2.2 Baseline
 on:
   workflow_dispatch:
     inputs:
-      iterations:
-        description: Iterações por cenário
+      runs:
+        description: Execuções por cenário
         required: false
-        default: '1000'
+        default: "1000"
       seed:
-        description: Seed determinística
+        description: Seed comparável entre execuções
         required: false
-        default: '2202'
+        default: "monstrinhomon-combat-v2.2-baseline-v1"
   pull_request:
+    branches: [ "main" ]
     paths:
-      - 'scripts/combat-v2-2/**'
-      - 'tests/combatSimulationHarnessV22.test.js'
-      - 'data/monsters.json'
-      - 'data/skills.json'
-      - 'design/canon/class_matchups.json'
-      - 'js/combat/groupCombatFormula.js'
-      - 'package.json'
-      - '.github/workflows/combat-v2-2-baseline.yml'
+      - "js/combat/combatSimulationHarness.js"
+      - "js/combat/groupCombatFormula.js"
+      - "scripts/simulate-combat-v2-2.mjs"
+      - "tests/combatSimulationHarnessV22.test.js"
+      - "data/monsters.json"
+      - "data/skills.json"
+      - "design/canon/class_matchups.json"
+      - "package.json"
+      - ".github/workflows/combat-v2-2-baseline.yml"
 
 permissions:
   contents: read
@@ -28,38 +30,40 @@ permissions:
 jobs:
   baseline:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    env:
+      BASELINE_RUNS: ${{ github.event.inputs.runs || '1000' }}
+      BASELINE_SEED: ${{ github.event.inputs.seed || 'monstrinhomon-combat-v2.2-baseline-v1' }}
+      BASELINE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: npm
+          node-version: "20"
+          cache: "npm"
 
-      - name: Install dependencies
+      - name: Instalar dependências
         run: npm ci
 
-      - name: Test simulation harness
-        run: npm run test:combat-sim-v2-2
+      - name: Testar harness
+        run: npm run test:combat-simulation-v2-2
 
-      - name: Generate deterministic baseline
-        env:
-          ITERATIONS: ${{ github.event.inputs.iterations || '1000' }}
-          SEED: ${{ github.event.inputs.seed || '2202' }}
-        run: |
-          npm run simulate:combat-v2-2 -- \
-            --iterations "$ITERATIONS" \
-            --seed "$SEED" \
-            --json artifacts/combat-v2-2/baseline.json \
-            --markdown artifacts/combat-v2-2/baseline.md
+      - name: Gerar baseline reproduzível
+        run: >-
+          npm run simulate:combat-v2-2 --
+          --runs "$BASELINE_RUNS"
+          --seed "$BASELINE_SEED"
+          --baseline-sha "$BASELINE_SHA"
+          --output artifacts/combat-v2-2-baseline.json
+          --report artifacts/combat-v2-2-baseline.md
 
-      - name: Upload baseline artifacts
+      - name: Publicar artefatos
         uses: actions/upload-artifact@v4
         with:
-          name: combat-v2-2-baseline-${{ github.sha }}
-          path: artifacts/combat-v2-2/
+          name: combat-v2-2-baseline-${{ env.BASELINE_SHA }}
+          path: artifacts/
           if-no-files-found: error
           retention-days: 30

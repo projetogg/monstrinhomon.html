@@ -1,171 +1,149 @@
 import { describe, expect, it } from 'vitest';
-
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import {
-  buildDefaultScenarios,
+  applyEneRegen,
+  buildBaselineScenarios,
+  buildClassAdvantages,
   createSeededRng,
-  getClassModifiers,
-  loadSimulationData,
-  renderBaselineMarkdown,
-  runBaseline,
-  runScenario,
-  scaleCatalogMonster,
-  selectClassRepresentatives,
-  selectOffensiveSkill,
-} from '../scripts/combat-v2-2/simulator.mjs';
-import { parseArgs } from '../scripts/combat-v2-2/run-baseline.mjs';
+  renderMarkdownReport,
+  runScenarioMatrix,
+  scaleMonsterTemplate,
+  selectBaseTemplates,
+  selectTierOneDamageSkills,
+  simulateScenario,
+} from '../js/combat/combatSimulationHarness.js';
 
-describe('Harness de simulação do combate v2.2', () => {
-  it('usa RNG determinística e reproduz a mesma sequência', () => {
-    const first = createSeededRng(2202);
-    const second = createSeededRng(2202);
+const ROOT = resolve(import.meta.dirname, '..');
+const monstersJson = JSON.parse(readFileSync(resolve(ROOT, 'data/monsters.json'), 'utf8'));
+const skillsJson = JSON.parse(readFileSync(resolve(ROOT, 'data/skills.json'), 'utf8'));
+const matchupsJson = JSON.parse(readFileSync(resolve(ROOT, 'design/canon/class_matchups.json'), 'utf8'));
 
-    const firstSequence = Array.from({ length: 20 }, () => first());
-    const secondSequence = Array.from({ length: 20 }, () => second());
-
-    expect(firstSequence).toEqual(secondSequence);
-    expect(new Set(firstSequence).size).toBeGreaterThan(1);
+describe('Combat Simulation Harness v2.2', () => {
+  it('produz a mesma sequência para a mesma seed', () => {
+    const first = createSeededRng('seed-fixa');
+    const second = createSeededRng('seed-fixa');
+    expect(Array.from({ length: 20 }, () => first())).toEqual(
+      Array.from({ length: 20 }, () => second()),
+    );
   });
 
-  it('carrega as três fontes reais e encontra representante Comum para as oito classes', () => {
-    const data = loadSimulationData();
-    const representatives = selectClassRepresentatives(data.monsters);
+  it('converte a tabela canônica de matchups sem inferir nomes', () => {
+    const advantages = buildClassAdvantages(matchupsJson);
+    expect(advantages.Guerreiro).toEqual({ strong: 'Ladino', weak: 'Mago' });
+    expect(advantages.Animalista).toEqual({ strong: 'Bardo', weak: 'Bárbaro' });
+  });
 
-    expect(Object.keys(representatives).sort()).toEqual([
-      'Animalista',
-      'Bardo',
-      'Bárbaro',
-      'Caçador',
-      'Curandeiro',
-      'Guerreiro',
-      'Ladino',
-      'Mago',
+  it('lê os templates comuns e as skills ofensivas diretamente dos dados atuais', () => {
+    const templates = selectBaseTemplates(monstersJson);
+    const skills = selectTierOneDamageSkills(skillsJson);
+    expect(Object.keys(templates).sort()).toEqual([
+      'Animalista', 'Bardo', 'Bárbaro', 'Caçador',
+      'Curandeiro', 'Guerreiro', 'Ladino', 'Mago',
     ].sort());
-    expect(data.skills.length).toBeGreaterThan(0);
-    expect(data.matchups.Guerreiro).toEqual({ strong: 'Ladino', weak: 'Mago' });
+    expect(skills.Guerreiro.id).toBe('GOLPE_DE_ESPADA_0');
+    expect(skills.Guerreiro.power).toBe(14);
+    expect(skills.Curandeiro).toBeUndefined();
   });
 
-  it('seleciona skill ofensiva canônica sem duplicar catálogo no harness', () => {
-    const data = loadSimulationData();
-    const skill = selectOffensiveSkill(data.skills, 'Guerreiro', 0);
-
-    expect(skill).toMatchObject({
-      id: 'GOLPE_DE_ESPADA_0',
-      class: 'Guerreiro',
-      type: 'DAMAGE',
-      stageIndex: 0,
-      power: 14,
-      energy_cost: 4,
-    });
-  });
-
-  it('escala um template sem modificar o objeto do catálogo', () => {
-    const data = loadSimulationData();
-    const template = data.monsters.find((monster) => monster.id === 'MON_001');
+  it('escala um template sem modificar o objeto de origem', () => {
+    const template = selectBaseTemplates(monstersJson).Guerreiro;
     const snapshot = structuredClone(template);
-    const scaled = scaleCatalogMonster(template, 10);
-
+    const level10 = scaleMonsterTemplate(template, 10);
+    expect(level10.level).toBe(10);
+    expect(level10.hpMax).toBeGreaterThan(template.baseHp);
+    expect(level10.atk).toBeGreaterThan(template.baseAtk);
     expect(template).toEqual(snapshot);
-    expect(scaled.level).toBe(10);
-    expect(scaled.hpMax).toBeGreaterThan(template.baseHp);
-    expect(scaled.atk).toBeGreaterThan(template.baseAtk);
   });
 
-  it('aplica vantagem, desvantagem e neutralidade a partir de class_matchups.json', () => {
-    const data = loadSimulationData();
+  it('limita a regeneração à capacidade restante da barra de ENE', () => {
+    expect(applyEneRegen(0, 4, 2)).toEqual({ energy: 2, gained: 2 });
+    expect(applyEneRegen(3, 4, 2)).toEqual({ energy: 4, gained: 1 });
+    expect(applyEneRegen(4, 4, 2)).toEqual({ energy: 4, gained: 0 });
+  });
 
-    expect(getClassModifiers('Guerreiro', 'Ladino', data.matchups)).toMatchObject({
-      classModAtk: 2,
-      damageMult: 1.1,
-      relation: 'advantage',
+  it('constrói a matriz mínima em níveis 1, 5, 10, 15 e 30', () => {
+    const scenarios = buildBaselineScenarios({ monstersJson, skillsJson, matchupsJson });
+    expect(scenarios.length).toBe(90);
+    expect(new Set(scenarios.map(row => row.level ?? row.player.level))).toEqual(new Set([1, 5, 10, 15, 30]));
+    expect(scenarios.some(row => row.playerActionProfile === 'basic')).toBe(true);
+    expect(scenarios.some(row => row.playerActionProfile === 'mixed')).toBe(true);
+  });
+
+  it('repete exatamente o resultado para cenário e seed idênticos', () => {
+    const scenario = buildBaselineScenarios({
+      monstersJson,
+      skillsJson,
+      matchupsJson,
+      levels: [1],
+    })[0];
+    const first = simulateScenario(scenario, { runs: 50, seed: 'reproducivel' });
+    const second = simulateScenario(scenario, { runs: 50, seed: 'reproducivel' });
+    expect(second).toEqual(first);
+  });
+
+  it('não contabiliza ENE nominal acima do máximo em perfil básico', () => {
+    const scenario = buildBaselineScenarios({
+      monstersJson,
+      skillsJson,
+      matchupsJson,
+      levels: [1],
+    }).find(row => row.playerActionProfile === 'basic');
+    const runs = 20;
+    const result = simulateScenario(scenario, { runs, seed: 'ene-cap' });
+    const maximumPossibleGain = runs * (scenario.player.eneMax + scenario.enemy.eneMax);
+    expect(result.summary.actions.eneRegenerated).toBeLessThanOrEqual(maximumPossibleGain);
+  });
+
+  it('produz métricas válidas e contagens de confronto coerentes', () => {
+    const scenario = buildBaselineScenarios({
+      monstersJson,
+      skillsJson,
+      matchupsJson,
+      levels: [1],
+    })[1];
+    const result = simulateScenario(scenario, { runs: 60, seed: 'metricas' });
+    const summary = result.summary;
+    expect(summary.winRate).toBeGreaterThanOrEqual(0);
+    expect(summary.winRate).toBeLessThanOrEqual(1);
+    expect(summary.ttk.mean).toBeGreaterThan(0);
+    expect(summary.ttk.p90).toBeGreaterThanOrEqual(summary.ttk.median);
+    expect(summary.damage.min).toBeGreaterThanOrEqual(0);
+    const categorized = Object.values(summary.confrontation)
+      .slice(0, 5)
+      .reduce((sum, value) => sum + value, 0);
+    expect(categorized).toBe(summary.actions.attacks);
+  });
+
+  it('executa matriz curta com seeds derivadas por cenário', () => {
+    const scenarios = buildBaselineScenarios({
+      monstersJson,
+      skillsJson,
+      matchupsJson,
+      levels: [1],
+    }).slice(0, 4);
+    const first = runScenarioMatrix(scenarios, { runs: 20, seed: 'matrix' });
+    const second = runScenarioMatrix(scenarios, { runs: 20, seed: 'matrix' });
+    expect(second).toEqual(first);
+    expect(first).toHaveLength(4);
+  });
+
+  it('relatório não declara o núcleo pronto antes do playtest', () => {
+    const scenarios = buildBaselineScenarios({
+      monstersJson,
+      skillsJson,
+      matchupsJson,
+      levels: [1],
+    }).slice(0, 2);
+    const results = runScenarioMatrix(scenarios, { runs: 10, seed: 'report' });
+    const markdown = renderMarkdownReport({
+      baselineSha: 'abc123',
+      seed: 'report',
+      runs: 10,
+      results,
     });
-    expect(getClassModifiers('Guerreiro', 'Mago', data.matchups)).toMatchObject({
-      classModAtk: -2,
-      damageMult: 0.9,
-      relation: 'disadvantage',
-    });
-    expect(getClassModifiers('Guerreiro', 'Bardo', data.matchups)).toMatchObject({
-      classModAtk: 0,
-      damageMult: 1,
-      relation: 'neutral',
-    });
-  });
-
-  it('produz métricas idênticas para o mesmo cenário e seed', () => {
-    const data = loadSimulationData();
-    const representatives = selectClassRepresentatives(data.monsters);
-    const scenario = {
-      id: 'deterministic_test',
-      label: 'Teste determinístico',
-      playerClass: 'Guerreiro',
-      enemyClass: 'Mago',
-      level: 5,
-      playerAction: 'basic',
-      enemyAction: 'basic',
-      passivesEnabled: true,
-    };
-
-    const input = {
-      scenario,
-      representatives,
-      skills: data.skills,
-      matchups: data.matchups,
-      iterations: 30,
-      seed: 9876,
-    };
-
-    const first = runScenario(input);
-    const second = runScenario(input);
-
-    expect(first.metrics).toEqual(second.metrics);
-    expect(first.metrics.iterations).toBe(30);
-    expect(first.metrics.turns.mean).toBeGreaterThan(0);
-    expect(first.metrics.winRate).toBeGreaterThanOrEqual(0);
-    expect(first.metrics.winRate).toBeLessThanOrEqual(1);
-  });
-
-  it('mantém comparações de passiva e boss como cenários isolados', () => {
-    const scenarios = buildDefaultScenarios({ levels: [1] });
-    const ids = scenarios.map((scenario) => scenario.id);
-
-    expect(ids).toContain('Guerreiro_vs_Ladino_lv10_passives_on');
-    expect(ids).toContain('Guerreiro_vs_Ladino_lv10_passives_off');
-    expect(ids).toContain('Guerreiro_vs_Mago_lv10_common');
-    expect(ids).toContain('Guerreiro_vs_Mago_lv10_boss_proxy');
-  });
-
-  it('gera baseline reduzida e não transforma resultado numérico em aprovação automática', () => {
-    const scenarios = [{
-      id: 'baseline_test',
-      label: 'Baseline reduzida',
-      playerClass: 'Guerreiro',
-      enemyClass: 'Ladino',
-      level: 1,
-      playerAction: 'basic',
-      enemyAction: 'basic',
-      passivesEnabled: true,
-    }];
-    const report = runBaseline({ iterations: 10, seed: 2202, scenarios, levels: [1] });
-    const markdown = renderBaselineMarkdown(report);
-
-    expect(report.metadata.classification).toBe('C. Evidência ainda insuficiente para decidir');
-    expect(report.results).toHaveLength(1);
-    expect(markdown).toContain('# Baseline Quantitativa — Combate v2.2');
-    expect(markdown).toContain('não aprova mudanças de balanceamento');
-  });
-
-  it('valida argumentos da CLI', () => {
-    expect(parseArgs([
-      '--iterations', '50',
-      '--seed', '123',
-      '--levels', '1,5,10',
-      '--json', 'artifacts/result.json',
-    ])).toMatchObject({
-      iterations: 50,
-      seed: 123,
-      levels: [1, 5, 10],
-    });
-
-    expect(() => parseArgs(['--iterations', '0'])).toThrow(/inteiro positivo/);
-    expect(() => parseArgs(['--unknown'])).toThrow(/Argumento desconhecido/);
+    expect(markdown).toContain('C. Evidência ainda insuficiente para decidir');
+    expect(markdown).not.toContain('A. Núcleo pronto para calibração');
+    expect(markdown).toContain('abc123');
   });
 });
