@@ -9,6 +9,7 @@
     "test:coverage": "vitest run --coverage",
     "coverage": "vitest run --coverage",
     "test:combat-simulation-v2-2": "vitest run tests/combatSimulationHarnessV22.test.js",
+    "test:combat-parity-v2-2": "vitest run tests/combatHarnessRuntimeParityV22.test.js",
     "simulate:combat-v2-2": "node scripts/simulate-combat-v2-2.mjs",
     "validate-data": "node scripts/validate-data.mjs",
     "validate:monster-assets": "node scripts/validate-monster-assets.mjs",
