@@ -1,8 +1,8 @@
 # Monstrinhomon — Mapa de Autoridade
 
-**Data:** 2026-05-19  
-**Status:** Canônico para a Fase 0 da Card Layer.  
-**Relacionado:** `docs/AUDIT_GENERAL_RISKS_2026-05.md`, `docs/CARD_LAYER_ARCHITECTURE_v0.1.2.md`, `docs/AUDIT_FASE_0_RESPOSTAS.md`, `docs/PENDENCIAS_TECNICAS.md`.
+**Data:** 2026-07-27  
+**Status:** Canônico para os domínios listados.  
+**Relacionado:** `docs/AUDIT_GENERAL_RISKS_2026-05.md`, `docs/CARD_LAYER_ARCHITECTURE_v0.1.2.md`, `docs/AUDIT_FASE_0_RESPOSTAS.md`, `docs/PENDENCIAS_TECNICAS.md`, `docs/DECISAO_PIPELINE_PASSIVAS_ESPECIE_2026-07.md`.
 
 Este documento define quais arquivos vencem em caso de conflito entre runtime, design, documentos antigos e legado.
 
@@ -13,7 +13,8 @@ Este documento define quais arquivos vencem em caso de conflito entre runtime, d
 ## 1. Regra geral de conflito
 
 ```text
-Runtime vence design.
+Runtime vence design quando descrevemos o estado implementado.
+Decisão canônica aprovada vence runtime quando definimos o comportamento pretendido.
 Design vence legado.
 Card Layer nunca vence mecânica.
 ```
@@ -27,6 +28,7 @@ A Card Layer é uma camada visual/organizacional. Ela não decide dano, custo, a
 | Domínio | Autoridade | Status | Observações |
 |---|---|---|---|
 | Fórmula de combate, faixas, ModNível | `docs/PATCH_CANONICO_COMBATE_V2.2.md` | Autoridade máxima | Não alterar pela Card Layer. |
+| Pipeline das passivas de espécie | `docs/DECISAO_PIPELINE_PASSIVAS_ESPECIE_2026-07.md` | Decisão aprovada | Define a etapa de `atkBonus` e a ordem entre resistência percentual e `shieldhorn`; runtime ainda possui drifts até PRs próprios. |
 | Mecânica runtime de skills | `data/skills.json` via `js/data/skillsLoader.js` | Confirmado | Fonte canônica das skills usadas pelo runtime. |
 | Lista efetiva de skills para apresentação | `getMonsterSkills` em `index.html` linhas 4475–4575 | Confirmado | Fluxo: `SKILL_DEFS` → `KitSwap.getEffectiveSkills`; preserva `groupKey`/`stageIndex` para Card Layer. |
 | Forma operacional de skills para combate | `resolveMonsterSkills()` / `normalizeSkill()` | Confirmado | Normaliza a skill para cálculo/execução de combate. Não é a fonte visual primária da Card Layer. |
@@ -38,8 +40,8 @@ A Card Layer é uma camada visual/organizacional. Ela não decide dano, custo, a
 | Card Layer visual | `docs/CARD_LAYER_ARCHITECTURE_v0.1.2.md` | Canônico para Fase 1 | Camada visual acima do runtime. |
 | CSVs raiz | Legado inerte | Confirmado | Referência histórica; não carregados no runtime de combate/skills. |
 | `GAME_RULES.md` §3–§10 | Legado revogado | Já marcado no arquivo | Não usar como fonte atual quando houver doc canônico mais recente. |
-| `AGENTS.md` | Suplementar atualizado neste PR | Alinhado ao canon v2 para escopo da Card Layer | Mantém papel de guia operacional; autoridade principal continua nos docs canônicos. |
-| `PROXIMOS_PASSOS.md` | Legado / redirecionamento | Atualizado neste PR | Conteúdo histórico preservado em `docs/legacy/PROXIMOS_PASSOS_2026-01.md`. |
+| `AGENTS.md` | Suplementar | Alinhado ao canon v2 para escopo da Card Layer | Mantém papel de guia operacional; autoridade principal continua nos docs canônicos. |
+| `PROXIMOS_PASSOS.md` | Legado / redirecionamento | Atualizado | Conteúdo histórico preservado em `docs/legacy/PROXIMOS_PASSOS_2026-01.md`. |
 
 ---
 
@@ -74,3 +76,5 @@ Ver `docs/PENDENCIAS_TECNICAS.md`:
 - PT-002 — Mapeamento `groupKey → slot`.
 - PT-003 — CSVs raiz como legado inerte.
 - PT-004 — Drift documental em `AGENTS.md` e `PROXIMOS_PASSOS.md`.
+
+Para passivas de espécie, consultar também a sequência técnica aprovada em `docs/DECISAO_PIPELINE_PASSIVAS_ESPECIE_2026-07.md`.
