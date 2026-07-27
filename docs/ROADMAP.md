@@ -5,44 +5,72 @@
 
 ## Agora
 
-### Concluir governanca compartilhada
+### Validar o nucleo jogavel v2.2
 
-**Resultado esperado:** ChatGPT, Claude e o responsavel humano usam os mesmos pontos de entrada e distinguem `main`, PR aberto, decisao e historico.
+**Resultado esperado:** obter evidencia quantitativa e de playtest suficiente para decidir calibracao de PWR, critico, passivas, energia e bosses sem alterar varios dominios ao mesmo tempo.
 
-**Concluido:**
+**Entregas:**
 
-- README aponta para os documentos de governanca;
-- estado do projeto e datado e associado a um marco verificavel;
-- Portal do Drive aponta para o GitHub, sem copiar regras tecnicas;
-- acervo antigo do Drive foi classificado;
-- Dex v3 foi mantida como proposta editorial ativa.
-
-**Pendente:**
-
-- mapa de autoridade separar formalmente comportamento implementado de regra pretendida;
-- identificar e versionar o "Documento Mestre" citado pelo Patch v2.2.
-
-### Revisar os drafts existentes
-
-**Resultado esperado:** PRs #255 e #256 recebem revisao independente e decisao humana de merge, ajustes ou encerramento.
-
-**Ordem recomendada:**
-
-1. revisar PR #256, menor e mais isolado;
-2. revisar PR #255, com impacto amplo em combate.
+1. executar o protocolo em `docs/VALIDACAO_NUCLEO_JOGAVEL_V2_2.md`;
+2. registrar simulacoes reproduziveis por classe, nivel e encontro;
+3. usar `docs/PLAYTEST_TEMPLATE_V2_2.md` em playtest mediado;
+4. separar bugs, balanceamento, UX e decisoes humanas;
+5. recomendar somente um proximo PR.
 
 **Criterios de saida:**
 
-- comportamento e testes revisados;
-- conflitos com decisoes canonicas identificados;
-- riscos e rollback registrados;
-- decisao humana documentada.
+- TTK medio, mediana e distribuicao registrados;
+- taxa de vitoria por cenario registrada;
+- impacto de critico, vantagem, passivas e ENE medido;
+- Wild e Group comparados em condicoes equivalentes;
+- boss avaliado separadamente;
+- ao menos um playtest padronizado registrado;
+- `DEC-COMBAT-A` e `DEC-COMBAT-D` possuem evidencia suficiente para decisao humana ou sao explicitamente mantidas como pendentes.
+
+### Alimentar a camada de produto no Drive
+
+**Resultado esperado:** a arquitetura de pastas deixa de ser apenas estrutural e passa a conter contexto operacional.
+
+**Prioridade:**
+
+1. Visao e Publico;
+2. Experiencia Desejada;
+3. Glossario de Produto;
+4. modelo e registros de playtest;
+5. principios de uso terapeutico sem dados identificaveis.
+
+O Drive nao deve manter copias concorrentes das regras tecnicas do GitHub.
 
 ### Revisar nomes editoriais pendentes
 
 **Resultado esperado:** os 34 nomes com `needs_verification` na Dex v3 recebem decisao humana por familia.
 
 A aprovacao editorial de um nome nao autoriza migracao automatica para o runtime.
+
+## Concluido recentemente
+
+### Governanca compartilhada inicial
+
+- README aponta para os documentos de governanca e para o Portal do Drive;
+- estado do projeto e datado e associado a um marco verificavel;
+- Portal do Drive aponta para o GitHub, sem copiar regras tecnicas;
+- acervo antigo do Drive foi classificado;
+- Dex v3 foi mantida como proposta editorial ativa;
+- PRs #257 e #258 foram integrados.
+
+### Migracao tecnica do combate Wild
+
+- PR #255 integrado;
+- Wild usa a base bilateral v2.2 compartilhada com o Group;
+- a migracao tecnica nao equivale a validacao de balanceamento.
+
+### Estabilizacao tecnica inicial da Card Layer
+
+- PR #256 integrado;
+- `buildRuntimeSkillDefs()` preserva identidade canonica;
+- inferencia por nome removida;
+- aliases de kit swap permanecem explicitos;
+- QA de produto e decisao de encerramento do piloto continuam pendentes.
 
 ## Proximo
 
@@ -65,31 +93,17 @@ A aprovacao editorial de um nome nao autoriza migracao automatica para o runtime
 - nao migrar atributos, evolucoes ou classes no mesmo PR;
 - cada migracao deve declarar compatibilidade de saves, referencias e assets.
 
-### Consolidar consistencia de combate
-
-**Resultado esperado:** Wild e Group possuem uma relacao de formula aprovada, implementada e quantitativamente testada.
-
-**Dependencias:**
-
-- decisao sobre PWR e calibracao do catalogo;
-- revisao do PR #255;
-- testes quantitativos apos qualquer migracao.
-
 ### Tratar energia, boss e passivas separadamente
 
 **Resultado esperado:** regeneracao de ENE, boss e recalibracao de passivas recebem investigacoes e PRs pequenos independentes.
 
 Nao combinar esses dominios em um unico PR amplo de balanceamento.
 
-### Estabilizar o piloto da Card Layer
+### QA publicado da Card Layer
 
-**Resultado esperado:** o Guerreiro mapeia skills efetivas sem alterar mecanica de combate.
+**Resultado esperado:** o piloto do Guerreiro e testado no ambiente publicado com registro de mapeamento, fallback, clareza e ausencia de duplicacao mecanica.
 
-**Dependencias:**
-
-- revisao do PR #256;
-- QA no ambiente publicado;
-- criterio explicito para encerrar o piloto.
+A expansao para outras classes depende desse QA e de criterio explicito para encerrar o piloto.
 
 ## Depois
 
@@ -98,16 +112,20 @@ Nao combinar esses dominios em um unico PR amplo de balanceamento.
 - decidir eventuais migracoes de nomes, uma familia por vez;
 - expandir a Card Layer somente apos o piloto;
 - melhorar metricas de playtest;
-- reduzir gradualmente a concentracao de logica em `index.html`.
+- reduzir gradualmente a concentracao de logica em `index.html`;
+- aprofundar economia, narrativa e catalogo somente depois da estabilizacao do nucleo.
 
 ## Portoes de decisao
 
 | Decisao | Responsavel | Estado | Bloqueia |
 |---|---|---|---|
-| PWR e calibracao do catalogo | autor humano | pendente | balanceamento final do combate |
+| PWR e calibracao do catalogo | autor humano | pendente de validacao v2.2 | balanceamento final do combate |
+| premio aleatorio do critico | autor humano | pendente de validacao v2.2 | comportamento final do critico |
+| valores das passivas de classe | autor humano | decisao conceitual parcial; valores divergentes | calibracao das passivas |
+| regeneracao de ENE | autor humano | divergencia aberta | economia de habilidades |
+| comportamento de boss | autor humano | investigacao pendente | curva de encontros especiais |
 | status do catalogo v3 do Drive | autor humano | parcial: proposta editorial ativa | migracao tecnica de nomes e IDs |
 | 34 nomes editoriais restantes | autor humano | pendente | fechamento editorial da Dex v3 |
-| premio aleatorio do critico | autor humano | pendente | comportamento final do critico |
 | modelo do slot 4 | autor humano | pendente | expansao da Card Layer |
 | autoridade normativa/descritiva | autor humano | pendente | revisao global dos documentos |
 
