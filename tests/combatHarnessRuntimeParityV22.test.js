@@ -2,6 +2,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+vi.mock('../js/combat/groupCombatFormula.js', async () => {
+  const actual = await vi.importActual('../js/combat/groupCombatFormula.js');
+  return {
+    ...actual,
+    resolveConfrontation: vi.fn(actual.resolveConfrontation),
+  };
+});
+
 import {
   DEFAULT_BASIC_POWER,
   buildClassAdvantages,
@@ -120,10 +128,13 @@ function runHarnessBasic({ seed, attacker, defender, classAdvantages }) {
     initialEnergyRatio: 0,
     passivesEnabled: true,
   };
+  resolveConfrontation.mockClear();
   const result = simulateScenario(scenario, { runs: 1, seed, maxTurns: 1 });
+  const confrontation = resolveConfrontation.mock.results[0]?.value ?? null;
   return {
     result,
     damage: result.summary.damage.meanPerDamagingAction,
+    confrontation,
   };
 }
 
@@ -330,7 +341,7 @@ describe('Paridade determinística — harness, Wild e Group', () => {
   ];
 
   for (const testCase of parityCases) {
-    it(`${testCase.id}: produz o mesmo dano nos três caminhos`, () => {
+    it(`${testCase.id}: produz o mesmo RC e dano nos três caminhos`, () => {
       vi.spyOn(Math, 'random').mockReturnValue(0.5);
       const [seededD20A, seededD20D] = seededPair(testCase.rolls.seed);
       expect([seededD20A, seededD20D]).toEqual([
@@ -386,7 +397,7 @@ describe('Paridade determinística — harness, Wild e Group', () => {
         classAdvantages: testCase.classAdvantages,
       });
 
-      expect(harness.result.summary.confrontation[expected.confrontation.category]).toBeGreaterThan(0);
+      expect(harness.confrontation).toEqual(expected.confrontation);
       expect(wild.encounter.log.join(' ')).toContain(`RC ${expected.confrontation.rc}`);
       expect(group.encounter.log.join(' ')).toContain(`RC${expected.confrontation.rc}`);
       expect(wild.damage).toBe(harness.damage);
@@ -444,6 +455,7 @@ describe('Diferenças caracterizadas — não corrigidas neste PR', () => {
 
     expect(expectedWithSpd.confrontation.category).toBe(RC_CATEGORY.ACERTO_NORMAL);
     expect(expectedWithoutSpd.confrontation.category).toBe(RC_CATEGORY.ACERTO_REDUZIDO);
+    expect(harness.confrontation).toEqual(expectedWithSpd.confrontation);
     expect(harness.damage).toBe(expectedWithSpd.damage);
     expect(wild.damage).toBe(expectedWithSpd.damage);
     expect(group.damage).toBe(expectedWithoutSpd.damage);
