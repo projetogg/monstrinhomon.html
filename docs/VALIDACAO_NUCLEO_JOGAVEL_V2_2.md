@@ -218,3 +218,19 @@ Finalizar com exatamente uma classificacao:
 - **C. Evidencia ainda insuficiente para decidir**
 
 A conclusao deve citar os dados que a sustentam. Testes verdes, isoladamente, nao autorizam a classificacao A.
+
+## 12. Instrumento oficial da baseline
+
+A baseline v2.2 possui um unico caminho operacional oficial:
+
+- **nucleo do harness:** `js/combat/combatSimulationHarness.js`;
+- **CLI:** `scripts/simulate-combat-v2-2.mjs`;
+- **testes:** `tests/combatSimulationHarnessV22.test.js`;
+- **workflow:** `.github/workflows/combat-v2-2-baseline.yml`;
+- **comandos npm:** `test:combat-simulation-v2-2` e `simulate:combat-v2-2`.
+
+O harness integrado pelo PR #260 e a fonte operacional para novas medicoes. Arquivos paralelos em `scripts/combat-v2-2/` foram removidos por duplicarem carregamento de dados, construcao de cenarios, politica de acoes e geracao de relatorio sem serem consumidos pelo `package.json` ou pelo workflow oficial.
+
+Nao criar uma segunda CLI ou um segundo nucleo de simulacao. Novas capacidades devem ser adicionadas ao harness oficial ou a modulos puros importados por ele.
+
+O proximo portao tecnico, apos esta consolidacao, e demonstrar a paridade do harness com os loops reais de Wild e Group antes de interpretar resultados como evidencia de balanceamento.

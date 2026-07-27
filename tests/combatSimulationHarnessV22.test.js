@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
   applyEneRegen,
@@ -145,5 +145,22 @@ describe('Combat Simulation Harness v2.2', () => {
     expect(markdown).toContain('C. Evidência ainda insuficiente para decidir');
     expect(markdown).not.toContain('A. Núcleo pronto para calibração');
     expect(markdown).toContain('abc123');
+  });
+
+  it('mantém um único entrypoint oficial para a baseline v2.2', () => {
+    const packageJson = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'));
+    const workflow = readFileSync(resolve(ROOT, '.github/workflows/combat-v2-2-baseline.yml'), 'utf8');
+    const officialCli = readFileSync(resolve(ROOT, 'scripts/simulate-combat-v2-2.mjs'), 'utf8');
+
+    expect(packageJson.scripts['simulate:combat-v2-2']).toBe('node scripts/simulate-combat-v2-2.mjs');
+    expect(packageJson.scripts['test:combat-simulation-v2-2']).toBe('vitest run tests/combatSimulationHarnessV22.test.js');
+    expect(officialCli).toContain("../js/combat/combatSimulationHarness.js");
+    expect(workflow).toContain('scripts/simulate-combat-v2-2.mjs');
+    expect(workflow).toContain('js/combat/combatSimulationHarness.js');
+    expect(workflow).not.toContain('scripts/combat-v2-2/');
+
+    expect(existsSync(resolve(ROOT, 'scripts/simulate-combat-v2-2.mjs'))).toBe(true);
+    expect(existsSync(resolve(ROOT, 'scripts/combat-v2-2/simulator.mjs'))).toBe(false);
+    expect(existsSync(resolve(ROOT, 'scripts/combat-v2-2/run-baseline.mjs'))).toBe(false);
   });
 });
