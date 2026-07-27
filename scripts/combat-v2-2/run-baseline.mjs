@@ -69,7 +69,7 @@ function printHelp() {
 Opções:
   --iterations N      Iterações por cenário (padrão: 1000)
   --seed N            Seed determinística (padrão: 2202)
-  --levels LISTA      Níveis separados por vírgula (padrão: 1,5,10,15,30)
+  --levels LISTA      Níveis separados por vírgula (padrão: 1,5,10,15,30; cenários extras usam níveis fixos 1/10/30 e 10)
   --json CAMINHO      Salva relatório completo em JSON
   --markdown CAMINHO  Salva resumo em Markdown
   -h, --help          Mostra esta ajuda
