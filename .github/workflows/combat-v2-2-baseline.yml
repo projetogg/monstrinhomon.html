@@ -7,6 +7,10 @@ on:
         description: Execuções por cenário
         required: false
         default: "1000"
+      seed:
+        description: Seed comparável entre execuções
+        required: false
+        default: "monstrinhomon-combat-v2.2-baseline-v1"
   pull_request:
     branches: [ "main" ]
     paths:
@@ -26,6 +30,10 @@ permissions:
 jobs:
   baseline:
     runs-on: ubuntu-latest
+    env:
+      BASELINE_RUNS: ${{ github.event.inputs.runs || '1000' }}
+      BASELINE_SEED: ${{ github.event.inputs.seed || 'monstrinhomon-combat-v2.2-baseline-v1' }}
+      BASELINE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
     steps:
       - name: Checkout
@@ -44,20 +52,18 @@ jobs:
         run: npm run test:combat-simulation-v2-2
 
       - name: Gerar baseline reproduzível
-        env:
-          BASELINE_RUNS: ${{ inputs.runs || '1000' }}
         run: >-
           npm run simulate:combat-v2-2 --
           --runs "$BASELINE_RUNS"
-          --seed "$GITHUB_SHA"
-          --baseline-sha "$GITHUB_SHA"
+          --seed "$BASELINE_SEED"
+          --baseline-sha "$BASELINE_SHA"
           --output artifacts/combat-v2-2-baseline.json
           --report artifacts/combat-v2-2-baseline.md
 
       - name: Publicar artefatos
         uses: actions/upload-artifact@v4
         with:
-          name: combat-v2-2-baseline-${{ github.sha }}
+          name: combat-v2-2-baseline-${{ env.BASELINE_SHA }}
           path: artifacts/
           if-no-files-found: error
           retention-days: 30
