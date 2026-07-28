@@ -3,21 +3,20 @@ name: Tests (Vitest)
 on:
   pull_request:
     branches: [ "main" ]
+  push:
+    branches: [ "main" ]
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  patch-and-validation:
+  unit-and-validation:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: codex/group-species-passives-skills
-          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -28,39 +27,37 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
-      - name: Aplicar patch determinístico
-        run: |
-          node scripts/temp-apply-group-species-skill-passives.mjs
-          node scripts/temp-fix-group-passive-parity-assertions.mjs
-
-      - name: Testar passivas de espécie
-        run: npm run test:species-passive-parity-v2-2
-
-      - name: Testar execução de skills Group
-        run: npx vitest run tests/groupSkillExecution.test.js
-
-      - name: Testar paridade do harness
-        run: npm run test:combat-parity-v2-2
-
-      - name: Testar simulador
-        run: npm run test:combat-simulation-v2-2
-
-      - name: Suíte geral
+      - name: Testes unitários (Vitest)
         run: npm test
 
-      - name: Smoke Wild
+      - name: Smoke Wild Loop (Vitest)
         run: npm run test:wild-loop:vitest
 
       - name: Validar dados
         run: npm run validate-data
 
-      - name: Validar assets
+      - name: Validar assets de monstrinhos
         run: npm run validate:monster-assets
 
-      - name: Publicar runtime e testes validados
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add js/combat/groupActions.js tests/speciesPassiveModeParityV22.test.js tests/groupSkillExecution.test.js
-          git commit -m "fix(combat): despachar passivas de espécie nas skills Group"
-          git push origin HEAD:codex/group-species-passives-skills
+  wild-loop-e2e:
+    runs-on: ubuntu-latest
+    needs: unit-and-validation
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Instalar Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: E2E Wild Loop (Playwright)
+        run: npm run test:wild-loop
