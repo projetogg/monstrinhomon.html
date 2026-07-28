@@ -134,7 +134,7 @@ function makeDeps({ mon, player, enemies, skillById = null, rollD20Val = 15, hit
             openSwitchMonsterModal: vi.fn(),
             handleVictoryRewards: vi.fn(),
             getSkillById: (id) => skillById,
-            canUseSkillNow: (skill, m) => (m.ene >= (skill.energy_cost || 0))
+            canUseSkillNow: (skill, m) => (m.ene >= Number(skill.cost ?? skill.energy_cost ?? 0))
         }
     };
 
@@ -296,6 +296,132 @@ describe('executePlayerSkillGroup - Skills Ofensivas (Ataque)', () => {
         const joined = enc.log.join(' ');
         expect(joined).toContain('Golpe Total');
         expect(joined).toContain('DragãoTest');
+    });
+});
+
+
+
+// ---------------------------------------------------------------------------
+// executePlayerSkillGroup - Passivas de espécie
+// ---------------------------------------------------------------------------
+
+describe('executePlayerSkillGroup - Passivas de espécie', () => {
+    const offensiveSkill = (overrides = {}) => ({
+        id: 'SK_SPECIES_DAMAGE',
+        name: 'Golpe de Espécie',
+        type: 'DAMAGE',
+        target: 'enemy',
+        power: 8,
+        cost: 2,
+        accuracy: 1,
+        ...overrides,
+    });
+
+    const debuffSkill = (overrides = {}) => ({
+        id: 'SK_SPECIES_DEBUFF',
+        name: 'Debuff de Espécie',
+        type: 'BUFF',
+        target: 'enemy',
+        power: -1,
+        cost: 1,
+        accuracy: 1,
+        ...overrides,
+    });
+
+    function runSkill({ monOverrides = {}, skill = offensiveSkill(), rollD20Val = 15, preState = null }) {
+        const mon = makeMon(monOverrides);
+        const player = makePlayer(mon);
+        const enemies = [makeEnemy({ hp: 100, hpMax: 100, def: 6 })];
+        const { deps, enc } = makeDeps({ mon, player, enemies, rollD20Val });
+        if (preState) enc.passiveState = { ...preState };
+        const hpBefore = enemies[0].hp;
+        const result = executePlayerSkillGroup(skill, 0, deps);
+        return { mon, enemy: enemies[0], enc, result, damage: hpBefore - enemies[0].hp };
+    }
+
+    it('emberfang adiciona +1 ATK antes do cálculo da skill ofensiva', () => {
+        const base = runSkill({ monOverrides: { canonSpeciesId: null } });
+        const passive = runSkill({ monOverrides: { canonSpeciesId: 'emberfang' } });
+
+        expect(passive.damage).toBe(base.damage + 1);
+        expect(passive.enc.log.some(line => line.includes('+1 ATK (skill)'))).toBe(true);
+    });
+
+    it('emberfang preserva o limite estrito e não ativa exatamente em 70% de HP', () => {
+        const base = runSkill({ monOverrides: { hp: 35, hpMax: 50, canonSpeciesId: null } });
+        const boundary = runSkill({ monOverrides: { hp: 35, hpMax: 50, canonSpeciesId: 'emberfang' } });
+
+        expect(boundary.damage).toBe(base.damage);
+    });
+
+    it('swiftclaw aplica a abertura na primeira skill e registra o consumo', () => {
+        const base = runSkill({ monOverrides: { canonSpeciesId: null } });
+        const first = runSkill({ monOverrides: { canonSpeciesId: 'swiftclaw' } });
+
+        expect(first.damage).toBe(base.damage + 1);
+        expect(first.enc.passiveState.swiftclawFirstStrikeDone).toBe(true);
+    });
+
+    it('swiftclaw não concede novo bônus quando a abertura já foi consumida', () => {
+        const base = runSkill({ monOverrides: { canonSpeciesId: null } });
+        const consumed = runSkill({
+            monOverrides: { canonSpeciesId: 'swiftclaw' },
+            preState: { swiftclawFirstStrikeDone: true },
+        });
+
+        expect(consumed.damage).toBe(base.damage);
+    });
+
+    it('moonquill recebe +1 SPD por 1 turno após usar debuff', () => {
+        const result = runSkill({
+            monOverrides: { canonSpeciesId: 'moonquill' },
+            skill: debuffSkill(),
+        });
+
+        expect(result.mon.buffs).toEqual(expect.arrayContaining([
+            expect.objectContaining({
+                type: 'spd',
+                power: 1,
+                duration: 1,
+                source: 'moonquill_passive',
+            }),
+        ]));
+    });
+
+    it('shadowsting cria carga após utilizar debuff', () => {
+        const result = runSkill({
+            monOverrides: { canonSpeciesId: 'shadowsting' },
+            skill: debuffSkill(),
+        });
+
+        expect(result.enc.passiveState.shadowstingDebuffCharged).toBe(true);
+    });
+
+    it('bellwave cria carga após qualquer skill válida', () => {
+        const result = runSkill({ monOverrides: { canonSpeciesId: 'bellwave' } });
+
+        expect(result.enc.passiveState.bellwaveRhythmCharged).toBe(true);
+    });
+
+    it('skill ofensiva que erra ainda despacha ON_SKILL_USED para bellwave', () => {
+        const result = runSkill({
+            monOverrides: { canonSpeciesId: 'bellwave' },
+            rollD20Val: 1,
+        });
+
+        expect(result.damage).toBe(0);
+        expect(result.enc.passiveState.bellwaveRhythmCharged).toBe(true);
+    });
+
+    it('ENE insuficiente não cria carga nem estado de passiva', () => {
+        const result = runSkill({
+            monOverrides: { canonSpeciesId: 'bellwave', ene: 0 },
+            skill: offensiveSkill({ cost: 2 }),
+        });
+
+        expect(result.result).toBe(false);
+        expect(result.enc.passiveState).toBeUndefined();
+        expect(result.mon.buffs).toEqual([]);
     });
 });
 

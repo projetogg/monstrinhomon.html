@@ -1346,6 +1346,82 @@ function executeNonOffensiveSkillGroup(skill, context) {
 }
 
 /**
+ * Despacha ON_ATTACK para uma skill válida do jogador e gerencia o estado
+ * compartilhado das passivas de espécie.
+ *
+ * O modificador retornado é aplicado pelo caller ao ATK efetivo da skill
+ * ofensiva. Skills não ofensivas ainda podem consumir a abertura do swiftclaw,
+ * preservando a semântica já caracterizada no Wild.
+ */
+function resolvePlayerSpeciesSkillAttack(skill, context) {
+    const { mon, monName, enc, helpers } = context;
+    const passiveState = enc.passiveState || (enc.passiveState = {});
+    const offensive = isOffensiveSkill(skill);
+    const modifier = fireCombatEvent(mon, ON_ATTACK, {
+        hpPct: (Number(mon.hpMax) || 1) > 0 ? (Number(mon.hp) || 0) / (Number(mon.hpMax) || 1) : 0,
+        isOffensiveSkill: offensive,
+        isFirstAttackOfCombat: !passiveState.swiftclawFirstStrikeDone,
+        hasShadowstingCharge: false,
+        hasBellwaveRhythmCharge: false,
+    });
+
+    if (modifier?.atkBonus) {
+        helpers.log(enc, `✨ Passiva ${monName}: +${modifier.atkBonus} ATK (skill)`);
+        passiveState.swiftclawFirstStrikeDone = true;
+    }
+
+    return modifier;
+}
+
+/**
+ * Despacha ON_SKILL_USED exatamente uma vez após uma skill válida ter sido
+ * consumida. O helper aplica moonquill e produz as cargas de shadowsting e
+ * bellwave; o ataque básico continua responsável por consumir as cargas.
+ */
+function dispatchPlayerSpeciesSkillUsed(skill, context) {
+    const { mon, monName, enc, helpers } = context;
+    const passiveState = enc.passiveState || (enc.passiveState = {});
+    const skillType = String(
+        skill.type ||
+        (skill.category === 'Cura' ? 'HEAL' : skill.category === 'Suporte' ? 'BUFF' : 'DAMAGE')
+    ).toUpperCase();
+    const target = skill.target || '';
+    const isDebuff =
+        skillType === 'BUFF' &&
+        (target === 'enemy' || target === 'Inimigo') &&
+        (Number(skill.power) || 0) < 0;
+
+    const modifier = fireCombatEvent(mon, ON_SKILL_USED, {
+        hpPct: (Number(mon.hpMax) || 1) > 0 ? (Number(mon.hp) || 0) / (Number(mon.hpMax) || 1) : 0,
+        skillType,
+        isDebuff,
+    });
+
+    if (modifier?.spdBuff) {
+        applyBuff(mon, {
+            type: 'spd',
+            power: modifier.spdBuff.power,
+            duration: modifier.spdBuff.duration,
+            source: 'moonquill_passive',
+        });
+        helpers.log(
+            enc,
+            `✨ Passiva ${monName}: +${modifier.spdBuff.power} SPD por ${modifier.spdBuff.duration} turno(s)`,
+        );
+    }
+
+    if (isDebuff && mon.canonSpeciesId === 'shadowsting') {
+        passiveState.shadowstingDebuffCharged = true;
+        helpers.log(enc, `🗡️ Passiva ${monName}: carga de debuff preparada para o próximo ataque básico`);
+    }
+
+    if (mon.canonSpeciesId === 'bellwave') {
+        passiveState.bellwaveRhythmCharged = true;
+        helpers.log(enc, `🎵 Passiva ${monName}: ritmo carregado para o próximo ataque básico`);
+    }
+}
+
+/**
  * CAMADA 4C: Executa skill do jogador em combate de grupo.
  *
  * Recebe skill no formato operacional único (via resolveMonsterSkills):
@@ -1437,6 +1513,12 @@ export function executePlayerSkillGroup(skillOrId, enemyIndex, deps) {
 
         const enemyName = enemy.name || enemy.nome || "Inimigo";
 
+        // Passivas de espécie no uso de skill — ON_ATTACK.
+        // O evento ocorre após a validação do alvo e antes da resolução da ação.
+        const skillSpeciesAttack = resolvePlayerSpeciesSkillAttack(skill, {
+            mon, monName, enc, helpers,
+        });
+
         // Rolagem d20 para acurácia da skill
         const d20 = helpers.rollD20();
         const alwaysMiss = (d20 === 1);
@@ -1452,6 +1534,7 @@ export function executePlayerSkillGroup(skillOrId, enemyIndex, deps) {
         if (!hit) {
             helpers.log(enc, `✨ ${attackerName} (${monName}) usou ${skillName} e ERROU! (rolou ${d20})`);
             ui.showMissFeedback(`grpP_${actor.id}`);
+            dispatchPlayerSpeciesSkillUsed(skill, { mon, monName, enc, helpers });
             advanceGroupTurn(enc, deps);
             storage.save();
             ui.render();
@@ -1461,6 +1544,10 @@ export function executePlayerSkillGroup(skillOrId, enemyIndex, deps) {
         // Calcular dano com poder da skill
         const atkMods = core.getBuffModifiers(mon);
         const effectiveAtk = Math.max(1, (Number(mon.atk) || 0) + atkMods.atk);
+        const effectiveAtkForSkill = Math.max(
+            1,
+            effectiveAtk + (Number(skillSpeciesAttack?.atkBonus) || 0),
+        );
         const defMods = core.getBuffModifiers(enemy);
         const effectiveDef = Math.max(1, (Number(enemy.def) || 0) + defMods.def);
         const classAdv = core.getClassAdvantageModifiers(
@@ -1473,7 +1560,7 @@ export function executePlayerSkillGroup(skillOrId, enemyIndex, deps) {
         if (isCrit) power = Math.round(power * 1.5); // A1: crit ×1.5 (era ×2)
 
         let dmg = core.calcDamage({
-            atk: effectiveAtk,
+            atk: effectiveAtkForSkill,
             def: effectiveDef,
             power: power,
             damageMult: classAdv.damageMult,
@@ -1516,16 +1603,22 @@ export function executePlayerSkillGroup(skillOrId, enemyIndex, deps) {
         const critText = isCrit ? ' CRÍTICO! 🌟' : '';
         helpers.log(enc, `✨ ${attackerName} (${monName}) usou ${skillName}! ${enemyName} recebe ${dmg} de dano!${critText}`);
         ui.showDamageFeedback(`grpE_${tIdx}`, dmg, isCrit);
+        dispatchPlayerSpeciesSkillUsed(skill, { mon, monName, enc, helpers });
 
         if (!core.isAlive(enemy)) {
             helpers.log(enc, `🏁 ${enemyName} foi derrotado!`);
         }
 
     } else {
+        // Mesmo contrato do Wild: uma skill válida também despacha ON_ATTACK,
+        // permitindo que swiftclaw consuma a abertura na primeira ação de skill.
+        resolvePlayerSpeciesSkillAttack(skill, { mon, monName, enc, helpers });
+
         // Habilidades não-ofensivas: despacha para executeNonOffensiveSkillGroup
         executeNonOffensiveSkillGroup(skill, {
             mon, monName, player, attackerName, enc, deps,
         });
+        dispatchPlayerSpeciesSkillUsed(skill, { mon, monName, enc, helpers });
 
         // Se há skill pendente de aliado, pausar aqui (aguarda seleção)
         if (enc.pendingAllySkill) {
