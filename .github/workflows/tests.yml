@@ -29,7 +29,9 @@ jobs:
         run: npm ci
 
       - name: Aplicar patch determinístico
-        run: node scripts/temp-apply-group-species-skill-passives.mjs
+        run: |
+          node scripts/temp-apply-group-species-skill-passives.mjs
+          node scripts/temp-fix-group-passive-parity-assertions.mjs
 
       - name: Testar passivas de espécie
         run: npm run test:species-passive-parity-v2-2
