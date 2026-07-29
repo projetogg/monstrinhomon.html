@@ -5,48 +5,31 @@
 
 ## Agora
 
-### Adicionar uma matriz quantitativa dedicada às passivas de espécie
+### Executar playtest mediado das passivas de espécie
 
-**Resultado esperado:** medir o impacto real das oito passivas sem alterar a baseline atual de fórmula e passivas de classe.
+**Resultado esperado:** confrontar os sinais da matriz automatizada com clareza, duração, escolha de ações, frustração e observação terapêutica.
 
 **Próximo PR único:**
 
 ```text
-test(combat): adicionar matriz quantitativa de passivas de espécie
+docs(playtest): registrar playtest mediado das passivas de espécie
 ```
 
-**Entregas mínimas:**
+**Prioridades:**
 
-1. manter `simulate:combat-v2-2` como referência da fórmula-base;
-2. criar uma matriz separada de espécies;
-3. usar pares determinísticos com e sem passiva;
-4. medir frequência de ativação;
-5. medir delta de dano, mitigação, cura e estados;
-6. cobrir as oito espécies;
-7. separar Wild e Group quando houver contrato não comparável;
-8. publicar JSON e Markdown próprios;
-9. não alterar valores no mesmo PR.
-
-**Métricas mínimas:**
-
-- ativações por combate;
-- porcentagem de combates com ativação;
-- dano adicional médio e distribuição;
-- dano mitigado;
-- cura adicional;
-- duração dos buffs;
-- cargas criadas e consumidas;
-- TTK;
-- vitória e sobrevivência;
-- interação com classe, nível e perfil de ação.
+1. observar `shieldhorn`, que apresentou o maior delta automatizado de vitória;
+2. medir a frequência natural de `wildpace` abaixo de 40% de HP;
+3. verificar se as passivas de setup são percebidas e compreendidas;
+4. registrar o uso real de skills e ataques básicos;
+5. separar UX, bug e balanceamento;
+6. não alterar valores no mesmo PR.
 
 **Limites:**
 
-- não substituir a baseline atual;
-- não misturar expansão do harness com balanceamento;
-- não alterar PWR, crítico, ENE, bosses ou dados;
-- preservar seeds e cenários pareados;
-- qualquer drift novo deve ser caracterizado antes de ser corrigido.
+- a matriz automatizada não autoriza nerf ou buff;
+- o playtest deve usar o modelo padronizado;
+- qualquer ajuste posterior deve tratar uma única passiva;
+- PWR, crítico, ENE e bosses permanecem investigações separadas.
 
 ### Validar o núcleo jogável v2.2
 
@@ -58,17 +41,17 @@ test(combat): adicionar matriz quantitativa de passivas de espécie
 - paridade da fórmula entre harness, Wild e Group;
 - oito passivas de espécie em paridade nos caminhos comparáveis;
 - baseline de fórmula e passivas de classe estável antes/depois das correções;
-- impacto quantitativo das passivas de espécie ainda não medido;
+- impacto quantitativo das oito passivas medido em matriz dedicada;
+- `shieldhorn` é o principal sinal automatizado para observação;
 - playtest padronizado ainda pendente.
 
 **Entregas restantes:**
 
-1. matriz quantitativa das passivas de espécie;
-2. análise dos resultados dessa matriz;
-3. playtest mediado com `docs/PLAYTEST_TEMPLATE_V2_2.md`;
-4. investigação independente de ENE;
-5. investigação independente de boss;
-6. decisão humana sobre PWR e crítico.
+1. playtest mediado com `docs/PLAYTEST_TEMPLATE_V2_2.md`;
+2. decisão humana sobre os sinais da matriz;
+3. investigação independente de ENE;
+4. investigação independente de boss;
+5. decisão humana sobre PWR e crítico.
 
 **Critérios de saída:**
 
@@ -102,6 +85,20 @@ O Drive não deve manter cópias concorrentes das regras técnicas do GitHub.
 A aprovação editorial de um nome não autoriza migração automática para o runtime.
 
 ## Concluído recentemente
+
+### Matriz quantitativa das passivas de espécie
+
+- 48 pares determinísticos com e sem passiva;
+- níveis 1, 10 e 30;
+- perfis `basic` e `mixed`;
+- 96.000 batalhas na configuração padrão;
+- artefato JSON/Markdown próprio;
+- `shieldhorn` apresentou o maior sinal automatizado de vitória;
+- nenhum valor foi alterado;
+- análise humana e playtest permanecem obrigatórios.
+
+Fonte: `docs/reports/SPECIES_PASSIVE_QUANTITATIVE_MATRIX_2026-07.md`.
+
 
 ### Paridade e pipelines das passivas de espécie
 
@@ -227,7 +224,7 @@ A expansão para outras classes depende desse QA e de critério explícito para 
 | etapa de `atkBonus` de espécie | autor humano | APPROVED e implementada | concluído |
 | ordem de `shieldhorn` e resistência | autor humano | APPROVED e implementada | concluído |
 | paridade das oito espécies | evidência técnica + autor humano | comprovada nos caminhos comparáveis | matriz quantitativa |
-| impacto quantitativo das espécies | evidência técnica | não medido pelo harness atual | recalibração das espécies |
+| impacto quantitativo das espécies | evidência técnica | medido em matriz controlada; playtest pendente | decisão humana sobre valores |
 | PWR e calibração do catálogo | autor humano | pendente de validação v2.2 | balanceamento final |
 | prêmio aleatório do crítico | autor humano | pendente de validação v2.2 | comportamento final do crítico |
 | valores das passivas de classe | autor humano | decisão conceitual parcial | calibração das passivas |
