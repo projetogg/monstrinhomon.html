@@ -60,8 +60,8 @@ jobs:
             scripts/simulate-species-passives-v2-2.mjs \
             tests/speciesPassiveQuantitativeMatrixV22.test.js \
             docs/prompts/PROMPT_MATRIZ_QUANTITATIVA_PASSIVAS_ESPECIE_V2_2.md \
-            package.json \
-            tmp/species-matrix.tar.gz.b64
+            package.json
+          git add -u tmp/species-matrix.tar.gz.b64
           git commit -m "test(combat): adicionar matriz quantitativa de passivas de espécie"
           git push origin HEAD:codex/matriz-quantitativa-passivas-especie-v2-2
 
