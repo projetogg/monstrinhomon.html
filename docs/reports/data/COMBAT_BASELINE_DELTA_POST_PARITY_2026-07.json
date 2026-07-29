@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 1,
+  "classification": "NO_QUANTITATIVE_DELTA_IN_CURRENT_HARNESS",
+  "comparable": true,
+  "before": {
+    "baselineSha": "e019262f1325d0c416beb76b89000473b4480822",
+    "generatedAt": "2026-07-27T17:05:56.527Z",
+    "seed": "monstrinhomon-combat-v2.2-baseline-v1",
+    "runsPerScenario": 1000
+  },
+  "after": {
+    "baselineSha": "70670dd4f355515af695698a2d48582fc90b45fd",
+    "generatedAt": "2026-07-29T01:30:07.906Z",
+    "seed": "monstrinhomon-combat-v2.2-baseline-v1",
+    "runsPerScenario": 1000
+  },
+  "coverage": {
+    "currentHarnessIncludesSpeciesPassives": false,
+    "currentHarnessIncludesClassPassives": true,
+    "sourceLimitation": "Sem passivas de espécie, cura, itens, alvo de IA ou equivalência completa Wild/Group."
+  },
+  "scenarioComparison": {
+    "beforeCount": 90,
+    "afterCount": 90,
+    "commonCount": 90,
+    "unchangedCount": 90,
+    "changedCount": 0,
+    "missingAfter": [],
+    "addedAfter": [],
+    "scenarioDifferences": [],
+    "scenarioMetadataDifferences": []
+  },
+  "metadataDifferences": [
+    {
+      "path": "/baselineSha",
+      "before": "e019262f1325d0c416beb76b89000473b4480822",
+      "after": "70670dd4f355515af695698a2d48582fc90b45fd"
+    },
+    {
+      "path": "/generatedAt",
+      "before": "2026-07-27T17:05:56.527Z",
+      "after": "2026-07-29T01:30:07.906Z"
+    }
+  ],
+  "structuralDifferences": [],
+  "sourceDifferences": [],
+  "aggregate": {
+    "before": {
+      "scenarioCount": 90,
+      "runsPerScenario": 1000,
+      "totalRuns": 90000,
+      "scenarioMeanWinRate": 0.680867,
+      "scenarioMeanTtk": 3.754722,
+      "scenarioMeanDamagePerDamagingAction": 16.244343,
+      "scenarioMeanPlayerHpFinal": 21.491989,
+      "totalAttacks": 614572,
+      "totalBasicUses": 487919,
+      "totalSkillUses": 126653,
+      "weightedSkillUseRate": 0.206083,
+      "weightedNatural1Rate": 0.050167,
+      "weightedNatural20Rate": 0.05045,
+      "rcCounts": {
+        "falha_total": 56505,
+        "contato_neutralizado": 64733,
+        "acerto_reduzido": 113030,
+        "acerto_normal": 154886,
+        "acerto_forte": 225418
+      },
+      "rcShares": {
+        "falha_total": 0.091942,
+        "contato_neutralizado": 0.10533,
+        "acerto_reduzido": 0.183917,
+        "acerto_normal": 0.252023,
+        "acerto_forte": 0.366789
+      }
+    },
+    "after": {
+      "scenarioCount": 90,
+      "runsPerScenario": 1000,
+      "totalRuns": 90000,
+      "scenarioMeanWinRate": 0.680867,
+      "scenarioMeanTtk": 3.754722,
+      "scenarioMeanDamagePerDamagingAction": 16.244343,
+      "scenarioMeanPlayerHpFinal": 21.491989,
+      "totalAttacks": 614572,
+      "totalBasicUses": 487919,
+      "totalSkillUses": 126653,
+      "weightedSkillUseRate": 0.206083,
+      "weightedNatural1Rate": 0.050167,
+      "weightedNatural20Rate": 0.05045,
+      "rcCounts": {
+        "falha_total": 56505,
+        "contato_neutralizado": 64733,
+        "acerto_reduzido": 113030,
+        "acerto_normal": 154886,
+        "acerto_forte": 225418
+      },
+      "rcShares": {
+        "falha_total": 0.091942,
+        "contato_neutralizado": 0.10533,
+        "acerto_reduzido": 0.183917,
+        "acerto_normal": 0.252023,
+        "acerto_forte": 0.366789
+      }
+    },
+    "delta": {
+      "rcCounts": {
+        "acerto_forte": 0,
+        "acerto_normal": 0,
+        "acerto_reduzido": 0,
+        "contato_neutralizado": 0,
+        "falha_total": 0
+      },
+      "rcShares": {
+        "acerto_forte": 0,
+        "acerto_normal": 0,
+        "acerto_reduzido": 0,
+        "contato_neutralizado": 0,
+        "falha_total": 0
+      },
+      "runsPerScenario": 0,
+      "scenarioCount": 0,
+      "scenarioMeanDamagePerDamagingAction": 0,
+      "scenarioMeanPlayerHpFinal": 0,
+      "scenarioMeanTtk": 0,
+      "scenarioMeanWinRate": 0,
+      "totalAttacks": 0,
+      "totalBasicUses": 0,
+      "totalRuns": 0,
+      "totalSkillUses": 0,
+      "weightedNatural1Rate": 0,
+      "weightedNatural20Rate": 0,
+      "weightedSkillUseRate": 0
+    }
+  },
+  "provenance": {
+    "before": {
+      "pr": 264,
+      "workflowRunNumber": 15,
+      "workflowRunId": 30287695764,
+      "artifactId": 8661485325,
+      "artifactName": "combat-v2-2-baseline-e019262f1325d0c416beb76b89000473b4480822",
+      "artifactZipSha256": "b1416c0a89420f1f4e739a6c8aca73526b874c765fecb127e51bdd4a5bf09024"
+    },
+    "after": {
+      "pr": 275,
+      "workflowRunNumber": 23,
+      "workflowRunId": 30414217954,
+      "artifactId": 8709540034,
+      "artifactName": "combat-v2-2-baseline-70670dd4f355515af695698a2d48582fc90b45fd",
+      "artifactZipSha256": "9244e3f53860ebc1cc96115a93067225d12277f871a4ce0303c8e79a37f16fd2"
+    }
+  },
+  "interpretation": {
+    "quantitativeResultsChanged": false,
+    "speciesPassiveImpactMeasured": false,
+    "currentHarnessScope": "formula, class passives, RC, basic/mixed offensive actions and ENE",
+    "nextRecommendedPr": "test(combat): adicionar matriz quantitativa de passivas de espécie"
+  }
+}
