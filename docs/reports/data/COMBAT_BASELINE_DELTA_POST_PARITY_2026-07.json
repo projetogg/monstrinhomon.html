@@ -27,7 +27,8 @@
     "changedCount": 0,
     "missingAfter": [],
     "addedAfter": [],
-    "scenarioDifferences": []
+    "scenarioDifferences": [],
+    "scenarioMetadataDifferences": []
   },
   "metadataDifferences": [
     {
