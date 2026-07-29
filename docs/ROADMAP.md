@@ -1,7 +1,7 @@
 # Monstrinhomon - Roadmap
 
-**Status:** índice de planeamento.  
-**Regra:** itens deste arquivo não criam regras canónicas e não comprovam implementação.
+**Status:** índice de planejamento.  
+**Regra:** itens deste arquivo não criam regras canônicas e não comprovam implementação.
 
 ## Agora
 
@@ -30,7 +30,7 @@ test(combat): adicionar matriz quantitativa de passivas de espécie
 **Métricas mínimas:**
 
 - ativações por combate;
-- percentagem de combates com ativação;
+- porcentagem de combates com ativação;
 - dano adicional médio e distribuição;
 - dano mitigado;
 - cura adicional;
@@ -166,7 +166,7 @@ Fonte:
 ### Estabilização técnica inicial da Card Layer
 
 - PR #256 integrado;
-- `buildRuntimeSkillDefs()` preserva identidade canónica;
+- `buildRuntimeSkillDefs()` preserva identidade canônica;
 - inferência por nome removida;
 - aliases de kit swap permanecem explícitos;
 - QA de produto e decisão de encerramento do piloto continuam pendentes.
@@ -229,7 +229,7 @@ A expansão para outras classes depende desse QA e de critério explícito para 
 | paridade das oito espécies | evidência técnica + autor humano | comprovada nos caminhos comparáveis | matriz quantitativa |
 | impacto quantitativo das espécies | evidência técnica | não medido pelo harness atual | recalibração das espécies |
 | PWR e calibração do catálogo | autor humano | pendente de validação v2.2 | balanceamento final |
-| prémio aleatório do crítico | autor humano | pendente de validação v2.2 | comportamento final do crítico |
+| prêmio aleatório do crítico | autor humano | pendente de validação v2.2 | comportamento final do crítico |
 | valores das passivas de classe | autor humano | decisão conceitual parcial | calibração das passivas |
 | regeneração de ENE | autor humano | divergência aberta | economia de habilidades |
 | comportamento de boss | autor humano | investigação pendente | curva de encontros especiais |
