@@ -25,6 +25,7 @@ on:
       - "tests/combatSimulationHarnessV22.test.js"
       - "tests/combatHarnessRuntimeParityV22.test.js"
       - "tests/speciesPassiveModeParityV22.test.js"
+      - "tests/speciesPassiveFinalParityV22.test.js"
       - "data/monsters.json"
       - "data/skills.json"
       - "design/canon/class_matchups.json"
@@ -61,8 +62,11 @@ jobs:
       - name: Testar paridade com Wild e Group
         run: npm run test:combat-parity-v2-2
 
-      - name: Testar paridade das passivas de espécie
+      - name: Testar paridade estrutural das passivas de espécie
         run: npm run test:species-passive-parity-v2-2
+
+      - name: Testar paridade final das passivas de espécie
+        run: npm run test:species-passive-final-parity-v2-2
 
       - name: Gerar baseline reproduzível
         run: >-
