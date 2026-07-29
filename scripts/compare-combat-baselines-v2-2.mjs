@@ -4,7 +4,8 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const METADATA_FIELDS = new Set(['generatedAt', 'baselineSha']);
+const METADATA_FIELDS = new Set(['generatedAt', 'baselineSha', 'conclusion', 'limitations']);
+const STRUCTURAL_FIELDS = new Set(['schemaVersion', 'seed', 'runsPerScenario']);
 const RC_KEYS = [
   'falha_total',
   'contato_neutralizado',
@@ -147,19 +148,18 @@ export function compareBaselines(before, after) {
     Object.fromEntries(Object.entries(before || {}).filter(([key]) => METADATA_FIELDS.has(key))),
     Object.fromEntries(Object.entries(after || {}).filter(([key]) => METADATA_FIELDS.has(key))),
   );
-  const topLevelComparableDifferences = deepDiff(
-    Object.fromEntries(Object.entries(before || {}).filter(([key]) => key !== 'results' && !METADATA_FIELDS.has(key))),
-    Object.fromEntries(Object.entries(after || {}).filter(([key]) => key !== 'results' && !METADATA_FIELDS.has(key))),
+  const structuralDifferences = deepDiff(
+    Object.fromEntries(Object.entries(before || {}).filter(([key]) => STRUCTURAL_FIELDS.has(key))),
+    Object.fromEntries(Object.entries(after || {}).filter(([key]) => STRUCTURAL_FIELDS.has(key))),
   );
+  const sourceDifferences = deepDiff(before?.sources || {}, after?.sources || {});
 
   const beforeAggregate = aggregateBaseline(before);
   const afterAggregate = aggregateBaseline(after);
   const comparable =
-    before?.seed === after?.seed &&
-    Number(before?.runsPerScenario) === Number(after?.runsPerScenario) &&
+    structuralDifferences.length === 0 &&
     missingAfter.length === 0 &&
-    addedAfter.length === 0 &&
-    topLevelComparableDifferences.length === 0;
+    addedAfter.length === 0;
 
   let classification = 'NOT_COMPARABLE';
   if (comparable && scenarioDifferences.length === 0) {
@@ -184,12 +184,17 @@ export function compareBaselines(before, after) {
       seed: after?.seed ?? null,
       runsPerScenario: Number(after?.runsPerScenario) || 0,
     },
-    coverage: {
-      currentHarnessIncludesSpeciesPassives: false,
-      currentHarnessIncludesClassPassives: true,
-      sourceLimitation: (after?.limitations || []).find(item =>
-        String(item).includes('Sem passivas de espécie')) || null,
-    },
+    coverage: (() => {
+      const sourceLimitation = (after?.limitations || []).find(item =>
+        String(item).includes('Sem passivas de espécie')) || null;
+      return {
+        currentHarnessIncludesSpeciesPassives: sourceLimitation ? false : null,
+        currentHarnessIncludesClassPassives: (after?.results || []).some(
+          result => result?.passivesEnabled === true,
+        ),
+        sourceLimitation,
+      };
+    })(),
     scenarioComparison: {
       beforeCount: beforeResults.size,
       afterCount: afterResults.size,
@@ -201,7 +206,8 @@ export function compareBaselines(before, after) {
       scenarioDifferences,
     },
     metadataDifferences,
-    topLevelComparableDifferences,
+    structuralDifferences,
+    sourceDifferences,
     aggregate: {
       before: beforeAggregate,
       after: afterAggregate,
@@ -232,7 +238,8 @@ export function renderMarkdown(comparison) {
     `- Cenários comparados: ${comparison.scenarioComparison.commonCount}`,
     `- Cenários sem alteração: ${comparison.scenarioComparison.unchangedCount}`,
     `- Cenários alterados: ${comparison.scenarioComparison.changedCount}`,
-    `- Diferenças comparáveis de topo: ${comparison.topLevelComparableDifferences.length}`,
+    `- Diferenças estruturais: ${comparison.structuralDifferences.length}`,
+    `- Diferenças de fontes: ${comparison.sourceDifferences.length}`,
     `- Diferenças de metadados: ${comparison.metadataDifferences.length}`,
     '',
     '| Métrica | Antes | Depois | Delta |',
@@ -249,7 +256,13 @@ export function renderMarkdown(comparison) {
     '',
     '## Cobertura',
     '',
-    `- Passivas de espécie incluídas: ${comparison.coverage.currentHarnessIncludesSpeciesPassives ? 'sim' : 'não'}`,
+    `- Passivas de espécie incluídas: ${
+      comparison.coverage.currentHarnessIncludesSpeciesPassives === true
+        ? 'sim'
+        : comparison.coverage.currentHarnessIncludesSpeciesPassives === false
+          ? 'não'
+          : 'não determinado'
+    }`,
     `- Passivas de classe incluídas: ${comparison.coverage.currentHarnessIncludesClassPassives ? 'sim' : 'não'}`,
     `- Limitação declarada: ${comparison.coverage.sourceLimitation || 'não encontrada'}`,
     '',
