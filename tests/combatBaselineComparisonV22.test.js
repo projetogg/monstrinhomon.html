@@ -129,6 +129,24 @@ describe('comparação de baselines do combate v2.2', () => {
     )).toBe(true);
   });
 
+  it('ignora alteração apenas no rótulo visual do cenário', () => {
+    const before = makeBaseline();
+    const after = makeBaseline({ sha: 'after' });
+    after.results[0].label = 'Cenário traduzido';
+
+    const comparison = compareBaselines(before, after);
+
+    expect(comparison.comparable).toBe(true);
+    expect(comparison.classification).toBe('NO_QUANTITATIVE_DELTA_IN_CURRENT_HARNESS');
+    expect(comparison.scenarioComparison.changedCount).toBe(0);
+    expect(comparison.scenarioComparison.scenarioMetadataDifferences).toEqual([{
+      id: 'scenario-1',
+      path: '/results/scenario-1/label',
+      before: 'Scenario 1',
+      after: 'Cenário traduzido',
+    }]);
+  });
+
   it('não compara baselines com seeds diferentes', () => {
     const before = makeBaseline({ seed: 'seed-a' });
     const after = makeBaseline({ sha: 'after', seed: 'seed-b' });
