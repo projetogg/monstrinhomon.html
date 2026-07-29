@@ -41,7 +41,8 @@
       "after": "2026-07-29T01:30:07.906Z"
     }
   ],
-  "topLevelComparableDifferences": [],
+  "structuralDifferences": [],
+  "sourceDifferences": [],
   "aggregate": {
     "before": {
       "scenarioCount": 90,
