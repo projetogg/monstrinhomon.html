@@ -4,28 +4,39 @@ on:
   workflow_dispatch:
     inputs:
       runs:
-        description: Execuções por cenário
+        description: Execuções por cenário da baseline
         required: false
         default: "1000"
       seed:
-        description: Seed comparável entre execuções
+        description: Seed comparável da baseline
         required: false
         default: "monstrinhomon-combat-v2.2-baseline-v1"
+      species_runs:
+        description: Execuções por par da matriz de espécies
+        required: false
+        default: "1000"
+      species_seed:
+        description: Seed comparável da matriz de espécies
+        required: false
+        default: "monstrinhomon-species-passives-v2.2-matrix-v1"
   pull_request:
     branches: [ "main" ]
     paths:
       - "js/canon/speciesPassives.js"
       - "js/combat/combatEvents.js"
       - "js/combat/combatSimulationHarness.js"
+      - "js/combat/speciesPassiveQuantitativeHarness.js"
       - "js/combat/groupCombatFormula.js"
       - "js/combat/groupActions.js"
       - "js/combat/groupCore.js"
       - "js/combat/wildActions.js"
       - "scripts/simulate-combat-v2-2.mjs"
+      - "scripts/simulate-species-passives-v2-2.mjs"
       - "tests/combatSimulationHarnessV22.test.js"
       - "tests/combatHarnessRuntimeParityV22.test.js"
       - "tests/speciesPassiveModeParityV22.test.js"
       - "tests/speciesPassiveFinalParityV22.test.js"
+      - "tests/speciesPassiveQuantitativeMatrixV22.test.js"
       - "data/monsters.json"
       - "data/skills.json"
       - "design/canon/class_matchups.json"
@@ -81,6 +92,50 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: combat-v2-2-baseline-${{ env.BASELINE_SHA }}
-          path: artifacts/
+          path: |
+            artifacts/combat-v2-2-baseline.json
+            artifacts/combat-v2-2-baseline.md
+          if-no-files-found: error
+          retention-days: 30
+
+  species-passive-matrix:
+    runs-on: ubuntu-latest
+    env:
+      SPECIES_RUNS: ${{ github.event.inputs.species_runs || '1000' }}
+      SPECIES_SEED: ${{ github.event.inputs.species_seed || 'monstrinhomon-species-passives-v2.2-matrix-v1' }}
+      BASELINE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Testar matriz quantitativa de espécies
+        run: npm run test:species-passive-quantitative-v2-2
+
+      - name: Gerar matriz quantitativa de espécies
+        run: >-
+          npm run simulate:species-passives-v2-2 --
+          --runs "$SPECIES_RUNS"
+          --seed "$SPECIES_SEED"
+          --baseline-sha "$BASELINE_SHA"
+          --output artifacts/species-passive-v2-2-matrix.json
+          --report artifacts/species-passive-v2-2-matrix.md
+
+      - name: Publicar matriz de espécies
+        uses: actions/upload-artifact@v4
+        with:
+          name: species-passive-v2-2-matrix-${{ env.BASELINE_SHA }}
+          path: |
+            artifacts/species-passive-v2-2-matrix.json
+            artifacts/species-passive-v2-2-matrix.md
           if-no-files-found: error
           retention-days: 30
