@@ -77,7 +77,7 @@ async function main() {
       skills: 'data/skills.json',
       classMatchups: 'design/canon/class_matchups.json',
     },
-    conclusion: 'C. Medição automatizada concluída; decisão de balanceamento ainda depende de análise e playtest.',
+    conclusion: 'A. Matriz quantitativa criada e artefato publicado; análise humana permanece pendente.',
     limitations: [
       'Ações roteirizadas; sem IA completa.',
       'Sem economia integral de ENE, múltiplos alvos ou bosses.',

@@ -47,6 +47,12 @@ describe('Matriz quantitativa das passivas de espécie v2.2', () => {
     const basic = results.find(row => row.profile === 'basic');
     const mixed = results.find(row => row.profile === 'mixed');
     expect(basic.passive.effects.atkBonusApplications).toBe(0);
+    expect(basic.base.skillUses).toBe(0);
+    expect(basic.passive.skillUses).toBe(0);
+    expect(mixed.base.skillUses).toBeGreaterThan(0);
+    expect(mixed.passive.skillUses).toBeGreaterThan(0);
+    expect(mixed.base.basicUses).toBeGreaterThan(0);
+    expect(mixed.passive.basicUses).toBeGreaterThan(0);
     expect(mixed.passive.effects.atkBonusApplications).toBeGreaterThan(0);
   });
 
@@ -79,6 +85,7 @@ describe('Matriz quantitativa das passivas de espécie v2.2', () => {
     const bellwave = results.find(row => row.speciesId === 'bellwave');
     expect(moonquill.passive.effects.spdBuffApplications).toBeGreaterThan(0);
     expect(moonquill.passive.effects.spdBuffTurnsUsed).toBeGreaterThan(0);
+    expect(moonquill.passive.debuffUses).toBe(moonquill.base.debuffUses);
     expect(shadowsting.passive.effects.chargesCreated).toBeGreaterThan(0);
     expect(shadowsting.passive.effects.chargesConsumed).toBeGreaterThan(0);
     expect(bellwave.passive.effects.chargesCreated).toBeGreaterThan(0);
@@ -104,8 +111,10 @@ describe('Matriz quantitativa das passivas de espécie v2.2', () => {
       results,
     });
     expect(Object.keys(aggregate).sort()).toEqual([...SPECIES_QUANTITATIVE_IDS].sort());
+    expect(aggregate.shieldhorn.totalRunsPerVariant).toBe(20);
     expect(markdown).toContain('Matriz Quantitativa das Passivas de Espécie');
-    expect(markdown).toContain('decisão de balanceamento ainda depende de análise e playtest');
+    expect(markdown).toContain('A. Matriz quantitativa criada e artefato publicado');
+    expect(markdown).toContain('análise humana permanece pendente');
     expect(markdown).toContain('abc123');
   });
 });

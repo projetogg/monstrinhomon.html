@@ -160,6 +160,7 @@ function createPassiveState() {
     swiftclawFirstStrikeDone: false,
     shadowstingDebuffCharged: false,
     bellwaveRhythmCharged: false,
+    moonquillSpdPower: 0,
     moonquillSpdTurns: 0,
     floracuraHealUsed: false,
   };
@@ -231,6 +232,7 @@ function dispatchSkillUsed({ player, action, passiveEnabled, passiveState, count
     isDebuff: action.isDebuff,
   });
   if (modifier?.spdBuff) {
+    passiveState.moonquillSpdPower = Number(modifier.spdBuff.power) || 0;
     passiveState.moonquillSpdTurns = Math.max(
       passiveState.moonquillSpdTurns,
       Number(modifier.spdBuff.duration) || 0,
@@ -352,7 +354,9 @@ function simulateBattle(scenario, { passiveEnabled, seed, maxTurns }) {
     if (action.isDebuff) {
       dispatchSkillUsed({ player, action, passiveEnabled, passiveState, counters });
     } else {
-      const activeSpdBuff = passiveState.moonquillSpdTurns > 0 ? 1 : 0;
+      const activeSpdBuff = passiveState.moonquillSpdTurns > 0
+        ? passiveState.moonquillSpdPower
+        : 0;
       if (activeSpdBuff) counters.effects.spdBuffTurnsUsed += 1;
       const damage = performAttack({
         attacker: player,
@@ -368,6 +372,9 @@ function simulateBattle(scenario, { passiveEnabled, seed, maxTurns }) {
       dispatchSkillUsed({ player, action, passiveEnabled, passiveState, counters });
       if (passiveState.moonquillSpdTurns > 0 && !action.isDebuff) {
         passiveState.moonquillSpdTurns -= 1;
+        if (passiveState.moonquillSpdTurns === 0) {
+          passiveState.moonquillSpdPower = 0;
+        }
       }
     }
 
@@ -422,6 +429,9 @@ function summarizeVariant(runs) {
     damageTaken: summarizeValues(runs.map(run => run.damageTaken)),
     healing: summarizeValues(runs.map(run => run.healing)),
     actions: summarizeValues(runs.map(run => run.actions)),
+    basicUses: runs.reduce((sum, run) => sum + (Number(run.basicUses) || 0), 0),
+    skillUses: runs.reduce((sum, run) => sum + (Number(run.skillUses) || 0), 0),
+    debuffUses: runs.reduce((sum, run) => sum + (Number(run.debuffUses) || 0), 0),
     effects: effectTotals,
     categories: categoryTotals,
   };
@@ -531,7 +541,7 @@ export function aggregateSpeciesPassiveQuantitativeResults(results) {
       className: SPECIES_QUANTITATIVE_CONFIG[speciesId].className,
       mechanic: SPECIES_QUANTITATIVE_CONFIG[speciesId].mechanic,
       scenarioPairs: rows.length,
-      runsPerVariant: runs,
+      totalRunsPerVariant: runs,
       activationRate: round(weighted(row => row.passive.combatsWithActivationRate)),
       winRateDelta: round(weighted(row => row.delta.winRate)),
       meanDamageDealtDelta: round(weighted(row => row.delta.damageDealt.mean)),
@@ -555,7 +565,7 @@ export function renderSpeciesPassiveQuantitativeMarkdown({ baselineSha = 'unknow
     `- **Execuções por par:** ${runs}`,
     `- **Pares:** ${results.length}`,
     `- **Batalhas simuladas:** ${results.length * runs * 2}`,
-    '- **Conclusão:** **C. Medição automatizada concluída; decisão de balanceamento ainda depende de análise e playtest.**',
+    '- **Conclusão:** **A. Matriz quantitativa criada e artefato publicado; análise humana permanece pendente.**',
     '',
     '> Esta matriz é separada da baseline de fórmula. Ela usa pares com e sem passiva e roteiros controlados; não substitui playtest nem simula toda a IA/ENE do runtime.',
     '',
