@@ -297,15 +297,19 @@ describe('Passivas de espécie v2.2 — integração estrutural Wild e Group', (
     }
   });
 
-  it('Wild dispara eventos de skill e prepara cargas; Group ainda não', () => {
+  it('Wild e Group despacham eventos de skill e preparam as mesmas cargas', () => {
     expect(wildSkill).toContain('fireCombatEvent(playerMonster, ON_ATTACK');
     expect(wildSkill).toContain('fireCombatEvent(playerMonster, ON_SKILL_USED');
     expect(wildSkill).toContain('shadowstingDebuffCharged = true');
     expect(wildSkill).toContain('bellwaveRhythmCharged = true');
 
-    expect(groupSkill).not.toContain('fireCombatEvent(');
-    expect(groupSkill).not.toContain('shadowstingDebuffCharged = true');
-    expect(groupSkill).not.toContain('bellwaveRhythmCharged = true');
+    expect(groupSkill).toContain('resolvePlayerSpeciesSkillAttack');
+    expect(groupSkill).toContain('dispatchPlayerSpeciesSkillUsed');
+    expect(groupSkill).toContain('atk: effectiveAtkForSkill');
+    expect(GROUP_SOURCE).toContain('fireCombatEvent(mon, ON_ATTACK');
+    expect(GROUP_SOURCE).toContain('fireCombatEvent(mon, ON_SKILL_USED');
+    expect(GROUP_SOURCE).toContain('shadowstingDebuffCharged = true');
+    expect(GROUP_SOURCE).toContain('bellwaveRhythmCharged = true');
   });
 
   it('os dois modos integram floracura no uso de item e rastreiam a primeira cura', () => {
