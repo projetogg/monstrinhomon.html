@@ -22,9 +22,7 @@ jobs:
           fetch-depth: 0
 
       - name: Aplicar correções da revisão
-        run: |
-          cat tmp/species-review-fixes.part* | base64 -d > /tmp/species-review-fixes.tar.gz
-          tar -xzf /tmp/species-review-fixes.tar.gz -C .
+        run: node tmp/apply-species-review-fixes.mjs
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -52,14 +50,21 @@ jobs:
 
       - name: Publicar correções validadas
         run: |
-          rm -f tmp/species-review-fixes.tar.gz.b64 tmp/species-review-fixes.part*
+          rm -f \
+            tmp/apply-species-review-fixes.mjs \
+            tmp/species-review-fixes.tar.gz.b64 \
+            tmp/species-review-fixes.part1 \
+            tmp/species-review-fixes.part2 \
+            tmp/species-review-fixes.part3 \
+            tmp/species-review-fixes.part4 \
+            tmp/species-review-fixes.part5
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
             js/combat/speciesPassiveQuantitativeHarness.js \
             scripts/simulate-species-passives-v2-2.mjs \
             tests/speciesPassiveQuantitativeMatrixV22.test.js
-          git add -u tmp/species-review-fixes.tar.gz.b64 tmp/species-review-fixes.part1 tmp/species-review-fixes.part2 tmp/species-review-fixes.part3 tmp/species-review-fixes.part4 tmp/species-review-fixes.part5
+          git add -u tmp
           git commit -m "test(combat): atender revisão da matriz quantitativa"
           git push origin HEAD:codex/matriz-quantitativa-passivas-especie-v2-2
 
