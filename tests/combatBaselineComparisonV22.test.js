@@ -113,6 +113,22 @@ describe('comparação de baselines do combate v2.2', () => {
     expect(comparison.aggregate.delta.scenarioMeanWinRate).toBe(0.1);
   });
 
+  it('mantém comparabilidade quando muda apenas a conclusão descritiva', () => {
+    const before = makeBaseline();
+    const after = {
+      ...makeBaseline({ sha: 'after' }),
+      conclusion: 'B. Nova leitura descritiva',
+    };
+
+    const comparison = compareBaselines(before, after);
+
+    expect(comparison.comparable).toBe(true);
+    expect(comparison.classification).toBe('NO_QUANTITATIVE_DELTA_IN_CURRENT_HARNESS');
+    expect(comparison.metadataDifferences.some(
+      difference => difference.path === '/conclusion',
+    )).toBe(true);
+  });
+
   it('não compara baselines com seeds diferentes', () => {
     const before = makeBaseline({ seed: 'seed-a' });
     const after = makeBaseline({ sha: 'after', seed: 'seed-b' });
@@ -121,7 +137,7 @@ describe('comparação de baselines do combate v2.2', () => {
 
     expect(comparison.comparable).toBe(false);
     expect(comparison.classification).toBe('NOT_COMPARABLE');
-    expect(comparison.topLevelComparableDifferences.some(
+    expect(comparison.structuralDifferences.some(
       difference => difference.path === '/seed',
     )).toBe(true);
   });
