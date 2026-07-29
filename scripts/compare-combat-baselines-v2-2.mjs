@@ -58,6 +58,12 @@ function deepDiff(before, after, path = '') {
   return [{ path: path || '/', before, after }];
 }
 
+function comparableScenario(result) {
+  if (!result || typeof result !== 'object') return result;
+  const { label: _label, ...comparable } = result;
+  return comparable;
+}
+
 function indexResults(results = []) {
   const map = new Map();
   for (const result of results) {
@@ -138,10 +144,25 @@ export function compareBaselines(before, after) {
   const addedAfter = [...afterIds].filter(id => !beforeIds.has(id)).sort();
   const commonIds = [...beforeIds].filter(id => afterIds.has(id)).sort();
   const scenarioDifferences = [];
+  const scenarioMetadataDifferences = [];
 
   for (const id of commonIds) {
-    const differences = deepDiff(beforeResults.get(id), afterResults.get(id), `/results/${id}`);
+    const beforeResult = beforeResults.get(id);
+    const afterResult = afterResults.get(id);
+    const differences = deepDiff(
+      comparableScenario(beforeResult),
+      comparableScenario(afterResult),
+      `/results/${id}`,
+    );
     if (differences.length) scenarioDifferences.push({ id, differences });
+    if (beforeResult?.label !== afterResult?.label) {
+      scenarioMetadataDifferences.push({
+        id,
+        path: `/results/${id}/label`,
+        before: beforeResult?.label ?? null,
+        after: afterResult?.label ?? null,
+      });
+    }
   }
 
   const metadataDifferences = deepDiff(
@@ -204,6 +225,7 @@ export function compareBaselines(before, after) {
       missingAfter,
       addedAfter,
       scenarioDifferences,
+      scenarioMetadataDifferences,
     },
     metadataDifferences,
     structuralDifferences,
@@ -238,6 +260,7 @@ export function renderMarkdown(comparison) {
     `- Cenários comparados: ${comparison.scenarioComparison.commonCount}`,
     `- Cenários sem alteração: ${comparison.scenarioComparison.unchangedCount}`,
     `- Cenários alterados: ${comparison.scenarioComparison.changedCount}`,
+    `- Rótulos de cenário alterados: ${comparison.scenarioComparison.scenarioMetadataDifferences.length}`,
     `- Diferenças estruturais: ${comparison.structuralDifferences.length}`,
     `- Diferenças de fontes: ${comparison.sourceDifferences.length}`,
     `- Diferenças de metadados: ${comparison.metadataDifferences.length}`,
