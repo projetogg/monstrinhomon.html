@@ -8,12 +8,12 @@ Este documento não altera valores, runtime, fórmulas ou balanceamento.
 
 ## Proveniência
 
-- workflow: `Combat v2.2 Baseline`, run `#34` (`30476416752`);
-- head SHA: `32c995526fe5b805d19b24c1ebddbfe69c15b822`;
-- artifact ID: `8733789411`;
-- digest: `sha256:119cec1a42e16f75920f31db163734bf2f07345f5de34d461fbdfe65444ed674`;
+- workflow: `Combat v2.2 Baseline`, run `#53` (`30479184700`);
+- head SHA: `afedb87c0f204fad5b5d23ef8bb857ba76bf9ae8`;
+- artifact ID: `8734874312`;
+- digest: `sha256:651d69a1294d3bf5f873b53d99dfd0bfa299fa2a68c4ad2d606f33cf6844d0b1`;
 - seed: `monstrinhomon-species-passives-v2.2-matrix-v1`;
-- geração: `2026-07-29T17:41:02.178Z`.
+- geração: `2026-07-29T18:17:06.490Z`.
 
 ## Cobertura
 
