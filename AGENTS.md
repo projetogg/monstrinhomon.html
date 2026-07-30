@@ -22,6 +22,7 @@ Este arquivo não é fonte autônoma de regras. Antes de editar, siga a ordem de
 - Para **o que deve existir**, use decisões humanas e documentos canônicos vinculados.
 - Runtime divergente de regra pretendida deve ser registrado; não corrigir silenciosamente dentro de outro escopo.
 - Card Layer nunca redefine mecânica.
+- Uma limitação de fase não deve ser interpretada como rejeição permanente da visão de produto.
 - Drive e Projeto ChatGPT não mantêm cópias técnicas concorrentes.
 
 Mapa completo: `docs/AUTHORITY_MAP.md`.
@@ -57,7 +58,8 @@ A matriz de vantagens deve ser lida em `design/canon/class_matchups.json`. Anima
 | Progressão de slots | `js/canon/slotUnlocks.js` + `design/canon/level_progression.json` |
 | Kit swaps | `js/canon/kitSwap.js` |
 | Passivas de espécie | `js/canon/speciesPassives.js` |
-| Card Layer | `docs/CARD_LAYER_ARCHITECTURE_v0.1.2.md` |
+| Card Layer da Fase 1 | `docs/CARD_LAYER_ARCHITECTURE_v0.1.2.md` |
+| Visão híbrida de cartas | `docs/CARD_SYSTEM_VISION_RECONCILIATION_2026-07.md` |
 | Política do Projeto ChatGPT | `docs/CHATGPT_PROJECT_CONTEXT_POLICY.md` |
 
 ## Documentos antigos
@@ -69,14 +71,18 @@ A matriz de vantagens deve ser lida em `design/canon/class_matchups.json`. Anima
 - anexos antigos do Projeto ChatGPT não possuem autoridade automática;
 - palavras como `mestre`, `final`, `completo`, `v3` ou `fonte única` não provam vigência.
 
-## Card Layer — limites do piloto
+## Card Layer — limites do piloto atual
 
-- Não implementar deck, mão, compra, descarte ou ciclo.
-- Não implementar Talent Cards.
+As restrições abaixo valem para o piloto visual atual. Elas não revogam `DEC-CARDS-VISION-01`, que prevê futuramente RPG tático simples, deckbuilding leve, posicionamento e cartas como habilidades.
+
+- Não implementar deck, mão, compra, descarte ou ciclo neste piloto.
+- Não implementar Talent Cards neste piloto.
 - Não alterar `data/skills.json` para atender visual.
-- Não alterar fórmula, ENE, atributos, matchups, captura ou posicionamento.
+- Não alterar fórmula, ENE, atributos, matchups, captura ou posicionamento neste escopo.
 - Não duplicar campos mecânicos em `data/cards.json`.
 - Não chamar `applyKitSwaps` dentro da Card Layer para decidir mecânica.
+
+Deck, mão, ações sem ENE e tabuleiro exigem especificação e PR próprios depois do portão atual.
 
 ## Dados e IDs
 
