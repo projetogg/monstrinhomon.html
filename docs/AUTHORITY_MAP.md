@@ -2,6 +2,7 @@
 
 **Data:** 2026-07-30  
 **Status:** ACTIVE — canônico para os domínios listados.  
+**VerifiedAgainst:** `d73f81f401dded14587282c2c76aef424c69a408`  
 **Relacionado:** `docs/AI_ENTRYPOINT.md`, `docs/PROJECT_STATUS.md`, `docs/DECISION_LOG.md`, `docs/ROADMAP.md`.
 
 Este documento define quais fontes consultar quando comportamento implementado, regra pretendida, produto, proposta e legado entrarem em conflito.
@@ -54,33 +55,65 @@ Uma conversa ou anexo pode preservar intenção do autor e evidência histórica
 | Catálogo de design de skills | `design/canon/skills.json` | referência de design | não vence runtime automaticamente |
 | Slots por nível | `js/canon/slotUnlocks.js` + `design/canon/level_progression.json` | confirmado | upgrades intermediários não criam slot novo |
 | Kit swaps | `js/canon/kitSwap.js` | runtime | `_kitSwapId` é diagnóstico/telemetria |
-| Matchups de classe | `design/canon/class_matchups.json` consumido pelo runtime | canônico | Animalista possui matchups explícitos; não é neutro por padrão |
+| Matchups de classe | `design/canon/class_matchups.json` consumido pelo runtime | canônico | Animalista possui matchups explícitos |
 | Monstrinhos runtime | `data/monsters.json` e loaders atuais | runtime | nomes editoriais do Drive não migram automaticamente |
+| Dex v3 | proposta editorial + `DEC-DRIVE-01` | produto/editorial | não governa automaticamente IDs, stats, classes, evolução ou runtime |
+| Índice do catálogo v3 | `docs/catalog_v3/README.md` | classificação ativa | explica artefatos substituídos, propostas e tooling |
 | Card Layer — Fase 1 | `docs/CARD_LAYER_ARCHITECTURE_v0.1.2.md` + `data/cards.json` | piloto canônico | fundação visual; não implementa deck nesta fase |
-| Visão híbrida de cartas | `docs/CARD_SYSTEM_VISION_RECONCILIATION_2026-07.md` + `DEC-CARDS-VISION-01` | `APPROVED` para produto | RPG tático simples, posicionamento, cartas como habilidades e deckbuilding leve; detalhes exatos pendentes |
+| Visão híbrida de cartas | `docs/CARD_SYSTEM_VISION_RECONCILIATION_2026-07.md` + `DEC-CARDS-VISION-01` | `APPROVED` para produto | detalhes exatos pendentes |
 | Roadmap atual | `docs/ROADMAP.md` | planejamento ativo | planos históricos não concorrem |
-| Estado atual | `docs/PROJECT_STATUS.md` | resumo datado | deve sempre indicar commit/marco |
+| Estado atual | `docs/PROJECT_STATUS.md` | resumo datado | deve indicar commit-base e marco verificáveis |
 | Decisões | `docs/DECISION_LOG.md` | índice canônico | `APPROVED` e `IMPLEMENTED` são estados diferentes |
 
-## 4. Fontes históricas e propostas
+## 4. Dados, fixtures e artefatos paralelos
+
+A extensão ou localização do arquivo não determina sua autoridade.
+
+### JSON e módulos
+
+- confirme loader, fallback, normalização e testes;
+- dados carregados pelo runtime vencem artefatos editoriais ou históricos;
+- módulos com cópias estáticas devem ser auditados quando também existe fonte tabular.
+
+### CSVs da raiz
+
+Os CSVs da raiz não são a fonte runtime principal. Alguns, porém, são lidos diretamente por testes ou funcionam como contratos paralelos, fixtures, insumos históricos ou referências documentais.
+
+Antes de mover ou remover qualquer CSV:
+
+1. buscar leituras no runtime;
+2. buscar leituras em testes;
+3. buscar scripts e geradores;
+4. comparar valores com a fonte runtime;
+5. verificar comentários que declaram origem;
+6. identificar conteúdo exclusivo;
+7. decidir entre fixture explícita, geração, consolidação, legado ou remoção.
+
+`QUESTS.csv`, `DROPS.csv`, `LOCAIS.csv` e `ENCOUNTERS.csv` possuem consumidores de teste verificados na baseline examinada. Isso não os torna fonte runtime automática, mas impede classificá-los como inertes.
+
+Pendência: `PT-003` em `docs/PENDENCIAS_TECNICAS.md`.
+
+## 5. Fontes históricas, substituídas e propostas
 
 | Fonte | Tratamento |
 |---|---|
 | `GAME_RULES.md` §3–§10 | legado revogado; não implementar |
-| `docs/legacy/PLANO_DE_ACAO_2026-03.md` | planejamento histórico; caminho antigo é redirecionamento |
+| `docs/legacy/PLANO_DE_ACAO_2026-03.md` | planejamento histórico |
 | `PROXIMOS_PASSOS.md` | redirecionamento; não contém plano próprio |
-| `docs/archive/audits/` | auditorias datadas; evidência histórica, não estado atual |
-| CSVs raiz inertes | legado; não são carregados sem evidência explícita |
+| `docs/archive/audits/` | auditorias datadas; evidência histórica |
 | `docs/archive/` e `docs/legacy/` | histórico; fora da ordem de leitura atual |
-| anexos antigos do Projeto ChatGPT | sem autoridade automática; podem conter intenção única a ser reconciliada |
-| `Sistema_de_Cartas_Monstrinhomon_REVISADO.docx` | proposta de produto relevante | preservar até migração; não usar seus números como runtime |
-| versões anteriores ou duplicadas do sistema de cartas | histórico ou `SUPERSEDED` | remover do contexto ativo depois de preservar decisões únicas |
+| `docs/catalog_v3/PLANO_IMPLEMENTACAO_STATUS_OFICIAL_V3.md` | `SUPERSEDED`; não é roadmap nem fonte de stats |
+| `docs/catalog_v3/monstrinhomon_relatorio_validacao.md` | `SUPERSEDED`; números históricos não governam runtime |
+| `docs/catalog_v3/SOLUCAO_BLOQUEIOS_V3.md` | referência técnica; tooling não autoriza importação |
+| anexos antigos do Projeto ChatGPT | sem autoridade automática; podem conter intenção a reconciliar |
+| `Sistema_de_Cartas_Monstrinhomon_REVISADO.docx` | proposta de produto relevante; preservar até migração |
+| versões anteriores ou duplicadas do sistema de cartas | histórico ou `SUPERSEDED`; remover do contexto ativo após preservação |
 
 O nome `Documento Mestre` não concede autoridade. `DEC-AUTH-02` permanece pendente para decidir o destino formal das antigas cópias.
 
-## 5. Sistema de cartas — duas camadas complementares
+## 6. Sistema de cartas — duas camadas complementares
 
-### 5.1 Card Layer atual
+### Card Layer atual
 
 A Card Layer da Fase 1 deve seguir:
 
@@ -94,11 +127,11 @@ No piloto atual, a Card Layer não pode:
 
 - chamar `applyKitSwaps` para decidir mecânica;
 - alterar `data/skills.json`;
-- duplicar `power`, custo, acurácia, alvo, duração ou efeito;
+- duplicar power, custo, acurácia, alvo, duração ou efeito;
 - decidir `stageIndex`;
-- criar deck, mão, compra ou descarte dentro do escopo da Fase 1.
+- criar deck, mão, compra ou descarte dentro da Fase 1.
 
-### 5.2 Visão futura aprovada
+### Visão futura aprovada
 
 A limitação anterior é de fase, não de produto.
 
@@ -107,41 +140,34 @@ A visão aprovada prevê futuramente:
 - cartas como habilidades executáveis;
 - deckbuilding leve;
 - posicionamento tático simples;
-- troca de Monstrinhomon alterando opções e estilo de cartas;
-- garantia de ação legal mesmo com ENE baixa ou mão desfavorável;
+- troca de Monstrinhomon alterando opções e estilo;
+- garantia de ação legal com ENE baixa ou mão desfavorável;
 - algumas ações ou cartas sem custo de ENE;
 - uma única fonte mecânica para skills.
 
-Permanecem pendentes:
-
-- deck e mão exatos;
-- compra e descarte;
-- ação básica fora do deck ou carta permanente;
-- quantidade de cartas gratuitas;
-- grade e movimento;
-- economia futura de ENE;
-- primeiro protótipo jogável.
+Permanecem pendentes deck, mão, compra, descarte, ação básica, quantidade de cartas gratuitas, grade, movimento, economia de ENE e primeiro protótipo.
 
 Fonte: `docs/CARD_SYSTEM_VISION_RECONCILIATION_2026-07.md`.
 
-## 6. Quando houver conflito
+## 7. Quando houver conflito
 
 1. registrar arquivos e afirmações;
 2. identificar se a pergunta é descritiva, normativa, de produto ou histórica;
-3. verificar `DECISION_LOG.md`;
+3. verificar `docs/DECISION_LOG.md`;
 4. comparar código, dados e testes;
-5. recuperar conversas e documentos de produto quando a intenção do autor estiver em dúvida;
-6. classificar legado, proposta, editorial ou canônico;
+5. recuperar conversas e documentos de produto quando a intenção estiver em dúvida;
+6. classificar legado, proposta, editorial, fixture ou canônico;
 7. solicitar decisão humana quando a regra permanecer aberta.
 
-Não usar uma limitação temporária de implementação para revogar silenciosamente uma visão de produto aprovada.
+Não use uma limitação temporária de implementação para revogar silenciosamente uma visão de produto aprovada.
 
-## 7. Higiene documental
+## 8. Higiene documental
 
-Ações e classificações gerais estão em:
+Ações e classificações gerais:
 
 - `docs/INFORMATION_HYGIENE_AUDIT_2026-07.md`;
-- `docs/reports/HISTORICAL_DOCUMENT_ARCHIVE_2026-07.md`.
+- `docs/reports/HISTORICAL_DOCUMENT_ARCHIVE_2026-07.md`;
+- `docs/reports/ACTIVE_AUTHORITY_HOTFIX_2026-07.md`.
 
 Índices históricos:
 
