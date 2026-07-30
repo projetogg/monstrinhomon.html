@@ -25,6 +25,7 @@ Este arquivo é um índice. Regras detalhadas permanecem no documento canônico 
 | `DEC-SPECIES-DEF-01` | 2026-07-27 | IMPLEMENTED | passivas de espécie | redução percentual de classe ocorre antes da redução plana de `shieldhorn` | `docs/DECISAO_PIPELINE_PASSIVAS_ESPECIE_2026-07.md` | Wild e Group alinhados; PR #273 |
 | `DEC-FIELDS-01` | 2026-04-07 | PARTIAL | SPD/AGI | manter `spd` como campo técnico até eventual migração aprovada | Patch v2.2 | `spd` ativo no runtime |
 | `DEC-CARDS-01` | 2026-05-19 | PARTIAL | Card Layer | piloto visual sem duplicar mecânica | `docs/CARD_LAYER_ARCHITECTURE_v0.1.2.md` | identidade técnica estabilizada; QA de produto pendente |
+| `DEC-CARDS-VISION-01` | 2026-07-30 | APPROVED | visão do sistema de cartas | combinar RPG tático simples, posicionamento, cartas como habilidades e deckbuilding leve; garantir ação possível sem depender de ENE ou mão perfeita | `docs/CARD_SYSTEM_VISION_RECONCILIATION_2026-07.md` | Card Layer visual implementada parcialmente; deck, mão, tabuleiro e economia exata permanecem pendentes |
 | `DEC-TRADE-01` | 2026-05-26 | IMPLEMENTED | Trade | manter um único caminho runtime de Trade | PR #250 e testes arquiteturais | mergeado na `main` |
 | `DEC-AUTH-01` | — | PENDING | governança | formalizar separação entre autoridade normativa e descritiva | auditoria de governança 2026-06-22 | prática operacional existe; decisão formal ainda aberta |
 | `DEC-AUTH-02` | — | PENDING | governança | definir destino do antigo “Documento Mestre” | auditoria de governança 2026-06-22 | cópias antigas não possuem autoridade automática |
@@ -42,6 +43,34 @@ As decisões `DEC-SPECIES-ATK-01` e `DEC-SPECIES-DEF-01` foram:
 
 A implementação dessas decisões não altera automaticamente valores, gatilhos ou balanceamento das passivas.
 
+## Estado da visão híbrida de cartas
+
+`DEC-CARDS-01` e `DEC-CARDS-VISION-01` respondem a perguntas diferentes:
+
+- `DEC-CARDS-01` define o escopo técnico do piloto atual: Card Layer visual sem deck, mão, compra ou descarte nesta fase;
+- `DEC-CARDS-VISION-01` define a direção de produto: a fundação visual deverá futuramente integrar um RPG tático simples com deckbuilding leve e posicionamento.
+
+A ausência de deck no piloto não significa rejeição do deck no produto.
+
+Estão aprovados como princípios:
+
+- cartas funcionam como habilidades;
+- deckbuilding deve ser leve;
+- posicionamento deve permanecer acessível;
+- deve existir ao menos uma ação legal quando ENE ou mão limitarem as opções;
+- a fonte mecânica de skills deve permanecer única;
+- implementação deve ocorrer em fases.
+
+Permanecem pendentes:
+
+- tamanho do deck e da mão;
+- compra e descarte;
+- ação básica fora do deck ou carta permanente;
+- quantidade de cartas sem ENE;
+- grade, movimento e ocupação;
+- economia exata de ENE;
+- primeiro conjunto jogável.
+
 ## Marcos técnicos sem nova decisão de regra
 
 - PR #255: fórmula bilateral v2.2 integrada no Wild.
@@ -51,7 +80,7 @@ A implementação dessas decisões não altera automaticamente valores, gatilhos
 - PR #276: comparação quantitativa pós-paridade.
 - PR #278: matriz quantitativa dedicada às oito passivas de espécie.
 
-Esses merges não decidem PWR, prêmio do crítico, regeneração de ENE, valores das passivas, boss ou encerramento de QA de produto.
+Esses merges não decidem PWR, prêmio do crítico, regeneração de ENE, valores das passivas, boss ou regras exatas da fase híbrida de cartas.
 
 ## Limites da `DEC-DRIVE-01`
 
@@ -65,7 +94,8 @@ Esses merges não decidem PWR, prêmio do crítico, regeneração de ENE, valore
 - `PARTIAL` exige leitura da coluna de implementação.
 - PR aberto nunca muda sozinho o estado para `IMPLEMENTED`.
 - Merge técnico não encerra automaticamente validação de produto ou balanceamento.
-- Auditorias, anexos do ChatGPT e propostas do Drive não são decisões humanas.
+- Auditorias, anexos do ChatGPT e propostas do Drive não são decisões humanas por si mesmos.
+- Uma reafirmação explícita do autor pode aprovar uma direção de produto sem aprovar todos os números presentes nos documentos de apoio.
 
 ## Como registrar uma nova decisão
 
