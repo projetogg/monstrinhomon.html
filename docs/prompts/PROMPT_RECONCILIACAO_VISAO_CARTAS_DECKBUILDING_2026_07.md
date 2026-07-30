@@ -1,5 +1,11 @@
 # PROMPT OPERACIONAL — RECONCILIAÇÃO DA VISÃO DE CARTAS, DECKBUILDING E RPG TÁTICO
 
+**Status:** ACTIVE  
+**Domain:** produto e governança  
+**Authority:** GitHub  
+**VerifiedAgainst:** `b14dceb5438911ce93741fa4b722895ab9ffa8eb`, histórico do Projeto RPG e documentos de cartas  
+**Supersedes:** nenhum
+
 ## Repositório
 
 `projetogg/monstrinhomon.html`
