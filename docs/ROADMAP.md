@@ -29,7 +29,8 @@ docs(playtest): registrar playtest mediado das passivas de espécie
 - a matriz automatizada não autoriza nerf ou buff;
 - o playtest deve usar o modelo padronizado;
 - qualquer ajuste posterior deve tratar uma única passiva;
-- PWR, crítico, ENE e bosses permanecem investigações separadas.
+- PWR, crítico, ENE e bosses permanecem investigações separadas;
+- não iniciar deck, mão ou tabuleiro durante este portão.
 
 ### Validar o núcleo jogável v2.2
 
@@ -73,10 +74,22 @@ docs(playtest): registrar playtest mediado das passivas de espécie
 1. Visão e Público;
 2. Experiência Desejada;
 3. Glossário de Produto;
-4. modelo e registros de playtest;
-5. princípios de uso terapêutico sem dados identificáveis.
+4. visão híbrida de cartas, separando princípios aprovados de números pendentes;
+5. modelo e registros de playtest;
+6. princípios de uso terapêutico sem dados identificáveis.
 
 O Drive não deve manter cópias concorrentes das regras técnicas do GitHub.
+
+### Preservar a visão híbrida sem expandir escopo agora
+
+**Resultado esperado:** nenhuma IA volta a interpretar a Card Layer visual-only como visão final do sistema de cartas.
+
+A direção aprovada está em:
+
+- `DEC-CARDS-VISION-01`;
+- `docs/CARD_SYSTEM_VISION_RECONCILIATION_2026-07.md`.
+
+A fase atual não implementa deck, mão ou tabuleiro. A visão futura permanece registrada para uma etapa posterior.
 
 ### Revisar nomes editoriais pendentes
 
@@ -85,6 +98,18 @@ O Drive não deve manter cópias concorrentes das regras técnicas do GitHub.
 A aprovação editorial de um nome não autoriza migração automática para o runtime.
 
 ## Concluído recentemente
+
+### Reconciliação da visão de cartas
+
+- histórico de conversas e documentos de produto revisado;
+- visão híbrida confirmada pelo autor;
+- Card Layer visual-only classificada como etapa incremental;
+- `DEC-CARDS-VISION-01` registrada;
+- princípios aprovados separados de números e fluxos pendentes;
+- versão revisada do sistema de cartas preservada como proposta de produto;
+- implementação de deck, mão e tabuleiro continua fora do escopo atual.
+
+Fonte: `docs/CARD_SYSTEM_VISION_RECONCILIATION_2026-07.md`.
 
 ### Matriz quantitativa das passivas de espécie
 
@@ -98,7 +123,6 @@ A aprovação editorial de um nome não autoriza migração automática para o r
 - análise humana e playtest permanecem obrigatórios.
 
 Fonte: `docs/reports/SPECIES_PASSIVE_QUANTITATIVE_MATRIX_2026-07.md`.
-
 
 ### Paridade e pipelines das passivas de espécie
 
@@ -166,7 +190,8 @@ Fonte:
 - `buildRuntimeSkillDefs()` preserva identidade canônica;
 - inferência por nome removida;
 - aliases de kit swap permanecem explícitos;
-- QA de produto e decisão de encerramento do piloto continuam pendentes.
+- QA de produto e decisão de encerramento do piloto continuam pendentes;
+- a estabilização visual é fundação para a visão híbrida, não substituição dela.
 
 ## Próximo
 
@@ -207,12 +232,39 @@ As correções de pipeline e a estabilidade da baseline-base não equivalem à r
 
 A expansão para outras classes depende desse QA e de critério explícito para encerrar o piloto.
 
+### Especificar o MVP híbrido de cartas
+
+**Dependências:**
+
+- núcleo jogável suficientemente estabilizado;
+- QA do piloto visual encerrado;
+- visão híbrida preservada em `DEC-CARDS-VISION-01`;
+- decisão humana de iniciar a nova fase.
+
+**Resultado esperado:** transformar a visão em um protótipo mínimo testável, sem implementar tudo ao mesmo tempo.
+
+Questões que precisam de decisão própria:
+
+1. garantia contra turno morto;
+2. ação básica fora do deck ou carta permanente;
+3. quais cartas podem custar zero ENE;
+4. deck e mão mínimos;
+5. compra e descarte;
+6. relação entre deck e Monstrinhomon ativo;
+7. posicionamento mínimo;
+8. primeiro conjunto de classes e cartas;
+9. integração com combate em grupo;
+10. métricas de playtest infantil.
+
 ## Depois
 
 - consolidar a arquitetura de Evolution;
 - classificar e arquivar CSVs legados da raiz;
 - decidir eventuais migrações de nomes, uma família por vez;
-- expandir a Card Layer somente após o piloto;
+- expandir a Card Layer visual somente após o piloto;
+- prototipar deck/mão sem tabuleiro completo;
+- prototipar posicionamento mínimo sem ampliar o catálogo;
+- integrar deck e posicionamento somente depois de cada camada funcionar isoladamente;
 - melhorar métricas de playtest;
 - reduzir gradualmente a concentração de lógica em `index.html`;
 - aprofundar economia, narrativa e catálogo somente depois da estabilização do núcleo.
@@ -225,10 +277,14 @@ A expansão para outras classes depende desse QA e de critério explícito para 
 | ordem de `shieldhorn` e resistência | autor humano | APPROVED e implementada | concluído |
 | paridade das oito espécies | evidência técnica + autor humano | comprovada nos caminhos comparáveis | matriz quantitativa |
 | impacto quantitativo das espécies | evidência técnica | medido em matriz controlada; playtest pendente | decisão humana sobre valores |
+| visão híbrida de cartas | autor humano | APPROVED | especificação futura do MVP híbrido |
+| regras de deck, mão e descarte | autor humano + playtest | PENDING | implementação do deckbuilding |
+| garantia contra turno morto | autor humano + playtest | princípio aprovado; forma pendente | economia de ações e ENE |
+| tabuleiro e posicionamento mínimo | autor humano + playtest | PENDING | integração tática futura |
 | PWR e calibração do catálogo | autor humano | pendente de validação v2.2 | balanceamento final |
 | prêmio aleatório do crítico | autor humano | pendente de validação v2.2 | comportamento final do crítico |
 | valores das passivas de classe | autor humano | decisão conceitual parcial | calibração das passivas |
-| regeneração de ENE | autor humano | divergência aberta | economia de habilidades |
+| regeneração de ENE | autor humano | divergência aberta | economia de habilidades atual e futura |
 | comportamento de boss | autor humano | investigação pendente | curva de encontros especiais |
 | status do catálogo v3 do Drive | autor humano | proposta editorial ativa | migração de nomes e IDs |
 | 34 nomes editoriais restantes | autor humano | pendente | fechamento editorial da Dex v3 |
@@ -241,4 +297,5 @@ A expansão para outras classes depende desse QA e de critério explícito para 
 - `docs/PLANO_DE_ACAO.md`;
 - `PROXIMOS_PASSOS.md`;
 - planilhas históricas do Drive;
-- campos técnicos da Dex v3 sem decisão aprovada e issue/PR correspondente.
+- campos técnicos da Dex v3 sem decisão aprovada e issue/PR correspondente;
+- números de deck, mão, ENE ou grade presentes em propostas antigas sem decisão registrada.
