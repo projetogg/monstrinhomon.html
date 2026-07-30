@@ -6,14 +6,13 @@
 **VerifiedAgainst:** `d73f81f401dded14587282c2c76aef424c69a408`  
 **Supersedes:** descrição antiga que tratava dados estruturados como migração futura
 
-Este diretório reúne dados estruturados usados pelo jogo e artefatos auxiliares. A presença de um arquivo aqui não define, isoladamente, sua autoridade: sempre confirme loader, fallback, normalização, testes e decisões do domínio.
+Este diretório reúne dados estruturados usados pelo jogo e artefatos auxiliares. A presença de um arquivo aqui não define, isoladamente, sua autoridade: sempre confirme loader, normalização, testes e decisões do domínio.
 
 ## Fontes runtime verificadas
 
 | Domínio | Fonte principal | Observação |
 |---|---|---|
 | Monstrinhos | `monsters.json` | catálogo runtime; loaders atuais definem a forma consumida |
-| Fallback de monstrinhos | `monsters.bootstrap.json` | usado somente quando o caminho principal falha, conforme runtime e testes |
 | Skills | `skills.json` | fonte mecânica atual via `js/data/skillsLoader.js` |
 | Cards visuais | `cards.json` | metadados visuais; não duplica mecânica das skills |
 | Itens | `items.json` | confirmar loader e contratos antes de editar |
@@ -22,13 +21,19 @@ Este diretório reúne dados estruturados usados pelo jogo e artefatos auxiliare
 
 A lista acima é operacional, não um schema duplicado. Leia os próprios arquivos, loaders e testes do commit atual.
 
+## Artefatos auxiliares e fixtures
+
+`monsters.bootstrap.json` não é fallback de produção na baseline verificada. Ele é consumido por teste e documentação histórica específica.
+
+Não presuma comportamento de fallback pela existência do arquivo. Para confirmar recuperação de erro em produção, leia o loader atual e seus testes.
+
 ## Autoridade e classificação
 
 Antes de editar qualquer arquivo:
 
 1. consulte `docs/AUTHORITY_MAP.md`;
 2. localize o loader real;
-3. identifique fallback e normalização;
+3. identifique normalização e tratamento de falha;
 4. localize testes e validadores;
 5. verifique referências cruzadas;
 6. avalie compatibilidade com saves;
@@ -85,7 +90,7 @@ Use também os comandos específicos do domínio listados em `docs/PROJECT_STATU
 
 ## Mudanças estruturais
 
-Quando loader, fallback, schema efetivo ou autoridade mudar:
+Quando loader, tratamento de falha, schema efetivo ou autoridade mudar:
 
 - atualize este arquivo;
 - atualize `docs/AUTHORITY_MAP.md`;
