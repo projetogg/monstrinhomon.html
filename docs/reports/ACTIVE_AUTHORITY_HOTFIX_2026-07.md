@@ -107,7 +107,7 @@ Critérios revisados na branch:
 
 ## 8. Validação técnica
 
-A primeira execução do CI do PR #281 concluiu com sucesso:
+Uma execução completa do CI do PR #281 concluiu com sucesso:
 
 ```text
 npm test: PASS
@@ -117,14 +117,17 @@ npm run validate:monster-assets: PASS
 npm run test:wild-loop: PASS
 ```
 
-O commit final altera apenas este relatório; a rodada final de CI deve confirmar o mesmo resultado no head definitivo.
+As correções posteriores alteraram somente documentação. O CI do head definitivo deve repetir a validação antes do merge.
 
 ## 9. Revisão
 
 - PR aberto fora de draft;
 - mergeabilidade confirmada pelo GitHub;
-- nenhuma thread de revisão aberta até o registro deste relatório;
-- qualquer observação posterior deve permanecer dentro do escopo documental.
+- a revisão identificou que `monsters.bootstrap.json` havia sido classificado incorretamente como fallback de produção;
+- a busca confirmou consumo apenas como fixture/teste e documentação relacionada;
+- `data/README.md` foi corrigido para classificá-lo como artefato auxiliar, sem fallback runtime;
+- a thread foi resolvida;
+- nenhuma outra thread permanece aberta no momento deste registro.
 
 ## 10. Riscos restantes
 
