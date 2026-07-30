@@ -50,7 +50,7 @@ Uma implementação parcial também não revoga automaticamente a visão de prod
 | `docs/PENDENCIAS_TECNICAS.md` | `COMPLETE_NOW` | PT-004 ainda aparece “em correção” e o registro está centrado na Card Layer de maio |
 | `GAME_RULES.md` | `KEEP_ACTIVE` | possui conteúdo geral ainda consultado, mas contém grande bloco legado explicitamente revogado; não deve ser apagado sem separação prévia |
 | `docs/PATCH_CANONICO_COMBATE_V2.2.md` | `KEEP_ACTIVE` | autoridade normativa de combate |
-| `docs/CARD_LAYER_ARCHITECTURE_v0.1.2.md` | `KEEP_ACTIVE_PHASE_SPEC` | arquitetura válida da Fase 1 visual; não representa a visão final do sistema de cartas |
+| `docs/CARD_LAYER_ARCHITECTURE_v0.1.2.md` | `KEEP_ACTIVE` | arquitetura válida da Fase 1 visual; não representa a visão final do sistema de cartas |
 | `docs/CARD_SYSTEM_VISION_RECONCILIATION_2026-07.md` | `KEEP_ACTIVE` | registra a visão híbrida aprovada e separa princípios de detalhes pendentes |
 | `docs/reports/*` recentes | `KEEP_ACTIVE` | evidência datada e rastreável, desde que não sejam tratados como status atual |
 
@@ -130,9 +130,9 @@ Os arquivos do Projeto ChatGPT não devem ser classificados apenas pela idade. A
 
 | Arquivo | Classificação | Ação | Motivo |
 |---|---|---|---|
-| `Sistema_de_Cartas_Monstrinhomon.docx` | `SUPERSEDED_PRODUCT_DRAFT` | arquivar depois de comparar com a versão revisada | rascunho anterior da mesma visão híbrida |
-| `Sistema_de_Cartas_Monstrinhomon_REVISADO.docx` | `ACTIVE_PRODUCT_PROPOSAL` | manter temporariamente e migrar para Drive/GitHub | preserva visão de RPG tático, deckbuilding leve, cartas como habilidades, ações sem ENE e posicionamento |
-| `Documento_Mestre_Monstrinhomon_v3_onboarding.docx` | `EXTRACT_THEN_ARCHIVE` | extrair para o Drive e depois remover do projeto ativo | visão do produto, público, experiência desejada, propósito terapêutico e perguntas estratégicas |
+| `Sistema_de_Cartas_Monstrinhomon.docx` | `ARCHIVE` | arquivar depois de comparar com a versão revisada | rascunho anterior da mesma visão híbrida |
+| `Sistema_de_Cartas_Monstrinhomon_REVISADO.docx` | `KEEP_ACTIVE` | manter temporariamente e migrar para Drive/GitHub | preserva visão de RPG tático, deckbuilding leve, cartas como habilidades, ações sem ENE e posicionamento |
+| `Documento_Mestre_Monstrinhomon_v3_onboarding.docx` | `ARCHIVE` | extrair conteúdo de produto para o Drive antes de arquivar | visão do produto, público, experiência desejada, propósito terapêutico e perguntas estratégicas |
 
 A versão revisada do sistema de cartas não é um experimento externo ao Monstrinhomon. Ela pertence à visão do produto, mas seus números e fluxos específicos continuam como propostas.
 
