@@ -4,13 +4,13 @@
 **Domain:** governança técnica  
 **Authority:** GitHub  
 **VerifiedAgainst:** `d73f81f401dded14587282c2c76aef424c69a408`  
-**Supersedes:** versões anteriores do prompt de Onda 0 que tratavam CSVs ou catálogo v3 de forma genérica
+**Supersedes:** versões anteriores do prompt de Onda 0 que tratavam CSVs, fallbacks ou catálogo v3 de forma genérica
 
 ## 1. Missão
 
 Executar a Onda 0 da auditoria integrada do Monstrinhomon: corrigir somente arquivos ativos que possam orientar humanos ou IAs com estado, fórmulas, IDs, valores, hierarquias ou autoridades obsoletas.
 
-O resultado deve fazer todas as instruções operacionais convergirem para a governança atual sem alterar runtime, dados, regras, balanceamento ou fase de produto.
+O resultado deve fazer instruções e pontos de entrada convergirem para a governança atual sem alterar runtime, dados, testes, regras, balanceamento ou fase de produto.
 
 ## 2. Princípios obrigatórios
 
@@ -23,7 +23,9 @@ O resultado deve fazer todas as instruções operacionais convergirem para a gov
 7. Não copiar fórmulas, thresholds, listas de skills, matchups, números de balanceamento ou roadmap técnico para instruções de agentes.
 8. CSVs da raiz não devem ser classificados em bloco: alguns são fixtures ou contratos de teste, outros são históricos ou legados.
 9. Conteúdo editorial da Dex v3 não altera automaticamente IDs, atributos, classes, evolução ou runtime.
-10. Toda mudança deve ser pequena, reversível e rastreável.
+10. A existência de um arquivo chamado `bootstrap`, `fallback`, `patch` ou `oficial` não comprova consumo runtime; confirme loader e testes.
+11. Animalista possui matchups explícitos e não deve ser presumido neutro.
+12. Toda mudança deve ser pequena, reversível e rastreável.
 
 ## 3. Preflight obrigatório
 
@@ -42,7 +44,8 @@ Antes de editar:
 4. verificar `AGENTS.md` e todas as instruções em `.github/`;
 5. verificar os loaders, dados e testes citados pelas instruções;
 6. examinar `DEC-DRIVE-01` e os documentos de `docs/catalog_v3/`;
-7. registrar base, data, PRs abertos e limitações.
+7. confirmar quais arquivos e saídas geradas realmente existem;
+8. registrar base, data, PRs abertos e limitações.
 
 Interromper se a `main` mudar materialmente durante a execução.
 
@@ -61,7 +64,7 @@ Para cada arquivo candidato, registrar:
 | preservação | como manter histórico |
 | fora de escopo | o que não será alterado |
 
-Não editar apenas por idade ou nome.
+Não editar apenas por idade, nome ou extensão.
 
 ## 5. Escopo autorizado
 
@@ -94,12 +97,20 @@ Não repetir fórmulas, matchups, classes, IDs, thresholds ou constantes.
 
 ### 5.3 Instruções de dados
 
-Reescrever `.github/instructions/data.instructions.md` como guia de processo.
+Reescrever `.github/instructions/data.instructions.md` como guia de processo para `data/**/*`.
+
+Criar `.github/instructions/root-csv.instructions.md` com:
+
+```yaml
+applyTo: "*.csv"
+```
+
+Esse arquivo deve garantir que edições nos CSVs da raiz recebam instrução específica, já que `data/**/*` não os abrange.
 
 Antes de editar dados, exigir:
 
 1. identificar a autoridade do domínio;
-2. identificar loader e fallback;
+2. identificar loader e tratamento de falha;
 3. identificar schema e validação;
 4. identificar testes e scripts consumidores;
 5. verificar compatibilidade com saves e referências;
@@ -115,17 +126,24 @@ Declarar explicitamente:
 Reescrever `data/README.md` para descrever:
 
 - finalidade atual;
-- fontes carregadas por domínio;
-- loaders e fallbacks;
+- fontes comprovadamente carregadas por domínio;
+- loaders e tratamento de falha;
+- artefatos auxiliares e fixtures;
 - validação;
 - compatibilidade de IDs e saves;
 - diferença entre runtime, design, fixture e legado.
 
 Não inventar schema nem padrões de ID.
 
+Não classificar `monsters.bootstrap.json` ou qualquer outro arquivo como fallback de produção sem evidência no loader e nos testes.
+
 ### 5.5 `AGENTS.md`
 
-Corrigir somente a classificação genérica dos CSVs, salvo nova evidência material.
+Corrigir a classificação genérica dos CSVs e preservar explicitamente:
+
+> Animalista possui matchups explícitos e não deve ser presumido neutro.
+
+Não alterar outras regras sem evidência concreta.
 
 ### 5.6 Catálogo v3
 
@@ -136,7 +154,8 @@ Classificar:
 - `PLANO_IMPLEMENTACAO_STATUS_OFICIAL_V3.md`: `SUPERSEDED`;
 - `monstrinhomon_relatorio_validacao.md`: `SUPERSEDED`;
 - `SOLUCAO_BLOQUEIOS_V3.md`: referência técnica, sem autoridade automática sobre runtime;
-- CSV/JSON/patches gerados: proposta ou artefato de migração, conforme uso atual.
+- arquivos realmente existentes: proposta, referência ou tooling conforme uso atual;
+- saídas mencionadas em documentos, mas não versionadas: potenciais artefatos gerados, nunca arquivos presumidos.
 
 Os dois documentos `SUPERSEDED` devem virar redirecionamentos curtos. O corpo anterior permanece recuperável no commit-base e no histórico Git.
 
@@ -169,11 +188,15 @@ A execução passa somente se:
 5. `PROJECT_STATUS.md` registrar a base verificada;
 6. a política do Projeto ChatGPT registrar a base verificada;
 7. CSVs forem descritos por função, não como bloco inerte;
-8. a Dex v3 não for descrita como fonte runtime automática;
-9. os documentos conflitantes do catálogo estiverem `SUPERSEDED`;
-10. a visão híbrida de cartas permanecer preservada;
-11. o playtest das passivas permanecer como próximo portão;
-12. o diff não tocar runtime, dados ou testes.
+8. existir instrução com `applyTo: "*.csv"` para os CSVs da raiz;
+9. a Dex v3 não for descrita como fonte runtime automática;
+10. os documentos conflitantes do catálogo estiverem `SUPERSEDED`;
+11. o índice do catálogo não listar como existentes artefatos não versionados;
+12. Animalista estiver explicitamente protegido contra interpretação neutra;
+13. artefatos auxiliares não forem descritos como fallbacks sem prova;
+14. a visão híbrida de cartas permanecer preservada;
+15. o playtest das passivas permanecer como próximo portão;
+16. o diff não tocar runtime, dados ou testes.
 
 ## 8. Buscas de controle
 
@@ -185,7 +208,10 @@ Revisar ocorrências ativas de:
 - afirmações de sete classes;
 - `fonte oficial de stats` para a Dex v3;
 - `hardcoded no index.html` como estado atual;
-- `CSVs raiz são legado inerte`.
+- `CSVs raiz são legado inerte`;
+- `Animalista neutro`;
+- `monsters.bootstrap.json` descrito como fallback;
+- artefatos JSON do catálogo citados como presentes sem confirmação.
 
 Classificar cada ocorrência restante como ativa, histórica, fixture, teste ou comentário. Não editar automaticamente `docs/archive/` ou `docs/legacy/`.
 
@@ -214,12 +240,14 @@ Criar:
 
 - `docs/reports/ACTIVE_AUTHORITY_HOTFIX_2026-07.md`;
 - `docs/catalog_v3/README.md`;
+- `.github/instructions/root-csv.instructions.md`;
 - este prompt versionado.
 
 O relatório deve separar:
 
 - fatos verificados;
 - alterações executadas;
+- correções decorrentes de revisão;
 - conteúdo histórico preservado;
 - riscos restantes;
 - próximos PRs;
@@ -252,7 +280,9 @@ Ao concluir:
 2. abrir o PR fora de draft;
 3. acompanhar CI e revisão;
 4. corrigir somente observações dentro do escopo;
-5. parar.
+5. resolver todas as threads válidas;
+6. confirmar head final, mergeabilidade e CI;
+7. parar.
 
 Não fazer merge sem autorização humana explícita.
 
