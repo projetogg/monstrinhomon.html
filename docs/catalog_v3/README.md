@@ -27,17 +27,27 @@ Para responder o que o jogo faz hoje, use `data/monsters.json`, loaders, testes 
 
 Para migrar qualquer conteúdo da Dex v3, são necessários decisão registrada, PR específico, compatibilidade, validação e rollback.
 
-## Classificação dos artefatos
+## Arquivos atualmente versionados e classificados
 
 | Arquivo | Classificação | Tratamento |
 |---|---|---|
 | `PLANO_IMPLEMENTACAO_STATUS_OFICIAL_V3.md` | `SUPERSEDED` | plano histórico; não é roadmap atual nem fonte de stats |
 | `monstrinhomon_relatorio_validacao.md` | `SUPERSEDED` | relatório histórico de consolidação; números não governam runtime |
-| `SOLUCAO_BLOQUEIOS_V3.md` | `ACTIVE_REFERENCE` | documenta uma ponte técnica e riscos; não autoriza importação automática |
+| `SOLUCAO_BLOQUEIOS_V3.md` | `ACTIVE_REFERENCE` | documenta riscos e tooling; não autoriza importação automática |
 | `monstrinhomon_status_oficial.csv` | `PROPOSAL_ARTIFACT` | dados de proposta/migração; não carregados automaticamente |
-| `monstrinhomon_status_oficial.json` | `PROPOSAL_ARTIFACT` | artefato derivado; confirmar geração e uso antes de editar |
-| `monstrinhomon_status_runtime_patch.json` | `MIGRATION_ARTIFACT` | patch potencial; não é catálogo runtime ativo por presença no repositório |
 | scripts de geração relacionados | `TOOLING` | só alteram runtime quando executados em fluxo aprovado e o resultado é integrado |
+
+## Saídas potenciais de geração
+
+O script relacionado ao catálogo pode produzir artefatos derivados, incluindo representações JSON e patches de migração. Esses nomes aparecem em documentos históricos, mas não devem ser presumidos como arquivos atualmente versionados.
+
+Antes de citar ou usar uma saída gerada:
+
+1. confirme que o arquivo existe na branch examinada;
+2. confirme qual script o gerou;
+3. registre entrada, comando e commit;
+4. compare a saída com `data/monsters.json` e testes atuais;
+5. não trate a geração como autorização de importação.
 
 ## Fontes vigentes
 
