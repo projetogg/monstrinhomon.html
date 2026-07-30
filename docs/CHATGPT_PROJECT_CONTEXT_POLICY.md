@@ -1,9 +1,10 @@
 # Política de Contexto — Projeto RPG no ChatGPT
 
 **Status:** ACTIVE  
-**Domínio:** governança de contexto  
-**Autoridade:** GitHub para técnica; Google Drive para produto e discussão  
-**Verificado contra:** `main` após PR #278 e reconciliação da visão híbrida de cartas
+**Domain:** governança de contexto  
+**Authority:** GitHub para técnica; Google Drive para produto e discussão  
+**VerifiedAgainst:** `b14dceb5438911ce93741fa4b722895ab9ffa8eb` e `docs/CARD_SYSTEM_VISION_RECONCILIATION_2026-07.md`  
+**Supersedes:** orientações que tratavam a proposta híbrida de cartas como experimento externo
 
 ## Texto recomendado para as instruções do Projeto ChatGPT
 
