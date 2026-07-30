@@ -1,5 +1,11 @@
 # PROMPT OPERACIONAL — AUDITORIA DE HIGIENE INFORMACIONAL
 
+**Status:** ACTIVE  
+**Domain:** governança de contexto  
+**Authority:** GitHub  
+**VerifiedAgainst:** `b14dceb5438911ce93741fa4b722895ab9ffa8eb`  
+**Supersedes:** nenhum
+
 ## Repositório
 
 `projetogg/monstrinhomon.html`
