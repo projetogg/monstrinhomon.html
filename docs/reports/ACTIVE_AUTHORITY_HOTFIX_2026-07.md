@@ -47,6 +47,7 @@ A execução não altera runtime, JSON, CSV, testes, regras ou balanceamento.
 ### Processo de dados
 
 - `.github/instructions/data.instructions.md` reescrito como processo baseado em autoridade, loader, schema, testes, saves e rollback;
+- criado `.github/instructions/root-csv.instructions.md` com `applyTo: "*.csv"` para cobrir CSVs da raiz;
 - `data/README.md` atualizado para o diretório estruturado atual;
 - CSVs passaram a ser classificados individualmente;
 - `AGENTS.md`, `AUTHORITY_MAP.md` e `PENDENCIAS_TECNICAS.md` alinhados.
@@ -55,7 +56,8 @@ A execução não altera runtime, JSON, CSV, testes, regras ou balanceamento.
 
 - `docs/PROJECT_STATUS.md` atualizado para a base pós-PR #280;
 - `docs/CHATGPT_PROJECT_CONTEXT_POLICY.md` atualizado para a mesma baseline;
-- visão híbrida de cartas e fase atual preservadas.
+- visão híbrida de cartas e fase atual preservadas;
+- a regra de que Animalista possui matchups explícitos e não deve ser presumido neutro foi mantida de forma inequívoca.
 
 ### Catálogo v3
 
@@ -63,12 +65,14 @@ A execução não altera runtime, JSON, CSV, testes, regras ou balanceamento.
 - plano de implementação antigo classificado `SUPERSEDED`;
 - relatório de consolidação antigo classificado `SUPERSEDED`;
 - solução de bloqueios classificada `ACTIVE_REFERENCE`;
+- arquivos realmente versionados separados de saídas apenas potencialmente geradas;
 - corpos anteriores preservados no histórico do commit-base;
 - nenhuma importação ou alteração de catálogo executada.
 
 ### Processo reproduzível
 
-- prompt versionado em `docs/prompts/PROMPT_CORRECAO_FONTES_ATIVAS_INSTRUCOES_IA_2026_07.md`.
+- prompt versionado em `docs/prompts/PROMPT_CORRECAO_FONTES_ATIVAS_INSTRUCOES_IA_2026_07.md`;
+- prompt atualizado para incorporar as correções encontradas durante a revisão.
 
 ## 5. Conteúdo histórico preservado
 
@@ -101,13 +105,17 @@ Critérios revisados na branch:
 - instruções não afirmam sete classes;
 - exemplos fictícios de IDs foram removidos das instruções atualizadas;
 - CSVs não são chamados genericamente de inertes;
+- CSVs da raiz recebem instrução própria por `applyTo: "*.csv"`;
 - Dex v3 não é fonte runtime automática;
+- o índice v3 não apresenta saídas inexistentes como arquivos versionados;
+- Animalista não pode ser interpretado como neutro;
+- `monsters.bootstrap.json` não é descrito como fallback de produção;
 - próximo portão continua sendo o playtest das passivas;
 - diff limitado a documentação e instruções.
 
 ## 8. Validação técnica
 
-Uma execução completa do CI do PR #281 concluiu com sucesso:
+Uma execução completa do CI do PR #281 concluiu com sucesso antes das últimas correções documentais:
 
 ```text
 npm test: PASS
@@ -117,17 +125,19 @@ npm run validate:monster-assets: PASS
 npm run test:wild-loop: PASS
 ```
 
-As correções posteriores alteraram somente documentação. O CI do head definitivo deve repetir a validação antes do merge.
+O CI do head definitivo deve repetir a validação antes do merge.
 
 ## 9. Revisão
 
-- PR aberto fora de draft;
-- mergeabilidade confirmada pelo GitHub;
-- a revisão identificou que `monsters.bootstrap.json` havia sido classificado incorretamente como fallback de produção;
-- a busca confirmou consumo apenas como fixture/teste e documentação relacionada;
-- `data/README.md` foi corrigido para classificá-lo como artefato auxiliar, sem fallback runtime;
-- a thread foi resolvida;
-- nenhuma outra thread permanece aberta no momento deste registro.
+As observações válidas foram incorporadas:
+
+1. `monsters.bootstrap.json` deixou de ser descrito como fallback de produção e passou a fixture/artefato auxiliar;
+2. a redação explícita de Animalista não neutro foi restaurada no mapa de autoridade;
+3. foi criada instrução própria para CSVs da raiz;
+4. saídas JSON não versionadas deixaram de ser listadas como arquivos existentes;
+5. o placeholder do número do PR foi substituído por `#281`.
+
+As threads correspondentes devem estar resolvidas antes da conclusão final.
 
 ## 10. Riscos restantes
 
