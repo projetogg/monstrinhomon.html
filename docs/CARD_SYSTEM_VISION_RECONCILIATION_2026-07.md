@@ -1,10 +1,10 @@
 # Reconciliação da Visão de Cartas, Deckbuilding e RPG Tático
 
-**Status:** APPROVED para visão de produto; implementação parcial  
-**Domínio:** produto, combate tático e arquitetura futura de cartas  
-**Autoridade:** decisão humana registrada; runtime continua descritivo  
-**Data:** 2026-07-30  
-**Verificado contra:** `main` após PR #278, histórico do Projeto RPG, documentos de cartas e `docs/CARD_LAYER_ARCHITECTURE_v0.1.2.md`
+**Status:** ACTIVE  
+**Domain:** produto, combate tático e arquitetura futura de cartas  
+**Authority:** GitHub — decisão humana registrada; runtime continua descritivo  
+**VerifiedAgainst:** `b14dceb5438911ce93741fa4b722895ab9ffa8eb`, histórico do Projeto RPG, documentos de cartas e `docs/CARD_LAYER_ARCHITECTURE_v0.1.2.md`  
+**Supersedes:** interpretação que tratava o deckbuilding como experimento externo ao produto
 
 ## 1. Conclusão executiva
 
@@ -258,11 +258,11 @@ Esses riscos justificam implementação em fases e protótipo mínimo. Eles não
 
 | Documento | Classificação | Tratamento |
 |---|---|---|
-| `docs/CARD_LAYER_ARCHITECTURE_v0.1.2.md` | `ACTIVE_PHASE_SPEC` | manter como arquitetura da Fase 1 visual |
-| `CARD LAYER ARCHITECTURE v0_1_1.pdf` | `SUPERSEDED` | remover do contexto ativo; v0.1.2 substitui |
-| `Sistema_de_Cartas_Monstrinhomon.docx` | `SUPERSEDED_PRODUCT_DRAFT` | preservar apenas se contiver conteúdo ausente na versão revisada; caso contrário, arquivar |
-| `Sistema_de_Cartas_Monstrinhomon_REVISADO.docx` | `ACTIVE_PRODUCT_PROPOSAL` | não apagar; migrar para Drive/GitHub com marcação de proposta e itens aprovados separados |
-| documentos duplicados `v1` | `DUPLICATE` | remover após confirmar que a versão revisada está preservada |
+| `docs/CARD_LAYER_ARCHITECTURE_v0.1.2.md` | `KEEP_ACTIVE` | manter como arquitetura da Fase 1 visual |
+| `CARD LAYER ARCHITECTURE v0_1_1.pdf` | `ARCHIVE` | remover do contexto ativo; v0.1.2 substitui |
+| `Sistema_de_Cartas_Monstrinhomon.docx` | `ARCHIVE` | preservar apenas se contiver conteúdo ausente na versão revisada; caso contrário, arquivar |
+| `Sistema_de_Cartas_Monstrinhomon_REVISADO.docx` | `KEEP_ACTIVE` | não apagar; migrar para Drive/GitHub com marcação de proposta e itens aprovados separados |
+| documentos duplicados `v1` | `DELETE_ACTIVE_COPY` | remover após confirmar que a versão revisada está preservada |
 
 A versão revisada não possui autoridade sobre runtime e números. Ela possui valor como fonte de produto e histórico de decisões.
 
