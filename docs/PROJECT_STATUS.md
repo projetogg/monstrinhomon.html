@@ -2,8 +2,8 @@
 
 **Verificado em:** 2026-07-30  
 **Branch oficial examinada:** `main`  
-**Commit verificado:** `b14dceb5438911ce93741fa4b722895ab9ffa8eb`  
-**Marco técnico:** PR #278 integrado  
+**Commit verificado:** `8615f27f369b13d36dece301ae1c1d4381c8bc8f`  
+**Marco técnico:** PR #279 integrado  
 **Escopo:** este arquivo descreve o repositório e decisões registradas; não afirma que visão futura já está implementada.
 
 ## Baseline atual
@@ -21,6 +21,7 @@
 - Baseline quantitativa de fórmula separada da matriz quantitativa das espécies.
 - Matriz de espécies com 48 pares e 96.000 batalhas controladas.
 - Visão futura de cartas registrada separadamente do estado atual do runtime.
+- Planos e auditorias datadas preservados em `docs/legacy/` e `docs/archive/audits/`, fora da ordem de leitura atual.
 
 ## Implementado na `main`
 
@@ -37,6 +38,7 @@
 | Paridade final das espécies | oito espécies nos caminhos comparáveis | PR #275 |
 | Comparação de baselines | ferramenta e relatório reproduzíveis | PR #276 |
 | Matriz quantitativa das espécies | 48 pares; artefato próprio | PR #278 |
+| Governança e visão híbrida | contexto higienizado e `DEC-CARDS-VISION-01` registrada | PR #279 |
 | Card Layer | piloto visual do Guerreiro tecnicamente estabilizado | `js/cards/*`, `data/cards.json`, PR #256 |
 | Deck, mão e tabuleiro | não implementados | visão aprovada, especificação e protótipo pendentes |
 | Save/load | camadas complementares de persistência | `js/saveLayer.js`, `js/storage.js` |
@@ -113,12 +115,16 @@ Fontes:
 - `README.md`, `AI_ENTRYPOINT.md`, `PROJECT_STATUS.md`, `AUTHORITY_MAP.md`, `DECISION_LOG.md` e `ROADMAP.md` formam os pontos de entrada atuais.
 - Anexos do Projeto ChatGPT não possuem autoridade técnica automática.
 - Conversas e documentos de produto podem preservar intenção do autor; decisões reconciliadas devem ser registradas no GitHub.
-- Documentos históricos devem estar em `docs/archive/` ou `docs/legacy/`, ou possuir marcação explícita.
-- `LEIA-ME.md`, `TODO_FUNCIONALIDADES.md` e `docs/ANALISE_PROJETO.md` foram classificados como cópias ativas perigosas na auditoria de julho de 2026.
+- Documentos históricos estão em `docs/archive/` ou `docs/legacy/`, ou possuem redirecionamento explícito.
+- `LEIA-ME.md`, `TODO_FUNCIONALIDADES.md` e `docs/ANALISE_PROJETO.md` foram removidos como cópias ativas perigosas no PR #279.
+- `docs/PLANO_DE_ACAO.md` e as três auditorias datadas possuem conteúdo preservado em áreas históricas e caminhos antigos reduzidos a redirecionamentos.
 - A versão revisada do sistema de cartas deve ser preservada como proposta de produto até migração.
-- A migração ampla de planos e auditorias históricas está separada para PR posterior.
+- CSVs raiz e outros planos concluídos ainda exigem auditorias próprias antes de mover ou remover.
 
-Fonte: `docs/INFORMATION_HYGIENE_AUDIT_2026-07.md`.
+Fontes:
+
+- `docs/INFORMATION_HYGIENE_AUDIT_2026-07.md`;
+- `docs/reports/HISTORICAL_DOCUMENT_ARCHIVE_2026-07.md`.
 
 ## Divergências e lacunas conhecidas
 
@@ -131,7 +137,8 @@ Fonte: `docs/INFORMATION_HYGIENE_AUDIT_2026-07.md`.
 | `DIV-CARDS-01` | Card Layer visual | QA de produto e encerramento do piloto pendentes |
 | `GAP-CARDS-HYBRID-01` | regras exatas do deckbuilding tático | visão aprovada; especificação e protótipo pendentes |
 | `DIV-NAMES-01` | nomes editoriais da Dex v3 | mapear antes de qualquer migração |
-| `DOC-HYGIENE-02` | planos e auditorias históricas em caminhos ativos | migração para arquivo pendente |
+| `DOC-HYGIENE-02` | planos e auditorias históricas em caminhos ativos | resolvida pelo arquivamento e redirecionamentos registrados no PR #280 |
+| `DOC-HYGIENE-03` | CSVs raiz e outros planos concluídos | auditorias independentes pendentes |
 
 ## Decisões aprovadas e implementadas
 
@@ -173,7 +180,7 @@ Prioridades:
 4. registrar duração, escolhas, frustração e entendimento;
 5. separar UX, bug e balanceamento.
 
-A reconciliação da visão de cartas não autoriza começar a implementação de deck ou tabuleiro durante este portão.
+A reconciliação da visão de cartas e o arquivamento documental não autorizam começar a implementação de deck ou tabuleiro durante este portão.
 
 ## Validação técnica
 
@@ -202,4 +209,5 @@ Atualizar este arquivo quando ocorrer:
 - decisão sobre deck, mão, ações sem ENE ou tabuleiro;
 - aprovação ou migração de nomes;
 - alteração dos comandos oficiais de teste;
+- conclusão de nova etapa de higiene documental;
 - novo marco técnico que torne esta fotografia materialmente incorreta.
