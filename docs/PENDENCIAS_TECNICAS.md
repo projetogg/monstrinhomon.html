@@ -1,104 +1,102 @@
 # Monstrinhomon — Pendências Técnicas
 
-**Data:** 2026-05-19  
-**Status:** Registro vivo de pendências técnicas identificadas no fechamento da Fase 0 da Card Layer.
+**Status:** ACTIVE — registro de pendências técnicas não representadas integralmente no roadmap.  
+**Atualizado:** 2026-07-30
 
----
+Este arquivo não substitui `docs/ROADMAP.md` e não cria regras canônicas.
 
 ## PT-001 — Slot 4 base de classes
 
-**Origem:** Auditoria Fase 0 Card Layer (2026-05-19)  
 **Status:** Aberto  
 **Prioridade:** Média  
-**Bloqueia Fase 1?** Não.
+**Bloqueia o piloto atual da Card Layer?** Não.
 
-### Descrição
+`data/skills.json` não define de forma fechada um slot 4 base para todas as classes. A Card Layer não deve inventar uma habilidade pública de slot 4.
 
-`data/skills.json` não contém skill base de slot 4 para o Guerreiro. A evidência da auditoria indica que o slot 4 aparece como skill exclusiva via `kitSwap` em espécies específicas, não como skill canônica base da classe.
+Decisão necessária:
 
-### Decisão necessária
-
-- **Opção A:** implementar slot 4 base por classe em runtime futuro.
-- **Opção B:** manter slot 4 como exclusivo de `kitSwap` por espécie.
-
-### Impacto
-
-A Card Layer não cria Card pública de slot 4 até que esta decisão seja tomada. Em produção, slot 4 ausente não deve renderizar placeholder visível para crianças.
-
----
+- implementar slot 4 base por classe; ou
+- manter slot 4 dependente de assinatura/kit swap.
 
 ## PT-002 — Mapeamento `groupKey → slot`
 
-**Origem:** Auditoria Fase 0 Card Layer (2026-05-19)  
 **Status:** Aberto  
-**Prioridade:** Baixa/Média  
-**Bloqueia Fase 1?** Não.
+**Prioridade:** Baixa/Média.
 
-### Descrição
+O runtime organiza skills por `class`, `groupKey` e `stageIndex`, enquanto o desbloqueio informa quantidade de slots. A ordenação visual continua dependente de metadado explícito.
 
-Não há mapeamento canônico no runtime entre `groupKey` e slot. O runtime organiza skills por `class → groupKey → stageIndex`, enquanto `slotUnlocks.js` informa apenas a quantidade de slots desbloqueados.
-
-### Decisão atual
-
-A Card Layer usará `display_slot` manual em cada Card como metadado de ordenação visual.
-
-### Investigação futura
-
-Verificar se há ordem implícita confiável em `SKILL_DEFS[class]` ou se deve existir arquivo explícito de ordenação visual.
-
----
+Investigar somente quando a expansão da Card Layer for aprovada.
 
 ## PT-003 — CSVs raiz como legado inerte
 
-**Origem:** Auditoria Fase 0 Card Layer (2026-05-19)  
 **Status:** Aberto  
-**Prioridade:** Baixa  
-**Bloqueia Fase 1?** Não.
+**Prioridade:** Baixa.
 
-### Descrição
+CSVs históricos não são carregados pelo runtime atual, salvo evidência específica. A ação correta é confirmar referências e movê-los em PR próprio para `legacy/data-csv/` ou removê-los quando o histórico Git for suficiente.
 
-CSVs como `HABILIDADES.csv`, `MONSTROS.csv` e equivalentes aparecem como referência histórica/documental, mas não são carregados pelo runtime de combate/skills.
+Não misturar essa limpeza com alteração de dados runtime.
 
-### Decisão atual
+## PT-004 — Drift em `AGENTS.md` e `PROXIMOS_PASSOS.md`
 
-Tratar CSVs raiz como legado inerte, salvo evidência contrária em PR futuro.
+**Status:** Resolvido em documentação na auditoria de julho de 2026.
 
-### Ação futura
-
-Considerar mover CSVs para `docs/legacy/` ou `legacy/` para reduzir confusão de novos desenvolvedores.
-
----
-
-## PT-004 — Drift documental: `AGENTS.md` e `PROXIMOS_PASSOS.md`
-
-**Origem:** Auditoria Fase 0 Card Layer (2026-05-19)  
-**Status:** Em correção  
-**Prioridade:** Média  
-**Bloqueia Fase 1?** Não, desde que os avisos de legado estejam commitados.
-
-### Descrição
-
-`AGENTS.md` e `PROXIMOS_PASSOS.md` descrevem estado pré-v2.x em alguns trechos: 7 classes, fórmula antiga e sistema I/II/III. Isso conflita com documentos canônicos recentes.
-
-### Ações aprovadas
-
-- Adicionar aviso no topo de `AGENTS.md` apontando para `GAME_RULES.md` e `docs/PATCH_CANONICO_COMBATE_V2.2.md`.
-- Corrigir lista de classes para incluir Animalista.
-- Marcar `PROXIMOS_PASSOS.md` como legado e preservar cópia em `docs/legacy/PROXIMOS_PASSOS_2026-01.md`.
-
----
+- `AGENTS.md` passou a usar a ordem de leitura atual e não presume Animalista neutro;
+- `PROXIMOS_PASSOS.md` virou redirecionamento mínimo para `PROJECT_STATUS.md` e `ROADMAP.md`;
+- o conteúdo histórico permanece em `docs/legacy/PROXIMOS_PASSOS_2026-01.md`.
 
 ## PT-005 — Categoria visual de `Provocar`
 
-**Origem:** Planejamento da Fase 1 Card Layer  
+**Status:** Aberto para playtest  
+**Prioridade:** Baixa.
+
+A categoria visual atual é `controle`. Reclassificar como `suporte` somente se o playtest infantil demonstrar confusão consistente.
+
+## PT-006 — Semântica de skill que erra no Wild
+
+**Status:** Lacuna de evidência  
+**Prioridade:** Baixa/Média.
+
+O Group expõe localmente erro de acurácia; o caminho Wild recebe resultado mais agregado. Não alterar o runtime sem uma investigação isolada.
+
+## PT-007 — Regeneração de ENE
+
 **Status:** Aberto  
-**Prioridade:** Baixa  
-**Bloqueia Fase 1?** Não.
+**Prioridade:** Média.
 
-### Descrição
+Existe divergência histórica sobre tabela e arredondamento de regeneração. Exige auditoria própria, cenários quantitativos e decisão humana.
 
-`Provocar` pode ser classificado visualmente como `controle` ou `suporte`. `controle` é mecanicamente mais fiel; `suporte` pode ser mais intuitivo para crianças.
+## PT-008 — Boss
 
-### Decisão atual
+**Status:** Investigação pendente  
+**Prioridade:** Média.
 
-Começar com `category_visual: "controle"` e observar em playtest infantil. Se houver confusão, reclassificar como `suporte`.
+Multiplicadores, fases, cura e curva de boss não estão integralmente validados contra a experiência desejada.
+
+## PT-009 — QA de produto da Card Layer
+
+**Status:** Aberto  
+**Prioridade:** Média.
+
+A identidade técnica do piloto do Guerreiro está estabilizada. Ainda faltam teste no ambiente publicado, clareza infantil e critério de encerramento do piloto.
+
+## PT-010 — Higiene do acervo documental
+
+**Status:** Parcial  
+**Prioridade:** Alta para governança.
+
+Concluído:
+
+- correção dos pontos de entrada ativos;
+- remoção proposta de arquivos manifestamente falsos;
+- política do Projeto ChatGPT;
+- classificação inicial do acervo.
+
+Pendente:
+
+- mover `docs/PLANO_DE_ACAO.md` para `docs/legacy/`;
+- criar índices de `docs/archive/` e `docs/legacy/`;
+- classificar auditorias e planos concluídos;
+- mover CSVs raiz em PR separado;
+- executar limpeza manual do Projeto ChatGPT e do Drive.
+
+Fonte: `docs/INFORMATION_HYGIENE_AUDIT_2026-07.md`.

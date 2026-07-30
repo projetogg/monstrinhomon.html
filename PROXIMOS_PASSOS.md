@@ -1,43 +1,19 @@
-# PROXIMOS_PASSOS.md — legado
+# PROXIMOS_PASSOS.md — redirecionamento
 
-> **Status atualizado em 2026-05-19:** LEGADO / referência histórica.
->
-> Este arquivo descreve um estado antigo do projeto e não deve ser usado como plano atual.
-> A cópia histórica foi preservada em `docs/legacy/PROXIMOS_PASSOS_2026-01.md`.
+**Status:** SUPERSEDED  
+**Atualizado:** 2026-07-30
 
-## Fontes atuais
+Este arquivo não contém plano próprio e não deve ser usado para decidir a próxima etapa.
 
-> **Aviso de atualização — 2026-05:** este arquivo é legado e serve apenas como redirecionamento.
+Consulte:
 
-Para decisões atuais, consultar nesta ordem:
+1. `docs/PROJECT_STATUS.md` — estado verificado da `main`;
+2. `docs/ROADMAP.md` — planejamento atual;
+3. `docs/DECISION_LOG.md` — decisões abertas, aprovadas e implementadas;
+4. `docs/AI_ENTRYPOINT.md` — ordem de leitura para IAs.
 
-1. `docs/AUDIT_GENERAL_RISKS_2026-05.md`
-2. `docs/AUTHORITY_MAP.md`
-3. `AGENTS.md`
-4. `data/skills.json`
-5. `docs/PATCH_CANONICO_COMBATE_V2.2.md`
-6. `GAME_RULES.md` (respeitando trechos marcados como legado revogado)
-7. `docs/CARD_LAYER_ARCHITECTURE_v0.1.2.md`
-8. `docs/AUDIT_FASE_0_RESPOSTAS.md`
-9. `docs/PENDENCIAS_TECNICAS.md`
+A versão histórica foi preservada em:
 
-## Próxima etapa ativa
+`docs/legacy/PROXIMOS_PASSOS_2026-01.md`.
 
-```text
-Branch futura: feature/card-layer-fase-1
-Escopo: piloto visual com 3 Cards do Guerreiro.
-Cards confirmadas:
-- Golpe de Espada
-- Escudo
-- Provocar
-```
-
-## Fora de escopo da próxima etapa
-
-- Deck, mão, ciclo, compra e descarte.
-- Talent Cards.
-- Signature Cards mecânicas.
-- Alteração de combate.
-- Alteração de `data/skills.json`.
-
-Este arquivo fica na raiz apenas como redirecionamento para reduzir drift documental.
+O próximo portão vigente na data desta atualização é o playtest mediado das passivas de espécie. Verifique sempre `docs/ROADMAP.md`, pois esta frase pode envelhecer.
