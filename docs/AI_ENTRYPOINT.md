@@ -1,20 +1,21 @@
-# Monstrinhomon - Entrada para IAs
+# Monstrinhomon — Entrada para IAs
 
-**Status:** guia operacional. Este arquivo nao cria regras do jogo.
+**Status:** ACTIVE — guia operacional. Este arquivo não cria regras do jogo.  
+**Atualizado:** 2026-07-30
 
-Use esta entrada antes de propor ou alterar codigo, dados, regras ou documentacao.
+Use esta entrada antes de propor ou alterar código, dados, regras ou documentação.
 
-## Ordem minima de leitura
+## Ordem mínima de leitura
 
 1. `README.md`
 2. `docs/PROJECT_STATUS.md`
 3. `docs/AUTHORITY_MAP.md`
 4. `docs/DECISION_LOG.md`
 5. `docs/ROADMAP.md`
-6. codigo, dados e testes do dominio afetado
+6. código, dados e testes do domínio afetado
 7. PRs abertos e mergeados recentemente que sejam relevantes
 
-`AGENTS.md` contem instrucoes operacionais adicionais do repositorio.
+`AGENTS.md` contém instruções operacionais adicionais do repositório.
 
 ## Duas perguntas diferentes
 
@@ -24,57 +25,83 @@ Use a `main`, os dados realmente carregados e os testes relativos ao mesmo commi
 
 ### O que o jogo deve fazer?
 
-Use documentos canonicos aprovados e decisoes humanas registradas em `docs/DECISION_LOG.md`. Uma regra pretendida nao deve ser descrita como implementada antes do merge correspondente.
+Use documentos canônicos aprovados e decisões humanas registradas em `docs/DECISION_LOG.md`. Uma regra pretendida não deve ser descrita como implementada antes do merge correspondente.
 
-A relacao definitiva entre essas duas autoridades ainda precisa ser reconciliada em `docs/AUTHORITY_MAP.md`. Ate essa revisao, explicite sempre se a afirmacao descreve runtime ou regra pretendida.
+Quando comportamento e regra pretendida divergirem, registre a divergência. Não resolva silenciosamente durante outro PR.
 
 ## Google Drive
 
-O Drive e destinado a:
+O Drive é destinado a:
 
-- visao do produto;
-- decisoes ainda em discussao;
+- visão do produto;
+- decisões ainda em discussão;
 - playtests;
-- observacoes terapeuticas;
-- referencias visuais;
+- observações terapêuticas sem dados identificáveis;
+- referências visuais;
 - demandas brutas;
-- revisoes entre IAs.
+- revisões entre IAs.
 
-O Drive nao e fonte oficial de codigo, dados runtime, testes ou regras tecnicas canonicas. Planilhas e documentos antigos podem ser historicos ou propostas, mesmo quando usam palavras como "final", "completo", "v3" ou "base mestra".
+O Drive não é fonte oficial de código, dados runtime, testes ou regras técnicas canônicas. Documentos antigos podem ser históricos ou propostas, mesmo quando usam palavras como `final`, `completo`, `v3` ou `base mestra`.
 
-Nao copie uma regra tecnica do GitHub para o Drive como uma segunda versao mantida manualmente. Use links para o arquivo, PR ou commit correspondente.
+Não copie uma regra técnica do GitHub para o Drive como uma segunda versão mantida manualmente. Use links para o arquivo, PR ou commit correspondente.
+
+## Projeto RPG no ChatGPT
+
+O Projeto ChatGPT é um ponto de entrada e ambiente de trabalho, não uma fonte técnica autônoma.
+
+- Anexos podem ser históricos, propostas, protótipos ou cópias antigas.
+- Não trate `Documento Mestre`, `final`, `completo`, `v3`, `roadmap` ou `fonte única` como prova de vigência.
+- Compare afirmações técnicas com a `main` e os documentos desta ordem de leitura.
+- Não mantenha fórmulas, valores, listas de skills, estado de implementação ou roadmap técnico copiados nas instruções do projeto.
+- Experimentos independentes, como sistemas de deck, devem ficar em projeto separado e claramente não canônico.
+
+Política completa: `docs/CHATGPT_PROJECT_CONTEXT_POLICY.md`.
+
+## Classificação obrigatória de documentos
+
+Todo documento novo deve declarar, quando aplicável:
+
+```text
+Status: ACTIVE | PROPOSAL | HISTORICAL | SUPERSEDED
+Domain: produto | técnica | playtest | terapêutica | visual | demanda
+Authority: GitHub | Drive | nenhuma
+VerifiedAgainst: commit/PR/data ou “não aplicável”
+Supersedes: caminho anterior ou “nenhum”
+```
+
+Arquivos em `docs/archive/` ou `docs/legacy/` são evidência histórica e não entram na ordem de leitura atual.
 
 ## Pull requests
 
-- PR aberto ou draft e proposta, nao baseline oficial.
-- Registre a branch e o commit-base antes de analisar.
-- Mudanca de regra exige decisao humana aprovada.
-- PR documental nao pode afirmar que alterou runtime.
+- PR aberto ou draft é proposta, não baseline oficial.
+- Registre branch e commit-base antes de analisar.
+- Mudança de regra exige decisão humana aprovada.
+- PR documental não pode afirmar que alterou runtime.
 - Mantenha escopo pequeno, testes declarados e rollback claro.
 
 ## Quando fontes entrarem em conflito
 
-1. identifique as afirmacoes conflitantes e seus arquivos;
+1. identifique as afirmações conflitantes e seus arquivos;
 2. examine runtime, dados carregados e testes;
-3. classifique o conflito como descritivo, normativo ou historico;
+3. classifique o conflito como descritivo, normativo, editorial ou histórico;
 4. consulte `docs/DECISION_LOG.md`;
-5. apresente a evidencia ao responsavel humano se a regra continuar aberta;
-6. nao resolva a regra silenciosamente durante a implementacao.
+5. apresente evidência ao responsável humano se a regra continuar aberta;
+6. não resolva a regra silenciosamente durante a implementação.
 
 ## Checklist antes de editar
 
 - [ ] SHA da `main` registrado
 - [ ] PRs abertos relevantes examinados
-- [ ] codigo, dados e testes do dominio lidos
-- [ ] fontes do Drive classificadas como proposta, observacao, referencia ou historico
-- [ ] fatos separados de inferencias
-- [ ] decisoes humanas pendentes identificadas
-- [ ] escopo, validacao e rollback definidos
+- [ ] código, dados e testes do domínio lidos
+- [ ] anexos do ChatGPT e fontes do Drive classificados
+- [ ] fatos separados de inferências
+- [ ] decisões humanas pendentes identificadas
+- [ ] escopo, validação e rollback definidos
 
 ## Checklist depois do merge
 
 - [ ] `PROJECT_STATUS.md` atualizado, se o estado material mudou
-- [ ] `DECISION_LOG.md` atualizado, se uma decisao mudou de status
-- [ ] `ROADMAP.md` atualizado, se um resultado foi concluido ou repriorizado
+- [ ] `DECISION_LOG.md` atualizado, se uma decisão mudou de status
+- [ ] `ROADMAP.md` atualizado, se um resultado foi concluído ou repriorizado
 - [ ] demanda no Drive aponta para o PR ou commit mergeado
-- [ ] nenhuma copia concorrente de regra tecnica foi criada no Drive
+- [ ] nenhuma cópia concorrente de regra técnica foi criada no Drive ou no Projeto ChatGPT
