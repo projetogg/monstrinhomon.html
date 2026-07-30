@@ -47,13 +47,16 @@ Não copie uma regra técnica do GitHub para o Drive como uma segunda versão ma
 
 ## Projeto RPG no ChatGPT
 
-O Projeto ChatGPT é um ponto de entrada e ambiente de trabalho, não uma fonte técnica autônoma.
+O Projeto ChatGPT é um ponto de entrada, fonte de histórico conversacional e ambiente de trabalho. Ele não é uma fonte técnica autônoma.
 
 - Anexos podem ser históricos, propostas, protótipos ou cópias antigas.
 - Não trate `Documento Mestre`, `final`, `completo`, `v3`, `roadmap` ou `fonte única` como prova de vigência.
 - Compare afirmações técnicas com a `main` e os documentos desta ordem de leitura.
 - Não mantenha fórmulas, valores, listas de skills, estado de implementação ou roadmap técnico copiados nas instruções do projeto.
-- Experimentos independentes, como sistemas de deck, devem ficar em projeto separado e claramente não canônico.
+- Conversas e documentos de produto podem preservar intenção do autor; quando essa intenção divergir da governança atual, reconcilie e registre a decisão no GitHub antes de implementar.
+- Não classifique automaticamente uma proposta como projeto separado apenas porque ainda não foi implementada.
+
+A visão híbrida do sistema de cartas está registrada em `docs/CARD_SYSTEM_VISION_RECONCILIATION_2026-07.md`.
 
 Política completa: `docs/CHATGPT_PROJECT_CONTEXT_POLICY.md`.
 
@@ -83,10 +86,11 @@ Arquivos em `docs/archive/` ou `docs/legacy/` são evidência histórica e não 
 
 1. identifique as afirmações conflitantes e seus arquivos;
 2. examine runtime, dados carregados e testes;
-3. classifique o conflito como descritivo, normativo, editorial ou histórico;
+3. classifique o conflito como descritivo, normativo, de produto, editorial ou histórico;
 4. consulte `docs/DECISION_LOG.md`;
-5. apresente evidência ao responsável humano se a regra continuar aberta;
-6. não resolva a regra silenciosamente durante a implementação.
+5. recupere conversas e documentos de produto quando a intenção do autor estiver em dúvida;
+6. apresente evidência ao responsável humano se a regra continuar aberta;
+7. não resolva a regra silenciosamente durante a implementação.
 
 ## Checklist antes de editar
 
@@ -94,6 +98,7 @@ Arquivos em `docs/archive/` ou `docs/legacy/` são evidência histórica e não 
 - [ ] PRs abertos relevantes examinados
 - [ ] código, dados e testes do domínio lidos
 - [ ] anexos do ChatGPT e fontes do Drive classificados
+- [ ] visão de produto separada do estado implementado
 - [ ] fatos separados de inferências
 - [ ] decisões humanas pendentes identificadas
 - [ ] escopo, validação e rollback definidos
