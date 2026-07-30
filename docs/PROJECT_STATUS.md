@@ -2,7 +2,7 @@
 
 **Verificado em:** 2026-07-29  
 **Branch oficial examinada:** `main`  
-**Marco técnico de origem:** PR #275 mergeado em `a41a0f79df8c6f2914e822ddc46969c9c36a2336`  
+**Marco técnico em validação:** PR #278, head `32c995526fe5b805d19b24c1ebddbfe69c15b822`  
 **Escopo:** este arquivo descreve o repositório; não cria regras do jogo.
 
 ## Baseline atual
@@ -17,7 +17,8 @@
 - Oito passivas de espécie revalidadas nos caminhos comparáveis.
 - As decisões `DEC-SPECIES-ATK-01` e `DEC-SPECIES-DEF-01` estão implementadas.
 - A baseline quantitativa atual cobre fórmula, RC, ações ofensivas, ENE e passivas de classe.
-- A baseline quantitativa atual **não cobre passivas de espécie**.
+- A baseline quantitativa de fórmula permanece separada e não cobre passivas de espécie.
+- A matriz quantitativa dedicada cobre as oito espécies em 48 pares e 96.000 batalhas controladas.
 
 ## Implementado na main
 
@@ -33,6 +34,7 @@
 | Passivas em skills Group | `ON_ATTACK` e `ON_SKILL_USED` integrados | PR #274 |
 | Paridade final das espécies | oito espécies em paridade nos caminhos comparáveis | `tests/speciesPassiveFinalParityV22.test.js`, PR #275 |
 | Comparação de baselines | ferramenta reproduzível e relatório pós-paridade | `scripts/compare-combat-baselines-v2-2.mjs` e relatório de julho de 2026 |
+| Matriz quantitativa de espécies | 48 pares com e sem passiva, 96.000 batalhas | `js/combat/speciesPassiveQuantitativeHarness.js` e relatório de julho de 2026 |
 | Passivas de classe | conceito e valores atuais presentes | harness, Wild e Group |
 | Catálogo de Cards | 3 Cards visuais do Guerreiro | `data/cards.json` |
 | Card Layer | piloto do Guerreiro com identidade efetiva preservada | `js/cards/*`, `js/data/skillsLoader.js`, PR #256 |
@@ -40,14 +42,9 @@
 
 ## Resultado quantitativo mais recente
 
-Foram comparados os artefatos:
+### Baseline de fórmula
 
-- run #15, SHA `e019262f1325d0c416beb76b89000473b4480822`;
-- run #23, SHA `70670dd4f355515af695698a2d48582fc90b45fd`.
-
-As duas execuções usam a mesma seed, 90 cenários e 1000 execuções por cenário.
-
-Resultado:
+A comparação entre as runs #15 e #23 permaneceu estável:
 
 ```text
 90 cenários comparados
@@ -56,19 +53,33 @@ Resultado:
 90.000 combates por baseline
 ```
 
-As únicas diferenças são `baselineSha` e `generatedAt`.
+### Matriz das passivas de espécie
 
-Interpretação obrigatória:
+O artefato da run #34 executou:
 
-- a baseline de fórmula e passivas de classe permaneceu estável;
-- o delta zero não mede o impacto das passivas de espécie;
-- o harness não chama o resolver de passivas de espécie;
-- `passivesEnabled` no harness refere-se às passivas de classe;
-- não existe evidência quantitativa para buff, nerf ou recalibração das espécies.
+```text
+8 espécies
+3 níveis
+2 perfis
+48 pares
+1.000 execuções por variante
+96.000 batalhas
+```
 
-Fonte:
+Principais sinais automatizados:
 
-`docs/reports/COMBAT_BASELINE_DELTA_POST_PARITY_2026-07.md`.
+- `shieldhorn`: `+10,15 p.p.` de vitória e `5,726833` de dano evitado;
+- `wildpace`: `+3,486833` de dano total no cenário controlado abaixo de 40% de HP;
+- `floracura`: exatamente `+3` de cura por combate;
+- `swiftclaw`, `moonquill`, `shadowsting` e `bellwave`: efeitos válidos e estados observáveis nos perfis aplicáveis;
+- perfis `basic` sem setup permanecem intencionalmente inertes para passivas dependentes de skill.
+
+A matriz encerra a lacuna de medição automatizada, mas não autoriza buff ou nerf sem análise humana e playtest.
+
+Fontes:
+
+- `docs/reports/COMBAT_BASELINE_DELTA_POST_PARITY_2026-07.md`;
+- `docs/reports/SPECIES_PASSIVE_QUANTITATIVE_MATRIX_2026-07.md`.
 
 ## Estado do Drive
 
@@ -90,7 +101,7 @@ A marcação editorial não altera o runtime. Nomes divergentes da `main` exigem
 | `DIV-SP-ATK-01` | `atkBonus` antes da fórmula | implementado nos caminhos comparáveis | resolvida no PR #266 |
 | `DIV-SP-DEF-01` | resistência percentual antes de `shieldhorn` | implementado nos caminhos comparáveis | resolvida no PR #273 |
 | `DIV-SP-SKILL-01` | skills Group dispararem eventos de espécie | implementado | resolvida no PR #274 |
-| `GAP-SP-QUANT-01` | impacto quantitativo das passivas de espécie | harness atual não simula espécies | aberto; próximo portão técnico |
+| `GAP-SP-QUANT-01` | impacto quantitativo das passivas de espécie | matriz dedicada mede as oito espécies | encerrada tecnicamente; análise e playtest pendentes |
 | `EG-01` | semântica de skill que erra no Wild | runtime Wild não expõe erro localmente como Group | lacuna de evidência isolada |
 | `DIV-ENE-01` | tabela canônica de regeneração | divergência histórica ainda precisa de investigação própria | aberto |
 | `DIV-PASSIVE-01` | valores das passivas de classe | runtime possui valores de 10% a 15% | aberto; não recalibrar sem medição |
@@ -113,6 +124,8 @@ A marcação editorial não altera o runtime. Nomes divergentes da `main` exigem
 | #273 | ordem defensiva de `shieldhorn` no Wild | mergeado | pipeline defensivo |
 | #274 | passivas de espécie nas skills Group | mergeado | integração de eventos |
 | #275 | revalidação final das espécies | mergeado | matriz final de paridade |
+| #276 | comparação quantitativa pós-paridade | mergeado | estabilidade da baseline-base |
+| #278 | matriz quantitativa das espécies | em validação | 48 pares e artefato próprio |
 
 ## Decisões aprovadas e implementadas
 
@@ -133,26 +146,21 @@ Fonte: `docs/DECISAO_PIPELINE_PASSIVAS_ESPECIE_2026-07.md`.
 
 A fase permanece **Validação do Núcleo Jogável — Combate v2.2**.
 
-O próximo PR técnico deve ser único e limitado a:
+O próximo portão deve ser único e limitado a:
 
 ```text
-test(combat): adicionar matriz quantitativa de passivas de espécie
+docs(playtest): registrar playtest mediado das passivas de espécie
 ```
 
-Objetivo desse PR:
+Prioridades:
 
-1. preservar a baseline atual como referência de fórmula e passivas de classe;
-2. criar cenários pareados com e sem cada espécie;
-3. medir frequência de ativação e impacto numérico;
-4. publicar artefato próprio;
-5. não alterar valores.
+1. observar `shieldhorn` em uso real, sem presumir nerf;
+2. medir frequência natural de `wildpace` abaixo de 40% de HP;
+3. verificar clareza e utilidade das passivas condicionadas a skills;
+4. registrar duração, escolha de ações, frustração e entendimento;
+5. separar feedback de UX, bug e balanceamento.
 
-Depois dele:
-
-1. revisar os resultados quantitativos das espécies;
-2. realizar playtest mediado;
-3. separar bugs, UX e balanceamento;
-4. decidir se existe evidência para recalibração.
+Somente depois do playtest e de decisão humana será apropriado abrir um PR de valor, limitado a uma única passiva.
 
 Protocolos: `docs/VALIDACAO_NUCLEO_JOGAVEL_V2_2.md` e `docs/PLAYTEST_TEMPLATE_V2_2.md`.
 
@@ -166,6 +174,7 @@ npm run test:combat-simulation-v2-2
 npm run test:combat-parity-v2-2
 npm run test:species-passive-parity-v2-2
 npm run test:species-passive-final-parity-v2-2
+npm run test:species-passive-quantitative-v2-2
 npm run test:combat-baseline-comparison-v2-2
 npm run validate-data
 npm run validate:monster-assets
@@ -178,7 +187,6 @@ Execute `npm run test:wild-loop` quando as dependências do Playwright estiverem
 
 Atualizar este arquivo quando ocorrer:
 
-- criação da matriz quantitativa de passivas de espécie;
 - conclusão de playtest padronizado;
 - mudança relevante em código ou dados runtime;
 - decisão sobre PWR, crítico, passivas, energia ou boss;
