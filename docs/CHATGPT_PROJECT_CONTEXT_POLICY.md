@@ -3,8 +3,8 @@
 **Status:** ACTIVE  
 **Domain:** governança de contexto  
 **Authority:** GitHub para técnica; Google Drive para produto e discussão  
-**VerifiedAgainst:** `b14dceb5438911ce93741fa4b722895ab9ffa8eb` e `docs/CARD_SYSTEM_VISION_RECONCILIATION_2026-07.md`  
-**Supersedes:** orientações que tratavam a proposta híbrida de cartas como experimento externo
+**VerifiedAgainst:** `d73f81f401dded14587282c2c76aef424c69a408` e `docs/CARD_SYSTEM_VISION_RECONCILIATION_2026-07.md`  
+**Supersedes:** orientações que tratavam a proposta híbrida de cartas como experimento externo ou anexos antigos como fonte técnica
 
 ## Texto recomendado para as instruções do Projeto ChatGPT
 
@@ -18,14 +18,14 @@ Antes de responder sobre estado, código, dados, regras, arquitetura ou próximo
 1. consulte docs/AI_ENTRYPOINT.md;
 2. verifique docs/PROJECT_STATUS.md;
 3. verifique docs/AUTHORITY_MAP.md, docs/DECISION_LOG.md e docs/ROADMAP.md;
-4. examine a main, os testes e os PRs recentes do domínio.
+4. examine a main, os dados carregados, os testes e os PRs recentes do domínio.
 
 GitHub é a fonte oficial de código, dados runtime, testes, arquitetura técnica e regras canônicas aprovadas.
 Google Drive é o espaço de visão do produto, decisões em discussão, playtests, observações terapêuticas, referências visuais e demandas.
 
 Arquivos anexados ao Projeto ChatGPT podem ser históricos, propostas, protótipos ou cópias antigas. Nunca trate um arquivo como atual apenas porque contém palavras como “mestre”, “final”, “completo”, “v3”, “roadmap” ou “fonte única”. Compare suas afirmações com a main e com os documentos de governança.
 
-Conversas e documentos de produto podem preservar decisões e intenções do autor que ainda não foram migradas para o GitHub. Quando houver conflito, não descarte automaticamente o material nem o trate como regra implementada: reconcilie a intenção, separe princípios aprovados de detalhes pendentes e registre a decisão no GitHub.
+Conversas e documentos de produto podem preservar decisões e intenções do autor ainda não migradas. Quando houver conflito, não descarte automaticamente o material nem o trate como regra implementada: reconcilie a intenção, separe princípios aprovados de detalhes pendentes e registre a decisão no GitHub.
 
 A visão de produto do sistema de cartas combina RPG tático simples, posicionamento, cartas como habilidades e deckbuilding leve. A Card Layer visual-only é uma etapa incremental, não a visão final. Consulte docs/CARD_SYSTEM_VISION_RECONCILIATION_2026-07.md.
 
@@ -48,7 +48,7 @@ O Projeto ChatGPT pode conter:
 
 - esta política ou uma versão curta dela;
 - links para GitHub e Portal do Drive;
-- documentos de produto ainda em elaboração, quando estiverem claramente classificados e não se apresentarem como runtime;
+- documentos de produto ainda em elaboração, quando claramente classificados e sem pretensão de descrever runtime;
 - registros temporários da tarefa atual;
 - a versão revisada de uma proposta que ainda contenha decisões únicas não migradas.
 
