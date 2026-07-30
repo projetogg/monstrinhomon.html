@@ -115,7 +115,7 @@ Critérios revisados na branch:
 
 ## 8. Validação técnica
 
-Uma execução completa do CI do PR #281 concluiu com sucesso antes das últimas correções documentais:
+A validação completa do head anterior às últimas linhas deste relatório concluiu com sucesso:
 
 ```text
 npm test: PASS
@@ -125,19 +125,17 @@ npm run validate:monster-assets: PASS
 npm run test:wild-loop: PASS
 ```
 
-O CI do head definitivo deve repetir a validação antes do merge.
+A alteração final é exclusivamente este registro de resultado. O CI do PR permanece como portão obrigatório antes do merge.
 
 ## 9. Revisão
 
-As observações válidas foram incorporadas:
+As cinco observações válidas foram incorporadas e suas threads foram resolvidas:
 
 1. `monsters.bootstrap.json` deixou de ser descrito como fallback de produção e passou a fixture/artefato auxiliar;
 2. a redação explícita de Animalista não neutro foi restaurada no mapa de autoridade;
 3. foi criada instrução própria para CSVs da raiz;
 4. saídas JSON não versionadas deixaram de ser listadas como arquivos existentes;
 5. o placeholder do número do PR foi substituído por `#281`.
-
-As threads correspondentes devem estar resolvidas antes da conclusão final.
 
 ## 10. Riscos restantes
 
