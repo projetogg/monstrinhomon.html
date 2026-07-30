@@ -55,7 +55,7 @@ Uma conversa ou anexo pode preservar intenção do autor e evidência histórica
 | Catálogo de design de skills | `design/canon/skills.json` | referência de design | não vence runtime automaticamente |
 | Slots por nível | `js/canon/slotUnlocks.js` + `design/canon/level_progression.json` | confirmado | upgrades intermediários não criam slot novo |
 | Kit swaps | `js/canon/kitSwap.js` | runtime | `_kitSwapId` é diagnóstico/telemetria |
-| Matchups de classe | `design/canon/class_matchups.json` consumido pelo runtime | canônico | Animalista possui matchups explícitos |
+| Matchups de classe | `design/canon/class_matchups.json` consumido pelo runtime | canônico | Animalista possui matchups explícitos e não deve ser presumido neutro |
 | Monstrinhos runtime | `data/monsters.json` e loaders atuais | runtime | nomes editoriais do Drive não migram automaticamente |
 | Dex v3 | proposta editorial + `DEC-DRIVE-01` | produto/editorial | não governa automaticamente IDs, stats, classes, evolução ou runtime |
 | Índice do catálogo v3 | `docs/catalog_v3/README.md` | classificação ativa | explica artefatos substituídos, propostas e tooling |
@@ -71,7 +71,7 @@ A extensão ou localização do arquivo não determina sua autoridade.
 
 ### JSON e módulos
 
-- confirme loader, fallback, normalização e testes;
+- confirme loader, tratamento de falha, normalização e testes;
 - dados carregados pelo runtime vencem artefatos editoriais ou históricos;
 - módulos com cópias estáticas devem ser auditados quando também existe fonte tabular.
 
