@@ -137,7 +137,7 @@ Fontes:
 | `DIV-CARDS-01` | Card Layer visual | QA de produto e encerramento do piloto pendentes |
 | `GAP-CARDS-HYBRID-01` | regras exatas do deckbuilding tático | visão aprovada; especificação e protótipo pendentes |
 | `DIV-NAMES-01` | nomes editoriais da Dex v3 | mapear antes de qualquer migração |
-| `DOC-HYGIENE-02` | planos e auditorias históricas em caminhos ativos | resolvida pelo arquivamento e redirecionamentos; oficial após merge deste changeset |
+| `DOC-HYGIENE-02` | planos e auditorias históricas em caminhos ativos | resolvida pelo arquivamento e redirecionamentos registrados no PR #280 |
 | `DOC-HYGIENE-03` | CSVs raiz e outros planos concluídos | auditorias independentes pendentes |
 
 ## Decisões aprovadas e implementadas
