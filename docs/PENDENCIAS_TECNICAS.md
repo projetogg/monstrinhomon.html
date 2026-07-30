@@ -99,8 +99,7 @@ Pendente:
 
 - auditar e mover CSVs raiz em PR separado;
 - classificar outros planos concluídos individualmente;
-- executar limpeza manual do Projeto ChatGPT e do Drive;
-- atualizar esta seção depois do merge do PR de arquivamento.
+- executar limpeza manual do Projeto ChatGPT e do Drive.
 
 Fontes:
 
