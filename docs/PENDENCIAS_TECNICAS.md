@@ -82,21 +82,27 @@ A identidade técnica do piloto do Guerreiro está estabilizada. Ainda faltam te
 ## PT-010 — Higiene do acervo documental
 
 **Status:** Parcial  
-**Prioridade:** Alta para governança.
+**Prioridade:** Média para governança.
 
 Concluído:
 
 - correção dos pontos de entrada ativos;
-- remoção proposta de arquivos manifestamente falsos;
+- remoção dos arquivos manifestamente falsos no PR #279;
 - política do Projeto ChatGPT;
-- classificação inicial do acervo.
+- reconciliação da visão híbrida de cartas;
+- migração de `docs/PLANO_DE_ACAO.md` para `docs/legacy/PLANO_DE_ACAO_2026-03.md`;
+- migração das três auditorias datadas para `docs/archive/audits/`;
+- criação dos índices de `docs/archive/`, `docs/archive/audits/` e `docs/legacy/`;
+- preservação de compatibilidade por redirecionamentos nos caminhos antigos.
 
 Pendente:
 
-- mover `docs/PLANO_DE_ACAO.md` para `docs/legacy/`;
-- criar índices de `docs/archive/` e `docs/legacy/`;
-- classificar auditorias e planos concluídos;
-- mover CSVs raiz em PR separado;
-- executar limpeza manual do Projeto ChatGPT e do Drive.
+- auditar e mover CSVs raiz em PR separado;
+- classificar outros planos concluídos individualmente;
+- executar limpeza manual do Projeto ChatGPT e do Drive;
+- atualizar esta seção depois do merge do PR de arquivamento.
 
-Fonte: `docs/INFORMATION_HYGIENE_AUDIT_2026-07.md`.
+Fontes:
+
+- `docs/INFORMATION_HYGIENE_AUDIT_2026-07.md`;
+- `docs/reports/HISTORICAL_DOCUMENT_ARCHIVE_2026-07.md`.

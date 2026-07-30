@@ -67,9 +67,9 @@ Uma conversa ou anexo pode preservar intenção do autor e evidência histórica
 | Fonte | Tratamento |
 |---|---|
 | `GAME_RULES.md` §3–§10 | legado revogado; não implementar |
-| `docs/PLANO_DE_ACAO.md` | planejamento histórico; migração para `docs/legacy/` pendente |
+| `docs/legacy/PLANO_DE_ACAO_2026-03.md` | planejamento histórico; caminho antigo é redirecionamento |
 | `PROXIMOS_PASSOS.md` | redirecionamento; não contém plano próprio |
-| auditorias datadas | evidência histórica; consultar status atual antes de usar |
+| `docs/archive/audits/` | auditorias datadas; evidência histórica, não estado atual |
 | CSVs raiz inertes | legado; não são carregados sem evidência explícita |
 | `docs/archive/` e `docs/legacy/` | histórico; fora da ordem de leitura atual |
 | anexos antigos do Projeto ChatGPT | sem autoridade automática; podem conter intenção única a ser reconciliada |
@@ -138,6 +138,13 @@ Não usar uma limitação temporária de implementação para revogar silenciosa
 
 ## 7. Higiene documental
 
-Ações e classificações atuais estão em:
+Ações e classificações gerais estão em:
 
-`docs/INFORMATION_HYGIENE_AUDIT_2026-07.md`.
+- `docs/INFORMATION_HYGIENE_AUDIT_2026-07.md`;
+- `docs/reports/HISTORICAL_DOCUMENT_ARCHIVE_2026-07.md`.
+
+Índices históricos:
+
+- `docs/archive/README.md`;
+- `docs/archive/audits/README.md`;
+- `docs/legacy/README.md`.
