@@ -6,7 +6,7 @@
 **Data:** 2026-07-30  
 **Base verificada:** `d73f81f401dded14587282c2c76aef424c69a408`  
 **Branch:** `docs/active-authority-hotfix-281`  
-**PR:** a registrar após abertura
+**PR:** #281
 
 ## 1. Objetivo
 
@@ -107,17 +107,26 @@ Critérios revisados na branch:
 
 ## 8. Validação técnica
 
-A registrar após execução do CI do PR:
+A primeira execução do CI do PR #281 concluiu com sucesso:
 
 ```text
-npm test: pendente
-npm run validate-data: pendente
-npm run validate:monster-assets: pendente
-npm run test:wild-loop:vitest: pendente
-npm run test:wild-loop: pendente quando disponível
+npm test: PASS
+npm run test:wild-loop:vitest: PASS
+npm run validate-data: PASS
+npm run validate:monster-assets: PASS
+npm run test:wild-loop: PASS
 ```
 
-## 9. Riscos restantes
+O commit final altera apenas este relatório; a rodada final de CI deve confirmar o mesmo resultado no head definitivo.
+
+## 9. Revisão
+
+- PR aberto fora de draft;
+- mergeabilidade confirmada pelo GitHub;
+- nenhuma thread de revisão aberta até o registro deste relatório;
+- qualquer observação posterior deve permanecer dentro do escopo documental.
+
+## 10. Riscos restantes
 
 1. CSVs continuam em contratos paralelos; PT-003 exige PR próprio.
 2. Portal e estrutura do Drive continuam desatualizados.
@@ -125,13 +134,13 @@ npm run test:wild-loop: pendente quando disponível
 4. Outros planos de migração podem precisar de classificação individual.
 5. `DEC-AUTH-01` e `DEC-AUTH-02` permanecem pendentes.
 
-## 10. Rollback
+## 11. Rollback
 
 - reverter os commits da branch ou o futuro merge;
 - recuperar corpos substituídos pelo commit-base;
 - nenhum rollback de runtime ou dados é necessário.
 
-## 11. Próximo passo recomendado
+## 12. Próximo passo recomendado
 
 Após integração desta Onda 0:
 
@@ -142,8 +151,6 @@ Após integração desta Onda 0:
 5. preencher Visão, Decisões e Playtests;
 6. tratar CSVs em PR técnico separado.
 
-## 12. Classificação provisória
+## 13. Classificação final
 
 `A. Fontes ativas convergem para a governança atual; runtime e dados não foram alterados.`
-
-A classificação final depende do CI e da revisão do PR.
