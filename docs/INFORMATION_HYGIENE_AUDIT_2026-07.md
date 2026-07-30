@@ -1,5 +1,11 @@
 # Auditoria de Higiene Informacional — Monstrinhomon
 
+**Status:** HISTORICAL  
+**Domain:** técnica  
+**Authority:** GitHub  
+**VerifiedAgainst:** `b14dceb5438911ce93741fa4b722895ab9ffa8eb`  
+**Supersedes:** nenhum
+
 **Data:** 2026-07-30  
 **Main examinada:** `b14dceb5438911ce93741fa4b722895ab9ffa8eb`  
 **Escopo:** GitHub, Projeto RPG do ChatGPT e fronteira com Google Drive.  
@@ -42,7 +48,7 @@ Uma implementação parcial também não revoga automaticamente a visão de prod
 | `docs/DECISION_LOG.md` | `COMPLETE_NOW` | decisões de passivas já implementadas e visão híbrida de cartas ainda não registrada |
 | `AGENTS.md` | `COMPLETE_NOW` | ordem de autoridade antiga e afirmação incorreta de Animalista neutro |
 | `docs/PENDENCIAS_TECNICAS.md` | `COMPLETE_NOW` | PT-004 ainda aparece “em correção” e o registro está centrado na Card Layer de maio |
-| `GAME_RULES.md` | `KEEP_ACTIVE_WITH_WARNING` | possui conteúdo geral ainda consultado, mas grande bloco legado revogado; não deve ser apagado sem separação prévia |
+| `GAME_RULES.md` | `KEEP_ACTIVE` | possui conteúdo geral ainda consultado, mas contém grande bloco legado explicitamente revogado; não deve ser apagado sem separação prévia |
 | `docs/PATCH_CANONICO_COMBATE_V2.2.md` | `KEEP_ACTIVE` | autoridade normativa de combate |
 | `docs/CARD_LAYER_ARCHITECTURE_v0.1.2.md` | `KEEP_ACTIVE_PHASE_SPEC` | arquitetura válida da Fase 1 visual; não representa a visão final do sistema de cartas |
 | `docs/CARD_SYSTEM_VISION_RECONCILIATION_2026-07.md` | `KEEP_ACTIVE` | registra a visão híbrida aprovada e separa princípios de detalhes pendentes |
