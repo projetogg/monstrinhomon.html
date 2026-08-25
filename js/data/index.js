@@ -9,6 +9,7 @@ export {
     loadMonsters,
     getMonstersMapSync,
     validateMonsterSchema,
+    isMonsterAvailableForNewContent,
     normalizeMonsterData,
     getCacheStatus,
     clearCache

@@ -2433,7 +2433,9 @@
             if (window.Data && window.Data.getMonstersMapSync) {
                 const monstersMap = window.Data.getMonstersMapSync();
                 if (monstersMap && monstersMap.size > 0) {
-                    return Array.from(monstersMap.values());
+                    const isAvailable = window.Data.isMonsterAvailableForNewContent
+                        || ((monster) => monster?.deprecated !== true);
+                    return Array.from(monstersMap.values()).filter(isAvailable);
                 }
             }
             return [];
@@ -10051,7 +10053,9 @@
                     if (window.Data && window.Data.getMonstersMapSync) {
                         const monstersMap = window.Data.getMonstersMapSync();
                         if (monstersMap && monstersMap.size > 0) {
-                            return Array.from(monstersMap.values());
+                            const isAvailable = window.Data.isMonsterAvailableForNewContent
+                                || ((monster) => monster?.deprecated !== true);
+                            return Array.from(monstersMap.values()).filter(isAvailable);
                         }
                     }
                     
@@ -10614,8 +10618,10 @@
                 
                 // Filter by rarity
                 const monsterPool = [];
+                const isAvailable = window.Data.isMonsterAvailableForNewContent
+                    || ((candidate) => candidate?.deprecated !== true);
                 for (const [id, monster] of monstersMap.entries()) {
-                    if (monster.rarity === targetRarity) {
+                    if (monster.rarity === targetRarity && isAvailable(monster)) {
                         monsterPool.push(monster);
                     }
                 }

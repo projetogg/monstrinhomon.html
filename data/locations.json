@@ -22,7 +22,6 @@
       },
       "speciesPoolsByRarity": {
         "Comum": [
-          "MON_100",
           "MON_005",
           "MON_028"
         ],
@@ -103,7 +102,6 @@
           "MON_001",
           "MON_028",
           "MON_017",
-          "MON_100",
           "MON_031"
         ],
         "Incomum": [
@@ -689,8 +687,7 @@
         "Comum": [
           "MON_001",
           "MON_026",
-          "MON_021",
-          "MON_100"
+          "MON_021"
         ],
         "Incomum": [
           "MON_002",

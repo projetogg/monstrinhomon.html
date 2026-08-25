@@ -15,7 +15,7 @@
  * - hatchEgg(state, playerId, eggItemId): Choca um ovo e retorna resultado
  */
 
-import { getMonstersMapSync } from './dataLoader.js';
+import { getMonstersMapSync, isMonsterAvailableForNewContent } from './dataLoader.js';
 import { getItemById } from './itemsLoader.js';
 
 /**
@@ -54,7 +54,7 @@ export function getMonstersByRarity(rarity) {
         // Converter Map para array e filtrar por raridade
         const filtered = [];
         for (const [id, monster] of monstersMap.entries()) {
-            if (monster.rarity === rarity) {
+            if (monster.rarity === rarity && isMonsterAvailableForNewContent(monster)) {
                 filtered.push(monster);
             }
         }

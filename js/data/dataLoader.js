@@ -39,6 +39,20 @@ export function validateMonsterSchema(monster) {
 }
 
 /**
+ * Indica se um template pode participar de conteúdo novo.
+ *
+ * Templates descontinuados continuam no cache para que saves antigos possam
+ * resolver seus IDs, mas não devem aparecer em catálogos, seletores, ovos ou
+ * novas gerações de encontro.
+ *
+ * @param {Object|null} monster - Template do catálogo
+ * @returns {boolean} true quando o template pode ser oferecido novamente
+ */
+export function isMonsterAvailableForNewContent(monster) {
+    return Boolean(monster) && monster.deprecated !== true;
+}
+
+/**
  * Normaliza dados do monster, preenchendo campos faltantes com defaults
  * NÃO modifica valores existentes, apenas preenche faltantes
  * @param {Object} monster - Monster data
