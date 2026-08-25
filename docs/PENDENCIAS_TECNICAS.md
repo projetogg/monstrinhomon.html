@@ -1,7 +1,8 @@
 # Monstrinhomon — Pendências Técnicas
 
 **Status:** ACTIVE — registro de pendências técnicas não representadas integralmente no roadmap.  
-**Atualizado:** 2026-07-30
+**Atualizado:** 2026-07-30  
+**VerifiedAgainst:** `d73f81f401dded14587282c2c76aef424c69a408`
 
 Este arquivo não substitui `docs/ROADMAP.md` e não cria regras canônicas.
 
@@ -27,21 +28,37 @@ O runtime organiza skills por `class`, `groupKey` e `stageIndex`, enquanto o des
 
 Investigar somente quando a expansão da Card Layer for aprovada.
 
-## PT-003 — CSVs raiz como legado inerte
+## PT-003 — Consolidação dos CSVs da raiz
 
 **Status:** Aberto  
-**Prioridade:** Baixa.
+**Prioridade:** Média para governança e contratos de teste.
 
-CSVs históricos não são carregados pelo runtime atual, salvo evidência específica. A ação correta é confirmar referências e movê-los em PR próprio para `legacy/data-csv/` ou removê-los quando o histórico Git for suficiente.
+Os CSVs da raiz não são a fonte runtime principal, mas não formam um bloco homogêneo.
 
-Não misturar essa limpeza com alteração de dados runtime.
+Evidência verificada na baseline:
+
+- `QUESTS.csv` é lido pela suíte de integridade e possui representação paralela em `js/data/questSystem.js`;
+- `DROPS.csv` é lido pela suíte de integridade e possui representação paralela em `js/data/dropSystem.js`;
+- `LOCAIS.csv` e `ENCOUNTERS.csv` são lidos por testes de integridade;
+- outros CSVs contêm fórmulas, valores, IDs ou catálogos históricos que podem divergir do runtime.
+
+Ação correta:
+
+1. inventariar cada CSV;
+2. buscar runtime, testes, scripts, comentários e documentação;
+3. comparar conteúdo com a fonte efetiva;
+4. classificar como runtime, fixture, contrato paralelo, gerado, histórico, legado inerte ou desconhecido;
+5. escolher fonte única ou geração quando houver duplicidade;
+6. mover ou remover somente em PR próprio com testes atualizados.
+
+Não misturar essa consolidação com balanceamento ou alteração de dados runtime.
 
 ## PT-004 — Drift em `AGENTS.md` e `PROXIMOS_PASSOS.md`
 
 **Status:** Resolvido em documentação na auditoria de julho de 2026.
 
-- `AGENTS.md` passou a usar a ordem de leitura atual e não presume Animalista neutro;
-- `PROXIMOS_PASSOS.md` virou redirecionamento mínimo para `PROJECT_STATUS.md` e `ROADMAP.md`;
+- `AGENTS.md` usa a ordem de leitura atual e não presume Animalista neutro;
+- `PROXIMOS_PASSOS.md` é redirecionamento mínimo;
 - o conteúdo histórico permanece em `docs/legacy/PROXIMOS_PASSOS_2026-01.md`.
 
 ## PT-005 — Categoria visual de `Provocar`
@@ -56,7 +73,7 @@ A categoria visual atual é `controle`. Reclassificar como `suporte` somente se 
 **Status:** Lacuna de evidência  
 **Prioridade:** Baixa/Média.
 
-O Group expõe localmente erro de acurácia; o caminho Wild recebe resultado mais agregado. Não alterar o runtime sem uma investigação isolada.
+O Group expõe localmente erro de acurácia; o caminho Wild recebe resultado mais agregado. Não alterar o runtime sem investigação isolada.
 
 ## PT-007 — Regeneração de ENE
 
@@ -86,22 +103,25 @@ A identidade técnica do piloto do Guerreiro está estabilizada. Ainda faltam te
 
 Concluído:
 
-- correção dos pontos de entrada ativos;
-- remoção dos arquivos manifestamente falsos no PR #279;
+- correção dos pontos de entrada iniciais;
+- remoção de arquivos manifestamente falsos no PR #279;
 - política do Projeto ChatGPT;
 - reconciliação da visão híbrida de cartas;
-- migração de `docs/PLANO_DE_ACAO.md` para `docs/legacy/PLANO_DE_ACAO_2026-03.md`;
-- migração das três auditorias datadas para `docs/archive/audits/`;
-- criação dos índices de `docs/archive/`, `docs/archive/audits/` e `docs/legacy/`;
-- preservação de compatibilidade por redirecionamentos nos caminhos antigos.
+- migração de planos e auditorias datadas no PR #280;
+- índices de `docs/archive/`, `docs/archive/audits/` e `docs/legacy/`;
+- redirecionamentos para caminhos históricos;
+- correção das instruções ativas de agentes e dados;
+- classificação dos documentos conflitantes do catálogo v3.
 
 Pendente:
 
-- auditar e mover CSVs raiz em PR separado;
+- executar PT-003 em PR próprio;
 - classificar outros planos concluídos individualmente;
-- executar limpeza manual do Projeto ChatGPT e do Drive.
+- atualizar e consolidar o Google Drive;
+- migrar conteúdo útil e executar limpeza manual do Projeto ChatGPT.
 
 Fontes:
 
 - `docs/INFORMATION_HYGIENE_AUDIT_2026-07.md`;
-- `docs/reports/HISTORICAL_DOCUMENT_ARCHIVE_2026-07.md`.
+- `docs/reports/HISTORICAL_DOCUMENT_ARCHIVE_2026-07.md`;
+- `docs/reports/ACTIVE_AUTHORITY_HOTFIX_2026-07.md`.

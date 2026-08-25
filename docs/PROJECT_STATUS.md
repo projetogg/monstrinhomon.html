@@ -2,14 +2,14 @@
 
 **Verificado em:** 2026-07-30  
 **Branch oficial examinada:** `main`  
-**Commit verificado:** `8615f27f369b13d36dece301ae1c1d4381c8bc8f`  
-**Marco técnico:** PR #279 integrado  
-**Escopo:** este arquivo descreve o repositório e decisões registradas; não afirma que visão futura já está implementada.
+**Commit-base verificado:** `d73f81f401dded14587282c2c76aef424c69a408`  
+**Marco técnico:** PR #280 integrado; arquivamento documental histórico concluído  
+**Escopo:** fotografia datada do estado implementado e das decisões registradas. Visão futura não equivale a runtime.
 
 ## Baseline atual
 
-- Aplicação em JavaScript executada no navegador.
-- Dados runtime em `data/`, conforme os loaders efetivamente usados.
+- Aplicação JavaScript executada no navegador.
+- Dados runtime estruturados em `data/`, conforme loaders efetivamente usados.
 - Testes Vitest, validadores de dados/assets e smoke tests definidos em `package.json`.
 - GitHub como fonte técnica oficial.
 - Google Drive como espaço de produto, discussão, playtest, observação e referência visual.
@@ -20,8 +20,9 @@
 - `DEC-SPECIES-ATK-01` e `DEC-SPECIES-DEF-01` implementadas.
 - Baseline quantitativa de fórmula separada da matriz quantitativa das espécies.
 - Matriz de espécies com 48 pares e 96.000 batalhas controladas.
-- Visão futura de cartas registrada separadamente do estado atual do runtime.
-- Planos e auditorias datadas preservados em `docs/legacy/` e `docs/archive/audits/`, fora da ordem de leitura atual.
+- Visão híbrida de cartas registrada separadamente do runtime atual.
+- Planos e auditorias datadas preservados em `docs/legacy/` e `docs/archive/`, fora da ordem de leitura atual.
+- Instruções operacionais de agentes devem apontar para a governança, e não copiar fórmulas, valores ou IDs.
 
 ## Implementado na `main`
 
@@ -34,43 +35,35 @@
 | Paridade da fórmula-base | matriz determinística | `tests/combatHarnessRuntimeParityV22.test.js`, PR #263 |
 | `atkBonus` de espécie | ATK antes da fórmula | PR #266 |
 | Ordem de `shieldhorn` | resistência percentual antes da redução plana | PR #273 |
-| Passivas nas skills Group | `ON_ATTACK` e `ON_SKILL_USED` | PR #274 |
+| Passivas nas skills Group | eventos de ataque e uso de skill | PR #274 |
 | Paridade final das espécies | oito espécies nos caminhos comparáveis | PR #275 |
 | Comparação de baselines | ferramenta e relatório reproduzíveis | PR #276 |
-| Matriz quantitativa das espécies | 48 pares; artefato próprio | PR #278 |
+| Matriz quantitativa das espécies | 48 pares e artefato próprio | PR #278 |
 | Governança e visão híbrida | contexto higienizado e `DEC-CARDS-VISION-01` registrada | PR #279 |
+| Arquivamento documental | planos e auditorias históricas classificados e redirecionados | PR #280 |
 | Card Layer | piloto visual do Guerreiro tecnicamente estabilizado | `js/cards/*`, `data/cards.json`, PR #256 |
-| Deck, mão e tabuleiro | não implementados | visão aprovada, especificação e protótipo pendentes |
+| Deck, mão e tabuleiro | não implementados | visão aprovada; especificação e protótipo pendentes |
 | Save/load | camadas complementares de persistência | `js/saveLayer.js`, `js/storage.js` |
 
 ## Visão de produto do sistema de cartas
 
-A direção de produto aprovada combina:
+A direção aprovada combina:
 
 - RPG tático simples;
-- posicionamento;
+- posicionamento acessível;
 - cartas como habilidades executáveis;
 - deckbuilding leve;
-- ações ou cartas sem custo de ENE para impedir turno morto;
+- garantia de ação legal quando ENE ou mão limitarem opções;
+- possibilidade de ações ou cartas sem custo de ENE;
 - troca de Monstrinhomon alterando opções e estilo de cartas;
 - uma única fonte mecânica para skills.
 
-Essa visão está registrada em:
+Fontes:
 
 - `DEC-CARDS-VISION-01`;
 - `docs/CARD_SYSTEM_VISION_RECONCILIATION_2026-07.md`.
 
-A Card Layer visual-only atual é fundação incremental. Ela não representa a arquitetura final de todo o sistema de cartas.
-
-Permanecem pendentes:
-
-- tamanho de deck e mão;
-- compra e descarte;
-- ação básica fora do deck ou carta permanente;
-- quantidade de ações sem ENE;
-- grade, movimento e ocupação;
-- economia futura de ENE;
-- primeiro protótipo híbrido.
+A Card Layer visual-only é uma fundação incremental. Permanecem pendentes deck, mão, compra, descarte, ação básica, economia futura de ENE, grade, movimento e primeiro protótipo híbrido.
 
 ## Evidência quantitativa atual
 
@@ -96,35 +89,36 @@ Essa baseline mede fórmula, RC, ações ofensivas, ENE e passivas de classe. El
 96.000 batalhas
 ```
 
-Principais sinais automatizados:
+Sinais principais:
 
 - `shieldhorn`: maior delta automatizado de vitória e mitigação;
-- `wildpace`: efeito medido num cenário controlado já abaixo de 40% de HP;
+- `wildpace`: efeito medido em cenário controlado iniciado abaixo de 40% de HP;
 - `floracura`: bônus de cura confirmado;
-- passivas dependentes de skill: efeitos e estados observáveis nos perfis aplicáveis.
+- passivas dependentes de skill: efeitos observáveis nos perfis aplicáveis.
 
-Esses resultados não autorizam buff ou nerf sem análise humana e playtest.
+Esses resultados não autorizam buff ou nerf sem playtest e decisão humana.
 
 Fontes:
 
 - `docs/reports/COMBAT_BASELINE_DELTA_POST_PARITY_2026-07.md`;
 - `docs/reports/SPECIES_PASSIVE_QUANTITATIVE_MATRIX_2026-07.md`.
 
-## Estado da informação
+## Estado da informação e autoridade
 
-- `README.md`, `AI_ENTRYPOINT.md`, `PROJECT_STATUS.md`, `AUTHORITY_MAP.md`, `DECISION_LOG.md` e `ROADMAP.md` formam os pontos de entrada atuais.
+- `README.md`, `docs/AI_ENTRYPOINT.md`, este arquivo, `docs/AUTHORITY_MAP.md`, `docs/DECISION_LOG.md` e `docs/ROADMAP.md` são os pontos de entrada atuais.
+- `AGENTS.md` é o guia operacional; wrappers em `.github/` não devem manter regras próprias.
 - Anexos do Projeto ChatGPT não possuem autoridade técnica automática.
-- Conversas e documentos de produto podem preservar intenção do autor; decisões reconciliadas devem ser registradas no GitHub.
-- Documentos históricos estão em `docs/archive/` ou `docs/legacy/`, ou possuem redirecionamento explícito.
-- `LEIA-ME.md`, `TODO_FUNCIONALIDADES.md` e `docs/ANALISE_PROJETO.md` foram removidos como cópias ativas perigosas no PR #279.
-- `docs/PLANO_DE_ACAO.md` e as três auditorias datadas possuem conteúdo preservado em áreas históricas e caminhos antigos reduzidos a redirecionamentos.
-- A versão revisada do sistema de cartas deve ser preservada como proposta de produto até migração.
-- CSVs raiz e outros planos concluídos ainda exigem auditorias próprias antes de mover ou remover.
+- Conversas e documentos de produto podem preservar intenção; decisões reconciliadas devem ser registradas no GitHub.
+- Documentos históricos ficam em `docs/archive/`, `docs/legacy/` ou em redirecionamentos classificados.
+- A Dex v3 permanece proposta editorial; não governa automaticamente runtime, IDs, atributos, classes ou evolução.
+- CSVs da raiz não são a fonte runtime principal, mas alguns são lidos por testes ou funcionam como contratos paralelos. A auditoria deve ser individual.
 
 Fontes:
 
+- `docs/AUTHORITY_MAP.md`;
 - `docs/INFORMATION_HYGIENE_AUDIT_2026-07.md`;
-- `docs/reports/HISTORICAL_DOCUMENT_ARCHIVE_2026-07.md`.
+- `docs/reports/HISTORICAL_DOCUMENT_ARCHIVE_2026-07.md`;
+- `docs/reports/ACTIVE_AUTHORITY_HOTFIX_2026-07.md`.
 
 ## Divergências e lacunas conhecidas
 
@@ -137,32 +131,33 @@ Fontes:
 | `DIV-CARDS-01` | Card Layer visual | QA de produto e encerramento do piloto pendentes |
 | `GAP-CARDS-HYBRID-01` | regras exatas do deckbuilding tático | visão aprovada; especificação e protótipo pendentes |
 | `DIV-NAMES-01` | nomes editoriais da Dex v3 | mapear antes de qualquer migração |
-| `DOC-HYGIENE-02` | planos e auditorias históricas em caminhos ativos | resolvida pelo arquivamento e redirecionamentos registrados no PR #280 |
+| `DOC-HYGIENE-02` | planos e auditorias históricas em caminhos ativos | resolvida pelo PR #280 |
 | `DOC-HYGIENE-03` | CSVs raiz e outros planos concluídos | auditorias independentes pendentes |
+| `DOC-HYGIENE-04` | instruções ativas com regras e autoridades antigas | corrigida pela Onda 0 de autoridade ativa |
+| `DRIVE-HYGIENE-01` | duas raízes e Portal desatualizado | execução separada pendente |
+| `CHATGPT-HYGIENE-01` | anexos antigos no contexto ativo | migração e limpeza manual pendentes |
 
-## Decisões aprovadas e implementadas
+## Decisões
+
+### Implementadas
 
 - `DEC-SPECIES-ATK-01`: `atkBonus` modifica o ATK antes da fórmula.
 - `DEC-SPECIES-DEF-01`: resistência percentual ocorre antes da redução plana de `shieldhorn`.
 
-Fonte: `docs/DECISAO_PIPELINE_PASSIVAS_ESPECIE_2026-07.md`.
+### Aprovadas e não implementadas integralmente
 
-## Decisões aprovadas ainda não implementadas integralmente
+- `DEC-CARDS-VISION-01`: RPG tático simples, deckbuilding leve, posicionamento, cartas como habilidades e garantia contra turno morto.
 
-- `DEC-CARDS-VISION-01`: RPG tático simples + deckbuilding leve + posicionamento + cartas como habilidades, com garantia contra turno morto.
+### Pendentes
 
-Fonte: `docs/CARD_SYSTEM_VISION_RECONCILIATION_2026-07.md`.
-
-## Decisões pendentes
-
-- `DEC-COMBAT-A`: estratégia de calibração entre PWR e catálogo.
-- `DEC-COMBAT-D`: destino do prêmio aleatório de UX no crítico.
+- `DEC-COMBAT-A`: estratégia de calibração entre PWR e catálogo;
+- `DEC-COMBAT-D`: destino do prêmio aleatório de UX no crítico;
 - regras exatas de deck, mão, compra, descarte, ações sem ENE e tabuleiro;
-- `DEC-AUTH-01`: formalização final da autoridade normativa e descritiva.
-- `DEC-AUTH-02`: destino do antigo “Documento Mestre”.
-- `DEC-DRIVE-01`: revisão dos nomes editoriais ainda pendentes.
+- `DEC-AUTH-01`: formalização final da autoridade normativa e descritiva;
+- `DEC-AUTH-02`: destino do antigo Documento Mestre;
+- revisão dos nomes editoriais ainda pendentes em `DEC-DRIVE-01`.
 
-## Fase atual recomendada
+## Fase atual
 
 A fase permanece **Validação do Núcleo Jogável — Combate v2.2**.
 
@@ -180,7 +175,7 @@ Prioridades:
 4. registrar duração, escolhas, frustração e entendimento;
 5. separar UX, bug e balanceamento.
 
-A reconciliação da visão de cartas e o arquivamento documental não autorizam começar a implementação de deck ou tabuleiro durante este portão.
+Higiene documental não autoriza iniciar deck, tabuleiro ou recalibração durante este portão.
 
 ## Validação técnica
 
@@ -209,5 +204,5 @@ Atualizar este arquivo quando ocorrer:
 - decisão sobre deck, mão, ações sem ENE ou tabuleiro;
 - aprovação ou migração de nomes;
 - alteração dos comandos oficiais de teste;
-- conclusão de nova etapa de higiene documental;
+- nova etapa de higiene documental;
 - novo marco técnico que torne esta fotografia materialmente incorreta.

@@ -1,73 +1,99 @@
-# Data Directory
+# Diretório `data/`
 
-Este diretório contém os dados do jogo Monstrinhomon em formato CSV e/ou JSON.
+**Status:** ACTIVE  
+**Domain:** dados runtime  
+**Authority:** GitHub  
+**VerifiedAgainst:** `d73f81f401dded14587282c2c76aef424c69a408`  
+**Supersedes:** descrição antiga que tratava dados estruturados como migração futura
 
-## Estrutura
+Este diretório reúne dados estruturados usados pelo jogo e artefatos auxiliares. A presença de um arquivo aqui não define, isoladamente, sua autoridade: sempre confirme loader, normalização, testes e decisões do domínio.
 
-Os dados do jogo são organizados em arquivos que representam diferentes aspectos do jogo:
+## Fontes runtime verificadas
 
-### Arquivos Esperados
+| Domínio | Fonte principal | Observação |
+|---|---|---|
+| Monstrinhos | `monsters.json` | catálogo runtime; loaders atuais definem a forma consumida |
+| Skills | `skills.json` | fonte mecânica atual via `js/data/skillsLoader.js` |
+| Cards visuais | `cards.json` | metadados visuais; não duplica mecânica das skills |
+| Itens | `items.json` | confirmar loader e contratos antes de editar |
+| Locais | `locations.json` | usado pelo fluxo de exploração e testes de integridade |
+| Mapa | `worldMap.json` | estrutura de navegação e encontros especiais |
 
-- **monstrinhos.csv/json** - Catálogo de Monstrinhos disponíveis
-- **classes.csv/json** - Definições das classes de jogadores
-- **itens.csv/json** - Itens disponíveis no jogo
-- **habilidades.csv/json** - Habilidades e poderes
+A lista acima é operacional, não um schema duplicado. Leia os próprios arquivos, loaders e testes do commit atual.
 
-## Formato de IDs
+## Artefatos auxiliares e fixtures
 
-Todos os IDs devem seguir o padrão:
+`monsters.bootstrap.json` não é fallback de produção na baseline verificada. Ele é consumido por teste e documentação histórica específica.
 
-- Monstrinhos: `MON_001`, `MON_002`, etc. ou `m_luma`, `m_trok`, etc.
-- Itens: `ITM_001`, `ITM_002`, etc. ou `ball_basic`, `potion`, etc.
-- Habilidades: `SKL_001`, `SKL_002`, etc.
-- Classes: `pc_mago`, `pc_guerreiro`, etc.
+Não presuma comportamento de fallback pela existência do arquivo. Para confirmar recuperação de erro em produção, leia o loader atual e seus testes.
 
-## Regras Importantes
+## Autoridade e classificação
 
-1. **IDs são imutáveis** - Nunca renomear um ID existente
-2. **IDs são únicos** - Cada entidade tem um ID único
-3. **Compatibilidade** - Manter IDs antigos ao criar novos dados
-4. **Formato consistente** - Usar o mesmo formato em todos os arquivos
+Antes de editar qualquer arquivo:
 
-## Campos Obrigatórios
+1. consulte `docs/AUTHORITY_MAP.md`;
+2. localize o loader real;
+3. identifique normalização e tratamento de falha;
+4. localize testes e validadores;
+5. verifique referências cruzadas;
+6. avalie compatibilidade com saves;
+7. separe manutenção, migração editorial e balanceamento.
 
-### Monstrinhos
-- `id`: string única
-- `name`: nome do Monstrinho
-- `class`: uma das 7 classes (Mago, Curandeiro, Guerreiro, Bárbaro, Ladino, Bardo, Caçador)
-- `rarity`: raridade (Comum, Incomum, Raro, Místico, Lendário)
-- `baseHp`: HP base no nível 1
+Dados em `design/canon/`, planilhas do Drive, artefatos de migração e CSVs históricos não vencem automaticamente os dados carregados pelo runtime.
 
-### Classes de Jogador
-- `id`: string única
-- `name`: nome da classe
-- `allowed`: array de classes que podem ser usadas em batalha
+## IDs e saves
 
-### Itens
-- `id`: string única
-- `name`: nome do item
-- `type`: tipo (captura, cura, tatico)
-- Campos adicionais dependem do tipo
+- IDs existentes são estáveis.
+- Não renomeie, recicle ou remapeie IDs sem migração explícita.
+- Mudanças que afetem saves devem declarar compatibilidade e rollback.
+- Não derive padrões de ID de exemplos antigos ou documentos substituídos.
+- Nomes editoriais aprovados não autorizam mudança automática de ID ou runtime.
+
+## Skills e Card Layer
+
+- `skills.json` permanece a fonte mecânica das skills.
+- `cards.json` descreve apresentação visual.
+- Cards não devem copiar `power`, custo, acurácia, alvo, duração ou efeito.
+- A Card Layer visual atual não implementa deck, mão, compra ou descarte.
+- A visão híbrida futura está registrada separadamente em `docs/CARD_SYSTEM_VISION_RECONCILIATION_2026-07.md`.
+
+## CSVs da raiz
+
+Os CSVs localizados na raiz do repositório não fazem parte deste diretório e não devem ser tratados como um único bloco.
+
+Alguns são consumidos por testes ou funcionam como contratos paralelos; outros são históricos ou legados. Antes de mover ou remover um CSV, audite individualmente runtime, testes, scripts, comentários e referências.
+
+Pendência registrada: `PT-003` em `docs/PENDENCIAS_TECNICAS.md`.
+
+## Balanceamento
+
+Alterações em atributos, custos, chances, thresholds, recompensas, evolução, raridade ou progressão não são simples correções documentais.
+
+Elas exigem escopo próprio, evidência, validação antes/depois e decisão humana quando aplicável.
 
 ## Validação
 
-Antes de adicionar novos dados:
+```bash
+npm test
+npm run validate-data
+npm run validate:monster-assets
+npm run test:wild-loop:vitest
+```
 
-1. Verificar que todos os IDs são únicos
-2. Verificar que todos os campos obrigatórios estão presentes
-3. Validar valores das enumerações (classes, raridades, tipos)
-4. Testar no jogo antes de commitar
+Quando o ambiente permitir:
 
-## Atualização
+```bash
+npm run test:wild-loop
+```
 
-Para adicionar novos dados:
+Use também os comandos específicos do domínio listados em `docs/PROJECT_STATUS.md`.
 
-1. Criar novo arquivo ou atualizar existente
-2. Seguir o formato estabelecido
-3. Não remover ou renomear dados existentes
-4. Documentar mudanças no commit
-5. Testar o fluxo completo do jogo
+## Mudanças estruturais
 
----
+Quando loader, tratamento de falha, schema efetivo ou autoridade mudar:
 
-**Nota**: Este diretório está preparado para receber dados estruturados. Atualmente, os dados estão hardcoded no `index.html` para o MVP, mas devem ser migrados para este diretório em versões futuras.
+- atualize este arquivo;
+- atualize `docs/AUTHORITY_MAP.md`;
+- atualize `docs/PROJECT_STATUS.md` quando o estado material mudar;
+- preserve compatibilidade e rollback;
+- não mantenha uma cópia independente de valores ou fórmulas neste README.

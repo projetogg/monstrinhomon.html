@@ -64,7 +64,7 @@ Ver `docs/AUTHORITY_MAP.md` para versão canônica. Resumo:
 | Quantidade de slots por nível | `js/canon/slotUnlocks.js` |
 | Variações por espécie | `js/canon/kitSwap.js` |
 | Card Layer visual | Este documento |
-| CSVs raiz | Legado inerte |
+| CSVs raiz | Auditoria individual obrigatória: alguns ainda têm consumidores em testes ou contratos; consultar `AGENTS.md`, `docs/AUTHORITY_MAP.md` e `.github/instructions/root-csv.instructions.md` |
 
 Regra de conflito:
 

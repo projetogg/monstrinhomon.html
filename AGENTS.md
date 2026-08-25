@@ -89,7 +89,7 @@ Deck, mão, ações sem ENE e tabuleiro exigem especificação e PR próprios de
 - IDs existentes são estáveis.
 - Não renomear IDs sem migração explícita.
 - Mudanças que afetem saves devem declarar compatibilidade e rollback.
-- CSVs raiz são legado inerte salvo prova de carregamento.
+- Os CSVs da raiz não são a fonte runtime principal. Alguns, porém, são consumidos diretamente por testes, auditorias ou módulos como fixtures, contratos paralelos ou referências históricas. Antes de mover ou remover qualquer CSV, audite individualmente runtime, testes, scripts, comentários e referências.
 
 ## Padrões de código
 
