@@ -1,8 +1,10 @@
 # Documento 1 — Fórmula de Combate Canônica v2
 
-> **Status:** Canônico — Aprovado para implementação  
+> **Status:** ACTIVE_REFERENCE — subordinado a `docs/PATCH_CANONICO_COMBATE_V2.2.md`, `docs/AUTHORITY_MAP.md`, dados carregados e testes do mesmo commit  
 > **Versão:** 2.1 (revisão de balanceamento — DEF parcial)  
-> **Última atualização:** 2026-03-31
+> **Última atualização:** 2026-08-25
+>
+> Este documento preserva a formulação v2.1 e não vence o Patch v2.2 nem o runtime atual em caso de conflito.
 
 ---
 
@@ -228,7 +230,7 @@ Isso impede que monstros muito fortes sejam frustrados por pequenas oscilações
 ### 8.1 Ciclo de Vantagens
 ```
 Guerreiro > Ladino > Mago > Bárbaro > Caçador > Bardo > Curandeiro > Guerreiro
-Animalista: neutro contra todos
+Animalista possui matchups explícitos em `design/canon/class_matchups.json`, consumidos pelo runtime, e não deve ser presumido neutro.
 ```
 
 ### 8.2 Efeito da Vantagem/Desvantagem
