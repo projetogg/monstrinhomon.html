@@ -1,9 +1,13 @@
 # Monstrinhomon — Estado do Projeto
 
 **Verificado em:** 2026-08-26
+
 **Branch oficial examinada:** `main`
+
 **Commit-base verificado:** `6d59d876b1459b4ebd54d4838b1fffdfd83ad7cc`
+
 **Marco técnico:** PR #283 integrado; `MON_100` descontinuado com compatibilidade de saves
+
 **Escopo:** fotografia datada do estado implementado e das decisões registradas. Visão futura não equivale a runtime.
 
 ## Baseline atual
