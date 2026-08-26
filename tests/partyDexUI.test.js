@@ -184,6 +184,35 @@ describe('PartyDexUI - getDexProgress', () => {
         expect(result.remaining).toBe(9);
         expect(result.progressPct).toBe(10);
     });
+
+    it('não promete novamente um marco já premiado antes da descontinuação', () => {
+        const entries = Object.fromEntries(
+            Array.from({ length: 9 }, (_, i) => [
+                `MON_${String(i + 1).padStart(3, '0')}`,
+                { seen: true, captured: true }
+            ])
+        );
+        entries.MON_100 = { seen: true, captured: true };
+
+        const state = {
+            partyDex: {
+                entries,
+                meta: { lastMilestoneAwarded: 10 }
+            },
+            partyMoney: 100
+        };
+
+        const result = getDexProgress(state, {
+            isTemplateEligible: templateId => templateId !== 'MON_100'
+        });
+
+        expect(result.capturedCount).toBe(9);
+        expect(result.lastAwarded).toBe(10);
+        expect(result.nextMilestone).toBe(20);
+        expect(result.remaining).toBe(11);
+        expect(result.nextReward).toBe(200);
+        expect(result.progressPct).toBe(0);
+    });
 });
 
 describe('PartyDexUI - getDexEntryStatus', () => {
