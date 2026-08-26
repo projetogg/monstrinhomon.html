@@ -12,10 +12,10 @@
 
 ## Contexto
 
-`MON_100` (`Rato-de-Lama`) permanece no catálogo runtime, em pools de áreas,
-templates de encontro e listagens do cliente. A Dex editorial atual não inclui
-essa espécie, mas essa divergência editorial, sozinha, não autorizava uma
-alteração de runtime.
+Antes da implementação do PR #283, `MON_100` (`Rato-de-Lama`) permanecia no
+catálogo runtime, em pools de áreas, templates de encontro e listagens do
+cliente. A Dex editorial atual não inclui essa espécie, mas essa divergência
+editorial, sozinha, não autorizava uma alteração de runtime.
 
 Em 2026-08-25, o autor aprovou explicitamente a descontinuação compatível:
 impedir novas aparições e preservar saves e referências existentes.
