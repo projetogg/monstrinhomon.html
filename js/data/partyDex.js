@@ -19,6 +19,8 @@
  * - Rewards go to GameState.partyMoney
  */
 
+import { isMonsterIdAvailableForNewContent } from './dataLoader.js';
+
 /**
  * Ensure partyDex exists in GameState with proper structure
  * @param {Object} state - GameState object
@@ -110,14 +112,22 @@ export function markDexCaptured(state, monsterTemplateId) {
 /**
  * Get the count of unique captured monsters
  * @param {Object} state - GameState object
- * @returns {number} Count of unique captured monsters
+ * @param {Object} options - Dependências opcionais para elegibilidade
+ * @param {Function} options.isTemplateEligible - Predicate (templateId) => boolean
+ * @returns {number} Count of unique captured monsters ativos
  */
-export function getCapturedCount(state) {
+export function getCapturedCount(state, options = {}) {
     ensurePartyDex(state);
+
+    const isTemplateEligible = options.isTemplateEligible
+        || isMonsterIdAvailableForNewContent;
     
     let count = 0;
     for (const templateId in state.partyDex.entries) {
-        if (state.partyDex.entries[templateId]?.captured === true) {
+        if (
+            state.partyDex.entries[templateId]?.captured === true
+            && isTemplateEligible(templateId)
+        ) {
             count++;
         }
     }
@@ -138,7 +148,7 @@ export function checkDexMilestonesAndAward(state, deps = {}) {
     ensurePartyDex(state);
     ensurePartyMoney(state);
     
-    const capturedCount = getCapturedCount(state);
+    const capturedCount = getCapturedCount(state, deps);
     const milestone = Math.floor(capturedCount / 10) * 10;
     
     // Check if we've reached a new milestone

@@ -12875,8 +12875,15 @@
                 
                 const monstrodex = GameState.monstrodex || { seen: [], captured: [] };
                 const totalMonsters = getMonstersArray().length;
-                const seenCount = monstrodex.seen.length;
-                const capturedCount = monstrodex.captured.length;
+                const isAvailableId = window.Data?.isMonsterIdAvailableForNewContent
+                    || (() => true);
+                const countAvailableIds = (ids) => new Set(
+                    (Array.isArray(ids) ? ids : [])
+                        .map(id => String(id))
+                        .filter(id => isAvailableId(id))
+                ).size;
+                const seenCount = countAvailableIds(monstrodex.seen);
+                const capturedCount = countAvailableIds(monstrodex.captured);
                 
                 if (seenCount === 0) {
                     container.innerHTML = `<p class="home-empty-cta">

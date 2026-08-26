@@ -1,7 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { isMonsterAvailableForNewContent } from '../js/data/dataLoader.js';
+import {
+    isMonsterAvailableForNewContent,
+    isMonsterIdAvailableForNewContent,
+    clearCache,
+    loadMonsters
+} from '../js/data/dataLoader.js';
+import { getCapturedCount } from '../js/data/partyDex.js';
+import { getDexProgress } from '../js/ui/partyDexUI.js';
 
 function readJson(relativePath) {
     return JSON.parse(readFileSync(join(process.cwd(), relativePath), 'utf-8'));
@@ -13,6 +20,11 @@ describe('Descontinuação de templates de monstro', () => {
     const encounterTemplates = readJson('data/encounterTemplates.json').templates;
     const legacyTemplate = monsters.find(monster => monster.id === 'MON_100');
 
+    afterEach(() => {
+        clearCache();
+        vi.unstubAllGlobals();
+    });
+
     it('preserva MON_100 no catálogo para compatibilidade de saves', () => {
         expect(legacyTemplate).toBeDefined();
         expect(legacyTemplate.name).toBe('Rato-de-Lama');
@@ -22,6 +34,14 @@ describe('Descontinuação de templates de monstro', () => {
     it('classifica MON_100 como indisponível para conteúdo novo', () => {
         expect(isMonsterAvailableForNewContent(legacyTemplate)).toBe(false);
         expect(isMonsterAvailableForNewContent(monsters.find(monster => monster.id === 'MON_001'))).toBe(true);
+
+        const monstersMap = new Map(monsters.map(monster => [monster.id, monster]));
+        expect(isMonsterIdAvailableForNewContent('MON_100', monstersMap)).toBe(false);
+        expect(isMonsterIdAvailableForNewContent('MON_001', monstersMap)).toBe(true);
+        expect(isMonsterIdAvailableForNewContent('MON_UNKNOWN', monstersMap)).toBe(false);
+
+        const callbackResult = ['MON_001'].filter(isMonsterIdAvailableForNewContent);
+        expect(callbackResult).toEqual(['MON_001']);
     });
 
     it('remove MON_100 de todos os pools e templates de encontro', () => {
@@ -41,5 +61,29 @@ describe('Descontinuação de templates de monstro', () => {
         const filterUsages = indexSource.match(/isMonsterAvailableForNewContent/g) || [];
 
         expect(filterUsages.length).toBeGreaterThanOrEqual(3);
+        expect(indexSource).toContain('isMonsterIdAvailableForNewContent');
+    });
+
+    it('ignora MON_100 nos contadores reais após carregar o catálogo', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ version: 1, monsters })
+        }));
+        await loadMonsters();
+
+        const state = {
+            partyDex: {
+                entries: {
+                    'MON_001': { seen: true, captured: true },
+                    'MON_100': { seen: true, captured: true }
+                },
+                meta: { lastMilestoneAwarded: 0 }
+            },
+            partyMoney: 0
+        };
+
+        expect(getCapturedCount(state)).toBe(1);
+        expect(getDexProgress(state).capturedCount).toBe(1);
+        expect(state.partyDex.entries['MON_100'].captured).toBe(true);
     });
 });

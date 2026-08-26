@@ -14,13 +14,16 @@
  */
 
 import { getMonsterVisualHTML } from './monsterVisual.js';
+import { isMonsterIdAvailableForNewContent } from '../data/dataLoader.js';
 
 /**
  * Calculate PartyDex progress information
  * @param {Object} state - GameState object
+ * @param {Object} options - Dependências opcionais para elegibilidade
+ * @param {Function} options.isTemplateEligible - Predicate (templateId) => boolean
  * @returns {Object} Progress data
  */
-export function getDexProgress(state) {
+export function getDexProgress(state, options = {}) {
     if (!state || !state.partyDex) {
         return {
             capturedCount: 0,
@@ -33,11 +36,16 @@ export function getDexProgress(state) {
         };
     }
     
-    // Count captured monsters
+    // Count only captured monsters that still belong to the active catalog.
     let capturedCount = 0;
     const entries = state.partyDex.entries || {};
+    const isTemplateEligible = options.isTemplateEligible
+        || isMonsterIdAvailableForNewContent;
     for (const templateId in entries) {
-        if (entries[templateId]?.captured === true) {
+        if (
+            entries[templateId]?.captured === true
+            && isTemplateEligible(templateId)
+        ) {
             capturedCount++;
         }
     }

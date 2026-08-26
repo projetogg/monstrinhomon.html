@@ -31,7 +31,9 @@ impedir novas aparições e preservar saves e referências existentes.
    contrato paralelo `ENCOUNTERS.csv`.
 5. Permitir que instâncias já presentes em saves continuem carregando e
    aparecendo em time, caixa e encontros já salvos.
-6. Fazer a implementação em PR pequeno, isolado, testado e reversível.
+6. Preservar entradas antigas na Monstrodex/PartyDex, sem contá-las nos totais,
+   progressos ou novos marcos do catálogo ativo.
+7. Fazer a implementação em PR pequeno, isolado, testado e reversível.
 
 ## Compatibilidade
 
@@ -53,6 +55,7 @@ impedir novas aparições e preservar saves e referências existentes.
 - `MON_100` continua encontrável por ID;
 - `MON_100` não aparece em pools de localização, templates ou contratos de encontro;
 - ovos, Monstrodex e seletores não oferecem templates descontinuados;
+- contadores e marcos ignoram entradas descontinuadas sem apagar o save;
 - testes gerais, validadores de dados/assets e smoke Vitest permanecem verdes.
 
 ## Rollback

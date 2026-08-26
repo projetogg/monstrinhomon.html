@@ -10,6 +10,7 @@ export {
     getMonstersMapSync,
     validateMonsterSchema,
     isMonsterAvailableForNewContent,
+    isMonsterIdAvailableForNewContent,
     normalizeMonsterData,
     getCacheStatus,
     clearCache

@@ -158,6 +158,28 @@ describe('PartyDexUI - getDexProgress', () => {
         
         expect(result.capturedCount).toBe(2); // Only m1 and m2
     });
+
+    it('exclui template descontinuado dos contadores e marcos visuais', () => {
+        const state = {
+            partyDex: {
+                entries: {
+                    'MON_001': { seen: true, captured: true },
+                    'MON_100': { seen: true, captured: true }
+                },
+                meta: { lastMilestoneAwarded: 0 }
+            },
+            partyMoney: 0
+        };
+
+        const result = getDexProgress(state, {
+            isTemplateEligible: templateId => templateId !== 'MON_100'
+        });
+
+        expect(result.capturedCount).toBe(1);
+        expect(result.nextMilestone).toBe(10);
+        expect(result.remaining).toBe(9);
+        expect(result.progressPct).toBe(10);
+    });
 });
 
 describe('PartyDexUI - getDexEntryStatus', () => {
