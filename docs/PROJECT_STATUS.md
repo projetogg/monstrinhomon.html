@@ -1,9 +1,9 @@
 # Monstrinhomon — Estado do Projeto
 
-**Verificado em:** 2026-07-30  
-**Branch oficial examinada:** `main`  
-**Commit-base verificado:** `d73f81f401dded14587282c2c76aef424c69a408`  
-**Marco técnico:** PR #280 integrado; arquivamento documental histórico concluído  
+**Verificado em:** 2026-08-26
+**Branch oficial examinada:** `main`
+**Commit-base verificado:** `6d59d876b1459b4ebd54d4838b1fffdfd83ad7cc`
+**Marco técnico:** PR #283 integrado; `MON_100` descontinuado com compatibilidade de saves
 **Escopo:** fotografia datada do estado implementado e das decisões registradas. Visão futura não equivale a runtime.
 
 ## Baseline atual
@@ -20,6 +20,7 @@
 - `DEC-SPECIES-ATK-01` e `DEC-SPECIES-DEF-01` implementadas.
 - Baseline quantitativa de fórmula separada da matriz quantitativa das espécies.
 - Matriz de espécies com 48 pares e 96.000 batalhas controladas.
+- `MON_100` excluído de conteúdo novo, mantendo lookup e saves existentes.
 - Visão híbrida de cartas registrada separadamente do runtime atual.
 - Planos e auditorias datadas preservados em `docs/legacy/` e `docs/archive/`, fora da ordem de leitura atual.
 - Instruções operacionais de agentes devem apontar para a governança, e não copiar fórmulas, valores ou IDs.
@@ -39,6 +40,7 @@
 | Paridade final das espécies | oito espécies nos caminhos comparáveis | PR #275 |
 | Comparação de baselines | ferramenta e relatório reproduzíveis | PR #276 |
 | Matriz quantitativa das espécies | 48 pares e artefato próprio | PR #278 |
+| Catálogo ativo | `MON_100` descontinuado para conteúdo novo, com compatibilidade preservada | PR #283 |
 | Governança e visão híbrida | contexto higienizado e `DEC-CARDS-VISION-01` registrada | PR #279 |
 | Arquivamento documental | planos e auditorias históricas classificados e redirecionados | PR #280 |
 | Card Layer | piloto visual do Guerreiro tecnicamente estabilizado | `js/cards/*`, `data/cards.json`, PR #256 |
@@ -143,6 +145,7 @@ Fontes:
 
 - `DEC-SPECIES-ATK-01`: `atkBonus` modifica o ATK antes da fórmula.
 - `DEC-SPECIES-DEF-01`: resistência percentual ocorre antes da redução plana de `shieldhorn`.
+- `DEC-CATALOG-MON-100-01`: `MON_100` não participa de conteúdo novo, mas permanece resolvível em saves existentes.
 
 ### Aprovadas e não implementadas integralmente
 

@@ -99,6 +99,16 @@ A aprovação editorial de um nome não autoriza migração automática para o r
 
 ## Concluído recentemente
 
+### Descontinuação compatível de `MON_100`
+
+- PR #283 integrado à `main`;
+- novas aparições, ofertas e contagens do catálogo ativo excluem `MON_100`;
+- lookup, instâncias e registros de saves existentes permanecem compatíveis;
+- testes, validadores, Playwright e GitHub Pages permaneceram verdes;
+- o tratamento não altera balanceamento e libera o congelamento da build do playtest.
+
+Fonte: `docs/DECISAO_DESCONTINUACAO_MON_100_2026-08.md`.
+
 ### Reconciliação da visão de cartas
 
 - histórico de conversas e documentos de produto revisado;
