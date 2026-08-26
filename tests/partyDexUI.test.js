@@ -4,7 +4,11 @@
  * Tests for pure functions in partyDexUI.js
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+vi.mock('../js/data/dataLoader.js', () => ({
+    isMonsterIdAvailableForNewContent: () => true
+}));
 import {
     getDexProgress,
     getDexEntryStatus,

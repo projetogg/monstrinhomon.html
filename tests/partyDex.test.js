@@ -4,7 +4,11 @@
  * Tests for shared party Dex with escalating milestone rewards
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+vi.mock('../js/data/dataLoader.js', () => ({
+    isMonsterIdAvailableForNewContent: () => true
+}));
 import {
     ensurePartyDex,
     ensurePartyMoney,

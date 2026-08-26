@@ -41,7 +41,7 @@ describe('Descontinuação de templates de monstro', () => {
         expect(isMonsterIdAvailableForNewContent('MON_UNKNOWN', monstersMap)).toBe(false);
 
         const callbackResult = ['MON_001'].filter(isMonsterIdAvailableForNewContent);
-        expect(callbackResult).toEqual(['MON_001']);
+        expect(callbackResult).toEqual([]);
     });
 
     it('remove MON_100 de todos os pools e templates de encontro', () => {
@@ -85,5 +85,12 @@ describe('Descontinuação de templates de monstro', () => {
         expect(getCapturedCount(state)).toBe(1);
         expect(getDexProgress(state).capturedCount).toBe(1);
         expect(state.partyDex.entries['MON_100'].captured).toBe(true);
+    });
+
+    it('falha fechado enquanto o catálogo ainda não foi carregado', () => {
+        clearCache();
+
+        expect(isMonsterIdAvailableForNewContent('MON_001')).toBe(false);
+        expect(isMonsterIdAvailableForNewContent('MON_100')).toBe(false);
     });
 });

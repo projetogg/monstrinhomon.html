@@ -2565,6 +2565,11 @@
                                 console.error('[Migration Phase2] Erro durante rebuild canônico:', e);
                             }
                         }
+
+                        // Os contadores falham fechados enquanto o catálogo não existe.
+                        // Recalcular as duas projeções assim que a fonte canônica estiver pronta.
+                        renderMonstrodex();
+                        renderPartyDexTab();
                     }).catch(() => {
                         // Errors already logged by DataLoader, silently continue with hardcoded fallback
                     });

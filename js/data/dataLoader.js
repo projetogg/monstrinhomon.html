@@ -55,9 +55,9 @@ export function isMonsterAvailableForNewContent(monster) {
 /**
  * Indica se um ID pode contar em catálogos e progressos ativos.
  *
- * Quando o catálogo ainda não foi carregado, preserva o comportamento legado
- * para não zerar contadores durante a inicialização. Depois do carregamento,
- * somente IDs conhecidos e não descontinuados são elegíveis.
+ * Antes de o catálogo ser carregado, falha fechado: nenhum ID é considerado
+ * elegível. Depois do carregamento, somente IDs conhecidos e não
+ * descontinuados podem contar.
  *
  * @param {string} monsterId - ID do template
  * @param {Map<string, Object>|null} monstersMap - Catálogo opcional para teste
@@ -66,7 +66,7 @@ export function isMonsterAvailableForNewContent(monster) {
 export function isMonsterIdAvailableForNewContent(monsterId, monstersMap = monstersCache) {
     if (!monsterId) return false;
     const activeMap = monstersMap instanceof Map ? monstersMap : monstersCache;
-    if (!activeMap || activeMap.size === 0) return true;
+    if (!activeMap || activeMap.size === 0) return false;
 
     return isMonsterAvailableForNewContent(activeMap.get(String(monsterId)));
 }
