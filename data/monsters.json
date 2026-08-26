@@ -581,7 +581,8 @@
       "baseDef": 3,
       "baseSpd": 4,
       "baseEne": 4,
-      "emoji": "🐀"
+      "emoji": "🐀",
+      "deprecated": true
     },
     {
       "id": "MON_028",

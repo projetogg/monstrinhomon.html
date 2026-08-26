@@ -11,7 +11,8 @@ import { getItemById } from '../js/data/itemsLoader.js';
 
 // Mock dos módulos de dados
 vi.mock('../js/data/dataLoader.js', () => ({
-    getMonstersMapSync: vi.fn()
+    getMonstersMapSync: vi.fn(),
+    isMonsterAvailableForNewContent: (monster) => Boolean(monster) && monster.deprecated !== true
 }));
 
 vi.mock('../js/data/itemsLoader.js', () => ({
@@ -107,6 +108,17 @@ describe('PR14A: getMonstersByRarity - Filter monsters by rarity', () => {
         const raro = getMonstersByRarity('Raro');
         expect(raro).toHaveLength(1);
         expect(raro[0].name).toBe('Raro 1');
+    });
+
+    it('should exclude deprecated monsters from new egg pools', () => {
+        const mockMap = new Map([
+            ['MON_001', { id: 'MON_001', name: 'Disponível', rarity: 'Comum' }],
+            ['MON_100', { id: 'MON_100', name: 'Legado', rarity: 'Comum', deprecated: true }]
+        ]);
+
+        getMonstersMapSync.mockReturnValue(mockMap);
+
+        expect(getMonstersByRarity('Comum').map(monster => monster.id)).toEqual(['MON_001']);
     });
     
     it('should return empty array for rarity with no monsters', () => {

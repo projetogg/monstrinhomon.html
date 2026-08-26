@@ -4,7 +4,11 @@
  * Tests for shared party Dex with escalating milestone rewards
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+vi.mock('../js/data/dataLoader.js', () => ({
+    isMonsterIdAvailableForNewContent: () => true
+}));
 import {
     ensurePartyDex,
     ensurePartyMoney,
@@ -191,6 +195,18 @@ describe('PartyDex - Captured Count', () => {
         
         expect(getCapturedCount(state)).toBe(1);
     });
+
+    it('preserva entrada descontinuada sem contá-la no progresso ativo', () => {
+        markDexCaptured(state, 'MON_001');
+        markDexCaptured(state, 'MON_100');
+
+        const count = getCapturedCount(state, {
+            isTemplateEligible: templateId => templateId !== 'MON_100'
+        });
+
+        expect(state.partyDex.entries['MON_100'].captured).toBe(true);
+        expect(count).toBe(1);
+    });
 });
 
 describe('PartyDex - Milestone Rewards', () => {
@@ -225,6 +241,22 @@ describe('PartyDex - Milestone Rewards', () => {
         
         expect(result.awarded).toBe(false);
         expect(state.partyMoney).toBe(0);
+    });
+
+    it('não usa template descontinuado para atingir marco', () => {
+        for (let i = 1; i <= 9; i++) {
+            markDexCaptured(state, `MON_${String(i).padStart(3, '0')}`);
+        }
+        markDexCaptured(state, 'MON_100');
+
+        const result = checkDexMilestonesAndAward(state, {
+            ...mockDeps,
+            isTemplateEligible: templateId => templateId !== 'MON_100'
+        });
+
+        expect(result.awarded).toBe(false);
+        expect(state.partyMoney).toBe(0);
+        expect(state.partyDex.entries['MON_100'].captured).toBe(true);
     });
     
     it('should award +100 coins at 10 captured (milestone 10)', () => {

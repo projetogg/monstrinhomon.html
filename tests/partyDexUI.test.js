@@ -4,7 +4,11 @@
  * Tests for pure functions in partyDexUI.js
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+vi.mock('../js/data/dataLoader.js', () => ({
+    isMonsterIdAvailableForNewContent: () => true
+}));
 import {
     getDexProgress,
     getDexEntryStatus,
@@ -157,6 +161,57 @@ describe('PartyDexUI - getDexProgress', () => {
         const result = getDexProgress(state);
         
         expect(result.capturedCount).toBe(2); // Only m1 and m2
+    });
+
+    it('exclui template descontinuado dos contadores e marcos visuais', () => {
+        const state = {
+            partyDex: {
+                entries: {
+                    'MON_001': { seen: true, captured: true },
+                    'MON_100': { seen: true, captured: true }
+                },
+                meta: { lastMilestoneAwarded: 0 }
+            },
+            partyMoney: 0
+        };
+
+        const result = getDexProgress(state, {
+            isTemplateEligible: templateId => templateId !== 'MON_100'
+        });
+
+        expect(result.capturedCount).toBe(1);
+        expect(result.nextMilestone).toBe(10);
+        expect(result.remaining).toBe(9);
+        expect(result.progressPct).toBe(10);
+    });
+
+    it('não promete novamente um marco já premiado antes da descontinuação', () => {
+        const entries = Object.fromEntries(
+            Array.from({ length: 9 }, (_, i) => [
+                `MON_${String(i + 1).padStart(3, '0')}`,
+                { seen: true, captured: true }
+            ])
+        );
+        entries.MON_100 = { seen: true, captured: true };
+
+        const state = {
+            partyDex: {
+                entries,
+                meta: { lastMilestoneAwarded: 10 }
+            },
+            partyMoney: 100
+        };
+
+        const result = getDexProgress(state, {
+            isTemplateEligible: templateId => templateId !== 'MON_100'
+        });
+
+        expect(result.capturedCount).toBe(9);
+        expect(result.lastAwarded).toBe(10);
+        expect(result.nextMilestone).toBe(20);
+        expect(result.remaining).toBe(11);
+        expect(result.nextReward).toBe(200);
+        expect(result.progressPct).toBe(0);
     });
 });
 

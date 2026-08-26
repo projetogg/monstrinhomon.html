@@ -30,6 +30,7 @@ Este arquivo é um índice. Regras detalhadas permanecem no documento canônico 
 | `DEC-AUTH-01` | — | PENDING | governança | formalizar separação entre autoridade normativa e descritiva | auditoria de governança 2026-06-22 | prática operacional existe; decisão formal ainda aberta |
 | `DEC-AUTH-02` | — | PENDING | governança | definir destino do antigo “Documento Mestre” | auditoria de governança 2026-06-22 | cópias antigas não possuem autoridade automática |
 | `DEC-DRIVE-01` | 2026-06-23 | PARTIAL | catálogo editorial | manter Dex v3 como proposta editorial ativa e classificar o restante do acervo | [documento de decisão no Drive](https://docs.google.com/document/d/1N4msx5Wa_IazEwj5k9fYcOD9JwZBJJ86iFkfptifpDA/edit) | Drive organizado; nomes pendentes; nenhuma migração runtime automática |
+| `DEC-CATALOG-MON-100-01` | 2026-08-25 | APPROVED | catálogo/runtime | descontinuar `MON_100` para conteúdo novo, preservando lookup e saves existentes | `docs/DECISAO_DESCONTINUACAO_MON_100_2026-08.md` | implementação proposta em PR isolado; ainda não pertence à `main` |
 
 ## Estado das passivas de espécie
 

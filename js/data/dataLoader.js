@@ -39,6 +39,39 @@ export function validateMonsterSchema(monster) {
 }
 
 /**
+ * Indica se um template pode participar de conteúdo novo.
+ *
+ * Templates descontinuados continuam no cache para que saves antigos possam
+ * resolver seus IDs, mas não devem aparecer em catálogos, seletores, ovos ou
+ * novas gerações de encontro.
+ *
+ * @param {Object|null} monster - Template do catálogo
+ * @returns {boolean} true quando o template pode ser oferecido novamente
+ */
+export function isMonsterAvailableForNewContent(monster) {
+    return Boolean(monster) && monster.deprecated !== true;
+}
+
+/**
+ * Indica se um ID pode contar em catálogos e progressos ativos.
+ *
+ * Antes de o catálogo ser carregado, falha fechado: nenhum ID é considerado
+ * elegível. Depois do carregamento, somente IDs conhecidos e não
+ * descontinuados podem contar.
+ *
+ * @param {string} monsterId - ID do template
+ * @param {Map<string, Object>|null} monstersMap - Catálogo opcional para teste
+ * @returns {boolean} true quando o ID pertence ao catálogo ativo
+ */
+export function isMonsterIdAvailableForNewContent(monsterId, monstersMap = monstersCache) {
+    if (!monsterId) return false;
+    const activeMap = monstersMap instanceof Map ? monstersMap : monstersCache;
+    if (!activeMap || activeMap.size === 0) return false;
+
+    return isMonsterAvailableForNewContent(activeMap.get(String(monsterId)));
+}
+
+/**
  * Normaliza dados do monster, preenchendo campos faltantes com defaults
  * NÃO modifica valores existentes, apenas preenche faltantes
  * @param {Object} monster - Monster data

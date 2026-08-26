@@ -168,6 +168,9 @@ describe('data/locations.json - Referências de Monstros', () => {
     const locData = loadLocationsJson();
     const monData = loadMonstersJson();
     const monsterIds = new Set(monData.monsters.map(m => m.id));
+    const deprecatedMonsterIds = new Set(
+        monData.monsters.filter(monster => monster.deprecated === true).map(monster => monster.id)
+    );
 
     /** Retorna todos os IDs de monstros de todos os pools de uma localização */
     function allPoolIds(loc) {
@@ -182,6 +185,17 @@ describe('data/locations.json - Referências de Monstros', () => {
                     monsterIds.has(mId),
                     `${loc.id}.speciesPoolsByRarity: "${mId}" não existe no catálogo`
                 ).toBe(true);
+            }
+        }
+    });
+
+    it('speciesPoolsByRarity não deve oferecer templates descontinuados', () => {
+        for (const loc of locData.locations) {
+            for (const mId of allPoolIds(loc)) {
+                expect(
+                    deprecatedMonsterIds.has(mId),
+                    `${loc.id}.speciesPoolsByRarity oferece template descontinuado: "${mId}"`
+                ).toBe(false);
             }
         }
     });

@@ -14,13 +14,16 @@
  */
 
 import { getMonsterVisualHTML } from './monsterVisual.js';
+import { isMonsterIdAvailableForNewContent } from '../data/dataLoader.js';
 
 /**
  * Calculate PartyDex progress information
  * @param {Object} state - GameState object
+ * @param {Object} options - Dependências opcionais para elegibilidade
+ * @param {Function} options.isTemplateEligible - Predicate (templateId) => boolean
  * @returns {Object} Progress data
  */
-export function getDexProgress(state) {
+export function getDexProgress(state, options = {}) {
     if (!state || !state.partyDex) {
         return {
             capturedCount: 0,
@@ -33,23 +36,25 @@ export function getDexProgress(state) {
         };
     }
     
-    // Count captured monsters
+    // Count only captured monsters that still belong to the active catalog.
     let capturedCount = 0;
     const entries = state.partyDex.entries || {};
+    const isTemplateEligible = options.isTemplateEligible
+        || isMonsterIdAvailableForNewContent;
     for (const templateId in entries) {
-        if (entries[templateId]?.captured === true) {
+        if (
+            entries[templateId]?.captured === true
+            && isTemplateEligible(templateId)
+        ) {
             capturedCount++;
         }
     }
     
-    // Calculate next milestone
-    // Rule: 0->10, 1..9->10, 10->20, 19->20, 20->30, etc.
-    let nextMilestone;
-    if (capturedCount === 0) {
-        nextMilestone = 10;
-    } else {
-        nextMilestone = (Math.floor(capturedCount / 10) + 1) * 10;
-    }
+    // O marco visual nunca pode voltar para um prêmio já persistido.
+    const lastAwarded = state.partyDex?.meta?.lastMilestoneAwarded ?? 0;
+    const completedBracket = Math.floor(capturedCount / 10) * 10;
+    const bracketStart = Math.max(lastAwarded, completedBracket);
+    const nextMilestone = bracketStart + 10;
     
     // Calculate remaining
     const remaining = nextMilestone - capturedCount;
@@ -60,12 +65,9 @@ export function getDexProgress(state) {
     // Get party money
     const partyMoney = state.partyMoney ?? 0;
     
-    // Get last awarded milestone
-    const lastAwarded = state.partyDex?.meta?.lastMilestoneAwarded ?? 0;
-    
     // Calculate progress percentage within current 10-monster bracket
     // 0->0%, 1->10%, 9->90%, 10->0% (resets for next bracket)
-    const progressWithinBracket = capturedCount % 10;
+    const progressWithinBracket = Math.max(0, capturedCount - bracketStart);
     const progressPct = (progressWithinBracket / 10) * 100;
     
     return {

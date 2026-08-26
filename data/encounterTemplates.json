@@ -34,7 +34,6 @@
       "locationId": "LOC_001",
       "type": "wild",
       "monsters": [
-        "MON_100",
         "MON_023"
       ],
       "minLevel": 2,
@@ -145,8 +144,7 @@
       "locationId": "LOC_003",
       "type": "wild",
       "monsters": [
-        "MON_021",
-        "MON_100"
+        "MON_021"
       ],
       "minLevel": 6,
       "maxLevel": 9,

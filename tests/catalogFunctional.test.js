@@ -7,7 +7,7 @@
  * Cobertura:
  *  - Carregamento por ID via dataLoader (monstros novos do bootstrap)
  *  - Resolução funcional de evolução (cadeias completas)
- *  - Seleção de monstros em pools (todos os 64 são elegíveis)
+ *  - Seleção de monstros em pools (templates descontinuados ficam fora)
  *  - getMonsterSkills retorna skills válidas para todas as classes presentes
  *  - Ausência de fallback indevido para catálogos antigos
  */
@@ -20,6 +20,7 @@ import {
     getMonstersMapSync,
     clearCache,
     validateMonsterSchema,
+    isMonsterAvailableForNewContent,
     normalizeMonsterData
 } from '../js/data/dataLoader.js';
 
@@ -205,12 +206,14 @@ describe('Catálogo Funcional — Pool de Encontros', () => {
 
     const allMonsters = loadMonstersJsonRaw().monsters;
 
-    it('todos os 64 monstros devem estar disponíveis como pool de encontro', () => {
-        // Simula a seleção aleatória do index.html (linha 3439)
-        // O jogo usa MONSTER_CATALOG[Math.floor(Math.random() * MONSTER_CATALOG.length)]
-        // Verificar que nenhum monstro fica inacessível
+    it('mantém 64 templates para compatibilidade, mas somente 63 em conteúdo novo', () => {
+        const availableMonsters = allMonsters.filter(isMonsterAvailableForNewContent);
+
         expect(allMonsters.length).toBe(64);
-        for (const m of allMonsters) {
+        expect(availableMonsters.length).toBe(63);
+        expect(availableMonsters.some(monster => monster.id === 'MON_100')).toBe(false);
+
+        for (const m of availableMonsters) {
             expect(m.id).toBeTruthy();
             expect(m.baseHp).toBeGreaterThan(0);
             expect(m.class).toBeTruthy();
@@ -272,6 +275,15 @@ describe('Catálogo Funcional — getMonsterTemplate Simulado', () => {
         const t = simulateGetMonsterTemplate('MON_016', []);
         expect(t).toBeDefined();
         expect(t.name).toBe('Wizardragomon');
+    });
+
+    it('getMonsterTemplate preserva MON_100 para carregar saves existentes', () => {
+        const t = simulateGetMonsterTemplate('MON_100', []);
+
+        expect(t).toBeDefined();
+        expect(t.name).toBe('Rato-de-Lama');
+        expect(t.deprecated).toBe(true);
+        expect(isMonsterAvailableForNewContent(t)).toBe(false);
     });
 
     it('getMonsterTemplate deve retornar null para ID inexistente', () => {
