@@ -1,21 +1,21 @@
 # Decisão — descontinuação de `MON_100`
 
-**Status:** APPROVED
+**Status:** IMPLEMENTED
 
 **Domain:** técnica
 
 **Authority:** GitHub
 
-**VerifiedAgainst:** `6e94b417f4d9495c7000346f95f1916cffac5615`
+**VerifiedAgainst:** `6d59d876b1459b4ebd54d4838b1fffdfd83ad7cc`
 
 **Supersedes:** nenhum
 
 ## Contexto
 
-`MON_100` (`Rato-de-Lama`) permanece no catálogo runtime, em pools de áreas,
-templates de encontro e listagens do cliente. A Dex editorial atual não inclui
-essa espécie, mas essa divergência editorial, sozinha, não autorizava uma
-alteração de runtime.
+Antes da implementação do PR #283, `MON_100` (`Rato-de-Lama`) permanecia no
+catálogo runtime, em pools de áreas, templates de encontro e listagens do
+cliente. A Dex editorial atual não inclui essa espécie, mas essa divergência
+editorial, sozinha, não autorizava uma alteração de runtime.
 
 Em 2026-08-25, o autor aprovou explicitamente a descontinuação compatível:
 impedir novas aparições e preservar saves e referências existentes.
@@ -63,7 +63,9 @@ impedir novas aparições e preservar saves e referências existentes.
 Reverter o PR isolado restaura o comportamento anterior. Como o registro não é
 apagado e não há migração de save, o rollback não exige transformação de dados.
 
-## Transição de estado
+## Implementação confirmada
 
-Esta decisão permanece `APPROVED` enquanto a implementação estiver em PR. Só
-deve ser marcada `IMPLEMENTED` depois do merge confirmado na `main`.
+A decisão foi implementada pelo PR #283 e integrada à `main` no commit
+`6d59d876b1459b4ebd54d4838b1fffdfd83ad7cc`. Os testes, validadores, smoke
+Vitest, Playwright e a publicação do GitHub Pages permaneceram verdes após o
+merge.
