@@ -159,7 +159,20 @@ async function run() {
         await page.waitForSelector('#spotsList .wm-spot:not(.wm-spot--service)', { timeout: 10000 });
         await page.locator('#spotsList .wm-spot:not(.wm-spot--service)').first().click();
 
-        await page.selectOption('#encounterPlayer', { index: 1 });
+        // A perspectiva global da navbar deve preencher o encontro individual
+        // automaticamente; não existe mais uma segunda seleção visível no spot.
+        await page.waitForFunction(() => {
+            const select = document.getElementById('encounterPlayer');
+            return !!select?.value;
+        }, null, { timeout: 10000 });
+        const encounterPlayerId = await page.locator('#encounterPlayer').inputValue();
+        const encounterPlayerLabel = await page.locator('#encounterPlayerLabel').textContent();
+        assert(encounterPlayerId, 'Perspectiva global não foi propagada para o encontro individual');
+        assert(
+            encounterPlayerLabel && encounterPlayerLabel.trim() !== '—',
+            'Label do jogador atual não foi preenchido no spot'
+        );
+
         await page.locator('#wildSetupPanel button:has-text("Iniciar")').click();
         await page.waitForSelector('#encounterPanel button:has-text("Atacar")', { timeout: 10000 });
 
