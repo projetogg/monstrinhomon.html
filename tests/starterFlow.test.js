@@ -260,10 +260,16 @@ describe('Regressão pré-playtest — starter não pode terminar incompleto', (
         expect(indexHtml).toContain("player.activeIndex = firstAliveIndex(player.team);");
     });
 
-    it('falha ao conceder starter deve retornar ao ovo em vez de avançar para hatched', () => {
-        expect(indexHtml).toContain("mmAlert('Não foi possível conceder o Monstrinhomon inicial. Tente chocar o ovo novamente.', 'error');");
-        expect(indexHtml).toContain("MM_STARTER.phase = 'egg';");
-        expect(indexHtml).toMatch(/mmRenderStarterFlow\(\);\s*return;\s*}\s*\n\s*MM_STARTER\.phase = 'hatched';/);
+    it('time cheio deve bloquear o hatch antes de redirecionar o starter para a Box', () => {
+        expect(indexHtml).toContain("if (player.team.length >= maxTeamSize)");
+        expect(indexHtml).toContain("A equipe está cheia. Libere um espaço no time antes de receber o Monstrinhomon inicial.");
+    });
+
+    it('starter só deve ser marcado como concedido se realmente entrar no time', () => {
+        expect(indexHtml).toContain("const idx = mon ? player.team.indexOf(mon) : -1;");
+        expect(indexHtml).toContain("if (mon && idx >= 0)");
+        expect(indexHtml).toContain("player.starterGranted = true;");
+        expect(indexHtml).toContain("Não foi possível conceder o Monstrinhomon inicial ao time. Tente novamente.");
     });
 
     it('mmFinishStarterFlow deve bloquear saída se existir jogador sem starter/time', () => {
