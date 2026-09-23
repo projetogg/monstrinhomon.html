@@ -288,6 +288,7 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
             const defPassive = fireCombatEvent(encounter.wildMonster, ON_HIT, {
                 hpPct: encounter.wildMonster.hpMax > 0 ? encounter.wildMonster.hp / encounter.wildMonster.hpMax : 0,
                 isFirstHitThisTurn: true, // Fase 4.2: jogador ataca apenas uma vez por turno
+                isFrontline: true, // Wild não possui linha posicional: combatente ativo = frente
             });
             if (defPassive?.damageReduction) {
                 const reducedDamage = Math.max(1, damage - defPassive.damageReduction);
@@ -576,6 +577,7 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
         const defPassive = fireCombatEvent(playerMonster, ON_HIT, {
             hpPct: playerMonster.hpMax > 0 ? playerMonster.hp / playerMonster.hpMax : 0,
             isFirstHitThisTurn: !passiveState.shieldhornBlockedThisTurn, // Fase 4.2
+            isFrontline: true, // Wild não possui linha posicional: combatente ativo = frente
         });
         if (defPassive?.damageReduction) {
             const reducedDamage = Math.max(1, damage - defPassive.damageReduction);
@@ -710,6 +712,7 @@ function processEnemyBasicAttack(encounter, wildMonster, playerMonster, dependen
         const defPassive = fireCombatEvent(playerMonster, ON_HIT, {
             hpPct: playerMonster.hpMax > 0 ? playerMonster.hp / playerMonster.hpMax : 0,
             isFirstHitThisTurn: !passiveState.shieldhornBlockedThisTurn, // Fase 4.2
+            isFrontline: true, // Wild não possui linha posicional: combatente ativo = frente
         });
         if (defPassive?.damageReduction) {
             const reducedDamage = Math.max(1, damage - defPassive.damageReduction);
