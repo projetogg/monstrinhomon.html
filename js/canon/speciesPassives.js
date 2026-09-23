@@ -45,6 +45,8 @@
  *                      context.hasShadowstingCharge: true = debuff foi aplicado antes (Fase 10)
  *  'on_hit_received' — instância está recebendo um hit confirmado
  *                      context.isFirstHitThisTurn: true = primeiro hit da rodada (padrão)
+ *                      context.isFrontline: false = fora da linha de frente em combate posicional
+ *                      (ausente = true para modos sem posição explícita, como Wild)
  *  'on_heal_item'    — instância usou um item de cura (Fase 4.1)
  *                      context.isFirstHeal: true = primeira cura do combate
  *  'on_skill_used'   — instância usou qualquer habilidade (Fase 4.1)
@@ -112,13 +114,17 @@ const PASSIVE_HANDLERS = {
      * no primeiro ataque sofrido por turno."
      *
      * Implementação Fase 4.2 (semântica canônica):
-     *   Reduz dano recebido em 1 ponto APENAS no primeiro hit do turno.
-     *   context.isFirstHitThisTurn (boolean, padrão: true se ausente) controla o gate.
+     *   Reduz dano recebido em 1 ponto APENAS no primeiro hit do turno E na linha de frente.
+     *   context.isFrontline === false bloqueia a passiva em combate posicional.
+     *   Contexto sem posição explícita (Wild/harness legado) é tratado como linha de frente.
+     *   context.isFirstHitThisTurn (boolean, padrão: true se ausente) controla o gate de hit.
      *   O caller (wildActions.js) rastreia passiveState.shieldhornBlockedThisTurn
      *   e reseta no início de cada ciclo de ataque inimigo (processEnemyCounterattack).
      */
     shieldhorn: (_instance, context) => {
         if (context.event !== 'on_hit_received') return null;
+        // Modos sem posição explícita tratam o combatente ativo como linha de frente.
+        if (context.isFrontline === false) return null;
         // isFirstHitThisTurn: undefined é tratado como true (compatível com callers antigos)
         if (context.isFirstHitThisTurn === false) return null;
         return { damageReduction: 1 };

@@ -229,7 +229,7 @@ describe('Passivas de espécie v2.2 — contrato canônico compartilhado', () =>
   });
 
   it.each([
-    ['shieldhorn', ON_HIT, { isFirstHitThisTurn: true }, { damageReduction: 1 }],
+    ['shieldhorn', ON_HIT, { isFirstHitThisTurn: true, isFrontline: true }, { damageReduction: 1 }],
     ['emberfang', ON_ATTACK, { hpPct: 0.80, isOffensiveSkill: true }, { atkBonus: 1 }],
     ['floracura', ON_HEAL_ITEM, { isFirstHeal: true }, { healBonus: 3 }],
     ['swiftclaw', ON_ATTACK, { isFirstAttackOfCombat: true }, { atkBonus: 1 }],
@@ -239,6 +239,14 @@ describe('Passivas de espécie v2.2 — contrato canônico compartilhado', () =>
     ['wildpace', ON_ATTACK, { hpPct: 0.39, isOffensiveSkill: false }, { atkBonus: 1 }],
   ])('%s resolve o modificador canônico esperado', (speciesId, event, payload, expected) => {
     expect(fireCombatEvent({ canonSpeciesId: speciesId }, event, payload)).toEqual(expected);
+  });
+
+  it('shieldhorn não dispara quando o contexto posicional informa retaguarda', () => {
+    expect(fireCombatEvent(
+      { canonSpeciesId: 'shieldhorn' },
+      ON_HIT,
+      { isFirstHitThisTurn: true, isFrontline: false },
+    )).toBeNull();
   });
 
   it('preserva os limites estritos de HP de emberfang e wildpace', () => {
@@ -295,6 +303,16 @@ describe('Passivas de espécie v2.2 — integração estrutural Wild e Group', (
       expect(source).toContain('hasBellwaveRhythmCharge');
       expect(source).toContain('isOffensiveSkill: false');
     }
+  });
+
+  it('shieldhorn respeita linha de frente no Group e trata o combatente Wild como frente', () => {
+    expect(GROUP_SOURCE).toContain(
+      'isFrontline: (enc.positions?.[`enemy_${enemyIndex}`] || POSITION.FRONT) === POSITION.FRONT',
+    );
+    expect(GROUP_SOURCE).toContain(
+      'isFrontline: (enc.positions?.[finalTargetPid] || POSITION.FRONT) === POSITION.FRONT',
+    );
+    expect((WILD_SOURCE.match(/isFrontline: true/g) || []).length).toBeGreaterThanOrEqual(3);
   });
 
   it('Wild e Group despacham eventos de skill e preparam as mesmas cargas', () => {

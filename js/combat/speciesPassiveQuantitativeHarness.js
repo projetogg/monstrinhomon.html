@@ -302,6 +302,7 @@ function performAttack({
       event: 'on_hit_received',
       hpPct: defender.hp / defender.hpMax,
       isFirstHitThisTurn: true,
+      isFrontline: true,
     });
     if (modifier?.damageReduction) {
       const reduced = Math.max(1, damage - modifier.damageReduction);

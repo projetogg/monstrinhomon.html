@@ -3,15 +3,16 @@
  *
  * Testa refinamentos das passivas shieldhorn e emberfang:
  *
- *   A. shieldhorn — apenas primeiro hit do turno inimigo
+ *   A. shieldhorn — linha de frente + apenas primeiro hit do turno inimigo
  *   B. emberfang  — apenas skill ofensiva (DAMAGE), não ataque básico
- *   C. Semântica de contexto explícita (isOffensiveSkill, isFirstHitThisTurn)
+ *   C. Semântica de contexto explícita (isOffensiveSkill, isFirstHitThisTurn, isFrontline)
  *   D. Reset do passiveState entre turnos
  *   E. Regressão: floracura e moonquill não afetados
  *   F. Simulação: emberfang via executeWildSkill (canal correto Fase 4.2)
  *
  * Cobertura:
- *   - shieldhorn: dispara com isFirstHitThisTurn=true (padrão)
+ *   - shieldhorn: dispara com isFirstHitThisTurn=true na linha de frente
+ *   - shieldhorn: não dispara com isFrontline=false
  *   - shieldhorn: não dispara com isFirstHitThisTurn=false (segundo hit)
  *   - shieldhorn: passiveState.shieldhornBlockedThisTurn marcado após disparo
  *   - shieldhorn: reset em processEnemyCounterattack (via executeWildEnemyFullTurn)
@@ -116,9 +117,20 @@ describe('speciesPassives 4.2 — shieldhorn: isFirstHitThisTurn', () => {
             event: 'on_hit_received',
             hpPct: 0.75,
             isFirstHitThisTurn: true,
+            isFrontline: true,
         });
         expect(mod).not.toBeNull();
         expect(mod.damageReduction).toBe(1);
+    });
+
+    it('NÃO dispara fora da linha de frente em combate posicional', () => {
+        const mod = resolvePassiveModifier(makeShieldhorn(), {
+            event: 'on_hit_received',
+            hpPct: 0.75,
+            isFirstHitThisTurn: true,
+            isFrontline: false,
+        });
+        expect(mod).toBeNull();
     });
 
     it('NÃO dispara com isFirstHitThisTurn=false (segundo hit do turno)', () => {
