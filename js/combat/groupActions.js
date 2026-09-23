@@ -428,6 +428,7 @@ export function executePlayerAttackGroup(deps, targetEnemyIndex = null) {
     const defSpeciesPassive = fireCombatEvent(enemy, ON_HIT, {
         hpPct: (Number(enemy.hpMax) || 1) > 0 ? (Number(enemy.hp) || 0) / (Number(enemy.hpMax) || 1) : 0,
         isFirstHitThisTurn: true,
+        isFrontline: (enc.positions?.[`enemy_${enemyIndex}`] || POSITION.FRONT) === POSITION.FRONT,
     });
     if (defSpeciesPassive?.damageReduction) {
         const reduced = Math.max(1, dmg - defSpeciesPassive.damageReduction);
@@ -896,6 +897,7 @@ export function executeEnemyTurnGroup(enc, deps) {
         const targetDefSpeciesPassive = fireCombatEvent(targetMon, ON_HIT, {
             hpPct: (Number(targetMon.hpMax) || 1) > 0 ? (Number(targetMon.hp) || 0) / (Number(targetMon.hpMax) || 1) : 0,
             isFirstHitThisTurn: true,
+            isFrontline: (enc.positions?.[finalTargetPid] || POSITION.FRONT) === POSITION.FRONT,
         });
         if (targetDefSpeciesPassive?.damageReduction) {
             const reduced = Math.max(1, dmg - targetDefSpeciesPassive.damageReduction);
