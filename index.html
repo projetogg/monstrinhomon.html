@@ -4964,15 +4964,17 @@
                     return;
                 }
                 
-                // Para encontros individuais (captura selvagem)
+                // Para encontros individuais (captura selvagem), a perspectiva global
+                // da navbar é a fonte de verdade. O select oculto é apenas espelho de UI.
+                let selectedWildPlayerId = null;
                 if (type === 'wild') {
-                    const selectedPlayerId = document.getElementById('encounterPlayer')?.value;
-                    if (!selectedPlayerId) {
+                    selectedWildPlayerId = getEncounterPerspectivePlayerId();
+                    if (!selectedWildPlayerId) {
                         showToast('Selecione um jogador para o encontro individual', 'error');
                         return;
                     }
                     
-                    const player = GameState.players.find(p => p.id === selectedPlayerId);
+                    const player = GameState.players.find(p => p.id === selectedWildPlayerId);
                     if (!player || !player.team || player.team.length === 0) {
                         mmAlert('O jogador selecionado não tem monstrinhos no time', 'error');
                         return;
@@ -4997,7 +4999,7 @@
                     type: type,
                     active: true,
                     log: [],
-                    selectedPlayerId: type === 'wild' ? document.getElementById('encounterPlayer')?.value : null,
+                    selectedPlayerId: type === 'wild' ? selectedWildPlayerId : null,
                     rewardsGranted: false  // Previne duplicação de XP
                 };
                 
@@ -9400,6 +9402,18 @@
         }
 
         /**
+         * Resolve o jogador da perspectiva global para encontros individuais.
+         * Não depende do select oculto de UI.
+         */
+        function getEncounterPerspectivePlayerId() {
+            ensurePerspectivePlayerId();
+            const playerId = GameState.ui?.perspectivePlayerId || null;
+            return (playerId && (GameState.players || []).some(p => p?.id === playerId))
+                ? playerId
+                : null;
+        }
+
+        /**
          * Define a perspectiva global da UI para o jogador indicado.
          * Atualiza boxViewedPlayerId e selectedShopPlayerId para refletir a seleção.
          */
@@ -10747,23 +10761,35 @@
         function updateEncounterPlayerDropdown() {
             try {
                 const select = document.getElementById('encounterPlayer');
-                if (!select) return;
-                
+                const label = document.getElementById('encounterPlayerLabel');
+                if (!select) return null;
+
+                const players = (GameState.players || []).filter(Boolean);
                 select.innerHTML = '<option value="">-- Select Player --</option>';
-                
-                if (GameState.players && GameState.players.length > 0) {
-                    GameState.players.forEach(player => {
-                        const option = document.createElement('option');
-                        option.value = player.id;
-                        option.textContent = `${player.name} (${player.class || 'No class'})`;
-                        select.appendChild(option);
-                    });
+
+                players.forEach(player => {
+                    const option = document.createElement('option');
+                    option.value = player.id;
+                    option.textContent = `${player.name} (${player.class || 'No class'})`;
+                    select.appendChild(option);
+                });
+
+                const selectedPlayerId = getEncounterPerspectivePlayerId();
+                const selectedPlayer = players.find(p => p.id === selectedPlayerId) || null;
+
+                select.value = selectedPlayerId || '';
+                if (label) {
+                    label.textContent = selectedPlayer
+                        ? `${selectedPlayer.name} (${selectedPlayer.class || 'Sem classe'})`
+                        : 'Nenhum jogador disponível';
                 }
 
                 // Fix #8: Mostrar hint de quests ativas do jogador selecionado
                 renderEncounterQuestHint(select.value);
+                return selectedPlayerId;
             } catch (error) {
                 console.error('Failed to update encounter player dropdown:', error);
+                return null;
             }
         }
 
@@ -12500,38 +12526,9 @@
         }
         window.closeHealModal = closeHealModal;
 
-        /** Atualiza o dropdown de jogadores no painel de setup selvagem. */
+        /** Atualiza o jogador do painel de setup selvagem a partir da perspectiva global. */
         function _wmUpdatePlayerDropdown() {
-            const select = document.getElementById('encounterPlayer');
-            const label = document.getElementById('encounterPlayerLabel');
-            if (!select) return;
-
-            const players = (GameState.players ?? []).filter(Boolean);
-            select.innerHTML = '<option value="">-- Selecione --</option>';
-
-            players.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p.id;
-                opt.textContent = `${p.name} (${p.class})`;
-                select.appendChild(opt);
-            });
-
-            // A perspectiva global da navbar é a fonte de verdade para encontros
-            // individuais. O select permanece oculto apenas como contrato interno
-            // de startEncounter(), evitando pedir a mesma escolha duas vezes.
-            ensurePerspectivePlayerId();
-            const perspectiveId = GameState.ui?.perspectivePlayerId;
-            const preferred = players.find(p => p.id === perspectiveId) || players[0] || null;
-
-            if (preferred) {
-                select.value = preferred.id;
-                if (label) label.textContent = `${preferred.name} (${preferred.class})`;
-                renderEncounterQuestHint(preferred.id);
-            } else {
-                select.value = '';
-                if (label) label.textContent = 'Nenhum jogador disponível';
-                renderEncounterQuestHint('');
-            }
+            return updateEncounterPlayerDropdown();
         }
 
         /** Volta do painel de spots/boss/setup para o overworld. */
@@ -16066,17 +16063,25 @@
             const cls = player.class || MM_TABLES.CLASSES[0];
             const info = STARTER_BY_CLASS[cls] || STARTER_BY_CLASS[MM_TABLES.CLASSES[0]];
 
+            player.team = Array.isArray(player.team) ? player.team : [];
+            const maxTeamSize = GameState.config?.maxTeamSize || 6;
+            if (player.team.length >= maxTeamSize) {
+                mmAlert('A equipe está cheia. Libere um espaço no time antes de receber o Monstrinhomon inicial.', 'warning');
+                MM_STARTER.phase = 'egg';
+                mmRenderStarterFlow();
+                return;
+            }
+
             const mon = awardMonster(info.monsterId, 5, null, 'party', player);
-            if (mon) {
+            const idx = mon ? player.team.indexOf(mon) : -1;
+            if (mon && idx >= 0) {
+                // Só considerar o starter concedido se ele realmente entrou no time.
                 player.starterGranted = true;
                 player.starterMonsterId = info.monsterId;
-
-                // Garantir que o starter recém-concedido seja o monstrinho ativo.
-                const idx = player.team.indexOf(mon);
-                if (idx >= 0) player.activeIndex = idx;
+                player.activeIndex = idx;
             } else {
-                console.error('[mmStarterHatchEgg] awardMonster falhou para', info.monsterId);
-                mmAlert('Não foi possível conceder o Monstrinhomon inicial. Tente chocar o ovo novamente.', 'error');
+                console.error('[mmStarterHatchEgg] starter não entrou no time para', info.monsterId);
+                mmAlert('Não foi possível conceder o Monstrinhomon inicial ao time. Tente novamente.', 'error');
                 MM_STARTER.phase = 'egg';
                 mmRenderStarterFlow();
                 return;
