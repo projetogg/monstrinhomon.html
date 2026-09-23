@@ -45,6 +45,23 @@ describe('PlayerPanelUI - renderMonsterCard', () => {
         expect(html).toContain('style="width: 50%"');
         expect(html).not.toContain('49/600 XP');
     });
+
+    it('save antigo sem xpNeeded deve usar o calculador runtime injetado', () => {
+        const html = renderMonsterCard({
+            name: 'Ferrozimon',
+            class: 'Guerreiro',
+            rarity: 'Comum',
+            level: 6,
+            hp: 30,
+            hpMax: 30,
+            xp: 49
+        }, {
+            calculateXpNeeded: () => 98
+        });
+
+        expect(html).toContain('49/98 XP');
+        expect(html).toContain('style="width: 50%"');
+    });
 });
 
 describe('PlayerPanelUI - renderTeamReorderList', () => {
