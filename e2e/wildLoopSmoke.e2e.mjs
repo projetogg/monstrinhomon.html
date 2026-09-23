@@ -158,6 +158,10 @@ async function run() {
             setupPlayersCount === 2,
             `Novo jogo multi-jogador não criou 2 jogadores via fluxo de UI (encontrado: ${setupPlayersCount})`
         );
+        const firstPlayerId = setupSave?.players?.[0]?.id || null;
+        const secondPlayerId = setupSave?.players?.[1]?.id || null;
+        const secondPlayerName = setupSave?.players?.[1]?.name || null;
+        assert(firstPlayerId && secondPlayerId, 'IDs dos dois jogadores não foram persistidos no setup');
 
         await page.getByRole('button', { name: /Mundo/ }).click();
         await page.waitForFunction(() => typeof window.showWorldMap === 'function', null, { timeout: 10000 });
@@ -175,44 +179,39 @@ async function run() {
             return !!select?.value;
         }, null, { timeout: 10000 });
 
-        const perspectiveTargets = await page.evaluate(() => {
-            const players = window.GameState?.players || [];
-            return {
-                firstId: players[0]?.id || null,
-                secondId: players[1]?.id || null,
-                secondName: players[1]?.name || null,
-            };
-        });
-        assert(perspectiveTargets.firstId && perspectiveTargets.secondId, 'Jogadores multi-player indisponíveis no runtime');
-
         const initialEncounterPlayerId = await page.locator('#encounterPlayer').inputValue();
         assert(
-            initialEncounterPlayerId === perspectiveTargets.firstId,
+            initialEncounterPlayerId === firstPlayerId,
             'Spot não iniciou sincronizado com a perspectiva do primeiro jogador'
         );
 
         // Trocar a perspectiva com o spot já aberto: regressão apontada no review do PR #286.
         await page.evaluate((secondId) => {
             window.setPlayerPerspective(secondId);
-        }, perspectiveTargets.secondId);
+        }, secondPlayerId);
 
         await page.waitForFunction(
             (secondId) => document.getElementById('encounterPlayer')?.value === secondId,
-            perspectiveTargets.secondId,
+            secondPlayerId,
             { timeout: 10000 }
         );
         const encounterPlayerLabel = await page.locator('#encounterPlayerLabel').textContent();
         assert(
-            encounterPlayerLabel?.includes(perspectiveTargets.secondName),
+            encounterPlayerLabel?.includes(secondPlayerName),
             'Label do encontro não acompanhou a troca de perspectiva'
         );
 
         await page.locator('#wildSetupPanel button:has-text("Iniciar")').click();
         await page.waitForSelector('#encounterPanel button:has-text("Atacar")', { timeout: 10000 });
 
-        const selectedEncounterPlayerId = await page.evaluate(() => window.GameState?.currentEncounter?.selectedPlayerId || null);
+        const selectedEncounterPlayerId = await page.evaluate(() => {
+            const raw = localStorage.getItem('monstrinhomon_state');
+            const parsed = raw ? JSON.parse(raw) : null;
+            const save = parsed?.state ?? parsed ?? {};
+            return save?.currentEncounter?.selectedPlayerId || null;
+        });
         assert(
-            selectedEncounterPlayerId === perspectiveTargets.secondId,
+            selectedEncounterPlayerId === secondPlayerId,
             'Encontro iniciou com jogador diferente da perspectiva global selecionada'
         );
 
