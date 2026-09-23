@@ -3,7 +3,7 @@
 **Status:** ACTIVE — relatório técnico/evidencial; não aprova recalibração de XP.  
 **Domain:** técnica / playtest  
 **Authority:** GitHub para o comportamento observado no runtime; decisões de ritmo continuam dependentes do autor.  
-**VerifiedAgainst:** `29aaa0ce89e5b99da45fe15cbb55109a79c3ad6c` + branch `fix/pre-playtest-stabilization-xp-audit`  
+**VerifiedAgainst:** `d3eb6726a05ec9bd6952dce2a1104fae1b265064` (merge do PR #286); follow-up técnico no PR #287  
 **Supersedes:** nenhum
 
 ## 1. Origem
@@ -219,3 +219,16 @@ Antes do primeiro registro formal SP-01:
 5. só então iniciar a coleta formal de `shieldhorn`.
 
 A decisão de balanceamento de XP pode permanecer separada se o ritmo não inviabilizar a sessão de passivas.
+
+
+## 6. Follow-up pós-merge do PR #286
+
+O code review automatizado ocorreu após o merge do PR #286 e identificou três lacunas relevantes:
+
+1. o hatch podia interpretar como concedido um starter redirecionado para a Box quando o time estivesse cheio;
+2. o E2E anterior exercitava apenas um jogador e não comprovava a troca real de perspectiva em contexto multi-jogador;
+3. a troca de perspectiva com o spot aberto podia deixar o espelho oculto do encontro fora de sincronia.
+
+O PR #287 trata essas lacunas sem alterar valores, fórmula de XP, passivas ou regras de combate. Também preserva o fallback visual de `xpNeeded` para saves antigos através da injeção do calculador runtime, evitando uma curva paralela na UI.
+
+Até o merge e a validação do PR #287, o estado deve ser interpretado como **estabilização em revisão**, não como baseline final do playtest.
