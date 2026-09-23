@@ -120,17 +120,26 @@ async function run() {
         await page.waitForSelector('#mmNewGame.show', { timeout: 10000 });
         await page.evaluate(() => {
             const numPlayersInput = document.getElementById('mmNumPlayers');
-            if (numPlayersInput) numPlayersInput.value = '1';
+            if (numPlayersInput) numPlayersInput.value = '2';
             window.mmNewGameNext();
             window.mmNewGameNext();
-            const playerNameInput = document.getElementById('mmPName_0');
-            if (playerNameInput) playerNameInput.value = 'E2E';
-            if (typeof window.mmSelectClass === 'function') window.mmSelectClass(0, 'Mago');
+
+            const playerNameInput0 = document.getElementById('mmPName_0');
+            const playerNameInput1 = document.getElementById('mmPName_1');
+            if (playerNameInput0) playerNameInput0.value = 'E2E-A';
+            if (playerNameInput1) playerNameInput1.value = 'E2E-B';
+            if (typeof window.mmSelectClass === 'function') {
+                window.mmSelectClass(0, 'Mago');
+                window.mmSelectClass(1, 'Mago');
+            }
+
             window.mmNewGameNext();
             window.mmFinishNewGame();
         });
 
         await page.waitForSelector('#mmStarterFlow.show', { timeout: 10000 });
+        await page.locator('#mmStarterFlow button:has-text("Chocar o Ovo")').click();
+        await page.locator('#mmStarterFlow button:has-text("Próximo Jogador")').click();
         await page.locator('#mmStarterFlow button:has-text("Chocar o Ovo")').click();
         await page.locator('#mmStarterFlow button:has-text("Começar Aventura")').click();
         await page.locator('#mmStartChoice button:has-text("Pular")').click();
@@ -146,9 +155,13 @@ async function run() {
         });
         const setupPlayersCount = setupSave?.players?.length ?? 0;
         assert(
-            setupPlayersCount >= 1,
-            `Novo jogo não criou jogadores via fluxo de UI (encontrado: ${setupPlayersCount}, esperado: >= 1)`
+            setupPlayersCount === 2,
+            `Novo jogo multi-jogador não criou 2 jogadores via fluxo de UI (encontrado: ${setupPlayersCount})`
         );
+        const firstPlayerId = setupSave?.players?.[0]?.id || null;
+        const secondPlayerId = setupSave?.players?.[1]?.id || null;
+        const secondPlayerName = setupSave?.players?.[1]?.name || null;
+        assert(firstPlayerId && secondPlayerId, 'IDs dos dois jogadores não foram persistidos no setup');
 
         await page.getByRole('button', { name: /Mundo/ }).click();
         await page.waitForFunction(() => typeof window.showWorldMap === 'function', null, { timeout: 10000 });
@@ -165,16 +178,42 @@ async function run() {
             const select = document.getElementById('encounterPlayer');
             return !!select?.value;
         }, null, { timeout: 10000 });
-        const encounterPlayerId = await page.locator('#encounterPlayer').inputValue();
-        const encounterPlayerLabel = await page.locator('#encounterPlayerLabel').textContent();
-        assert(encounterPlayerId, 'Perspectiva global não foi propagada para o encontro individual');
+
+        const initialEncounterPlayerId = await page.locator('#encounterPlayer').inputValue();
         assert(
-            encounterPlayerLabel && encounterPlayerLabel.trim() !== '—',
-            'Label do jogador atual não foi preenchido no spot'
+            initialEncounterPlayerId === firstPlayerId,
+            'Spot não iniciou sincronizado com a perspectiva do primeiro jogador'
+        );
+
+        // Trocar a perspectiva com o spot já aberto: regressão apontada no review do PR #286.
+        await page.evaluate((secondId) => {
+            window.setPlayerPerspective(secondId);
+        }, secondPlayerId);
+
+        await page.waitForFunction(
+            (secondId) => document.getElementById('encounterPlayer')?.value === secondId,
+            secondPlayerId,
+            { timeout: 10000 }
+        );
+        const encounterPlayerLabel = await page.locator('#encounterPlayerLabel').textContent();
+        assert(
+            encounterPlayerLabel?.includes(secondPlayerName),
+            'Label do encontro não acompanhou a troca de perspectiva'
         );
 
         await page.locator('#wildSetupPanel button:has-text("Iniciar")').click();
         await page.waitForSelector('#encounterPanel button:has-text("Atacar")', { timeout: 10000 });
+
+        const selectedEncounterPlayerId = await page.evaluate(() => {
+            const raw = localStorage.getItem('monstrinhomon_state');
+            const parsed = raw ? JSON.parse(raw) : null;
+            const save = parsed?.state ?? parsed ?? {};
+            return save?.currentEncounter?.selectedPlayerId || null;
+        });
+        assert(
+            selectedEncounterPlayerId === secondPlayerId,
+            'Encontro iniciou com jogador diferente da perspectiva global selecionada'
+        );
 
         const beforeBattleState = await page.evaluate(() => {
             const raw = localStorage.getItem('monstrinhomon_state');

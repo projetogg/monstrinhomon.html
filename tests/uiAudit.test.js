@@ -191,12 +191,18 @@ describe('Auditoria UI — Integridade de onchange handlers', () => {
         expect(indexHtml).toContain('onchange="renderEncounterQuestHint(this.value)"');
     });
 
-    it('encontro individual usa a perspectiva global sem pedir seleção duplicada', () => {
+    it('encontro individual usa a perspectiva global sem depender do select oculto', () => {
         expect(indexHtml).toContain('id="encounterPlayerLabel"');
         expect(indexHtml).toMatch(/id="encounterPlayer"[^>]*class="is-hidden"/);
-        expect(indexHtml).toContain("const perspectiveId = GameState.ui?.perspectivePlayerId;");
-        expect(indexHtml).toContain("const preferred = players.find(p => p.id === perspectiveId) || players[0] || null;");
-        expect(indexHtml).toContain("select.value = preferred.id;");
+        expect(indexHtml).toContain("function getEncounterPerspectivePlayerId()");
+        expect(indexHtml).toContain("selectedWildPlayerId = getEncounterPerspectivePlayerId();");
+        expect(indexHtml).toContain("selectedPlayerId: type === 'wild' ? selectedWildPlayerId : null");
+    });
+
+    it('troca de perspectiva deve sincronizar o espelho oculto e o label do encontro', () => {
+        expect(indexHtml).toContain("const selectedPlayerId = getEncounterPerspectivePlayerId();");
+        expect(indexHtml).toContain("select.value = selectedPlayerId || '';");
+        expect(indexHtml).toContain("return updateEncounterPlayerDropdown();");
     });
 
     it('encounterType onchange chama updateEncounterUI', () => {

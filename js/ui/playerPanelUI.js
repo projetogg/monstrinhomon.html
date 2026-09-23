@@ -24,9 +24,20 @@ export function renderMonsterCard(monster, options = {}) {
         if (!monster) return '';
 
         const hpPercent = clampPercent(((monster.hp || 0) / (monster.hpMax || 1)) * 100);
-        // A UI deve refletir o mesmo xpNeeded persistido/calculado pelo runtime.
-        // Não inventar uma segunda curva visual baseada em level * 100.
-        const xpNeeded = Math.max(1, Number(monster.xpNeeded) || 1);
+        // A UI deve refletir o xpNeeded persistido pelo runtime. Para saves antigos
+        // sem o campo, o chamador pode injetar o calculador canônico em vez de
+        // inventarmos uma curva paralela neste módulo visual.
+        const persistedXpNeeded = Number(monster.xpNeeded);
+        const calculateXpNeeded = options.calculateXpNeeded;
+        const fallbackXpNeeded = typeof calculateXpNeeded === 'function'
+            ? Number(calculateXpNeeded(monster.level))
+            : NaN;
+        const xpNeeded = Math.max(
+            1,
+            Number.isFinite(persistedXpNeeded) && persistedXpNeeded > 0
+                ? persistedXpNeeded
+                : (Number.isFinite(fallbackXpNeeded) && fallbackXpNeeded > 0 ? fallbackXpNeeded : 1)
+        );
         const xpPercent = clampPercent(((monster.xp || 0) / xpNeeded) * 100);
 
         const defaultFriendship = options.defaultFriendship ?? 50;
