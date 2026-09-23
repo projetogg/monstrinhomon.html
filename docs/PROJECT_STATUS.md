@@ -1,12 +1,12 @@
 # Monstrinhomon — Estado do Projeto
 
-**Verificado em:** 2026-08-26
+**Verificado em:** 2026-09-23
 
 **Branch oficial examinada:** `main`
 
-**Commit-base verificado:** `6d59d876b1459b4ebd54d4838b1fffdfd83ad7cc`
+**Commit-base verificado:** `ab76fcb4e2dc91e5bcf3da812130ccbe983219b4`
 
-**Marco técnico:** PR #283 integrado; `MON_100` descontinuado com compatibilidade de saves
+**Marco técnico:** PR #288 integrado; `shieldhorn` agora respeita a linha de frente no Group
 
 **Escopo:** fotografia datada do estado implementado e das decisões registradas. Visão futura não equivale a runtime.
 
@@ -40,6 +40,7 @@
 | Paridade da fórmula-base | matriz determinística | `tests/combatHarnessRuntimeParityV22.test.js`, PR #263 |
 | `atkBonus` de espécie | ATK antes da fórmula | PR #266 |
 | Ordem de `shieldhorn` | resistência percentual antes da redução plana | PR #273 |
+| Gate posicional de `shieldhorn` | mitigação apenas na linha de frente no Group; Wild mantém combatente ativo como frente | PR #288 |
 | Passivas nas skills Group | eventos de ataque e uso de skill | PR #274 |
 | Paridade final das espécies | oito espécies nos caminhos comparáveis | PR #275 |
 | Comparação de baselines | ferramenta e relatório reproduzíveis | PR #276 |
@@ -97,7 +98,8 @@ Essa baseline mede fórmula, RC, ações ofensivas, ENE e passivas de classe. El
 
 Sinais principais:
 
-- `shieldhorn`: maior delta automatizado de vitória e mitigação;
+- `shieldhorn`: maior delta automatizado de vitória e mitigação na matriz isolada da passiva;
+- a matriz de espécies não modela o pacote completo de espécie: não aplica offsets via `speciesBridge`, kit swap ou economia integral de ENE;
 - `wildpace`: efeito medido em cenário controlado iniciado abaixo de 40% de HP;
 - `floracura`: bônus de cura confirmado;
 - passivas dependentes de skill: efeitos observáveis nos perfis aplicáveis.
@@ -133,6 +135,7 @@ Fontes:
 | `EG-01` | semântica de skill que erra no Wild | lacuna de evidência isolada |
 | `DIV-ENE-01` | regeneração de ENE | investigação independente pendente |
 | `DIV-PASSIVE-01` | valores das passivas de classe | não recalibrar sem medição |
+| `DIV-KITSWAP-PWR-01` | calibração do Golpe Pesado de `shieldhorn` | referências de PWR em comentários/testes não correspondem a `data/skills.json`; depende de `DEC-COMBAT-A` |
 | `DIV-BOSS-01` | multiplicadores e comportamento de boss | investigação pendente |
 | `DIV-CARDS-01` | Card Layer visual | QA de produto e encerramento do piloto pendentes |
 | `GAP-CARDS-HYBRID-01` | regras exatas do deckbuilding tático | visão aprovada; especificação e protótipo pendentes |
@@ -176,13 +179,15 @@ docs(playtest): registrar playtest mediado das passivas de espécie
 
 Prioridades:
 
-1. observar `shieldhorn` sem presumir nerf;
+1. observar `shieldhorn` pós-PR #288, sem presumir nerf;
 2. medir frequência natural de `wildpace` abaixo de 40% de HP;
 3. verificar clareza das passivas condicionadas a skills;
 4. registrar duração, escolhas, frustração e entendimento;
 5. separar UX, bug e balanceamento.
 
 Higiene documental não autoriza iniciar deck, tabuleiro ou recalibração durante este portão.
+
+A reavaliação pós-PR #288 está registrada em `docs/reports/SHIELDHORN_TANK_PACKAGE_REASSESSMENT_2026-09.md`. Ela mantém `damageReduction: 1` congelado para coleta e registra separadamente o drift de calibração do Golpe Pesado.
 
 ## Validação técnica
 

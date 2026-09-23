@@ -44,6 +44,8 @@ docs(playtest): registrar playtest mediado das passivas de espécie
 - baseline de fórmula e passivas de classe estável antes/depois das correções;
 - impacto quantitativo das oito passivas medido em matriz dedicada;
 - `shieldhorn` é o principal sinal automatizado para observação;
+- PR #288 corrigiu o gate de linha de frente sem alterar `damageReduction: 1`;
+- reavaliação pós-correção separou o sinal da matriz isolada do pacote completo do tank e identificou drift de calibração no Golpe Pesado;
 - playtest padronizado ainda pendente.
 
 **Entregas restantes:**
@@ -52,7 +54,8 @@ docs(playtest): registrar playtest mediado das passivas de espécie
 2. decisão humana sobre os sinais da matriz;
 3. investigação independente de ENE;
 4. investigação independente de boss;
-5. decisão humana sobre PWR e crítico.
+5. decisão humana sobre PWR e crítico;
+6. reconciliar a calibração do Golpe Pesado com `data/skills.json` dentro de `DEC-COMBAT-A`, sem misturar essa decisão com a coleta de `shieldhorn`.
 
 **Critérios de saída:**
 
@@ -98,6 +101,17 @@ A fase atual não implementa deck, mão ou tabuleiro. A visão futura permanece 
 A aprovação editorial de um nome não autoriza migração automática para o runtime.
 
 ## Concluído recentemente
+
+### Correção do gate posicional de `shieldhorn`
+
+- PR #288 integrado;
+- `shieldhorn` só mitiga na linha de frente no Group;
+- Wild preserva o combatente ativo como linha de frente;
+- `damageReduction: 1` não foi alterado;
+- reavaliação subsequente identificou drift entre as referências históricas de PWR do Golpe Pesado e `data/skills.json`;
+- nenhum nerf/buff foi autorizado.
+
+Fonte: `docs/reports/SHIELDHORN_TANK_PACKAGE_REASSESSMENT_2026-09.md`.
 
 ### Descontinuação compatível de `MON_100`
 
