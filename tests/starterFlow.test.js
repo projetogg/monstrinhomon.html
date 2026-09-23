@@ -253,6 +253,27 @@ describe('mmFinishNewGame — sem auto-award de starter', () => {
     });
 });
 
+describe('Regressão pré-playtest — starter não pode terminar incompleto', () => {
+    const indexHtml = readFileSync(resolve(__dirname, '../index.html'), 'utf-8');
+
+    it('awardMonster deve inicializar activeIndex ao adicionar o primeiro monstrinho', () => {
+        expect(indexHtml).toContain("player.activeIndex = firstAliveIndex(player.team);");
+    });
+
+    it('falha ao conceder starter deve retornar ao ovo em vez de avançar para hatched', () => {
+        expect(indexHtml).toContain("mmAlert('Não foi possível conceder o Monstrinhomon inicial. Tente chocar o ovo novamente.', 'error');");
+        expect(indexHtml).toContain("MM_STARTER.phase = 'egg';");
+        expect(indexHtml).toMatch(/mmRenderStarterFlow\(\);\s*return;\s*}\s*\n\s*MM_STARTER\.phase = 'hatched';/);
+    });
+
+    it('mmFinishStarterFlow deve bloquear saída se existir jogador sem starter/time', () => {
+        expect(indexHtml).toContain("const incompleteIndex = (GameState.players ?? []).findIndex");
+        expect(indexHtml).toContain("!p.starterGranted");
+        expect(indexHtml).toContain("p.team.length === 0");
+        expect(indexHtml).toContain("Há um jogador sem Monstrinhomon inicial. Conclua o ovo antes de continuar.");
+    });
+});
+
 describe('Fluxo multi-jogador', () => {
     it('todos os jogadores recebem starter após fluxo completo', () => {
         const players = [

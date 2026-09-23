@@ -24,7 +24,9 @@ export function renderMonsterCard(monster, options = {}) {
         if (!monster) return '';
 
         const hpPercent = clampPercent(((monster.hp || 0) / (monster.hpMax || 1)) * 100);
-        const xpNeeded = (monster.level || 1) * 100;
+        // A UI deve refletir o mesmo xpNeeded persistido/calculado pelo runtime.
+        // Não inventar uma segunda curva visual baseada em level * 100.
+        const xpNeeded = Math.max(1, Number(monster.xpNeeded) || 1);
         const xpPercent = clampPercent(((monster.xp || 0) / xpNeeded) * 100);
 
         const defaultFriendship = options.defaultFriendship ?? 50;
