@@ -419,8 +419,8 @@
                 </nav>
                 <p id="wildSetupDesc" class="text-small text-muted" style="margin:4px 0 12px"></p>
                 <div class="encounter-setup-inline">
-                    <label>👤 Jogador:</label>
-                    <select id="encounterPlayer" onchange="renderEncounterQuestHint(this.value)">
+                    <span class="text-small">👤 Jogador atual: <strong id="encounterPlayerLabel">—</strong></span>
+                    <select id="encounterPlayer" class="is-hidden" aria-hidden="true" tabindex="-1" onchange="renderEncounterQuestHint(this.value)">
                         <option value="">-- Selecione --</option>
                     </select>
                     <button class="btn btn-success" onclick="startEncounter()">▶ Iniciar</button>
@@ -4333,6 +4333,16 @@
                     const maxTeamSize = GameState.config?.maxTeamSize || 6;
                     if (player.team.length < maxTeamSize) {
                         player.team.push(monster);
+
+                        // Pré-playtest: ao receber o primeiro monstrinho (ex.: starter),
+                        // garantir imediatamente um activeIndex válido. Isso evita um
+                        // estado intermediário em que a Home tem jogador/time, mas
+                        // não consegue resolver o monstrinho ativo.
+                        if (typeof player.activeIndex !== 'number' ||
+                            player.activeIndex < 0 ||
+                            !player.team[player.activeIndex]) {
+                            player.activeIndex = firstAliveIndex(player.team);
+                        }
                     } else {
                         // Party full, add to sharedBox instead (PR15A)
                         const boxResult = addToSharedBox(player.id, monster);
@@ -12493,19 +12503,34 @@
         /** Atualiza o dropdown de jogadores no painel de setup selvagem. */
         function _wmUpdatePlayerDropdown() {
             const select = document.getElementById('encounterPlayer');
+            const label = document.getElementById('encounterPlayerLabel');
             if (!select) return;
+
+            const players = (GameState.players ?? []).filter(Boolean);
             select.innerHTML = '<option value="">-- Selecione --</option>';
-            (GameState.players ?? []).forEach(p => {
-                if (!p) return;
+
+            players.forEach(p => {
                 const opt = document.createElement('option');
                 opt.value = p.id;
                 opt.textContent = `${p.name} (${p.class})`;
                 select.appendChild(opt);
             });
-            if (select.options.length === 2) {
-                // Auto-seleciona se houver apenas 1 jogador
-                select.selectedIndex = 1;
-                renderEncounterQuestHint(select.value);
+
+            // A perspectiva global da navbar é a fonte de verdade para encontros
+            // individuais. O select permanece oculto apenas como contrato interno
+            // de startEncounter(), evitando pedir a mesma escolha duas vezes.
+            ensurePerspectivePlayerId();
+            const perspectiveId = GameState.ui?.perspectivePlayerId;
+            const preferred = players.find(p => p.id === perspectiveId) || players[0] || null;
+
+            if (preferred) {
+                select.value = preferred.id;
+                if (label) label.textContent = `${preferred.name} (${preferred.class})`;
+                renderEncounterQuestHint(preferred.id);
+            } else {
+                select.value = '';
+                if (label) label.textContent = 'Nenhum jogador disponível';
+                renderEncounterQuestHint('');
             }
         }
 
@@ -16045,8 +16070,16 @@
             if (mon) {
                 player.starterGranted = true;
                 player.starterMonsterId = info.monsterId;
+
+                // Garantir que o starter recém-concedido seja o monstrinho ativo.
+                const idx = player.team.indexOf(mon);
+                if (idx >= 0) player.activeIndex = idx;
             } else {
                 console.error('[mmStarterHatchEgg] awardMonster falhou para', info.monsterId);
+                mmAlert('Não foi possível conceder o Monstrinhomon inicial. Tente chocar o ovo novamente.', 'error');
+                MM_STARTER.phase = 'egg';
+                mmRenderStarterFlow();
+                return;
             }
 
             MM_STARTER.phase = 'hatched';
@@ -16078,6 +16111,33 @@
         }
 
         function mmFinishStarterFlow() {
+            // Não permitir que o onboarding avance ao tutorial/Home com jogador sem
+            // starter. Se uma concessão falhar, retorna exatamente ao jogador afetado.
+            const incompleteIndex = (GameState.players ?? []).findIndex(p =>
+                !p ||
+                !p.starterGranted ||
+                !Array.isArray(p.team) ||
+                p.team.length === 0
+            );
+            if (incompleteIndex >= 0) {
+                MM_STARTER.playerIndex = incompleteIndex;
+                MM_STARTER.phase = 'egg';
+                mmShow("mmStarterFlow");
+                mmRenderStarterFlow();
+                mmAlert('Há um jogador sem Monstrinhomon inicial. Conclua o ovo antes de continuar.', 'warning');
+                return;
+            }
+
+            // Reparar activeIndex antes de sair do onboarding.
+            (GameState.players ?? []).forEach(player => {
+                const current = (typeof player.activeIndex === 'number')
+                    ? player.team[player.activeIndex]
+                    : null;
+                if (!_isAlive(current)) {
+                    player.activeIndex = firstAliveIndex(player.team);
+                }
+            });
+
             GameState.starterFlowCompleted = true;
 
             // Auto-criar sessão se ainda não existir — garante que batalhas funcionem
