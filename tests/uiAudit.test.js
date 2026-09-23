@@ -191,6 +191,14 @@ describe('Auditoria UI — Integridade de onchange handlers', () => {
         expect(indexHtml).toContain('onchange="renderEncounterQuestHint(this.value)"');
     });
 
+    it('encontro individual usa a perspectiva global sem pedir seleção duplicada', () => {
+        expect(indexHtml).toContain('id="encounterPlayerLabel"');
+        expect(indexHtml).toMatch(/id="encounterPlayer"[^>]*class="is-hidden"/);
+        expect(indexHtml).toContain("const perspectiveId = GameState.ui?.perspectivePlayerId;");
+        expect(indexHtml).toContain("const preferred = players.find(p => p.id === perspectiveId) || players[0] || null;");
+        expect(indexHtml).toContain("select.value = preferred.id;");
+    });
+
     it('encounterType onchange chama updateEncounterUI', () => {
         expect(indexHtml).toContain('id="encounterType"');
         expect(indexHtml).toContain('onchange="updateEncounterUI()"');
