@@ -5,32 +5,35 @@
 
 ## Agora
 
-### Executar playtest mediado das passivas de espécie
+### Validar passivas por simulação dirigida pré-playtest
 
-**Resultado esperado:** confrontar os sinais da matriz automatizada com clareza, duração, escolha de ações, frustração e observação terapêutica.
+**Resultado esperado:** reduzir as lacunas mecânicas enquanto a build ainda não está pronta para apresentação às crianças, sem fabricar evidência humana.
 
-**Próximo PR único:**
+**Estado:**
 
-```text
-docs(playtest): registrar playtest mediado das passivas de espécie
-```
+- `DEC-PLAYTEST-PRE-01` aprovada;
+- SP-01 técnico de `shieldhorn` concluído;
+- `shieldhorn` no SP-01 preservou HP, mas não alterou vitória nem TTK;
+- `damageReduction: 1` permanece congelado;
+- playtest humano está adiado, não cancelado.
 
 **Prioridades:**
 
-1. observar `shieldhorn`, que apresentou o maior delta automatizado de vitória;
-2. medir a frequência natural de `wildpace` abaixo de 40% de HP;
-3. verificar se as passivas de setup são percebidas e compreendidas;
-4. registrar o uso real de skills e ataques básicos;
-5. separar UX, bug e balanceamento;
-6. não alterar valores no mesmo PR.
+1. executar SP-02 `wildpace` começando com HP cheio e registrar frequência natural de entrada abaixo de 40%;
+2. testar passivas de setup em cenários com oportunidade real de trigger e consumo;
+3. ampliar cenários somente quando a métrica atual estiver saturada;
+4. distinguir cenário de demonstração de cenário de sensibilidade;
+5. não alterar valores no mesmo passo da coleta;
+6. manter PWR, crítico, ENE e boss separados.
 
 **Limites:**
 
-- a matriz automatizada não autoriza nerf ou buff;
-- o playtest deve usar o modelo padronizado;
-- qualquer ajuste posterior deve tratar uma única passiva;
-- PWR, crítico, ENE e bosses permanecem investigações separadas;
+- `TECHNICAL_CONTROLLED` não é evidência humana;
+- não inferir percepção, compreensão, justiça, diversão ou frustração;
+- nenhuma simulação isolada autoriza buff/nerf;
 - não iniciar deck, mão ou tabuleiro durante este portão.
+
+Fonte: `docs/DECISAO_PROCESSO_PREPLAYTEST_SIMULACAO_2026-09.md`.
 
 ### Validar o núcleo jogável v2.2
 
@@ -46,16 +49,18 @@ docs(playtest): registrar playtest mediado das passivas de espécie
 - `shieldhorn` é o principal sinal automatizado para observação;
 - PR #288 corrigiu o gate de linha de frente sem alterar `damageReduction: 1`;
 - reavaliação pós-correção separou o sinal da matriz isolada do pacote completo do tank e identificou drift de calibração no Golpe Pesado;
-- playtest padronizado ainda pendente.
+- SP-01 técnico concluído no harness oficial;
+- playtest padronizado humano adiado até a build estar apresentável.
 
 **Entregas restantes:**
 
-1. playtest mediado com `docs/PLAYTEST_TEMPLATE_V2_2.md`;
-2. decisão humana sobre os sinais da matriz;
-3. investigação independente de ENE;
-4. investigação independente de boss;
-5. decisão humana sobre PWR e crítico;
-6. reconciliar a calibração do Golpe Pesado com `data/skills.json` dentro de `DEC-COMBAT-A`, sem misturar essa decisão com a coleta de `shieldhorn`.
+1. concluir a bateria técnica pré-playtest das passivas;
+2. retomar playtest mediado com `docs/PLAYTEST_TEMPLATE_V2_2.md` quando a build estiver apresentável;
+3. decisão humana sobre os sinais da matriz;
+4. investigação independente de ENE;
+5. investigação independente de boss;
+6. decisão humana sobre PWR e crítico;
+7. reconciliar a calibração do Golpe Pesado com `data/skills.json` dentro de `DEC-COMBAT-A`, sem misturar essa decisão com a coleta de `shieldhorn`.
 
 **Critérios de saída:**
 
@@ -219,11 +224,11 @@ Fonte:
 
 ## Próximo
 
-### Executar playtest mediado após a matriz de espécies
+### Retomar playtest mediado das passivas
 
-**Dependência:** a matriz quantitativa de passivas de espécie deve estar concluída.
+**Dependências:** a build deve estar apresentável às crianças e a etapa técnica pré-playtest deve estar suficientemente consolidada.
 
-**Resultado esperado:** confrontar resultados automatizados com clareza, duração, frustração, escolha de ações e observação terapêutica.
+**Resultado esperado:** confrontar resultados automatizados com clareza, duração, frustração, escolha de ações e observação terapêutica. Simulação não substitui esta etapa.
 
 ### Reconciliar autoridade documental
 

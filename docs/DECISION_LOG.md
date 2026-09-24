@@ -1,7 +1,7 @@
 # Monstrinhomon — Registro de Decisões
 
 **Status:** ACTIVE  
-**Atualizado:** 2026-08-26
+**Atualizado:** 2026-09-24
 
 Este arquivo é um índice. Regras detalhadas permanecem no documento canônico ou ADR vinculado.
 
@@ -18,6 +18,7 @@ Este arquivo é um índice. Regras detalhadas permanecem no documento canônico 
 
 | ID | Data | Estado | Domínio | Resumo | Fonte | Implementação |
 |---|---|---|---|---|---|---|
+| `DEC-PLAYTEST-PRE-01` | 2026-09-24 | APPROVED | processo de validação | adiar playtest humano enquanto a build não estiver apresentável e usar simulações técnicas dirigidas como etapa pré-playtest | `docs/DECISAO_PROCESSO_PREPLAYTEST_SIMULACAO_2026-09.md` | SP-01 técnico executado; coleta humana permanece futura |
 | `DEC-COMBAT-B` | 2026-05-29 | PARTIAL | passivas de classe | manter passivas fracas, explícitas e fora das cartas por enquanto | `docs/DECISAO_B_PASSIVAS_CLASSE_2026-05.md` | conceito ativo; valores ainda não recalibrados |
 | `DEC-COMBAT-A` | — | PENDING | PWR e catálogo | escolher estratégia de calibração | Patch v2.2, Decisão A | aguarda evidência de playtest e decisão humana |
 | `DEC-COMBAT-D` | — | PENDING | crítico | manter, remover ou formalizar prêmio aleatório de UX | Patch v2.2, Decisão D | aguarda validação específica do crítico |
@@ -31,6 +32,18 @@ Este arquivo é um índice. Regras detalhadas permanecem no documento canônico 
 | `DEC-AUTH-02` | — | PENDING | governança | definir destino do antigo “Documento Mestre” | auditoria de governança 2026-06-22 | cópias antigas não possuem autoridade automática |
 | `DEC-DRIVE-01` | 2026-06-23 | PARTIAL | catálogo editorial | manter Dex v3 como proposta editorial ativa e classificar o restante do acervo | [documento de decisão no Drive](https://docs.google.com/document/d/1N4msx5Wa_IazEwj5k9fYcOD9JwZBJJ86iFkfptifpDA/edit) | Drive organizado; nomes pendentes; nenhuma migração runtime automática |
 | `DEC-CATALOG-MON-100-01` | 2026-08-25 | IMPLEMENTED | catálogo/runtime | descontinuar `MON_100` para conteúdo novo, preservando lookup e saves existentes | `docs/DECISAO_DESCONTINUACAO_MON_100_2026-08.md` | PR #283 integrado à `main` em `6d59d876` |
+
+## Estado do processo pré-playtest
+
+`DEC-PLAYTEST-PRE-01` altera o timing da validação, não as regras do jogo.
+
+Enquanto a build não estiver apresentável às crianças:
+- simulações dirigidas podem reduzir incerteza mecânica;
+- resultados devem ser rotulados como técnicos/controlados;
+- UX, percepção, compreensão, frustração, diversão e estratégia espontânea permanecem pendentes;
+- o playtest humano continua necessário antes de encerrar evidência humana das passivas.
+
+O SP-01 técnico está em `docs/reports/SP01_TECHNICAL_SHIELDHORN_2026-09.md`.
 
 ## Estado das passivas de espécie
 
