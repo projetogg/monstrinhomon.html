@@ -1,12 +1,12 @@
 # Monstrinhomon — Estado do Projeto
 
-**Verificado em:** 2026-09-23
+**Verificado em:** 2026-09-24
 
 **Branch oficial examinada:** `main`
 
-**Commit-base verificado:** `ab76fcb4e2dc91e5bcf3da812130ccbe983219b4`
+**Commit-base verificado:** `2ae5ea981ba87f49aea72450254a1d8da8dd351f`
 
-**Marco técnico:** PR #288 integrado; `shieldhorn` agora respeita a linha de frente no Group
+**Marco técnico:** PR #289 integrado; SP-01 técnico executado separadamente no harness oficial pós-PR #288
 
 **Escopo:** fotografia datada do estado implementado e das decisões registradas. Visão futura não equivale a runtime.
 
@@ -24,6 +24,8 @@
 - `DEC-SPECIES-ATK-01` e `DEC-SPECIES-DEF-01` implementadas.
 - Baseline quantitativa de fórmula separada da matriz quantitativa das espécies.
 - Matriz de espécies com 48 pares e 96.000 batalhas controladas.
+- SP-01 técnico de `shieldhorn` executado no cenário Ferrozimon × Vitalex com 20.000 pares `basic` e 20.000 `mixed`.
+- Playtest humano das passivas adiado até a build estar apresentável às crianças; simulação dirigida é a etapa operacional imediata.
 - `MON_100` excluído de conteúdo novo, mantendo lookup e saves existentes.
 - Visão híbrida de cartas registrada separadamente do runtime atual.
 - Planos e auditorias datadas preservados em `docs/legacy/` e `docs/archive/`, fora da ordem de leitura atual.
@@ -104,7 +106,15 @@ Sinais principais:
 - `floracura`: bônus de cura confirmado;
 - passivas dependentes de skill: efeitos observáveis nos perfis aplicáveis.
 
-Esses resultados não autorizam buff ou nerf sem playtest e decisão humana.
+Esses resultados não autorizam buff ou nerf automaticamente.
+
+SP-01 técnico pós-PR #288:
+- `basic`: 100% → 100% de vitória; TTK inalterado; +3,40795 HP final médio;
+- `mixed`: 100% → 100%; TTK inalterado; +2,15635 HP final médio;
+- o cenário confirma resistência mecânica, mas está saturado para calibração por win rate;
+- dimensões humanas permanecem não testadas.
+
+Fonte adicional: `docs/reports/SP01_TECHNICAL_SHIELDHORN_2026-09.md`.
 
 Fontes:
 
@@ -156,6 +166,7 @@ Fontes:
 
 ### Aprovadas e não implementadas integralmente
 
+- `DEC-PLAYTEST-PRE-01`: adiar coleta humana enquanto a build não estiver apresentável e usar simulação dirigida como etapa pré-playtest.
 - `DEC-CARDS-VISION-01`: RPG tático simples, deckbuilding leve, posicionamento, cartas como habilidades e garantia contra turno morto.
 
 ### Pendentes
@@ -169,25 +180,26 @@ Fontes:
 
 ## Fase atual
 
-A fase permanece **Validação do Núcleo Jogável — Combate v2.2**.
+A fase permanece **Validação do Núcleo Jogável — Combate v2.2**, com etapa operacional imediata de **validação pré-playtest por simulação dirigida das passivas de espécie**.
 
-Próximo portão:
+Motivo: o autor determinou que a build ainda não está pronta para apresentação às crianças. Simular manualmente a sessão sem participantes não produziria evidência humana.
 
-```text
-docs(playtest): registrar playtest mediado das passivas de espécie
-```
+Prioridades imediatas:
 
-Prioridades:
+1. SP-01 técnico de `shieldhorn`: **concluído**, sem sinal para alterar `damageReduction: 1`;
+2. SP-02 técnico de `wildpace`: medir limiar natural partindo de HP cheio;
+3. passivas de setup: medir oportunidade → trigger → consumo em cenários não saturados;
+4. manter PWR, crítico, ENE e boss em investigações separadas;
+5. separar sempre `TECHNICAL_CONTROLLED` de evidência humana.
 
-1. observar `shieldhorn` pós-PR #288, sem presumir nerf;
-2. medir frequência natural de `wildpace` abaixo de 40% de HP;
-3. verificar clareza das passivas condicionadas a skills;
-4. registrar duração, escolhas, frustração e entendimento;
-5. separar UX, bug e balanceamento.
+O playtest mediado humano permanece como portão futuro e deve ser retomado quando a build estiver apresentável. Percepção, compreensão, frustração, diversão, justiça e estratégia espontânea não podem ser preenchidas por simulação.
 
-Higiene documental não autoriza iniciar deck, tabuleiro ou recalibração durante este portão.
+Fontes:
+- `docs/DECISAO_PROCESSO_PREPLAYTEST_SIMULACAO_2026-09.md`;
+- `docs/reports/SP01_TECHNICAL_SHIELDHORN_2026-09.md`;
+- `docs/reports/SHIELDHORN_TANK_PACKAGE_REASSESSMENT_2026-09.md`.
 
-A reavaliação pós-PR #288 está registrada em `docs/reports/SHIELDHORN_TANK_PACKAGE_REASSESSMENT_2026-09.md`. Ela mantém `damageReduction: 1` congelado para coleta e registra separadamente o drift de calibração do Golpe Pesado.
+Nenhum valor de passiva, PWR ou ENE é alterado nesta etapa.
 
 ## Validação técnica
 
