@@ -16,6 +16,7 @@ const monsters = monstersJson.monsters;
 const skills = skillsJson.skills;
 const playerTemplate = monsters.find(mon => mon.id === 'MON_023');
 const enemyTemplate = monsters.find(mon => mon.id === 'MON_031');
+const evolvedEnemyTemplate = monsters.find(mon => mon.id === 'MON_031B');
 const classAdvantages = buildClassAdvantages(matchupsJson);
 const animalistDamageSkill = skills.find(skill =>
   skill.class === 'Animalista'
@@ -23,16 +24,16 @@ const animalistDamageSkill = skills.find(skill =>
   && Number(skill.stageIndex) === 0
 );
 
-function scenario(profile, enemyLevel = 10) {
+function scenario(profile, enemyLevel = 10, enemyTemplateOverride = enemyTemplate) {
   return {
-    id: `sp02-natural-${profile}-enemyL${enemyLevel}`,
+    id: `sp02-natural-${profile}-${enemyTemplateOverride.id}-enemyL${enemyLevel}`,
     speciesId: 'wildpace',
     className: 'Animalista',
     level: 10,
     enemyLevel,
     profile,
     playerTemplate,
-    enemyTemplate,
+    enemyTemplate: enemyTemplateOverride,
     classAdvantages,
     initialHpRatio: 1,
     basicPower: DEFAULT_BASIC_POWER.Animalista,
@@ -95,6 +96,34 @@ describe('SP-02 técnico — wildpace a partir de HP cheio', () => {
     expect(mixed.passive.observations.startedAtFullHpRate).toBe(1);
     expect(basic.base.observations.startedBelowThresholdRate).toBe(0);
     expect(mixed.base.observations.startedBelowThresholdRate).toBe(0);
+  });
+
+  it('mede sensibilidade com forma evoluída quando Vitalex já deveria ter evoluído', () => {
+    const runs = 5000;
+    const seed = 'sp02-natural-evolved-sensitivity-590660';
+    const rows = [];
+
+    for (const enemyLevel of [12, 13]) {
+      for (const profile of ['basic', 'mixed']) {
+        const result = simulateSpeciesPassiveScenarioPair(
+          scenario(profile, enemyLevel, evolvedEnemyTemplate),
+          { runs, seed, maxTurns: 30 },
+        );
+        rows.push({
+          ...compact(result),
+          enemyId: evolvedEnemyTemplate.id,
+          enemyName: evolvedEnemyTemplate.name,
+        });
+      }
+    }
+
+    console.log('SP02_NATURAL_EVOLVED_SENSITIVITY', JSON.stringify({
+      verifiedAgainst: '590660187266215251ed9b71ba36012efa07991f',
+      runsPerPair: runs,
+      rows,
+    }));
+
+    expect(rows.every(row => Number.isFinite(row.baseThresholdCrossingRate))).toBe(true);
   });
 
   it('mede sensibilidade natural do limiar em dificuldades próximas', () => {
