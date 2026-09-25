@@ -280,6 +280,24 @@ describe('executeGroupUseItem - Cura básica (IT_HEAL_01)', () => {
         expect(logText).toContain('HP');
     });
 
+    it('deve incluir bônus floracura no total de HP reportado', () => {
+        const mon = makeMon({
+            name: 'Nutrilo',
+            class: 'Curandeiro',
+            canonSpeciesId: 'floracura',
+            hp: 20,
+            hpMax: 100
+        });
+        const player = makePlayer(mon, { 'IT_HEAL_01': 1 }, { class: 'Curandeiro' });
+        const { deps, enc } = makeDeps({ mon, player, itemDefById: { 'IT_HEAL_01': HEAL_01 } });
+
+        executeGroupUseItem('IT_HEAL_01', deps);
+
+        expect(mon.hp).toBe(53); // 20 + 30 base + 3 floracura
+        expect(enc.log.some(line => line.includes('Passiva Nutrilo') && line.includes('+3 HP'))).toBe(true);
+        expect(enc.log.some(line => line.includes('Petisco de Cura') && line.includes('(+33 HP)'))).toBe(true);
+    });
+
     it('deve tocar som de cura', () => {
         const mon = makeMon({ hp: 30, hpMax: 100 });
         const player = makePlayer(mon, { 'IT_HEAL_01': 1 });

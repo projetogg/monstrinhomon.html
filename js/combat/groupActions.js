@@ -1719,7 +1719,7 @@ export function executeUseItemGroup(itemId, target, deps) {
         // Calcular e aplicar cura
         const healAmount = Math.max(healMin, Math.floor(hpMax * healPct));
         const newHp = Math.min(hpMax, hp + healAmount);
-        const healed = newHp - hp;
+        let healed = newHp - hp;
         mon.hp = newHp;
 
         // PR-02: on_heal_item — passiva de espécie ao usar item de cura (floracura)
@@ -1732,6 +1732,7 @@ export function executeUseItemGroup(itemId, target, deps) {
             const bonus = Math.min(healSpeciesPassive.healBonus, hpMax - mon.hp);
             if (bonus > 0) {
                 mon.hp += bonus;
+                healed += bonus;
                 const monNameForLog = mon.nickname || mon.name || mon.nome || "Monstrinho";
                 helpers.log(enc, `✨ Passiva ${monNameForLog}: +${bonus} HP (primeira cura)`);
             }

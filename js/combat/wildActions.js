@@ -1251,7 +1251,7 @@ export function executeWildItemUse({ encounter, player, playerMonster, itemId, d
         const healAmount = Math.max(healMin, Math.floor(playerMonster.hpMax * healPct));
         const hpBefore   = playerMonster.hp;
         playerMonster.hp = Math.min(playerMonster.hpMax, playerMonster.hp + healAmount);
-        const actualHeal = playerMonster.hp - hpBefore;
+        let actualHeal = playerMonster.hp - hpBefore;
 
         // Passiva canônica — floracura (bônus na primeira cura do combate)
         // passiveState é inicializado lazily no encounter para não poluir o objeto de encontro
@@ -1265,6 +1265,7 @@ export function executeWildItemUse({ encounter, player, playerMonster, itemId, d
             const bonus = Math.min(healPassive.healBonus, playerMonster.hpMax - playerMonster.hp);
             if (bonus > 0) {
                 playerMonster.hp += bonus;
+                actualHeal += bonus;
                 const healLabel = _passiveLabel(playerMonster.canonSpeciesId, 'on_heal_item');
                 encounter.log.push(
                     healLabel

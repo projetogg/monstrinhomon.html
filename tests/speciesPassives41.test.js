@@ -277,6 +277,26 @@ describe('speciesPassives 4.1 — floracura integração executeWildItemUse', ()
         expect(enc.passiveState.floracuraHealUsed).toBe(true);
     });
 
+    it('floracura: actualHeal e feedback visual incluem o bônus efetivamente aplicado', () => {
+        const pm = makeMonster({ canonSpeciesId: 'floracura', hp: 20, hpMax: 80 });
+        const wild = makeWild();
+        const enc = makeEncounter(wild);
+        const player = makePlayer();
+        const deps = makeItemDeps();
+
+        const result = executeWildItemUse({
+            encounter: enc,
+            player,
+            playerMonster: pm,
+            itemId: 'IT_HEAL_01',
+            dependencies: deps,
+        });
+
+        expect(pm.hp).toBe(47); // 20 + 24 base + 3 floracura
+        expect(result.actualHeal).toBe(27);
+        expect(deps.onHealVisualFeedback).toHaveBeenCalledWith(27);
+    });
+
     it('floracura: log registra bônus de passiva', () => {
         const pm = makeMonster({ canonSpeciesId: 'floracura', hp: 40, hpMax: 80 });
         const wild = makeWild();
