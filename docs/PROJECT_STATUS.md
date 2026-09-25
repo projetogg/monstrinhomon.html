@@ -117,7 +117,6 @@ SP-01 técnico pós-PR #288:
 
 Fonte adicional:
 - `docs/reports/SP01_TECHNICAL_SHIELDHORN_2026-09.md`;
-- `docs/reports/SP02_TECHNICAL_WILDPACE_2026-09.md`;
 - `docs/reports/SP02_TECHNICAL_WILDPACE_2026-09.md`.
 
 SP-02 técnico:
