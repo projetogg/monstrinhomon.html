@@ -13,14 +13,16 @@
 
 - `DEC-PLAYTEST-PRE-01` aprovada;
 - SP-01 técnico de `shieldhorn` concluído;
+- SP-02 técnico de `wildpace` concluído a partir de HP cheio;
 - `shieldhorn` no SP-01 preservou HP, mas não alterou vitória nem TTK;
+- `wildpace` no cenário oficial ativou naturalmente em ~30% (`basic`) e ~10% (`mixed`), com pequeno impacto em vitória;
 - `damageReduction: 1` permanece congelado;
 - playtest humano está adiado, não cancelado.
 
 **Prioridades:**
 
-1. executar SP-02 `wildpace` começando com HP cheio e registrar frequência natural de entrada abaixo de 40%;
-2. testar passivas de setup em cenários com oportunidade real de trigger e consumo;
+1. executar SP-03 `floracura` com oportunidade real de cura e separar oportunidade, ativação e benefício;
+2. testar `moonquill`, `shadowsting` e `bellwave` em cenários com setup válido e consumo observável;
 3. ampliar cenários somente quando a métrica atual estiver saturada;
 4. distinguir cenário de demonstração de cenário de sensibilidade;
 5. não alterar valores no mesmo passo da coleta;
@@ -50,6 +52,7 @@ Fonte: `docs/DECISAO_PROCESSO_PREPLAYTEST_SIMULACAO_2026-09.md`.
 - PR #288 corrigiu o gate de linha de frente sem alterar `damageReduction: 1`;
 - reavaliação pós-correção separou o sinal da matriz isolada do pacote completo do tank e identificou drift de calibração no Golpe Pesado;
 - SP-01 técnico concluído no harness oficial;
+- SP-02 técnico concluído com HP cheio e sensibilidade de dificuldade/progressão;
 - playtest padronizado humano adiado até a build estar apresentável.
 
 **Entregas restantes:**
@@ -106,6 +109,18 @@ A fase atual não implementa deck, mão ou tabuleiro. A visão futura permanece 
 A aprovação editorial de um nome não autoriza migração automática para o runtime.
 
 ## Concluído recentemente
+
+### SP-02 técnico de `wildpace`
+
+- cenário oficial iniciou em 100% de HP;
+- `basic`: 29,625% cruzaram `<40%`; delta de vitória +0,255 p.p.;
+- `mixed`: 10,35% cruzaram `<40%`; delta +0,015 p.p.;
+- a frequência cresce com pressão, mas o bônus não transforma lutas estruturalmente perdidas em viradas automáticas;
+- PR #292 foi usado apenas como bancada experimental e fechado sem merge;
+- nenhum valor foi alterado.
+
+Fonte: `docs/reports/SP02_TECHNICAL_WILDPACE_2026-09.md`.
+
 
 ### Correção do gate posicional de `shieldhorn`
 
