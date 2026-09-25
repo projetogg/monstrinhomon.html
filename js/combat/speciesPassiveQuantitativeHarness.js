@@ -330,7 +330,7 @@ function simulateBattle(scenario, { passiveEnabled, seed, maxTurns }) {
     speciesId: passiveEnabled ? scenario.speciesId : null,
     hpRatio: initialHpRatio,
   });
-  const enemy = makeCombatant(scenario.enemyTemplate, scenario.level, {
+  const enemy = makeCombatant(scenario.enemyTemplate, scenario.enemyLevel ?? scenario.level, {
     spdOffset: scenario.speciesId === 'moonquill' ? 3 : 0,
   });
   const rng = createSeededRng(seed);
