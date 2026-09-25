@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { resolveAndApply } from '../js/canon/speciesBridge.js';
+import { applyStatOffsets } from '../js/canon/speciesBridge.js';
 import { resolvePassiveModifier } from '../js/canon/speciesPassives.js';
 import { computeGroupDamage, resolveConfrontation, RC_CATEGORY } from '../js/combat/groupCombatFormula.js';
 import {
@@ -21,10 +21,12 @@ const ROOT = resolve(import.meta.dirname, '..');
 const monsters = JSON.parse(readFileSync(resolve(ROOT, 'data/monsters.json'), 'utf8')).monsters;
 const items = JSON.parse(readFileSync(resolve(ROOT, 'data/items.json'), 'utf8')).items;
 const matchups = JSON.parse(readFileSync(resolve(ROOT, 'design/canon/class_matchups.json'), 'utf8'));
+const species = JSON.parse(readFileSync(resolve(ROOT, 'design/canon/species.json'), 'utf8'));
 
 const NUTRILO = monsters.find(mon => mon.id === 'MON_028');
 const FURTILHON = monsters.find(mon => mon.id === 'MON_030');
 const PETISCO = items.find(item => item.id === 'IT_HEAL_01');
+const FLORACURA = species.find(entry => entry.id === 'floracura');
 const CLASS_ADVANTAGES = buildClassAdvantages(matchups);
 
 function applyClassPassives(damage, attackerClass, defenderClass) {
@@ -38,18 +40,18 @@ function applyClassPassives(damage, attackerClass, defenderClass) {
 
 function makePlayer(passiveEnabled) {
   const scaled = scaleMonsterTemplate(NUTRILO, 10);
-  const resolved = resolveAndApply(NUTRILO.id, {
+  const adjusted = applyStatOffsets({
     hpMax: scaled.hpMax,
     atk: scaled.atk,
     def: scaled.def,
     spd: scaled.spd,
     eneMax: scaled.eneMax,
-  });
+  }, FLORACURA.base_stat_offsets).stats;
   return {
     ...scaled,
-    ...resolved.stats,
-    hp: resolved.stats.hpMax,
-    canonSpeciesId: passiveEnabled ? resolved.canonSpeciesId : null,
+    ...adjusted,
+    hp: adjusted.hpMax,
+    canonSpeciesId: passiveEnabled ? 'floracura' : null,
   };
 }
 
@@ -319,6 +321,23 @@ describe('SP-03 técnico — floracura com oportunidade natural de item', () => 
 
     expect(rows).toHaveLength(4);
     expect(rows.every(row => row.itemUseRate >= 0 && row.itemUseRate <= 1)).toBe(true);
+  });
+
+  it('mede sensibilidade de dificuldade do cenário com política eficiente em <=40% HP', () => {
+    const rows = [8, 9, 10].map(enemyLevel => compact(simulatePair({
+      runs: 5000,
+      seed: 'sp03-floracura-difficulty-03a67',
+      itemThreshold: 0.40,
+      enemyLevel,
+    })));
+
+    console.log('SP03_FLORACURA_DIFFICULTY_SENSITIVITY', JSON.stringify({
+      verifiedAgainst: '03a67aa1fb54698feea1f9959988dcd536c50ac8',
+      runsPerPair: 5000,
+      rows,
+    }));
+
+    expect(rows).toHaveLength(3);
   });
 
   it('confirma que o feedback Wild actualHeal não inclui o bônus da passiva', () => {
