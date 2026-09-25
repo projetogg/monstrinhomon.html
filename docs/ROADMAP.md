@@ -14,6 +14,7 @@
 - `DEC-PLAYTEST-PRE-01` aprovada;
 - SP-01 técnico de `shieldhorn` concluído;
 - SP-02 técnico de `wildpace` concluído a partir de HP cheio;
+- SP-03 técnico de `floracura` concluído com Petisco real e timing de uso;
 - `shieldhorn` no SP-01 preservou HP, mas não alterou vitória nem TTK;
 - `wildpace` no cenário oficial ativou naturalmente em ~30% (`basic`) e ~10% (`mixed`), com pequeno impacto em vitória;
 - `damageReduction: 1` permanece congelado;
@@ -21,8 +22,8 @@
 
 **Prioridades:**
 
-1. executar SP-03 `floracura` com oportunidade real de cura e separar oportunidade, ativação e benefício;
-2. testar `moonquill`, `shadowsting` e `bellwave` em cenários com setup válido e consumo observável;
+1. executar SP-06A `moonquill` com debuff válido, buff de SPD e efeito posterior mensurável;
+2. executar SP-06B `shadowsting` e SP-06C `bellwave` com criação e consumo de carga observáveis;
 3. ampliar cenários somente quando a métrica atual estiver saturada;
 4. distinguir cenário de demonstração de cenário de sensibilidade;
 5. não alterar valores no mesmo passo da coleta;
@@ -53,6 +54,8 @@ Fonte: `docs/DECISAO_PROCESSO_PREPLAYTEST_SIMULACAO_2026-09.md`.
 - reavaliação pós-correção separou o sinal da matriz isolada do pacote completo do tank e identificou drift de calibração no Golpe Pesado;
 - SP-01 técnico concluído no harness oficial;
 - SP-02 técnico concluído com HP cheio e sensibilidade de dificuldade/progressão;
+- SP-03 técnico concluído com oportunidade natural de cura e sensibilidade de timing;
+- PR #296 corrigiu o feedback total de `floracura` sem mudar o HP efetivo ou o balanceamento;
 - playtest padronizado humano adiado até a build estar apresentável.
 
 **Entregas restantes:**
@@ -109,6 +112,20 @@ A fase atual não implementa deck, mão ou tabuleiro. A visão futura permanece 
 A aprovação editorial de um nome não autoriza migração automática para o runtime.
 
 ## Concluído recentemente
+
+### SP-03 técnico de `floracura`
+
+- Nutrilo Nv10 × Furtilhon Nv10 iniciado em HP cheio;
+- Petisco real de 30% / mínimo 30 e item consumindo a ação;
+- política `<=50%`: delta de vitória +1,33 p.p.;
+- política `<=70%`: 92,22% dos usos não deixaram espaço para o bônus;
+- política `<=40%`: +3 completo em todos os usos observados;
+- política `<=30%`: item usado em apenas 89,9% das lutas;
+- nenhuma alteração numérica autorizada;
+- drift de feedback corrigido no PR #296.
+
+Fonte: `docs/reports/SP03_TECHNICAL_FLORACURA_2026-09.md`.
+
 
 ### SP-02 técnico de `wildpace`
 
