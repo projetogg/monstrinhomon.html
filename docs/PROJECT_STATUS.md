@@ -4,9 +4,9 @@
 
 **Branch oficial examinada:** `main`
 
-**Commit-base verificado:** `590660187266215251ed9b71ba36012efa07991f`
+**Commit-base verificado:** `03a67aa1fb54698feea1f9959988dcd536c50ac8`
 
-**Marco técnico:** SP-01 e SP-02 técnicos concluídos na etapa pré-playtest; runtime permanece no baseline pós-PR #288
+**Marco técnico:** SP-01, SP-02 e SP-03 técnicos concluídos na etapa pré-playtest; runtime permanece no baseline pós-PR #288
 
 **Escopo:** fotografia datada do estado implementado e das decisões registradas. Visão futura não equivale a runtime.
 
@@ -26,6 +26,7 @@
 - Matriz de espécies com 48 pares e 96.000 batalhas controladas.
 - SP-01 técnico de `shieldhorn` executado no cenário Ferrozimon × Vitalex com 20.000 pares `basic` e 20.000 `mixed`.
 - SP-02 técnico de `wildpace` executado a partir de HP cheio: 20.000 pares por perfil no cenário oficial e sensibilidade adicional.
+- SP-03 técnico de `floracura` executado a partir de HP cheio com Petisco runtime e sensibilidade de timing/dificuldade.
 - Playtest humano das passivas adiado até a build estar apresentável às crianças; simulação dirigida é a etapa operacional imediata.
 - `MON_100` excluído de conteúdo novo, mantendo lookup e saves existentes.
 - Visão híbrida de cartas registrada separadamente do runtime atual.
@@ -104,7 +105,7 @@ Sinais principais:
 - `shieldhorn`: maior delta automatizado de vitória e mitigação na matriz isolada da passiva;
 - a matriz de espécies não modela o pacote completo de espécie: não aplica offsets via `speciesBridge`, kit swap ou economia integral de ENE;
 - `wildpace`: efeito medido em cenário controlado iniciado abaixo de 40% de HP;
-- `floracura`: bônus de cura confirmado;
+- `floracura`: bônus de cura confirmado; SP-03 mostrou forte dependência do timing do item e impacto pequeno/moderado no resultado;
 - passivas dependentes de skill: efeitos observáveis nos perfis aplicáveis.
 
 Esses resultados não autorizam buff ou nerf automaticamente.
@@ -117,13 +118,21 @@ SP-01 técnico pós-PR #288:
 
 Fonte adicional:
 - `docs/reports/SP01_TECHNICAL_SHIELDHORN_2026-09.md`;
-- `docs/reports/SP02_TECHNICAL_WILDPACE_2026-09.md`.
+- `docs/reports/SP02_TECHNICAL_WILDPACE_2026-09.md`;
+- `docs/reports/SP03_TECHNICAL_FLORACURA_2026-09.md`.
 
 SP-02 técnico:
 - cenário oficial `basic`: cruzamento natural de `<40%` em 29,625%; delta de vitória +0,255 p.p.;
 - cenário oficial `mixed`: cruzamento natural em 10,35%; delta de vitória +0,015 p.p.;
 - a disponibilidade cresce com a dificuldade, mas o +1 ATK não produz virada automática;
 - com Vitalion Nv12–13, o gatilho ocorre quase sempre, porém confrontos estruturalmente perdidos continuam majoritariamente perdidos.
+
+SP-03 técnico:
+- Nutrilo Nv10 × Furtilhon Nv10, política técnica de item em <=50% HP: 7,125% → 8,455% de vitória; delta +1,33 p.p.;
+- o bônus médio foi +2,61 HP por uso nessa política;
+- em uso <=70% HP, 92,22% dos usos não deixaram espaço para o bônus;
+- em uso <=40%, 100% dos usos válidos receberam +3 completo;
+- o feedback Wild principal retorna/exibe a cura-base sem somar o +3, embora o log da passiva registre o bônus separadamente.
 
 Fontes:
 
@@ -156,6 +165,8 @@ Fontes:
 | `DIV-PASSIVE-01` | valores das passivas de classe | não recalibrar sem medição |
 | `DIV-KITSWAP-PWR-01` | calibração do Golpe Pesado de `shieldhorn` | referências de PWR em comentários/testes não correspondem a `data/skills.json`; depende de `DEC-COMBAT-A` |
 | `DIV-BOSS-01` | multiplicadores e comportamento de boss | investigação pendente |
+| `UX-FLORACURA-01` | feedback de cura Wild/Group | HP final está correto, mas o bônus da passiva fica separado da cura-base; revisar antes do playtest humano |
+| `EG-SP03-CHOICE-01` | escolha entre Cura I e Petisco | não inferível por simulação técnica; permanece para playtest humano |
 | `DIV-CARDS-01` | Card Layer visual | QA de produto e encerramento do piloto pendentes |
 | `GAP-CARDS-HYBRID-01` | regras exatas do deckbuilding tático | visão aprovada; especificação e protótipo pendentes |
 | `DIV-NAMES-01` | nomes editoriais da Dex v3 | mapear antes de qualquer migração |
@@ -197,17 +208,20 @@ Prioridades imediatas:
 
 1. SP-01 técnico de `shieldhorn`: **concluído**, sem sinal para alterar `damageReduction: 1`;
 2. SP-02 técnico de `wildpace`: **concluído**, sem sinal para alterar o `+1 ATK`;
-3. SP-03 / `floracura`: medir oportunidade real de cura → escolha/ativação técnica → benefício;
-4. demais passivas de setup: medir oportunidade → trigger → consumo em cenários não saturados;
-5. manter PWR, crítico, ENE e boss em investigações separadas;
-6. separar sempre `TECHNICAL_CONTROLLED` de evidência humana.
+3. SP-03 técnico de `floracura`: **concluído**, sem sinal para alterar o `+3 HP`;
+4. SP-04 / `swiftclaw`: medir primeira ação ofensiva, dano e breakpoints sem indução humana fictícia;
+5. SP-05 / `emberfang`: medir janela >70% e uso de skill ofensiva;
+6. SP-06A/B/C: medir setup e consumo de `moonquill`, `shadowsting` e `bellwave`;
+7. manter PWR, crítico, ENE e boss em investigações separadas;
+8. separar sempre `TECHNICAL_CONTROLLED` de evidência humana.
 
 O playtest mediado humano permanece como portão futuro e deve ser retomado quando a build estiver apresentável. Percepção, compreensão, frustração, diversão, justiça e estratégia espontânea não podem ser preenchidas por simulação.
 
 Fontes:
 - `docs/DECISAO_PROCESSO_PREPLAYTEST_SIMULACAO_2026-09.md`;
 - `docs/reports/SP01_TECHNICAL_SHIELDHORN_2026-09.md`;
-- `docs/reports/SHIELDHORN_TANK_PACKAGE_REASSESSMENT_2026-09.md`.
+- `docs/reports/SHIELDHORN_TANK_PACKAGE_REASSESSMENT_2026-09.md`;
+- `docs/reports/SP03_TECHNICAL_FLORACURA_2026-09.md`.
 
 Nenhum valor de passiva, PWR ou ENE é alterado nesta etapa.
 
