@@ -14,19 +14,22 @@
 - `DEC-PLAYTEST-PRE-01` aprovada;
 - SP-01 técnico de `shieldhorn` concluído;
 - SP-02 técnico de `wildpace` concluído a partir de HP cheio;
+- SP-03 técnico de `floracura` concluído com Petisco runtime e sensibilidade de timing;
 - `shieldhorn` no SP-01 preservou HP, mas não alterou vitória nem TTK;
 - `wildpace` no cenário oficial ativou naturalmente em ~30% (`basic`) e ~10% (`mixed`), com pequeno impacto em vitória;
+- `floracura` mostrou impacto dependente do timing: uso cedo frequentemente desperdiça o +3; uso em <=40% aproveita o bônus completo;
 - `damageReduction: 1` permanece congelado;
 - playtest humano está adiado, não cancelado.
 
 **Prioridades:**
 
-1. executar SP-03 `floracura` com oportunidade real de cura e separar oportunidade, ativação e benefício;
-2. testar `moonquill`, `shadowsting` e `bellwave` em cenários com setup válido e consumo observável;
-3. ampliar cenários somente quando a métrica atual estiver saturada;
-4. distinguir cenário de demonstração de cenário de sensibilidade;
-5. não alterar valores no mesmo passo da coleta;
-6. manter PWR, crítico, ENE e boss separados.
+1. executar SP-04 `swiftclaw` com primeira ação ofensiva livre e medir básico × skill, dano e breakpoints;
+2. executar SP-05 `emberfang` com janela natural de HP >70% e skill ofensiva;
+3. executar SP-06A/B/C (`moonquill`, `shadowsting`, `bellwave`) com setup válido e consumo observável;
+4. ampliar cenários somente quando a métrica atual estiver saturada;
+5. distinguir cenário de demonstração de cenário de sensibilidade;
+6. não alterar valores no mesmo passo da coleta;
+7. manter PWR, crítico, ENE e boss separados.
 
 **Limites:**
 
@@ -53,6 +56,7 @@ Fonte: `docs/DECISAO_PROCESSO_PREPLAYTEST_SIMULACAO_2026-09.md`.
 - reavaliação pós-correção separou o sinal da matriz isolada do pacote completo do tank e identificou drift de calibração no Golpe Pesado;
 - SP-01 técnico concluído no harness oficial;
 - SP-02 técnico concluído com HP cheio e sensibilidade de dificuldade/progressão;
+- SP-03 técnico concluído com Petisco runtime, timing de cura e feedback avaliados;
 - playtest padronizado humano adiado até a build estar apresentável.
 
 **Entregas restantes:**
@@ -109,6 +113,20 @@ A fase atual não implementa deck, mão ou tabuleiro. A visão futura permanece 
 A aprovação editorial de um nome não autoriza migração automática para o runtime.
 
 ## Concluído recentemente
+
+### SP-03 técnico de `floracura`
+
+- HP inicial cheio;
+- Petisco runtime de 30% / mínimo 30;
+- política <=50%: delta de vitória +1,33 p.p.; bônus médio +2,61 HP por uso;
+- uso <=70% frequentemente não deixa espaço para o +3;
+- uso <=40% aproveitou +3 completo em todos os usos observados;
+- feedback Wild principal comunica a cura-base e deixa o bônus em log separado;
+- PR #295 foi usado apenas como bancada experimental e fechado sem merge;
+- nenhum valor foi alterado.
+
+Fonte: `docs/reports/SP03_TECHNICAL_FLORACURA_2026-09.md`.
+
 
 ### SP-02 técnico de `wildpace`
 
