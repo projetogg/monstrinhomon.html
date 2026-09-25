@@ -323,9 +323,12 @@ function performAttack({
 
 function simulateBattle(scenario, { passiveEnabled, seed, maxTurns }) {
   const config = SPECIES_QUANTITATIVE_CONFIG[scenario.speciesId];
+  const initialHpRatio = Number.isFinite(Number(scenario.initialHpRatio))
+    ? Math.min(1, Math.max(0.01, Number(scenario.initialHpRatio)))
+    : getInitialHpRatio(scenario.speciesId);
   const player = makeCombatant(scenario.playerTemplate, scenario.level, {
     speciesId: passiveEnabled ? scenario.speciesId : null,
-    hpRatio: getInitialHpRatio(scenario.speciesId),
+    hpRatio: initialHpRatio,
   });
   const enemy = makeCombatant(scenario.enemyTemplate, scenario.level, {
     spdOffset: scenario.speciesId === 'moonquill' ? 3 : 0,
@@ -333,6 +336,13 @@ function simulateBattle(scenario, { passiveEnabled, seed, maxTurns }) {
   const rng = createSeededRng(seed);
   const counters = makeBattleCounters();
   const passiveState = createPassiveState();
+  const observations = {
+    startedAtFullHp: player.hp === player.hpMax,
+    startedBelowThreshold: player.hp / player.hpMax < 0.40,
+    thresholdCrossed: false,
+    firstThresholdTurn: null,
+    postThresholdAttackOpportunities: 0,
+  };
   let turn = 0;
 
   while (player.hp > 0 && enemy.hp > 0 && turn < maxTurns) {
@@ -348,6 +358,14 @@ function simulateBattle(scenario, { passiveEnabled, seed, maxTurns }) {
       basicPower: scenario.basicPower,
       skillPower: scenario.skillPower,
     });
+    if (
+      scenario.speciesId === 'wildpace'
+      && !observations.startedBelowThreshold
+      && observations.thresholdCrossed
+      && player.hp / player.hpMax < 0.40
+    ) {
+      observations.postThresholdAttackOpportunities += 1;
+    }
     counters.actions += 1;
     counters[action.kind === 'basic' ? 'basicUses' : 'skillUses'] += 1;
     if (action.isDebuff) counters.debuffUses += 1;
@@ -381,16 +399,28 @@ function simulateBattle(scenario, { passiveEnabled, seed, maxTurns }) {
 
     if (enemy.hp <= 0) break;
 
+    const hpRatioBeforeEnemyAttack = player.hp / player.hpMax;
     const enemyDamage = performAttack({
       attacker: enemy,
       defender: player,
-      power: scenario.basicPower,
+      power: Number(scenario.enemyBasicPower ?? scenario.basicPower),
       rng,
       classAdvantages: scenario.classAdvantages,
       counters,
       defenderSpeciesPassive: passiveEnabled && scenario.speciesId === 'shieldhorn',
     });
     counters.damageTaken += enemyDamage;
+    if (
+      scenario.speciesId === 'wildpace'
+      && !observations.startedBelowThreshold
+      && !observations.thresholdCrossed
+      && hpRatioBeforeEnemyAttack >= 0.40
+      && player.hp > 0
+      && player.hp / player.hpMax < 0.40
+    ) {
+      observations.thresholdCrossed = true;
+      observations.firstThresholdTurn = turn;
+    }
   }
 
   return {
@@ -407,6 +437,7 @@ function simulateBattle(scenario, { passiveEnabled, seed, maxTurns }) {
     debuffUses: counters.debuffUses,
     categories: counters.categories,
     effects: counters.effects,
+    observations,
   };
 }
 
@@ -435,6 +466,22 @@ function summarizeVariant(runs) {
     debuffUses: runs.reduce((sum, run) => sum + (Number(run.debuffUses) || 0), 0),
     effects: effectTotals,
     categories: categoryTotals,
+    observations: {
+      startedAtFullHpRate: round(runs.filter(run => run.observations?.startedAtFullHp).length / total),
+      startedBelowThresholdRate: round(runs.filter(run => run.observations?.startedBelowThreshold).length / total),
+      thresholdCrossingRate: round(runs.filter(run => run.observations?.thresholdCrossed).length / total),
+      postThresholdAttackOpportunityRate: round(
+        runs.filter(run => (run.observations?.postThresholdAttackOpportunities || 0) > 0).length / total,
+      ),
+      postThresholdAttackOpportunities: summarizeValues(
+        runs.map(run => run.observations?.postThresholdAttackOpportunities || 0),
+      ),
+      firstThresholdTurn: summarizeValues(
+        runs
+          .map(run => run.observations?.firstThresholdTurn)
+          .filter(value => Number.isFinite(value)),
+      ),
+    },
   };
 }
 
