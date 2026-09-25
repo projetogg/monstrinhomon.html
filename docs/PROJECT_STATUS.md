@@ -1,12 +1,12 @@
 # Monstrinhomon — Estado do Projeto
 
-**Verificado em:** 2026-09-24
+**Verificado em:** 2026-09-25
 
 **Branch oficial examinada:** `main`
 
-**Commit-base verificado:** `2ae5ea981ba87f49aea72450254a1d8da8dd351f`
+**Commit-base verificado:** `590660187266215251ed9b71ba36012efa07991f`
 
-**Marco técnico:** PR #289 integrado; SP-01 técnico executado separadamente no harness oficial pós-PR #288
+**Marco técnico:** SP-01 e SP-02 técnicos concluídos na etapa pré-playtest; runtime permanece no baseline pós-PR #288
 
 **Escopo:** fotografia datada do estado implementado e das decisões registradas. Visão futura não equivale a runtime.
 
@@ -25,6 +25,7 @@
 - Baseline quantitativa de fórmula separada da matriz quantitativa das espécies.
 - Matriz de espécies com 48 pares e 96.000 batalhas controladas.
 - SP-01 técnico de `shieldhorn` executado no cenário Ferrozimon × Vitalex com 20.000 pares `basic` e 20.000 `mixed`.
+- SP-02 técnico de `wildpace` executado a partir de HP cheio: 20.000 pares por perfil no cenário oficial e sensibilidade adicional.
 - Playtest humano das passivas adiado até a build estar apresentável às crianças; simulação dirigida é a etapa operacional imediata.
 - `MON_100` excluído de conteúdo novo, mantendo lookup e saves existentes.
 - Visão híbrida de cartas registrada separadamente do runtime atual.
@@ -114,7 +115,16 @@ SP-01 técnico pós-PR #288:
 - o cenário confirma resistência mecânica, mas está saturado para calibração por win rate;
 - dimensões humanas permanecem não testadas.
 
-Fonte adicional: `docs/reports/SP01_TECHNICAL_SHIELDHORN_2026-09.md`.
+Fonte adicional:
+- `docs/reports/SP01_TECHNICAL_SHIELDHORN_2026-09.md`;
+- `docs/reports/SP02_TECHNICAL_WILDPACE_2026-09.md`;
+- `docs/reports/SP02_TECHNICAL_WILDPACE_2026-09.md`.
+
+SP-02 técnico:
+- cenário oficial `basic`: cruzamento natural de `<40%` em 29,625%; delta de vitória +0,255 p.p.;
+- cenário oficial `mixed`: cruzamento natural em 10,35%; delta de vitória +0,015 p.p.;
+- a disponibilidade cresce com a dificuldade, mas o +1 ATK não produz virada automática;
+- com Vitalion Nv12–13, o gatilho ocorre quase sempre, porém confrontos estruturalmente perdidos continuam majoritariamente perdidos.
 
 Fontes:
 
@@ -187,10 +197,11 @@ Motivo: o autor determinou que a build ainda não está pronta para apresentaç�
 Prioridades imediatas:
 
 1. SP-01 técnico de `shieldhorn`: **concluído**, sem sinal para alterar `damageReduction: 1`;
-2. SP-02 técnico de `wildpace`: medir limiar natural partindo de HP cheio;
-3. passivas de setup: medir oportunidade → trigger → consumo em cenários não saturados;
-4. manter PWR, crítico, ENE e boss em investigações separadas;
-5. separar sempre `TECHNICAL_CONTROLLED` de evidência humana.
+2. SP-02 técnico de `wildpace`: **concluído**, sem sinal para alterar o `+1 ATK`;
+3. SP-03 / `floracura`: medir oportunidade real de cura → escolha/ativação técnica → benefício;
+4. demais passivas de setup: medir oportunidade → trigger → consumo em cenários não saturados;
+5. manter PWR, crítico, ENE e boss em investigações separadas;
+6. separar sempre `TECHNICAL_CONTROLLED` de evidência humana.
 
 O playtest mediado humano permanece como portão futuro e deve ser retomado quando a build estiver apresentável. Percepção, compreensão, frustração, diversão, justiça e estratégia espontânea não podem ser preenchidas por simulação.
 
