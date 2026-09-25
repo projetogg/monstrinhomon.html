@@ -1,7 +1,7 @@
 # Monstrinhomon — Registro de Decisões
 
 **Status:** ACTIVE  
-**Atualizado:** 2026-09-24
+**Atualizado:** 2026-09-25
 
 Este arquivo é um índice. Regras detalhadas permanecem no documento canônico ou ADR vinculado.
 
@@ -18,7 +18,7 @@ Este arquivo é um índice. Regras detalhadas permanecem no documento canônico 
 
 | ID | Data | Estado | Domínio | Resumo | Fonte | Implementação |
 |---|---|---|---|---|---|---|
-| `DEC-PLAYTEST-PRE-01` | 2026-09-24 | APPROVED | processo de validação | adiar playtest humano enquanto a build não estiver apresentável e usar simulações técnicas dirigidas como etapa pré-playtest | `docs/DECISAO_PROCESSO_PREPLAYTEST_SIMULACAO_2026-09.md` | SP-01 técnico executado; coleta humana permanece futura |
+| `DEC-PLAYTEST-PRE-01` | 2026-09-24 | APPROVED | processo de validação | adiar playtest humano enquanto a build não estiver apresentável e usar simulações técnicas dirigidas como etapa pré-playtest | `docs/DECISAO_PROCESSO_PREPLAYTEST_SIMULACAO_2026-09.md` | SP-01 e SP-02 técnicos executados; coleta humana permanece futura |
 | `DEC-COMBAT-B` | 2026-05-29 | PARTIAL | passivas de classe | manter passivas fracas, explícitas e fora das cartas por enquanto | `docs/DECISAO_B_PASSIVAS_CLASSE_2026-05.md` | conceito ativo; valores ainda não recalibrados |
 | `DEC-COMBAT-A` | — | PENDING | PWR e catálogo | escolher estratégia de calibração | Patch v2.2, Decisão A | aguarda evidência de playtest e decisão humana |
 | `DEC-COMBAT-D` | — | PENDING | crítico | manter, remover ou formalizar prêmio aleatório de UX | Patch v2.2, Decisão D | aguarda validação específica do crítico |
@@ -43,7 +43,9 @@ Enquanto a build não estiver apresentável às crianças:
 - UX, percepção, compreensão, frustração, diversão e estratégia espontânea permanecem pendentes;
 - o playtest humano continua necessário antes de encerrar evidência humana das passivas.
 
-O SP-01 técnico está em `docs/reports/SP01_TECHNICAL_SHIELDHORN_2026-09.md`.
+Relatórios técnicos concluídos:
+- `docs/reports/SP01_TECHNICAL_SHIELDHORN_2026-09.md`;
+- `docs/reports/SP02_TECHNICAL_WILDPACE_2026-09.md`.
 
 ## Estado das passivas de espécie
 
