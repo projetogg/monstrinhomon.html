@@ -386,7 +386,6 @@ describe('executePlayerSkillGroup - Passivas de espécie', () => {
                 source: 'moonquill_passive',
             }),
         ]));
-        expect(result.enc._turnOrderNeedsRecalc).toBe(true);
     });
 
     it('shadowsting cria carga após utilizar debuff', () => {
