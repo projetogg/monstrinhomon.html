@@ -157,6 +157,43 @@ describe('SP-06B técnico — shadowsting', () => {
     expect(result.passive.effects.chargesConsumed).toBeGreaterThan(0);
   });
 
+  it('mapeia candidatos naturais Nv30 para cenário de sensibilidade não saturado', () => {
+    const candidates = monsters
+      .filter(mon => !mon.deprecated)
+      .filter(mon => mon.id !== SHADOW.id)
+      .filter(mon => mon.rarity !== 'Lendário')
+      .filter(mon => !mon.evolvesAt || Number(mon.evolvesAt) > 30)
+      .filter(mon => !['Caçador', 'Guerreiro'].includes(mon.class));
+
+    const rows = candidates.map(enemyTemplate => {
+      const result = simulateSpeciesPassiveScenarioPair(
+        scenario('mixed', enemyTemplate, 'candidate-' + enemyTemplate.id),
+        {
+          runs: 1000,
+          maxTurns: 30,
+          seed: 'sp06b-shadowsting-candidate-' + enemyTemplate.id,
+        },
+      );
+      return {
+        id: enemyTemplate.id,
+        name: enemyTemplate.name,
+        className: enemyTemplate.class,
+        rarity: enemyTemplate.rarity,
+        baseWinRate: result.base.winRate,
+        passiveWinRate: result.passive.winRate,
+        deltaWinRate: result.delta.winRate,
+        deltaDamageMean: result.delta.damageDealt.mean,
+      };
+    }).sort((a, b) => Math.abs(a.baseWinRate - 0.5) - Math.abs(b.baseWinRate - 0.5));
+
+    console.log('SP06B_SHADOWSTING_CANDIDATE_SCAN', JSON.stringify({
+      verifiedAgainst: 'd53db6bcda76e016ec1c9474bdebdba5717d990a',
+      top: rows.slice(0, 12),
+    }));
+
+    expect(rows.length).toBeGreaterThan(0);
+  });
+
   it('perfil só básico não cria carga nem ativa shadowsting', () => {
     const result = simulateSpeciesPassiveScenarioPair(scenario('basic'), {
       runs: 5000,
