@@ -27,6 +27,7 @@ import {
     executeWildItemUse,
     executeWildSkill,
     executeWildAttack,
+    updateBuffs,
 } from '../js/combat/wildActions.js';
 
 // ===========================================================================
@@ -482,7 +483,7 @@ describe('speciesPassives 4.1 — moonquill integração executeWildSkill', () =
         expect(pm.buffs.find(b => b.source === 'moonquill_passive')).toBeUndefined();
     });
 
-    it('moonquill: buff tem duration=1 (limpo no próximo turno pelo sistema de buffs)', () => {
+    it('moonquill: duration=1 permanece ativa durante a próxima ação e expira no tick seguinte', () => {
         const pm = makeMonster({ canonSpeciesId: 'moonquill', class: 'Mago', ene: 10, buffs: [] });
         const wild = makeWild({ hp: 50 });
         const enc = makeEncounter(wild);
@@ -493,12 +494,18 @@ describe('speciesPassives 4.1 — moonquill integração executeWildSkill', () =
 
         executeWildSkill({ encounter: enc, player: makePlayer({ class: pm.class }), playerMonster: pm, skillIndex: 0, dependencies: deps });
 
-        const spdBuff = pm.buffs.find(b => b.source === 'moonquill_passive');
-        expect(spdBuff.duration).toBe(1);
-        // Simular updateBuffs (reduz duração): buff deve desaparecer após 1 aplicação
-        spdBuff.duration--;
-        const remaining = pm.buffs.filter(b => b.duration > 0);
-        expect(remaining.find(b => b.source === 'moonquill_passive')).toBeUndefined();
+        let spdBuff = pm.buffs.find(b => b.source === 'moonquill_passive');
+        expect(spdBuff).toMatchObject({ duration: 1, deferFirstTick: true });
+
+        // Início do próximo turno: o buff ainda deve existir para afetar a ação.
+        updateBuffs(pm);
+        spdBuff = pm.buffs.find(b => b.source === 'moonquill_passive');
+        expect(spdBuff).toMatchObject({ duration: 1 });
+        expect(spdBuff.deferFirstTick).toBeUndefined();
+
+        // Início do turno seguinte: a janela de 1 turno terminou.
+        updateBuffs(pm);
+        expect(pm.buffs.find(b => b.source === 'moonquill_passive')).toBeUndefined();
     });
 });
 
