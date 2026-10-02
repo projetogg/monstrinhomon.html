@@ -24,10 +24,10 @@
 // checkHit: verifica se ataque acerta baseado em d20 + ATK vs DEF
 // calcDamage: calcula dano final com fórmula ATK + POWER - DEF
 // getBuffModifiers: retorna modificadores de buffs ativos (+ATK, +DEF, +SPD)
-export { checkHit, calcDamage, getBuffModifiers, getClassAdvantageModifiers } from './wildCore.js';
+export { checkHit, calcDamage, getBuffModifiers, getClassAdvantageModifiers, getEffectiveSpd } from './wildCore.js';
 
 // Import for internal use in this module
-import { getBuffModifiers as _getBuffModifiers } from './wildCore.js';
+import { getBuffModifiers as _getBuffModifiers, getEffectiveSpd as _getEffectiveSpd } from './wildCore.js';
 
 /**
  * Retorna ator atual do encounter baseado em turnIndex
@@ -244,7 +244,7 @@ export function calculateTurnOrder(enc, playersData, rollD20Fn) {
             side: "player",
             id: pid,
             name: p.name || p.nome || "Jogador",
-            spd: Number(mon.spd) || 0,
+            spd: _getEffectiveSpd(mon),
             _tiebreak: null
         });
     }
@@ -261,7 +261,7 @@ export function calculateTurnOrder(enc, playersData, rollD20Fn) {
             side: "enemy",
             id: i,
             name: e.name || e.nome || `Inimigo ${i + 1}`,
-            spd: Number(e.spd) || 0,
+            spd: _getEffectiveSpd(e),
             _tiebreak: null
         });
     }
