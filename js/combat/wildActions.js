@@ -985,6 +985,7 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
                 power: skillPassive.spdBuff.power,
                 duration: skillPassive.spdBuff.duration,
                 source: 'moonquill_passive',
+                deferFirstTick: true,
             });
             const moonLabel = _passiveLabel(playerMonster.canonSpeciesId, 'on_skill_used');
             encounter.log.push(
