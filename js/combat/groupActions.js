@@ -1060,6 +1060,23 @@ export function advanceGroupTurn(enc, deps) {
     if (nextTurnIndex === 0) {
         // Nova rodada iniciada
         enc._roundNumber = (enc._roundNumber || 1) + 1;
+
+        // PATCH v2.2 §10: se SPD mudou na rodada anterior, recalcular a
+        // iniciativa usando SPD efetivo (inclui buffs/debuffs ativos).
+        if (enc._turnOrderNeedsRecalc) {
+            const rollForInitiative = typeof helpers.rollD20 === 'function'
+                ? helpers.rollD20
+                : (() => 10);
+            const recalculated = GroupCore.calculateTurnOrder(enc, state.players, rollForInitiative);
+            if (Array.isArray(recalculated) && recalculated.length > 0) {
+                enc.turnOrder = recalculated;
+                // O loop abaixo incrementa antes de ler o ator. -1 garante que
+                // o primeiro ator da nova ordem seja índice 0.
+                enc.turnIndex = -1;
+            }
+            enc._turnOrderNeedsRecalc = false;
+        }
+
         // Limpar TAUNT e MARK: efeitos duram apenas 1 rodada
         enc.tauntActiveId = null;
         enc.tauntActiveMonName = null;
@@ -1406,6 +1423,9 @@ function dispatchPlayerSpeciesSkillUsed(skill, context) {
             duration: modifier.spdBuff.duration,
             source: 'moonquill_passive',
         });
+        // A iniciativa de Group é recalculada com SPD efetivo no início da
+        // próxima rodada, conforme PATCH_CANONICO_COMBATE_V2.2 §10.
+        enc._turnOrderNeedsRecalc = true;
         helpers.log(
             enc,
             `✨ Passiva ${monName}: +${modifier.spdBuff.power} SPD por ${modifier.spdBuff.duration} turno(s)`,
