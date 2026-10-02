@@ -18,6 +18,7 @@ const matchups = JSON.parse(readFileSync(resolve(ROOT, 'design/canon/class_match
 const SHADOW = monsters.find(mon => mon.id === 'MON_022C');
 const VITALION = monsters.find(mon => mon.id === 'MON_031B');
 const VITALEGION = monsters.find(mon => mon.id === 'MON_031C');
+const AURAVELO = monsters.find(mon => mon.id === 'MON_028C');
 const SOMBRIFUR = monsters.find(mon => mon.id === 'MON_030C');
 const CLASS_ADVANTAGES = buildClassAdvantages(matchups);
 
@@ -107,6 +108,38 @@ describe('SP-06B técnico — shadowsting', () => {
       verifiedAgainst: 'd53db6bcda76e016ec1c9474bdebdba5717d990a',
       player: { id: SHADOW.id, name: SHADOW.name, level: 30 },
       enemy: { id: VITALEGION.id, name: VITALEGION.name, level: 30 },
+      result: {
+        runs: result.runs,
+        baseWinRate: result.base.winRate,
+        passiveWinRate: result.passive.winRate,
+        deltaWinRate: result.delta.winRate,
+        baseTurns: result.base.turns,
+        passiveTurns: result.passive.turns,
+        deltaTurns: result.delta.turns,
+        deltaDamageDealt: result.delta.damageDealt,
+        deltaPlayerHpFinal: result.delta.playerHpFinal,
+        passiveEffects: result.passive.effects,
+      },
+    }));
+
+    expect(result.passive.effects.chargesCreated).toBeGreaterThan(0);
+    expect(result.passive.effects.chargesConsumed).toBeGreaterThan(0);
+  });
+
+  it('mede sensibilidade competitiva contra Auravelo Nv30', () => {
+    const result = simulateSpeciesPassiveScenarioPair(
+      scenario('mixed', AURAVELO, 'sensitivity-auravelo'),
+      {
+        runs: 20000,
+        maxTurns: 30,
+        seed: 'sp06b-shadowsting-auravelo-d53db6b',
+      },
+    );
+
+    console.log('SP06B_SHADOWSTING_SENSITIVITY_AURAVELO', JSON.stringify({
+      verifiedAgainst: 'd53db6bcda76e016ec1c9474bdebdba5717d990a',
+      player: { id: SHADOW.id, name: SHADOW.name, level: 30 },
+      enemy: { id: AURAVELO.id, name: AURAVELO.name, level: 30 },
       result: {
         runs: result.runs,
         baseWinRate: result.base.winRate,
