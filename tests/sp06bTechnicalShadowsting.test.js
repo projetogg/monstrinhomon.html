@@ -17,17 +17,18 @@ const matchups = JSON.parse(readFileSync(resolve(ROOT, 'design/canon/class_match
 
 const SHADOW = monsters.find(mon => mon.id === 'MON_022C');
 const VITALION = monsters.find(mon => mon.id === 'MON_031B');
+const VITALEGION = monsters.find(mon => mon.id === 'MON_031C');
 const CLASS_ADVANTAGES = buildClassAdvantages(matchups);
 
-function scenario(profile = 'mixed') {
+function scenario(profile = 'mixed', enemyTemplate = VITALION, label = 'official') {
   return {
-    id: `sp06b-shadowsting-official-${profile}`,
+    id: `sp06b-shadowsting-${label}-${profile}`,
     speciesId: 'shadowsting',
     className: 'Ladino',
     level: 30,
     profile,
     playerTemplate: SHADOW,
-    enemyTemplate: VITALION,
+    enemyTemplate,
     classAdvantages: CLASS_ADVANTAGES,
     basicPower: DEFAULT_BASIC_POWER.Ladino ?? 7,
     skillPower: 0,
@@ -89,6 +90,38 @@ describe('SP-06B técnico — shadowsting', () => {
     expect(result.passive.effects.chargesConsumed).toBeGreaterThan(0);
     expect(result.passive.effects.chargesConsumed)
       .toBeLessThanOrEqual(result.passive.effects.chargesCreated);
+  });
+
+  it('mede sensibilidade contra Vitalegion Nv30 para reduzir saturação', () => {
+    const result = simulateSpeciesPassiveScenarioPair(
+      scenario('mixed', VITALEGION, 'sensitivity-vitalegion'),
+      {
+        runs: 20000,
+        maxTurns: 30,
+        seed: 'sp06b-shadowsting-vitalegion-d53db6b',
+      },
+    );
+
+    console.log('SP06B_SHADOWSTING_SENSITIVITY_VITALEGION', JSON.stringify({
+      verifiedAgainst: 'd53db6bcda76e016ec1c9474bdebdba5717d990a',
+      player: { id: SHADOW.id, name: SHADOW.name, level: 30 },
+      enemy: { id: VITALEGION.id, name: VITALEGION.name, level: 30 },
+      result: {
+        runs: result.runs,
+        baseWinRate: result.base.winRate,
+        passiveWinRate: result.passive.winRate,
+        deltaWinRate: result.delta.winRate,
+        baseTurns: result.base.turns,
+        passiveTurns: result.passive.turns,
+        deltaTurns: result.delta.turns,
+        deltaDamageDealt: result.delta.damageDealt,
+        deltaPlayerHpFinal: result.delta.playerHpFinal,
+        passiveEffects: result.passive.effects,
+      },
+    }));
+
+    expect(result.passive.effects.chargesCreated).toBeGreaterThan(0);
+    expect(result.passive.effects.chargesConsumed).toBeGreaterThan(0);
   });
 
   it('perfil só básico não cria carga nem ativa shadowsting', () => {
