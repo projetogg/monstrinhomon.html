@@ -1422,6 +1422,7 @@ function dispatchPlayerSpeciesSkillUsed(skill, context) {
             power: modifier.spdBuff.power,
             duration: modifier.spdBuff.duration,
             source: 'moonquill_passive',
+            deferFirstTick: true,
         });
         // A iniciativa de Group é recalculada com SPD efetivo no início da
         // próxima rodada, conforme PATCH_CANONICO_COMBATE_V2.2 §10.
