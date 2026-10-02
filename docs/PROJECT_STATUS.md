@@ -4,9 +4,9 @@
 
 **Branch oficial examinada:** `main`
 
-**Commit-base verificado:** `b78bc8878e0bb7f644657644861e66ec1ce911d1`
+**Commit-base verificado:** `d53db6bcda76e016ec1c9474bdebdba5717d990a`
 
-**Marco técnico:** SP-01, SP-02, SP-03 e SP-06A técnicos concluídos; PRs #300 e #301 corrigiram o consumo e a duração operacional de SPD de `moonquill` sem alterar seu valor
+**Marco técnico:** SP-01, SP-02, SP-03, SP-06A e SP-06B técnicos concluídos; `shadowsting` confirmado sem alteração numérica
 
 **Escopo:** fotografia datada do estado implementado e das decisões registradas. Visão futura não equivale a runtime.
 
@@ -28,6 +28,7 @@
 - SP-02 técnico de `wildpace` executado a partir de HP cheio: 20.000 pares por perfil no cenário oficial e sensibilidade adicional.
 - SP-03 técnico de `floracura` executado com HP cheio, Petisco real, custo de ação do item e sensibilidade de timing/dificuldade.
 - SP-06A técnico de `moonquill` concluído após corrigir dois drifts funcionais de SPD; cenário oficial saturado e breakpoints controlados confirmam efeito utilizável.
+- SP-06B técnico de `shadowsting` concluído: cadeia debuff → carga → básico +1 ATK → consumo confirmada; cenário competitivo válido adicionou dano sem alterar vitória/TTK.
 - Playtest humano das passivas adiado até a build estar apresentável às crianças; simulação dirigida é a etapa operacional imediata.
 - `MON_100` excluído de conteúdo novo, mantendo lookup e saves existentes.
 - Visão híbrida de cartas registrada separadamente do runtime atual.
@@ -122,7 +123,8 @@ Fonte adicional:
 - `docs/reports/SP01_TECHNICAL_SHIELDHORN_2026-09.md`;
 - `docs/reports/SP02_TECHNICAL_WILDPACE_2026-09.md`;
 - `docs/reports/SP03_TECHNICAL_FLORACURA_2026-09.md`;
-- `docs/reports/SP06A_TECHNICAL_MOONQUILL_2026-10.md`.
+- `docs/reports/SP06A_TECHNICAL_MOONQUILL_2026-10.md`;
+- `docs/reports/SP06B_TECHNICAL_SHADOWSTING_2026-10.md`.
 
 SP-02 técnico:
 - cenário oficial `basic`: cruzamento natural de `<40%` em 29,625%; delta de vitória +0,255 p.p.;
@@ -145,6 +147,14 @@ SP-03 técnico:
 - esperar até `<=30%` reduziu a frequência de uso do item para 89,9%;
 - nenhuma alteração do +3 HP é justificada pela evidência atual;
 - PR #296 corrigiu apenas o feedback total de cura.
+
+SP-06B técnico:
+- cadeia `debuff → carga → básico +1 ATK → consumo` confirmada;
+- protocolo histórico usa Vitalion Nv30, mas `MON_031B` evolui no Nv25: configuração classificada como drift de progressão;
+- contra Auravelo Nv30, 20.000 pares: 29,67% → 29,67% de vitória, TTK inalterado e +4,1638 de dano médio;
+- 96.636 cargas criadas e 83.276 consumidas (~86,2%);
+- perfil apenas básico não criou nem consumiu cargas;
+- nenhuma alteração do `+1 ATK` é justificada pela evidência atual.
 
 Fontes:
 
@@ -175,6 +185,7 @@ Fontes:
 | `EG-01` | semântica de skill que erra no Wild | lacuna de evidência isolada |
 | `DIV-ENE-01` | regeneração de ENE | investigação independente pendente |
 | `DIV-INIT-01` | iniciativa Group | runtime ainda não implementa a fórmula canônica `SPD + d6`; tratar separadamente da calibração de `moonquill` |
+| `DIV-SP06B-PROGRESSION-01` | cenário SP-06B | protocolo histórico usa Vitalion Nv30, mas `MON_031B` evolui no Nv25; atualizar configuração antes do playtest humano |
 | `DIV-PASSIVE-01` | valores das passivas de classe | não recalibrar sem medição |
 | `DIV-KITSWAP-PWR-01` | calibração do Golpe Pesado de `shieldhorn` | referências de PWR em comentários/testes não correspondem a `data/skills.json`; depende de `DEC-COMBAT-A` |
 | `DIV-BOSS-01` | multiplicadores e comportamento de boss | investigação pendente |
@@ -221,8 +232,8 @@ Prioridades imediatas:
 2. SP-02 técnico de `wildpace`: **concluído**, sem sinal para alterar o `+1 ATK`;
 3. SP-03 técnico de `floracura`: **concluído**, sem sinal para alterar o `+3 HP`;
 4. SP-06A / `moonquill`: **concluído com caveat**; cadeia funcional confirmada, cenário oficial saturado e divergência maior de iniciativa separada;
-5. SP-06B / `shadowsting`: medir criação e consumo de carga em cenário não saturado;
-6. depois SP-06C / `bellwave`;
+5. SP-06B / `shadowsting`: **concluído com caveat**; cadeia funcional confirmada, protocolo histórico tem drift de progressão e não há sinal para alterar `+1 ATK`;
+6. SP-06C / `bellwave`: medir criação e consumo da carga rítmica em cenário não saturado;
 7. manter PWR, crítico, ENE, iniciativa e boss em investigações separadas;
 8. separar sempre `TECHNICAL_CONTROLLED` de evidência humana.
 
@@ -232,7 +243,9 @@ Fontes:
 - `docs/DECISAO_PROCESSO_PREPLAYTEST_SIMULACAO_2026-09.md`;
 - `docs/reports/SP01_TECHNICAL_SHIELDHORN_2026-09.md`;
 - `docs/reports/SHIELDHORN_TANK_PACKAGE_REASSESSMENT_2026-09.md`;
-- `docs/reports/SP03_TECHNICAL_FLORACURA_2026-09.md`.
+- `docs/reports/SP03_TECHNICAL_FLORACURA_2026-09.md`;
+- `docs/reports/SP06A_TECHNICAL_MOONQUILL_2026-10.md`;
+- `docs/reports/SP06B_TECHNICAL_SHADOWSTING_2026-10.md`.
 
 Nenhum valor de passiva, PWR ou ENE é alterado nesta etapa.
 
