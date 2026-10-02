@@ -15,6 +15,7 @@
 - SP-01 técnico de `shieldhorn` concluído;
 - SP-02 técnico de `wildpace` concluído a partir de HP cheio;
 - SP-03 técnico de `floracura` concluído com Petisco real e timing de uso;
+- SP-06A técnico de `moonquill` concluído com caveat após correções de SPD dos PRs #300 e #301;
 - `shieldhorn` no SP-01 preservou HP, mas não alterou vitória nem TTK;
 - `wildpace` no cenário oficial ativou naturalmente em ~30% (`basic`) e ~10% (`mixed`), com pequeno impacto em vitória;
 - `damageReduction: 1` permanece congelado;
@@ -22,8 +23,8 @@
 
 **Prioridades:**
 
-1. executar SP-06A `moonquill` com debuff válido, buff de SPD e efeito posterior mensurável;
-2. executar SP-06B `shadowsting` e SP-06C `bellwave` com criação e consumo de carga observáveis;
+1. executar SP-06B `shadowsting` com criação e consumo de carga observáveis;
+2. executar SP-06C `bellwave` em cenário não saturado;
 3. ampliar cenários somente quando a métrica atual estiver saturada;
 4. distinguir cenário de demonstração de cenário de sensibilidade;
 5. não alterar valores no mesmo passo da coleta;
@@ -56,6 +57,8 @@ Fonte: `docs/DECISAO_PROCESSO_PREPLAYTEST_SIMULACAO_2026-09.md`.
 - SP-02 técnico concluído com HP cheio e sensibilidade de dificuldade/progressão;
 - SP-03 técnico concluído com oportunidade natural de cura e sensibilidade de timing;
 - PR #296 corrigiu o feedback total de `floracura` sem mudar o HP efetivo ou o balanceamento;
+- SP-06A técnico concluído: `moonquill` funcional após #300/#301, cenário oficial saturado e efeito demonstrado em breakpoints;
+- a divergência da iniciativa Group frente à fórmula canônica `SPD + d6` permanece separada da calibração da passiva;
 - playtest padronizado humano adiado até a build estar apresentável.
 
 **Entregas restantes:**
@@ -112,6 +115,21 @@ A fase atual não implementa deck, mão ou tabuleiro. A visão futura permanece 
 A aprovação editorial de um nome não autoriza migração automática para o runtime.
 
 ## Concluído recentemente
+
+### SP-06A técnico de `moonquill`
+
+- Dracoflamemon Nv30 × Vitalion Nv30 confirmou que o cenário oficial já satura a vantagem ofensiva de SPD;
+- 20.000 pares oficiais: 0 mudança de categoria, hit ou dano com o +1 SPD;
+- breakpoint ofensivo 41 × 39: 0,23% de mudanças de categoria, sem mudança de dano;
+- breakpoint Group 41 × 42: 0% → 52,4% de jogador primeiro no runtime atual;
+- PR #300 corrigiu consumo de SPD efetivo na iniciativa;
+- PR #301 corrigiu a duração operacional do buff até a próxima ação;
+- PRs experimentais #299 e #302 foram fechados sem merge;
+- nenhuma alteração numérica autorizada;
+- iniciativa canônica `SPD + d6` continua uma divergência separada.
+
+Fonte: `docs/reports/SP06A_TECHNICAL_MOONQUILL_2026-10.md`.
+
 
 ### SP-03 técnico de `floracura`
 

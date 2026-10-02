@@ -1,12 +1,12 @@
 # Monstrinhomon — Estado do Projeto
 
-**Verificado em:** 2026-09-25
+**Verificado em:** 2026-10-02
 
 **Branch oficial examinada:** `main`
 
-**Commit-base verificado:** `194be88b4257a8e50cf4ef456534a6722ea38fd9`
+**Commit-base verificado:** `b78bc8878e0bb7f644657644861e66ec1ce911d1`
 
-**Marco técnico:** SP-01, SP-02 e SP-03 técnicos concluídos; PR #296 alinhou o feedback total de cura de `floracura` sem alterar balanceamento
+**Marco técnico:** SP-01, SP-02, SP-03 e SP-06A técnicos concluídos; PRs #300 e #301 corrigiram o consumo e a duração operacional de SPD de `moonquill` sem alterar seu valor
 
 **Escopo:** fotografia datada do estado implementado e das decisões registradas. Visão futura não equivale a runtime.
 
@@ -27,6 +27,7 @@
 - SP-01 técnico de `shieldhorn` executado no cenário Ferrozimon × Vitalex com 20.000 pares `basic` e 20.000 `mixed`.
 - SP-02 técnico de `wildpace` executado a partir de HP cheio: 20.000 pares por perfil no cenário oficial e sensibilidade adicional.
 - SP-03 técnico de `floracura` executado com HP cheio, Petisco real, custo de ação do item e sensibilidade de timing/dificuldade.
+- SP-06A técnico de `moonquill` concluído após corrigir dois drifts funcionais de SPD; cenário oficial saturado e breakpoints controlados confirmam efeito utilizável.
 - Playtest humano das passivas adiado até a build estar apresentável às crianças; simulação dirigida é a etapa operacional imediata.
 - `MON_100` excluído de conteúdo novo, mantendo lookup e saves existentes.
 - Visão híbrida de cartas registrada separadamente do runtime atual.
@@ -120,13 +121,22 @@ SP-01 técnico pós-PR #288:
 Fonte adicional:
 - `docs/reports/SP01_TECHNICAL_SHIELDHORN_2026-09.md`;
 - `docs/reports/SP02_TECHNICAL_WILDPACE_2026-09.md`;
-- `docs/reports/SP03_TECHNICAL_FLORACURA_2026-09.md`.
+- `docs/reports/SP03_TECHNICAL_FLORACURA_2026-09.md`;
+- `docs/reports/SP06A_TECHNICAL_MOONQUILL_2026-10.md`.
 
 SP-02 técnico:
 - cenário oficial `basic`: cruzamento natural de `<40%` em 29,625%; delta de vitória +0,255 p.p.;
 - cenário oficial `mixed`: cruzamento natural em 10,35%; delta de vitória +0,015 p.p.;
 - a disponibilidade cresce com a dificuldade, mas o +1 ATK não produz virada automática;
 - com Vitalion Nv12–13, o gatilho ocorre quase sempre, porém confrontos estruturalmente perdidos continuam majoritariamente perdidos.
+
+SP-06A técnico:
+- Dracoflamemon Nv30 × Vitalion Nv30: SPD 41 × 29 já saturava a vantagem ofensiva, então `+1 SPD` produziu 0 mudança em categoria, hit e dano em 20.000 pares;
+- breakpoint ofensivo 41 × 39: mudança de categoria em 0,23%, sem mudança de hit ou dano;
+- breakpoint Group 41 × 42: jogador primeiro 0% → 52,4% no runtime atual;
+- PR #300 corrigiu uso de SPD efetivo/recálculo de iniciativa e PR #301 preservou o buff até a próxima ação;
+- a fórmula Group ainda diverge da iniciativa canônica `SPD + d6`, registrada separadamente em `DIV-INIT-01`;
+- nenhuma alteração do `+1 SPD / 1 turno` é justificada pela evidência atual.
 
 SP-03 técnico:
 - Nutrilo Nv10 × Furtilhon Nv10, política técnica de item em `<=50%`: 7,125% → 8,455% de vitória, delta +1,33 p.p.;
@@ -164,6 +174,7 @@ Fontes:
 |---|---|---|
 | `EG-01` | semântica de skill que erra no Wild | lacuna de evidência isolada |
 | `DIV-ENE-01` | regeneração de ENE | investigação independente pendente |
+| `DIV-INIT-01` | iniciativa Group | runtime ainda não implementa a fórmula canônica `SPD + d6`; tratar separadamente da calibração de `moonquill` |
 | `DIV-PASSIVE-01` | valores das passivas de classe | não recalibrar sem medição |
 | `DIV-KITSWAP-PWR-01` | calibração do Golpe Pesado de `shieldhorn` | referências de PWR em comentários/testes não correspondem a `data/skills.json`; depende de `DEC-COMBAT-A` |
 | `DIV-BOSS-01` | multiplicadores e comportamento de boss | investigação pendente |
@@ -209,10 +220,11 @@ Prioridades imediatas:
 1. SP-01 técnico de `shieldhorn`: **concluído**, sem sinal para alterar `damageReduction: 1`;
 2. SP-02 técnico de `wildpace`: **concluído**, sem sinal para alterar o `+1 ATK`;
 3. SP-03 técnico de `floracura`: **concluído**, sem sinal para alterar o `+3 HP`;
-4. SP-06A / `moonquill`: medir setup de debuff → buff de SPD → efeito utilizável;
-5. depois `shadowsting` e `bellwave`: medir criação e consumo de carga em cenários não saturados;
-6. manter PWR, crítico, ENE e boss em investigações separadas;
-7. separar sempre `TECHNICAL_CONTROLLED` de evidência humana.
+4. SP-06A / `moonquill`: **concluído com caveat**; cadeia funcional confirmada, cenário oficial saturado e divergência maior de iniciativa separada;
+5. SP-06B / `shadowsting`: medir criação e consumo de carga em cenário não saturado;
+6. depois SP-06C / `bellwave`;
+7. manter PWR, crítico, ENE, iniciativa e boss em investigações separadas;
+8. separar sempre `TECHNICAL_CONTROLLED` de evidência humana.
 
 O playtest mediado humano permanece como portão futuro e deve ser retomado quando a build estiver apresentável. Percepção, compreensão, frustração, diversão, justiça e estratégia espontânea não podem ser preenchidas por simulação.
 
