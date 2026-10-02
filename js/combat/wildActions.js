@@ -397,6 +397,12 @@ export function updateBuffs(monster) {
         if (!monster || !monster.buffs) return;
         
         monster.buffs = monster.buffs.filter(buff => {
+            // Buffs criados no fim da ação para valer "até o próximo turno"
+            // precisam sobreviver ao primeiro tick de início de turno.
+            if (buff?.deferFirstTick) {
+                delete buff.deferFirstTick;
+                return true;
+            }
             buff.duration--;
             return buff.duration > 0;
         });
@@ -532,6 +538,7 @@ function processEnemySkillAttack(encounter, wildMonster, playerMonster, wildSkil
             power: wildSkillPassive.spdBuff.power,
             duration: wildSkillPassive.spdBuff.duration,
             source: 'moonquill_passive',
+            deferFirstTick: true,
         });
         const moonLabel = _passiveLabel(wildMonster.canonSpeciesId, 'on_skill_used');
         encounter.log.push(
