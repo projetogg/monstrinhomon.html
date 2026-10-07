@@ -1,12 +1,12 @@
 # Monstrinhomon — Estado do Projeto
 
-**Verificado em:** 2026-10-02
+**Verificado em:** 2026-10-07
 
 **Branch oficial examinada:** `main`
 
-**Commit-base verificado:** `d53db6bcda76e016ec1c9474bdebdba5717d990a`
+**Commit-base verificado:** `f4495f8e489633b36634ae58a0a5fcd17bbb9257`
 
-**Marco técnico:** SP-01, SP-02, SP-03, SP-06A e SP-06B técnicos concluídos; `shadowsting` confirmado sem alteração numérica
+**Marco técnico:** SP-01, SP-02, SP-03, SP-06A, SP-06B e SP-06C técnicos concluídos; `bellwave` funcional, sem evidência para alteração numérica
 
 **Escopo:** fotografia datada do estado implementado e das decisões registradas. Visão futura não equivale a runtime.
 
@@ -29,6 +29,7 @@
 - SP-03 técnico de `floracura` executado com HP cheio, Petisco real, custo de ação do item e sensibilidade de timing/dificuldade.
 - SP-06A técnico de `moonquill` concluído após corrigir dois drifts funcionais de SPD; cenário oficial saturado e breakpoints controlados confirmam efeito utilizável.
 - SP-06B técnico de `shadowsting` concluído: cadeia debuff → carga → básico +1 ATK → consumo confirmada; cenário competitivo válido adicionou dano sem alterar vitória/TTK.
+- SP-06C técnico de `bellwave` concluído: cadência skill → básico confirmada; carga binária não acumula; cenário oficial saturado e sensibilidade com TRockmon mostrou dano adicional sem impacto material em TTK/vitória.
 - Playtest humano das passivas adiado até a build estar apresentável às crianças; simulação dirigida é a etapa operacional imediata.
 - `MON_100` excluído de conteúdo novo, mantendo lookup e saves existentes.
 - Visão híbrida de cartas registrada separadamente do runtime atual.
@@ -124,7 +125,8 @@ Fonte adicional:
 - `docs/reports/SP02_TECHNICAL_WILDPACE_2026-09.md`;
 - `docs/reports/SP03_TECHNICAL_FLORACURA_2026-09.md`;
 - `docs/reports/SP06A_TECHNICAL_MOONQUILL_2026-10.md`;
-- `docs/reports/SP06B_TECHNICAL_SHADOWSTING_2026-10.md`.
+- `docs/reports/SP06B_TECHNICAL_SHADOWSTING_2026-10.md`;
+- `docs/reports/SP06C_TECHNICAL_BELLWAVE_2026-10.md`.
 
 SP-02 técnico:
 - cenário oficial `basic`: cruzamento natural de `<40%` em 29,625%; delta de vitória +0,255 p.p.;
@@ -154,6 +156,15 @@ SP-06B técnico:
 - contra Auravelo Nv30, 20.000 pares: 29,67% → 29,67% de vitória, TTK inalterado e +4,1638 de dano médio;
 - 96.636 cargas criadas e 83.276 consumidas (~86,2%);
 - perfil apenas básico não criou nem consumiu cargas;
+- nenhuma alteração do `+1 ATK` é justificada pela evidência atual.
+
+SP-06C técnico:
+- cadeia `skill válida → carga rítmica → básico +1 ATK → consumo` confirmada;
+- skills consecutivas renovam uma carga binária; não acumulam múltiplas cargas;
+- cenário oficial Rainhassommon Nv30 × Sombrifur Nv30: 0% → 0% de vitória, TTK inalterado e +1,96555 de dano médio;
+- sensibilidade TRockmon Nv30 × Umbraquimonom Nv30: 70,385% → 70,390%, delta +0,005 p.p.; TTK inalterado; +1,9375 de dano médio;
+- protocolo alinhado para explicitar que skill válida que erra ainda carrega o ritmo e para identificar a Nota Discordante do kit swap;
+- o harness isola a passiva e não mede integralmente kit swap de SPD + iniciativa;
 - nenhuma alteração do `+1 ATK` é justificada pela evidência atual.
 
 Fontes:
@@ -186,6 +197,7 @@ Fontes:
 | `DIV-ENE-01` | regeneração de ENE | investigação independente pendente |
 | `DIV-INIT-01` | iniciativa Group | runtime ainda não implementa a fórmula canônica `SPD + d6`; tratar separadamente da calibração de `moonquill` |
 | `DIV-SP06B-PROGRESSION-01` | cenário SP-06B | protocolo histórico usa Vitalion Nv30, mas `MON_031B` evolui no Nv25; atualizar configuração antes do playtest humano |
+| `GAP-SP06C-KIT-01` | pacote bellwave | simulação isolou a passiva; interação completa entre kit swap de SPD, ENE e iniciativa ainda não foi medida |
 | `DIV-PASSIVE-01` | valores das passivas de classe | não recalibrar sem medição |
 | `DIV-KITSWAP-PWR-01` | calibração do Golpe Pesado de `shieldhorn` | referências de PWR em comentários/testes não correspondem a `data/skills.json`; depende de `DEC-COMBAT-A` |
 | `DIV-BOSS-01` | multiplicadores e comportamento de boss | investigação pendente |
@@ -233,9 +245,12 @@ Prioridades imediatas:
 3. SP-03 técnico de `floracura`: **concluído**, sem sinal para alterar o `+3 HP`;
 4. SP-06A / `moonquill`: **concluído com caveat**; cadeia funcional confirmada, cenário oficial saturado e divergência maior de iniciativa separada;
 5. SP-06B / `shadowsting`: **concluído com caveat**; cadeia funcional confirmada, protocolo histórico tem drift de progressão e não há sinal para alterar `+1 ATK`;
-6. SP-06C / `bellwave`: medir criação e consumo da carga rítmica em cenário não saturado;
-7. manter PWR, crítico, ENE, iniciativa e boss em investigações separadas;
-8. separar sempre `TECHNICAL_CONTROLLED` de evidência humana.
+6. SP-06C / `bellwave`: **concluído com caveat**; cadência funcional, dano adicional consistente e sem sinal para alterar `+1 ATK`;
+7. SP-04 / `swiftclaw`: próxima rodada técnica dedicada, priorizando a primeira ação ofensiva;
+8. SP-05 / `emberfang`: executar depois de `swiftclaw`, medindo a janela estrita de HP >70%;
+9. após SP-04 e SP-05, consolidar a bateria técnica das oito passivas antes de decidir a próxima investigação;
+10. manter PWR, crítico, ENE, iniciativa e boss em investigações separadas;
+11. separar sempre `TECHNICAL_CONTROLLED` de evidência humana.
 
 O playtest mediado humano permanece como portão futuro e deve ser retomado quando a build estiver apresentável. Percepção, compreensão, frustração, diversão, justiça e estratégia espontânea não podem ser preenchidas por simulação.
 
@@ -245,7 +260,8 @@ Fontes:
 - `docs/reports/SHIELDHORN_TANK_PACKAGE_REASSESSMENT_2026-09.md`;
 - `docs/reports/SP03_TECHNICAL_FLORACURA_2026-09.md`;
 - `docs/reports/SP06A_TECHNICAL_MOONQUILL_2026-10.md`;
-- `docs/reports/SP06B_TECHNICAL_SHADOWSTING_2026-10.md`.
+- `docs/reports/SP06B_TECHNICAL_SHADOWSTING_2026-10.md`;
+- `docs/reports/SP06C_TECHNICAL_BELLWAVE_2026-10.md`.
 
 Nenhum valor de passiva, PWR ou ENE é alterado nesta etapa.
 
