@@ -23,6 +23,7 @@ const classAdvantages = buildClassAdvantages(matchupsJson);
 
 const RAINHA = monsters.find(mon => mon.id === 'MON_027C');
 const TROCK = monsters.find(mon => mon.id === 'MON_007');
+const UMBRA = monsters.find(mon => mon.id === 'MON_022C');
 const SOMBRIFUR = monsters.find(mon => mon.id === 'MON_030C');
 
 function scenario(profile = 'mixed', enemyTemplate = SOMBRIFUR, label = 'official', playerTemplate = RAINHA) {
@@ -218,6 +219,43 @@ describe('SP-06C técnico — bellwave', () => {
     }));
 
     expect(rows.length).toBeGreaterThan(0);
+  });
+
+  it('mede sensibilidade final com TRockmon Nv30 × Umbraquimonom Nv30', () => {
+    const result = simulateSpeciesPassiveScenarioPair(
+      scenario('mixed', UMBRA, 'sensitivity-trock-umbra', TROCK),
+      {
+        runs: 20000,
+        maxTurns: 30,
+        seed: 'sp06c-bellwave-trock-umbra-f4495f8e',
+      },
+    );
+
+    console.log('SP06C_BELLWAVE_SENSITIVITY_TROCK_UMBRA', JSON.stringify({
+      verifiedAgainst: 'f4495f8e489633b36634ae58a0a5fcd17bbb9257',
+      player: { id: TROCK.id, name: TROCK.name, level: 30 },
+      enemy: { id: UMBRA.id, name: UMBRA.name, level: 30 },
+      result: {
+        runs: result.runs,
+        baseWinRate: result.base.winRate,
+        passiveWinRate: result.passive.winRate,
+        deltaWinRate: result.delta.winRate,
+        baseTurns: result.base.turns,
+        passiveTurns: result.passive.turns,
+        deltaTurns: result.delta.turns,
+        deltaDamageDealt: result.delta.damageDealt,
+        deltaPlayerHpFinal: result.delta.playerHpFinal,
+        passiveEffects: result.passive.effects,
+        baseSkillUses: result.base.skillUses,
+        passiveSkillUses: result.passive.skillUses,
+        baseBasicUses: result.base.basicUses,
+        passiveBasicUses: result.passive.basicUses,
+      },
+    }));
+
+    expect(result.passive.effects.chargesCreated).toBeGreaterThan(0);
+    expect(result.passive.effects.chargesConsumed).toBeGreaterThan(0);
+    expect(result.delta.damageDealt.mean).toBeGreaterThan(0);
   });
 
   it('mapeia candidatos naturais Nv30 neutros para cenário de sensibilidade', () => {
