@@ -22,16 +22,17 @@ const skills = selectTierOneDamageSkills(skillsJson);
 const classAdvantages = buildClassAdvantages(matchupsJson);
 
 const RAINHA = monsters.find(mon => mon.id === 'MON_027C');
+const TROCK = monsters.find(mon => mon.id === 'MON_007');
 const SOMBRIFUR = monsters.find(mon => mon.id === 'MON_030C');
 
-function scenario(profile = 'mixed', enemyTemplate = SOMBRIFUR, label = 'official') {
+function scenario(profile = 'mixed', enemyTemplate = SOMBRIFUR, label = 'official', playerTemplate = RAINHA) {
   return {
     id: `sp06c-bellwave-${label}-${profile}`,
     speciesId: 'bellwave',
     className: 'Bardo',
     level: 30,
     profile,
-    playerTemplate: RAINHA,
+    playerTemplate,
     enemyTemplate,
     classAdvantages,
     basicPower: DEFAULT_BASIC_POWER.Bardo ?? 7,
@@ -178,6 +179,45 @@ describe('SP-06C técnico — bellwave', () => {
     expect(result.passive.effects.chargesConsumed).toBe(0);
     expect(result.passive.effects.atkBonusApplications).toBe(0);
     expect(result.delta.winRate).toBe(0);
+  });
+
+  it('mapeia sensibilidade Nv30 usando TRockmon, segunda linha bellwave válida', () => {
+    expect(validAtLevel(TROCK, 30)).toBe(true);
+
+    const candidates = monsters
+      .filter(mon => mon.id !== TROCK.id)
+      .filter(mon => mon.rarity !== 'Lendário')
+      .filter(mon => validAtLevel(mon, 30))
+      .filter(mon => !['Curandeiro', 'Animalista'].includes(mon.class));
+
+    const rows = candidates.map(enemyTemplate => {
+      const result = simulateSpeciesPassiveScenarioPair(
+        scenario('mixed', enemyTemplate, `trock-candidate-${enemyTemplate.id}`, TROCK),
+        {
+          runs: 1000,
+          maxTurns: 30,
+          seed: `sp06c-bellwave-trock-candidate-${enemyTemplate.id}-f4495f8e`,
+        },
+      );
+      return {
+        id: enemyTemplate.id,
+        name: enemyTemplate.name,
+        className: enemyTemplate.class,
+        rarity: enemyTemplate.rarity,
+        baseWinRate: result.base.winRate,
+        passiveWinRate: result.passive.winRate,
+        deltaWinRate: result.delta.winRate,
+        deltaDamageMean: result.delta.damageDealt.mean,
+      };
+    }).sort((a, b) => Math.abs(a.baseWinRate - 0.5) - Math.abs(b.baseWinRate - 0.5));
+
+    console.log('SP06C_BELLWAVE_TROCK_SCAN', JSON.stringify({
+      verifiedAgainst: 'f4495f8e489633b36634ae58a0a5fcd17bbb9257',
+      player: { id: TROCK.id, name: TROCK.name, level: 30 },
+      top: rows.slice(0, 12),
+    }));
+
+    expect(rows.length).toBeGreaterThan(0);
   });
 
   it('mapeia candidatos naturais Nv30 neutros para cenário de sensibilidade', () => {
