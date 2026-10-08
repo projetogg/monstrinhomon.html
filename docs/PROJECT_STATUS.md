@@ -6,7 +6,7 @@
 
 **Commit-base verificado:** `7a44b5ec47b7cc6f47126a33b5ea0ace89d50070`
 
-**Marco técnico:** SP-01, SP-02, SP-03, SP-04, SP-06A, SP-06B e SP-06C técnicos concluídos; semântica da abertura de `swiftclaw` aprovada pela opção B, ainda não implementada
+**Marco técnico:** SP-01, SP-02, SP-03, SP-04, SP-05, SP-06A, SP-06B e SP-06C técnicos concluídos; semântica da abertura de `swiftclaw` aprovada pela opção B, ainda não implementada
 
 **Escopo:** fotografia datada do estado implementado e das decisões registradas. Visão futura não equivale a runtime.
 
@@ -31,6 +31,7 @@
 - SP-06B técnico de `shadowsting` concluído: cadeia debuff → carga → básico +1 ATK → consumo confirmada; cenário competitivo válido adicionou dano sem alterar vitória/TTK.
 - SP-06C técnico de `bellwave` concluído: cadência skill → básico confirmada; carga binária não acumula; cenário oficial saturado e sensibilidade com TRockmon mostrou dano adicional sem impacto material em TTK/vitória.
 - SP-04 técnico de `swiftclaw` concluído com caveats: cenário oficial saturado; sensibilidade natural mostrou impacto pequeno; runtime/harness divergem sobre consumo da abertura; Armadilha I no Group reproduziu bug funcional registrado no issue #309.
+- SP-05 técnico de `emberfang` executado com 20.000 pares `basic` e `mixed`, sensibilidade ENE/iniciativa e confronto natural menos saturado; impacto pequeno, sem base para alteração de `+1 ATK`; modelo controlado não equivale ao runtime integral.
 - Playtest humano das passivas adiado até a build estar apresentável às crianças; simulação dirigida é a etapa operacional imediata.
 - `MON_100` excluído de conteúdo novo, mantendo lookup e saves existentes.
 - Visão híbrida de cartas registrada separadamente do runtime atual.
@@ -261,8 +262,8 @@ Prioridades imediatas:
 5. SP-06B / `shadowsting`: **concluído com caveat**; cadeia funcional confirmada, protocolo histórico tem drift de progressão e não há sinal para alterar `+1 ATK`;
 6. SP-06C / `bellwave`: **concluído com caveat**; cadência funcional, dano adicional consistente e sem sinal para alterar `+1 ATK`;
 7. SP-04 / `swiftclaw`: **concluído com caveats**; decisão B aprovada em `DEC-SP04-OPENING-01`; implementar paridade Wild/Group/harness em PR próprio e manter bug Group #309 separado;
-8. SP-05 / `emberfang`: próxima rodada técnica, medindo a janela estrita de HP >70%;
-9. após SP-05, consolidar a bateria técnica das oito passivas e listar decisões/bloqueios antes da etapa seguinte;
+8. SP-05 / `emberfang`: **concluído com caveats**, janela estrita `>70%` testada; cenário oficial saturado, sensibilidade a ENE/iniciativa documentada, sem justificativa para alterar `+1 ATK`;
+9. consolidar a bateria técnica das oito passivas e listar decisões/bloqueios antes da etapa seguinte;
 10. manter PWR, crítico, ENE, iniciativa e boss em investigações separadas;
 11. separar sempre `TECHNICAL_CONTROLLED` de evidência humana.
 
@@ -276,7 +277,8 @@ Fontes:
 - `docs/reports/SP06A_TECHNICAL_MOONQUILL_2026-10.md`;
 - `docs/reports/SP06B_TECHNICAL_SHADOWSTING_2026-10.md`;
 - `docs/reports/SP06C_TECHNICAL_BELLWAVE_2026-10.md`;
-- `docs/reports/SP04_TECHNICAL_SWIFTCLAW_2026-10.md`.
+- `docs/reports/SP04_TECHNICAL_SWIFTCLAW_2026-10.md`;
+- `docs/reports/SP05_TECHNICAL_EMBERFANG_2026-10.md`.
 
 Nenhum valor de passiva, PWR ou ENE é alterado nesta etapa.
 
