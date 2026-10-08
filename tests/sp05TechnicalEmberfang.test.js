@@ -74,7 +74,7 @@ function makeCombatant(template) {
   const hpMax = Math.max(12, Math.round(scaled.hpMax * 1.6));
   return { ...scaled, hpMax, hp: hpMax };
 }
-function oneBattle({ enabled, seed, initialEnergyRatio }) {
+function oneBattle({ enabled, seed, initialEnergyRatio, enemyFirst = false, regenRound = 'floor' }) {
   const rng = createSeededRng(seed);
   const player = makeCombatant(PLAYER), enemy = makeCombatant(ENEMY);
   let ene = Math.floor(player.eneMax * initialEnergyRatio);
@@ -124,7 +124,10 @@ function oneBattle({ enabled, seed, initialEnergyRatio }) {
 
   while (player.hp > 0 && enemy.hp > 0 && turns < 30) {
     turns += 1;
-    const regen = applyEneRegen(ene, player.eneMax, calculateEneRegen(player.class, player.eneMax));
+    if (enemyFirst) { strike(enemy, player, DEFAULT_BASIC_POWER.Ladino); if (player.hp <= 0) break; }
+    const defaultRegen = calculateEneRegen(player.class, player.eneMax);
+    const wildLikeRegen = Math.max(1, Math.ceil(player.eneMax * .10));
+    const regen = applyEneRegen(ene, player.eneMax, regenRound === 'ceil' ? wildLikeRegen : defaultRegen);
     ene = regen.energy; eneGained += regen.gained;
 
     const hpEligible = player.hp / player.hpMax > .70;
@@ -141,7 +144,7 @@ function oneBattle({ enabled, seed, initialEnergyRatio }) {
       damageDealt += strike(player, enemy, DEFAULT_BASIC_POWER['Bárbaro']);
     }
     if (enemy.hp <= 0) break;
-    strike(enemy, player, DEFAULT_BASIC_POWER.Ladino);
+    if (!enemyFirst) strike(enemy, player, DEFAULT_BASIC_POWER.Ladino);
   }
   return {
     winner: enemy.hp <= 0 && player.hp > 0 ? 'player' : player.hp <= 0 && enemy.hp > 0 ? 'enemy' : 'draw',
@@ -150,16 +153,16 @@ function oneBattle({ enabled, seed, initialEnergyRatio }) {
     skillsAbove70, skillsBelowOrAt70, eneSpent, eneGained, basicUses, skillUses,
   };
 }
-function energyPair(runs, initialEnergyRatio, seed) {
+function energyPair(runs, initialEnergyRatio, seed, extraOptions = {}) {
   const base = [], passive = [];
   for(let i = 0; i < runs; i++) {
     const runSeed = seed + ':run-' + i;
-    base.push(oneBattle({enabled:false, seed:runSeed, initialEnergyRatio}));
-    passive.push(oneBattle({enabled:true, seed:runSeed, initialEnergyRatio}));
+    base.push(oneBattle({enabled:false, seed:runSeed, initialEnergyRatio, ...extraOptions}));
+    passive.push(oneBattle({enabled:true, seed:runSeed, initialEnergyRatio, ...extraOptions}));
   }
   const total = key => passive.reduce((n,row)=>n+row[key],0);
   return {
-    runs, initialEnergyRatio,
+    runs, initialEnergyRatio, enemyFirst:extraOptions.enemyFirst ?? false, regenRound:extraOptions.regenRound ?? 'floor',
     baseWinRate: round(base.filter(row=>row.winner==='player').length/runs),
     passiveWinRate: round(passive.filter(row=>row.winner==='player').length/runs),
     baseTTK: stats(base.map(row=>row.turns)),
@@ -233,6 +236,14 @@ describe('SP-05 técnico controlado — emberfang', () => {
     expect(full.opportunityTurns).toBeGreaterThan(0);
     expect(zero.appliedBonuses).toBeLessThanOrEqual(zero.skillsAbove70);
     expect(full.appliedBonuses).toBeLessThanOrEqual(full.skillsAbove70);
+    const enemyFirstZero = energyPair(20000,0,'sp05-energy-enemyfirst-zero-cde906a2',{enemyFirst:true});
+    const enemyFirstFull = energyPair(20000,1,'sp05-energy-enemyfirst-full-cde906a2',{enemyFirst:true});
+    const enemyFirstZeroCeil = energyPair(20000,0,'sp05-energy-enemyfirst-ceil-cde906a2',{enemyFirst:true,regenRound:'ceil'});
+    console.log('SP05_ENEMY_FIRST_ENERGY_ZERO',JSON.stringify({SHA,...enemyFirstZero}));
+    console.log('SP05_ENEMY_FIRST_ENERGY_FULL',JSON.stringify({SHA,...enemyFirstFull}));
+    console.log('SP05_ENEMY_FIRST_ENERGY_ZERO_CEIL_SENSITIVITY',JSON.stringify({SHA,...enemyFirstZeroCeil}));
+    expect(enemyFirstFull.appliedBonuses).toBeLessThanOrEqual(enemyFirstFull.skillsAbove70);
+    expect(enemyFirstZeroCeil.appliedBonuses).toBeLessThanOrEqual(enemyFirstZeroCeil.skillsAbove70);
   });
 
   it('rastreia sensibilidade natural de adversários nível 10 sem usar estágios impossíveis', () => {
