@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 
 import { resolvePassiveModifier } from '../js/canon/speciesPassives.js';
 import { executeWildAttack, executeWildSkill } from '../js/combat/wildActions.js';
+import { executePlayerSkillGroup } from '../js/combat/groupActions.js';
 import {
   simulateSpeciesPassiveScenarioPair,
 } from '../js/combat/speciesPassiveQuantitativeHarness.js';
@@ -365,6 +366,82 @@ describe('SP-04 técnico — swiftclaw', () => {
     }));
 
     expect(enc.passiveState?.swiftclawFirstStrikeDone).not.toBe(true);
+  });
+
+  it('caracteriza Group atual: Armadilha I entra no caminho de dano e consome a abertura', () => {
+    const mon = makeRuntimeSwift({ ene: 12 });
+    const player = { id: 'p1', name: 'Jogador', class: 'Caçador', team: [mon] };
+    const enemy = makeRuntimeWild({ id: 'enemy_0', hp: 100, hpMax: 100 });
+    const enc = {
+      id: 'grp_sp04',
+      active: true,
+      finished: false,
+      participants: [player.id],
+      enemies: [enemy],
+      turnOrder: [
+        { side: 'player', id: player.id, name: player.name },
+        { side: 'enemy', id: 'enemy_0', enemyIndex: 0, name: enemy.name },
+      ],
+      turnIndex: 0,
+      log: [],
+    };
+    const state = { currentEncounter: enc, players: [player], config: { classAdvantages: {} } };
+    const deps = {
+      state,
+      core: {
+        getCurrentActor: e => e.turnOrder[e.turnIndex],
+        isAlive: entity => (Number(entity?.hp) || 0) > 0,
+        hasAlivePlayers: () => true,
+        hasAliveEnemies: e => e.enemies.some(x => (Number(x?.hp) || 0) > 0),
+        calcDamage: ({ atk, def, power, damageMult = 1 }) =>
+          Math.max(1, Math.floor((atk + power - def) * damageMult)),
+        getBuffModifiers: () => ({ atk: 0, def: 0, spd: 0 }),
+        getClassAdvantageModifiers: () => ({ atkBonus: 0, damageMult: 1 }),
+      },
+      ui: {
+        render: vi.fn(),
+        showDamageFeedback: vi.fn(),
+        showMissFeedback: vi.fn(),
+        playAttackFeedback: vi.fn(),
+      },
+      audio: { playSfx: vi.fn() },
+      storage: { save: vi.fn() },
+      helpers: {
+        getPlayerById: id => state.players.find(p => p.id === id),
+        getActiveMonsterOfPlayer: p => p?.team?.[0],
+        getEnemyByIndex: (e, idx) => e.enemies[idx],
+        log: (e, msg) => e.log.push(msg),
+        applyEneRegen: vi.fn(),
+        updateBuffs: vi.fn(),
+        rollD20: () => 15,
+        recordD20Roll: vi.fn(),
+        applyDamage: (target, dmg) => { target.hp = Math.max(0, target.hp - dmg); },
+        canUseSkillNow: (skill, m) => (Number(m.ene) || 0) >= Number(skill.cost ?? skill.energy_cost ?? 0),
+        handleVictoryRewards: vi.fn(),
+        firstAliveIndex: vi.fn(() => 0),
+        chooseTargetPlayerId: vi.fn(),
+        openSwitchMonsterModal: vi.fn(),
+        getBasicAttackPower: () => DEFAULT_BASIC_POWER['Caçador'] ?? 8,
+      },
+    };
+
+    const hpBefore = enemy.hp;
+    const result = executePlayerSkillGroup(ARMADILHA, 0, deps);
+
+    console.log('SP04_SWIFTCLAW_GROUP_TRAP_OPENER', JSON.stringify({
+      verifiedAgainst: '7a44b5ec47b7cc6f47126a33b5ea0ace89d50070',
+      result,
+      hpBefore,
+      hpAfter: enemy.hp,
+      enemyBuffs: enemy.buffs,
+      swiftclawFirstStrikeDone: enc.passiveState?.swiftclawFirstStrikeDone ?? false,
+      logs: enc.log,
+    }));
+
+    expect(result).toBe(true);
+    expect(enc.passiveState?.swiftclawFirstStrikeDone).toBe(true);
+    expect(enemy.hp).toBeLessThan(hpBefore);
+    expect(enemy.buffs).toEqual([]);
   });
 
   it('mede cenário oficial no harness existente — básico e mixed', () => {
