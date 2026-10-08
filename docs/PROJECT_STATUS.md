@@ -6,7 +6,7 @@
 
 **Commit-base verificado:** `7a44b5ec47b7cc6f47126a33b5ea0ace89d50070`
 
-**Marco técnico:** SP-01, SP-02, SP-03, SP-04, SP-06A, SP-06B e SP-06C técnicos concluídos; `swiftclaw` sem sinal para ajuste numérico, com semântica de abertura pendente
+**Marco técnico:** SP-01, SP-02, SP-03, SP-04, SP-06A, SP-06B e SP-06C técnicos concluídos; semântica da abertura de `swiftclaw` aprovada pela opção B, ainda não implementada
 
 **Escopo:** fotografia datada do estado implementado e das decisões registradas. Visão futura não equivale a runtime.
 
@@ -208,7 +208,7 @@ Fontes:
 | `DIV-INIT-01` | iniciativa Group | runtime ainda não implementa a fórmula canônica `SPD + d6`; tratar separadamente da calibração de `moonquill` |
 | `DIV-SP06B-PROGRESSION-01` | cenário SP-06B | protocolo histórico usa Vitalion Nv30, mas `MON_031B` evolui no Nv25; atualizar configuração antes do playtest humano |
 | `GAP-SP06C-KIT-01` | pacote bellwave | simulação isolou a passiva; interação completa entre kit swap de SPD, ENE e iniciativa ainda não foi medida |
-| `DIV-SP04-OPENING-01` | `swiftclaw` | básico que erra preserva abertura; skill pode consumir antes do desfecho; harness preserva até primeiro acerto; aguarda `DEC-SP04-OPENING-01` |
+| `DIV-SP04-OPENING-01` | `swiftclaw` | decisão de produto APPROVED (opção B: primeiro ataque que acerta); Wild/Group ainda precisam de paridade com o contrato aprovado; implementação pendente |
 | `BUG-GROUP-DEBUFF-01` | skills BUFF contra inimigo no Group | Armadilha I entra no pipeline de dano e não aplica SPD; correção rastreada no issue #309 |
 | `DIV-SP04-PWR-REF-01` | referência de PWR de Caçador | comentários/fixtures históricos usam Flecha Poderosa I PWR 19; `data/skills.json` atual usa PWR 15; tratar em `DEC-COMBAT-A` |
 | `DIV-PASSIVE-01` | valores das passivas de classe | não recalibrar sem medição |
@@ -233,6 +233,7 @@ Fontes:
 
 ### Aprovadas e não implementadas integralmente
 
+- `DEC-SP04-OPENING-01`: `swiftclaw` beneficia o primeiro básico ou skill de dano que acerta; erro/controle não consomem; PR técnico de paridade pendente.
 - `DEC-PLAYTEST-PRE-01`: adiar coleta humana enquanto a build não estiver apresentável e usar simulação dirigida como etapa pré-playtest.
 - `DEC-CARDS-VISION-01`: RPG tático simples, deckbuilding leve, posicionamento, cartas como habilidades e garantia contra turno morto.
 
@@ -259,7 +260,7 @@ Prioridades imediatas:
 4. SP-06A / `moonquill`: **concluído com caveat**; cadeia funcional confirmada, cenário oficial saturado e divergência maior de iniciativa separada;
 5. SP-06B / `shadowsting`: **concluído com caveat**; cadeia funcional confirmada, protocolo histórico tem drift de progressão e não há sinal para alterar `+1 ATK`;
 6. SP-06C / `bellwave`: **concluído com caveat**; cadência funcional, dano adicional consistente e sem sinal para alterar `+1 ATK`;
-7. SP-04 / `swiftclaw`: **concluído com caveats**; manter +1 ATK, corrigir bug Group #309 em trilha própria e decidir semântica da abertura antes do playtest humano;
+7. SP-04 / `swiftclaw`: **concluído com caveats**; decisão B aprovada em `DEC-SP04-OPENING-01`; implementar paridade Wild/Group/harness em PR próprio e manter bug Group #309 separado;
 8. SP-05 / `emberfang`: próxima rodada técnica, medindo a janela estrita de HP >70%;
 9. após SP-05, consolidar a bateria técnica das oito passivas e listar decisões/bloqueios antes da etapa seguinte;
 10. manter PWR, crítico, ENE, iniciativa e boss em investigações separadas;
