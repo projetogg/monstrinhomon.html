@@ -35,6 +35,7 @@ const classAdvantages = buildClassAdvantages(matchupsJson);
 
 const MIAUMON = monsters.find(mon => mon.id === 'MON_009');
 const AQUASOL = monsters.find(mon => mon.id === 'MON_032');
+const LUVURSO = monsters.find(mon => mon.id === 'MON_017');
 
 function officialScenario(profile = 'basic', enemyTemplate = AQUASOL, label = 'official') {
   return {
@@ -430,6 +431,47 @@ describe('SP-04 técnico — swiftclaw', () => {
       expect(row.activationRate).toBeLessThan(1);
       expect(row.firstActionMissRate).toBeGreaterThan(0);
     }
+  });
+
+  it('mede sensibilidade final Miaumon Nv10 × Luvursomon Nv10', () => {
+    expect(validAtLevel(LUVURSO, 10)).toBe(true);
+
+    const existingBasic = simulateSpeciesPassiveScenarioPair(
+      officialScenario('basic', LUVURSO, 'sensitivity-luvurso'),
+      {
+        runs: 20000,
+        maxTurns: 30,
+        seed: 'sp04-swiftclaw-luvurso-existing-7a44b5ec',
+      },
+    );
+
+    const firstActionBasic = summarizeModel({
+      profile: 'basic',
+      semantic: 'first_action',
+      runs: 20000,
+      enemyTemplate: LUVURSO,
+      seed: 'sp04-swiftclaw-luvurso-first-action-7a44b5ec',
+    });
+
+    console.log('SP04_SWIFTCLAW_SENSITIVITY_LUVURSO', JSON.stringify({
+      verifiedAgainst: '7a44b5ec47b7cc6f47126a33b5ea0ace89d50070',
+      player: { id: MIAUMON.id, name: MIAUMON.name, level: 10 },
+      enemy: { id: LUVURSO.id, name: LUVURSO.name, level: 10 },
+      existingHarnessFirstHit: {
+        runs: existingBasic.runs,
+        baseWinRate: existingBasic.base.winRate,
+        passiveWinRate: existingBasic.passive.winRate,
+        deltaWinRate: existingBasic.delta.winRate,
+        deltaDamage: existingBasic.delta.damageDealt,
+        deltaTurns: existingBasic.delta.turns,
+        deltaHpFinal: existingBasic.delta.playerHpFinal,
+        effects: existingBasic.passive.effects,
+      },
+      firstActionModel: firstActionBasic,
+    }));
+
+    expect(existingBasic.passive.effects.atkBonusApplications).toBe(20000);
+    expect(firstActionBasic.activationRate).toBeLessThan(1);
   });
 
   it('faz scan Nv10 natural para detectar saturação do cenário oficial', () => {
