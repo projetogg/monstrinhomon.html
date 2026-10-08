@@ -1,12 +1,12 @@
 # Monstrinhomon — Estado do Projeto
 
-**Verificado em:** 2026-10-07
+**Verificado em:** 2026-10-08
 
 **Branch oficial examinada:** `main`
 
-**Commit-base verificado:** `f4495f8e489633b36634ae58a0a5fcd17bbb9257`
+**Commit-base verificado:** `7a44b5ec47b7cc6f47126a33b5ea0ace89d50070`
 
-**Marco técnico:** SP-01, SP-02, SP-03, SP-06A, SP-06B e SP-06C técnicos concluídos; `bellwave` funcional, sem evidência para alteração numérica
+**Marco técnico:** SP-01, SP-02, SP-03, SP-04, SP-06A, SP-06B e SP-06C técnicos concluídos; `swiftclaw` sem sinal para ajuste numérico, com semântica de abertura pendente
 
 **Escopo:** fotografia datada do estado implementado e das decisões registradas. Visão futura não equivale a runtime.
 
@@ -30,6 +30,7 @@
 - SP-06A técnico de `moonquill` concluído após corrigir dois drifts funcionais de SPD; cenário oficial saturado e breakpoints controlados confirmam efeito utilizável.
 - SP-06B técnico de `shadowsting` concluído: cadeia debuff → carga → básico +1 ATK → consumo confirmada; cenário competitivo válido adicionou dano sem alterar vitória/TTK.
 - SP-06C técnico de `bellwave` concluído: cadência skill → básico confirmada; carga binária não acumula; cenário oficial saturado e sensibilidade com TRockmon mostrou dano adicional sem impacto material em TTK/vitória.
+- SP-04 técnico de `swiftclaw` concluído com caveats: cenário oficial saturado; sensibilidade natural mostrou impacto pequeno; runtime/harness divergem sobre consumo da abertura; Armadilha I no Group reproduziu bug funcional registrado no issue #309.
 - Playtest humano das passivas adiado até a build estar apresentável às crianças; simulação dirigida é a etapa operacional imediata.
 - `MON_100` excluído de conteúdo novo, mantendo lookup e saves existentes.
 - Visão híbrida de cartas registrada separadamente do runtime atual.
@@ -167,6 +168,15 @@ SP-06C técnico:
 - o harness isola a passiva e não mede integralmente kit swap de SPD + iniciativa;
 - nenhuma alteração do `+1 ATK` é justificada pela evidência atual.
 
+SP-04 técnico:
+- cenário oficial Miaumon Nv10 × Aquasol Nv10 ficou saturado: `basic` 99,765% → 99,780% e `mixed` 99,975% → 99,975%;
+- sensibilidade Miaumon Nv10 × Luvursomon Nv10, harness histórico: 68,210% → 69,060%, delta +0,850 p.p.; TTK médio -0,02715; +0,54625 de dano total médio;
+- modelo `first_action` no mesmo matchup: delta +0,655 p.p., ativação 93,62% e 6,38% de erro na primeira ação;
+- ataque básico que erra preserva a abertura, enquanto skills podem consumi-la antes do desfecho; harness histórico preserva até o primeiro acerto;
+- Armadilha I consome a abertura no Wild sem aproveitar o ATK e, no Group, foi reproduzido um bug em que causa 1 de dano sem aplicar SPD -2; issue #309 registra o plano de correção;
+- referências históricas de PWR da Flecha Poderosa I usam 19, enquanto `data/skills.json` atual usa 15;
+- nenhuma alteração do `+1 ATK` é justificada pela evidência atual; a semântica de consumo exige decisão humana.
+
 Fontes:
 
 - `docs/reports/COMBAT_BASELINE_DELTA_POST_PARITY_2026-07.md`;
@@ -198,6 +208,9 @@ Fontes:
 | `DIV-INIT-01` | iniciativa Group | runtime ainda não implementa a fórmula canônica `SPD + d6`; tratar separadamente da calibração de `moonquill` |
 | `DIV-SP06B-PROGRESSION-01` | cenário SP-06B | protocolo histórico usa Vitalion Nv30, mas `MON_031B` evolui no Nv25; atualizar configuração antes do playtest humano |
 | `GAP-SP06C-KIT-01` | pacote bellwave | simulação isolou a passiva; interação completa entre kit swap de SPD, ENE e iniciativa ainda não foi medida |
+| `DIV-SP04-OPENING-01` | `swiftclaw` | básico que erra preserva abertura; skill pode consumir antes do desfecho; harness preserva até primeiro acerto; aguarda `DEC-SP04-OPENING-01` |
+| `BUG-GROUP-DEBUFF-01` | skills BUFF contra inimigo no Group | Armadilha I entra no pipeline de dano e não aplica SPD; correção rastreada no issue #309 |
+| `DIV-SP04-PWR-REF-01` | referência de PWR de Caçador | comentários/fixtures históricos usam Flecha Poderosa I PWR 19; `data/skills.json` atual usa PWR 15; tratar em `DEC-COMBAT-A` |
 | `DIV-PASSIVE-01` | valores das passivas de classe | não recalibrar sem medição |
 | `DIV-KITSWAP-PWR-01` | calibração do Golpe Pesado de `shieldhorn` | referências de PWR em comentários/testes não correspondem a `data/skills.json`; depende de `DEC-COMBAT-A` |
 | `DIV-BOSS-01` | multiplicadores e comportamento de boss | investigação pendente |
@@ -246,9 +259,9 @@ Prioridades imediatas:
 4. SP-06A / `moonquill`: **concluído com caveat**; cadeia funcional confirmada, cenário oficial saturado e divergência maior de iniciativa separada;
 5. SP-06B / `shadowsting`: **concluído com caveat**; cadeia funcional confirmada, protocolo histórico tem drift de progressão e não há sinal para alterar `+1 ATK`;
 6. SP-06C / `bellwave`: **concluído com caveat**; cadência funcional, dano adicional consistente e sem sinal para alterar `+1 ATK`;
-7. SP-04 / `swiftclaw`: próxima rodada técnica dedicada, priorizando a primeira ação ofensiva;
-8. SP-05 / `emberfang`: executar depois de `swiftclaw`, medindo a janela estrita de HP >70%;
-9. após SP-04 e SP-05, consolidar a bateria técnica das oito passivas antes de decidir a próxima investigação;
+7. SP-04 / `swiftclaw`: **concluído com caveats**; manter +1 ATK, corrigir bug Group #309 em trilha própria e decidir semântica da abertura antes do playtest humano;
+8. SP-05 / `emberfang`: próxima rodada técnica, medindo a janela estrita de HP >70%;
+9. após SP-05, consolidar a bateria técnica das oito passivas e listar decisões/bloqueios antes da etapa seguinte;
 10. manter PWR, crítico, ENE, iniciativa e boss em investigações separadas;
 11. separar sempre `TECHNICAL_CONTROLLED` de evidência humana.
 
@@ -261,7 +274,8 @@ Fontes:
 - `docs/reports/SP03_TECHNICAL_FLORACURA_2026-09.md`;
 - `docs/reports/SP06A_TECHNICAL_MOONQUILL_2026-10.md`;
 - `docs/reports/SP06B_TECHNICAL_SHADOWSTING_2026-10.md`;
-- `docs/reports/SP06C_TECHNICAL_BELLWAVE_2026-10.md`.
+- `docs/reports/SP06C_TECHNICAL_BELLWAVE_2026-10.md`;
+- `docs/reports/SP04_TECHNICAL_SWIFTCLAW_2026-10.md`.
 
 Nenhum valor de passiva, PWR ou ENE é alterado nesta etapa.
 

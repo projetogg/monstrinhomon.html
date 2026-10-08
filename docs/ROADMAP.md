@@ -18,6 +18,7 @@
 - SP-06A técnico de `moonquill` concluído com caveat após correções de SPD dos PRs #300 e #301;
 - SP-06B técnico de `shadowsting` concluído com caveat; cadeia de carga funcional e sem justificativa para alteração numérica;
 - SP-06C técnico de `bellwave` concluído com caveat; cadência funcional, protocolo alinhado e sem justificativa para alteração numérica;
+- SP-04 técnico de `swiftclaw` concluído com caveats; impacto pequeno, sem ajuste numérico, semântica de abertura pendente e bug Group #309 isolado;
 - `shieldhorn` no SP-01 preservou HP, mas não alterou vitória nem TTK;
 - `wildpace` no cenário oficial ativou naturalmente em ~30% (`basic`) e ~10% (`mixed`), com pequeno impacto em vitória;
 - `damageReduction: 1` permanece congelado;
@@ -25,14 +26,15 @@
 
 **Prioridades:**
 
-1. executar SP-04 `swiftclaw`, priorizando a primeira ação ofensiva e seu impacto;
-2. executar SP-05 `emberfang`, preservando a janela estrita de HP >70%;
-3. consolidar a bateria técnica das oito passivas após SP-04 e SP-05;
-4. ampliar cenários somente quando a métrica atual estiver saturada;
-5. corrigir configurações de progressão antes do playtest humano;
-6. distinguir cenário de demonstração de cenário de sensibilidade;
-7. não alterar valores no mesmo passo da coleta;
-8. manter PWR, crítico, ENE e boss separados.
+1. executar SP-05 `emberfang`, preservando a janela estrita de HP >70%;
+2. consolidar a bateria técnica das oito passivas após SP-05;
+3. corrigir o bug Group #309 antes de usar debuffs contra inimigo em coleta humana;
+4. obter decisão do autor para `DEC-SP04-OPENING-01` antes do playtest humano de `swiftclaw`;
+5. ampliar cenários somente quando a métrica atual estiver saturada;
+6. corrigir configurações de progressão antes do playtest humano;
+7. distinguir cenário de demonstração de cenário de sensibilidade;
+8. não alterar valores no mesmo passo da coleta;
+9. manter PWR, crítico, ENE e boss separados.
 
 **Limites:**
 
@@ -64,6 +66,7 @@ Fonte: `docs/DECISAO_PROCESSO_PREPLAYTEST_SIMULACAO_2026-09.md`.
 - SP-06A técnico concluído: `moonquill` funcional após #300/#301, cenário oficial saturado e efeito demonstrado em breakpoints;
 - SP-06B técnico concluído: `shadowsting` cria/consome carga corretamente e acrescenta dano, mas não alterou vitória/TTK no cenário competitivo medido;
 - SP-06C técnico concluído: `bellwave` cria/consome carga rítmica corretamente; carga não acumula, dano adicional foi consistente e impacto em vitória/TTK foi materialmente nulo nos cenários medidos;
+- SP-04 técnico concluído: `swiftclaw` mostrou impacto pequeno em cenário não saturado; a maior pendência é a semântica de consumo da abertura, com bug Group de Armadilha separado no issue #309;
 - a divergência da iniciativa Group frente à fórmula canônica `SPD + d6` permanece separada da calibração da passiva;
 - playtest padronizado humano adiado até a build estar apresentável.
 
@@ -121,6 +124,22 @@ A fase atual não implementa deck, mão ou tabuleiro. A visão futura permanece 
 A aprovação editorial de um nome não autoriza migração automática para o runtime.
 
 ## Concluído recentemente
+
+### SP-04 técnico de `swiftclaw`
+
+- cenário oficial Miaumon Nv10 × Aquasol Nv10 saturado: `basic` 99,765% → 99,780%; `mixed` 99,975% → 99,975%;
+- sensibilidade Miaumon Nv10 × Luvursomon Nv10 no harness histórico: 68,210% → 69,060%, +0,850 p.p.;
+- modelo `first_action`: +0,655 p.p., ativação 93,62%, com 6,38% de erros na primeira ação;
+- básico que erra preserva a abertura, skills podem consumi-la antes do desfecho e harness histórico preserva até primeiro acerto;
+- Armadilha I no Wild consome a abertura sem aproveitar +ATK;
+- Armadilha I no Group causou 1 de dano e não aplicou SPD -2; bug rastreado no issue #309;
+- referência histórica PWR 19 da Flecha Poderosa I diverge de `data/skills.json` PWR 15;
+- decisão de consumo da abertura registrada como pendente em `DEC-SP04-OPENING-01`;
+- PR #308 usado apenas como bancada experimental e fechado sem merge;
+- nenhum valor foi alterado.
+
+Fonte: `docs/reports/SP04_TECHNICAL_SWIFTCLAW_2026-10.md`.
+
 
 ### SP-06C técnico de `bellwave`
 
