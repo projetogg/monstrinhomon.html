@@ -18,7 +18,7 @@
 - SP-06A técnico de `moonquill` concluído com caveat após correções de SPD dos PRs #300 e #301;
 - SP-06B técnico de `shadowsting` concluído com caveat; cadeia de carga funcional e sem justificativa para alteração numérica;
 - SP-06C técnico de `bellwave` concluído com caveat; cadência funcional, protocolo alinhado e sem justificativa para alteração numérica;
-- SP-04 técnico de `swiftclaw` concluído com caveats; impacto pequeno, sem ajuste numérico, semântica de abertura pendente e bug Group #309 isolado;
+- SP-04 técnico de `swiftclaw` concluído com caveats; decisão B (primeiro ataque acertado) aprovada e implementação/paridade pendente; bug Group #309 isolado;
 - `shieldhorn` no SP-01 preservou HP, mas não alterou vitória nem TTK;
 - `wildpace` no cenário oficial ativou naturalmente em ~30% (`basic`) e ~10% (`mixed`), com pequeno impacto em vitória;
 - `damageReduction: 1` permanece congelado;
@@ -29,7 +29,7 @@
 1. executar SP-05 `emberfang`, preservando a janela estrita de HP >70%;
 2. consolidar a bateria técnica das oito passivas após SP-05;
 3. corrigir o bug Group #309 antes de usar debuffs contra inimigo em coleta humana;
-4. obter decisão do autor para `DEC-SP04-OPENING-01` antes do playtest humano de `swiftclaw`;
+4. implementar `DEC-SP04-OPENING-01` (opção B: primeiro básico ou skill de dano acertado) e testar paridade Wild/Group/harness em PR técnico próprio antes do playtest humano;
 5. ampliar cenários somente quando a métrica atual estiver saturada;
 6. corrigir configurações de progressão antes do playtest humano;
 7. distinguir cenário de demonstração de cenário de sensibilidade;
