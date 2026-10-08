@@ -87,14 +87,14 @@ Uma varredura exploratória de adversários Comuns naturalmente válidos no Nv10
 | HP final médio (delta pareado) | — | — | +0,81155 |
 | Ativação em combates | — | 93,25% | — |
 
-A escolha após varredura constitui sensibilidade exploratória, não validação externa pré-registrada. A classe do Ferrozimon traz características diferentes de Furtilhon; não comparar seus win rates como se só a passiva tivesse mudado.
+A escolha após varredura constitui sensibilidade exploratória, não validação externa pré-registrada. Não foram estimados intervalos de confiança nem repetidas seeds independentes; diferenças pequenas (principalmente +0,030 p.p. no oficial) não devem ser tratadas como significância estatística estabelecida. A classe do Ferrozimon traz características diferentes de Furtilhon; não comparar seus win rates como se só a passiva tivesse mudado.
 
 ## Validação automatizada
 
 - PR de bancada: [#313](https://github.com/projetogg/monstrinhomon.html/pull/313), draft, sem alterações runtime/canônicas.
 - Commit da bancada: `43bac58a1b93f94353b3b0229e4c25cb45bf2d1d`.
 - GitHub Actions [#37850820186](https://github.com/projetogg/monstrinhomon.html/actions/runs/37850820186): **176 arquivos / 5.781 testes unitários aprovados**, incluindo SP-05; **7 testes Wild Loop (Vitest) aprovados**; validações de dados/assets aprovadas.
-- Playwright E2E: consultar status do job de E2E dessa mesma execução antes de encerrar a validação CI total.
+- Playwright E2E: **aprovado**, job `wild-loop-e2e` na execução [#37850820186](https://github.com/projetogg/monstrinhomon.html/actions/runs/37850820186).
 
 Os logs contém saídas rotuladas `SP05_CONTRACT`, `SP05_OFFICIAL_BASIC`, `SP05_OFFICIAL_MIXED_UNLIMITED_ENE`, `SP05_ENERGY_*`, `SP05_ENEMY_FIRST_*`, `SP05_CANDIDATE_SCAN` e `SP05_SENSITIVITY_MIXED_UNLIMITED_ENE`.
 
