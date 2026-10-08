@@ -18,7 +18,7 @@ Este arquivo é um índice. Regras detalhadas permanecem no documento canônico 
 
 | ID | Data | Estado | Domínio | Resumo | Fonte | Implementação |
 |---|---|---|---|---|---|---|
-| `DEC-PLAYTEST-PRE-01` | 2026-09-24 | APPROVED | processo de validação | adiar playtest humano enquanto a build não estiver apresentável e usar simulações técnicas dirigidas como etapa pré-playtest | `docs/DECISAO_PROCESSO_PREPLAYTEST_SIMULACAO_2026-09.md` | SP-01, SP-02, SP-03, SP-04, SP-06A, SP-06B e SP-06C técnicos executados; coleta humana permanece futura |
+| `DEC-PLAYTEST-PRE-01` | 2026-09-24 | APPROVED | processo de validação | adiar playtest humano enquanto a build não estiver apresentável e usar simulações técnicas dirigidas como etapa pré-playtest | `docs/DECISAO_PROCESSO_PREPLAYTEST_SIMULACAO_2026-09.md` | SP-01, SP-02, SP-03, SP-04, SP-05, SP-06A, SP-06B e SP-06C técnicos executados; coleta humana permanece futura |
 | `DEC-SP04-OPENING-01` | 2026-10-08 | APPROVED | `swiftclaw` | opção B: primeiro ataque básico ou skill de dano que acerta recebe +1 ATK; erros e controle não consomem | `docs/DEC_SP04_SWIFTCLAW_FIRST_HIT_2026-10.md` | IMPLEMENTAÇÃO PENDENTE: alinhar Wild, Group e harness em PR próprio; bug Group #309 separado |
 | `DEC-COMBAT-B` | 2026-05-29 | PARTIAL | passivas de classe | manter passivas fracas, explícitas e fora das cartas por enquanto | `docs/DECISAO_B_PASSIVAS_CLASSE_2026-05.md` | conceito ativo; valores ainda não recalibrados |
 | `DEC-COMBAT-A` | — | PENDING | PWR e catálogo | escolher estratégia de calibração | Patch v2.2, Decisão A | aguarda evidência de playtest e decisão humana |
@@ -53,7 +53,8 @@ Relatórios técnicos concluídos:
 - `docs/reports/SP06A_TECHNICAL_MOONQUILL_2026-10.md`;
 - `docs/reports/SP06B_TECHNICAL_SHADOWSTING_2026-10.md`;
 - `docs/reports/SP06C_TECHNICAL_BELLWAVE_2026-10.md`;
-- `docs/reports/SP04_TECHNICAL_SWIFTCLAW_2026-10.md`.
+- `docs/reports/SP04_TECHNICAL_SWIFTCLAW_2026-10.md`;
+- `docs/reports/SP05_TECHNICAL_EMBERFANG_2026-10.md`.
 
 ## Estado das passivas de espécie
 
