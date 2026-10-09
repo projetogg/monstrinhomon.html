@@ -1583,6 +1583,9 @@ export function executePlayerSkillGroup(skillOrId, enemyIndex, deps) {
                     power,
                     duration,
                     source: skillName,
+                    // O debuff começa após a ação do caster. Não expirar no
+                    // início da primeira ação do alvo (updateBuffs ocorre antes).
+                    deferFirstTick: true,
                 });
                 if (stat === 'spd') enc._turnOrderNeedsRecalc = true;
                 helpers.log(enc,
