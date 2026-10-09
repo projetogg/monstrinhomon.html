@@ -1,8 +1,8 @@
 # SP-05 técnico — `emberfang` (Fúria Crescente)
 
-**Status:** PROPOSAL — relatório para revisão; não é mudança de regra.  
+**Status:** ACTIVE — relatório técnico controlado e datado; não cria nem modifica regras.  
 **Domain:** playtest técnico / combate v2.2 / passivas de espécie.  
-**Authority:** GitHub — evidência técnica, condicionada a revisão e merge documental.  
+**Authority:** GitHub — evidência técnica vinculada à baseline; não é decisão normativa.  
 **VerifiedAgainst:** `main` `cde906a27c33989efc1c6b606cde6740c79a1708`; bancada `43bac58a1b93f94353b3b0229e4c25cb45bf2d1d` (PR #313), CI [#37850820186](https://github.com/projetogg/monstrinhomon.html/actions/runs/37850820186).  
 **Supersedes:** nenhum.  
 **Evidência:** `TECHNICAL_CONTROLLED`, **não** playtest humano.
