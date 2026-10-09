@@ -193,8 +193,10 @@ function applyFloracuraItem({ player, passiveEnabled, passiveState, counters }) 
   passiveState.floracuraHealUsed = true;
 }
 
-function resolveAttackModifier({ player, action, passiveEnabled, passiveState, counters }) {
-  if (!passiveEnabled) return 0;
+function resolveAttackModifier({ player, action, passiveEnabled, passiveState, counters, confirmedHit }) {
+  // Mesmo contrato de Wild/Group: nunca disparar/consumir uma abertura
+  // por erro ou ação de controle. A métrica de hit já foi calculada no caller.
+  if (!passiveEnabled || !confirmedHit || action.isDebuff) return 0;
   const modifier = resolvePassiveModifier(player, {
     event: 'on_attack',
     hpPct: player.hp / player.hpMax,
@@ -366,7 +368,9 @@ function simulateBattle(scenario, { passiveEnabled, seed, maxTurns }) {
         rng,
         classAdvantages: scenario.classAdvantages,
         counters,
-        resolveAtkBonus: () => resolveAttackModifier({ player, action, passiveEnabled, passiveState, counters }),
+        resolveAtkBonus: () => resolveAttackModifier({
+          player, action, passiveEnabled, passiveState, counters, confirmedHit: true,
+        }),
         spdBonus: activeSpdBuff,
       });
       counters.damageDealt += damage;
