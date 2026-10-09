@@ -13,6 +13,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { normalizeSkill } from '../js/combat/skillResolver.js';
 import { getBuffModifiers } from '../js/combat/groupCore.js';
+import { updateBuffs } from '../js/combat/wildActions.js';
 import {
     executePlayerAttackGroup,
     executePlayerSkillGroup
@@ -473,9 +474,15 @@ describe('Issue #309 — habilidades de controle contra inimigo no Group', () =>
         expect(enemies[1].hp).toBe(100);
         expect(enemies[0].buffs).toEqual([]);
         expect(enemies[1].buffs).toEqual([
-            expect.objectContaining({ type: 'spd', power, duration, source: skill.name }),
+            expect.objectContaining({ type: 'spd', power, duration, source: skill.name, deferFirstTick: true }),
         ]);
         expect(getBuffModifiers(enemies[1]).spd).toBe(power);
+        // updateBuffs no início da ação inimiga não pode descartar debuff
+        // aplicado ao final do turno anterior antes de qualquer efeito.
+        updateBuffs(enemies[1]);
+        expect(getBuffModifiers(enemies[1]).spd).toBe(power);
+        for (let n = 0; n < duration; n++) updateBuffs(enemies[1]);
+        expect(getBuffModifiers(enemies[1]).spd).toBe(0);
         expect(enc._turnOrderNeedsRecalc).toBe(true);
         expect(enc.log.some(message => message.includes('recebe 1 de dano'))).toBe(false);
         expect(enc.log.some(message => message.includes('recebe ' + power + ' SPD'))).toBe(true);
