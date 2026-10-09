@@ -1375,7 +1375,9 @@ function executeNonOffensiveSkillGroup(skill, context) {
 function resolvePlayerSpeciesSkillAttack(skill, context) {
     const { mon, monName, enc, helpers } = context;
     const passiveState = enc.passiveState || (enc.passiveState = {});
-    const offensive = isOffensiveSkill(skill);
+    // ON_ATTACK é um gatilho de dano: alvo inimigo não torna BUFF uma skill DAMAGE.
+    // A semântica de consumo de swiftclaw continua pendente no issue #312.
+    const offensive = String(skill.type || '').toUpperCase() === 'DAMAGE';
     const modifier = fireCombatEvent(mon, ON_ATTACK, {
         hpPct: (Number(mon.hpMax) || 1) > 0 ? (Number(mon.hp) || 0) / (Number(mon.hpMax) || 1) : 0,
         isOffensiveSkill: offensive,
@@ -1398,7 +1400,7 @@ function resolvePlayerSpeciesSkillAttack(skill, context) {
  * bellwave; o ataque básico continua responsável por consumir as cargas.
  */
 function dispatchPlayerSpeciesSkillUsed(skill, context) {
-    const { mon, monName, enc, helpers } = context;
+    const { mon, monName, enc, helpers, debuffApplied = true } = context;
     const passiveState = enc.passiveState || (enc.passiveState = {});
     const skillType = String(
         skill.type ||
@@ -1408,7 +1410,8 @@ function dispatchPlayerSpeciesSkillUsed(skill, context) {
     const isDebuff =
         skillType === 'BUFF' &&
         (target === 'enemy' || target === 'Inimigo') &&
-        (Number(skill.power) || 0) < 0;
+        (Number(skill.power) || 0) < 0 &&
+        debuffApplied;
 
     const modifier = fireCombatEvent(mon, ON_SKILL_USED, {
         hpPct: (Number(mon.hpMax) || 1) > 0 ? (Number(mon.hp) || 0) / (Number(mon.hpMax) || 1) : 0,
@@ -1515,11 +1518,9 @@ export function executePlayerSkillGroup(skillOrId, enemyIndex, deps) {
     const monName = mon.nickname || mon.name || mon.nome || "Monstrinho";
     const skillName = skill.name || 'Habilidade';
 
-    // Detectar ofensividade pelo formato operacional normalizado:
-    //   target 'enemy'/'area' = ofensivo
-    //   type 'DAMAGE' = também ofensivo (segurança para skills não normalizadas)
-    //   target 'Inimigo'/'Área' = compat. legada SKILLS_CATALOG
-    // Detectar ofensividade via skillResolver (fonte única, sem duplicação)
+    // isOffensiveSkill sinaliza que a ação exige ALVO INIMIGO, não que causa dano.
+    // BUFF/controle com target enemy usa a mesma seleção e a mesma rolagem,
+    // mas deve aplicar seu efeito de debuff fora do pipeline DAMAGE.
     const isOffensive = isOffensiveSkill(skill);
 
     if (isOffensive) {
@@ -1557,14 +1558,51 @@ export function executePlayerSkillGroup(skillOrId, enemyIndex, deps) {
         if (!hit) {
             helpers.log(enc, `✨ ${attackerName} (${monName}) usou ${skillName} e ERROU! (rolou ${d20})`);
             ui.showMissFeedback(`grpP_${actor.id}`);
-            dispatchPlayerSpeciesSkillUsed(skill, { mon, monName, enc, helpers });
+            // Falha de controle não equivale a debuff aplicado. Habilidades
+            // válidas continuam contando para a cadência de bellwave.
+            dispatchPlayerSpeciesSkillUsed(skill, { mon, monName, enc, helpers, debuffApplied: false });
             advanceGroupTurn(enc, deps);
             storage.save();
             ui.render();
             return true;
         }
 
-        // Calcular dano com poder da skill
+        // Issue #309: BUFF direcionado ao inimigo é controle, não DAMAGE.
+        // A lógica de alvo/acerto acima é compartilhada; aqui tratamos o
+        // efeito sem aplicar dano mínimo, crítico ou passiva de dano.
+        if (String(skill.type || '').toUpperCase() !== 'DAMAGE') {
+            const stat = String(skill.buffType || skill._raw?.buffType || '').toLowerCase();
+            const power = Number(skill.power) || 0;
+            const validDebuff = String(skill.type || '').toUpperCase() === 'BUFF' &&
+                ['atk', 'def', 'spd'].includes(stat) && power < 0;
+
+            if (validDebuff) {
+                const duration = Math.max(1, Number(skill.duration ?? skill._raw?.duration ?? 1) || 1);
+                applyBuff(enemy, {
+                    type: stat,
+                    power,
+                    duration,
+                    source: skillName,
+                });
+                if (stat === 'spd') enc._turnOrderNeedsRecalc = true;
+                helpers.log(enc,
+                    `✨ ${attackerName} (${monName}) usou ${skillName}! ${enemyName} recebe ${power} ${stat.toUpperCase()} por ${duration} turno(s)!`);
+            } else {
+                // Nunca converter skill de controle não reconhecida em dano.
+                helpers.log(enc,
+                    `⚠️ ${skillName} não possui efeito de controle contra inimigo configurado.`);
+            }
+
+            dispatchPlayerSpeciesSkillUsed(skill, {
+                mon, monName, enc, helpers, debuffApplied: validDebuff,
+            });
+            advanceGroupTurn(enc, deps);
+            storage.save();
+            ui.render();
+            return true;
+        }
+
+        // Skill realmente DAMAGE: preservar integralmente o pipeline de dano.
         const atkMods = core.getBuffModifiers(mon);
         const effectiveAtk = Math.max(1, (Number(mon.atk) || 0) + atkMods.atk);
         const effectiveAtkForSkill = Math.max(
