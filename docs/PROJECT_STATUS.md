@@ -4,9 +4,9 @@
 
 **Branch oficial examinada:** `main`
 
-**Commit-base verificado:** `cde906a27c33989efc1c6b606cde6740c79a1708`
+**Commit-base verificado:** `e830206575299cac2b910698b035c0fdc1832b86`
 
-**Marco técnico:** SP-01, SP-02, SP-03, SP-04, SP-05, SP-06A, SP-06B e SP-06C técnicos concluídos; semântica da abertura de `swiftclaw` aprovada pela opção B, ainda não implementada
+**Marco técnico:** as oito passivas possuem rodadas técnicas concluídas e síntese consolidada com caveats; `swiftclaw` opção B aprovada, ainda não implementada; build humana ainda não liberada
 
 **Escopo:** fotografia datada do estado implementado e das decisões registradas. Visão futura não equivale a runtime.
 
@@ -32,7 +32,8 @@
 - SP-06C técnico de `bellwave` concluído: cadência skill → básico confirmada; carga binária não acumula; cenário oficial saturado e sensibilidade com TRockmon mostrou dano adicional sem impacto material em TTK/vitória.
 - SP-04 técnico de `swiftclaw` concluído com caveats: cenário oficial saturado; sensibilidade natural mostrou impacto pequeno; runtime/harness divergem sobre consumo da abertura; Armadilha I no Group reproduziu bug funcional registrado no issue #309.
 - SP-05 técnico de `emberfang` executado com 20.000 pares `basic` e `mixed`, sensibilidade ENE/iniciativa e confronto natural menos saturado; impacto pequeno, sem base para alteração de `+1 ATK`; modelo controlado não equivale ao runtime integral.
-- Playtest humano das passivas adiado até a build estar apresentável às crianças; simulação dirigida é a etapa operacional imediata.
+- Consolidação das oito rodadas técnicas registrada em `docs/reports/SPECIES_PASSIVE_TECHNICAL_CONSOLIDATION_2026-10.md` sem alteração de valores; correções técnicas e preparação da build são a próxima etapa operacional.
+- Playtest humano das passivas continua adiado até a build estar apresentável às crianças; nenhuma simulação substitui evidência humana.
 - `MON_100` excluído de conteúdo novo, mantendo lookup e saves existentes.
 - Visão híbrida de cartas registrada separadamente do runtime atual.
 - Planos e auditorias datadas preservados em `docs/legacy/` e `docs/archive/`, fora da ordem de leitura atual.
@@ -207,6 +208,7 @@ Fontes:
 | `EG-01` | semântica de skill que erra no Wild | lacuna de evidência isolada |
 | `DIV-ENE-01` | regeneração de ENE | investigação independente pendente |
 | `DIV-INIT-01` | iniciativa Group | runtime ainda não implementa a fórmula canônica `SPD + d6`; tratar separadamente da calibração de `moonquill` |
+| `DIV-SP06A-PROGRESSION-01` | cenário SP-06A | **novo achado da consolidação**: protocolo de `moonquill` também usa Vitalion (`MON_031B`) Nv30, porém evolui no Nv25; revalidar e corrigir cenário antes da coleta humana |
 | `DIV-SP06B-PROGRESSION-01` | cenário SP-06B | protocolo histórico usa Vitalion Nv30, mas `MON_031B` evolui no Nv25; atualizar configuração antes do playtest humano |
 | `GAP-SP06C-KIT-01` | pacote bellwave | simulação isolou a passiva; interação completa entre kit swap de SPD, ENE e iniciativa ainda não foi medida |
 | `DIV-SP04-OPENING-01` | `swiftclaw` | decisão de produto APPROVED (opção B: primeiro ataque que acerta); Wild/Group ainda precisam de paridade com o contrato aprovado; implementação pendente |
@@ -249,23 +251,19 @@ Fontes:
 
 ## Fase atual
 
-A fase permanece **Validação do Núcleo Jogável — Combate v2.2**, com etapa operacional imediata de **validação pré-playtest por simulação dirigida das passivas de espécie**.
+A fase permanece **Validação do Núcleo Jogável — Combate v2.2**, com bateria de simulação dirigida das oito passivas **consolidada tecnicamente** e etapa operacional imediata de **correções e preparação do portão de playtest humano**. Não se trata de aprovação de balanceamento ou liberação da build.
 
 Motivo: o autor determinou que a build ainda não está pronta para apresentação às crianças. Simular manualmente a sessão sem participantes não produziria evidência humana.
 
 Prioridades imediatas:
 
-1. SP-01 técnico de `shieldhorn`: **concluído**, sem sinal para alterar `damageReduction: 1`;
-2. SP-02 técnico de `wildpace`: **concluído**, sem sinal para alterar o `+1 ATK`;
-3. SP-03 técnico de `floracura`: **concluído**, sem sinal para alterar o `+3 HP`;
-4. SP-06A / `moonquill`: **concluído com caveat**; cadeia funcional confirmada, cenário oficial saturado e divergência maior de iniciativa separada;
-5. SP-06B / `shadowsting`: **concluído com caveat**; cadeia funcional confirmada, protocolo histórico tem drift de progressão e não há sinal para alterar `+1 ATK`;
-6. SP-06C / `bellwave`: **concluído com caveat**; cadência funcional, dano adicional consistente e sem sinal para alterar `+1 ATK`;
-7. SP-04 / `swiftclaw`: **concluído com caveats**; decisão B aprovada em `DEC-SP04-OPENING-01`; implementar paridade Wild/Group/harness em PR próprio e manter bug Group #309 separado;
-8. SP-05 / `emberfang`: **concluído com caveats**, janela estrita `>70%` testada; cenário oficial saturado, sensibilidade a ENE/iniciativa documentada, sem justificativa para alterar `+1 ATK`;
-9. consolidar a bateria técnica das oito passivas e listar decisões/bloqueios antes da etapa seguinte;
-10. manter PWR, crítico, ENE, iniciativa e boss em investigações separadas;
-11. separar sempre `TECHNICAL_CONTROLLED` de evidência humana.
+1. **Consolidação das oito passivas: CONCLUÍDA TECNICAMENTE COM CAVEATS** — ver `docs/reports/SPECIES_PASSIVE_TECHNICAL_CONSOLIDATION_2026-10.md`; nenhuma mudança de valor autorizada.
+2. **Issue #309, BUG Group confirmado:** corrigir skill BUFF/debuff contra inimigo em PR independente, com testes de efeito e paridade.
+3. **Issue #312, decisão `DEC-SP04-OPENING-01`:** implementar opção B já aprovada em Wild/Group/harness, em PR independente e após considerar a dependência técnica #309.
+4. **Corrigir configuração SP-06A/SP-06B:** Vitalion `MON_031B` Nv30 não é evolução natural (evolui no Nv25); escolher e validar adversário legítimo antes de sessão.
+5. **Investigações independentes:** iniciativa Group (`DIV-INIT-01`), regeneração de ENE (`DIV-ENE-01`) e lacunas de kits; não fundir com balanceamento de passivas.
+6. **Qualificação da build:** QA visual/operacional e decisão humana de retomada do playtest; sem dados identificáveis e sem pressupor evidência humana.
+7. **PWR, crítico, boss e visão futura das cartas:** conservar em trilhas próprias, sem ampliar este escopo.
 
 O playtest mediado humano permanece como portão futuro e deve ser retomado quando a build estiver apresentável. Percepção, compreensão, frustração, diversão, justiça e estratégia espontânea não podem ser preenchidas por simulação.
 
@@ -278,7 +276,8 @@ Fontes:
 - `docs/reports/SP06B_TECHNICAL_SHADOWSTING_2026-10.md`;
 - `docs/reports/SP06C_TECHNICAL_BELLWAVE_2026-10.md`;
 - `docs/reports/SP04_TECHNICAL_SWIFTCLAW_2026-10.md`;
-- `docs/reports/SP05_TECHNICAL_EMBERFANG_2026-10.md`.
+- `docs/reports/SP05_TECHNICAL_EMBERFANG_2026-10.md`;
+- `docs/reports/SPECIES_PASSIVE_TECHNICAL_CONSOLIDATION_2026-10.md`.
 
 Nenhum valor de passiva, PWR ou ENE é alterado nesta etapa.
 
