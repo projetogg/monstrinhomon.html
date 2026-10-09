@@ -56,6 +56,28 @@ describe('Matriz quantitativa das passivas de espécie v2.2', () => {
     expect(mixed.passive.effects.atkBonusApplications).toBeGreaterThan(0);
   });
 
+  it('swiftclaw no harness aguarda o primeiro hit confirmado e ativa uma única vez por combate', () => {
+    const scenario = buildScenarios({ levels: [10], profiles: ['basic'] })
+      .find(row => row.speciesId === 'swiftclaw');
+    // Mesmas seeds: aumentar a janela deixa mais oportunidades para acertar
+    // após a primeira ação errada. A unidade de aplicação não excede 1/combat.
+    const one = simulateSpeciesPassiveScenarioPair(scenario, {
+      runs: 350, maxTurns: 1, seed: 'swiftclaw-first-hit-312',
+    });
+    const several = simulateSpeciesPassiveScenarioPair(scenario, {
+      runs: 350, maxTurns: 8, seed: 'swiftclaw-first-hit-312',
+    });
+    expect(one.passive.effects.atkBonusApplications).toBeGreaterThan(0);
+    expect(one.passive.effects.atkBonusApplications).toBeLessThan(one.runs);
+    expect(several.passive.effects.atkBonusApplications).toBeGreaterThan(
+      one.passive.effects.atkBonusApplications,
+    );
+    expect(several.passive.effects.atkBonusApplications).toBeLessThanOrEqual(several.runs);
+    expect(several.passive.effects.atkBonusApplications).toBe(
+      several.passive.effects.triggers,
+    );
+  });
+
   it('mede mitigação positiva de shieldhorn', () => {
     const scenario = buildScenarios({ levels: [10], profiles: ['basic'] })
       .find(row => row.speciesId === 'shieldhorn');
