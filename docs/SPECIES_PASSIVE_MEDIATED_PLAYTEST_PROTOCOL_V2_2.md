@@ -115,6 +115,10 @@ Depois da sessão, completar o `PLAYTEST_TEMPLATE_V2_2.md`. A ficha rápida não
 
 ## 5. Matriz mínima de cenários
 
+> **AVISO DE CONFIGURAÇÃO — CONSOLIDAÇÃO 2026-10-09.** Os cenários **SP-06A e SP-06B** abaixo ainda propõem Vitalion `MON_031B` no nível 30, mas `data/monsters.json` define evolução dessa forma no nível 25. Portanto, as duas linhas são **fixtures históricos, não configurações naturais válidas para aplicação literal**. Antes do playtest humano, aprovar/validar novo oponente e reavaliar matchup, dificuldade e gatilho; não forçar evolução/nível em save apenas para reproduzir os números históricos. Ver [consolidação das oito passivas](reports/SPECIES_PASSIVE_TECHNICAL_CONSOLIDATION_2026-10.md).
+>
+> **SP-04 — decisão posterior ao texto histórico:** `DEC-SP04-OPENING-01` aprovou a opção **B** (primeiro ataque básico ou skill de dano **que acerta**; erro/controle não consomem). O runtime ainda precisa da implementação #312, independente do bug Group #309. Não interpretar a expressão “primeira ação ofensiva” abaixo como nova aprovação da opção A, nem conduzir coleta humana de SP-04 como se a decisão já estivesse implementada.
+
 Os oponentes sugeridos `MON_030*`, `MON_031*` e `MON_032*` não possuem mapeamento de espécie no bridge verificado, reduzindo interferência de outra passiva. A ausência de matchup direto deve ser confirmada no pré-playtest; se a configuração publicada não permitir selecionar o encontro, registrar o adversário real e a diferença, sem editar save ou HP durante a coleta natural.
 
 | ID | Foco | Jogador | Nível | Skills/item relevantes | Adversário sugerido | Condição inicial | Evento natural esperado | Não forçar | Métricas centrais | Sessão válida quando |
