@@ -30,8 +30,8 @@
 **Prioridades:**
 
 1. **Consolidação técnica das oito passivas: CONCLUÍDA com caveats**; não recalibrar valores nesta etapa.
-2. Corrigir bug Group de skill BUFF contra inimigo, issue #309, com PR e regressões próprios.
-3. Implementar `DEC-SP04-OPENING-01` opção B, issue #312, em PR separado e com paridade Wild/Group/harness.
+2. Issue #309 corrigido no PR #316: controle contra inimigo no Group executa BUFF como debuff sem dano.
+3. Próximo: implementar a opção B de `DEC-SP04-OPENING-01` no issue #312, em PR separado e com paridade Wild/Group/harness.
 4. Corrigir **ambos** os fixtures SP-06A e SP-06B (Vitalion Nv30 inválido), revalidando a configuração natural e os matchups antes do playtest.
 5. Tratar iniciativa Group, ENE e interação de kits como investigações independentes e preservar caveats de representatividade.
 6. Executar QA da build adequada a crianças; só então levar ao autor proposta de liberação de playtest humano.
@@ -74,7 +74,7 @@ Fonte: `docs/DECISAO_PROCESSO_PREPLAYTEST_SIMULACAO_2026-09.md`.
 
 **Entregas restantes:**
 
-1. corrigir issue #309 e implementar issue #312 em PRs de código distintos;
+1. issue #309 corrigido pelo PR #316; implementar issue #312 em PR técnico independente;
 2. revisar e corrigir os cenários SP-06A e SP-06B para níveis/evoluções naturais, validando gatilhos e comparabilidade;
 3. reconciliar iniciativa Group e investigar ENE/kit conforme risco para a coleta, sem alterar valores no mesmo experimento;
 4. preparar e demonstrar build apresentável e, após decisão humana, retomar playtest mediado com `docs/PLAYTEST_TEMPLATE_V2_2.md`;
