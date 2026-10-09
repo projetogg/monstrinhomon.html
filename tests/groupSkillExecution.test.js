@@ -9,6 +9,11 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { normalizeSkill } from '../js/combat/skillResolver.js';
+import { getBuffModifiers } from '../js/combat/groupCore.js';
+import { updateBuffs } from '../js/combat/wildActions.js';
 import {
     executePlayerAttackGroup,
     executePlayerSkillGroup
@@ -325,6 +330,8 @@ describe('executePlayerSkillGroup - Passivas de espécie', () => {
         power: -1,
         cost: 1,
         accuracy: 1,
+        buffType: 'SPD',
+        duration: 1,
         ...overrides,
     });
 
@@ -422,6 +429,135 @@ describe('executePlayerSkillGroup - Passivas de espécie', () => {
         expect(result.result).toBe(false);
         expect(result.enc.passiveState).toBeUndefined();
         expect(result.mon.buffs).toEqual([]);
+    });
+});
+
+
+// ---------------------------------------------------------------------------
+// Issue #309 — BUFF com alvo inimigo deve aplicar debuff, nunca dano.
+// ---------------------------------------------------------------------------
+
+describe('Issue #309 — habilidades de controle contra inimigo no Group', () => {
+    const catalog = JSON.parse(readFileSync(
+        resolve(import.meta.dirname, '../data/skills.json'), 'utf8',
+    )).skills;
+
+    function makeControlSkill(id = 'ARMADILHA_0', changes = {}) {
+        const raw = catalog.find(entry => entry.id === id);
+        expect(raw, 'skill de catálogo não encontrada').toBeDefined();
+        return normalizeSkill({ ...raw, ...changes });
+    }
+
+    function runControl({ skill = makeControlSkill(), roll = 15, enemyCount = 1, speciesId = null, ene = 10 } = {}) {
+        const mon = makeMon({ class: 'Caçador', ene, canonSpeciesId: speciesId });
+        const player = makePlayer(mon, { class: 'Caçador' });
+        const enemies = Array.from({ length: enemyCount }, (_, i) =>
+            makeEnemy({ id: 'e' + i, name: 'Alvo ' + i, hp: 100, hpMax: 100 }),
+        );
+        const { deps, enc } = makeDeps({ mon, player, enemies, rollD20Val: roll });
+        const result = executePlayerSkillGroup(skill, enemyCount - 1, deps);
+        return { mon, enemies, enc, deps, result };
+    }
+
+    it.each([
+        ['ARMADILHA_0', -2, 1],
+        ['ARMADILHA_1', -2, 1],
+        ['ARMADILHA_2', -3, 2],
+    ])('%s aplica SPD (e duração) do catálogo sem qualquer dano', (id, power, duration) => {
+        const skill = makeControlSkill(id);
+        expect(skill.type).toBe('BUFF');
+        expect(skill.target).toBe('enemy');
+        expect(skill.buffType).toBe('SPD');
+        const { enemies, enc, result } = runControl({ skill, enemyCount: 2 });
+        expect(result).toBe(true);
+        expect(enemies[0].hp).toBe(100);
+        expect(enemies[1].hp).toBe(100);
+        expect(enemies[0].buffs).toEqual([]);
+        expect(enemies[1].buffs).toEqual([
+            expect.objectContaining({ type: 'spd', power, duration, source: skill.name, deferFirstTick: true }),
+        ]);
+        expect(getBuffModifiers(enemies[1]).spd).toBe(power);
+        // updateBuffs no início da ação inimiga não pode descartar debuff
+        // aplicado ao final do turno anterior antes de qualquer efeito.
+        updateBuffs(enemies[1]);
+        expect(getBuffModifiers(enemies[1]).spd).toBe(power);
+        for (let n = 0; n < duration; n++) updateBuffs(enemies[1]);
+        expect(getBuffModifiers(enemies[1]).spd).toBe(0);
+        // O avanço de turno já pode ter recalculado a iniciativa e limpado
+        // a flag; o contrato persistente aqui é SPD efetiva e duração do debuff.
+        expect(enc.log.some(message => message.includes('recebe 1 de dano'))).toBe(false);
+        expect(enc.log.some(message => message.includes('recebe ' + power + ' SPD'))).toBe(true);
+    });
+
+    it('d20=1 falha: não causa dano, não aplica controle e consome a ação', () => {
+        const { mon, enemies, enc, result } = runControl({ roll: 1 });
+        expect(result).toBe(true);
+        expect(mon.ene).toBe(7);
+        expect(enemies[0].hp).toBe(100);
+        expect(enemies[0].buffs).toEqual([]);
+        expect(enc._turnOrderNeedsRecalc).toBeUndefined();
+        expect(enc.log.some(message => message.includes('ERROU'))).toBe(true);
+    });
+
+    it('d20=20 acerta o controle sem causar dano crítico', () => {
+        const { enemies, enc, result } = runControl({ roll: 20 });
+        expect(result).toBe(true);
+        expect(enemies[0].hp).toBe(100);
+        expect(getBuffModifiers(enemies[0]).spd).toBe(-2);
+        expect(enc.log.some(message => message.includes('CRÍTICO!'))).toBe(false);
+    });
+
+    it('moonquill recebe SPD somente quando o debuff é aplicado com sucesso', () => {
+        const hit = runControl({ speciesId: 'moonquill', roll: 15 });
+        const miss = runControl({ speciesId: 'moonquill', roll: 1 });
+        expect(hit.enemies[0].hp).toBe(100);
+        expect(hit.enemies[0].buffs[0]).toMatchObject({ type: 'spd', power: -2 });
+        expect(hit.mon.buffs).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: 'spd', power: 1, duration: 1, source: 'moonquill_passive' }),
+        ]));
+        expect(miss.enemies[0].buffs).toEqual([]);
+        expect(miss.mon.buffs).toEqual([]);
+    });
+
+    it('shadowsting carrega apenas após debuff aplicado', () => {
+        const hit = runControl({ speciesId: 'shadowsting', roll: 15 });
+        const miss = runControl({ speciesId: 'shadowsting', roll: 1 });
+        expect(hit.enc.passiveState.shadowstingDebuffCharged).toBe(true);
+        expect(miss.enc.passiveState.shadowstingDebuffCharged).not.toBe(true);
+        expect(hit.enemies[0].hp).toBe(100);
+    });
+
+    it('bellwave carrega após uso válido, mesmo que skill de controle erre', () => {
+        const miss = runControl({ speciesId: 'bellwave', roll: 1 });
+        expect(miss.enc.passiveState.bellwaveRhythmCharged).toBe(true);
+        expect(miss.enemies[0].buffs).toEqual([]);
+    });
+
+    it('ENE insuficiente não aplica debuff nem carrega passivas', () => {
+        const { enemies, mon, enc, result } = runControl({ ene: 0, speciesId: 'shadowsting' });
+        expect(result).toBe(false);
+        expect(enemies[0].hp).toBe(100);
+        expect(enemies[0].buffs).toEqual([]);
+        expect(mon.ene).toBe(0);
+        expect(enc.passiveState).toBeUndefined();
+    });
+
+    it('skill DAMAGE contra inimigo segue causando dano normalmente', () => {
+        const offensive = normalizeSkill({
+            name: 'Flecha Certeira', type: 'DAMAGE', target: 'enemy', cost: 2, power: 9, accuracy: 1,
+        });
+        const { enemies, result } = runControl({ skill: offensive });
+        expect(result).toBe(true);
+        expect(enemies[0].hp).toBeLessThan(100);
+        expect(enemies[0].buffs).toEqual([]);
+    });
+
+    it('BUFF sem efeito reconhecido não deve ser convertido em dano mínimo', () => {
+        const invalidControl = makeControlSkill('ARMADILHA_0', { buffType: 'INDEFINIDO' });
+        const { enemies, enc } = runControl({ skill: invalidControl });
+        expect(enemies[0].hp).toBe(100);
+        expect(enemies[0].buffs).toEqual([]);
+        expect(enc.log.some(message => message.includes('não possui efeito de controle'))).toBe(true);
     });
 });
 
