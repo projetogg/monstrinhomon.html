@@ -4,7 +4,7 @@
 
 **Branch oficial examinada:** `main`
 
-**Commit-base verificado:** `e830206575299cac2b910698b035c0fdc1832b86`
+**Commit-base verificado:** `7120cddb470a577995cf324f80bf890a85f95595`
 
 **Marco técnico:** as oito passivas possuem rodadas técnicas concluídas e síntese consolidada com caveats; `swiftclaw` opção B aprovada, ainda não implementada; build humana ainda não liberada
 
@@ -32,6 +32,7 @@
 - SP-06C técnico de `bellwave` concluído: cadência skill → básico confirmada; carga binária não acumula; cenário oficial saturado e sensibilidade com TRockmon mostrou dano adicional sem impacto material em TTK/vitória.
 - SP-04 técnico de `swiftclaw` concluído com caveats: cenário oficial saturado; sensibilidade natural mostrou impacto pequeno; runtime/harness divergem sobre consumo da abertura; Armadilha I no Group reproduziu bug funcional registrado no issue #309.
 - SP-05 técnico de `emberfang` executado com 20.000 pares `basic` e `mixed`, sensibilidade ENE/iniciativa e confronto natural menos saturado; impacto pequeno, sem base para alteração de `+1 ATK`; modelo controlado não equivale ao runtime integral.
+- Bug Group #309 corrigido por PR #316: BUFF/debuff contra inimigo executa efeito sem dano, respeita acerto e duração e preserva passivas condicionadas ao sucesso; implementação da decisão de `swiftclaw` #312 continua pendente.
 - Consolidação das oito rodadas técnicas registrada em `docs/reports/SPECIES_PASSIVE_TECHNICAL_CONSOLIDATION_2026-10.md` sem alteração de valores; correções técnicas e preparação da build são a próxima etapa operacional.
 - Playtest humano das passivas continua adiado até a build estar apresentável às crianças; nenhuma simulação substitui evidência humana.
 - `MON_100` excluído de conteúdo novo, mantendo lookup e saves existentes.
@@ -212,7 +213,7 @@ Fontes:
 | `DIV-SP06B-PROGRESSION-01` | cenário SP-06B | protocolo histórico usa Vitalion Nv30, mas `MON_031B` evolui no Nv25; atualizar configuração antes do playtest humano |
 | `GAP-SP06C-KIT-01` | pacote bellwave | simulação isolou a passiva; interação completa entre kit swap de SPD, ENE e iniciativa ainda não foi medida |
 | `DIV-SP04-OPENING-01` | `swiftclaw` | decisão de produto APPROVED (opção B: primeiro ataque que acerta); Wild/Group ainda precisam de paridade com o contrato aprovado; implementação pendente |
-| `BUG-GROUP-DEBUFF-01` | skills BUFF contra inimigo no Group | Armadilha I entra no pipeline de dano e não aplica SPD; correção rastreada no issue #309 |
+| `BUG-GROUP-DEBUFF-01` | skills BUFF contra inimigo no Group | **CORRIGIDO pelo PR #316:** efeito de debuff aplicado ao alvo sem dano mínimo; acerto, falha, duração e passivas cobertos por regressões. Histórico do defeito: issue #309. |
 | `DIV-SP04-PWR-REF-01` | referência de PWR de Caçador | comentários/fixtures históricos usam Flecha Poderosa I PWR 19; `data/skills.json` atual usa PWR 15; tratar em `DEC-COMBAT-A` |
 | `DIV-PASSIVE-01` | valores das passivas de classe | não recalibrar sem medição |
 | `DIV-KITSWAP-PWR-01` | calibração do Golpe Pesado de `shieldhorn` | referências de PWR em comentários/testes não correspondem a `data/skills.json`; depende de `DEC-COMBAT-A` |
@@ -258,8 +259,8 @@ Motivo: o autor determinou que a build ainda não está pronta para apresentaç�
 Prioridades imediatas:
 
 1. **Consolidação das oito passivas: CONCLUÍDA TECNICAMENTE COM CAVEATS** — ver `docs/reports/SPECIES_PASSIVE_TECHNICAL_CONSOLIDATION_2026-10.md`; nenhuma mudança de valor autorizada.
-2. **Issue #309, BUG Group confirmado:** corrigir skill BUFF/debuff contra inimigo em PR independente, com testes de efeito e paridade.
-3. **Issue #312, decisão `DEC-SP04-OPENING-01`:** implementar opção B já aprovada em Wild/Group/harness, em PR independente e após considerar a dependência técnica #309.
+2. **Issue #309, BUG Group:** **corrigido no PR #316** em escopo próprio; regressões de controle e paridade sem alteração de valores.
+3. **Issue #312, decisão `DEC-SP04-OPENING-01`:** **próxima correção técnica**, implementar opção B aprovada em Wild/Group/harness por PR separado; não foi implementada pelo PR #316.
 4. **Corrigir configuração SP-06A/SP-06B:** Vitalion `MON_031B` Nv30 não é evolução natural (evolui no Nv25); escolher e validar adversário legítimo antes de sessão.
 5. **Investigações independentes:** iniciativa Group (`DIV-INIT-01`), regeneração de ENE (`DIV-ENE-01`) e lacunas de kits; não fundir com balanceamento de passivas.
 6. **Qualificação da build:** QA visual/operacional e decisão humana de retomada do playtest; sem dados identificáveis e sem pressupor evidência humana.
