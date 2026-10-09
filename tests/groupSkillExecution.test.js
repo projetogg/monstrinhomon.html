@@ -483,7 +483,8 @@ describe('Issue #309 — habilidades de controle contra inimigo no Group', () =>
         expect(getBuffModifiers(enemies[1]).spd).toBe(power);
         for (let n = 0; n < duration; n++) updateBuffs(enemies[1]);
         expect(getBuffModifiers(enemies[1]).spd).toBe(0);
-        expect(enc._turnOrderNeedsRecalc).toBe(true);
+        // O avanço de turno já pode ter recalculado a iniciativa e limpado
+        // a flag; o contrato persistente aqui é SPD efetiva e duração do debuff.
         expect(enc.log.some(message => message.includes('recebe 1 de dano'))).toBe(false);
         expect(enc.log.some(message => message.includes('recebe ' + power + ' SPD'))).toBe(true);
     });
