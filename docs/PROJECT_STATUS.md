@@ -4,7 +4,7 @@
 
 **Branch oficial examinada:** `main`
 
-**Commit-base verificado:** `6a63d5d9c3cbc0ec82f3dc89cef91ee524c34d8f`
+**Commit-base verificado:** `56156741bc3536732cd40f90adb336cbf4471db3`
 
 **Marco técnico:** as oito passivas possuem rodadas técnicas concluídas e síntese consolidada com caveats; `swiftclaw` opção B implementada no PR #317, com ressalva do adapter Wild; build humana ainda não liberada
 
@@ -33,7 +33,7 @@
 - SP-04 técnico de `swiftclaw` concluído com caveats: cenário oficial saturado; sensibilidade natural mostrou impacto pequeno; runtime/harness divergem sobre consumo da abertura; Armadilha I no Group reproduziu bug funcional registrado no issue #309.
 - SP-05 técnico de `emberfang` executado com 20.000 pares `basic` e `mixed`, sensibilidade ENE/iniciativa e confronto natural menos saturado; impacto pequeno, sem base para alteração de `+1 ATK`; modelo controlado não equivale ao runtime integral.
 - Bug Group #309 corrigido pelo PR #316; decisão de primeiro hit de `swiftclaw` #312 implementada em PR #317, com Wild confirmando skills DAMAGE por redução real de HP e Group pela rolagem de hit.
-- Consolidação das oito rodadas técnicas registrada em `docs/reports/SPECIES_PASSIVE_TECHNICAL_CONSOLIDATION_2026-10.md` sem alteração de valores; correções técnicas e preparação da build são a próxima etapa operacional.
+- Consolidação das oito rodadas técnicas registrada em `docs/reports/SPECIES_PASSIVE_TECHNICAL_CONSOLIDATION_2026-10.md` sem alteração de valores; reparação documental de fixtures SP-06A/B e scan exploratório no PR #318. O playtest permanece bloqueado até QA e autorização da configuração.
 - Playtest humano das passivas continua adiado até a build estar apresentável às crianças; nenhuma simulação substitui evidência humana.
 - `MON_100` excluído de conteúdo novo, mantendo lookup e saves existentes.
 - Visão híbrida de cartas registrada separadamente do runtime atual.
@@ -209,8 +209,8 @@ Fontes:
 | `EG-01` | semântica de skill que erra no Wild | lacuna de evidência isolada |
 | `DIV-ENE-01` | regeneração de ENE | investigação independente pendente |
 | `DIV-INIT-01` | iniciativa Group | runtime ainda não implementa a fórmula canônica `SPD + d6`; tratar separadamente da calibração de `moonquill` |
-| `DIV-SP06A-PROGRESSION-01` | cenário SP-06A | **novo achado da consolidação**: protocolo de `moonquill` também usa Vitalion (`MON_031B`) Nv30, porém evolui no Nv25; revalidar e corrigir cenário antes da coleta humana |
-| `DIV-SP06B-PROGRESSION-01` | cenário SP-06B | protocolo histórico usa Vitalion Nv30, mas `MON_031B` evolui no Nv25; atualizar configuração antes do playtest humano |
+| `DIV-SP06A-PROGRESSION-01` | cenário SP-06A | **Corrigido no protocolo como candidato NÃO HOMOLOGADO**: Aquasolion Nv30 no bloco observacional; Vitalegion Nv30 só como candidato à bancada técnica de iniciativa devido à dificuldade. Validar em build e aprovar antes de coleta humana. Relatório `SP06AB_NATURAL_FIXTURE_REPAIR_2026-10.md`. |
+| `DIV-SP06B-PROGRESSION-01` | cenário SP-06B | **Corrigido no protocolo como candidato NÃO HOMOLOGADO**: Auravelo Nv30 (ou Aquasolion mais simples); Auravelo tem `floracura` mapeada, diferente de Vitalion. Validar IA, itens, dificuldade e obter decisão humana antes de coleta. |
 | `GAP-SP06C-KIT-01` | pacote bellwave | simulação isolou a passiva; interação completa entre kit swap de SPD, ENE e iniciativa ainda não foi medida |
 | `DIV-SP04-OPENING-01` | `swiftclaw` | **RESOLVIDO pelo PR #317:** opção B aprovada implementada nos paths comparáveis Wild/Group/harness; Wild skill confirma hit por dano real ao HP, sem nova rolagem de precisão. |
 | `BUG-GROUP-DEBUFF-01` | skills BUFF contra inimigo no Group | **CORRIGIDO pelo PR #316:** efeito de debuff aplicado ao alvo sem dano mínimo; acerto, falha, duração e passivas cobertos por regressões. Histórico do defeito: issue #309. |
@@ -261,7 +261,7 @@ Prioridades imediatas:
 1. **Consolidação das oito passivas: CONCLUÍDA TECNICAMENTE COM CAVEATS** — ver `docs/reports/SPECIES_PASSIVE_TECHNICAL_CONSOLIDATION_2026-10.md`; nenhuma mudança de valor autorizada.
 2. **Issue #309, BUG Group:** **corrigido no PR #316** em escopo próprio; regressões de controle e paridade sem alteração de valores.
 3. **Issue #312, decisão `DEC-SP04-OPENING-01`: IMPLEMENTADA no PR #317**, após correção independente de Group #309. Sem alteração de valores de passivas.
-4. **Corrigir configuração SP-06A/SP-06B:** Vitalion `MON_031B` Nv30 não é evolução natural (evolui no Nv25); escolher e validar adversário legítimo antes de sessão.
+4. **SP-06A/SP-06B: drift histórico corrigido em proposta de protocolo, NÃO HOMOLOGADO:** Aquasolion Nv30 (SP-06A observação) e Auravelo Nv30 (SP-06B desafio) são candidatos de evolução válida. **Próximo:** QA de oponente realmente selecionável, dificuldade, possível `floracura` da IA e aprovação do autor antes de sessão; ver `docs/reports/SP06AB_NATURAL_FIXTURE_REPAIR_2026-10.md`.
 5. **Investigações independentes:** iniciativa Group (`DIV-INIT-01`), regeneração de ENE (`DIV-ENE-01`) e lacunas de kits; não fundir com balanceamento de passivas.
 6. **Qualificação da build:** QA visual/operacional e decisão humana de retomada do playtest; sem dados identificáveis e sem pressupor evidência humana.
 7. **PWR, crítico, boss e visão futura das cartas:** conservar em trilhas próprias, sem ampliar este escopo.
