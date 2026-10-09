@@ -32,7 +32,7 @@
 1. **Consolidação técnica das oito passivas: CONCLUÍDA com caveats**; não recalibrar valores nesta etapa.
 2. Issue #309 corrigido no PR #316: controle contra inimigo no Group executa BUFF como debuff sem dano.
 3. **Issue #312 implementado pelo PR #317:** primeiro acerto de `swiftclaw` em Wild/Group/harness, com caveat do adapter Wild. Nenhum valor foi alterado.
-4. Corrigir **ambos** os fixtures SP-06A e SP-06B (Vitalion Nv30 inválido), revalidando a configuração natural e os matchups antes do playtest.
+4. **SP-06A/B: proposta documental reparada com candidatos naturais, ainda NÃO homologada:** Aquasolion Nv30 para observar `moonquill`, Auravelo Nv30 para desafio de `shadowsting` (alternativa Aquasolion); verificar evolução, matchup, disponibilidade e dificuldade no QA. Ver `docs/reports/SP06AB_NATURAL_FIXTURE_REPAIR_2026-10.md`.
 5. Tratar iniciativa Group, ENE e interação de kits como investigações independentes e preservar caveats de representatividade.
 6. Executar QA da build adequada a crianças; só então levar ao autor proposta de liberação de playtest humano.
 7. Manter PWR, crítico, boss e futuras cartas em trilhas separadas; não iniciar balanceamento numérico sem evidência suficiente.
@@ -75,7 +75,7 @@ Fonte: `docs/DECISAO_PROCESSO_PREPLAYTEST_SIMULACAO_2026-09.md`.
 **Entregas restantes:**
 
 1. **issues #309 e #312 corrigidos separadamente** (PR #316 Group e PR #317 swiftclaw); confirmar QA do build e critérios de coleta;
-2. revisar e corrigir os cenários SP-06A e SP-06B para níveis/evoluções naturais, validando gatilhos e comparabilidade;
+2. **Reparo documental SP-06A/B executado** com comparação técnica do PR experimental #318, fechado sem merge; próxima ação: executar QA real, verificar seleção de oponente e obter aprovação humana da dificuldade/objetivo antes de declarar cenários aptos;
 3. reconciliar iniciativa Group e investigar ENE/kit conforme risco para a coleta, sem alterar valores no mesmo experimento;
 4. preparar e demonstrar build apresentável e, após decisão humana, retomar playtest mediado com `docs/PLAYTEST_TEMPLATE_V2_2.md`;
 5. obter evidência humana antes de decidir sobre percepções e eventuais valores de passivas;
@@ -125,6 +125,17 @@ A fase atual não implementa deck, mão ou tabuleiro. A visão futura permanece 
 A aprovação editorial de um nome não autoriza migração automática para o runtime.
 
 ## Concluído recentemente
+
+### SP-06A / SP-06B — reparação documental de configuração (2026-10-09)
+
+- `MON_031B` (Vitalion) no nível 30 foi retirado das linhas operacionais de SP-06A/B por violar a evolução natural no Nv25;
+- bancada experimental PR #318 (fechada sem merge; CI aprovada) comparou 14 configurações em 1.200 pares cada; não homologou combate infantil;
+- **SP-06A:** candidato observacional Aquasolion Nv30; Vitalegion Nv30 apenas para sensibilidade técnica de iniciativa, não para combate infantil longo;
+- **SP-06B:** candidato Auravelo Nv30, com risco de dificuldade e de interação adversária com `floracura`; alternativa Aquasolion Nv30 para setup mais acessível;
+- **nenhuma substituição é decisão final do autor**; aguardam QA/avaliação de build e escolha de finalidade da sessão;
+- nenhum valor, atributo, skill, fórmula ou combate runtime foi alterado.
+
+Fonte: `docs/reports/SP06AB_NATURAL_FIXTURE_REPAIR_2026-10.md`.
 
 ### Swiftclaw — abertura no primeiro hit confirmado (PR #317, 2026-10-09)
 
