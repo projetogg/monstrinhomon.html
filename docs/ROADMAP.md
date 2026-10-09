@@ -18,7 +18,7 @@
 - SP-06A técnico de `moonquill` concluído com caveat após correções de SPD dos PRs #300 e #301;
 - SP-06B técnico de `shadowsting` concluído com caveat; cadeia de carga funcional e sem justificativa para alteração numérica;
 - SP-06C técnico de `bellwave` concluído com caveat; cadência funcional, protocolo alinhado e sem justificativa para alteração numérica;
-- SP-04 técnico de `swiftclaw` concluído com caveats; decisão B (primeiro ataque acertado) aprovada e implementação/paridade pendente; bug Group #309 isolado;
+- SP-04 técnico de `swiftclaw` concluído com caveats; decisão B implementada no PR #317 e bug Group #309 corrigido pelo PR #316, sem alterar valores;
 - SP-05 técnico de `emberfang` concluído com caveats: gate de HP >70% confirmado, cenário oficial saturado, forte sensibilidade a ENE/iniciativa e nenhuma recalibração autorizada;
 - **consolidação das oito passivas executada:** síntese única, caveats, decisões e portão de coleta em `docs/reports/SPECIES_PASSIVE_TECHNICAL_CONSOLIDATION_2026-10.md`;
 - **drift adicional:** o protocolo SP-06A (além de SP-06B) usa Vitalion Nv30 embora `MON_031B` evolua no Nv25; revalidar fixture antes de coleta;
@@ -31,7 +31,7 @@
 
 1. **Consolidação técnica das oito passivas: CONCLUÍDA com caveats**; não recalibrar valores nesta etapa.
 2. Issue #309 corrigido no PR #316: controle contra inimigo no Group executa BUFF como debuff sem dano.
-3. Próximo: implementar a opção B de `DEC-SP04-OPENING-01` no issue #312, em PR separado e com paridade Wild/Group/harness.
+3. **Issue #312 implementado pelo PR #317:** primeiro acerto de `swiftclaw` em Wild/Group/harness, com caveat do adapter Wild. Nenhum valor foi alterado.
 4. Corrigir **ambos** os fixtures SP-06A e SP-06B (Vitalion Nv30 inválido), revalidando a configuração natural e os matchups antes do playtest.
 5. Tratar iniciativa Group, ENE e interação de kits como investigações independentes e preservar caveats de representatividade.
 6. Executar QA da build adequada a crianças; só então levar ao autor proposta de liberação de playtest humano.
@@ -74,7 +74,7 @@ Fonte: `docs/DECISAO_PROCESSO_PREPLAYTEST_SIMULACAO_2026-09.md`.
 
 **Entregas restantes:**
 
-1. issue #309 corrigido pelo PR #316; implementar issue #312 em PR técnico independente;
+1. **issues #309 e #312 corrigidos separadamente** (PR #316 Group e PR #317 swiftclaw); confirmar QA do build e critérios de coleta;
 2. revisar e corrigir os cenários SP-06A e SP-06B para níveis/evoluções naturais, validando gatilhos e comparabilidade;
 3. reconciliar iniciativa Group e investigar ENE/kit conforme risco para a coleta, sem alterar valores no mesmo experimento;
 4. preparar e demonstrar build apresentável e, após decisão humana, retomar playtest mediado com `docs/PLAYTEST_TEMPLATE_V2_2.md`;
@@ -126,6 +126,15 @@ A aprovação editorial de um nome não autoriza migração automática para o r
 
 ## Concluído recentemente
 
+### Swiftclaw — abertura no primeiro hit confirmado (PR #317, 2026-10-09)
+
+- Decisão humana `DEC-SP04-OPENING-01` opção B implementada em Wild, Group e harness;
+- erros, ações inválidas e controle não gastam +1 ATK; o primeiro básico ou skill DAMAGE acertado consome uma única vez;
+- limitação observacional: skill Wild não realiza rolagem de acerto própria; o adapter confirma por redução do HP do alvo; não inventar equivalência total com Group;
+- #309 foi corrigido no PR #316 independente; nenhuma recalibração de PWR, ENE ou passivas;
+- próxima prioridade: revalidar fixtures SP-06A/B e preparar os gates de QA da build para eventual playtest humano.
+
+
 ### Consolidação técnica das oito passivas (2026-10-09)
 
 - SP-01, SP-02, SP-03, SP-04, SP-05 e SP-06A/B/C sintetizados sem alterar regras ou valores;
@@ -145,7 +154,7 @@ Fonte: `docs/reports/SPECIES_PASSIVE_TECHNICAL_CONSOLIDATION_2026-10.md`.
 - Armadilha I no Wild consome a abertura sem aproveitar +ATK;
 - Armadilha I no Group causou 1 de dano e não aplicou SPD -2; bug rastreado no issue #309;
 - referência histórica PWR 19 da Flecha Poderosa I diverge de `data/skills.json` PWR 15;
-- decisão de consumo então pendente no SP-04; **opção B aprovada posteriormente** em `DEC-SP04-OPENING-01` (2026-10-08), implementação ainda pendente;
+- decisão de consumo então pendente no SP-04; **opção B aprovada posteriormente** em `DEC-SP04-OPENING-01` (2026-10-08) e implementada no PR #317;
 - PR #308 usado apenas como bancada experimental e fechado sem merge;
 - nenhum valor foi alterado.
 
