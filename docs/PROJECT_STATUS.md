@@ -4,9 +4,9 @@
 
 **Branch oficial examinada:** `main`
 
-**Commit-base verificado:** `7120cddb470a577995cf324f80bf890a85f95595`
+**Commit-base verificado:** `6a63d5d9c3cbc0ec82f3dc89cef91ee524c34d8f`
 
-**Marco técnico:** as oito passivas possuem rodadas técnicas concluídas e síntese consolidada com caveats; `swiftclaw` opção B aprovada, ainda não implementada; build humana ainda não liberada
+**Marco técnico:** as oito passivas possuem rodadas técnicas concluídas e síntese consolidada com caveats; `swiftclaw` opção B implementada no PR #317, com ressalva do adapter Wild; build humana ainda não liberada
 
 **Escopo:** fotografia datada do estado implementado e das decisões registradas. Visão futura não equivale a runtime.
 
@@ -32,7 +32,7 @@
 - SP-06C técnico de `bellwave` concluído: cadência skill → básico confirmada; carga binária não acumula; cenário oficial saturado e sensibilidade com TRockmon mostrou dano adicional sem impacto material em TTK/vitória.
 - SP-04 técnico de `swiftclaw` concluído com caveats: cenário oficial saturado; sensibilidade natural mostrou impacto pequeno; runtime/harness divergem sobre consumo da abertura; Armadilha I no Group reproduziu bug funcional registrado no issue #309.
 - SP-05 técnico de `emberfang` executado com 20.000 pares `basic` e `mixed`, sensibilidade ENE/iniciativa e confronto natural menos saturado; impacto pequeno, sem base para alteração de `+1 ATK`; modelo controlado não equivale ao runtime integral.
-- Bug Group #309 corrigido por PR #316: BUFF/debuff contra inimigo executa efeito sem dano, respeita acerto e duração e preserva passivas condicionadas ao sucesso; implementação da decisão de `swiftclaw` #312 continua pendente.
+- Bug Group #309 corrigido pelo PR #316; decisão de primeiro hit de `swiftclaw` #312 implementada em PR #317, com Wild confirmando skills DAMAGE por redução real de HP e Group pela rolagem de hit.
 - Consolidação das oito rodadas técnicas registrada em `docs/reports/SPECIES_PASSIVE_TECHNICAL_CONSOLIDATION_2026-10.md` sem alteração de valores; correções técnicas e preparação da build são a próxima etapa operacional.
 - Playtest humano das passivas continua adiado até a build estar apresentável às crianças; nenhuma simulação substitui evidência humana.
 - `MON_100` excluído de conteúdo novo, mantendo lookup e saves existentes.
@@ -171,14 +171,14 @@ SP-06C técnico:
 - o harness isola a passiva e não mede integralmente kit swap de SPD + iniciativa;
 - nenhuma alteração do `+1 ATK` é justificada pela evidência atual.
 
-SP-04 técnico:
+SP-04 técnico (evidência histórica anterior aos PRs #316 e #317):
 - cenário oficial Miaumon Nv10 × Aquasol Nv10 ficou saturado: `basic` 99,765% → 99,780% e `mixed` 99,975% → 99,975%;
 - sensibilidade Miaumon Nv10 × Luvursomon Nv10, harness histórico: 68,210% → 69,060%, delta +0,850 p.p.; TTK médio -0,02715; +0,54625 de dano total médio;
 - modelo `first_action` no mesmo matchup: delta +0,655 p.p., ativação 93,62% e 6,38% de erro na primeira ação;
 - ataque básico que erra preserva a abertura, enquanto skills podem consumi-la antes do desfecho; harness histórico preserva até o primeiro acerto;
-- Armadilha I consome a abertura no Wild sem aproveitar o ATK e, no Group, foi reproduzido um bug em que causa 1 de dano sem aplicar SPD -2; issue #309 registra o plano de correção;
+- Armadilha I consome a abertura no Wild sem aproveitar o ATK e, no Group, foi reproduzido um bug em que causa 1 de dano sem aplicar SPD -2; issue #309 foi corrigido no PR #316 e `swiftclaw` no PR #317;
 - referências históricas de PWR da Flecha Poderosa I usam 19, enquanto `data/skills.json` atual usa 15;
-- nenhuma alteração do `+1 ATK` é justificada pela evidência atual; a semântica de consumo exige decisão humana.
+- nenhuma alteração do `+1 ATK` é justificada pela evidência atual; a semântica histórica foi resolvida pela decisão B e implementada no PR #317; dados históricos preservados.
 
 Fontes:
 
@@ -212,7 +212,7 @@ Fontes:
 | `DIV-SP06A-PROGRESSION-01` | cenário SP-06A | **novo achado da consolidação**: protocolo de `moonquill` também usa Vitalion (`MON_031B`) Nv30, porém evolui no Nv25; revalidar e corrigir cenário antes da coleta humana |
 | `DIV-SP06B-PROGRESSION-01` | cenário SP-06B | protocolo histórico usa Vitalion Nv30, mas `MON_031B` evolui no Nv25; atualizar configuração antes do playtest humano |
 | `GAP-SP06C-KIT-01` | pacote bellwave | simulação isolou a passiva; interação completa entre kit swap de SPD, ENE e iniciativa ainda não foi medida |
-| `DIV-SP04-OPENING-01` | `swiftclaw` | decisão de produto APPROVED (opção B: primeiro ataque que acerta); Wild/Group ainda precisam de paridade com o contrato aprovado; implementação pendente |
+| `DIV-SP04-OPENING-01` | `swiftclaw` | **RESOLVIDO pelo PR #317:** opção B aprovada implementada nos paths comparáveis Wild/Group/harness; Wild skill confirma hit por dano real ao HP, sem nova rolagem de precisão. |
 | `BUG-GROUP-DEBUFF-01` | skills BUFF contra inimigo no Group | **CORRIGIDO pelo PR #316:** efeito de debuff aplicado ao alvo sem dano mínimo; acerto, falha, duração e passivas cobertos por regressões. Histórico do defeito: issue #309. |
 | `DIV-SP04-PWR-REF-01` | referência de PWR de Caçador | comentários/fixtures históricos usam Flecha Poderosa I PWR 19; `data/skills.json` atual usa PWR 15; tratar em `DEC-COMBAT-A` |
 | `DIV-PASSIVE-01` | valores das passivas de classe | não recalibrar sem medição |
@@ -232,12 +232,12 @@ Fontes:
 ### Implementadas
 
 - `DEC-SPECIES-ATK-01`: `atkBonus` modifica o ATK antes da fórmula.
+- `DEC-SP04-OPENING-01`: primeiro ataque básico ou skill DAMAGE que acerta recebe +1 ATK; opção B implementada no PR #317, sem validação humana de balanceamento.
 - `DEC-SPECIES-DEF-01`: resistência percentual ocorre antes da redução plana de `shieldhorn`.
 - `DEC-CATALOG-MON-100-01`: `MON_100` não participa de conteúdo novo, mas permanece resolvível em saves existentes.
 
 ### Aprovadas e não implementadas integralmente
 
-- `DEC-SP04-OPENING-01`: `swiftclaw` beneficia o primeiro básico ou skill de dano que acerta; erro/controle não consomem; PR técnico de paridade pendente.
 - `DEC-PLAYTEST-PRE-01`: adiar coleta humana enquanto a build não estiver apresentável e usar simulação dirigida como etapa pré-playtest.
 - `DEC-CARDS-VISION-01`: RPG tático simples, deckbuilding leve, posicionamento, cartas como habilidades e garantia contra turno morto.
 
@@ -260,7 +260,7 @@ Prioridades imediatas:
 
 1. **Consolidação das oito passivas: CONCLUÍDA TECNICAMENTE COM CAVEATS** — ver `docs/reports/SPECIES_PASSIVE_TECHNICAL_CONSOLIDATION_2026-10.md`; nenhuma mudança de valor autorizada.
 2. **Issue #309, BUG Group:** **corrigido no PR #316** em escopo próprio; regressões de controle e paridade sem alteração de valores.
-3. **Issue #312, decisão `DEC-SP04-OPENING-01`:** **próxima correção técnica**, implementar opção B aprovada em Wild/Group/harness por PR separado; não foi implementada pelo PR #316.
+3. **Issue #312, decisão `DEC-SP04-OPENING-01`: IMPLEMENTADA no PR #317**, após correção independente de Group #309. Sem alteração de valores de passivas.
 4. **Corrigir configuração SP-06A/SP-06B:** Vitalion `MON_031B` Nv30 não é evolução natural (evolui no Nv25); escolher e validar adversário legítimo antes de sessão.
 5. **Investigações independentes:** iniciativa Group (`DIV-INIT-01`), regeneração de ENE (`DIV-ENE-01`) e lacunas de kits; não fundir com balanceamento de passivas.
 6. **Qualificação da build:** QA visual/operacional e decisão humana de retomada do playtest; sem dados identificáveis e sem pressupor evidência humana.

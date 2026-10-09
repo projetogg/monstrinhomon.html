@@ -387,7 +387,9 @@ export function executePlayerAttackGroup(deps, targetEnemyIndex = null) {
             effectiveAtkForDamage + atkSpeciesPassive.atkBonus,
         );
         helpers.log(enc, `✨ Passiva ${monName}: +${atkSpeciesPassive.atkBonus} ATK`);
-        passiveStateAtk.swiftclawFirstStrikeDone = true;
+        // A abertura pertence exclusivamente a swiftclaw. Outras passivas
+        // não podem marcar seu consumo.
+        if (mon.canonSpeciesId === 'swiftclaw') passiveStateAtk.swiftclawFirstStrikeDone = true;
         passiveStateAtk.shadowstingDebuffCharged = false;
         passiveStateAtk.bellwaveRhythmCharged = false;
     }
@@ -1365,24 +1367,16 @@ function executeNonOffensiveSkillGroup(skill, context) {
 }
 
 /**
- * Despacha ON_ATTACK para uma skill válida do jogador e gerencia o estado
- * compartilhado das passivas de espécie.
- *
- * O modificador retornado é aplicado pelo caller ao ATK efetivo da skill
- * ofensiva. Skills não ofensivas ainda podem consumir a abertura do swiftclaw,
- * preservando a semântica já caracterizada no Wild.
+ * Resolve ON_ATTACK apenas após confirmação de acerto de uma skill de dano.
+ * O evento altera ATK no cálculo de dano, sem modificar o confronto já rolado.
+ * Controle, HEAL e ataques que falham não acionam nem consomem swiftclaw.
  */
 function resolvePlayerSpeciesSkillAttack(skill, context) {
     const { mon, monName, enc, helpers } = context;
     const passiveState = enc.passiveState || (enc.passiveState = {});
-    // ON_ATTACK é um gatilho de dano: alvo inimigo não torna BUFF uma skill DAMAGE.
-    // A semântica de consumo de swiftclaw continua pendente no issue #312.
-    const offensive = skill.type
-        ? String(skill.type).toUpperCase() === 'DAMAGE'
-        : isOffensiveSkill(skill); // compatibilidade com skills ofensivas legadas sem type
     const modifier = fireCombatEvent(mon, ON_ATTACK, {
         hpPct: (Number(mon.hpMax) || 1) > 0 ? (Number(mon.hp) || 0) / (Number(mon.hpMax) || 1) : 0,
-        isOffensiveSkill: offensive,
+        isOffensiveSkill: true,
         isFirstAttackOfCombat: !passiveState.swiftclawFirstStrikeDone,
         hasShadowstingCharge: false,
         hasBellwaveRhythmCharge: false,
@@ -1390,7 +1384,7 @@ function resolvePlayerSpeciesSkillAttack(skill, context) {
 
     if (modifier?.atkBonus) {
         helpers.log(enc, `✨ Passiva ${monName}: +${modifier.atkBonus} ATK (skill)`);
-        passiveState.swiftclawFirstStrikeDone = true;
+        if (mon.canonSpeciesId === 'swiftclaw') passiveState.swiftclawFirstStrikeDone = true;
     }
 
     return modifier;
@@ -1544,12 +1538,6 @@ export function executePlayerSkillGroup(skillOrId, enemyIndex, deps) {
 
         const enemyName = enemy.name || enemy.nome || "Inimigo";
 
-        // Passivas de espécie no uso de skill — ON_ATTACK.
-        // O evento ocorre após a validação do alvo e antes da resolução da ação.
-        const skillSpeciesAttack = resolvePlayerSpeciesSkillAttack(skill, {
-            mon, monName, enc, helpers,
-        });
-
         // Rolagem d20 para acurácia da skill
         const d20 = helpers.rollD20();
         const alwaysMiss = (d20 === 1);
@@ -1611,6 +1599,12 @@ export function executePlayerSkillGroup(skillOrId, enemyIndex, deps) {
             ui.render();
             return true;
         }
+
+        // Skill DAMAGE confirmada: só agora a abertura de swiftclaw é elegível.
+        // Não altera o RC/acerto, apenas ATK efetivo usado no dano.
+        const skillSpeciesAttack = resolvePlayerSpeciesSkillAttack(skill, {
+            mon, monName, enc, helpers,
+        });
 
         // Skill realmente DAMAGE: preservar integralmente o pipeline de dano.
         const atkMods = core.getBuffModifiers(mon);
@@ -1681,10 +1675,6 @@ export function executePlayerSkillGroup(skillOrId, enemyIndex, deps) {
         }
 
     } else {
-        // Mesmo contrato do Wild: uma skill válida também despacha ON_ATTACK,
-        // permitindo que swiftclaw consuma a abertura na primeira ação de skill.
-        resolvePlayerSpeciesSkillAttack(skill, { mon, monName, enc, helpers });
-
         // Habilidades não-ofensivas: despacha para executeNonOffensiveSkillGroup
         executeNonOffensiveSkillGroup(skill, {
             mon, monName, player, attackerName, enc, deps,

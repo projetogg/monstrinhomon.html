@@ -433,6 +433,88 @@ describe('executePlayerSkillGroup - Passivas de espécie', () => {
 });
 
 
+
+describe('DEC-SP04-OPENING-01 — swiftclaw no primeiro acerto Group', () => {
+    function makeFight() {
+        const mon = makeMon({ class: 'Caçador', canonSpeciesId: 'swiftclaw', ene: 20, eneMax: 20 });
+        const player = makePlayer(mon, { class: 'Caçador' });
+        const enemies = [makeEnemy({ hp: 150, hpMax: 150, def: 6 })];
+        const { deps, enc } = makeDeps({ mon, player, enemies, rollD20Val: 15 });
+        // Captura da variável para alternar acerto/erro mantendo o mesmo encontro.
+        let die = 15;
+        deps.helpers.rollD20 = () => die;
+        return { mon, enemies, deps, enc, setDie: value => { die = value; } };
+    }
+    const damageSkill = () => ({
+        name: 'Flecha Teste', type: 'DAMAGE', target: 'enemy', power: 10, cost: 2, accuracy: 1,
+    });
+    const controlSkill = () => normalizeSkill({
+        name: 'Armadilha Teste', type: 'BUFF', target: 'enemy', power: -2,
+        cost: 2, accuracy: 1, buffType: 'SPD', duration: 1,
+    });
+
+    it('skill DAMAGE que erra preserva abertura, próximo acerto consome só uma vez', () => {
+        const f = makeFight();
+        f.setDie(1);
+        expect(executePlayerSkillGroup(damageSkill(), 0, f.deps)).toBe(true);
+        expect(f.enemies[0].hp).toBe(150);
+        expect(f.enc.passiveState?.swiftclawFirstStrikeDone).not.toBe(true);
+        expect(f.enc.log.some(l => l.includes('+1 ATK (skill)'))).toBe(false);
+        f.setDie(15);
+        const hp = f.enemies[0].hp;
+        expect(executePlayerSkillGroup(damageSkill(), 0, f.deps)).toBe(true);
+        expect(f.enemies[0].hp).toBeLessThan(hp);
+        expect(f.enc.passiveState.swiftclawFirstStrikeDone).toBe(true);
+        expect(f.enc.log.filter(l => l.includes('+1 ATK (skill)'))).toHaveLength(1);
+        executePlayerSkillGroup(damageSkill(), 0, f.deps);
+        expect(f.enc.log.filter(l => l.includes('+1 ATK (skill)'))).toHaveLength(1);
+    });
+
+    it('Armadilha I acertada aplica SPD sem consumir abertura; depois DAMAGE acerta', () => {
+        const f = makeFight();
+        executePlayerSkillGroup(controlSkill(), 0, f.deps);
+        expect(f.enemies[0].hp).toBe(150);
+        expect(f.enemies[0].buffs[0]).toMatchObject({ type: 'spd', power: -2 });
+        expect(f.enc.passiveState?.swiftclawFirstStrikeDone).not.toBe(true);
+        expect(f.enc.log.some(l => l.includes('Passiva TestMon: +1 ATK'))).toBe(false);
+        executePlayerSkillGroup(damageSkill(), 0, f.deps);
+        expect(f.enc.passiveState.swiftclawFirstStrikeDone).toBe(true);
+    });
+
+    it('ENE insuficiente e alvo inválido não consomem abertura', () => {
+        const f = makeFight();
+        f.mon.ene = 0;
+        expect(executePlayerSkillGroup(damageSkill(), 0, f.deps)).toBe(false);
+        expect(f.enc.passiveState?.swiftclawFirstStrikeDone).not.toBe(true);
+        f.mon.ene = 10;
+        expect(executePlayerSkillGroup(damageSkill(), 30, f.deps)).toBe(false);
+        expect(f.enc.passiveState?.swiftclawFirstStrikeDone).not.toBe(true);
+    });
+
+    it('primeiro básico que erra preserva; o próximo básico que acerta consome', () => {
+        const f = makeFight();
+        f.setDie(1);
+        executePlayerAttackGroup(f.deps, 0);
+        expect(f.enc.passiveState?.swiftclawFirstStrikeDone).not.toBe(true);
+        f.setDie(20);
+        executePlayerAttackGroup(f.deps, 0);
+        expect(f.enc.passiveState.swiftclawFirstStrikeDone).toBe(true);
+        expect(f.enc.log.filter(l => l.includes('Passiva TestMon: +1 ATK'))).toHaveLength(1);
+        executePlayerAttackGroup(f.deps, 0);
+        expect(f.enc.log.filter(l => l.includes('Passiva TestMon: +1 ATK'))).toHaveLength(1);
+    });
+
+    it('cada encontro possui sua abertura independente', () => {
+        const first = makeFight();
+        executePlayerSkillGroup(damageSkill(), 0, first.deps);
+        const second = makeFight();
+        executePlayerSkillGroup(damageSkill(), 0, second.deps);
+        expect(first.enc.passiveState.swiftclawFirstStrikeDone).toBe(true);
+        expect(second.enc.passiveState.swiftclawFirstStrikeDone).toBe(true);
+        expect(second.enc.log.filter(l => l.includes('+1 ATK (skill)'))).toHaveLength(1);
+    });
+});
+
 // ---------------------------------------------------------------------------
 // Issue #309 — BUFF com alvo inimigo deve aplicar debuff, nunca dano.
 // ---------------------------------------------------------------------------
