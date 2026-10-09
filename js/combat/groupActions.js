@@ -1377,7 +1377,9 @@ function resolvePlayerSpeciesSkillAttack(skill, context) {
     const passiveState = enc.passiveState || (enc.passiveState = {});
     // ON_ATTACK é um gatilho de dano: alvo inimigo não torna BUFF uma skill DAMAGE.
     // A semântica de consumo de swiftclaw continua pendente no issue #312.
-    const offensive = String(skill.type || 'DAMAGE').toUpperCase() === 'DAMAGE';
+    const offensive = skill.type
+        ? String(skill.type).toUpperCase() === 'DAMAGE'
+        : isOffensiveSkill(skill); // compatibilidade com skills ofensivas legadas sem type
     const modifier = fireCombatEvent(mon, ON_ATTACK, {
         hpPct: (Number(mon.hpMax) || 1) > 0 ? (Number(mon.hp) || 0) / (Number(mon.hpMax) || 1) : 0,
         isOffensiveSkill: offensive,
@@ -1519,7 +1521,9 @@ export function executePlayerSkillGroup(skillOrId, enemyIndex, deps) {
     const skillName = skill.name || 'Habilidade';
     // Caminhos legados aceitam skill sem type: a convenção histórica é DAMAGE.
     // BUFF tipada continua obrigatoriamente no pipeline de controle.
-    const skillType = String(skill.type || 'DAMAGE').toUpperCase();
+    const skillType = String(
+        skill.type || (skill.category === 'Cura' ? 'HEAL' : skill.category === 'Suporte' ? 'BUFF' : 'DAMAGE')
+    ).toUpperCase();
 
     // isOffensiveSkill sinaliza que a ação exige ALVO INIMIGO, não que causa dano.
     // BUFF/controle com target enemy usa a mesma seleção e a mesma rolagem,
