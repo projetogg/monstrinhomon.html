@@ -1,10 +1,10 @@
 # Monstrinhomon — Estado do Projeto
 
-**Verificado em:** 2026-10-08
+**Verificado em:** 2026-10-09
 
 **Branch oficial examinada:** `main`
 
-**Commit-base verificado:** `7a44b5ec47b7cc6f47126a33b5ea0ace89d50070`
+**Commit-base verificado:** `cde906a27c33989efc1c6b606cde6740c79a1708`
 
 **Marco técnico:** SP-01, SP-02, SP-03, SP-04, SP-05, SP-06A, SP-06B e SP-06C técnicos concluídos; semântica da abertura de `swiftclaw` aprovada pela opção B, ainda não implementada
 
