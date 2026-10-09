@@ -173,14 +173,15 @@ const PASSIVE_HANDLERS = {
     /**
      * swiftclaw (Caçador, arquétipo striker_veloz)
      *
-     * Passiva canônica: "No primeiro ataque do combate, recebe +1 bônus de ataque."
+     * DEC-SP04-OPENING-01 (opção B): "O primeiro ataque básico ou skill de dano
+     * que acerta recebe +1 ATK; controle/erro não consomem."
      *
-     * Implementação Fase 9:
-     *   No evento 'on_attack', retorna { atkBonus: 1 } apenas se o contexto
-     *   indicar que é o primeiro ataque do combate (isFirstAttackOfCombat === true).
-     *   O caller (wildActions.js) rastreia encounter.passiveState.swiftclawFirstStrikeDone
-     *   e passa isFirstAttackOfCombat no contexto. Após o modifier ser aplicado,
-     *   o caller marca swiftclawFirstStrikeDone = true para impedir novas ativações.
+     * O handler retorna o modificador apenas se o caller confirmar elegibilidade
+     * do primeiro hit via isFirstAttackOfCombat. O caller só deve emitir este
+     * evento após acerto do básico/skill DAMAGE (ou preparar o bônus temporário
+     * antes do adapter Wild e registrar consumo apenas após dano confirmado).
+     * encounter.passiveState.swiftclawFirstStrikeDone pertence ao encounter;
+     * o bônus afeta ATK do dano, não o RC/acerto já resolvido.
      *
      * Simetria: player-side apenas (Fase 9). Wild-side pode ser adicionado em fase futura
      *   caso seja necessário (sem impacto no design atual, pois monstros selvagens
