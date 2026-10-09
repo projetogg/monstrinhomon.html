@@ -91,7 +91,7 @@ A escolha após varredura constitui sensibilidade exploratória, não validaçã
 
 ## Validação automatizada
 
-- PR de bancada: [#313](https://github.com/projetogg/monstrinhomon.html/pull/313), draft, sem alterações runtime/canônicas.
+- PR de bancada: [#313](https://github.com/projetogg/monstrinhomon.html/pull/313), **fechado sem merge** após coleta, sem alterações runtime/canônicas.
 - Commit da bancada: `43bac58a1b93f94353b3b0229e4c25cb45bf2d1d`.
 - GitHub Actions [#37850820186](https://github.com/projetogg/monstrinhomon.html/actions/runs/37850820186): **176 arquivos / 5.781 testes unitários aprovados**, incluindo SP-05; **7 testes Wild Loop (Vitest) aprovados**; validações de dados/assets aprovadas.
 - Playwright E2E: **aprovado**, job `wild-loop-e2e` na execução [#37850820186](https://github.com/projetogg/monstrinhomon.html/actions/runs/37850820186).
