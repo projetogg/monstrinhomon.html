@@ -65,6 +65,8 @@ function makeDebuffSkill(overrides = {}) {
         power: -1,
         cost: 1,
         accuracy: 1,
+        buffType: 'SPD',
+        duration: 1,
         ...overrides,
     };
 }
@@ -318,7 +320,7 @@ describe('Passivas de espécie v2.2 — revalidação final Wild × Group', () =
         const wildSkillUsedIndex = WILD_SOURCE.indexOf('fireCombatEvent(playerMonster, ON_SKILL_USED');
         const groupMissIndex = GROUP_SOURCE.indexOf('if (!hit) {');
         const groupMissDispatchIndex = GROUP_SOURCE.indexOf(
-            'dispatchPlayerSpeciesSkillUsed(skill, { mon, monName, enc, helpers });',
+            'dispatchPlayerSpeciesSkillUsed(skill, { mon, monName, enc, helpers, debuffApplied: false });',
             groupMissIndex,
         );
 
