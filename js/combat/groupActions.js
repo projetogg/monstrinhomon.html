@@ -1377,7 +1377,7 @@ function resolvePlayerSpeciesSkillAttack(skill, context) {
     const passiveState = enc.passiveState || (enc.passiveState = {});
     // ON_ATTACK é um gatilho de dano: alvo inimigo não torna BUFF uma skill DAMAGE.
     // A semântica de consumo de swiftclaw continua pendente no issue #312.
-    const offensive = String(skill.type || '').toUpperCase() === 'DAMAGE';
+    const offensive = String(skill.type || 'DAMAGE').toUpperCase() === 'DAMAGE';
     const modifier = fireCombatEvent(mon, ON_ATTACK, {
         hpPct: (Number(mon.hpMax) || 1) > 0 ? (Number(mon.hp) || 0) / (Number(mon.hpMax) || 1) : 0,
         isOffensiveSkill: offensive,
@@ -1517,6 +1517,9 @@ export function executePlayerSkillGroup(skillOrId, enemyIndex, deps) {
     const attackerName = player.name || player.nome || actor.name || "Jogador";
     const monName = mon.nickname || mon.name || mon.nome || "Monstrinho";
     const skillName = skill.name || 'Habilidade';
+    // Caminhos legados aceitam skill sem type: a convenção histórica é DAMAGE.
+    // BUFF tipada continua obrigatoriamente no pipeline de controle.
+    const skillType = String(skill.type || 'DAMAGE').toUpperCase();
 
     // isOffensiveSkill sinaliza que a ação exige ALVO INIMIGO, não que causa dano.
     // BUFF/controle com target enemy usa a mesma seleção e a mesma rolagem,
@@ -1570,10 +1573,10 @@ export function executePlayerSkillGroup(skillOrId, enemyIndex, deps) {
         // Issue #309: BUFF direcionado ao inimigo é controle, não DAMAGE.
         // A lógica de alvo/acerto acima é compartilhada; aqui tratamos o
         // efeito sem aplicar dano mínimo, crítico ou passiva de dano.
-        if (String(skill.type || '').toUpperCase() !== 'DAMAGE') {
+        if (skillType !== 'DAMAGE') {
             const stat = String(skill.buffType || skill._raw?.buffType || '').toLowerCase();
             const power = Number(skill.power) || 0;
-            const validDebuff = String(skill.type || '').toUpperCase() === 'BUFF' &&
+            const validDebuff = skillType === 'BUFF' &&
                 ['atk', 'def', 'spd'].includes(stat) && power < 0;
 
             if (validDebuff) {
