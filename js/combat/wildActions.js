@@ -959,7 +959,11 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
         if (!success) return { success: false, result: 'invalid' };
 
         const confirmedDamageHit = isOffensiveSkill && (Number(wildMonster.hp) || 0) < enemyHpBeforeSkill;
-        if (speciesSkillAtkMod?.atkBonus && confirmedDamageHit) {
+        // Emberfang/wildpace seguem seu contrato de uso da skill; apenas
+        // swiftclaw depende de hit confirmado para ativar e consumir a abertura.
+        const shouldLogSkillPassive = speciesSkillAtkMod?.atkBonus &&
+            (playerMonster.canonSpeciesId !== 'swiftclaw' || confirmedDamageHit);
+        if (shouldLogSkillPassive) {
             const skillAtkLabel = _passiveLabel(playerMonster.canonSpeciesId, 'on_attack');
             encounter.log.push(
                 skillAtkLabel
