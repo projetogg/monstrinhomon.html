@@ -19,6 +19,7 @@
 - SP-06B técnico de `shadowsting` concluído com caveat; cadeia de carga funcional e sem justificativa para alteração numérica;
 - SP-06C técnico de `bellwave` concluído com caveat; cadência funcional, protocolo alinhado e sem justificativa para alteração numérica;
 - SP-04 técnico de `swiftclaw` concluído com caveats; decisão B (primeiro ataque acertado) aprovada e implementação/paridade pendente; bug Group #309 isolado;
+- SP-05 técnico de `emberfang` concluído com caveats: gate de HP >70% confirmado, cenário oficial saturado, forte sensibilidade a ENE/iniciativa e nenhuma recalibração autorizada;
 - `shieldhorn` no SP-01 preservou HP, mas não alterou vitória nem TTK;
 - `wildpace` no cenário oficial ativou naturalmente em ~30% (`basic`) e ~10% (`mixed`), com pequeno impacto em vitória;
 - `damageReduction: 1` permanece congelado;
@@ -26,15 +27,14 @@
 
 **Prioridades:**
 
-1. executar SP-05 `emberfang`, preservando a janela estrita de HP >70%;
-2. consolidar a bateria técnica das oito passivas após SP-05;
-3. corrigir o bug Group #309 antes de usar debuffs contra inimigo em coleta humana;
-4. implementar `DEC-SP04-OPENING-01` (opção B: primeiro básico ou skill de dano acertado) e testar paridade Wild/Group/harness em PR técnico próprio antes do playtest humano;
-5. ampliar cenários somente quando a métrica atual estiver saturada;
-6. corrigir configurações de progressão antes do playtest humano;
-7. distinguir cenário de demonstração de cenário de sensibilidade;
-8. não alterar valores no mesmo passo da coleta;
-9. manter PWR, crítico, ENE e boss separados.
+1. consolidar a bateria técnica das oito passivas e listar decisões/bloqueios do playtest;
+2. corrigir o bug Group #309 antes de usar debuffs contra inimigo em coleta humana;
+3. implementar `DEC-SP04-OPENING-01` (opção B) e testar paridade Wild/Group/harness em PR técnico próprio antes do playtest humano;
+4. ampliar cenários somente quando a métrica atual estiver saturada;
+5. corrigir configurações de progressão antes do playtest humano;
+6. distinguir cenário de demonstração de cenário de sensibilidade;
+7. não alterar valores no mesmo passo da coleta;
+8. manter PWR, crítico, ENE e boss separados.
 
 **Limites:**
 
@@ -67,12 +67,13 @@ Fonte: `docs/DECISAO_PROCESSO_PREPLAYTEST_SIMULACAO_2026-09.md`.
 - SP-06B técnico concluído: `shadowsting` cria/consome carga corretamente e acrescenta dano, mas não alterou vitória/TTK no cenário competitivo medido;
 - SP-06C técnico concluído: `bellwave` cria/consome carga rítmica corretamente; carga não acumula, dano adicional foi consistente e impacto em vitória/TTK foi materialmente nulo nos cenários medidos;
 - SP-04 técnico concluído: `swiftclaw` mostrou impacto pequeno em cenário não saturado; a maior pendência é a semântica de consumo da abertura, com bug Group de Armadilha separado no issue #309;
+- SP-05 técnico concluído com caveats: `emberfang` responde estritamente a HP >70% e skill de dano; ativação altamente sensível à ENE inicial, regeneração e ordem de ação; cenário oficial saturado, sem evidência para alterar valor;
 - a divergência da iniciativa Group frente à fórmula canônica `SPD + d6` permanece separada da calibração da passiva;
 - playtest padronizado humano adiado até a build estar apresentável.
 
 **Entregas restantes:**
 
-1. concluir a bateria técnica pré-playtest das passivas;
+1. consolidar e revisar a bateria técnica pré-playtest das passivas (SP-01 a SP-06C), com caveats e bloqueios;
 2. retomar playtest mediado com `docs/PLAYTEST_TEMPLATE_V2_2.md` quando a build estiver apresentável;
 3. decisão humana sobre os sinais da matriz;
 4. investigação independente de ENE;
