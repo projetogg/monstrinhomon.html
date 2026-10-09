@@ -5,9 +5,9 @@
 
 ## Agora
 
-### Validar passivas por simulação dirigida pré-playtest
+### Consolidar passivas e preparar o portão de playtest
 
-**Resultado esperado:** reduzir as lacunas mecânicas enquanto a build ainda não está pronta para apresentação às crianças, sem fabricar evidência humana.
+**Resultado esperado:** preservar as oito rodadas técnicas já concluídas, resolver bloqueios funcionais e de configuração, e preparar uma build apresentável para a futura coleta humana, sem fabricar evidência de crianças.
 
 **Estado:**
 
@@ -20,6 +20,8 @@
 - SP-06C técnico de `bellwave` concluído com caveat; cadência funcional, protocolo alinhado e sem justificativa para alteração numérica;
 - SP-04 técnico de `swiftclaw` concluído com caveats; decisão B (primeiro ataque acertado) aprovada e implementação/paridade pendente; bug Group #309 isolado;
 - SP-05 técnico de `emberfang` concluído com caveats: gate de HP >70% confirmado, cenário oficial saturado, forte sensibilidade a ENE/iniciativa e nenhuma recalibração autorizada;
+- **consolidação das oito passivas executada:** síntese única, caveats, decisões e portão de coleta em `docs/reports/SPECIES_PASSIVE_TECHNICAL_CONSOLIDATION_2026-10.md`;
+- **drift adicional:** o protocolo SP-06A (além de SP-06B) usa Vitalion Nv30 embora `MON_031B` evolua no Nv25; revalidar fixture antes de coleta;
 - `shieldhorn` no SP-01 preservou HP, mas não alterou vitória nem TTK;
 - `wildpace` no cenário oficial ativou naturalmente em ~30% (`basic`) e ~10% (`mixed`), com pequeno impacto em vitória;
 - `damageReduction: 1` permanece congelado;
@@ -27,14 +29,13 @@
 
 **Prioridades:**
 
-1. consolidar a bateria técnica das oito passivas e listar decisões/bloqueios do playtest;
-2. corrigir o bug Group #309 antes de usar debuffs contra inimigo em coleta humana;
-3. implementar `DEC-SP04-OPENING-01` (opção B) e testar paridade Wild/Group/harness em PR técnico próprio antes do playtest humano;
-4. ampliar cenários somente quando a métrica atual estiver saturada;
-5. corrigir configurações de progressão antes do playtest humano;
-6. distinguir cenário de demonstração de cenário de sensibilidade;
-7. não alterar valores no mesmo passo da coleta;
-8. manter PWR, crítico, ENE e boss separados.
+1. **Consolidação técnica das oito passivas: CONCLUÍDA com caveats**; não recalibrar valores nesta etapa.
+2. Corrigir bug Group de skill BUFF contra inimigo, issue #309, com PR e regressões próprios.
+3. Implementar `DEC-SP04-OPENING-01` opção B, issue #312, em PR separado e com paridade Wild/Group/harness.
+4. Corrigir **ambos** os fixtures SP-06A e SP-06B (Vitalion Nv30 inválido), revalidando a configuração natural e os matchups antes do playtest.
+5. Tratar iniciativa Group, ENE e interação de kits como investigações independentes e preservar caveats de representatividade.
+6. Executar QA da build adequada a crianças; só então levar ao autor proposta de liberação de playtest humano.
+7. Manter PWR, crítico, boss e futuras cartas em trilhas separadas; não iniciar balanceamento numérico sem evidência suficiente.
 
 **Limites:**
 
@@ -73,13 +74,12 @@ Fonte: `docs/DECISAO_PROCESSO_PREPLAYTEST_SIMULACAO_2026-09.md`.
 
 **Entregas restantes:**
 
-1. consolidar e revisar a bateria técnica pré-playtest das passivas (SP-01 a SP-06C), com caveats e bloqueios;
-2. retomar playtest mediado com `docs/PLAYTEST_TEMPLATE_V2_2.md` quando a build estiver apresentável;
-3. decisão humana sobre os sinais da matriz;
-4. investigação independente de ENE;
-5. investigação independente de boss;
-6. decisão humana sobre PWR e crítico;
-7. reconciliar a calibração do Golpe Pesado com `data/skills.json` dentro de `DEC-COMBAT-A`, sem misturar essa decisão com a coleta de `shieldhorn`.
+1. corrigir issue #309 e implementar issue #312 em PRs de código distintos;
+2. revisar e corrigir os cenários SP-06A e SP-06B para níveis/evoluções naturais, validando gatilhos e comparabilidade;
+3. reconciliar iniciativa Group e investigar ENE/kit conforme risco para a coleta, sem alterar valores no mesmo experimento;
+4. preparar e demonstrar build apresentável e, após decisão humana, retomar playtest mediado com `docs/PLAYTEST_TEMPLATE_V2_2.md`;
+5. obter evidência humana antes de decidir sobre percepções e eventuais valores de passivas;
+6. manter investigação independente de boss, crítico, PWR e calibração de Golpe Pesado sob `DEC-COMBAT-A`.
 
 **Critérios de saída:**
 
@@ -126,6 +126,16 @@ A aprovação editorial de um nome não autoriza migração automática para o r
 
 ## Concluído recentemente
 
+### Consolidação técnica das oito passivas (2026-10-09)
+
+- SP-01, SP-02, SP-03, SP-04, SP-05 e SP-06A/B/C sintetizados sem alterar regras ou valores;
+- decisões e limitações humanas separadas de resultados `TECHNICAL_CONTROLLED`;
+- novo `DIV-SP06A-PROGRESSION-01` registrado ao lado do drift já conhecido `DIV-SP06B-PROGRESSION-01`;
+- bloqueios de Group #309, implementação aprovada #312, ajustes de fixtures e QA de build priorizados;
+- etapa encerrada documentalmente, **não** libera playtest humano.
+
+Fonte: `docs/reports/SPECIES_PASSIVE_TECHNICAL_CONSOLIDATION_2026-10.md`.
+
 ### SP-04 técnico de `swiftclaw`
 
 - cenário oficial Miaumon Nv10 × Aquasol Nv10 saturado: `basic` 99,765% → 99,780%; `mixed` 99,975% → 99,975%;
@@ -135,7 +145,7 @@ A aprovação editorial de um nome não autoriza migração automática para o r
 - Armadilha I no Wild consome a abertura sem aproveitar +ATK;
 - Armadilha I no Group causou 1 de dano e não aplicou SPD -2; bug rastreado no issue #309;
 - referência histórica PWR 19 da Flecha Poderosa I diverge de `data/skills.json` PWR 15;
-- decisão de consumo da abertura registrada como pendente em `DEC-SP04-OPENING-01`;
+- decisão de consumo então pendente no SP-04; **opção B aprovada posteriormente** em `DEC-SP04-OPENING-01` (2026-10-08), implementação ainda pendente;
 - PR #308 usado apenas como bancada experimental e fechado sem merge;
 - nenhum valor foi alterado.
 
