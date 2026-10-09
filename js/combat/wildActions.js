@@ -252,7 +252,7 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
                         ? `✨ Passiva ${playerMonster.name} (${atkLabel}): +${atkPassive.atkBonus} ATK`
                         : `✨ Passiva ${playerMonster.name}: +${atkPassive.atkBonus} ATK`
                 );
-                passiveStateAtk.swiftclawFirstStrikeDone = true; // Fase 9: consome bônus de primeiro ataque
+                if (playerMonster.canonSpeciesId === 'swiftclaw') passiveStateAtk.swiftclawFirstStrikeDone = true;
                 passiveStateAtk.shadowstingDebuffCharged = false; // Fase 10: consome carga de debuff
                 passiveStateAtk.bellwaveRhythmCharged = false; // Fase 11: consome carga de ritmo
             }
@@ -906,38 +906,27 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
         // Atualizar buffs do jogador
         updateBuffs(playerMonster);
 
-        // Passiva canônica — emberfang (+1 ATK em skill ofensiva com HP > 70%) — Fase 4.2
-        // swiftclaw (+1 ATK no primeiro ataque do combate) — Fase 9
-        // Nota: shadowsting via resolvePassiveModifier NÃO dispara em skill ofensiva qualquer
-        //   (isOffensiveSkill: true nunca ativa shadowsting via passive handler).
-        //   A execução canônica do shadowsting (Golpe Furtivo) é tratada em bloco dedicado abaixo.
-        // Nota: bellwave NÃO dispara em skill (isOffensiveSkill: true nunca ativa bellwave) — Fase 11
-        // Aplica como buff temporário antes de useSkill para que getBuffModifiers o inclua.
-        // Removido imediatamente após a skill para não persistir ao turno do inimigo.
+        // ON_ATTACK em skill é elegível somente para dano acertado.
+        // Wild delega o efeito a useSkill (sem rolagem de acerto local):
+        // o bônus provisório entra antes do dano e só é consumido após
+        // confirmação de HP reduzido por uma skill DAMAGE bem-sucedida.
         const isOffensiveSkill = skill.type === 'DAMAGE';
         const passiveStateSkill = encounter.passiveState || (encounter.passiveState = {});
-        const emberfangMod = fireCombatEvent(playerMonster, ON_ATTACK, {
+        const speciesSkillAtkMod = isOffensiveSkill ? fireCombatEvent(playerMonster, ON_ATTACK, {
             hpPct: playerMonster.hpMax > 0 ? playerMonster.hp / playerMonster.hpMax : 0,
-            isOffensiveSkill,
-            isFirstAttackOfCombat: !passiveStateSkill.swiftclawFirstStrikeDone, // Fase 9
-            hasShadowstingCharge: false, // Fase 10: passive handler nunca ativa shadowsting em skill
-            hasBellwaveRhythmCharge: false, // Fase 11: skill nunca ativa bellwave (só ataque básico)
-        });
-        if (emberfangMod?.atkBonus) {
+            isOffensiveSkill: true,
+            isFirstAttackOfCombat: !passiveStateSkill.swiftclawFirstStrikeDone,
+            hasShadowstingCharge: false,
+            hasBellwaveRhythmCharge: false,
+        }) : null;
+        if (speciesSkillAtkMod?.atkBonus) {
             playerMonster.buffs = playerMonster.buffs || [];
             playerMonster.buffs.push({
                 type: 'atk',
-                power: emberfangMod.atkBonus,
+                power: speciesSkillAtkMod.atkBonus,
                 duration: 1,
                 source: 'emberfang_passive',
             });
-            const skillAtkLabel = _passiveLabel(playerMonster.canonSpeciesId, 'on_attack');
-            encounter.log.push(
-                skillAtkLabel
-                    ? `✨ Passiva ${playerMonster.name} (${skillAtkLabel}): +${emberfangMod.atkBonus} ATK (skill ofensiva)`
-                    : `✨ Passiva ${playerMonster.name}: +${emberfangMod.atkBonus} ATK (skill ofensiva)`
-            );
-            passiveStateSkill.swiftclawFirstStrikeDone = true; // Fase 9: consome bônus de primeiro ataque
         }
 
         // Fase 13.1: shadowsting — Golpe Furtivo (kit swap de execução) consome carga de debuff.
@@ -954,7 +943,9 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
             encounter.log.push(`✨ Passiva ${playerMonster.name}: +1 ATK (execução furtiva)`);
         }
 
-        // Executar habilidade
+        // Executar habilidade; só uma alteração real no HP inimigo confirma
+        // que DAMAGE atingiu o alvo no adapter Wild atual.
+        const enemyHpBeforeSkill = Number(wildMonster.hp) || 0;
         const success = dependencies.useSkill(playerMonster, skill, wildMonster, encounter);
 
         // Remover buffs temporários de passiva que não devem persistir ao turno inimigo.
@@ -966,6 +957,17 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
         }
 
         if (!success) return { success: false, result: 'invalid' };
+
+        const confirmedDamageHit = isOffensiveSkill && (Number(wildMonster.hp) || 0) < enemyHpBeforeSkill;
+        if (speciesSkillAtkMod?.atkBonus && confirmedDamageHit) {
+            const skillAtkLabel = _passiveLabel(playerMonster.canonSpeciesId, 'on_attack');
+            encounter.log.push(
+                skillAtkLabel
+                    ? `✨ Passiva ${playerMonster.name} (${skillAtkLabel}): +${speciesSkillAtkMod.atkBonus} ATK (skill ofensiva)`
+                    : `✨ Passiva ${playerMonster.name}: +${speciesSkillAtkMod.atkBonus} ATK (skill ofensiva)`
+            );
+            if (playerMonster.canonSpeciesId === 'swiftclaw') passiveStateSkill.swiftclawFirstStrikeDone = true;
+        }
 
         // Passiva canônica — moonquill (+1 SPD ao aplicar debuff)
         // Debuff = habilidade BUFF direcionada ao inimigo com poder negativo
