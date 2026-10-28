@@ -1,0 +1,4342 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-28T19:31:16.332Z",
+  "baselineSha": "e6d550ff427657110500d99cbc3e570cfedde2f6",
+  "seed": "monstrinhomon-combat-v2.2-baseline-v1",
+  "runsPerScenario": 1000,
+  "sources": {
+    "formula": "js/combat/groupCombatFormula.js",
+    "monsters": "data/monsters.json",
+    "skills": "data/skills.json",
+    "classMatchups": "design/canon/class_matchups.json"
+  },
+  "conclusion": "C. Evidência ainda insuficiente para decidir",
+  "limitations": [
+    "Sem playtest humano.",
+    "Sem passivas de espécie, cura, itens, alvo de IA ou equivalência completa Wild/Group.",
+    "Níveis 5–30 usam o perfil explícito de crescimento do harness e exigem comparação com o runtime.",
+    "Jogador atua primeiro em todos os turnos."
+  ],
+  "results": [
+    {
+      "id": "Guerreiro-Bárbaro-L1-basic",
+      "label": "Guerreiro x Bárbaro — nível 1 — basic",
+      "level": 1,
+      "playerClass": "Guerreiro",
+      "enemyClass": "Bárbaro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.674,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.549,
+          "median": 4,
+          "p10": 3,
+          "p25": 4,
+          "p75": 5,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 8.3,
+        "damage": {
+          "meanPerDamagingAction": 7.5865,
+          "min": 1,
+          "max": 14
+        },
+        "confrontation": {
+          "falha_total": 1352,
+          "contato_neutralizado": 1250,
+          "acerto_reduzido": 2037,
+          "acerto_normal": 2077,
+          "acerto_forte": 1708,
+          "natural1Rate": 0.0527,
+          "natural20Rate": 0.0503
+        },
+        "actions": {
+          "attacks": 8424,
+          "basicUses": 8424,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 7280
+        }
+      }
+    },
+    {
+      "id": "Guerreiro-Bárbaro-L1-mixed",
+      "label": "Guerreiro x Bárbaro — nível 1 — mixed",
+      "level": 1,
+      "playerClass": "Guerreiro",
+      "enemyClass": "Bárbaro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.745,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.308,
+          "median": 4,
+          "p10": 3,
+          "p25": 4,
+          "p75": 5,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 9.468,
+        "damage": {
+          "meanPerDamagingAction": 8.1349,
+          "min": 1,
+          "max": 23
+        },
+        "confrontation": {
+          "falha_total": 1185,
+          "contato_neutralizado": 1207,
+          "acerto_reduzido": 1866,
+          "acerto_normal": 1977,
+          "acerto_forte": 1636,
+          "natural1Rate": 0.0512,
+          "natural20Rate": 0.0471
+        },
+        "actions": {
+          "attacks": 7871,
+          "basicUses": 7067,
+          "skillUses": 804,
+          "skillUseRate": 0.1021,
+          "eneSpent": 3216,
+          "eneRegenerated": 7606
+        }
+      }
+    },
+    {
+      "id": "Bárbaro-Guerreiro-L1-basic",
+      "label": "Bárbaro x Guerreiro — nível 1 — basic",
+      "level": 1,
+      "playerClass": "Bárbaro",
+      "enemyClass": "Guerreiro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.474,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.526,
+          "median": 4,
+          "p10": 3,
+          "p25": 4,
+          "p75": 5,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 5.422,
+        "damage": {
+          "meanPerDamagingAction": 7.5184,
+          "min": 1,
+          "max": 14
+        },
+        "confrontation": {
+          "falha_total": 1381,
+          "contato_neutralizado": 1305,
+          "acerto_reduzido": 2049,
+          "acerto_normal": 2205,
+          "acerto_forte": 1638,
+          "natural1Rate": 0.0513,
+          "natural20Rate": 0.0471
+        },
+        "actions": {
+          "attacks": 8578,
+          "basicUses": 8578,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 7404
+        }
+      }
+    },
+    {
+      "id": "Bárbaro-Guerreiro-L1-mixed",
+      "label": "Bárbaro x Guerreiro — nível 1 — mixed",
+      "level": 1,
+      "playerClass": "Bárbaro",
+      "enemyClass": "Guerreiro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.434,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.339,
+          "median": 4,
+          "p10": 3,
+          "p25": 4,
+          "p75": 5,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 5.133,
+        "damage": {
+          "meanPerDamagingAction": 7.9415,
+          "min": 1,
+          "max": 23
+        },
+        "confrontation": {
+          "falha_total": 1281,
+          "contato_neutralizado": 1244,
+          "acerto_reduzido": 2062,
+          "acerto_normal": 2016,
+          "acerto_forte": 1641,
+          "natural1Rate": 0.0468,
+          "natural20Rate": 0.0499
+        },
+        "actions": {
+          "attacks": 8244,
+          "basicUses": 7577,
+          "skillUses": 667,
+          "skillUseRate": 0.0809,
+          "eneSpent": 2668,
+          "eneRegenerated": 7741
+        }
+      }
+    },
+    {
+      "id": "Mago-Guerreiro-L1-basic",
+      "label": "Mago x Guerreiro — nível 1 — basic",
+      "level": 1,
+      "playerClass": "Mago",
+      "enemyClass": "Guerreiro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.238,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.831,
+          "median": 4,
+          "p10": 3,
+          "p25": 3,
+          "p75": 5,
+          "p90": 5,
+          "oneOrTwoTurnRate": 0.075,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 1.745,
+        "damage": {
+          "meanPerDamagingAction": 7.3093,
+          "min": 1,
+          "max": 16
+        },
+        "confrontation": {
+          "falha_total": 1017,
+          "contato_neutralizado": 1088,
+          "acerto_reduzido": 1713,
+          "acerto_normal": 1986,
+          "acerto_forte": 1620,
+          "natural1Rate": 0.0558,
+          "natural20Rate": 0.0508
+        },
+        "actions": {
+          "attacks": 7424,
+          "basicUses": 7424,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 10326
+        }
+      }
+    },
+    {
+      "id": "Mago-Guerreiro-L1-mixed",
+      "label": "Mago x Guerreiro — nível 1 — mixed",
+      "level": 1,
+      "playerClass": "Mago",
+      "enemyClass": "Guerreiro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.527,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.452,
+          "median": 3,
+          "p10": 2,
+          "p25": 3,
+          "p75": 4,
+          "p90": 4,
+          "oneOrTwoTurnRate": 0.126,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 5.119,
+        "damage": {
+          "meanPerDamagingAction": 8.9325,
+          "min": 1,
+          "max": 25
+        },
+        "confrontation": {
+          "falha_total": 884,
+          "contato_neutralizado": 941,
+          "acerto_reduzido": 1480,
+          "acerto_normal": 1619,
+          "acerto_forte": 1453,
+          "natural1Rate": 0.0521,
+          "natural20Rate": 0.0522
+        },
+        "actions": {
+          "attacks": 6377,
+          "basicUses": 4663,
+          "skillUses": 1714,
+          "skillUseRate": 0.2688,
+          "eneSpent": 6856,
+          "eneRegenerated": 9829
+        }
+      }
+    },
+    {
+      "id": "Guerreiro-Mago-L1-basic",
+      "label": "Guerreiro x Mago — nível 1 — basic",
+      "level": 1,
+      "playerClass": "Guerreiro",
+      "enemyClass": "Mago",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.884,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.907,
+          "median": 4,
+          "p10": 3,
+          "p25": 3,
+          "p75": 5,
+          "p90": 5,
+          "oneOrTwoTurnRate": 0.064,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 12.839,
+        "damage": {
+          "meanPerDamagingAction": 7.3483,
+          "min": 1,
+          "max": 16
+        },
+        "confrontation": {
+          "falha_total": 947,
+          "contato_neutralizado": 1060,
+          "acerto_reduzido": 1625,
+          "acerto_normal": 1833,
+          "acerto_forte": 1465,
+          "natural1Rate": 0.0494,
+          "natural20Rate": 0.0469
+        },
+        "actions": {
+          "attacks": 6930,
+          "basicUses": 6930,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 9246
+        }
+      }
+    },
+    {
+      "id": "Guerreiro-Mago-L1-mixed",
+      "label": "Guerreiro x Mago — nível 1 — mixed",
+      "level": 1,
+      "playerClass": "Guerreiro",
+      "enemyClass": "Mago",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.749,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.482,
+          "median": 3,
+          "p10": 2,
+          "p25": 3,
+          "p75": 4,
+          "p90": 4,
+          "oneOrTwoTurnRate": 0.101,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 10.225,
+        "damage": {
+          "meanPerDamagingAction": 8.8028,
+          "min": 1,
+          "max": 25
+        },
+        "confrontation": {
+          "falha_total": 859,
+          "contato_neutralizado": 971,
+          "acerto_reduzido": 1442,
+          "acerto_normal": 1651,
+          "acerto_forte": 1292,
+          "natural1Rate": 0.0521,
+          "natural20Rate": 0.0489
+        },
+        "actions": {
+          "attacks": 6215,
+          "basicUses": 4629,
+          "skillUses": 1586,
+          "skillUseRate": 0.2552,
+          "eneSpent": 6344,
+          "eneRegenerated": 8948
+        }
+      }
+    },
+    {
+      "id": "Ladino-Caçador-L1-basic",
+      "label": "Ladino x Caçador — nível 1 — basic",
+      "level": 1,
+      "playerClass": "Ladino",
+      "enemyClass": "Caçador",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.818,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 2.367,
+          "median": 2,
+          "p10": 2,
+          "p25": 2,
+          "p75": 3,
+          "p90": 3,
+          "oneOrTwoTurnRate": 0.675,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 10.093,
+        "damage": {
+          "meanPerDamagingAction": 12.3622,
+          "min": 1,
+          "max": 22
+        },
+        "confrontation": {
+          "falha_total": 324,
+          "contato_neutralizado": 453,
+          "acerto_reduzido": 804,
+          "acerto_normal": 1162,
+          "acerto_forte": 1173,
+          "natural1Rate": 0.0503,
+          "natural20Rate": 0.0467
+        },
+        "actions": {
+          "attacks": 3916,
+          "basicUses": 3916,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 7568
+        }
+      }
+    },
+    {
+      "id": "Ladino-Caçador-L1-mixed",
+      "label": "Ladino x Caçador — nível 1 — mixed",
+      "level": 1,
+      "playerClass": "Ladino",
+      "enemyClass": "Caçador",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.847,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 2.124,
+          "median": 2,
+          "p10": 2,
+          "p25": 2,
+          "p75": 2,
+          "p90": 3,
+          "oneOrTwoTurnRate": 0.899,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 11.949,
+        "damage": {
+          "meanPerDamagingAction": 15.4545,
+          "min": 1,
+          "max": 35
+        },
+        "confrontation": {
+          "falha_total": 288,
+          "contato_neutralizado": 400,
+          "acerto_reduzido": 677,
+          "acerto_normal": 941,
+          "acerto_forte": 1095,
+          "natural1Rate": 0.0547,
+          "natural20Rate": 0.0559
+        },
+        "actions": {
+          "attacks": 3401,
+          "basicUses": 2139,
+          "skillUses": 1262,
+          "skillUseRate": 0.3711,
+          "eneSpent": 5048,
+          "eneRegenerated": 6802
+        }
+      }
+    },
+    {
+      "id": "Caçador-Mago-L1-basic",
+      "label": "Caçador x Mago — nível 1 — basic",
+      "level": 1,
+      "playerClass": "Caçador",
+      "enemyClass": "Mago",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.982,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 2.304,
+          "median": 2,
+          "p10": 2,
+          "p25": 2,
+          "p75": 2,
+          "p90": 3,
+          "oneOrTwoTurnRate": 0.751,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 17.807,
+        "damage": {
+          "meanPerDamagingAction": 12.1334,
+          "min": 1,
+          "max": 23
+        },
+        "confrontation": {
+          "falha_total": 364,
+          "contato_neutralizado": 424,
+          "acerto_reduzido": 706,
+          "acerto_normal": 903,
+          "acerto_forte": 1229,
+          "natural1Rate": 0.0552,
+          "natural20Rate": 0.0419
+        },
+        "actions": {
+          "attacks": 3626,
+          "basicUses": 3626,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 6642
+        }
+      }
+    },
+    {
+      "id": "Caçador-Mago-L1-mixed",
+      "label": "Caçador x Mago — nível 1 — mixed",
+      "level": 1,
+      "playerClass": "Caçador",
+      "enemyClass": "Mago",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.945,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 2.158,
+          "median": 2,
+          "p10": 2,
+          "p25": 2,
+          "p75": 2,
+          "p90": 3,
+          "oneOrTwoTurnRate": 0.867,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 17.491,
+        "damage": {
+          "meanPerDamagingAction": 14.8738,
+          "min": 1,
+          "max": 34
+        },
+        "confrontation": {
+          "falha_total": 335,
+          "contato_neutralizado": 370,
+          "acerto_reduzido": 632,
+          "acerto_normal": 938,
+          "acerto_forte": 1096,
+          "natural1Rate": 0.0546,
+          "natural20Rate": 0.0484
+        },
+        "actions": {
+          "attacks": 3371,
+          "basicUses": 2167,
+          "skillUses": 1204,
+          "skillUseRate": 0.3572,
+          "eneSpent": 4816,
+          "eneRegenerated": 6742
+        }
+      }
+    },
+    {
+      "id": "Curandeiro-Bárbaro-L1-basic",
+      "label": "Curandeiro x Bárbaro — nível 1 — basic",
+      "level": 1,
+      "playerClass": "Curandeiro",
+      "enemyClass": "Bárbaro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.029,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 2.861,
+          "median": 3,
+          "p10": 2,
+          "p25": 2,
+          "p75": 3,
+          "p90": 4,
+          "oneOrTwoTurnRate": 0.423,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 0.178,
+        "damage": {
+          "meanPerDamagingAction": 9.6484,
+          "min": 1,
+          "max": 22
+        },
+        "confrontation": {
+          "falha_total": 633,
+          "contato_neutralizado": 775,
+          "acerto_reduzido": 1234,
+          "acerto_normal": 1578,
+          "acerto_forte": 1473,
+          "natural1Rate": 0.0543,
+          "natural20Rate": 0.0485
+        },
+        "actions": {
+          "attacks": 5693,
+          "basicUses": 5693,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 8476
+        }
+      }
+    },
+    {
+      "id": "Curandeiro-Bárbaro-L1-mixed",
+      "label": "Curandeiro x Bárbaro — nível 1 — mixed",
+      "level": 1,
+      "playerClass": "Curandeiro",
+      "enemyClass": "Bárbaro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.025,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 2.812,
+          "median": 3,
+          "p10": 2,
+          "p25": 2,
+          "p75": 3,
+          "p90": 4,
+          "oneOrTwoTurnRate": 0.439,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 0.163,
+        "damage": {
+          "meanPerDamagingAction": 9.8405,
+          "min": 1,
+          "max": 22
+        },
+        "confrontation": {
+          "falha_total": 627,
+          "contato_neutralizado": 728,
+          "acerto_reduzido": 1185,
+          "acerto_normal": 1518,
+          "acerto_forte": 1541,
+          "natural1Rate": 0.0536,
+          "natural20Rate": 0.0559
+        },
+        "actions": {
+          "attacks": 5599,
+          "basicUses": 5599,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 8361
+        }
+      }
+    },
+    {
+      "id": "Bardo-Curandeiro-L1-basic",
+      "label": "Bardo x Curandeiro — nível 1 — basic",
+      "level": 1,
+      "playerClass": "Bardo",
+      "enemyClass": "Curandeiro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.972,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.653,
+          "median": 3,
+          "p10": 2.9,
+          "p25": 3,
+          "p75": 4,
+          "p90": 5,
+          "oneOrTwoTurnRate": 0.1,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 17.85,
+        "damage": {
+          "meanPerDamagingAction": 8.1024,
+          "min": 1,
+          "max": 16
+        },
+        "confrontation": {
+          "falha_total": 1141,
+          "contato_neutralizado": 938,
+          "acerto_reduzido": 1374,
+          "acerto_normal": 1511,
+          "acerto_forte": 1370,
+          "natural1Rate": 0.0494,
+          "natural20Rate": 0.0527
+        },
+        "actions": {
+          "attacks": 6334,
+          "basicUses": 6334,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 11141
+        }
+      }
+    },
+    {
+      "id": "Bardo-Curandeiro-L1-mixed",
+      "label": "Bardo x Curandeiro — nível 1 — mixed",
+      "level": 1,
+      "playerClass": "Bardo",
+      "enemyClass": "Curandeiro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.992,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.476,
+          "median": 3,
+          "p10": 3,
+          "p25": 3,
+          "p75": 4,
+          "p90": 5,
+          "oneOrTwoTurnRate": 0.096,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 18.872,
+        "damage": {
+          "meanPerDamagingAction": 8.9432,
+          "min": 1,
+          "max": 23
+        },
+        "confrontation": {
+          "falha_total": 1098,
+          "contato_neutralizado": 900,
+          "acerto_reduzido": 1249,
+          "acerto_normal": 1436,
+          "acerto_forte": 1277,
+          "natural1Rate": 0.0508,
+          "natural20Rate": 0.0483
+        },
+        "actions": {
+          "attacks": 5960,
+          "basicUses": 4908,
+          "skillUses": 1052,
+          "skillUseRate": 0.1765,
+          "eneSpent": 5260,
+          "eneRegenerated": 11908
+        }
+      }
+    },
+    {
+      "id": "Animalista-Bardo-L1-basic",
+      "label": "Animalista x Bardo — nível 1 — basic",
+      "level": 1,
+      "playerClass": "Animalista",
+      "enemyClass": "Bardo",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.913,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.593,
+          "median": 3,
+          "p10": 2,
+          "p25": 3,
+          "p75": 4,
+          "p90": 5,
+          "oneOrTwoTurnRate": 0.17,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 15.538,
+        "damage": {
+          "meanPerDamagingAction": 8.7081,
+          "min": 1,
+          "max": 18
+        },
+        "confrontation": {
+          "falha_total": 888,
+          "contato_neutralizado": 885,
+          "acerto_reduzido": 1498,
+          "acerto_normal": 1645,
+          "acerto_forte": 1357,
+          "natural1Rate": 0.0481,
+          "natural20Rate": 0.0536
+        },
+        "actions": {
+          "attacks": 6273,
+          "basicUses": 6273,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 8207
+        }
+      }
+    },
+    {
+      "id": "Animalista-Bardo-L1-mixed",
+      "label": "Animalista x Bardo — nível 1 — mixed",
+      "level": 1,
+      "playerClass": "Animalista",
+      "enemyClass": "Bardo",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.894,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.355,
+          "median": 3,
+          "p10": 2,
+          "p25": 3,
+          "p75": 4,
+          "p90": 4,
+          "oneOrTwoTurnRate": 0.198,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 16.168,
+        "damage": {
+          "meanPerDamagingAction": 9.5084,
+          "min": 1,
+          "max": 31
+        },
+        "confrontation": {
+          "falha_total": 804,
+          "contato_neutralizado": 902,
+          "acerto_reduzido": 1321,
+          "acerto_normal": 1477,
+          "acerto_forte": 1312,
+          "natural1Rate": 0.0466,
+          "natural20Rate": 0.0536
+        },
+        "actions": {
+          "attacks": 5816,
+          "basicUses": 4858,
+          "skillUses": 958,
+          "skillUseRate": 0.1647,
+          "eneSpent": 4352,
+          "eneRegenerated": 8277
+        }
+      }
+    },
+    {
+      "id": "Guerreiro-Bárbaro-L5-basic",
+      "label": "Guerreiro x Bárbaro — nível 5 — basic",
+      "level": 5,
+      "playerClass": "Guerreiro",
+      "enemyClass": "Bárbaro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.684,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 5.169,
+          "median": 5,
+          "p10": 4,
+          "p25": 4,
+          "p75": 6,
+          "p90": 6.1,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 9.625,
+        "damage": {
+          "meanPerDamagingAction": 8.9514,
+          "min": 1,
+          "max": 16
+        },
+        "confrontation": {
+          "falha_total": 1164,
+          "contato_neutralizado": 1227,
+          "acerto_reduzido": 2251,
+          "acerto_normal": 2606,
+          "acerto_forte": 2406,
+          "natural1Rate": 0.0531,
+          "natural20Rate": 0.0532
+        },
+        "actions": {
+          "attacks": 9654,
+          "basicUses": 9654,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 9654
+        }
+      }
+    },
+    {
+      "id": "Guerreiro-Bárbaro-L5-mixed",
+      "label": "Guerreiro x Bárbaro — nível 5 — mixed",
+      "level": 5,
+      "playerClass": "Guerreiro",
+      "enemyClass": "Bárbaro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.755,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.857,
+          "median": 5,
+          "p10": 4,
+          "p25": 4,
+          "p75": 5,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 11.997,
+        "damage": {
+          "meanPerDamagingAction": 9.4581,
+          "min": 1,
+          "max": 26
+        },
+        "confrontation": {
+          "falha_total": 1008,
+          "contato_neutralizado": 1292,
+          "acerto_reduzido": 2014,
+          "acerto_normal": 2412,
+          "acerto_forte": 2233,
+          "natural1Rate": 0.0472,
+          "natural20Rate": 0.0529
+        },
+        "actions": {
+          "attacks": 8959,
+          "basicUses": 7851,
+          "skillUses": 1108,
+          "skillUseRate": 0.1237,
+          "eneSpent": 4654,
+          "eneRegenerated": 8959
+        }
+      }
+    },
+    {
+      "id": "Bárbaro-Guerreiro-L5-basic",
+      "label": "Bárbaro x Guerreiro — nível 5 — basic",
+      "level": 5,
+      "playerClass": "Bárbaro",
+      "enemyClass": "Guerreiro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.519,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 5.166,
+          "median": 5,
+          "p10": 4,
+          "p25": 4,
+          "p75": 6,
+          "p90": 7,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 6.934,
+        "damage": {
+          "meanPerDamagingAction": 8.8176,
+          "min": 1,
+          "max": 16
+        },
+        "confrontation": {
+          "falha_total": 1157,
+          "contato_neutralizado": 1360,
+          "acerto_reduzido": 2185,
+          "acerto_normal": 2734,
+          "acerto_forte": 2377,
+          "natural1Rate": 0.0485,
+          "natural20Rate": 0.0502
+        },
+        "actions": {
+          "attacks": 9813,
+          "basicUses": 9813,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 9813
+        }
+      }
+    },
+    {
+      "id": "Bárbaro-Guerreiro-L5-mixed",
+      "label": "Bárbaro x Guerreiro — nível 5 — mixed",
+      "level": 5,
+      "playerClass": "Bárbaro",
+      "enemyClass": "Guerreiro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.445,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.882,
+          "median": 5,
+          "p10": 4,
+          "p25": 4,
+          "p75": 5,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 5.946,
+        "damage": {
+          "meanPerDamagingAction": 9.4268,
+          "min": 1,
+          "max": 26
+        },
+        "confrontation": {
+          "falha_total": 1088,
+          "contato_neutralizado": 1276,
+          "acerto_reduzido": 2146,
+          "acerto_normal": 2557,
+          "acerto_forte": 2252,
+          "natural1Rate": 0.0456,
+          "natural20Rate": 0.0487
+        },
+        "actions": {
+          "attacks": 9319,
+          "basicUses": 8182,
+          "skillUses": 1137,
+          "skillUseRate": 0.122,
+          "eneSpent": 5040,
+          "eneRegenerated": 9319
+        }
+      }
+    },
+    {
+      "id": "Mago-Guerreiro-L5-basic",
+      "label": "Mago x Guerreiro — nível 5 — basic",
+      "level": 5,
+      "playerClass": "Mago",
+      "enemyClass": "Guerreiro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.181,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.525,
+          "median": 4,
+          "p10": 3,
+          "p25": 4,
+          "p75": 5,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0.015,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 1.522,
+        "damage": {
+          "meanPerDamagingAction": 8.1416,
+          "min": 1,
+          "max": 18
+        },
+        "confrontation": {
+          "falha_total": 1021,
+          "contato_neutralizado": 1267,
+          "acerto_reduzido": 1965,
+          "acerto_normal": 2395,
+          "acerto_forte": 2221,
+          "natural1Rate": 0.0471,
+          "natural20Rate": 0.0536
+        },
+        "actions": {
+          "attacks": 8869,
+          "basicUses": 8869,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 13394
+        }
+      }
+    },
+    {
+      "id": "Mago-Guerreiro-L5-mixed",
+      "label": "Mago x Guerreiro — nível 5 — mixed",
+      "level": 5,
+      "playerClass": "Mago",
+      "enemyClass": "Guerreiro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.448,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.987,
+          "median": 4,
+          "p10": 3,
+          "p25": 3,
+          "p75": 4,
+          "p90": 5,
+          "oneOrTwoTurnRate": 0.011,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 5.4,
+        "damage": {
+          "meanPerDamagingAction": 10.0299,
+          "min": 1,
+          "max": 28
+        },
+        "confrontation": {
+          "falha_total": 862,
+          "contato_neutralizado": 1010,
+          "acerto_reduzido": 1687,
+          "acerto_normal": 2058,
+          "acerto_forte": 1909,
+          "natural1Rate": 0.0472,
+          "natural20Rate": 0.0472
+        },
+        "actions": {
+          "attacks": 7526,
+          "basicUses": 5303,
+          "skillUses": 2223,
+          "skillUseRate": 0.2954,
+          "eneSpent": 8892,
+          "eneRegenerated": 11513
+        }
+      }
+    },
+    {
+      "id": "Guerreiro-Mago-L5-basic",
+      "label": "Guerreiro x Mago — nível 5 — basic",
+      "level": 5,
+      "playerClass": "Guerreiro",
+      "enemyClass": "Mago",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.935,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.492,
+          "median": 4,
+          "p10": 3,
+          "p25": 4,
+          "p75": 5,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0.018,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 18.286,
+        "damage": {
+          "meanPerDamagingAction": 8.3999,
+          "min": 1,
+          "max": 18
+        },
+        "confrontation": {
+          "falha_total": 953,
+          "contato_neutralizado": 1091,
+          "acerto_reduzido": 1815,
+          "acerto_normal": 2206,
+          "acerto_forte": 1984,
+          "natural1Rate": 0.0458,
+          "natural20Rate": 0.0475
+        },
+        "actions": {
+          "attacks": 8049,
+          "basicUses": 8049,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 11606
+        }
+      }
+    },
+    {
+      "id": "Guerreiro-Mago-L5-mixed",
+      "label": "Guerreiro x Mago — nível 5 — mixed",
+      "level": 5,
+      "playerClass": "Guerreiro",
+      "enemyClass": "Mago",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.759,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.083,
+          "median": 4,
+          "p10": 3,
+          "p25": 3,
+          "p75": 4,
+          "p90": 5,
+          "oneOrTwoTurnRate": 0.013,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 12.815,
+        "damage": {
+          "meanPerDamagingAction": 10.0245,
+          "min": 1,
+          "max": 28
+        },
+        "confrontation": {
+          "falha_total": 921,
+          "contato_neutralizado": 1051,
+          "acerto_reduzido": 1671,
+          "acerto_normal": 1976,
+          "acerto_forte": 1788,
+          "natural1Rate": 0.0512,
+          "natural20Rate": 0.0473
+        },
+        "actions": {
+          "attacks": 7407,
+          "basicUses": 5246,
+          "skillUses": 2161,
+          "skillUseRate": 0.2918,
+          "eneSpent": 8644,
+          "eneRegenerated": 10731
+        }
+      }
+    },
+    {
+      "id": "Ladino-Caçador-L5-basic",
+      "label": "Ladino x Caçador — nível 5 — basic",
+      "level": 5,
+      "playerClass": "Ladino",
+      "enemyClass": "Caçador",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.756,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 2.397,
+          "median": 2,
+          "p10": 2,
+          "p25": 2,
+          "p75": 3,
+          "p90": 3,
+          "oneOrTwoTurnRate": 0.658,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 12.606,
+        "damage": {
+          "meanPerDamagingAction": 15.4816,
+          "min": 1,
+          "max": 26
+        },
+        "confrontation": {
+          "falha_total": 240,
+          "contato_neutralizado": 398,
+          "acerto_reduzido": 769,
+          "acerto_normal": 1160,
+          "acerto_forte": 1471,
+          "natural1Rate": 0.05,
+          "natural20Rate": 0.051
+        },
+        "actions": {
+          "attacks": 4038,
+          "basicUses": 4038,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 8076
+        }
+      }
+    },
+    {
+      "id": "Ladino-Caçador-L5-mixed",
+      "label": "Ladino x Caçador — nível 5 — mixed",
+      "level": 5,
+      "playerClass": "Ladino",
+      "enemyClass": "Caçador",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.814,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 2.212,
+          "median": 2,
+          "p10": 2,
+          "p25": 2,
+          "p75": 2,
+          "p90": 3,
+          "oneOrTwoTurnRate": 0.815,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 14.628,
+        "damage": {
+          "meanPerDamagingAction": 18.3983,
+          "min": 1,
+          "max": 40
+        },
+        "confrontation": {
+          "falha_total": 231,
+          "contato_neutralizado": 350,
+          "acerto_reduzido": 669,
+          "acerto_normal": 1020,
+          "acerto_forte": 1340,
+          "natural1Rate": 0.0463,
+          "natural20Rate": 0.0476
+        },
+        "actions": {
+          "attacks": 3610,
+          "basicUses": 2245,
+          "skillUses": 1365,
+          "skillUseRate": 0.3781,
+          "eneSpent": 5460,
+          "eneRegenerated": 7220
+        }
+      }
+    },
+    {
+      "id": "Caçador-Mago-L5-basic",
+      "label": "Caçador x Mago — nível 5 — basic",
+      "level": 5,
+      "playerClass": "Caçador",
+      "enemyClass": "Mago",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.996,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 2.298,
+          "median": 2,
+          "p10": 2,
+          "p25": 2,
+          "p75": 3,
+          "p90": 3,
+          "oneOrTwoTurnRate": 0.739,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 25.374,
+        "damage": {
+          "meanPerDamagingAction": 15.7357,
+          "min": 1,
+          "max": 28
+        },
+        "confrontation": {
+          "falha_total": 286,
+          "contato_neutralizado": 298,
+          "acerto_reduzido": 662,
+          "acerto_normal": 903,
+          "acerto_forte": 1451,
+          "natural1Rate": 0.0489,
+          "natural20Rate": 0.0483
+        },
+        "actions": {
+          "attacks": 3600,
+          "basicUses": 3600,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 7200
+        }
+      }
+    },
+    {
+      "id": "Caçador-Mago-L5-mixed",
+      "label": "Caçador x Mago — nível 5 — mixed",
+      "level": 5,
+      "playerClass": "Caçador",
+      "enemyClass": "Mago",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.988,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 2.134,
+          "median": 2,
+          "p10": 2,
+          "p25": 2,
+          "p75": 2,
+          "p90": 3,
+          "oneOrTwoTurnRate": 0.881,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 26.411,
+        "damage": {
+          "meanPerDamagingAction": 18.6847,
+          "min": 1,
+          "max": 40
+        },
+        "confrontation": {
+          "falha_total": 264,
+          "contato_neutralizado": 298,
+          "acerto_reduzido": 563,
+          "acerto_normal": 836,
+          "acerto_forte": 1319,
+          "natural1Rate": 0.0488,
+          "natural20Rate": 0.0482
+        },
+        "actions": {
+          "attacks": 3280,
+          "basicUses": 2136,
+          "skillUses": 1144,
+          "skillUseRate": 0.3488,
+          "eneSpent": 4576,
+          "eneRegenerated": 6560
+        }
+      }
+    },
+    {
+      "id": "Curandeiro-Bárbaro-L5-basic",
+      "label": "Curandeiro x Bárbaro — nível 5 — basic",
+      "level": 5,
+      "playerClass": "Curandeiro",
+      "enemyClass": "Bárbaro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.004,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.101,
+          "median": 3,
+          "p10": 2,
+          "p25": 3,
+          "p75": 4,
+          "p90": 4,
+          "oneOrTwoTurnRate": 0.236,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 0.024,
+        "damage": {
+          "meanPerDamagingAction": 11.4796,
+          "min": 1,
+          "max": 25
+        },
+        "confrontation": {
+          "falha_total": 618,
+          "contato_neutralizado": 718,
+          "acerto_reduzido": 1337,
+          "acerto_normal": 1630,
+          "acerto_forte": 1895,
+          "natural1Rate": 0.0479,
+          "natural20Rate": 0.0521
+        },
+        "actions": {
+          "attacks": 6198,
+          "basicUses": 6198,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 9299
+        }
+      }
+    },
+    {
+      "id": "Curandeiro-Bárbaro-L5-mixed",
+      "label": "Curandeiro x Bárbaro — nível 5 — mixed",
+      "level": 5,
+      "playerClass": "Curandeiro",
+      "enemyClass": "Bárbaro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.001,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.054,
+          "median": 3,
+          "p10": 2,
+          "p25": 2,
+          "p75": 3,
+          "p90": 4,
+          "oneOrTwoTurnRate": 0.256,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 0.006,
+        "damage": {
+          "meanPerDamagingAction": 11.6432,
+          "min": 1,
+          "max": 38
+        },
+        "confrontation": {
+          "falha_total": 631,
+          "contato_neutralizado": 714,
+          "acerto_reduzido": 1231,
+          "acerto_normal": 1572,
+          "acerto_forte": 1959,
+          "natural1Rate": 0.0486,
+          "natural20Rate": 0.0553
+        },
+        "actions": {
+          "attacks": 6107,
+          "basicUses": 6098,
+          "skillUses": 9,
+          "skillUseRate": 0.0015,
+          "eneSpent": 54,
+          "eneRegenerated": 9161
+        }
+      }
+    },
+    {
+      "id": "Bardo-Curandeiro-L5-basic",
+      "label": "Bardo x Curandeiro — nível 5 — basic",
+      "level": 5,
+      "playerClass": "Bardo",
+      "enemyClass": "Curandeiro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.995,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.601,
+          "median": 4,
+          "p10": 3,
+          "p25": 4,
+          "p75": 5,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 25.292,
+        "damage": {
+          "meanPerDamagingAction": 8.3818,
+          "min": 1,
+          "max": 17
+        },
+        "confrontation": {
+          "falha_total": 1515,
+          "contato_neutralizado": 1248,
+          "acerto_reduzido": 1690,
+          "acerto_normal": 1923,
+          "acerto_forte": 1831,
+          "natural1Rate": 0.0547,
+          "natural20Rate": 0.0529
+        },
+        "actions": {
+          "attacks": 8207,
+          "basicUses": 8207,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 16402
+        }
+      }
+    },
+    {
+      "id": "Bardo-Curandeiro-L5-mixed",
+      "label": "Bardo x Curandeiro — nível 5 — mixed",
+      "level": 5,
+      "playerClass": "Bardo",
+      "enemyClass": "Curandeiro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.996,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.072,
+          "median": 4,
+          "p10": 3,
+          "p25": 3,
+          "p75": 5,
+          "p90": 5,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 26.824,
+        "damage": {
+          "meanPerDamagingAction": 9.5006,
+          "min": 1,
+          "max": 25
+        },
+        "confrontation": {
+          "falha_total": 1255,
+          "contato_neutralizado": 1054,
+          "acerto_reduzido": 1511,
+          "acerto_normal": 1645,
+          "acerto_forte": 1683,
+          "natural1Rate": 0.0539,
+          "natural20Rate": 0.0518
+        },
+        "actions": {
+          "attacks": 7148,
+          "basicUses": 5815,
+          "skillUses": 1333,
+          "skillUseRate": 0.1865,
+          "eneSpent": 6665,
+          "eneRegenerated": 14296
+        }
+      }
+    },
+    {
+      "id": "Animalista-Bardo-L5-basic",
+      "label": "Animalista x Bardo — nível 5 — basic",
+      "level": 5,
+      "playerClass": "Animalista",
+      "enemyClass": "Bardo",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.939,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.321,
+          "median": 4,
+          "p10": 3,
+          "p25": 4,
+          "p75": 5,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0.006,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 21.262,
+        "damage": {
+          "meanPerDamagingAction": 9.518,
+          "min": 1,
+          "max": 19
+        },
+        "confrontation": {
+          "falha_total": 925,
+          "contato_neutralizado": 1023,
+          "acerto_reduzido": 1690,
+          "acerto_normal": 2078,
+          "acerto_forte": 1987,
+          "natural1Rate": 0.0549,
+          "natural20Rate": 0.0528
+        },
+        "actions": {
+          "attacks": 7703,
+          "basicUses": 7703,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 11085
+        }
+      }
+    },
+    {
+      "id": "Animalista-Bardo-L5-mixed",
+      "label": "Animalista x Bardo — nível 5 — mixed",
+      "level": 5,
+      "playerClass": "Animalista",
+      "enemyClass": "Bardo",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.931,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.05,
+          "median": 4,
+          "p10": 3,
+          "p25": 3,
+          "p75": 4,
+          "p90": 5,
+          "oneOrTwoTurnRate": 0.004,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 20.878,
+        "damage": {
+          "meanPerDamagingAction": 10.6474,
+          "min": 1,
+          "max": 32
+        },
+        "confrontation": {
+          "falha_total": 808,
+          "contato_neutralizado": 1055,
+          "acerto_reduzido": 1564,
+          "acerto_normal": 1870,
+          "acerto_forte": 1872,
+          "natural1Rate": 0.0462,
+          "natural20Rate": 0.0518
+        },
+        "actions": {
+          "attacks": 7169,
+          "basicUses": 5601,
+          "skillUses": 1568,
+          "skillUseRate": 0.2187,
+          "eneSpent": 7109,
+          "eneRegenerated": 10288
+        }
+      }
+    },
+    {
+      "id": "Guerreiro-Bárbaro-L10-basic",
+      "label": "Guerreiro x Bárbaro — nível 10 — basic",
+      "level": 10,
+      "playerClass": "Guerreiro",
+      "enemyClass": "Bárbaro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.81,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 5.409,
+          "median": 5,
+          "p10": 4,
+          "p25": 5,
+          "p75": 6,
+          "p90": 7,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 15.543,
+        "damage": {
+          "meanPerDamagingAction": 11.351,
+          "min": 1,
+          "max": 20
+        },
+        "confrontation": {
+          "falha_total": 980,
+          "contato_neutralizado": 1133,
+          "acerto_reduzido": 2059,
+          "acerto_normal": 2802,
+          "acerto_forte": 3034,
+          "natural1Rate": 0.0526,
+          "natural20Rate": 0.0468
+        },
+        "actions": {
+          "attacks": 10008,
+          "basicUses": 10008,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 20016
+        }
+      }
+    },
+    {
+      "id": "Guerreiro-Bárbaro-L10-mixed",
+      "label": "Guerreiro x Bárbaro — nível 10 — mixed",
+      "level": 10,
+      "playerClass": "Guerreiro",
+      "enemyClass": "Bárbaro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.811,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.566,
+          "median": 4,
+          "p10": 4,
+          "p25": 4,
+          "p75": 5,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 17.719,
+        "damage": {
+          "meanPerDamagingAction": 13.5665,
+          "min": 1,
+          "max": 29
+        },
+        "confrontation": {
+          "falha_total": 727,
+          "contato_neutralizado": 984,
+          "acerto_reduzido": 1704,
+          "acerto_normal": 2337,
+          "acerto_forte": 2569,
+          "natural1Rate": 0.05,
+          "natural20Rate": 0.0528
+        },
+        "actions": {
+          "attacks": 8321,
+          "basicUses": 5162,
+          "skillUses": 3159,
+          "skillUseRate": 0.3796,
+          "eneSpent": 14704,
+          "eneRegenerated": 16642
+        }
+      }
+    },
+    {
+      "id": "Bárbaro-Guerreiro-L10-basic",
+      "label": "Bárbaro x Guerreiro — nível 10 — basic",
+      "level": 10,
+      "playerClass": "Bárbaro",
+      "enemyClass": "Guerreiro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.387,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 5.363,
+          "median": 5,
+          "p10": 4,
+          "p25": 5,
+          "p75": 6,
+          "p90": 7,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 6.032,
+        "damage": {
+          "meanPerDamagingAction": 11.1748,
+          "min": 1,
+          "max": 20
+        },
+        "confrontation": {
+          "falha_total": 975,
+          "contato_neutralizado": 1212,
+          "acerto_reduzido": 2238,
+          "acerto_normal": 2820,
+          "acerto_forte": 3094,
+          "natural1Rate": 0.0526,
+          "natural20Rate": 0.0501
+        },
+        "actions": {
+          "attacks": 10339,
+          "basicUses": 10339,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 20678
+        }
+      }
+    },
+    {
+      "id": "Bárbaro-Guerreiro-L10-mixed",
+      "label": "Bárbaro x Guerreiro — nível 10 — mixed",
+      "level": 10,
+      "playerClass": "Bárbaro",
+      "enemyClass": "Guerreiro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.35,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.537,
+          "median": 4,
+          "p10": 4,
+          "p25": 4,
+          "p75": 5,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 5.561,
+        "damage": {
+          "meanPerDamagingAction": 13.3427,
+          "min": 1,
+          "max": 29
+        },
+        "confrontation": {
+          "falha_total": 830,
+          "contato_neutralizado": 1011,
+          "acerto_reduzido": 1778,
+          "acerto_normal": 2437,
+          "acerto_forte": 2668,
+          "natural1Rate": 0.0503,
+          "natural20Rate": 0.0512
+        },
+        "actions": {
+          "attacks": 8724,
+          "basicUses": 5676,
+          "skillUses": 3048,
+          "skillUseRate": 0.3494,
+          "eneSpent": 14496,
+          "eneRegenerated": 17448
+        }
+      }
+    },
+    {
+      "id": "Mago-Guerreiro-L10-basic",
+      "label": "Mago x Guerreiro — nível 10 — basic",
+      "level": 10,
+      "playerClass": "Mago",
+      "enemyClass": "Guerreiro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.034,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.266,
+          "median": 4,
+          "p10": 3,
+          "p25": 3,
+          "p75": 5,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0.002,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 0.295,
+        "damage": {
+          "meanPerDamagingAction": 10.6746,
+          "min": 1,
+          "max": 23
+        },
+        "confrontation": {
+          "falha_total": 748,
+          "contato_neutralizado": 1012,
+          "acerto_reduzido": 1714,
+          "acerto_normal": 2441,
+          "acerto_forte": 2583,
+          "natural1Rate": 0.0506,
+          "natural20Rate": 0.0504
+        },
+        "actions": {
+          "attacks": 8498,
+          "basicUses": 8498,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 21260
+        }
+      }
+    },
+    {
+      "id": "Mago-Guerreiro-L10-mixed",
+      "label": "Mago x Guerreiro — nível 10 — mixed",
+      "level": 10,
+      "playerClass": "Mago",
+      "enemyClass": "Guerreiro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.181,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.613,
+          "median": 4,
+          "p10": 3,
+          "p25": 3,
+          "p75": 4,
+          "p90": 5,
+          "oneOrTwoTurnRate": 0.096,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 2.319,
+        "damage": {
+          "meanPerDamagingAction": 13.7559,
+          "min": 1,
+          "max": 32
+        },
+        "confrontation": {
+          "falha_total": 651,
+          "contato_neutralizado": 817,
+          "acerto_reduzido": 1465,
+          "acerto_normal": 2044,
+          "acerto_forte": 2068,
+          "natural1Rate": 0.05,
+          "natural20Rate": 0.0456
+        },
+        "actions": {
+          "attacks": 7045,
+          "basicUses": 3180,
+          "skillUses": 3865,
+          "skillUseRate": 0.5486,
+          "eneSpent": 15460,
+          "eneRegenerated": 17703
+        }
+      }
+    },
+    {
+      "id": "Guerreiro-Mago-L10-basic",
+      "label": "Guerreiro x Mago — nível 10 — basic",
+      "level": 10,
+      "playerClass": "Guerreiro",
+      "enemyClass": "Mago",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.983,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.234,
+          "median": 4,
+          "p10": 3,
+          "p25": 3,
+          "p75": 5,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0.003,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 32.158,
+        "damage": {
+          "meanPerDamagingAction": 11.074,
+          "min": 1,
+          "max": 23
+        },
+        "confrontation": {
+          "falha_total": 677,
+          "contato_neutralizado": 902,
+          "acerto_reduzido": 1495,
+          "acerto_normal": 2112,
+          "acerto_forte": 2299,
+          "natural1Rate": 0.0489,
+          "natural20Rate": 0.0537
+        },
+        "actions": {
+          "attacks": 7485,
+          "basicUses": 7485,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 18221
+        }
+      }
+    },
+    {
+      "id": "Guerreiro-Mago-L10-mixed",
+      "label": "Guerreiro x Mago — nível 10 — mixed",
+      "level": 10,
+      "playerClass": "Guerreiro",
+      "enemyClass": "Mago",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.942,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.595,
+          "median": 4,
+          "p10": 2,
+          "p25": 3,
+          "p75": 4,
+          "p90": 5,
+          "oneOrTwoTurnRate": 0.124,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 28.539,
+        "damage": {
+          "meanPerDamagingAction": 13.9739,
+          "min": 1,
+          "max": 32
+        },
+        "confrontation": {
+          "falha_total": 545,
+          "contato_neutralizado": 783,
+          "acerto_reduzido": 1279,
+          "acerto_normal": 1720,
+          "acerto_forte": 1921,
+          "natural1Rate": 0.0487,
+          "natural20Rate": 0.0503
+        },
+        "actions": {
+          "attacks": 6248,
+          "basicUses": 3101,
+          "skillUses": 3147,
+          "skillUseRate": 0.5037,
+          "eneSpent": 12588,
+          "eneRegenerated": 15149
+        }
+      }
+    },
+    {
+      "id": "Ladino-Caçador-L10-basic",
+      "label": "Ladino x Caçador — nível 10 — basic",
+      "level": 10,
+      "playerClass": "Ladino",
+      "enemyClass": "Caçador",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.841,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 2.355,
+          "median": 2,
+          "p10": 2,
+          "p25": 2,
+          "p75": 3,
+          "p90": 3,
+          "oneOrTwoTurnRate": 0.671,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 18.454,
+        "damage": {
+          "meanPerDamagingAction": 20.052,
+          "min": 1,
+          "max": 32
+        },
+        "confrontation": {
+          "falha_total": 118,
+          "contato_neutralizado": 238,
+          "acerto_reduzido": 553,
+          "acerto_normal": 1024,
+          "acerto_forte": 1936,
+          "natural1Rate": 0.0476,
+          "natural20Rate": 0.0476
+        },
+        "actions": {
+          "attacks": 3869,
+          "basicUses": 3869,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 11607
+        }
+      }
+    },
+    {
+      "id": "Ladino-Caçador-L10-mixed",
+      "label": "Ladino x Caçador — nível 10 — mixed",
+      "level": 10,
+      "playerClass": "Ladino",
+      "enemyClass": "Caçador",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.841,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 2.187,
+          "median": 2,
+          "p10": 2,
+          "p25": 2,
+          "p75": 2,
+          "p90": 3,
+          "oneOrTwoTurnRate": 0.822,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 19.927,
+        "damage": {
+          "meanPerDamagingAction": 23.7063,
+          "min": 1,
+          "max": 45
+        },
+        "confrontation": {
+          "falha_total": 121,
+          "contato_neutralizado": 222,
+          "acerto_reduzido": 534,
+          "acerto_normal": 908,
+          "acerto_forte": 1748,
+          "natural1Rate": 0.0501,
+          "natural20Rate": 0.0492
+        },
+        "actions": {
+          "attacks": 3533,
+          "basicUses": 2000,
+          "skillUses": 1533,
+          "skillUseRate": 0.4339,
+          "eneSpent": 6132,
+          "eneRegenerated": 10599
+        }
+      }
+    },
+    {
+      "id": "Caçador-Mago-L10-basic",
+      "label": "Caçador x Mago — nível 10 — basic",
+      "level": 10,
+      "playerClass": "Caçador",
+      "enemyClass": "Mago",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.998,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 2.316,
+          "median": 2,
+          "p10": 2,
+          "p25": 2,
+          "p75": 3,
+          "p90": 3,
+          "oneOrTwoTurnRate": 0.713,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 34.588,
+        "damage": {
+          "meanPerDamagingAction": 19.6589,
+          "min": 1,
+          "max": 32
+        },
+        "confrontation": {
+          "falha_total": 216,
+          "contato_neutralizado": 236,
+          "acerto_reduzido": 539,
+          "acerto_normal": 819,
+          "acerto_forte": 1824,
+          "natural1Rate": 0.0531,
+          "natural20Rate": 0.0531
+        },
+        "actions": {
+          "attacks": 3634,
+          "basicUses": 3634,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 10902
+        }
+      }
+    },
+    {
+      "id": "Caçador-Mago-L10-mixed",
+      "label": "Caçador x Mago — nível 10 — mixed",
+      "level": 10,
+      "playerClass": "Caçador",
+      "enemyClass": "Mago",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.996,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 2.216,
+          "median": 2,
+          "p10": 2,
+          "p25": 2,
+          "p75": 2,
+          "p90": 3,
+          "oneOrTwoTurnRate": 0.792,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 34.557,
+        "damage": {
+          "meanPerDamagingAction": 22.9411,
+          "min": 1,
+          "max": 44
+        },
+        "confrontation": {
+          "falha_total": 175,
+          "contato_neutralizado": 270,
+          "acerto_reduzido": 487,
+          "acerto_normal": 805,
+          "acerto_forte": 1699,
+          "natural1Rate": 0.0594,
+          "natural20Rate": 0.057
+        },
+        "actions": {
+          "attacks": 3436,
+          "basicUses": 2000,
+          "skillUses": 1436,
+          "skillUseRate": 0.4179,
+          "eneSpent": 5744,
+          "eneRegenerated": 10308
+        }
+      }
+    },
+    {
+      "id": "Curandeiro-Bárbaro-L10-basic",
+      "label": "Curandeiro x Bárbaro — nível 10 — basic",
+      "level": 10,
+      "playerClass": "Curandeiro",
+      "enemyClass": "Bárbaro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.185,
+          "median": 3,
+          "p10": 3,
+          "p25": 3,
+          "p75": 3,
+          "p90": 4,
+          "oneOrTwoTurnRate": 0.064,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 0,
+        "damage": {
+          "meanPerDamagingAction": 14.1166,
+          "min": 1,
+          "max": 29
+        },
+        "confrontation": {
+          "falha_total": 666,
+          "contato_neutralizado": 633,
+          "acerto_reduzido": 1139,
+          "acerto_normal": 1580,
+          "acerto_forte": 2352,
+          "natural1Rate": 0.0487,
+          "natural20Rate": 0.0529
+        },
+        "actions": {
+          "attacks": 6370,
+          "basicUses": 6370,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 15925
+        }
+      }
+    },
+    {
+      "id": "Curandeiro-Bárbaro-L10-mixed",
+      "label": "Curandeiro x Bárbaro — nível 10 — mixed",
+      "level": 10,
+      "playerClass": "Curandeiro",
+      "enemyClass": "Bárbaro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.106,
+          "median": 3,
+          "p10": 3,
+          "p25": 3,
+          "p75": 3,
+          "p90": 4,
+          "oneOrTwoTurnRate": 0.042,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 0,
+        "damage": {
+          "meanPerDamagingAction": 15.5779,
+          "min": 1,
+          "max": 42
+        },
+        "confrontation": {
+          "falha_total": 708,
+          "contato_neutralizado": 629,
+          "acerto_reduzido": 1149,
+          "acerto_normal": 1487,
+          "acerto_forte": 2239,
+          "natural1Rate": 0.0522,
+          "natural20Rate": 0.043
+        },
+        "actions": {
+          "attacks": 6212,
+          "basicUses": 5252,
+          "skillUses": 960,
+          "skillUseRate": 0.1545,
+          "eneSpent": 5760,
+          "eneRegenerated": 15530
+        }
+      }
+    },
+    {
+      "id": "Bardo-Curandeiro-L10-basic",
+      "label": "Bardo x Curandeiro — nível 10 — basic",
+      "level": 10,
+      "playerClass": "Bardo",
+      "enemyClass": "Curandeiro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 1,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.742,
+          "median": 4,
+          "p10": 4,
+          "p25": 4,
+          "p75": 5,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 38.827,
+        "damage": {
+          "meanPerDamagingAction": 10.2669,
+          "min": 1,
+          "max": 21
+        },
+        "confrontation": {
+          "falha_total": 1409,
+          "contato_neutralizado": 1175,
+          "acerto_reduzido": 1661,
+          "acerto_normal": 2009,
+          "acerto_forte": 2230,
+          "natural1Rate": 0.051,
+          "natural20Rate": 0.0449
+        },
+        "actions": {
+          "attacks": 8484,
+          "basicUses": 8484,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 25452
+        }
+      }
+    },
+    {
+      "id": "Bardo-Curandeiro-L10-mixed",
+      "label": "Bardo x Curandeiro — nível 10 — mixed",
+      "level": 10,
+      "playerClass": "Bardo",
+      "enemyClass": "Curandeiro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 1,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.116,
+          "median": 4,
+          "p10": 3,
+          "p25": 4,
+          "p75": 5,
+          "p90": 5,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 40.687,
+        "damage": {
+          "meanPerDamagingAction": 11.915,
+          "min": 1,
+          "max": 28
+        },
+        "confrontation": {
+          "falha_total": 1151,
+          "contato_neutralizado": 978,
+          "acerto_reduzido": 1398,
+          "acerto_normal": 1692,
+          "acerto_forte": 2013,
+          "natural1Rate": 0.0465,
+          "natural20Rate": 0.0525
+        },
+        "actions": {
+          "attacks": 7232,
+          "basicUses": 5179,
+          "skillUses": 2053,
+          "skillUseRate": 0.2839,
+          "eneSpent": 10265,
+          "eneRegenerated": 21696
+        }
+      }
+    },
+    {
+      "id": "Animalista-Bardo-L10-basic",
+      "label": "Animalista x Bardo — nível 10 — basic",
+      "level": 10,
+      "playerClass": "Animalista",
+      "enemyClass": "Bardo",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.976,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.512,
+          "median": 4,
+          "p10": 3,
+          "p25": 4,
+          "p75": 5,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 29.275,
+        "damage": {
+          "meanPerDamagingAction": 11.9327,
+          "min": 1,
+          "max": 23
+        },
+        "confrontation": {
+          "falha_total": 719,
+          "contato_neutralizado": 1005,
+          "acerto_reduzido": 1648,
+          "acerto_normal": 2245,
+          "acerto_forte": 2431,
+          "natural1Rate": 0.0507,
+          "natural20Rate": 0.0491
+        },
+        "actions": {
+          "attacks": 8048,
+          "basicUses": 8048,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 19632
+        }
+      }
+    },
+    {
+      "id": "Animalista-Bardo-L10-mixed",
+      "label": "Animalista x Bardo — nível 10 — mixed",
+      "level": 10,
+      "playerClass": "Animalista",
+      "enemyClass": "Bardo",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.954,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.712,
+          "median": 4,
+          "p10": 3,
+          "p25": 3,
+          "p75": 4,
+          "p90": 5,
+          "oneOrTwoTurnRate": 0.05,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 31.174,
+        "damage": {
+          "meanPerDamagingAction": 14.8947,
+          "min": 1,
+          "max": 36
+        },
+        "confrontation": {
+          "falha_total": 561,
+          "contato_neutralizado": 743,
+          "acerto_reduzido": 1323,
+          "acerto_normal": 1804,
+          "acerto_forte": 2039,
+          "natural1Rate": 0.0512,
+          "natural20Rate": 0.0519
+        },
+        "actions": {
+          "attacks": 6470,
+          "basicUses": 3685,
+          "skillUses": 2785,
+          "skillUseRate": 0.4304,
+          "eneSpent": 12335,
+          "eneRegenerated": 15698
+        }
+      }
+    },
+    {
+      "id": "Guerreiro-Bárbaro-L15-basic",
+      "label": "Guerreiro x Bárbaro — nível 15 — basic",
+      "level": 15,
+      "playerClass": "Guerreiro",
+      "enemyClass": "Bárbaro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.709,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 5.748,
+          "median": 6,
+          "p10": 5,
+          "p25": 5,
+          "p75": 6,
+          "p90": 7,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 13.775,
+        "damage": {
+          "meanPerDamagingAction": 13.1147,
+          "min": 1,
+          "max": 22
+        },
+        "confrontation": {
+          "falha_total": 606,
+          "contato_neutralizado": 1043,
+          "acerto_reduzido": 1996,
+          "acerto_normal": 3059,
+          "acerto_forte": 4083,
+          "natural1Rate": 0.0514,
+          "natural20Rate": 0.0486
+        },
+        "actions": {
+          "attacks": 10787,
+          "basicUses": 10787,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 32361
+        }
+      }
+    },
+    {
+      "id": "Guerreiro-Bárbaro-L15-mixed",
+      "label": "Guerreiro x Bárbaro — nível 15 — mixed",
+      "level": 15,
+      "playerClass": "Guerreiro",
+      "enemyClass": "Bárbaro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.783,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.573,
+          "median": 4,
+          "p10": 4,
+          "p25": 4,
+          "p75": 5,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 20.277,
+        "damage": {
+          "meanPerDamagingAction": 16.5186,
+          "min": 1,
+          "max": 31
+        },
+        "confrontation": {
+          "falha_total": 502,
+          "contato_neutralizado": 794,
+          "acerto_reduzido": 1563,
+          "acerto_normal": 2381,
+          "acerto_forte": 3123,
+          "natural1Rate": 0.0495,
+          "natural20Rate": 0.0508
+        },
+        "actions": {
+          "attacks": 8363,
+          "basicUses": 3634,
+          "skillUses": 4729,
+          "skillUseRate": 0.5655,
+          "eneSpent": 22070,
+          "eneRegenerated": 25089
+        }
+      }
+    },
+    {
+      "id": "Bárbaro-Guerreiro-L15-basic",
+      "label": "Bárbaro x Guerreiro — nível 15 — basic",
+      "level": 15,
+      "playerClass": "Bárbaro",
+      "enemyClass": "Guerreiro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.509,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 5.764,
+          "median": 6,
+          "p10": 5,
+          "p25": 5,
+          "p75": 6,
+          "p90": 7,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 8.752,
+        "damage": {
+          "meanPerDamagingAction": 13.0818,
+          "min": 1,
+          "max": 22
+        },
+        "confrontation": {
+          "falha_total": 690,
+          "contato_neutralizado": 1057,
+          "acerto_reduzido": 2056,
+          "acerto_normal": 3125,
+          "acerto_forte": 4091,
+          "natural1Rate": 0.0486,
+          "natural20Rate": 0.0538
+        },
+        "actions": {
+          "attacks": 11019,
+          "basicUses": 11019,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 33057
+        }
+      }
+    },
+    {
+      "id": "Bárbaro-Guerreiro-L15-mixed",
+      "label": "Bárbaro x Guerreiro — nível 15 — mixed",
+      "level": 15,
+      "playerClass": "Bárbaro",
+      "enemyClass": "Guerreiro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.477,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.57,
+          "median": 4,
+          "p10": 4,
+          "p25": 4,
+          "p75": 5,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 9.593,
+        "damage": {
+          "meanPerDamagingAction": 16.5563,
+          "min": 1,
+          "max": 31
+        },
+        "confrontation": {
+          "falha_total": 540,
+          "contato_neutralizado": 833,
+          "acerto_reduzido": 1595,
+          "acerto_normal": 2421,
+          "acerto_forte": 3274,
+          "natural1Rate": 0.0485,
+          "natural20Rate": 0.051
+        },
+        "actions": {
+          "attacks": 8663,
+          "basicUses": 3706,
+          "skillUses": 4957,
+          "skillUseRate": 0.5722,
+          "eneSpent": 24112,
+          "eneRegenerated": 25989
+        }
+      }
+    },
+    {
+      "id": "Mago-Guerreiro-L15-basic",
+      "label": "Mago x Guerreiro — nível 15 — basic",
+      "level": 15,
+      "playerClass": "Mago",
+      "enemyClass": "Guerreiro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.007,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.37,
+          "median": 4,
+          "p10": 3,
+          "p25": 4,
+          "p75": 5,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 0.107,
+        "damage": {
+          "meanPerDamagingAction": 12.5259,
+          "min": 1,
+          "max": 25
+        },
+        "confrontation": {
+          "falha_total": 542,
+          "contato_neutralizado": 924,
+          "acerto_reduzido": 1688,
+          "acerto_normal": 2524,
+          "acerto_forte": 3055,
+          "natural1Rate": 0.0529,
+          "natural20Rate": 0.0457
+        },
+        "actions": {
+          "attacks": 8733,
+          "basicUses": 8733,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 34911
+        }
+      }
+    },
+    {
+      "id": "Mago-Guerreiro-L15-mixed",
+      "label": "Mago x Guerreiro — nível 15 — mixed",
+      "level": 15,
+      "playerClass": "Mago",
+      "enemyClass": "Guerreiro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.155,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.545,
+          "median": 3,
+          "p10": 3,
+          "p25": 3,
+          "p75": 4,
+          "p90": 5,
+          "oneOrTwoTurnRate": 0.001,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 1.906,
+        "damage": {
+          "meanPerDamagingAction": 17.8147,
+          "min": 1,
+          "max": 35
+        },
+        "confrontation": {
+          "falha_total": 471,
+          "contato_neutralizado": 670,
+          "acerto_reduzido": 1349,
+          "acerto_normal": 2036,
+          "acerto_forte": 2409,
+          "natural1Rate": 0.0479,
+          "natural20Rate": 0.0503
+        },
+        "actions": {
+          "attacks": 6935,
+          "basicUses": 1055,
+          "skillUses": 5880,
+          "skillUseRate": 0.8479,
+          "eneSpent": 23520,
+          "eneRegenerated": 27895
+        }
+      }
+    },
+    {
+      "id": "Guerreiro-Mago-L15-basic",
+      "label": "Guerreiro x Mago — nível 15 — basic",
+      "level": 15,
+      "playerClass": "Guerreiro",
+      "enemyClass": "Mago",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.996,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.339,
+          "median": 4,
+          "p10": 3,
+          "p25": 4,
+          "p75": 5,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 40.716,
+        "damage": {
+          "meanPerDamagingAction": 13.1815,
+          "min": 1,
+          "max": 25
+        },
+        "confrontation": {
+          "falha_total": 524,
+          "contato_neutralizado": 716,
+          "acerto_reduzido": 1448,
+          "acerto_normal": 2249,
+          "acerto_forte": 2745,
+          "natural1Rate": 0.0527,
+          "natural20Rate": 0.0534
+        },
+        "actions": {
+          "attacks": 7682,
+          "basicUses": 7682,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 29730
+        }
+      }
+    },
+    {
+      "id": "Guerreiro-Mago-L15-mixed",
+      "label": "Guerreiro x Mago — nível 15 — mixed",
+      "level": 15,
+      "playerClass": "Guerreiro",
+      "enemyClass": "Mago",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.941,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.553,
+          "median": 3,
+          "p10": 3,
+          "p25": 3,
+          "p75": 4,
+          "p90": 5,
+          "oneOrTwoTurnRate": 0.003,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 31.972,
+        "damage": {
+          "meanPerDamagingAction": 18.1708,
+          "min": 1,
+          "max": 35
+        },
+        "confrontation": {
+          "falha_total": 369,
+          "contato_neutralizado": 620,
+          "acerto_reduzido": 1175,
+          "acerto_normal": 1809,
+          "acerto_forte": 2192,
+          "natural1Rate": 0.0483,
+          "natural20Rate": 0.054
+        },
+        "actions": {
+          "attacks": 6165,
+          "basicUses": 1104,
+          "skillUses": 5061,
+          "skillUseRate": 0.8209,
+          "eneSpent": 20244,
+          "eneRegenerated": 23719
+        }
+      }
+    },
+    {
+      "id": "Ladino-Caçador-L15-basic",
+      "label": "Ladino x Caçador — nível 15 — basic",
+      "level": 15,
+      "playerClass": "Ladino",
+      "enemyClass": "Caçador",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.917,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 2.56,
+          "median": 3,
+          "p10": 2,
+          "p25": 2,
+          "p75": 3,
+          "p90": 3,
+          "oneOrTwoTurnRate": 0.459,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 22.518,
+        "damage": {
+          "meanPerDamagingAction": 24.4393,
+          "min": 1,
+          "max": 35
+        },
+        "confrontation": {
+          "falha_total": 90,
+          "contato_neutralizado": 125,
+          "acerto_reduzido": 484,
+          "acerto_normal": 1000,
+          "acerto_forte": 2504,
+          "natural1Rate": 0.0478,
+          "natural20Rate": 0.0466
+        },
+        "actions": {
+          "attacks": 4203,
+          "basicUses": 4203,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 16812
+        }
+      }
+    },
+    {
+      "id": "Ladino-Caçador-L15-mixed",
+      "label": "Ladino x Caçador — nível 15 — mixed",
+      "level": 15,
+      "playerClass": "Ladino",
+      "enemyClass": "Caçador",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.933,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 2.047,
+          "median": 2,
+          "p10": 2,
+          "p25": 2,
+          "p75": 2,
+          "p90": 2,
+          "oneOrTwoTurnRate": 0.957,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 25.695,
+        "damage": {
+          "meanPerDamagingAction": 33.2768,
+          "min": 1,
+          "max": 48
+        },
+        "confrontation": {
+          "falha_total": 58,
+          "contato_neutralizado": 109,
+          "acerto_reduzido": 361,
+          "acerto_normal": 684,
+          "acerto_forte": 1949,
+          "natural1Rate": 0.0443,
+          "natural20Rate": 0.049
+        },
+        "actions": {
+          "attacks": 3161,
+          "basicUses": 0,
+          "skillUses": 3161,
+          "skillUseRate": 1,
+          "eneSpent": 12644,
+          "eneRegenerated": 12644
+        }
+      }
+    },
+    {
+      "id": "Caçador-Mago-L15-basic",
+      "label": "Caçador x Mago — nível 15 — basic",
+      "level": 15,
+      "playerClass": "Caçador",
+      "enemyClass": "Mago",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.998,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 2.44,
+          "median": 2,
+          "p10": 2,
+          "p25": 2,
+          "p75": 3,
+          "p90": 3,
+          "oneOrTwoTurnRate": 0.576,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 42.023,
+        "damage": {
+          "meanPerDamagingAction": 23.2692,
+          "min": 1,
+          "max": 37
+        },
+        "confrontation": {
+          "falha_total": 112,
+          "contato_neutralizado": 215,
+          "acerto_reduzido": 452,
+          "acerto_normal": 842,
+          "acerto_forte": 2261,
+          "natural1Rate": 0.0515,
+          "natural20Rate": 0.0487
+        },
+        "actions": {
+          "attacks": 3882,
+          "basicUses": 3882,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 16970
+        }
+      }
+    },
+    {
+      "id": "Caçador-Mago-L15-mixed",
+      "label": "Caçador x Mago — nível 15 — mixed",
+      "level": 15,
+      "playerClass": "Caçador",
+      "enemyClass": "Mago",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.997,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 2.074,
+          "median": 2,
+          "p10": 2,
+          "p25": 2,
+          "p75": 2,
+          "p90": 2,
+          "oneOrTwoTurnRate": 0.926,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 39.928,
+        "damage": {
+          "meanPerDamagingAction": 31.9756,
+          "min": 1,
+          "max": 49
+        },
+        "confrontation": {
+          "falha_total": 73,
+          "contato_neutralizado": 174,
+          "acerto_reduzido": 333,
+          "acerto_normal": 671,
+          "acerto_forte": 1900,
+          "natural1Rate": 0.0444,
+          "natural20Rate": 0.0543
+        },
+        "actions": {
+          "attacks": 3151,
+          "basicUses": 0,
+          "skillUses": 3151,
+          "skillUseRate": 1,
+          "eneSpent": 12604,
+          "eneRegenerated": 13681
+        }
+      }
+    },
+    {
+      "id": "Curandeiro-Bárbaro-L15-basic",
+      "label": "Curandeiro x Bárbaro — nível 15 — basic",
+      "level": 15,
+      "playerClass": "Curandeiro",
+      "enemyClass": "Bárbaro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.283,
+          "median": 3,
+          "p10": 3,
+          "p25": 3,
+          "p75": 4,
+          "p90": 4,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 0,
+        "damage": {
+          "meanPerDamagingAction": 15.7795,
+          "min": 1,
+          "max": 32
+        },
+        "confrontation": {
+          "falha_total": 497,
+          "contato_neutralizado": 562,
+          "acerto_reduzido": 1129,
+          "acerto_normal": 1538,
+          "acerto_forte": 2840,
+          "natural1Rate": 0.048,
+          "natural20Rate": 0.0515
+        },
+        "actions": {
+          "attacks": 6566,
+          "basicUses": 6566,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 26264
+        }
+      }
+    },
+    {
+      "id": "Curandeiro-Bárbaro-L15-mixed",
+      "label": "Curandeiro x Bárbaro — nível 15 — mixed",
+      "level": 15,
+      "playerClass": "Curandeiro",
+      "enemyClass": "Bárbaro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.093,
+          "median": 3,
+          "p10": 3,
+          "p25": 3,
+          "p75": 3,
+          "p90": 4,
+          "oneOrTwoTurnRate": 0.069,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 0,
+        "damage": {
+          "meanPerDamagingAction": 17.7299,
+          "min": 1,
+          "max": 45
+        },
+        "confrontation": {
+          "falha_total": 489,
+          "contato_neutralizado": 556,
+          "acerto_reduzido": 1037,
+          "acerto_normal": 1434,
+          "acerto_forte": 2670,
+          "natural1Rate": 0.0525,
+          "natural20Rate": 0.0472
+        },
+        "actions": {
+          "attacks": 6186,
+          "basicUses": 5037,
+          "skillUses": 1149,
+          "skillUseRate": 0.1857,
+          "eneSpent": 6894,
+          "eneRegenerated": 24744
+        }
+      }
+    },
+    {
+      "id": "Bardo-Curandeiro-L15-basic",
+      "label": "Bardo x Curandeiro — nível 15 — basic",
+      "level": 15,
+      "playerClass": "Bardo",
+      "enemyClass": "Curandeiro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 1,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 5.194,
+          "median": 5,
+          "p10": 4,
+          "p25": 5,
+          "p75": 6,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 48.878,
+        "damage": {
+          "meanPerDamagingAction": 11.1769,
+          "min": 1,
+          "max": 22
+        },
+        "confrontation": {
+          "falha_total": 1385,
+          "contato_neutralizado": 1093,
+          "acerto_reduzido": 1747,
+          "acerto_normal": 2118,
+          "acerto_forte": 3045,
+          "natural1Rate": 0.0491,
+          "natural20Rate": 0.0532
+        },
+        "actions": {
+          "attacks": 9388,
+          "basicUses": 9388,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 41733
+        }
+      }
+    },
+    {
+      "id": "Bardo-Curandeiro-L15-mixed",
+      "label": "Bardo x Curandeiro — nível 15 — mixed",
+      "level": 15,
+      "playerClass": "Bardo",
+      "enemyClass": "Curandeiro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 1,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.293,
+          "median": 4,
+          "p10": 4,
+          "p25": 4,
+          "p75": 5,
+          "p90": 5,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 51.908,
+        "damage": {
+          "meanPerDamagingAction": 13.9473,
+          "min": 1,
+          "max": 29
+        },
+        "confrontation": {
+          "falha_total": 1076,
+          "contato_neutralizado": 856,
+          "acerto_reduzido": 1384,
+          "acerto_normal": 1730,
+          "acerto_forte": 2540,
+          "natural1Rate": 0.0486,
+          "natural20Rate": 0.0517
+        },
+        "actions": {
+          "attacks": 7586,
+          "basicUses": 4360,
+          "skillUses": 3226,
+          "skillUseRate": 0.4253,
+          "eneSpent": 16130,
+          "eneRegenerated": 33635
+        }
+      }
+    },
+    {
+      "id": "Animalista-Bardo-L15-basic",
+      "label": "Animalista x Bardo — nível 15 — basic",
+      "level": 15,
+      "playerClass": "Animalista",
+      "enemyClass": "Bardo",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.98,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.805,
+          "median": 5,
+          "p10": 4,
+          "p25": 4,
+          "p75": 5,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 36.218,
+        "damage": {
+          "meanPerDamagingAction": 13.5794,
+          "min": 1,
+          "max": 24
+        },
+        "confrontation": {
+          "falha_total": 521,
+          "contato_neutralizado": 794,
+          "acerto_reduzido": 1509,
+          "acerto_normal": 2453,
+          "acerto_forte": 3353,
+          "natural1Rate": 0.0555,
+          "natural20Rate": 0.049
+        },
+        "actions": {
+          "attacks": 8630,
+          "basicUses": 8630,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 29715
+        }
+      }
+    },
+    {
+      "id": "Animalista-Bardo-L15-mixed",
+      "label": "Animalista x Bardo — nível 15 — mixed",
+      "level": 15,
+      "playerClass": "Animalista",
+      "enemyClass": "Bardo",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.974,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.689,
+          "median": 4,
+          "p10": 3,
+          "p25": 3,
+          "p75": 4,
+          "p90": 5,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 40.505,
+        "damage": {
+          "meanPerDamagingAction": 18.1292,
+          "min": 1,
+          "max": 37
+        },
+        "confrontation": {
+          "falha_total": 361,
+          "contato_neutralizado": 616,
+          "acerto_reduzido": 1171,
+          "acerto_normal": 1817,
+          "acerto_forte": 2439,
+          "natural1Rate": 0.0504,
+          "natural20Rate": 0.0497
+        },
+        "actions": {
+          "attacks": 6404,
+          "basicUses": 2149,
+          "skillUses": 4255,
+          "skillUseRate": 0.6644,
+          "eneSpent": 18727,
+          "eneRegenerated": 21927
+        }
+      }
+    },
+    {
+      "id": "Guerreiro-Bárbaro-L30-basic",
+      "label": "Guerreiro x Bárbaro — nível 30 — basic",
+      "level": 30,
+      "playerClass": "Guerreiro",
+      "enemyClass": "Bárbaro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.94,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 5.934,
+          "median": 6,
+          "p10": 5,
+          "p25": 6,
+          "p75": 6,
+          "p90": 7,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 28.612,
+        "damage": {
+          "meanPerDamagingAction": 20.4026,
+          "min": 1,
+          "max": 31
+        },
+        "confrontation": {
+          "falha_total": 211,
+          "contato_neutralizado": 403,
+          "acerto_reduzido": 1202,
+          "acerto_normal": 2482,
+          "acerto_forte": 6630,
+          "natural1Rate": 0.0446,
+          "natural20Rate": 0.0483
+        },
+        "actions": {
+          "attacks": 10928,
+          "basicUses": 10928,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 65568
+        }
+      }
+    },
+    {
+      "id": "Guerreiro-Bárbaro-L30-mixed",
+      "label": "Guerreiro x Bárbaro — nível 30 — mixed",
+      "level": 30,
+      "playerClass": "Guerreiro",
+      "enemyClass": "Bárbaro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.83,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.395,
+          "median": 4,
+          "p10": 4,
+          "p25": 4,
+          "p75": 5,
+          "p90": 5,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 26.802,
+        "damage": {
+          "meanPerDamagingAction": 27.9869,
+          "min": 1,
+          "max": 40
+        },
+        "confrontation": {
+          "falha_total": 163,
+          "contato_neutralizado": 284,
+          "acerto_reduzido": 847,
+          "acerto_normal": 1790,
+          "acerto_forte": 4876,
+          "natural1Rate": 0.0496,
+          "natural20Rate": 0.0495
+        },
+        "actions": {
+          "attacks": 7960,
+          "basicUses": 0,
+          "skillUses": 7960,
+          "skillUseRate": 1,
+          "eneSpent": 38970,
+          "eneRegenerated": 47760
+        }
+      }
+    },
+    {
+      "id": "Bárbaro-Guerreiro-L30-basic",
+      "label": "Bárbaro x Guerreiro — nível 30 — basic",
+      "level": 30,
+      "playerClass": "Bárbaro",
+      "enemyClass": "Guerreiro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.29,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 5.929,
+          "median": 6,
+          "p10": 5,
+          "p25": 6,
+          "p75": 6,
+          "p90": 7,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 3.821,
+        "damage": {
+          "meanPerDamagingAction": 20.1554,
+          "min": 1,
+          "max": 31
+        },
+        "confrontation": {
+          "falha_total": 238,
+          "contato_neutralizado": 456,
+          "acerto_reduzido": 1287,
+          "acerto_normal": 2605,
+          "acerto_forte": 6982,
+          "natural1Rate": 0.0507,
+          "natural20Rate": 0.0516
+        },
+        "actions": {
+          "attacks": 11568,
+          "basicUses": 11568,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 69408
+        }
+      }
+    },
+    {
+      "id": "Bárbaro-Guerreiro-L30-mixed",
+      "label": "Bárbaro x Guerreiro — nível 30 — mixed",
+      "level": 30,
+      "playerClass": "Bárbaro",
+      "enemyClass": "Guerreiro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.498,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.401,
+          "median": 4,
+          "p10": 4,
+          "p25": 4,
+          "p75": 5,
+          "p90": 5,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 12.793,
+        "damage": {
+          "meanPerDamagingAction": 27.5654,
+          "min": 1,
+          "max": 40
+        },
+        "confrontation": {
+          "falha_total": 172,
+          "contato_neutralizado": 336,
+          "acerto_reduzido": 929,
+          "acerto_normal": 1866,
+          "acerto_forte": 5001,
+          "natural1Rate": 0.05,
+          "natural20Rate": 0.0505
+        },
+        "actions": {
+          "attacks": 8304,
+          "basicUses": 0,
+          "skillUses": 8304,
+          "skillUseRate": 1,
+          "eneSpent": 42018,
+          "eneRegenerated": 49824
+        }
+      }
+    },
+    {
+      "id": "Mago-Guerreiro-L30-basic",
+      "label": "Mago x Guerreiro — nível 30 — basic",
+      "level": 30,
+      "playerClass": "Mago",
+      "enemyClass": "Guerreiro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.08,
+          "median": 4,
+          "p10": 4,
+          "p25": 4,
+          "p75": 4,
+          "p90": 5,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 0,
+        "damage": {
+          "meanPerDamagingAction": 19.4544,
+          "min": 1,
+          "max": 36
+        },
+        "confrontation": {
+          "falha_total": 246,
+          "contato_neutralizado": 453,
+          "acerto_reduzido": 981,
+          "acerto_normal": 1951,
+          "acerto_forte": 4529,
+          "natural1Rate": 0.0518,
+          "natural20Rate": 0.0549
+        },
+        "actions": {
+          "attacks": 8160,
+          "basicUses": 8160,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 61200
+        }
+      }
+    },
+    {
+      "id": "Mago-Guerreiro-L30-mixed",
+      "label": "Mago x Guerreiro — nível 30 — mixed",
+      "level": 30,
+      "playerClass": "Mago",
+      "enemyClass": "Guerreiro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.001,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.171,
+          "median": 3,
+          "p10": 3,
+          "p25": 3,
+          "p75": 3,
+          "p90": 4,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 0.014,
+        "damage": {
+          "meanPerDamagingAction": 26.7465,
+          "min": 1,
+          "max": 46
+        },
+        "confrontation": {
+          "falha_total": 182,
+          "contato_neutralizado": 357,
+          "acerto_reduzido": 761,
+          "acerto_normal": 1536,
+          "acerto_forte": 3505,
+          "natural1Rate": 0.0476,
+          "natural20Rate": 0.0503
+        },
+        "actions": {
+          "attacks": 6341,
+          "basicUses": 0,
+          "skillUses": 6341,
+          "skillUseRate": 1,
+          "eneSpent": 25364,
+          "eneRegenerated": 47559
+        }
+      }
+    },
+    {
+      "id": "Guerreiro-Mago-L30-basic",
+      "label": "Guerreiro x Mago — nível 30 — basic",
+      "level": 30,
+      "playerClass": "Guerreiro",
+      "enemyClass": "Mago",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 1,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.092,
+          "median": 4,
+          "p10": 4,
+          "p25": 4,
+          "p75": 4,
+          "p90": 5,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 80.802,
+        "damage": {
+          "meanPerDamagingAction": 20.5636,
+          "min": 1,
+          "max": 36
+        },
+        "confrontation": {
+          "falha_total": 206,
+          "contato_neutralizado": 384,
+          "acerto_reduzido": 774,
+          "acerto_normal": 1699,
+          "acerto_forte": 4121,
+          "natural1Rate": 0.0537,
+          "natural20Rate": 0.0512
+        },
+        "actions": {
+          "attacks": 7184,
+          "basicUses": 7184,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 52380
+        }
+      }
+    },
+    {
+      "id": "Guerreiro-Mago-L30-mixed",
+      "label": "Guerreiro x Mago — nível 30 — mixed",
+      "level": 30,
+      "playerClass": "Guerreiro",
+      "enemyClass": "Mago",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 1,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.192,
+          "median": 3,
+          "p10": 3,
+          "p25": 3,
+          "p75": 3,
+          "p90": 4,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 74.381,
+        "damage": {
+          "meanPerDamagingAction": 28.1278,
+          "min": 1,
+          "max": 46
+        },
+        "confrontation": {
+          "falha_total": 124,
+          "contato_neutralizado": 282,
+          "acerto_reduzido": 604,
+          "acerto_normal": 1239,
+          "acerto_forte": 3135,
+          "natural1Rate": 0.0552,
+          "natural20Rate": 0.0498
+        },
+        "actions": {
+          "attacks": 5384,
+          "basicUses": 0,
+          "skillUses": 5384,
+          "skillUseRate": 1,
+          "eneSpent": 21536,
+          "eneRegenerated": 38880
+        }
+      }
+    },
+    {
+      "id": "Ladino-Caçador-L30-basic",
+      "label": "Ladino x Caçador — nível 30 — basic",
+      "level": 30,
+      "playerClass": "Ladino",
+      "enemyClass": "Caçador",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.976,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 2.997,
+          "median": 3,
+          "p10": 3,
+          "p25": 3,
+          "p75": 3,
+          "p90": 3,
+          "oneOrTwoTurnRate": 0.004,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 19.846,
+        "damage": {
+          "meanPerDamagingAction": 38.4188,
+          "min": 1,
+          "max": 51
+        },
+        "confrontation": {
+          "falha_total": 6,
+          "contato_neutralizado": 14,
+          "acerto_reduzido": 149,
+          "acerto_normal": 510,
+          "acerto_forte": 4339,
+          "natural1Rate": 0.0494,
+          "natural20Rate": 0.05
+        },
+        "actions": {
+          "attacks": 5018,
+          "basicUses": 5018,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 40144
+        }
+      }
+    },
+    {
+      "id": "Ladino-Caçador-L30-mixed",
+      "label": "Ladino x Caçador — nível 30 — mixed",
+      "level": 30,
+      "playerClass": "Ladino",
+      "enemyClass": "Caçador",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.98,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 2.208,
+          "median": 2,
+          "p10": 2,
+          "p25": 2,
+          "p75": 2,
+          "p90": 3,
+          "oneOrTwoTurnRate": 0.792,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 38.384,
+        "damage": {
+          "meanPerDamagingAction": 48.0572,
+          "min": 1,
+          "max": 64
+        },
+        "confrontation": {
+          "falha_total": 9,
+          "contato_neutralizado": 8,
+          "acerto_reduzido": 105,
+          "acerto_normal": 355,
+          "acerto_forte": 2959,
+          "natural1Rate": 0.0576,
+          "natural20Rate": 0.0506
+        },
+        "actions": {
+          "attacks": 3436,
+          "basicUses": 0,
+          "skillUses": 3436,
+          "skillUseRate": 1,
+          "eneSpent": 13744,
+          "eneRegenerated": 27488
+        }
+      }
+    },
+    {
+      "id": "Caçador-Mago-L30-basic",
+      "label": "Caçador x Mago — nível 30 — basic",
+      "level": 30,
+      "playerClass": "Caçador",
+      "enemyClass": "Mago",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 1,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 2.925,
+          "median": 3,
+          "p10": 3,
+          "p25": 3,
+          "p75": 3,
+          "p90": 3,
+          "oneOrTwoTurnRate": 0.085,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 56.221,
+        "damage": {
+          "meanPerDamagingAction": 35.128,
+          "min": 1,
+          "max": 53
+        },
+        "confrontation": {
+          "falha_total": 45,
+          "contato_neutralizado": 73,
+          "acerto_reduzido": 249,
+          "acerto_normal": 577,
+          "acerto_forte": 3906,
+          "natural1Rate": 0.0482,
+          "natural20Rate": 0.0522
+        },
+        "actions": {
+          "attacks": 4850,
+          "basicUses": 4850,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 40725
+        }
+      }
+    },
+    {
+      "id": "Caçador-Mago-L30-mixed",
+      "label": "Caçador x Mago — nível 30 — mixed",
+      "level": 30,
+      "playerClass": "Caçador",
+      "enemyClass": "Mago",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 1,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 2.033,
+          "median": 2,
+          "p10": 2,
+          "p25": 2,
+          "p75": 2,
+          "p90": 2,
+          "oneOrTwoTurnRate": 0.967,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 67.621,
+        "damage": {
+          "meanPerDamagingAction": 44.7811,
+          "min": 1,
+          "max": 64
+        },
+        "confrontation": {
+          "falha_total": 23,
+          "contato_neutralizado": 45,
+          "acerto_reduzido": 149,
+          "acerto_normal": 368,
+          "acerto_forte": 2481,
+          "natural1Rate": 0.0496,
+          "natural20Rate": 0.0574
+        },
+        "actions": {
+          "attacks": 3066,
+          "basicUses": 0,
+          "skillUses": 3066,
+          "skillUseRate": 1,
+          "eneSpent": 12264,
+          "eneRegenerated": 25561
+        }
+      }
+    },
+    {
+      "id": "Curandeiro-Bárbaro-L30-basic",
+      "label": "Curandeiro x Bárbaro — nível 30 — basic",
+      "level": 30,
+      "playerClass": "Curandeiro",
+      "enemyClass": "Bárbaro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.281,
+          "median": 3,
+          "p10": 3,
+          "p25": 3,
+          "p75": 4,
+          "p90": 4,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 0,
+        "damage": {
+          "meanPerDamagingAction": 23.1054,
+          "min": 1,
+          "max": 45
+        },
+        "confrontation": {
+          "falha_total": 584,
+          "contato_neutralizado": 497,
+          "acerto_reduzido": 907,
+          "acerto_normal": 1076,
+          "acerto_forte": 3498,
+          "natural1Rate": 0.0492,
+          "natural20Rate": 0.0488
+        },
+        "actions": {
+          "attacks": 6562,
+          "basicUses": 6562,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 49215
+        }
+      }
+    },
+    {
+      "id": "Curandeiro-Bárbaro-L30-mixed",
+      "label": "Curandeiro x Bárbaro — nível 30 — mixed",
+      "level": 30,
+      "playerClass": "Curandeiro",
+      "enemyClass": "Bárbaro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 2.92,
+          "median": 3,
+          "p10": 3,
+          "p25": 3,
+          "p75": 3,
+          "p90": 3,
+          "oneOrTwoTurnRate": 0.089,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 0,
+        "damage": {
+          "meanPerDamagingAction": 29.4862,
+          "min": 1,
+          "max": 59
+        },
+        "confrontation": {
+          "falha_total": 494,
+          "contato_neutralizado": 419,
+          "acerto_reduzido": 815,
+          "acerto_normal": 970,
+          "acerto_forte": 3142,
+          "natural1Rate": 0.0469,
+          "natural20Rate": 0.056
+        },
+        "actions": {
+          "attacks": 5840,
+          "basicUses": 2920,
+          "skillUses": 2920,
+          "skillUseRate": 0.5,
+          "eneSpent": 17520,
+          "eneRegenerated": 43800
+        }
+      }
+    },
+    {
+      "id": "Bardo-Curandeiro-L30-basic",
+      "label": "Bardo x Curandeiro — nível 30 — basic",
+      "level": 30,
+      "playerClass": "Bardo",
+      "enemyClass": "Curandeiro",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 1,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 5.331,
+          "median": 5,
+          "p10": 5,
+          "p25": 5,
+          "p75": 6,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 86.798,
+        "damage": {
+          "meanPerDamagingAction": 16.7012,
+          "min": 1,
+          "max": 31
+        },
+        "confrontation": {
+          "falha_total": 1275,
+          "contato_neutralizado": 971,
+          "acerto_reduzido": 1389,
+          "acerto_normal": 1876,
+          "acerto_forte": 4151,
+          "natural1Rate": 0.0486,
+          "natural20Rate": 0.0492
+        },
+        "actions": {
+          "attacks": 9662,
+          "basicUses": 9662,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 81627
+        }
+      }
+    },
+    {
+      "id": "Bardo-Curandeiro-L30-mixed",
+      "label": "Bardo x Curandeiro — nível 30 — mixed",
+      "level": 30,
+      "playerClass": "Bardo",
+      "enemyClass": "Curandeiro",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 1,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.274,
+          "median": 4,
+          "p10": 4,
+          "p25": 4,
+          "p75": 5,
+          "p90": 5,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 91.439,
+        "damage": {
+          "meanPerDamagingAction": 20.7471,
+          "min": 1,
+          "max": 38
+        },
+        "confrontation": {
+          "falha_total": 924,
+          "contato_neutralizado": 787,
+          "acerto_reduzido": 1064,
+          "acerto_normal": 1449,
+          "acerto_forte": 3324,
+          "natural1Rate": 0.0454,
+          "natural20Rate": 0.0533
+        },
+        "actions": {
+          "attacks": 7548,
+          "basicUses": 3274,
+          "skillUses": 4274,
+          "skillUseRate": 0.5662,
+          "eneSpent": 21370,
+          "eneRegenerated": 63658
+        }
+      }
+    },
+    {
+      "id": "Animalista-Bardo-L30-basic",
+      "label": "Animalista x Bardo — nível 30 — basic",
+      "level": 30,
+      "playerClass": "Animalista",
+      "enemyClass": "Bardo",
+      "playerActionProfile": "basic",
+      "enemyActionProfile": "basic",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.997,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 4.736,
+          "median": 5,
+          "p10": 4,
+          "p25": 4,
+          "p75": 5,
+          "p90": 6,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 58.706,
+        "damage": {
+          "meanPerDamagingAction": 21.4417,
+          "min": 1,
+          "max": 34
+        },
+        "confrontation": {
+          "falha_total": 207,
+          "contato_neutralizado": 381,
+          "acerto_reduzido": 1051,
+          "acerto_normal": 2008,
+          "acerto_forte": 4828,
+          "natural1Rate": 0.0524,
+          "natural20Rate": 0.0494
+        },
+        "actions": {
+          "attacks": 8475,
+          "basicUses": 8475,
+          "skillUses": 0,
+          "skillUseRate": 0,
+          "eneSpent": 0,
+          "eneRegenerated": 58328
+        }
+      }
+    },
+    {
+      "id": "Animalista-Bardo-L30-mixed",
+      "label": "Animalista x Bardo — nível 30 — mixed",
+      "level": 30,
+      "playerClass": "Animalista",
+      "enemyClass": "Bardo",
+      "playerActionProfile": "mixed",
+      "enemyActionProfile": "mixed",
+      "passivesEnabled": true,
+      "summary": {
+        "runs": 1000,
+        "winRate": 0.998,
+        "drawRate": 0,
+        "ttk": {
+          "mean": 3.558,
+          "median": 3,
+          "p10": 3,
+          "p25": 3,
+          "p75": 4,
+          "p90": 4,
+          "oneOrTwoTurnRate": 0,
+          "overLimitRate": 0
+        },
+        "playerHpFinalMean": 67.423,
+        "damage": {
+          "meanPerDamagingAction": 29.0089,
+          "min": 1,
+          "max": 47
+        },
+        "confrontation": {
+          "falha_total": 158,
+          "contato_neutralizado": 272,
+          "acerto_reduzido": 753,
+          "acerto_normal": 1498,
+          "acerto_forte": 3437,
+          "natural1Rate": 0.0505,
+          "natural20Rate": 0.0477
+        },
+        "actions": {
+          "attacks": 6118,
+          "basicUses": 0,
+          "skillUses": 6118,
+          "skillUseRate": 1,
+          "eneSpent": 27032,
+          "eneRegenerated": 41828
+        }
+      }
+    }
+  ]
+}

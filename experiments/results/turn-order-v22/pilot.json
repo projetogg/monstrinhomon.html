@@ -1,0 +1,5189 @@
+{
+  "schemaVersion": 1,
+  "id": "MM-LAB-TURN-ORDER-PILOT",
+  "generatedAt": "2026-10-28T19:33:55.464Z",
+  "sourceCommit": "e6d550ff427657110500d99cbc3e570cfedde2f6",
+  "runtime": "v24.22.1",
+  "elapsedMs": 60,
+  "engine": "combatSimulationHarness-v2.2",
+  "policy": "basic ou mixed do harness; ENE inicial zero",
+  "config": {
+    "id": "MM-LAB-TURN-ORDER-PILOT",
+    "seed": "monstrinhomon-turn-order-v1",
+    "runs": 100,
+    "maxTurns": 50,
+    "levels": [
+      1,
+      10
+    ],
+    "pairs": [
+      [
+        "Guerreiro",
+        "Bárbaro"
+      ],
+      [
+        "Mago",
+        "Guerreiro"
+      ],
+      [
+        "Ladino",
+        "Caçador"
+      ]
+    ],
+    "selfClasses": [
+      "Guerreiro",
+      "Mago"
+    ],
+    "replicates": 1,
+    "includeSelfControls": true
+  },
+  "configHash": "a7b7ac697f72f5b1a754748118304f18a77cf5b162842e22c25fc7383a05bdbf",
+  "sourceHashes": {
+    "js/combat/combatSimulationHarness.js": "c4d0d730981ac02aecc05609811c4051ec0c98c43b636cbeca769e398d7cc73e",
+    "js/combat/groupCombatFormula.js": "58c31a898815471ddf1ab32f2089f081839e121bb56b5ebd771ea0b2459ab074",
+    "data/monsters.json": "262d91c8ecaffeb9ed2aa4d7a0764512688ffa7b7706afbdd35642a43dbf3522",
+    "data/skills.json": "b97c72ca243b100f9c46ca0374b639cd232912de9b3e60415299f0a211ffddbe",
+    "design/canon/class_matchups.json": "6ae570d9d6ef07cadc87fe870340cddcf095e5fd99152b2521ab2d305710f118",
+    "scripts/experiment-turn-order-v22.mjs": "048d0802ff09dcda7e9ea5b6761d9ffcb9e1b672a80d1a5d35dbda05a0acb2da",
+    "experiments/configs/turn-order-v22-pilot.json": "3d9d1c5977a469b96951a409234f99ced90de72247203d66ecd0b53a82b8d216"
+  },
+  "resultsHash": "b3c69adcadf0337f11d97a10c0ebb4a0e82373ad7c8cce098f8b2d5360f46ee2",
+  "results": [
+    {
+      "id": "MON_001:MON_021:L1:basic",
+      "control": false,
+      "scenario": {
+        "id": "MON_001:MON_021:L1:basic",
+        "label": "Guerreiro x Bárbaro — nível 1 — basic",
+        "player": {
+          "id": "MON_001",
+          "name": "Ferrozimon",
+          "class": "Guerreiro",
+          "rarity": "Comum",
+          "level": 1,
+          "hp": 29,
+          "hpMax": 29,
+          "atk": 7,
+          "def": 9,
+          "spd": 4,
+          "eneMax": 4
+        },
+        "enemy": {
+          "id": "MON_021",
+          "name": "Tamborilhomon",
+          "class": "Bárbaro",
+          "rarity": "Comum",
+          "level": 1,
+          "hp": 32,
+          "hpMax": 32,
+          "atk": 8,
+          "def": 6,
+          "spd": 4,
+          "eneMax": 4
+        },
+        "playerSkill": {
+          "id": "GOLPE_DE_ESPADA_0",
+          "name": "Golpe de Espada I",
+          "class": "Guerreiro",
+          "groupKey": "Golpe de Espada",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 14,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Ataque com espada.",
+          "tier": 1
+        },
+        "enemySkill": {
+          "id": "GOLPE_BRUTAL_0",
+          "name": "Golpe Brutal I",
+          "class": "Bárbaro",
+          "groupKey": "Golpe Brutal",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 18,
+          "accuracy": 1,
+          "energy_cost": 6,
+          "target": "Inimigo",
+          "desc": "Golpe brutal.",
+          "tier": 1
+        },
+        "playerActionProfile": "basic",
+        "enemyActionProfile": "basic",
+        "classAdvantages": {
+          "Guerreiro": {
+            "strong": "Ladino",
+            "weak": "Mago"
+          },
+          "Bárbaro": {
+            "strong": "Curandeiro",
+            "weak": "Guerreiro"
+          },
+          "Mago": {
+            "strong": "Guerreiro",
+            "weak": "Caçador"
+          },
+          "Curandeiro": {
+            "strong": "Bárbaro",
+            "weak": "Bardo"
+          },
+          "Bardo": {
+            "strong": "Curandeiro",
+            "weak": "Animalista"
+          },
+          "Ladino": {
+            "strong": "Caçador",
+            "weak": "Guerreiro"
+          },
+          "Caçador": {
+            "strong": "Mago",
+            "weak": "Ladino"
+          },
+          "Animalista": {
+            "strong": "Bardo",
+            "weak": "Bárbaro"
+          }
+        },
+        "initialEnergyRatio": 0,
+        "passivesEnabled": true,
+        "control": false
+      },
+      "aFirst": {
+        "n": 100,
+        "aWins": 61,
+        "bWins": 39,
+        "draws": 0,
+        "turns": 437,
+        "attacks": 813,
+        "skillUses": 0,
+        "eneSpent": 0,
+        "actionsA": 437,
+        "actionsB": 376,
+        "hpA": 786,
+        "hpB": 374,
+        "effectiveDamageA": 2826,
+        "effectiveDamageB": 2114,
+        "noResponse": 0,
+        "firstActorFinalBlows": 61,
+        "turnHistogram": {
+          "3": 23,
+          "4": 38,
+          "5": 22,
+          "6": 14,
+          "7": 2,
+          "8": 1
+        },
+        "aWinRate": 0.61,
+        "aWinInterval95": [
+          0.5120301704584073,
+          0.6998312599360558
+        ],
+        "meanTurns": 4.37,
+        "medianTurns": 4,
+        "p10Turns": 3,
+        "p90Turns": 6,
+        "meanHpA": 7.86,
+        "meanHpB": 3.74
+      },
+      "bFirst": {
+        "n": 100,
+        "aWins": 53,
+        "bWins": 47,
+        "draws": 0,
+        "turns": 449,
+        "attacks": 851,
+        "skillUses": 0,
+        "eneSpent": 0,
+        "actionsA": 402,
+        "actionsB": 449,
+        "hpA": 522,
+        "hpB": 527,
+        "effectiveDamageA": 2673,
+        "effectiveDamageB": 2378,
+        "noResponse": 0,
+        "firstActorFinalBlows": 47,
+        "turnHistogram": {
+          "3": 18,
+          "4": 37,
+          "5": 28,
+          "6": 13,
+          "7": 3,
+          "8": 1
+        },
+        "aWinRate": 0.53,
+        "aWinInterval95": [
+          0.4328885697009936,
+          0.6248918204065872
+        ],
+        "meanTurns": 4.49,
+        "medianTurns": 4,
+        "p10Turns": 3,
+        "p90Turns": 6,
+        "meanHpA": 5.22,
+        "meanHpB": 5.27
+      },
+      "bySeed": [
+        {
+          "seed": "monstrinhomon-turn-order-v1:replicate-1",
+          "aFirst": {
+            "n": 100,
+            "aWins": 61,
+            "bWins": 39,
+            "draws": 0,
+            "turns": 437,
+            "attacks": 813,
+            "skillUses": 0,
+            "eneSpent": 0,
+            "actionsA": 437,
+            "actionsB": 376,
+            "hpA": 786,
+            "hpB": 374,
+            "effectiveDamageA": 2826,
+            "effectiveDamageB": 2114,
+            "noResponse": 0,
+            "firstActorFinalBlows": 61,
+            "turnHistogram": {
+              "3": 23,
+              "4": 38,
+              "5": 22,
+              "6": 14,
+              "7": 2,
+              "8": 1
+            },
+            "aWinRate": 0.61,
+            "aWinInterval95": [
+              0.5120301704584073,
+              0.6998312599360558
+            ],
+            "meanTurns": 4.37,
+            "medianTurns": 4,
+            "p10Turns": 3,
+            "p90Turns": 6,
+            "meanHpA": 7.86,
+            "meanHpB": 3.74
+          },
+          "bFirst": {
+            "n": 100,
+            "aWins": 53,
+            "bWins": 47,
+            "draws": 0,
+            "turns": 449,
+            "attacks": 851,
+            "skillUses": 0,
+            "eneSpent": 0,
+            "actionsA": 402,
+            "actionsB": 449,
+            "hpA": 522,
+            "hpB": 527,
+            "effectiveDamageA": 2673,
+            "effectiveDamageB": 2378,
+            "noResponse": 0,
+            "firstActorFinalBlows": 47,
+            "turnHistogram": {
+              "3": 18,
+              "4": 37,
+              "5": 28,
+              "6": 13,
+              "7": 3,
+              "8": 1
+            },
+            "aWinRate": 0.53,
+            "aWinInterval95": [
+              0.4328885697009936,
+              0.6248918204065872
+            ],
+            "meanTurns": 4.49,
+            "medianTurns": 4,
+            "p10Turns": 3,
+            "p90Turns": 6,
+            "meanHpA": 5.22,
+            "meanHpB": 5.27
+          }
+        }
+      ],
+      "deltaWinPercentagePoints": 7.9999999999999964,
+      "deltaInterval95": [
+        -5.6391147368459125,
+        21.22886433387915
+      ]
+    },
+    {
+      "id": "MON_001:MON_021:L1:mixed",
+      "control": false,
+      "scenario": {
+        "id": "MON_001:MON_021:L1:mixed",
+        "label": "Guerreiro x Bárbaro — nível 1 — mixed",
+        "player": {
+          "id": "MON_001",
+          "name": "Ferrozimon",
+          "class": "Guerreiro",
+          "rarity": "Comum",
+          "level": 1,
+          "hp": 29,
+          "hpMax": 29,
+          "atk": 7,
+          "def": 9,
+          "spd": 4,
+          "eneMax": 4
+        },
+        "enemy": {
+          "id": "MON_021",
+          "name": "Tamborilhomon",
+          "class": "Bárbaro",
+          "rarity": "Comum",
+          "level": 1,
+          "hp": 32,
+          "hpMax": 32,
+          "atk": 8,
+          "def": 6,
+          "spd": 4,
+          "eneMax": 4
+        },
+        "playerSkill": {
+          "id": "GOLPE_DE_ESPADA_0",
+          "name": "Golpe de Espada I",
+          "class": "Guerreiro",
+          "groupKey": "Golpe de Espada",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 14,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Ataque com espada.",
+          "tier": 1
+        },
+        "enemySkill": {
+          "id": "GOLPE_BRUTAL_0",
+          "name": "Golpe Brutal I",
+          "class": "Bárbaro",
+          "groupKey": "Golpe Brutal",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 18,
+          "accuracy": 1,
+          "energy_cost": 6,
+          "target": "Inimigo",
+          "desc": "Golpe brutal.",
+          "tier": 1
+        },
+        "playerActionProfile": "mixed",
+        "enemyActionProfile": "mixed",
+        "classAdvantages": {
+          "Guerreiro": {
+            "strong": "Ladino",
+            "weak": "Mago"
+          },
+          "Bárbaro": {
+            "strong": "Curandeiro",
+            "weak": "Guerreiro"
+          },
+          "Mago": {
+            "strong": "Guerreiro",
+            "weak": "Caçador"
+          },
+          "Curandeiro": {
+            "strong": "Bárbaro",
+            "weak": "Bardo"
+          },
+          "Bardo": {
+            "strong": "Curandeiro",
+            "weak": "Animalista"
+          },
+          "Ladino": {
+            "strong": "Caçador",
+            "weak": "Guerreiro"
+          },
+          "Caçador": {
+            "strong": "Mago",
+            "weak": "Ladino"
+          },
+          "Animalista": {
+            "strong": "Bardo",
+            "weak": "Bárbaro"
+          }
+        },
+        "initialEnergyRatio": 0,
+        "passivesEnabled": true,
+        "control": false
+      },
+      "aFirst": {
+        "n": 100,
+        "aWins": 71,
+        "bWins": 29,
+        "draws": 0,
+        "turns": 432,
+        "attacks": 793,
+        "skillUses": 79,
+        "eneSpent": 316,
+        "actionsA": 432,
+        "actionsB": 361,
+        "hpA": 834,
+        "hpB": 313,
+        "effectiveDamageA": 2887,
+        "effectiveDamageB": 2066,
+        "noResponse": 0,
+        "firstActorFinalBlows": 71,
+        "turnHistogram": {
+          "3": 21,
+          "4": 46,
+          "5": 16,
+          "6": 14,
+          "7": 3
+        },
+        "aWinRate": 0.71,
+        "aWinInterval95": [
+          0.6146110882442888,
+          0.7898516425087772
+        ],
+        "meanTurns": 4.32,
+        "medianTurns": 4,
+        "p10Turns": 3,
+        "p90Turns": 6,
+        "meanHpA": 8.34,
+        "meanHpB": 3.13
+      },
+      "bFirst": {
+        "n": 100,
+        "aWins": 56,
+        "bWins": 44,
+        "draws": 0,
+        "turns": 424,
+        "attacks": 804,
+        "skillUses": 60,
+        "eneSpent": 240,
+        "actionsA": 380,
+        "actionsB": 424,
+        "hpA": 568,
+        "hpB": 573,
+        "effectiveDamageA": 2627,
+        "effectiveDamageB": 2332,
+        "noResponse": 0,
+        "firstActorFinalBlows": 44,
+        "turnHistogram": {
+          "3": 26,
+          "4": 44,
+          "5": 15,
+          "6": 11,
+          "7": 3,
+          "8": 1
+        },
+        "aWinRate": 0.56,
+        "aWinInterval95": [
+          0.4622810465167699,
+          0.6532797336983921
+        ],
+        "meanTurns": 4.24,
+        "medianTurns": 4,
+        "p10Turns": 3,
+        "p90Turns": 6,
+        "meanHpA": 5.68,
+        "meanHpB": 5.73
+      },
+      "bySeed": [
+        {
+          "seed": "monstrinhomon-turn-order-v1:replicate-1",
+          "aFirst": {
+            "n": 100,
+            "aWins": 71,
+            "bWins": 29,
+            "draws": 0,
+            "turns": 432,
+            "attacks": 793,
+            "skillUses": 79,
+            "eneSpent": 316,
+            "actionsA": 432,
+            "actionsB": 361,
+            "hpA": 834,
+            "hpB": 313,
+            "effectiveDamageA": 2887,
+            "effectiveDamageB": 2066,
+            "noResponse": 0,
+            "firstActorFinalBlows": 71,
+            "turnHistogram": {
+              "3": 21,
+              "4": 46,
+              "5": 16,
+              "6": 14,
+              "7": 3
+            },
+            "aWinRate": 0.71,
+            "aWinInterval95": [
+              0.6146110882442888,
+              0.7898516425087772
+            ],
+            "meanTurns": 4.32,
+            "medianTurns": 4,
+            "p10Turns": 3,
+            "p90Turns": 6,
+            "meanHpA": 8.34,
+            "meanHpB": 3.13
+          },
+          "bFirst": {
+            "n": 100,
+            "aWins": 56,
+            "bWins": 44,
+            "draws": 0,
+            "turns": 424,
+            "attacks": 804,
+            "skillUses": 60,
+            "eneSpent": 240,
+            "actionsA": 380,
+            "actionsB": 424,
+            "hpA": 568,
+            "hpB": 573,
+            "effectiveDamageA": 2627,
+            "effectiveDamageB": 2332,
+            "noResponse": 0,
+            "firstActorFinalBlows": 44,
+            "turnHistogram": {
+              "3": 26,
+              "4": 44,
+              "5": 15,
+              "6": 11,
+              "7": 3,
+              "8": 1
+            },
+            "aWinRate": 0.56,
+            "aWinInterval95": [
+              0.4622810465167699,
+              0.6532797336983921
+            ],
+            "meanTurns": 4.24,
+            "medianTurns": 4,
+            "p10Turns": 3,
+            "p90Turns": 6,
+            "meanHpA": 5.68,
+            "meanHpB": 5.73
+          }
+        }
+      ],
+      "deltaWinPercentagePoints": 14.999999999999991,
+      "deltaInterval95": [
+        1.6582785200777717,
+        27.619539881155426
+      ]
+    },
+    {
+      "id": "MON_001:MON_013:L1:basic",
+      "control": false,
+      "scenario": {
+        "id": "MON_001:MON_013:L1:basic",
+        "label": "Mago x Guerreiro — nível 1 — basic",
+        "player": {
+          "id": "MON_013",
+          "name": "Lagartomon",
+          "class": "Mago",
+          "rarity": "Comum",
+          "level": 1,
+          "hp": 24,
+          "hpMax": 24,
+          "atk": 6,
+          "def": 4,
+          "spd": 6,
+          "eneMax": 8
+        },
+        "enemy": {
+          "id": "MON_001",
+          "name": "Ferrozimon",
+          "class": "Guerreiro",
+          "rarity": "Comum",
+          "level": 1,
+          "hp": 29,
+          "hpMax": 29,
+          "atk": 7,
+          "def": 9,
+          "spd": 4,
+          "eneMax": 4
+        },
+        "playerSkill": {
+          "id": "MAGIA_ELEMENTAL_0",
+          "name": "Magia Elemental I",
+          "class": "Mago",
+          "groupKey": "Magia Elemental",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 15,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Magia elemental.",
+          "tier": 1
+        },
+        "enemySkill": {
+          "id": "GOLPE_DE_ESPADA_0",
+          "name": "Golpe de Espada I",
+          "class": "Guerreiro",
+          "groupKey": "Golpe de Espada",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 14,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Ataque com espada.",
+          "tier": 1
+        },
+        "playerActionProfile": "basic",
+        "enemyActionProfile": "basic",
+        "classAdvantages": {
+          "Guerreiro": {
+            "strong": "Ladino",
+            "weak": "Mago"
+          },
+          "Bárbaro": {
+            "strong": "Curandeiro",
+            "weak": "Guerreiro"
+          },
+          "Mago": {
+            "strong": "Guerreiro",
+            "weak": "Caçador"
+          },
+          "Curandeiro": {
+            "strong": "Bárbaro",
+            "weak": "Bardo"
+          },
+          "Bardo": {
+            "strong": "Curandeiro",
+            "weak": "Animalista"
+          },
+          "Ladino": {
+            "strong": "Caçador",
+            "weak": "Guerreiro"
+          },
+          "Caçador": {
+            "strong": "Mago",
+            "weak": "Ladino"
+          },
+          "Animalista": {
+            "strong": "Bardo",
+            "weak": "Bárbaro"
+          }
+        },
+        "initialEnergyRatio": 0,
+        "passivesEnabled": true,
+        "control": false
+      },
+      "aFirst": {
+        "n": 100,
+        "aWins": 20,
+        "bWins": 80,
+        "draws": 0,
+        "turns": 385,
+        "attacks": 750,
+        "skillUses": 0,
+        "eneSpent": 0,
+        "actionsA": 385,
+        "actionsB": 365,
+        "hpA": 114,
+        "hpB": 915,
+        "effectiveDamageA": 1985,
+        "effectiveDamageB": 2286,
+        "noResponse": 0,
+        "firstActorFinalBlows": 20,
+        "turnHistogram": {
+          "2": 7,
+          "3": 40,
+          "4": 32,
+          "5": 10,
+          "6": 6,
+          "7": 3,
+          "8": 2
+        },
+        "aWinRate": 0.2,
+        "aWinInterval95": [
+          0.1333669333310325,
+          0.2888291655931589
+        ],
+        "meanTurns": 3.85,
+        "medianTurns": 4,
+        "p10Turns": 3,
+        "p90Turns": 6,
+        "meanHpA": 1.14,
+        "meanHpB": 9.15
+      },
+      "bFirst": {
+        "n": 100,
+        "aWins": 16,
+        "bWins": 84,
+        "draws": 0,
+        "turns": 412,
+        "attacks": 740,
+        "skillUses": 0,
+        "eneSpent": 0,
+        "actionsA": 328,
+        "actionsB": 412,
+        "hpA": 95,
+        "hpB": 1145,
+        "effectiveDamageA": 1755,
+        "effectiveDamageB": 2305,
+        "noResponse": 0,
+        "firstActorFinalBlows": 84,
+        "turnHistogram": {
+          "2": 7,
+          "3": 25,
+          "4": 29,
+          "5": 29,
+          "6": 9,
+          "8": 1
+        },
+        "aWinRate": 0.16,
+        "aWinInterval95": [
+          0.10095288488804782,
+          0.24420269389270244
+        ],
+        "meanTurns": 4.12,
+        "medianTurns": 4,
+        "p10Turns": 3,
+        "p90Turns": 5.1000000000000085,
+        "meanHpA": 0.95,
+        "meanHpB": 11.45
+      },
+      "bySeed": [
+        {
+          "seed": "monstrinhomon-turn-order-v1:replicate-1",
+          "aFirst": {
+            "n": 100,
+            "aWins": 20,
+            "bWins": 80,
+            "draws": 0,
+            "turns": 385,
+            "attacks": 750,
+            "skillUses": 0,
+            "eneSpent": 0,
+            "actionsA": 385,
+            "actionsB": 365,
+            "hpA": 114,
+            "hpB": 915,
+            "effectiveDamageA": 1985,
+            "effectiveDamageB": 2286,
+            "noResponse": 0,
+            "firstActorFinalBlows": 20,
+            "turnHistogram": {
+              "2": 7,
+              "3": 40,
+              "4": 32,
+              "5": 10,
+              "6": 6,
+              "7": 3,
+              "8": 2
+            },
+            "aWinRate": 0.2,
+            "aWinInterval95": [
+              0.1333669333310325,
+              0.2888291655931589
+            ],
+            "meanTurns": 3.85,
+            "medianTurns": 4,
+            "p10Turns": 3,
+            "p90Turns": 6,
+            "meanHpA": 1.14,
+            "meanHpB": 9.15
+          },
+          "bFirst": {
+            "n": 100,
+            "aWins": 16,
+            "bWins": 84,
+            "draws": 0,
+            "turns": 412,
+            "attacks": 740,
+            "skillUses": 0,
+            "eneSpent": 0,
+            "actionsA": 328,
+            "actionsB": 412,
+            "hpA": 95,
+            "hpB": 1145,
+            "effectiveDamageA": 1755,
+            "effectiveDamageB": 2305,
+            "noResponse": 0,
+            "firstActorFinalBlows": 84,
+            "turnHistogram": {
+              "2": 7,
+              "3": 25,
+              "4": 29,
+              "5": 29,
+              "6": 9,
+              "8": 1
+            },
+            "aWinRate": 0.16,
+            "aWinInterval95": [
+              0.10095288488804782,
+              0.24420269389270244
+            ],
+            "meanTurns": 4.12,
+            "medianTurns": 4,
+            "p10Turns": 3,
+            "p90Turns": 5.1000000000000085,
+            "meanHpA": 0.95,
+            "meanHpB": 11.45
+          }
+        }
+      ],
+      "deltaWinPercentagePoints": 4.000000000000001,
+      "deltaInterval95": [
+        -6.737811337744399,
+        14.666387609224119
+      ]
+    },
+    {
+      "id": "MON_001:MON_013:L1:mixed",
+      "control": false,
+      "scenario": {
+        "id": "MON_001:MON_013:L1:mixed",
+        "label": "Mago x Guerreiro — nível 1 — mixed",
+        "player": {
+          "id": "MON_013",
+          "name": "Lagartomon",
+          "class": "Mago",
+          "rarity": "Comum",
+          "level": 1,
+          "hp": 24,
+          "hpMax": 24,
+          "atk": 6,
+          "def": 4,
+          "spd": 6,
+          "eneMax": 8
+        },
+        "enemy": {
+          "id": "MON_001",
+          "name": "Ferrozimon",
+          "class": "Guerreiro",
+          "rarity": "Comum",
+          "level": 1,
+          "hp": 29,
+          "hpMax": 29,
+          "atk": 7,
+          "def": 9,
+          "spd": 4,
+          "eneMax": 4
+        },
+        "playerSkill": {
+          "id": "MAGIA_ELEMENTAL_0",
+          "name": "Magia Elemental I",
+          "class": "Mago",
+          "groupKey": "Magia Elemental",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 15,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Magia elemental.",
+          "tier": 1
+        },
+        "enemySkill": {
+          "id": "GOLPE_DE_ESPADA_0",
+          "name": "Golpe de Espada I",
+          "class": "Guerreiro",
+          "groupKey": "Golpe de Espada",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 14,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Ataque com espada.",
+          "tier": 1
+        },
+        "playerActionProfile": "mixed",
+        "enemyActionProfile": "mixed",
+        "classAdvantages": {
+          "Guerreiro": {
+            "strong": "Ladino",
+            "weak": "Mago"
+          },
+          "Bárbaro": {
+            "strong": "Curandeiro",
+            "weak": "Guerreiro"
+          },
+          "Mago": {
+            "strong": "Guerreiro",
+            "weak": "Caçador"
+          },
+          "Curandeiro": {
+            "strong": "Bárbaro",
+            "weak": "Bardo"
+          },
+          "Bardo": {
+            "strong": "Curandeiro",
+            "weak": "Animalista"
+          },
+          "Ladino": {
+            "strong": "Caçador",
+            "weak": "Guerreiro"
+          },
+          "Caçador": {
+            "strong": "Mago",
+            "weak": "Ladino"
+          },
+          "Animalista": {
+            "strong": "Bardo",
+            "weak": "Bárbaro"
+          }
+        },
+        "initialEnergyRatio": 0,
+        "passivesEnabled": true,
+        "control": false
+      },
+      "aFirst": {
+        "n": 100,
+        "aWins": 46,
+        "bWins": 54,
+        "draws": 0,
+        "turns": 328,
+        "attacks": 610,
+        "skillUses": 155,
+        "eneSpent": 620,
+        "actionsA": 328,
+        "actionsB": 282,
+        "hpA": 491,
+        "hpB": 651,
+        "effectiveDamageA": 2249,
+        "effectiveDamageB": 1909,
+        "noResponse": 0,
+        "firstActorFinalBlows": 46,
+        "turnHistogram": {
+          "2": 16,
+          "3": 49,
+          "4": 28,
+          "5": 5,
+          "6": 2
+        },
+        "aWinRate": 0.46,
+        "aWinInterval95": [
+          0.36560808309024106,
+          0.5573513967663177
+        ],
+        "meanTurns": 3.28,
+        "medianTurns": 3,
+        "p10Turns": 2,
+        "p90Turns": 4,
+        "meanHpA": 4.91,
+        "meanHpB": 6.51
+      },
+      "bFirst": {
+        "n": 100,
+        "aWins": 19,
+        "bWins": 81,
+        "draws": 0,
+        "turns": 344,
+        "attacks": 607,
+        "skillUses": 150,
+        "eneSpent": 600,
+        "actionsA": 263,
+        "actionsB": 344,
+        "hpA": 186,
+        "hpB": 963,
+        "effectiveDamageA": 1937,
+        "effectiveDamageB": 2214,
+        "noResponse": 0,
+        "firstActorFinalBlows": 81,
+        "turnHistogram": {
+          "2": 14,
+          "3": 41,
+          "4": 36,
+          "5": 6,
+          "6": 2,
+          "7": 1
+        },
+        "aWinRate": 0.19,
+        "aWinInterval95": [
+          0.12514751509768735,
+          0.27778845379064376
+        ],
+        "meanTurns": 3.44,
+        "medianTurns": 3,
+        "p10Turns": 2,
+        "p90Turns": 4,
+        "meanHpA": 1.86,
+        "meanHpB": 9.63
+      },
+      "bySeed": [
+        {
+          "seed": "monstrinhomon-turn-order-v1:replicate-1",
+          "aFirst": {
+            "n": 100,
+            "aWins": 46,
+            "bWins": 54,
+            "draws": 0,
+            "turns": 328,
+            "attacks": 610,
+            "skillUses": 155,
+            "eneSpent": 620,
+            "actionsA": 328,
+            "actionsB": 282,
+            "hpA": 491,
+            "hpB": 651,
+            "effectiveDamageA": 2249,
+            "effectiveDamageB": 1909,
+            "noResponse": 0,
+            "firstActorFinalBlows": 46,
+            "turnHistogram": {
+              "2": 16,
+              "3": 49,
+              "4": 28,
+              "5": 5,
+              "6": 2
+            },
+            "aWinRate": 0.46,
+            "aWinInterval95": [
+              0.36560808309024106,
+              0.5573513967663177
+            ],
+            "meanTurns": 3.28,
+            "medianTurns": 3,
+            "p10Turns": 2,
+            "p90Turns": 4,
+            "meanHpA": 4.91,
+            "meanHpB": 6.51
+          },
+          "bFirst": {
+            "n": 100,
+            "aWins": 19,
+            "bWins": 81,
+            "draws": 0,
+            "turns": 344,
+            "attacks": 607,
+            "skillUses": 150,
+            "eneSpent": 600,
+            "actionsA": 263,
+            "actionsB": 344,
+            "hpA": 186,
+            "hpB": 963,
+            "effectiveDamageA": 1937,
+            "effectiveDamageB": 2214,
+            "noResponse": 0,
+            "firstActorFinalBlows": 81,
+            "turnHistogram": {
+              "2": 14,
+              "3": 41,
+              "4": 36,
+              "5": 6,
+              "6": 2,
+              "7": 1
+            },
+            "aWinRate": 0.19,
+            "aWinInterval95": [
+              0.12514751509768735,
+              0.27778845379064376
+            ],
+            "meanTurns": 3.44,
+            "medianTurns": 3,
+            "p10Turns": 2,
+            "p90Turns": 4,
+            "meanHpA": 1.86,
+            "meanHpB": 9.63
+          }
+        }
+      ],
+      "deltaWinPercentagePoints": 27,
+      "deltaInterval95": [
+        14.109442759581405,
+        38.697495138001855
+      ]
+    },
+    {
+      "id": "MON_009:MON_022:L1:basic",
+      "control": false,
+      "scenario": {
+        "id": "MON_009:MON_022:L1:basic",
+        "label": "Ladino x Caçador — nível 1 — basic",
+        "player": {
+          "id": "MON_022",
+          "name": "Corvimon",
+          "class": "Ladino",
+          "rarity": "Comum",
+          "level": 1,
+          "hp": 23,
+          "hpMax": 23,
+          "atk": 7,
+          "def": 4,
+          "spd": 10,
+          "eneMax": 6
+        },
+        "enemy": {
+          "id": "MON_009",
+          "name": "Miaumon",
+          "class": "Caçador",
+          "rarity": "Comum",
+          "level": 1,
+          "hp": 25,
+          "hpMax": 25,
+          "atk": 8,
+          "def": 4,
+          "spd": 9,
+          "eneMax": 4
+        },
+        "playerSkill": {
+          "id": "ATAQUE_PRECISO_0",
+          "name": "Ataque Preciso I",
+          "class": "Ladino",
+          "groupKey": "Ataque Preciso",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 15,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Ataque preciso.",
+          "tier": 1
+        },
+        "enemySkill": {
+          "id": "FLECHA_PODEROSA_0",
+          "name": "Flecha Poderosa I",
+          "class": "Caçador",
+          "groupKey": "Flecha Poderosa",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 15,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Flecha poderosa.",
+          "tier": 1
+        },
+        "playerActionProfile": "basic",
+        "enemyActionProfile": "basic",
+        "classAdvantages": {
+          "Guerreiro": {
+            "strong": "Ladino",
+            "weak": "Mago"
+          },
+          "Bárbaro": {
+            "strong": "Curandeiro",
+            "weak": "Guerreiro"
+          },
+          "Mago": {
+            "strong": "Guerreiro",
+            "weak": "Caçador"
+          },
+          "Curandeiro": {
+            "strong": "Bárbaro",
+            "weak": "Bardo"
+          },
+          "Bardo": {
+            "strong": "Curandeiro",
+            "weak": "Animalista"
+          },
+          "Ladino": {
+            "strong": "Caçador",
+            "weak": "Guerreiro"
+          },
+          "Caçador": {
+            "strong": "Mago",
+            "weak": "Ladino"
+          },
+          "Animalista": {
+            "strong": "Bardo",
+            "weak": "Bárbaro"
+          }
+        },
+        "initialEnergyRatio": 0,
+        "passivesEnabled": true,
+        "control": false
+      },
+      "aFirst": {
+        "n": 100,
+        "aWins": 75,
+        "bWins": 25,
+        "draws": 0,
+        "turns": 234,
+        "attacks": 393,
+        "skillUses": 0,
+        "eneSpent": 0,
+        "actionsA": 234,
+        "actionsB": 159,
+        "hpA": 870,
+        "hpB": 147,
+        "effectiveDamageA": 2353,
+        "effectiveDamageB": 1430,
+        "noResponse": 0,
+        "firstActorFinalBlows": 75,
+        "turnHistogram": {
+          "2": 70,
+          "3": 26,
+          "4": 4
+        },
+        "aWinRate": 0.75,
+        "aWinInterval95": [
+          0.656955364519384,
+          0.8245478863771232
+        ],
+        "meanTurns": 2.34,
+        "medianTurns": 2,
+        "p10Turns": 2,
+        "p90Turns": 3,
+        "meanHpA": 8.7,
+        "meanHpB": 1.47
+      },
+      "bFirst": {
+        "n": 100,
+        "aWins": 50,
+        "bWins": 50,
+        "draws": 0,
+        "turns": 232,
+        "attacks": 414,
+        "skillUses": 0,
+        "eneSpent": 0,
+        "actionsA": 182,
+        "actionsB": 232,
+        "hpA": 441,
+        "hpB": 513,
+        "effectiveDamageA": 1987,
+        "effectiveDamageB": 1859,
+        "noResponse": 0,
+        "firstActorFinalBlows": 50,
+        "turnHistogram": {
+          "2": 74,
+          "3": 20,
+          "4": 6
+        },
+        "aWinRate": 0.5,
+        "aWinInterval95": [
+          0.4038315303659956,
+          0.5961684696340044
+        ],
+        "meanTurns": 2.32,
+        "medianTurns": 2,
+        "p10Turns": 2,
+        "p90Turns": 3,
+        "meanHpA": 4.41,
+        "meanHpB": 5.13
+      },
+      "bySeed": [
+        {
+          "seed": "monstrinhomon-turn-order-v1:replicate-1",
+          "aFirst": {
+            "n": 100,
+            "aWins": 75,
+            "bWins": 25,
+            "draws": 0,
+            "turns": 234,
+            "attacks": 393,
+            "skillUses": 0,
+            "eneSpent": 0,
+            "actionsA": 234,
+            "actionsB": 159,
+            "hpA": 870,
+            "hpB": 147,
+            "effectiveDamageA": 2353,
+            "effectiveDamageB": 1430,
+            "noResponse": 0,
+            "firstActorFinalBlows": 75,
+            "turnHistogram": {
+              "2": 70,
+              "3": 26,
+              "4": 4
+            },
+            "aWinRate": 0.75,
+            "aWinInterval95": [
+              0.656955364519384,
+              0.8245478863771232
+            ],
+            "meanTurns": 2.34,
+            "medianTurns": 2,
+            "p10Turns": 2,
+            "p90Turns": 3,
+            "meanHpA": 8.7,
+            "meanHpB": 1.47
+          },
+          "bFirst": {
+            "n": 100,
+            "aWins": 50,
+            "bWins": 50,
+            "draws": 0,
+            "turns": 232,
+            "attacks": 414,
+            "skillUses": 0,
+            "eneSpent": 0,
+            "actionsA": 182,
+            "actionsB": 232,
+            "hpA": 441,
+            "hpB": 513,
+            "effectiveDamageA": 1987,
+            "effectiveDamageB": 1859,
+            "noResponse": 0,
+            "firstActorFinalBlows": 50,
+            "turnHistogram": {
+              "2": 74,
+              "3": 20,
+              "4": 6
+            },
+            "aWinRate": 0.5,
+            "aWinInterval95": [
+              0.4038315303659956,
+              0.5961684696340044
+            ],
+            "meanTurns": 2.32,
+            "medianTurns": 2,
+            "p10Turns": 2,
+            "p90Turns": 3,
+            "meanHpA": 4.41,
+            "meanHpB": 5.13
+          }
+        }
+      ],
+      "deltaWinPercentagePoints": 25,
+      "deltaInterval95": [
+        11.618789761958324,
+        37.167892962646775
+      ]
+    },
+    {
+      "id": "MON_009:MON_022:L1:mixed",
+      "control": false,
+      "scenario": {
+        "id": "MON_009:MON_022:L1:mixed",
+        "label": "Ladino x Caçador — nível 1 — mixed",
+        "player": {
+          "id": "MON_022",
+          "name": "Corvimon",
+          "class": "Ladino",
+          "rarity": "Comum",
+          "level": 1,
+          "hp": 23,
+          "hpMax": 23,
+          "atk": 7,
+          "def": 4,
+          "spd": 10,
+          "eneMax": 6
+        },
+        "enemy": {
+          "id": "MON_009",
+          "name": "Miaumon",
+          "class": "Caçador",
+          "rarity": "Comum",
+          "level": 1,
+          "hp": 25,
+          "hpMax": 25,
+          "atk": 8,
+          "def": 4,
+          "spd": 9,
+          "eneMax": 4
+        },
+        "playerSkill": {
+          "id": "ATAQUE_PRECISO_0",
+          "name": "Ataque Preciso I",
+          "class": "Ladino",
+          "groupKey": "Ataque Preciso",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 15,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Ataque preciso.",
+          "tier": 1
+        },
+        "enemySkill": {
+          "id": "FLECHA_PODEROSA_0",
+          "name": "Flecha Poderosa I",
+          "class": "Caçador",
+          "groupKey": "Flecha Poderosa",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 15,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Flecha poderosa.",
+          "tier": 1
+        },
+        "playerActionProfile": "mixed",
+        "enemyActionProfile": "mixed",
+        "classAdvantages": {
+          "Guerreiro": {
+            "strong": "Ladino",
+            "weak": "Mago"
+          },
+          "Bárbaro": {
+            "strong": "Curandeiro",
+            "weak": "Guerreiro"
+          },
+          "Mago": {
+            "strong": "Guerreiro",
+            "weak": "Caçador"
+          },
+          "Curandeiro": {
+            "strong": "Bárbaro",
+            "weak": "Bardo"
+          },
+          "Bardo": {
+            "strong": "Curandeiro",
+            "weak": "Animalista"
+          },
+          "Ladino": {
+            "strong": "Caçador",
+            "weak": "Guerreiro"
+          },
+          "Caçador": {
+            "strong": "Mago",
+            "weak": "Ladino"
+          },
+          "Animalista": {
+            "strong": "Bardo",
+            "weak": "Bárbaro"
+          }
+        },
+        "initialEnergyRatio": 0,
+        "passivesEnabled": true,
+        "control": false
+      },
+      "aFirst": {
+        "n": 100,
+        "aWins": 88,
+        "bWins": 12,
+        "draws": 0,
+        "turns": 210,
+        "attacks": 332,
+        "skillUses": 121,
+        "eneSpent": 484,
+        "actionsA": 210,
+        "actionsB": 122,
+        "hpA": 1192,
+        "hpB": 97,
+        "effectiveDamageA": 2403,
+        "effectiveDamageB": 1108,
+        "noResponse": 0,
+        "firstActorFinalBlows": 88,
+        "turnHistogram": {
+          "2": 91,
+          "3": 8,
+          "4": 1
+        },
+        "aWinRate": 0.88,
+        "aWinInterval95": [
+          0.8018790057328857,
+          0.9300059356298052
+        ],
+        "meanTurns": 2.1,
+        "medianTurns": 2,
+        "p10Turns": 2,
+        "p90Turns": 2,
+        "meanHpA": 11.92,
+        "meanHpB": 0.97
+      },
+      "bFirst": {
+        "n": 100,
+        "aWins": 36,
+        "bWins": 64,
+        "draws": 0,
+        "turns": 221,
+        "attacks": 378,
+        "skillUses": 153,
+        "eneSpent": 612,
+        "actionsA": 157,
+        "actionsB": 221,
+        "hpA": 385,
+        "hpB": 818,
+        "effectiveDamageA": 1682,
+        "effectiveDamageB": 1915,
+        "noResponse": 0,
+        "firstActorFinalBlows": 64,
+        "turnHistogram": {
+          "2": 84,
+          "3": 12,
+          "4": 3,
+          "5": 1
+        },
+        "aWinRate": 0.36,
+        "aWinInterval95": [
+          0.2727122040140433,
+          0.4576459754839126
+        ],
+        "meanTurns": 2.21,
+        "medianTurns": 2,
+        "p10Turns": 2,
+        "p90Turns": 3,
+        "meanHpA": 3.85,
+        "meanHpB": 8.18
+      },
+      "bySeed": [
+        {
+          "seed": "monstrinhomon-turn-order-v1:replicate-1",
+          "aFirst": {
+            "n": 100,
+            "aWins": 88,
+            "bWins": 12,
+            "draws": 0,
+            "turns": 210,
+            "attacks": 332,
+            "skillUses": 121,
+            "eneSpent": 484,
+            "actionsA": 210,
+            "actionsB": 122,
+            "hpA": 1192,
+            "hpB": 97,
+            "effectiveDamageA": 2403,
+            "effectiveDamageB": 1108,
+            "noResponse": 0,
+            "firstActorFinalBlows": 88,
+            "turnHistogram": {
+              "2": 91,
+              "3": 8,
+              "4": 1
+            },
+            "aWinRate": 0.88,
+            "aWinInterval95": [
+              0.8018790057328857,
+              0.9300059356298052
+            ],
+            "meanTurns": 2.1,
+            "medianTurns": 2,
+            "p10Turns": 2,
+            "p90Turns": 2,
+            "meanHpA": 11.92,
+            "meanHpB": 0.97
+          },
+          "bFirst": {
+            "n": 100,
+            "aWins": 36,
+            "bWins": 64,
+            "draws": 0,
+            "turns": 221,
+            "attacks": 378,
+            "skillUses": 153,
+            "eneSpent": 612,
+            "actionsA": 157,
+            "actionsB": 221,
+            "hpA": 385,
+            "hpB": 818,
+            "effectiveDamageA": 1682,
+            "effectiveDamageB": 1915,
+            "noResponse": 0,
+            "firstActorFinalBlows": 64,
+            "turnHistogram": {
+              "2": 84,
+              "3": 12,
+              "4": 3,
+              "5": 1
+            },
+            "aWinRate": 0.36,
+            "aWinInterval95": [
+              0.2727122040140433,
+              0.4576459754839126
+            ],
+            "meanTurns": 2.21,
+            "medianTurns": 2,
+            "p10Turns": 2,
+            "p90Turns": 3,
+            "meanHpA": 3.85,
+            "meanHpB": 8.18
+          }
+        }
+      ],
+      "deltaWinPercentagePoints": 52,
+      "deltaInterval95": [
+        39.494950510498825,
+        62.059698268983134
+      ]
+    },
+    {
+      "id": "MON_001:MON_021:L10:basic",
+      "control": false,
+      "scenario": {
+        "id": "MON_001:MON_021:L10:basic",
+        "label": "Guerreiro x Bárbaro — nível 10 — basic",
+        "player": {
+          "id": "MON_001",
+          "name": "Ferrozimon",
+          "class": "Guerreiro",
+          "rarity": "Comum",
+          "level": 10,
+          "hp": 55,
+          "hpMax": 55,
+          "atk": 13,
+          "def": 17,
+          "spd": 7,
+          "eneMax": 28
+        },
+        "enemy": {
+          "id": "MON_021",
+          "name": "Tamborilhomon",
+          "class": "Bárbaro",
+          "rarity": "Comum",
+          "level": 10,
+          "hp": 60,
+          "hpMax": 60,
+          "atk": 15,
+          "def": 11,
+          "spd": 7,
+          "eneMax": 28
+        },
+        "playerSkill": {
+          "id": "GOLPE_DE_ESPADA_0",
+          "name": "Golpe de Espada I",
+          "class": "Guerreiro",
+          "groupKey": "Golpe de Espada",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 14,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Ataque com espada.",
+          "tier": 1
+        },
+        "enemySkill": {
+          "id": "GOLPE_BRUTAL_0",
+          "name": "Golpe Brutal I",
+          "class": "Bárbaro",
+          "groupKey": "Golpe Brutal",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 18,
+          "accuracy": 1,
+          "energy_cost": 6,
+          "target": "Inimigo",
+          "desc": "Golpe brutal.",
+          "tier": 1
+        },
+        "playerActionProfile": "basic",
+        "enemyActionProfile": "basic",
+        "classAdvantages": {
+          "Guerreiro": {
+            "strong": "Ladino",
+            "weak": "Mago"
+          },
+          "Bárbaro": {
+            "strong": "Curandeiro",
+            "weak": "Guerreiro"
+          },
+          "Mago": {
+            "strong": "Guerreiro",
+            "weak": "Caçador"
+          },
+          "Curandeiro": {
+            "strong": "Bárbaro",
+            "weak": "Bardo"
+          },
+          "Bardo": {
+            "strong": "Curandeiro",
+            "weak": "Animalista"
+          },
+          "Ladino": {
+            "strong": "Caçador",
+            "weak": "Guerreiro"
+          },
+          "Caçador": {
+            "strong": "Mago",
+            "weak": "Ladino"
+          },
+          "Animalista": {
+            "strong": "Bardo",
+            "weak": "Bárbaro"
+          }
+        },
+        "initialEnergyRatio": 0,
+        "passivesEnabled": true,
+        "control": false
+      },
+      "aFirst": {
+        "n": 100,
+        "aWins": 85,
+        "bWins": 15,
+        "draws": 0,
+        "turns": 528,
+        "attacks": 971,
+        "skillUses": 0,
+        "eneSpent": 0,
+        "actionsA": 528,
+        "actionsB": 443,
+        "hpA": 1716,
+        "hpB": 232,
+        "effectiveDamageA": 5768,
+        "effectiveDamageB": 3784,
+        "noResponse": 0,
+        "firstActorFinalBlows": 85,
+        "turnHistogram": {
+          "4": 21,
+          "5": 43,
+          "6": 25,
+          "7": 9,
+          "8": 2
+        },
+        "aWinRate": 0.85,
+        "aWinInterval95": [
+          0.7671644040916763,
+          0.9069401471634337
+        ],
+        "meanTurns": 5.28,
+        "medianTurns": 5,
+        "p10Turns": 4,
+        "p90Turns": 7,
+        "meanHpA": 17.16,
+        "meanHpB": 2.32
+      },
+      "bFirst": {
+        "n": 100,
+        "aWins": 60,
+        "bWins": 40,
+        "draws": 0,
+        "turns": 522,
+        "attacks": 1004,
+        "skillUses": 0,
+        "eneSpent": 0,
+        "actionsA": 482,
+        "actionsB": 522,
+        "hpA": 1018,
+        "hpB": 752,
+        "effectiveDamageA": 5248,
+        "effectiveDamageB": 4482,
+        "noResponse": 0,
+        "firstActorFinalBlows": 40,
+        "turnHistogram": {
+          "4": 25,
+          "5": 43,
+          "6": 21,
+          "7": 7,
+          "8": 4
+        },
+        "aWinRate": 0.6,
+        "aWinInterval95": [
+          0.5020025867910618,
+          0.6905987135675411
+        ],
+        "meanTurns": 5.22,
+        "medianTurns": 5,
+        "p10Turns": 4,
+        "p90Turns": 7,
+        "meanHpA": 10.18,
+        "meanHpB": 7.52
+      },
+      "bySeed": [
+        {
+          "seed": "monstrinhomon-turn-order-v1:replicate-1",
+          "aFirst": {
+            "n": 100,
+            "aWins": 85,
+            "bWins": 15,
+            "draws": 0,
+            "turns": 528,
+            "attacks": 971,
+            "skillUses": 0,
+            "eneSpent": 0,
+            "actionsA": 528,
+            "actionsB": 443,
+            "hpA": 1716,
+            "hpB": 232,
+            "effectiveDamageA": 5768,
+            "effectiveDamageB": 3784,
+            "noResponse": 0,
+            "firstActorFinalBlows": 85,
+            "turnHistogram": {
+              "4": 21,
+              "5": 43,
+              "6": 25,
+              "7": 9,
+              "8": 2
+            },
+            "aWinRate": 0.85,
+            "aWinInterval95": [
+              0.7671644040916763,
+              0.9069401471634337
+            ],
+            "meanTurns": 5.28,
+            "medianTurns": 5,
+            "p10Turns": 4,
+            "p90Turns": 7,
+            "meanHpA": 17.16,
+            "meanHpB": 2.32
+          },
+          "bFirst": {
+            "n": 100,
+            "aWins": 60,
+            "bWins": 40,
+            "draws": 0,
+            "turns": 522,
+            "attacks": 1004,
+            "skillUses": 0,
+            "eneSpent": 0,
+            "actionsA": 482,
+            "actionsB": 522,
+            "hpA": 1018,
+            "hpB": 752,
+            "effectiveDamageA": 5248,
+            "effectiveDamageB": 4482,
+            "noResponse": 0,
+            "firstActorFinalBlows": 40,
+            "turnHistogram": {
+              "4": 25,
+              "5": 43,
+              "6": 21,
+              "7": 7,
+              "8": 4
+            },
+            "aWinRate": 0.6,
+            "aWinInterval95": [
+              0.5020025867910618,
+              0.6905987135675411
+            ],
+            "meanTurns": 5.22,
+            "medianTurns": 5,
+            "p10Turns": 4,
+            "p90Turns": 7,
+            "meanHpA": 10.18,
+            "meanHpB": 7.52
+          }
+        }
+      ],
+      "deltaWinPercentagePoints": 25,
+      "deltaInterval95": [
+        12.724063029821126,
+        36.333875486627186
+      ]
+    },
+    {
+      "id": "MON_001:MON_021:L10:mixed",
+      "control": false,
+      "scenario": {
+        "id": "MON_001:MON_021:L10:mixed",
+        "label": "Guerreiro x Bárbaro — nível 10 — mixed",
+        "player": {
+          "id": "MON_001",
+          "name": "Ferrozimon",
+          "class": "Guerreiro",
+          "rarity": "Comum",
+          "level": 10,
+          "hp": 55,
+          "hpMax": 55,
+          "atk": 13,
+          "def": 17,
+          "spd": 7,
+          "eneMax": 28
+        },
+        "enemy": {
+          "id": "MON_021",
+          "name": "Tamborilhomon",
+          "class": "Bárbaro",
+          "rarity": "Comum",
+          "level": 10,
+          "hp": 60,
+          "hpMax": 60,
+          "atk": 15,
+          "def": 11,
+          "spd": 7,
+          "eneMax": 28
+        },
+        "playerSkill": {
+          "id": "GOLPE_DE_ESPADA_0",
+          "name": "Golpe de Espada I",
+          "class": "Guerreiro",
+          "groupKey": "Golpe de Espada",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 14,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Ataque com espada.",
+          "tier": 1
+        },
+        "enemySkill": {
+          "id": "GOLPE_BRUTAL_0",
+          "name": "Golpe Brutal I",
+          "class": "Bárbaro",
+          "groupKey": "Golpe Brutal",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 18,
+          "accuracy": 1,
+          "energy_cost": 6,
+          "target": "Inimigo",
+          "desc": "Golpe brutal.",
+          "tier": 1
+        },
+        "playerActionProfile": "mixed",
+        "enemyActionProfile": "mixed",
+        "classAdvantages": {
+          "Guerreiro": {
+            "strong": "Ladino",
+            "weak": "Mago"
+          },
+          "Bárbaro": {
+            "strong": "Curandeiro",
+            "weak": "Guerreiro"
+          },
+          "Mago": {
+            "strong": "Guerreiro",
+            "weak": "Caçador"
+          },
+          "Curandeiro": {
+            "strong": "Bárbaro",
+            "weak": "Bardo"
+          },
+          "Bardo": {
+            "strong": "Curandeiro",
+            "weak": "Animalista"
+          },
+          "Ladino": {
+            "strong": "Caçador",
+            "weak": "Guerreiro"
+          },
+          "Caçador": {
+            "strong": "Mago",
+            "weak": "Ladino"
+          },
+          "Animalista": {
+            "strong": "Bardo",
+            "weak": "Bárbaro"
+          }
+        },
+        "initialEnergyRatio": 0,
+        "passivesEnabled": true,
+        "control": false
+      },
+      "aFirst": {
+        "n": 100,
+        "aWins": 77,
+        "bWins": 23,
+        "draws": 0,
+        "turns": 479,
+        "attacks": 881,
+        "skillUses": 329,
+        "eneSpent": 1534,
+        "actionsA": 479,
+        "actionsB": 402,
+        "hpA": 1517,
+        "hpB": 270,
+        "effectiveDamageA": 5730,
+        "effectiveDamageB": 3983,
+        "noResponse": 0,
+        "firstActorFinalBlows": 77,
+        "turnHistogram": {
+          "3": 3,
+          "4": 44,
+          "5": 31,
+          "6": 16,
+          "7": 5,
+          "8": 1
+        },
+        "aWinRate": 0.77,
+        "aWinInterval95": [
+          0.6784561697712622,
+          0.8415673411969654
+        ],
+        "meanTurns": 4.79,
+        "medianTurns": 5,
+        "p10Turns": 4,
+        "p90Turns": 6,
+        "meanHpA": 15.17,
+        "meanHpB": 2.7
+      },
+      "bFirst": {
+        "n": 100,
+        "aWins": 69,
+        "bWins": 31,
+        "draws": 0,
+        "turns": 455,
+        "attacks": 879,
+        "skillUses": 310,
+        "eneSpent": 1468,
+        "actionsA": 424,
+        "actionsB": 455,
+        "hpA": 1041,
+        "hpB": 534,
+        "effectiveDamageA": 5466,
+        "effectiveDamageB": 4459,
+        "noResponse": 0,
+        "firstActorFinalBlows": 31,
+        "turnHistogram": {
+          "3": 1,
+          "4": 61,
+          "5": 24,
+          "6": 10,
+          "7": 4
+        },
+        "aWinRate": 0.69,
+        "aWinInterval95": [
+          0.5937394428051057,
+          0.7722030278762395
+        ],
+        "meanTurns": 4.55,
+        "medianTurns": 4,
+        "p10Turns": 4,
+        "p90Turns": 6,
+        "meanHpA": 10.41,
+        "meanHpB": 5.34
+      },
+      "bySeed": [
+        {
+          "seed": "monstrinhomon-turn-order-v1:replicate-1",
+          "aFirst": {
+            "n": 100,
+            "aWins": 77,
+            "bWins": 23,
+            "draws": 0,
+            "turns": 479,
+            "attacks": 881,
+            "skillUses": 329,
+            "eneSpent": 1534,
+            "actionsA": 479,
+            "actionsB": 402,
+            "hpA": 1517,
+            "hpB": 270,
+            "effectiveDamageA": 5730,
+            "effectiveDamageB": 3983,
+            "noResponse": 0,
+            "firstActorFinalBlows": 77,
+            "turnHistogram": {
+              "3": 3,
+              "4": 44,
+              "5": 31,
+              "6": 16,
+              "7": 5,
+              "8": 1
+            },
+            "aWinRate": 0.77,
+            "aWinInterval95": [
+              0.6784561697712622,
+              0.8415673411969654
+            ],
+            "meanTurns": 4.79,
+            "medianTurns": 5,
+            "p10Turns": 4,
+            "p90Turns": 6,
+            "meanHpA": 15.17,
+            "meanHpB": 2.7
+          },
+          "bFirst": {
+            "n": 100,
+            "aWins": 69,
+            "bWins": 31,
+            "draws": 0,
+            "turns": 455,
+            "attacks": 879,
+            "skillUses": 310,
+            "eneSpent": 1468,
+            "actionsA": 424,
+            "actionsB": 455,
+            "hpA": 1041,
+            "hpB": 534,
+            "effectiveDamageA": 5466,
+            "effectiveDamageB": 4459,
+            "noResponse": 0,
+            "firstActorFinalBlows": 31,
+            "turnHistogram": {
+              "3": 1,
+              "4": 61,
+              "5": 24,
+              "6": 10,
+              "7": 4
+            },
+            "aWinRate": 0.69,
+            "aWinInterval95": [
+              0.5937394428051057,
+              0.7722030278762395
+            ],
+            "meanTurns": 4.55,
+            "medianTurns": 4,
+            "p10Turns": 4,
+            "p90Turns": 6,
+            "meanHpA": 10.41,
+            "meanHpB": 5.34
+          }
+        }
+      ],
+      "deltaWinPercentagePoints": 8.000000000000007,
+      "deltaInterval95": [
+        -4.303499764282424,
+        19.99499028656313
+      ]
+    },
+    {
+      "id": "MON_001:MON_013:L10:basic",
+      "control": false,
+      "scenario": {
+        "id": "MON_001:MON_013:L10:basic",
+        "label": "Mago x Guerreiro — nível 10 — basic",
+        "player": {
+          "id": "MON_013",
+          "name": "Lagartomon",
+          "class": "Mago",
+          "rarity": "Comum",
+          "level": 10,
+          "hp": 45,
+          "hpMax": 45,
+          "atk": 11,
+          "def": 7,
+          "spd": 11,
+          "eneMax": 28
+        },
+        "enemy": {
+          "id": "MON_001",
+          "name": "Ferrozimon",
+          "class": "Guerreiro",
+          "rarity": "Comum",
+          "level": 10,
+          "hp": 55,
+          "hpMax": 55,
+          "atk": 13,
+          "def": 17,
+          "spd": 7,
+          "eneMax": 28
+        },
+        "playerSkill": {
+          "id": "MAGIA_ELEMENTAL_0",
+          "name": "Magia Elemental I",
+          "class": "Mago",
+          "groupKey": "Magia Elemental",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 15,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Magia elemental.",
+          "tier": 1
+        },
+        "enemySkill": {
+          "id": "GOLPE_DE_ESPADA_0",
+          "name": "Golpe de Espada I",
+          "class": "Guerreiro",
+          "groupKey": "Golpe de Espada",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 14,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Ataque com espada.",
+          "tier": 1
+        },
+        "playerActionProfile": "basic",
+        "enemyActionProfile": "basic",
+        "classAdvantages": {
+          "Guerreiro": {
+            "strong": "Ladino",
+            "weak": "Mago"
+          },
+          "Bárbaro": {
+            "strong": "Curandeiro",
+            "weak": "Guerreiro"
+          },
+          "Mago": {
+            "strong": "Guerreiro",
+            "weak": "Caçador"
+          },
+          "Curandeiro": {
+            "strong": "Bárbaro",
+            "weak": "Bardo"
+          },
+          "Bardo": {
+            "strong": "Curandeiro",
+            "weak": "Animalista"
+          },
+          "Ladino": {
+            "strong": "Caçador",
+            "weak": "Guerreiro"
+          },
+          "Caçador": {
+            "strong": "Mago",
+            "weak": "Ladino"
+          },
+          "Animalista": {
+            "strong": "Bardo",
+            "weak": "Bárbaro"
+          }
+        },
+        "initialEnergyRatio": 0,
+        "passivesEnabled": true,
+        "control": false
+      },
+      "aFirst": {
+        "n": 100,
+        "aWins": 3,
+        "bWins": 97,
+        "draws": 0,
+        "turns": 428,
+        "attacks": 853,
+        "skillUses": 0,
+        "eneSpent": 0,
+        "actionsA": 428,
+        "actionsB": 425,
+        "hpA": 9,
+        "hpB": 2439,
+        "effectiveDamageA": 3061,
+        "effectiveDamageB": 4491,
+        "noResponse": 0,
+        "firstActorFinalBlows": 3,
+        "turnHistogram": {
+          "3": 27,
+          "4": 34,
+          "5": 26,
+          "6": 10,
+          "7": 3
+        },
+        "aWinRate": 0.03,
+        "aWinInterval95": [
+          0.010254524024038925,
+          0.0845193642905276
+        ],
+        "meanTurns": 4.28,
+        "medianTurns": 4,
+        "p10Turns": 3,
+        "p90Turns": 6,
+        "meanHpA": 0.09,
+        "meanHpB": 24.39
+      },
+      "bFirst": {
+        "n": 100,
+        "aWins": 2,
+        "bWins": 98,
+        "draws": 0,
+        "turns": 419,
+        "attacks": 740,
+        "skillUses": 0,
+        "eneSpent": 0,
+        "actionsA": 321,
+        "actionsB": 419,
+        "hpA": 7,
+        "hpB": 3206,
+        "effectiveDamageA": 2294,
+        "effectiveDamageB": 4493,
+        "noResponse": 0,
+        "firstActorFinalBlows": 98,
+        "turnHistogram": {
+          "3": 34,
+          "4": 34,
+          "5": 21,
+          "6": 5,
+          "7": 3,
+          "8": 2,
+          "9": 1
+        },
+        "aWinRate": 0.02,
+        "aWinInterval95": [
+          0.00550196755016235,
+          0.07001179072854388
+        ],
+        "meanTurns": 4.19,
+        "medianTurns": 4,
+        "p10Turns": 3,
+        "p90Turns": 6,
+        "meanHpA": 0.07,
+        "meanHpB": 32.06
+      },
+      "bySeed": [
+        {
+          "seed": "monstrinhomon-turn-order-v1:replicate-1",
+          "aFirst": {
+            "n": 100,
+            "aWins": 3,
+            "bWins": 97,
+            "draws": 0,
+            "turns": 428,
+            "attacks": 853,
+            "skillUses": 0,
+            "eneSpent": 0,
+            "actionsA": 428,
+            "actionsB": 425,
+            "hpA": 9,
+            "hpB": 2439,
+            "effectiveDamageA": 3061,
+            "effectiveDamageB": 4491,
+            "noResponse": 0,
+            "firstActorFinalBlows": 3,
+            "turnHistogram": {
+              "3": 27,
+              "4": 34,
+              "5": 26,
+              "6": 10,
+              "7": 3
+            },
+            "aWinRate": 0.03,
+            "aWinInterval95": [
+              0.010254524024038925,
+              0.0845193642905276
+            ],
+            "meanTurns": 4.28,
+            "medianTurns": 4,
+            "p10Turns": 3,
+            "p90Turns": 6,
+            "meanHpA": 0.09,
+            "meanHpB": 24.39
+          },
+          "bFirst": {
+            "n": 100,
+            "aWins": 2,
+            "bWins": 98,
+            "draws": 0,
+            "turns": 419,
+            "attacks": 740,
+            "skillUses": 0,
+            "eneSpent": 0,
+            "actionsA": 321,
+            "actionsB": 419,
+            "hpA": 7,
+            "hpB": 3206,
+            "effectiveDamageA": 2294,
+            "effectiveDamageB": 4493,
+            "noResponse": 0,
+            "firstActorFinalBlows": 98,
+            "turnHistogram": {
+              "3": 34,
+              "4": 34,
+              "5": 21,
+              "6": 5,
+              "7": 3,
+              "8": 2,
+              "9": 1
+            },
+            "aWinRate": 0.02,
+            "aWinInterval95": [
+              0.00550196755016235,
+              0.07001179072854388
+            ],
+            "meanTurns": 4.19,
+            "medianTurns": 4,
+            "p10Turns": 3,
+            "p90Turns": 6,
+            "meanHpA": 0.07,
+            "meanHpB": 32.06
+          }
+        }
+      ],
+      "deltaWinPercentagePoints": 0.9999999999999999,
+      "deltaInterval95": [
+        -4.376860639251238,
+        6.6414129680070415
+      ]
+    },
+    {
+      "id": "MON_001:MON_013:L10:mixed",
+      "control": false,
+      "scenario": {
+        "id": "MON_001:MON_013:L10:mixed",
+        "label": "Mago x Guerreiro — nível 10 — mixed",
+        "player": {
+          "id": "MON_013",
+          "name": "Lagartomon",
+          "class": "Mago",
+          "rarity": "Comum",
+          "level": 10,
+          "hp": 45,
+          "hpMax": 45,
+          "atk": 11,
+          "def": 7,
+          "spd": 11,
+          "eneMax": 28
+        },
+        "enemy": {
+          "id": "MON_001",
+          "name": "Ferrozimon",
+          "class": "Guerreiro",
+          "rarity": "Comum",
+          "level": 10,
+          "hp": 55,
+          "hpMax": 55,
+          "atk": 13,
+          "def": 17,
+          "spd": 7,
+          "eneMax": 28
+        },
+        "playerSkill": {
+          "id": "MAGIA_ELEMENTAL_0",
+          "name": "Magia Elemental I",
+          "class": "Mago",
+          "groupKey": "Magia Elemental",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 15,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Magia elemental.",
+          "tier": 1
+        },
+        "enemySkill": {
+          "id": "GOLPE_DE_ESPADA_0",
+          "name": "Golpe de Espada I",
+          "class": "Guerreiro",
+          "groupKey": "Golpe de Espada",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 14,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Ataque com espada.",
+          "tier": 1
+        },
+        "playerActionProfile": "mixed",
+        "enemyActionProfile": "mixed",
+        "classAdvantages": {
+          "Guerreiro": {
+            "strong": "Ladino",
+            "weak": "Mago"
+          },
+          "Bárbaro": {
+            "strong": "Curandeiro",
+            "weak": "Guerreiro"
+          },
+          "Mago": {
+            "strong": "Guerreiro",
+            "weak": "Caçador"
+          },
+          "Curandeiro": {
+            "strong": "Bárbaro",
+            "weak": "Bardo"
+          },
+          "Bardo": {
+            "strong": "Curandeiro",
+            "weak": "Animalista"
+          },
+          "Ladino": {
+            "strong": "Caçador",
+            "weak": "Guerreiro"
+          },
+          "Caçador": {
+            "strong": "Mago",
+            "weak": "Ladino"
+          },
+          "Animalista": {
+            "strong": "Bardo",
+            "weak": "Bárbaro"
+          }
+        },
+        "initialEnergyRatio": 0,
+        "passivesEnabled": true,
+        "control": false
+      },
+      "aFirst": {
+        "n": 100,
+        "aWins": 16,
+        "bWins": 84,
+        "draws": 0,
+        "turns": 349,
+        "attacks": 682,
+        "skillUses": 373,
+        "eneSpent": 1492,
+        "actionsA": 349,
+        "actionsB": 333,
+        "hpA": 149,
+        "hpB": 1905,
+        "effectiveDamageA": 3595,
+        "effectiveDamageB": 4351,
+        "noResponse": 0,
+        "firstActorFinalBlows": 16,
+        "turnHistogram": {
+          "2": 14,
+          "3": 41,
+          "4": 31,
+          "5": 10,
+          "6": 4
+        },
+        "aWinRate": 0.16,
+        "aWinInterval95": [
+          0.10095288488804782,
+          0.24420269389270244
+        ],
+        "meanTurns": 3.49,
+        "medianTurns": 3,
+        "p10Turns": 2,
+        "p90Turns": 5,
+        "meanHpA": 1.49,
+        "meanHpB": 19.05
+      },
+      "bFirst": {
+        "n": 100,
+        "aWins": 8,
+        "bWins": 92,
+        "draws": 0,
+        "turns": 359,
+        "attacks": 626,
+        "skillUses": 316,
+        "eneSpent": 1264,
+        "actionsA": 267,
+        "actionsB": 359,
+        "hpA": 86,
+        "hpB": 2678,
+        "effectiveDamageA": 2822,
+        "effectiveDamageB": 4414,
+        "noResponse": 0,
+        "firstActorFinalBlows": 92,
+        "turnHistogram": {
+          "2": 13,
+          "3": 37,
+          "4": 33,
+          "5": 12,
+          "6": 5
+        },
+        "aWinRate": 0.08,
+        "aWinInterval95": [
+          0.041093461484380624,
+          0.14998107700948735
+        ],
+        "meanTurns": 3.59,
+        "medianTurns": 3.5,
+        "p10Turns": 2,
+        "p90Turns": 5,
+        "meanHpA": 0.86,
+        "meanHpB": 26.78
+      },
+      "bySeed": [
+        {
+          "seed": "monstrinhomon-turn-order-v1:replicate-1",
+          "aFirst": {
+            "n": 100,
+            "aWins": 16,
+            "bWins": 84,
+            "draws": 0,
+            "turns": 349,
+            "attacks": 682,
+            "skillUses": 373,
+            "eneSpent": 1492,
+            "actionsA": 349,
+            "actionsB": 333,
+            "hpA": 149,
+            "hpB": 1905,
+            "effectiveDamageA": 3595,
+            "effectiveDamageB": 4351,
+            "noResponse": 0,
+            "firstActorFinalBlows": 16,
+            "turnHistogram": {
+              "2": 14,
+              "3": 41,
+              "4": 31,
+              "5": 10,
+              "6": 4
+            },
+            "aWinRate": 0.16,
+            "aWinInterval95": [
+              0.10095288488804782,
+              0.24420269389270244
+            ],
+            "meanTurns": 3.49,
+            "medianTurns": 3,
+            "p10Turns": 2,
+            "p90Turns": 5,
+            "meanHpA": 1.49,
+            "meanHpB": 19.05
+          },
+          "bFirst": {
+            "n": 100,
+            "aWins": 8,
+            "bWins": 92,
+            "draws": 0,
+            "turns": 359,
+            "attacks": 626,
+            "skillUses": 316,
+            "eneSpent": 1264,
+            "actionsA": 267,
+            "actionsB": 359,
+            "hpA": 86,
+            "hpB": 2678,
+            "effectiveDamageA": 2822,
+            "effectiveDamageB": 4414,
+            "noResponse": 0,
+            "firstActorFinalBlows": 92,
+            "turnHistogram": {
+              "2": 13,
+              "3": 37,
+              "4": 33,
+              "5": 12,
+              "6": 5
+            },
+            "aWinRate": 0.08,
+            "aWinInterval95": [
+              0.041093461484380624,
+              0.14998107700948735
+            ],
+            "meanTurns": 3.59,
+            "medianTurns": 3.5,
+            "p10Turns": 2,
+            "p90Turns": 5,
+            "meanHpA": 0.86,
+            "meanHpB": 26.78
+          }
+        }
+      ],
+      "deltaWinPercentagePoints": 8,
+      "deltaInterval95": [
+        -1.1563709746011979,
+        17.27567377501792
+      ]
+    },
+    {
+      "id": "MON_009:MON_022:L10:basic",
+      "control": false,
+      "scenario": {
+        "id": "MON_009:MON_022:L10:basic",
+        "label": "Ladino x Caçador — nível 10 — basic",
+        "player": {
+          "id": "MON_022",
+          "name": "Corvimon",
+          "class": "Ladino",
+          "rarity": "Comum",
+          "level": 10,
+          "hp": 43,
+          "hpMax": 43,
+          "atk": 13,
+          "def": 7,
+          "spd": 19,
+          "eneMax": 28
+        },
+        "enemy": {
+          "id": "MON_009",
+          "name": "Miaumon",
+          "class": "Caçador",
+          "rarity": "Comum",
+          "level": 10,
+          "hp": 47,
+          "hpMax": 47,
+          "atk": 15,
+          "def": 7,
+          "spd": 17,
+          "eneMax": 28
+        },
+        "playerSkill": {
+          "id": "ATAQUE_PRECISO_0",
+          "name": "Ataque Preciso I",
+          "class": "Ladino",
+          "groupKey": "Ataque Preciso",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 15,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Ataque preciso.",
+          "tier": 1
+        },
+        "enemySkill": {
+          "id": "FLECHA_PODEROSA_0",
+          "name": "Flecha Poderosa I",
+          "class": "Caçador",
+          "groupKey": "Flecha Poderosa",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 15,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Flecha poderosa.",
+          "tier": 1
+        },
+        "playerActionProfile": "basic",
+        "enemyActionProfile": "basic",
+        "classAdvantages": {
+          "Guerreiro": {
+            "strong": "Ladino",
+            "weak": "Mago"
+          },
+          "Bárbaro": {
+            "strong": "Curandeiro",
+            "weak": "Guerreiro"
+          },
+          "Mago": {
+            "strong": "Guerreiro",
+            "weak": "Caçador"
+          },
+          "Curandeiro": {
+            "strong": "Bárbaro",
+            "weak": "Bardo"
+          },
+          "Bardo": {
+            "strong": "Curandeiro",
+            "weak": "Animalista"
+          },
+          "Ladino": {
+            "strong": "Caçador",
+            "weak": "Guerreiro"
+          },
+          "Caçador": {
+            "strong": "Mago",
+            "weak": "Ladino"
+          },
+          "Animalista": {
+            "strong": "Bardo",
+            "weak": "Bárbaro"
+          }
+        },
+        "initialEnergyRatio": 0,
+        "passivesEnabled": true,
+        "control": false
+      },
+      "aFirst": {
+        "n": 100,
+        "aWins": 87,
+        "bWins": 13,
+        "draws": 0,
+        "turns": 237,
+        "attacks": 387,
+        "skillUses": 0,
+        "eneSpent": 0,
+        "actionsA": 237,
+        "actionsB": 150,
+        "hpA": 1688,
+        "hpB": 150,
+        "effectiveDamageA": 4550,
+        "effectiveDamageB": 2612,
+        "noResponse": 0,
+        "firstActorFinalBlows": 87,
+        "turnHistogram": {
+          "2": 67,
+          "3": 29,
+          "4": 4
+        },
+        "aWinRate": 0.87,
+        "aWinInterval95": [
+          0.7901964855992357,
+          0.9224283257275948
+        ],
+        "meanTurns": 2.37,
+        "medianTurns": 2,
+        "p10Turns": 2,
+        "p90Turns": 3,
+        "meanHpA": 16.88,
+        "meanHpB": 1.5
+      },
+      "bFirst": {
+        "n": 100,
+        "aWins": 53,
+        "bWins": 47,
+        "draws": 0,
+        "turns": 236,
+        "attacks": 425,
+        "skillUses": 0,
+        "eneSpent": 0,
+        "actionsA": 189,
+        "actionsB": 236,
+        "hpA": 563,
+        "hpB": 1001,
+        "effectiveDamageA": 3699,
+        "effectiveDamageB": 3737,
+        "noResponse": 0,
+        "firstActorFinalBlows": 47,
+        "turnHistogram": {
+          "2": 68,
+          "3": 28,
+          "4": 4
+        },
+        "aWinRate": 0.53,
+        "aWinInterval95": [
+          0.4328885697009936,
+          0.6248918204065872
+        ],
+        "meanTurns": 2.36,
+        "medianTurns": 2,
+        "p10Turns": 2,
+        "p90Turns": 3,
+        "meanHpA": 5.63,
+        "meanHpB": 10.01
+      },
+      "bySeed": [
+        {
+          "seed": "monstrinhomon-turn-order-v1:replicate-1",
+          "aFirst": {
+            "n": 100,
+            "aWins": 87,
+            "bWins": 13,
+            "draws": 0,
+            "turns": 237,
+            "attacks": 387,
+            "skillUses": 0,
+            "eneSpent": 0,
+            "actionsA": 237,
+            "actionsB": 150,
+            "hpA": 1688,
+            "hpB": 150,
+            "effectiveDamageA": 4550,
+            "effectiveDamageB": 2612,
+            "noResponse": 0,
+            "firstActorFinalBlows": 87,
+            "turnHistogram": {
+              "2": 67,
+              "3": 29,
+              "4": 4
+            },
+            "aWinRate": 0.87,
+            "aWinInterval95": [
+              0.7901964855992357,
+              0.9224283257275948
+            ],
+            "meanTurns": 2.37,
+            "medianTurns": 2,
+            "p10Turns": 2,
+            "p90Turns": 3,
+            "meanHpA": 16.88,
+            "meanHpB": 1.5
+          },
+          "bFirst": {
+            "n": 100,
+            "aWins": 53,
+            "bWins": 47,
+            "draws": 0,
+            "turns": 236,
+            "attacks": 425,
+            "skillUses": 0,
+            "eneSpent": 0,
+            "actionsA": 189,
+            "actionsB": 236,
+            "hpA": 563,
+            "hpB": 1001,
+            "effectiveDamageA": 3699,
+            "effectiveDamageB": 3737,
+            "noResponse": 0,
+            "firstActorFinalBlows": 47,
+            "turnHistogram": {
+              "2": 68,
+              "3": 28,
+              "4": 4
+            },
+            "aWinRate": 0.53,
+            "aWinInterval95": [
+              0.4328885697009936,
+              0.6248918204065872
+            ],
+            "meanTurns": 2.36,
+            "medianTurns": 2,
+            "p10Turns": 2,
+            "p90Turns": 3,
+            "meanHpA": 5.63,
+            "meanHpB": 10.01
+          }
+        }
+      ],
+      "deltaWinPercentagePoints": 34,
+      "deltaInterval95": [
+        21.60118614915564,
+        45.03601342574281
+      ]
+    },
+    {
+      "id": "MON_009:MON_022:L10:mixed",
+      "control": false,
+      "scenario": {
+        "id": "MON_009:MON_022:L10:mixed",
+        "label": "Ladino x Caçador — nível 10 — mixed",
+        "player": {
+          "id": "MON_022",
+          "name": "Corvimon",
+          "class": "Ladino",
+          "rarity": "Comum",
+          "level": 10,
+          "hp": 43,
+          "hpMax": 43,
+          "atk": 13,
+          "def": 7,
+          "spd": 19,
+          "eneMax": 28
+        },
+        "enemy": {
+          "id": "MON_009",
+          "name": "Miaumon",
+          "class": "Caçador",
+          "rarity": "Comum",
+          "level": 10,
+          "hp": 47,
+          "hpMax": 47,
+          "atk": 15,
+          "def": 7,
+          "spd": 17,
+          "eneMax": 28
+        },
+        "playerSkill": {
+          "id": "ATAQUE_PRECISO_0",
+          "name": "Ataque Preciso I",
+          "class": "Ladino",
+          "groupKey": "Ataque Preciso",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 15,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Ataque preciso.",
+          "tier": 1
+        },
+        "enemySkill": {
+          "id": "FLECHA_PODEROSA_0",
+          "name": "Flecha Poderosa I",
+          "class": "Caçador",
+          "groupKey": "Flecha Poderosa",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 15,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Flecha poderosa.",
+          "tier": 1
+        },
+        "playerActionProfile": "mixed",
+        "enemyActionProfile": "mixed",
+        "classAdvantages": {
+          "Guerreiro": {
+            "strong": "Ladino",
+            "weak": "Mago"
+          },
+          "Bárbaro": {
+            "strong": "Curandeiro",
+            "weak": "Guerreiro"
+          },
+          "Mago": {
+            "strong": "Guerreiro",
+            "weak": "Caçador"
+          },
+          "Curandeiro": {
+            "strong": "Bárbaro",
+            "weak": "Bardo"
+          },
+          "Bardo": {
+            "strong": "Curandeiro",
+            "weak": "Animalista"
+          },
+          "Ladino": {
+            "strong": "Caçador",
+            "weak": "Guerreiro"
+          },
+          "Caçador": {
+            "strong": "Mago",
+            "weak": "Ladino"
+          },
+          "Animalista": {
+            "strong": "Bardo",
+            "weak": "Bárbaro"
+          }
+        },
+        "initialEnergyRatio": 0,
+        "passivesEnabled": true,
+        "control": false
+      },
+      "aFirst": {
+        "n": 100,
+        "aWins": 85,
+        "bWins": 15,
+        "draws": 0,
+        "turns": 217,
+        "attacks": 349,
+        "skillUses": 149,
+        "eneSpent": 596,
+        "actionsA": 217,
+        "actionsB": 132,
+        "hpA": 2043,
+        "hpB": 184,
+        "effectiveDamageA": 4516,
+        "effectiveDamageB": 2257,
+        "noResponse": 0,
+        "firstActorFinalBlows": 85,
+        "turnHistogram": {
+          "2": 83,
+          "3": 17
+        },
+        "aWinRate": 0.85,
+        "aWinInterval95": [
+          0.7671644040916763,
+          0.9069401471634337
+        ],
+        "meanTurns": 2.17,
+        "medianTurns": 2,
+        "p10Turns": 2,
+        "p90Turns": 3,
+        "meanHpA": 20.43,
+        "meanHpB": 1.84
+      },
+      "bFirst": {
+        "n": 100,
+        "aWins": 36,
+        "bWins": 64,
+        "draws": 0,
+        "turns": 216,
+        "attacks": 368,
+        "skillUses": 168,
+        "eneSpent": 672,
+        "actionsA": 152,
+        "actionsB": 216,
+        "hpA": 447,
+        "hpB": 1534,
+        "effectiveDamageA": 3166,
+        "effectiveDamageB": 3853,
+        "noResponse": 0,
+        "firstActorFinalBlows": 64,
+        "turnHistogram": {
+          "2": 84,
+          "3": 16
+        },
+        "aWinRate": 0.36,
+        "aWinInterval95": [
+          0.2727122040140433,
+          0.4576459754839126
+        ],
+        "meanTurns": 2.16,
+        "medianTurns": 2,
+        "p10Turns": 2,
+        "p90Turns": 3,
+        "meanHpA": 4.47,
+        "meanHpB": 15.34
+      },
+      "bySeed": [
+        {
+          "seed": "monstrinhomon-turn-order-v1:replicate-1",
+          "aFirst": {
+            "n": 100,
+            "aWins": 85,
+            "bWins": 15,
+            "draws": 0,
+            "turns": 217,
+            "attacks": 349,
+            "skillUses": 149,
+            "eneSpent": 596,
+            "actionsA": 217,
+            "actionsB": 132,
+            "hpA": 2043,
+            "hpB": 184,
+            "effectiveDamageA": 4516,
+            "effectiveDamageB": 2257,
+            "noResponse": 0,
+            "firstActorFinalBlows": 85,
+            "turnHistogram": {
+              "2": 83,
+              "3": 17
+            },
+            "aWinRate": 0.85,
+            "aWinInterval95": [
+              0.7671644040916763,
+              0.9069401471634337
+            ],
+            "meanTurns": 2.17,
+            "medianTurns": 2,
+            "p10Turns": 2,
+            "p90Turns": 3,
+            "meanHpA": 20.43,
+            "meanHpB": 1.84
+          },
+          "bFirst": {
+            "n": 100,
+            "aWins": 36,
+            "bWins": 64,
+            "draws": 0,
+            "turns": 216,
+            "attacks": 368,
+            "skillUses": 168,
+            "eneSpent": 672,
+            "actionsA": 152,
+            "actionsB": 216,
+            "hpA": 447,
+            "hpB": 1534,
+            "effectiveDamageA": 3166,
+            "effectiveDamageB": 3853,
+            "noResponse": 0,
+            "firstActorFinalBlows": 64,
+            "turnHistogram": {
+              "2": 84,
+              "3": 16
+            },
+            "aWinRate": 0.36,
+            "aWinInterval95": [
+              0.2727122040140433,
+              0.4576459754839126
+            ],
+            "meanTurns": 2.16,
+            "medianTurns": 2,
+            "p10Turns": 2,
+            "p90Turns": 3,
+            "meanHpA": 4.47,
+            "meanHpB": 15.34
+          }
+        }
+      ],
+      "deltaWinPercentagePoints": 49,
+      "deltaInterval95": [
+        36.19512886527476,
+        59.42177513050415
+      ]
+    },
+    {
+      "id": "MON_001:self:L1:basic",
+      "control": true,
+      "scenario": {
+        "id": "MON_001:self:L1:basic",
+        "label": "Guerreiro espelhado L1 basic",
+        "control": true,
+        "player": {
+          "id": "MON_001",
+          "name": "Ferrozimon",
+          "class": "Guerreiro",
+          "rarity": "Comum",
+          "level": 1,
+          "hp": 29,
+          "hpMax": 29,
+          "atk": 7,
+          "def": 9,
+          "spd": 4,
+          "eneMax": 4
+        },
+        "enemy": {
+          "id": "MON_001",
+          "name": "Ferrozimon",
+          "class": "Guerreiro",
+          "rarity": "Comum",
+          "level": 1,
+          "hp": 29,
+          "hpMax": 29,
+          "atk": 7,
+          "def": 9,
+          "spd": 4,
+          "eneMax": 4
+        },
+        "playerSkill": {
+          "id": "GOLPE_DE_ESPADA_0",
+          "name": "Golpe de Espada I",
+          "class": "Guerreiro",
+          "groupKey": "Golpe de Espada",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 14,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Ataque com espada.",
+          "tier": 1
+        },
+        "enemySkill": {
+          "id": "GOLPE_DE_ESPADA_0",
+          "name": "Golpe de Espada I",
+          "class": "Guerreiro",
+          "groupKey": "Golpe de Espada",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 14,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Ataque com espada.",
+          "tier": 1
+        },
+        "playerActionProfile": "basic",
+        "enemyActionProfile": "basic",
+        "classAdvantages": {
+          "Guerreiro": {
+            "strong": "Ladino",
+            "weak": "Mago"
+          },
+          "Bárbaro": {
+            "strong": "Curandeiro",
+            "weak": "Guerreiro"
+          },
+          "Mago": {
+            "strong": "Guerreiro",
+            "weak": "Caçador"
+          },
+          "Curandeiro": {
+            "strong": "Bárbaro",
+            "weak": "Bardo"
+          },
+          "Bardo": {
+            "strong": "Curandeiro",
+            "weak": "Animalista"
+          },
+          "Ladino": {
+            "strong": "Caçador",
+            "weak": "Guerreiro"
+          },
+          "Caçador": {
+            "strong": "Mago",
+            "weak": "Ladino"
+          },
+          "Animalista": {
+            "strong": "Bardo",
+            "weak": "Bárbaro"
+          }
+        },
+        "initialEnergyRatio": 0,
+        "passivesEnabled": true
+      },
+      "aFirst": {
+        "n": 100,
+        "aWins": 64,
+        "bWins": 36,
+        "draws": 0,
+        "turns": 481,
+        "attacks": 898,
+        "skillUses": 0,
+        "eneSpent": 0,
+        "actionsA": 481,
+        "actionsB": 417,
+        "hpA": 719,
+        "hpB": 349,
+        "effectiveDamageA": 2551,
+        "effectiveDamageB": 2181,
+        "noResponse": 0,
+        "firstActorFinalBlows": 64,
+        "turnHistogram": {
+          "3": 7,
+          "4": 41,
+          "5": 26,
+          "6": 17,
+          "7": 8,
+          "8": 1
+        },
+        "aWinRate": 0.64,
+        "aWinInterval95": [
+          0.5423540245160874,
+          0.7272877959859567
+        ],
+        "meanTurns": 4.81,
+        "medianTurns": 5,
+        "p10Turns": 4,
+        "p90Turns": 6,
+        "meanHpA": 7.19,
+        "meanHpB": 3.49
+      },
+      "bFirst": {
+        "n": 100,
+        "aWins": 40,
+        "bWins": 60,
+        "draws": 0,
+        "turns": 487,
+        "attacks": 914,
+        "skillUses": 0,
+        "eneSpent": 0,
+        "actionsA": 427,
+        "actionsB": 487,
+        "hpA": 350,
+        "hpB": 698,
+        "effectiveDamageA": 2202,
+        "effectiveDamageB": 2550,
+        "noResponse": 0,
+        "firstActorFinalBlows": 60,
+        "turnHistogram": {
+          "3": 6,
+          "4": 32,
+          "5": 38,
+          "6": 20,
+          "7": 2,
+          "8": 1,
+          "9": 1
+        },
+        "aWinRate": 0.4,
+        "aWinInterval95": [
+          0.3094012864324589,
+          0.4979974132089382
+        ],
+        "meanTurns": 4.87,
+        "medianTurns": 5,
+        "p10Turns": 4,
+        "p90Turns": 6,
+        "meanHpA": 3.5,
+        "meanHpB": 6.98
+      },
+      "bySeed": [
+        {
+          "seed": "monstrinhomon-turn-order-v1:replicate-1",
+          "aFirst": {
+            "n": 100,
+            "aWins": 64,
+            "bWins": 36,
+            "draws": 0,
+            "turns": 481,
+            "attacks": 898,
+            "skillUses": 0,
+            "eneSpent": 0,
+            "actionsA": 481,
+            "actionsB": 417,
+            "hpA": 719,
+            "hpB": 349,
+            "effectiveDamageA": 2551,
+            "effectiveDamageB": 2181,
+            "noResponse": 0,
+            "firstActorFinalBlows": 64,
+            "turnHistogram": {
+              "3": 7,
+              "4": 41,
+              "5": 26,
+              "6": 17,
+              "7": 8,
+              "8": 1
+            },
+            "aWinRate": 0.64,
+            "aWinInterval95": [
+              0.5423540245160874,
+              0.7272877959859567
+            ],
+            "meanTurns": 4.81,
+            "medianTurns": 5,
+            "p10Turns": 4,
+            "p90Turns": 6,
+            "meanHpA": 7.19,
+            "meanHpB": 3.49
+          },
+          "bFirst": {
+            "n": 100,
+            "aWins": 40,
+            "bWins": 60,
+            "draws": 0,
+            "turns": 487,
+            "attacks": 914,
+            "skillUses": 0,
+            "eneSpent": 0,
+            "actionsA": 427,
+            "actionsB": 487,
+            "hpA": 350,
+            "hpB": 698,
+            "effectiveDamageA": 2202,
+            "effectiveDamageB": 2550,
+            "noResponse": 0,
+            "firstActorFinalBlows": 60,
+            "turnHistogram": {
+              "3": 6,
+              "4": 32,
+              "5": 38,
+              "6": 20,
+              "7": 2,
+              "8": 1,
+              "9": 1
+            },
+            "aWinRate": 0.4,
+            "aWinInterval95": [
+              0.3094012864324589,
+              0.4979974132089382
+            ],
+            "meanTurns": 4.87,
+            "medianTurns": 5,
+            "p10Turns": 4,
+            "p90Turns": 6,
+            "meanHpA": 3.5,
+            "meanHpB": 6.98
+          }
+        }
+      ],
+      "deltaWinPercentagePoints": 24,
+      "deltaInterval95": [
+        10.165900996505686,
+        36.580654286713134
+      ]
+    },
+    {
+      "id": "MON_001:self:L1:mixed",
+      "control": true,
+      "scenario": {
+        "id": "MON_001:self:L1:mixed",
+        "label": "Guerreiro espelhado L1 mixed",
+        "control": true,
+        "player": {
+          "id": "MON_001",
+          "name": "Ferrozimon",
+          "class": "Guerreiro",
+          "rarity": "Comum",
+          "level": 1,
+          "hp": 29,
+          "hpMax": 29,
+          "atk": 7,
+          "def": 9,
+          "spd": 4,
+          "eneMax": 4
+        },
+        "enemy": {
+          "id": "MON_001",
+          "name": "Ferrozimon",
+          "class": "Guerreiro",
+          "rarity": "Comum",
+          "level": 1,
+          "hp": 29,
+          "hpMax": 29,
+          "atk": 7,
+          "def": 9,
+          "spd": 4,
+          "eneMax": 4
+        },
+        "playerSkill": {
+          "id": "GOLPE_DE_ESPADA_0",
+          "name": "Golpe de Espada I",
+          "class": "Guerreiro",
+          "groupKey": "Golpe de Espada",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 14,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Ataque com espada.",
+          "tier": 1
+        },
+        "enemySkill": {
+          "id": "GOLPE_DE_ESPADA_0",
+          "name": "Golpe de Espada I",
+          "class": "Guerreiro",
+          "groupKey": "Golpe de Espada",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 14,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Ataque com espada.",
+          "tier": 1
+        },
+        "playerActionProfile": "mixed",
+        "enemyActionProfile": "mixed",
+        "classAdvantages": {
+          "Guerreiro": {
+            "strong": "Ladino",
+            "weak": "Mago"
+          },
+          "Bárbaro": {
+            "strong": "Curandeiro",
+            "weak": "Guerreiro"
+          },
+          "Mago": {
+            "strong": "Guerreiro",
+            "weak": "Caçador"
+          },
+          "Curandeiro": {
+            "strong": "Bárbaro",
+            "weak": "Bardo"
+          },
+          "Bardo": {
+            "strong": "Curandeiro",
+            "weak": "Animalista"
+          },
+          "Ladino": {
+            "strong": "Caçador",
+            "weak": "Guerreiro"
+          },
+          "Caçador": {
+            "strong": "Mago",
+            "weak": "Ladino"
+          },
+          "Animalista": {
+            "strong": "Bardo",
+            "weak": "Bárbaro"
+          }
+        },
+        "initialEnergyRatio": 0,
+        "passivesEnabled": true
+      },
+      "aFirst": {
+        "n": 100,
+        "aWins": 70,
+        "bWins": 30,
+        "draws": 0,
+        "turns": 458,
+        "attacks": 846,
+        "skillUses": 151,
+        "eneSpent": 604,
+        "actionsA": 458,
+        "actionsB": 388,
+        "hpA": 856,
+        "hpB": 232,
+        "effectiveDamageA": 2668,
+        "effectiveDamageB": 2044,
+        "noResponse": 0,
+        "firstActorFinalBlows": 70,
+        "turnHistogram": {
+          "3": 6,
+          "4": 57,
+          "5": 19,
+          "6": 11,
+          "7": 5,
+          "8": 2
+        },
+        "aWinRate": 0.7,
+        "aWinInterval95": [
+          0.6041514536665332,
+          0.7810511470506724
+        ],
+        "meanTurns": 4.58,
+        "medianTurns": 4,
+        "p10Turns": 4,
+        "p90Turns": 6,
+        "meanHpA": 8.56,
+        "meanHpB": 2.32
+      },
+      "bFirst": {
+        "n": 100,
+        "aWins": 37,
+        "bWins": 63,
+        "draws": 0,
+        "turns": 435,
+        "attacks": 807,
+        "skillUses": 137,
+        "eneSpent": 548,
+        "actionsA": 372,
+        "actionsB": 435,
+        "hpA": 396,
+        "hpB": 844,
+        "effectiveDamageA": 2056,
+        "effectiveDamageB": 2504,
+        "noResponse": 0,
+        "firstActorFinalBlows": 63,
+        "turnHistogram": {
+          "3": 13,
+          "4": 57,
+          "5": 16,
+          "6": 11,
+          "7": 2,
+          "8": 1
+        },
+        "aWinRate": 0.37,
+        "aWinInterval95": [
+          0.28182360534324524,
+          0.4677947041905709
+        ],
+        "meanTurns": 4.35,
+        "medianTurns": 4,
+        "p10Turns": 3,
+        "p90Turns": 6,
+        "meanHpA": 3.96,
+        "meanHpB": 8.44
+      },
+      "bySeed": [
+        {
+          "seed": "monstrinhomon-turn-order-v1:replicate-1",
+          "aFirst": {
+            "n": 100,
+            "aWins": 70,
+            "bWins": 30,
+            "draws": 0,
+            "turns": 458,
+            "attacks": 846,
+            "skillUses": 151,
+            "eneSpent": 604,
+            "actionsA": 458,
+            "actionsB": 388,
+            "hpA": 856,
+            "hpB": 232,
+            "effectiveDamageA": 2668,
+            "effectiveDamageB": 2044,
+            "noResponse": 0,
+            "firstActorFinalBlows": 70,
+            "turnHistogram": {
+              "3": 6,
+              "4": 57,
+              "5": 19,
+              "6": 11,
+              "7": 5,
+              "8": 2
+            },
+            "aWinRate": 0.7,
+            "aWinInterval95": [
+              0.6041514536665332,
+              0.7810511470506724
+            ],
+            "meanTurns": 4.58,
+            "medianTurns": 4,
+            "p10Turns": 4,
+            "p90Turns": 6,
+            "meanHpA": 8.56,
+            "meanHpB": 2.32
+          },
+          "bFirst": {
+            "n": 100,
+            "aWins": 37,
+            "bWins": 63,
+            "draws": 0,
+            "turns": 435,
+            "attacks": 807,
+            "skillUses": 137,
+            "eneSpent": 548,
+            "actionsA": 372,
+            "actionsB": 435,
+            "hpA": 396,
+            "hpB": 844,
+            "effectiveDamageA": 2056,
+            "effectiveDamageB": 2504,
+            "noResponse": 0,
+            "firstActorFinalBlows": 63,
+            "turnHistogram": {
+              "3": 13,
+              "4": 57,
+              "5": 16,
+              "6": 11,
+              "7": 2,
+              "8": 1
+            },
+            "aWinRate": 0.37,
+            "aWinInterval95": [
+              0.28182360534324524,
+              0.4677947041905709
+            ],
+            "meanTurns": 4.35,
+            "medianTurns": 4,
+            "p10Turns": 3,
+            "p90Turns": 6,
+            "meanHpA": 3.96,
+            "meanHpB": 8.44
+          }
+        }
+      ],
+      "deltaWinPercentagePoints": 32.99999999999999,
+      "deltaInterval95": [
+        19.30666293339714,
+        44.97679632159347
+      ]
+    },
+    {
+      "id": "MON_001:self:L10:basic",
+      "control": true,
+      "scenario": {
+        "id": "MON_001:self:L10:basic",
+        "label": "Guerreiro espelhado L10 basic",
+        "control": true,
+        "player": {
+          "id": "MON_001",
+          "name": "Ferrozimon",
+          "class": "Guerreiro",
+          "rarity": "Comum",
+          "level": 10,
+          "hp": 55,
+          "hpMax": 55,
+          "atk": 13,
+          "def": 17,
+          "spd": 7,
+          "eneMax": 28
+        },
+        "enemy": {
+          "id": "MON_001",
+          "name": "Ferrozimon",
+          "class": "Guerreiro",
+          "rarity": "Comum",
+          "level": 10,
+          "hp": 55,
+          "hpMax": 55,
+          "atk": 13,
+          "def": 17,
+          "spd": 7,
+          "eneMax": 28
+        },
+        "playerSkill": {
+          "id": "GOLPE_DE_ESPADA_0",
+          "name": "Golpe de Espada I",
+          "class": "Guerreiro",
+          "groupKey": "Golpe de Espada",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 14,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Ataque com espada.",
+          "tier": 1
+        },
+        "enemySkill": {
+          "id": "GOLPE_DE_ESPADA_0",
+          "name": "Golpe de Espada I",
+          "class": "Guerreiro",
+          "groupKey": "Golpe de Espada",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 14,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Ataque com espada.",
+          "tier": 1
+        },
+        "playerActionProfile": "basic",
+        "enemyActionProfile": "basic",
+        "classAdvantages": {
+          "Guerreiro": {
+            "strong": "Ladino",
+            "weak": "Mago"
+          },
+          "Bárbaro": {
+            "strong": "Curandeiro",
+            "weak": "Guerreiro"
+          },
+          "Mago": {
+            "strong": "Guerreiro",
+            "weak": "Caçador"
+          },
+          "Curandeiro": {
+            "strong": "Bárbaro",
+            "weak": "Bardo"
+          },
+          "Bardo": {
+            "strong": "Curandeiro",
+            "weak": "Animalista"
+          },
+          "Ladino": {
+            "strong": "Caçador",
+            "weak": "Guerreiro"
+          },
+          "Caçador": {
+            "strong": "Mago",
+            "weak": "Ladino"
+          },
+          "Animalista": {
+            "strong": "Bardo",
+            "weak": "Bárbaro"
+          }
+        },
+        "initialEnergyRatio": 0,
+        "passivesEnabled": true
+      },
+      "aFirst": {
+        "n": 100,
+        "aWins": 65,
+        "bWins": 35,
+        "draws": 0,
+        "turns": 685,
+        "attacks": 1305,
+        "skillUses": 0,
+        "eneSpent": 0,
+        "actionsA": 685,
+        "actionsB": 620,
+        "hpA": 922,
+        "hpB": 413,
+        "effectiveDamageA": 5087,
+        "effectiveDamageB": 4578,
+        "noResponse": 0,
+        "firstActorFinalBlows": 65,
+        "turnHistogram": {
+          "5": 13,
+          "6": 28,
+          "7": 30,
+          "8": 21,
+          "9": 6,
+          "10": 2
+        },
+        "aWinRate": 0.65,
+        "aWinInterval95": [
+          0.5525444329688796,
+          0.7363575175690247
+        ],
+        "meanTurns": 6.85,
+        "medianTurns": 7,
+        "p10Turns": 5,
+        "p90Turns": 8,
+        "meanHpA": 9.22,
+        "meanHpB": 4.13
+      },
+      "bFirst": {
+        "n": 100,
+        "aWins": 46,
+        "bWins": 54,
+        "draws": 0,
+        "turns": 688,
+        "attacks": 1322,
+        "skillUses": 0,
+        "eneSpent": 0,
+        "actionsA": 634,
+        "actionsB": 688,
+        "hpA": 615,
+        "hpB": 820,
+        "effectiveDamageA": 4680,
+        "effectiveDamageB": 4885,
+        "noResponse": 0,
+        "firstActorFinalBlows": 54,
+        "turnHistogram": {
+          "5": 13,
+          "6": 30,
+          "7": 26,
+          "8": 20,
+          "9": 9,
+          "10": 2
+        },
+        "aWinRate": 0.46,
+        "aWinInterval95": [
+          0.36560808309024106,
+          0.5573513967663177
+        ],
+        "meanTurns": 6.88,
+        "medianTurns": 7,
+        "p10Turns": 5,
+        "p90Turns": 9,
+        "meanHpA": 6.15,
+        "meanHpB": 8.2
+      },
+      "bySeed": [
+        {
+          "seed": "monstrinhomon-turn-order-v1:replicate-1",
+          "aFirst": {
+            "n": 100,
+            "aWins": 65,
+            "bWins": 35,
+            "draws": 0,
+            "turns": 685,
+            "attacks": 1305,
+            "skillUses": 0,
+            "eneSpent": 0,
+            "actionsA": 685,
+            "actionsB": 620,
+            "hpA": 922,
+            "hpB": 413,
+            "effectiveDamageA": 5087,
+            "effectiveDamageB": 4578,
+            "noResponse": 0,
+            "firstActorFinalBlows": 65,
+            "turnHistogram": {
+              "5": 13,
+              "6": 28,
+              "7": 30,
+              "8": 21,
+              "9": 6,
+              "10": 2
+            },
+            "aWinRate": 0.65,
+            "aWinInterval95": [
+              0.5525444329688796,
+              0.7363575175690247
+            ],
+            "meanTurns": 6.85,
+            "medianTurns": 7,
+            "p10Turns": 5,
+            "p90Turns": 8,
+            "meanHpA": 9.22,
+            "meanHpB": 4.13
+          },
+          "bFirst": {
+            "n": 100,
+            "aWins": 46,
+            "bWins": 54,
+            "draws": 0,
+            "turns": 688,
+            "attacks": 1322,
+            "skillUses": 0,
+            "eneSpent": 0,
+            "actionsA": 634,
+            "actionsB": 688,
+            "hpA": 615,
+            "hpB": 820,
+            "effectiveDamageA": 4680,
+            "effectiveDamageB": 4885,
+            "noResponse": 0,
+            "firstActorFinalBlows": 54,
+            "turnHistogram": {
+              "5": 13,
+              "6": 30,
+              "7": 26,
+              "8": 20,
+              "9": 9,
+              "10": 2
+            },
+            "aWinRate": 0.46,
+            "aWinInterval95": [
+              0.36560808309024106,
+              0.5573513967663177
+            ],
+            "meanTurns": 6.88,
+            "medianTurns": 7,
+            "p10Turns": 5,
+            "p90Turns": 9,
+            "meanHpA": 6.15,
+            "meanHpB": 8.2
+          }
+        }
+      ],
+      "deltaWinPercentagePoints": 19,
+      "deltaInterval95": [
+        5.225065518228325,
+        31.793535406049124
+      ]
+    },
+    {
+      "id": "MON_001:self:L10:mixed",
+      "control": true,
+      "scenario": {
+        "id": "MON_001:self:L10:mixed",
+        "label": "Guerreiro espelhado L10 mixed",
+        "control": true,
+        "player": {
+          "id": "MON_001",
+          "name": "Ferrozimon",
+          "class": "Guerreiro",
+          "rarity": "Comum",
+          "level": 10,
+          "hp": 55,
+          "hpMax": 55,
+          "atk": 13,
+          "def": 17,
+          "spd": 7,
+          "eneMax": 28
+        },
+        "enemy": {
+          "id": "MON_001",
+          "name": "Ferrozimon",
+          "class": "Guerreiro",
+          "rarity": "Comum",
+          "level": 10,
+          "hp": 55,
+          "hpMax": 55,
+          "atk": 13,
+          "def": 17,
+          "spd": 7,
+          "eneMax": 28
+        },
+        "playerSkill": {
+          "id": "GOLPE_DE_ESPADA_0",
+          "name": "Golpe de Espada I",
+          "class": "Guerreiro",
+          "groupKey": "Golpe de Espada",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 14,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Ataque com espada.",
+          "tier": 1
+        },
+        "enemySkill": {
+          "id": "GOLPE_DE_ESPADA_0",
+          "name": "Golpe de Espada I",
+          "class": "Guerreiro",
+          "groupKey": "Golpe de Espada",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 14,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Ataque com espada.",
+          "tier": 1
+        },
+        "playerActionProfile": "mixed",
+        "enemyActionProfile": "mixed",
+        "classAdvantages": {
+          "Guerreiro": {
+            "strong": "Ladino",
+            "weak": "Mago"
+          },
+          "Bárbaro": {
+            "strong": "Curandeiro",
+            "weak": "Guerreiro"
+          },
+          "Mago": {
+            "strong": "Guerreiro",
+            "weak": "Caçador"
+          },
+          "Curandeiro": {
+            "strong": "Bárbaro",
+            "weak": "Bardo"
+          },
+          "Bardo": {
+            "strong": "Curandeiro",
+            "weak": "Animalista"
+          },
+          "Ladino": {
+            "strong": "Caçador",
+            "weak": "Guerreiro"
+          },
+          "Caçador": {
+            "strong": "Mago",
+            "weak": "Ladino"
+          },
+          "Animalista": {
+            "strong": "Bardo",
+            "weak": "Bárbaro"
+          }
+        },
+        "initialEnergyRatio": 0,
+        "passivesEnabled": true
+      },
+      "aFirst": {
+        "n": 100,
+        "aWins": 61,
+        "bWins": 39,
+        "draws": 0,
+        "turns": 567,
+        "attacks": 1073,
+        "skillUses": 497,
+        "eneSpent": 1988,
+        "actionsA": 567,
+        "actionsB": 506,
+        "hpA": 951,
+        "hpB": 502,
+        "effectiveDamageA": 4998,
+        "effectiveDamageB": 4549,
+        "noResponse": 0,
+        "firstActorFinalBlows": 61,
+        "turnHistogram": {
+          "4": 20,
+          "5": 20,
+          "6": 44,
+          "7": 6,
+          "8": 9,
+          "9": 1
+        },
+        "aWinRate": 0.61,
+        "aWinInterval95": [
+          0.5120301704584073,
+          0.6998312599360558
+        ],
+        "meanTurns": 5.67,
+        "medianTurns": 6,
+        "p10Turns": 4,
+        "p90Turns": 7.1000000000000085,
+        "meanHpA": 9.51,
+        "meanHpB": 5.02
+      },
+      "bFirst": {
+        "n": 100,
+        "aWins": 44,
+        "bWins": 56,
+        "draws": 0,
+        "turns": 555,
+        "attacks": 1054,
+        "skillUses": 475,
+        "eneSpent": 1900,
+        "actionsA": 499,
+        "actionsB": 555,
+        "hpA": 636,
+        "hpB": 1077,
+        "effectiveDamageA": 4423,
+        "effectiveDamageB": 4864,
+        "noResponse": 0,
+        "firstActorFinalBlows": 56,
+        "turnHistogram": {
+          "4": 20,
+          "5": 31,
+          "6": 36,
+          "7": 6,
+          "8": 2,
+          "9": 4,
+          "10": 1
+        },
+        "aWinRate": 0.44,
+        "aWinInterval95": [
+          0.34672026630160796,
+          0.5377189534832302
+        ],
+        "meanTurns": 5.55,
+        "medianTurns": 5,
+        "p10Turns": 4,
+        "p90Turns": 7,
+        "meanHpA": 6.36,
+        "meanHpB": 10.77
+      },
+      "bySeed": [
+        {
+          "seed": "monstrinhomon-turn-order-v1:replicate-1",
+          "aFirst": {
+            "n": 100,
+            "aWins": 61,
+            "bWins": 39,
+            "draws": 0,
+            "turns": 567,
+            "attacks": 1073,
+            "skillUses": 497,
+            "eneSpent": 1988,
+            "actionsA": 567,
+            "actionsB": 506,
+            "hpA": 951,
+            "hpB": 502,
+            "effectiveDamageA": 4998,
+            "effectiveDamageB": 4549,
+            "noResponse": 0,
+            "firstActorFinalBlows": 61,
+            "turnHistogram": {
+              "4": 20,
+              "5": 20,
+              "6": 44,
+              "7": 6,
+              "8": 9,
+              "9": 1
+            },
+            "aWinRate": 0.61,
+            "aWinInterval95": [
+              0.5120301704584073,
+              0.6998312599360558
+            ],
+            "meanTurns": 5.67,
+            "medianTurns": 6,
+            "p10Turns": 4,
+            "p90Turns": 7.1000000000000085,
+            "meanHpA": 9.51,
+            "meanHpB": 5.02
+          },
+          "bFirst": {
+            "n": 100,
+            "aWins": 44,
+            "bWins": 56,
+            "draws": 0,
+            "turns": 555,
+            "attacks": 1054,
+            "skillUses": 475,
+            "eneSpent": 1900,
+            "actionsA": 499,
+            "actionsB": 555,
+            "hpA": 636,
+            "hpB": 1077,
+            "effectiveDamageA": 4423,
+            "effectiveDamageB": 4864,
+            "noResponse": 0,
+            "firstActorFinalBlows": 56,
+            "turnHistogram": {
+              "4": 20,
+              "5": 31,
+              "6": 36,
+              "7": 6,
+              "8": 2,
+              "9": 4,
+              "10": 1
+            },
+            "aWinRate": 0.44,
+            "aWinInterval95": [
+              0.34672026630160796,
+              0.5377189534832302
+            ],
+            "meanTurns": 5.55,
+            "medianTurns": 5,
+            "p10Turns": 4,
+            "p90Turns": 7,
+            "meanHpA": 6.36,
+            "meanHpB": 10.77
+          }
+        }
+      ],
+      "deltaWinPercentagePoints": 17,
+      "deltaInterval95": [
+        3.1627020808734336,
+        29.950198446565267
+      ]
+    },
+    {
+      "id": "MON_013:self:L1:basic",
+      "control": true,
+      "scenario": {
+        "id": "MON_013:self:L1:basic",
+        "label": "Mago espelhado L1 basic",
+        "control": true,
+        "player": {
+          "id": "MON_013",
+          "name": "Lagartomon",
+          "class": "Mago",
+          "rarity": "Comum",
+          "level": 1,
+          "hp": 24,
+          "hpMax": 24,
+          "atk": 6,
+          "def": 4,
+          "spd": 6,
+          "eneMax": 8
+        },
+        "enemy": {
+          "id": "MON_013",
+          "name": "Lagartomon",
+          "class": "Mago",
+          "rarity": "Comum",
+          "level": 1,
+          "hp": 24,
+          "hpMax": 24,
+          "atk": 6,
+          "def": 4,
+          "spd": 6,
+          "eneMax": 8
+        },
+        "playerSkill": {
+          "id": "MAGIA_ELEMENTAL_0",
+          "name": "Magia Elemental I",
+          "class": "Mago",
+          "groupKey": "Magia Elemental",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 15,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Magia elemental.",
+          "tier": 1
+        },
+        "enemySkill": {
+          "id": "MAGIA_ELEMENTAL_0",
+          "name": "Magia Elemental I",
+          "class": "Mago",
+          "groupKey": "Magia Elemental",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 15,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Magia elemental.",
+          "tier": 1
+        },
+        "playerActionProfile": "basic",
+        "enemyActionProfile": "basic",
+        "classAdvantages": {
+          "Guerreiro": {
+            "strong": "Ladino",
+            "weak": "Mago"
+          },
+          "Bárbaro": {
+            "strong": "Curandeiro",
+            "weak": "Guerreiro"
+          },
+          "Mago": {
+            "strong": "Guerreiro",
+            "weak": "Caçador"
+          },
+          "Curandeiro": {
+            "strong": "Bárbaro",
+            "weak": "Bardo"
+          },
+          "Bardo": {
+            "strong": "Curandeiro",
+            "weak": "Animalista"
+          },
+          "Ladino": {
+            "strong": "Caçador",
+            "weak": "Guerreiro"
+          },
+          "Caçador": {
+            "strong": "Mago",
+            "weak": "Ladino"
+          },
+          "Animalista": {
+            "strong": "Bardo",
+            "weak": "Bárbaro"
+          }
+        },
+        "initialEnergyRatio": 0,
+        "passivesEnabled": true
+      },
+      "aFirst": {
+        "n": 100,
+        "aWins": 63,
+        "bWins": 37,
+        "draws": 0,
+        "turns": 285,
+        "attacks": 507,
+        "skillUses": 0,
+        "eneSpent": 0,
+        "actionsA": 285,
+        "actionsB": 222,
+        "hpA": 772,
+        "hpB": 312,
+        "effectiveDamageA": 2088,
+        "effectiveDamageB": 1628,
+        "noResponse": 0,
+        "firstActorFinalBlows": 63,
+        "turnHistogram": {
+          "2": 36,
+          "3": 47,
+          "4": 13,
+          "5": 4
+        },
+        "aWinRate": 0.63,
+        "aWinInterval95": [
+          0.5322052958094291,
+          0.7181763946567546
+        ],
+        "meanTurns": 2.85,
+        "medianTurns": 3,
+        "p10Turns": 2,
+        "p90Turns": 4,
+        "meanHpA": 7.72,
+        "meanHpB": 3.12
+      },
+      "bFirst": {
+        "n": 100,
+        "aWins": 40,
+        "bWins": 60,
+        "draws": 0,
+        "turns": 288,
+        "attacks": 516,
+        "skillUses": 0,
+        "eneSpent": 0,
+        "actionsA": 228,
+        "actionsB": 288,
+        "hpA": 364,
+        "hpB": 724,
+        "effectiveDamageA": 1676,
+        "effectiveDamageB": 2036,
+        "noResponse": 0,
+        "firstActorFinalBlows": 60,
+        "turnHistogram": {
+          "2": 43,
+          "3": 31,
+          "4": 21,
+          "5": 5
+        },
+        "aWinRate": 0.4,
+        "aWinInterval95": [
+          0.3094012864324589,
+          0.4979974132089382
+        ],
+        "meanTurns": 2.88,
+        "medianTurns": 3,
+        "p10Turns": 2,
+        "p90Turns": 4,
+        "meanHpA": 3.64,
+        "meanHpB": 7.24
+      },
+      "bySeed": [
+        {
+          "seed": "monstrinhomon-turn-order-v1:replicate-1",
+          "aFirst": {
+            "n": 100,
+            "aWins": 63,
+            "bWins": 37,
+            "draws": 0,
+            "turns": 285,
+            "attacks": 507,
+            "skillUses": 0,
+            "eneSpent": 0,
+            "actionsA": 285,
+            "actionsB": 222,
+            "hpA": 772,
+            "hpB": 312,
+            "effectiveDamageA": 2088,
+            "effectiveDamageB": 1628,
+            "noResponse": 0,
+            "firstActorFinalBlows": 63,
+            "turnHistogram": {
+              "2": 36,
+              "3": 47,
+              "4": 13,
+              "5": 4
+            },
+            "aWinRate": 0.63,
+            "aWinInterval95": [
+              0.5322052958094291,
+              0.7181763946567546
+            ],
+            "meanTurns": 2.85,
+            "medianTurns": 3,
+            "p10Turns": 2,
+            "p90Turns": 4,
+            "meanHpA": 7.72,
+            "meanHpB": 3.12
+          },
+          "bFirst": {
+            "n": 100,
+            "aWins": 40,
+            "bWins": 60,
+            "draws": 0,
+            "turns": 288,
+            "attacks": 516,
+            "skillUses": 0,
+            "eneSpent": 0,
+            "actionsA": 228,
+            "actionsB": 288,
+            "hpA": 364,
+            "hpB": 724,
+            "effectiveDamageA": 1676,
+            "effectiveDamageB": 2036,
+            "noResponse": 0,
+            "firstActorFinalBlows": 60,
+            "turnHistogram": {
+              "2": 43,
+              "3": 31,
+              "4": 21,
+              "5": 5
+            },
+            "aWinRate": 0.4,
+            "aWinInterval95": [
+              0.3094012864324589,
+              0.4979974132089382
+            ],
+            "meanTurns": 2.88,
+            "medianTurns": 3,
+            "p10Turns": 2,
+            "p90Turns": 4,
+            "meanHpA": 3.64,
+            "meanHpB": 7.24
+          }
+        }
+      ],
+      "deltaWinPercentagePoints": 23,
+      "deltaInterval95": [
+        9.155399188360597,
+        35.64246948770575
+      ]
+    },
+    {
+      "id": "MON_013:self:L1:mixed",
+      "control": true,
+      "scenario": {
+        "id": "MON_013:self:L1:mixed",
+        "label": "Mago espelhado L1 mixed",
+        "control": true,
+        "player": {
+          "id": "MON_013",
+          "name": "Lagartomon",
+          "class": "Mago",
+          "rarity": "Comum",
+          "level": 1,
+          "hp": 24,
+          "hpMax": 24,
+          "atk": 6,
+          "def": 4,
+          "spd": 6,
+          "eneMax": 8
+        },
+        "enemy": {
+          "id": "MON_013",
+          "name": "Lagartomon",
+          "class": "Mago",
+          "rarity": "Comum",
+          "level": 1,
+          "hp": 24,
+          "hpMax": 24,
+          "atk": 6,
+          "def": 4,
+          "spd": 6,
+          "eneMax": 8
+        },
+        "playerSkill": {
+          "id": "MAGIA_ELEMENTAL_0",
+          "name": "Magia Elemental I",
+          "class": "Mago",
+          "groupKey": "Magia Elemental",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 15,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Magia elemental.",
+          "tier": 1
+        },
+        "enemySkill": {
+          "id": "MAGIA_ELEMENTAL_0",
+          "name": "Magia Elemental I",
+          "class": "Mago",
+          "groupKey": "Magia Elemental",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 15,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Magia elemental.",
+          "tier": 1
+        },
+        "playerActionProfile": "mixed",
+        "enemyActionProfile": "mixed",
+        "classAdvantages": {
+          "Guerreiro": {
+            "strong": "Ladino",
+            "weak": "Mago"
+          },
+          "Bárbaro": {
+            "strong": "Curandeiro",
+            "weak": "Guerreiro"
+          },
+          "Mago": {
+            "strong": "Guerreiro",
+            "weak": "Caçador"
+          },
+          "Curandeiro": {
+            "strong": "Bárbaro",
+            "weak": "Bardo"
+          },
+          "Bardo": {
+            "strong": "Curandeiro",
+            "weak": "Animalista"
+          },
+          "Ladino": {
+            "strong": "Caçador",
+            "weak": "Guerreiro"
+          },
+          "Caçador": {
+            "strong": "Mago",
+            "weak": "Ladino"
+          },
+          "Animalista": {
+            "strong": "Bardo",
+            "weak": "Bárbaro"
+          }
+        },
+        "initialEnergyRatio": 0,
+        "passivesEnabled": true
+      },
+      "aFirst": {
+        "n": 100,
+        "aWins": 65,
+        "bWins": 35,
+        "draws": 0,
+        "turns": 229,
+        "attacks": 393,
+        "skillUses": 160,
+        "eneSpent": 640,
+        "actionsA": 229,
+        "actionsB": 164,
+        "hpA": 913,
+        "hpB": 314,
+        "effectiveDamageA": 2086,
+        "effectiveDamageB": 1487,
+        "noResponse": 0,
+        "firstActorFinalBlows": 65,
+        "turnHistogram": {
+          "2": 78,
+          "3": 16,
+          "4": 5,
+          "5": 1
+        },
+        "aWinRate": 0.65,
+        "aWinInterval95": [
+          0.5525444329688796,
+          0.7363575175690247
+        ],
+        "meanTurns": 2.29,
+        "medianTurns": 2,
+        "p10Turns": 2,
+        "p90Turns": 3,
+        "meanHpA": 9.13,
+        "meanHpB": 3.14
+      },
+      "bFirst": {
+        "n": 100,
+        "aWins": 38,
+        "bWins": 62,
+        "draws": 0,
+        "turns": 239,
+        "attacks": 416,
+        "skillUses": 169,
+        "eneSpent": 676,
+        "actionsA": 177,
+        "actionsB": 239,
+        "hpA": 332,
+        "hpB": 845,
+        "effectiveDamageA": 1555,
+        "effectiveDamageB": 2068,
+        "noResponse": 0,
+        "firstActorFinalBlows": 62,
+        "turnHistogram": {
+          "2": 71,
+          "3": 20,
+          "4": 8,
+          "5": 1
+        },
+        "aWinRate": 0.38,
+        "aWinInterval95": [
+          0.29097599252478734,
+          0.47790244704488916
+        ],
+        "meanTurns": 2.39,
+        "medianTurns": 2,
+        "p10Turns": 2,
+        "p90Turns": 3,
+        "meanHpA": 3.32,
+        "meanHpB": 8.45
+      },
+      "bySeed": [
+        {
+          "seed": "monstrinhomon-turn-order-v1:replicate-1",
+          "aFirst": {
+            "n": 100,
+            "aWins": 65,
+            "bWins": 35,
+            "draws": 0,
+            "turns": 229,
+            "attacks": 393,
+            "skillUses": 160,
+            "eneSpent": 640,
+            "actionsA": 229,
+            "actionsB": 164,
+            "hpA": 913,
+            "hpB": 314,
+            "effectiveDamageA": 2086,
+            "effectiveDamageB": 1487,
+            "noResponse": 0,
+            "firstActorFinalBlows": 65,
+            "turnHistogram": {
+              "2": 78,
+              "3": 16,
+              "4": 5,
+              "5": 1
+            },
+            "aWinRate": 0.65,
+            "aWinInterval95": [
+              0.5525444329688796,
+              0.7363575175690247
+            ],
+            "meanTurns": 2.29,
+            "medianTurns": 2,
+            "p10Turns": 2,
+            "p90Turns": 3,
+            "meanHpA": 9.13,
+            "meanHpB": 3.14
+          },
+          "bFirst": {
+            "n": 100,
+            "aWins": 38,
+            "bWins": 62,
+            "draws": 0,
+            "turns": 239,
+            "attacks": 416,
+            "skillUses": 169,
+            "eneSpent": 676,
+            "actionsA": 177,
+            "actionsB": 239,
+            "hpA": 332,
+            "hpB": 845,
+            "effectiveDamageA": 1555,
+            "effectiveDamageB": 2068,
+            "noResponse": 0,
+            "firstActorFinalBlows": 62,
+            "turnHistogram": {
+              "2": 71,
+              "3": 20,
+              "4": 8,
+              "5": 1
+            },
+            "aWinRate": 0.38,
+            "aWinInterval95": [
+              0.29097599252478734,
+              0.47790244704488916
+            ],
+            "meanTurns": 2.39,
+            "medianTurns": 2,
+            "p10Turns": 2,
+            "p90Turns": 3,
+            "meanHpA": 3.32,
+            "meanHpB": 8.45
+          }
+        }
+      ],
+      "deltaWinPercentagePoints": 27,
+      "deltaInterval95": [
+        13.186066207363476,
+        39.40277982858324
+      ]
+    },
+    {
+      "id": "MON_013:self:L10:basic",
+      "control": true,
+      "scenario": {
+        "id": "MON_013:self:L10:basic",
+        "label": "Mago espelhado L10 basic",
+        "control": true,
+        "player": {
+          "id": "MON_013",
+          "name": "Lagartomon",
+          "class": "Mago",
+          "rarity": "Comum",
+          "level": 10,
+          "hp": 45,
+          "hpMax": 45,
+          "atk": 11,
+          "def": 7,
+          "spd": 11,
+          "eneMax": 28
+        },
+        "enemy": {
+          "id": "MON_013",
+          "name": "Lagartomon",
+          "class": "Mago",
+          "rarity": "Comum",
+          "level": 10,
+          "hp": 45,
+          "hpMax": 45,
+          "atk": 11,
+          "def": 7,
+          "spd": 11,
+          "eneMax": 28
+        },
+        "playerSkill": {
+          "id": "MAGIA_ELEMENTAL_0",
+          "name": "Magia Elemental I",
+          "class": "Mago",
+          "groupKey": "Magia Elemental",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 15,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Magia elemental.",
+          "tier": 1
+        },
+        "enemySkill": {
+          "id": "MAGIA_ELEMENTAL_0",
+          "name": "Magia Elemental I",
+          "class": "Mago",
+          "groupKey": "Magia Elemental",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 15,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Magia elemental.",
+          "tier": 1
+        },
+        "playerActionProfile": "basic",
+        "enemyActionProfile": "basic",
+        "classAdvantages": {
+          "Guerreiro": {
+            "strong": "Ladino",
+            "weak": "Mago"
+          },
+          "Bárbaro": {
+            "strong": "Curandeiro",
+            "weak": "Guerreiro"
+          },
+          "Mago": {
+            "strong": "Guerreiro",
+            "weak": "Caçador"
+          },
+          "Curandeiro": {
+            "strong": "Bárbaro",
+            "weak": "Bardo"
+          },
+          "Bardo": {
+            "strong": "Curandeiro",
+            "weak": "Animalista"
+          },
+          "Ladino": {
+            "strong": "Caçador",
+            "weak": "Guerreiro"
+          },
+          "Caçador": {
+            "strong": "Mago",
+            "weak": "Ladino"
+          },
+          "Animalista": {
+            "strong": "Bardo",
+            "weak": "Bárbaro"
+          }
+        },
+        "initialEnergyRatio": 0,
+        "passivesEnabled": true
+      },
+      "aFirst": {
+        "n": 100,
+        "aWins": 65,
+        "bWins": 35,
+        "draws": 0,
+        "turns": 364,
+        "attacks": 663,
+        "skillUses": 0,
+        "eneSpent": 0,
+        "actionsA": 364,
+        "actionsB": 299,
+        "hpA": 1137,
+        "hpB": 443,
+        "effectiveDamageA": 4057,
+        "effectiveDamageB": 3363,
+        "noResponse": 0,
+        "firstActorFinalBlows": 65,
+        "turnHistogram": {
+          "3": 53,
+          "4": 32,
+          "5": 13,
+          "6": 2
+        },
+        "aWinRate": 0.65,
+        "aWinInterval95": [
+          0.5525444329688796,
+          0.7363575175690247
+        ],
+        "meanTurns": 3.64,
+        "medianTurns": 3,
+        "p10Turns": 3,
+        "p90Turns": 5,
+        "meanHpA": 11.37,
+        "meanHpB": 4.43
+      },
+      "bFirst": {
+        "n": 100,
+        "aWins": 39,
+        "bWins": 61,
+        "draws": 0,
+        "turns": 344,
+        "attacks": 627,
+        "skillUses": 0,
+        "eneSpent": 0,
+        "actionsA": 283,
+        "actionsB": 344,
+        "hpA": 502,
+        "hpB": 1028,
+        "effectiveDamageA": 3472,
+        "effectiveDamageB": 3998,
+        "noResponse": 0,
+        "firstActorFinalBlows": 61,
+        "turnHistogram": {
+          "3": 61,
+          "4": 34,
+          "5": 5
+        },
+        "aWinRate": 0.39,
+        "aWinInterval95": [
+          0.3001687400639441,
+          0.4879698295415926
+        ],
+        "meanTurns": 3.44,
+        "medianTurns": 3,
+        "p10Turns": 3,
+        "p90Turns": 4,
+        "meanHpA": 5.02,
+        "meanHpB": 10.28
+      },
+      "bySeed": [
+        {
+          "seed": "monstrinhomon-turn-order-v1:replicate-1",
+          "aFirst": {
+            "n": 100,
+            "aWins": 65,
+            "bWins": 35,
+            "draws": 0,
+            "turns": 364,
+            "attacks": 663,
+            "skillUses": 0,
+            "eneSpent": 0,
+            "actionsA": 364,
+            "actionsB": 299,
+            "hpA": 1137,
+            "hpB": 443,
+            "effectiveDamageA": 4057,
+            "effectiveDamageB": 3363,
+            "noResponse": 0,
+            "firstActorFinalBlows": 65,
+            "turnHistogram": {
+              "3": 53,
+              "4": 32,
+              "5": 13,
+              "6": 2
+            },
+            "aWinRate": 0.65,
+            "aWinInterval95": [
+              0.5525444329688796,
+              0.7363575175690247
+            ],
+            "meanTurns": 3.64,
+            "medianTurns": 3,
+            "p10Turns": 3,
+            "p90Turns": 5,
+            "meanHpA": 11.37,
+            "meanHpB": 4.43
+          },
+          "bFirst": {
+            "n": 100,
+            "aWins": 39,
+            "bWins": 61,
+            "draws": 0,
+            "turns": 344,
+            "attacks": 627,
+            "skillUses": 0,
+            "eneSpent": 0,
+            "actionsA": 283,
+            "actionsB": 344,
+            "hpA": 502,
+            "hpB": 1028,
+            "effectiveDamageA": 3472,
+            "effectiveDamageB": 3998,
+            "noResponse": 0,
+            "firstActorFinalBlows": 61,
+            "turnHistogram": {
+              "3": 61,
+              "4": 34,
+              "5": 5
+            },
+            "aWinRate": 0.39,
+            "aWinInterval95": [
+              0.3001687400639441,
+              0.4879698295415926
+            ],
+            "meanTurns": 3.44,
+            "medianTurns": 3,
+            "p10Turns": 3,
+            "p90Turns": 4,
+            "meanHpA": 5.02,
+            "meanHpB": 10.28
+          }
+        }
+      ],
+      "deltaWinPercentagePoints": 26,
+      "deltaInterval95": [
+        12.181289841028606,
+        38.460849129326476
+      ]
+    },
+    {
+      "id": "MON_013:self:L10:mixed",
+      "control": true,
+      "scenario": {
+        "id": "MON_013:self:L10:mixed",
+        "label": "Mago espelhado L10 mixed",
+        "control": true,
+        "player": {
+          "id": "MON_013",
+          "name": "Lagartomon",
+          "class": "Mago",
+          "rarity": "Comum",
+          "level": 10,
+          "hp": 45,
+          "hpMax": 45,
+          "atk": 11,
+          "def": 7,
+          "spd": 11,
+          "eneMax": 28
+        },
+        "enemy": {
+          "id": "MON_013",
+          "name": "Lagartomon",
+          "class": "Mago",
+          "rarity": "Comum",
+          "level": 10,
+          "hp": 45,
+          "hpMax": 45,
+          "atk": 11,
+          "def": 7,
+          "spd": 11,
+          "eneMax": 28
+        },
+        "playerSkill": {
+          "id": "MAGIA_ELEMENTAL_0",
+          "name": "Magia Elemental I",
+          "class": "Mago",
+          "groupKey": "Magia Elemental",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 15,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Magia elemental.",
+          "tier": 1
+        },
+        "enemySkill": {
+          "id": "MAGIA_ELEMENTAL_0",
+          "name": "Magia Elemental I",
+          "class": "Mago",
+          "groupKey": "Magia Elemental",
+          "stageIndex": 0,
+          "type": "DAMAGE",
+          "category": "Ataque",
+          "power": 15,
+          "accuracy": 1,
+          "energy_cost": 4,
+          "target": "Inimigo",
+          "desc": "Magia elemental.",
+          "tier": 1
+        },
+        "playerActionProfile": "mixed",
+        "enemyActionProfile": "mixed",
+        "classAdvantages": {
+          "Guerreiro": {
+            "strong": "Ladino",
+            "weak": "Mago"
+          },
+          "Bárbaro": {
+            "strong": "Curandeiro",
+            "weak": "Guerreiro"
+          },
+          "Mago": {
+            "strong": "Guerreiro",
+            "weak": "Caçador"
+          },
+          "Curandeiro": {
+            "strong": "Bárbaro",
+            "weak": "Bardo"
+          },
+          "Bardo": {
+            "strong": "Curandeiro",
+            "weak": "Animalista"
+          },
+          "Ladino": {
+            "strong": "Caçador",
+            "weak": "Guerreiro"
+          },
+          "Caçador": {
+            "strong": "Mago",
+            "weak": "Ladino"
+          },
+          "Animalista": {
+            "strong": "Bardo",
+            "weak": "Bárbaro"
+          }
+        },
+        "initialEnergyRatio": 0,
+        "passivesEnabled": true
+      },
+      "aFirst": {
+        "n": 100,
+        "aWins": 59,
+        "bWins": 41,
+        "draws": 0,
+        "turns": 287,
+        "attacks": 515,
+        "skillUses": 315,
+        "eneSpent": 1260,
+        "actionsA": 287,
+        "actionsB": 228,
+        "hpA": 1098,
+        "hpB": 560,
+        "effectiveDamageA": 3940,
+        "effectiveDamageB": 3402,
+        "noResponse": 0,
+        "firstActorFinalBlows": 59,
+        "turnHistogram": {
+          "2": 24,
+          "3": 65,
+          "4": 11
+        },
+        "aWinRate": 0.59,
+        "aWinInterval95": [
+          0.4920143005341078,
+          0.6813268697886348
+        ],
+        "meanTurns": 2.87,
+        "medianTurns": 3,
+        "p10Turns": 2,
+        "p90Turns": 4,
+        "meanHpA": 10.98,
+        "meanHpB": 5.6
+      },
+      "bFirst": {
+        "n": 100,
+        "aWins": 32,
+        "bWins": 68,
+        "draws": 0,
+        "turns": 281,
+        "attacks": 494,
+        "skillUses": 293,
+        "eneSpent": 1172,
+        "actionsA": 213,
+        "actionsB": 281,
+        "hpA": 360,
+        "hpB": 1408,
+        "effectiveDamageA": 3092,
+        "effectiveDamageB": 4140,
+        "noResponse": 0,
+        "firstActorFinalBlows": 68,
+        "turnHistogram": {
+          "2": 29,
+          "3": 62,
+          "4": 8,
+          "5": 1
+        },
+        "aWinRate": 0.32,
+        "aWinInterval95": [
+          0.23669147324999093,
+          0.41662618610452384
+        ],
+        "meanTurns": 2.81,
+        "medianTurns": 3,
+        "p10Turns": 2,
+        "p90Turns": 3,
+        "meanHpA": 3.6,
+        "meanHpB": 14.08
+      },
+      "bySeed": [
+        {
+          "seed": "monstrinhomon-turn-order-v1:replicate-1",
+          "aFirst": {
+            "n": 100,
+            "aWins": 59,
+            "bWins": 41,
+            "draws": 0,
+            "turns": 287,
+            "attacks": 515,
+            "skillUses": 315,
+            "eneSpent": 1260,
+            "actionsA": 287,
+            "actionsB": 228,
+            "hpA": 1098,
+            "hpB": 560,
+            "effectiveDamageA": 3940,
+            "effectiveDamageB": 3402,
+            "noResponse": 0,
+            "firstActorFinalBlows": 59,
+            "turnHistogram": {
+              "2": 24,
+              "3": 65,
+              "4": 11
+            },
+            "aWinRate": 0.59,
+            "aWinInterval95": [
+              0.4920143005341078,
+              0.6813268697886348
+            ],
+            "meanTurns": 2.87,
+            "medianTurns": 3,
+            "p10Turns": 2,
+            "p90Turns": 4,
+            "meanHpA": 10.98,
+            "meanHpB": 5.6
+          },
+          "bFirst": {
+            "n": 100,
+            "aWins": 32,
+            "bWins": 68,
+            "draws": 0,
+            "turns": 281,
+            "attacks": 494,
+            "skillUses": 293,
+            "eneSpent": 1172,
+            "actionsA": 213,
+            "actionsB": 281,
+            "hpA": 360,
+            "hpB": 1408,
+            "effectiveDamageA": 3092,
+            "effectiveDamageB": 4140,
+            "noResponse": 0,
+            "firstActorFinalBlows": 68,
+            "turnHistogram": {
+              "2": 29,
+              "3": 62,
+              "4": 8,
+              "5": 1
+            },
+            "aWinRate": 0.32,
+            "aWinInterval95": [
+              0.23669147324999093,
+              0.41662618610452384
+            ],
+            "meanTurns": 2.81,
+            "medianTurns": 3,
+            "p10Turns": 2,
+            "p90Turns": 3,
+            "meanHpA": 3.6,
+            "meanHpB": 14.08
+          }
+        }
+      ],
+      "deltaWinPercentagePoints": 26.999999999999996,
+      "deltaInterval95": [
+        13.238525827177442,
+        39.36159689305845
+      ]
+    }
+  ],
+  "limitations": [
+    "Mede apenas o harness 1×1, sem tabuleiro, grupos, cura, itens, IA completa ou passivas de espécie.",
+    "Não implementa nem valida SPD + d6; a divergência DIV-INIT-01 permanece aberta.",
+    "mixed usa a primeira skill ofensiva estágio 0; Curandeiro sem skill ofensiva retorna ao básico.",
+    "Níveis acima de 1 usam crescimento sintético do harness, sem garantir evolução natural.",
+    "Contadores de ações/ENE são totais dos dois lados; turnos incluem batalhas encerradas no limite.",
+    "Amostra fixa; diferenças pequenas podem ser ruído de Monte Carlo. Nenhuma decisão de balanceamento.",
+    "Dano efetivo é HP perdido, com HP final limitado a zero; não inclui overkill. Ações por lado inferidas da alternância estrita, incluindo falhas.",
+    "sourceCommit é referência declarada; hashes dos bytes executados são a evidência exata."
+  ]
+}
