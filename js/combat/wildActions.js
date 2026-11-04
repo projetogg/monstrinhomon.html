@@ -466,7 +466,7 @@ function processEnemyCounterattack(encounter, wildMonster, playerMonster, depend
     const wildSkill = wildMonster.skill;
     
     // IA: 50% chance de usar habilidade se tiver ENE
-    const useSkill = action === 'auto' && wildSkill && 
+    const useSkill = action === 'auto' && wildSkill &&
                      (wildMonster.ene || 0) >= wildSkill.energy_cost && 
                      Math.random() < 0.5;
     
