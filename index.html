@@ -4662,133 +4662,9 @@
 
         // Usar habilidade
         function useSkill(attacker, skill, defender, encounter) {
-            try {
-                if (!attacker || !skill || !defender) return false;
-                
-                // Verificar se tem ENE suficiente
-                if (attacker.ene < skill.cost) {
-                    return false;
-                }
-                
-                // Consumir ENE
-                attacker.ene -= skill.cost;
-                
-                encounter.log = encounter.log || [];
-                encounter.log.push(`✨ ${attacker.name} usa ${skill.name}! (-${skill.cost} ENE)`);
-
-                // Fase 14: indicador de kit_swap — distingue habilidade canônica da espécie
-                if (skill._kitSwapId) {
-                    const isPromoted = skill._kitSwapId.endsWith('_ii');
-                    if (isPromoted) {
-                        encounter.log.push(`⭐ Habilidade especial da espécie (Promoção II)!`);
-                    } else {
-                        encounter.log.push(`🌟 Habilidade especial da espécie!`);
-                    }
-                }
-                
-                // Aplicar efeito baseado no tipo
-                switch (skill.type) {
-                    case 'DAMAGE':
-                        // Calcular dano da habilidade com nova fórmula
-                        const atkMods = Combat.Wild.Core.getBuffModifiers(attacker);
-                        const effectiveAtk = Math.max(1, attacker.atk + atkMods.atk);
-                        
-                        const defMods = Combat.Wild.Core.getBuffModifiers(defender);
-                        const effectiveDef = Math.max(1, defender.def + defMods.def);
-                        
-                        // Vantagem de classe
-                        const classAdv = GameState.config?.classAdvantages?.[attacker.class];
-                        let damageMult = 1.0;
-                        if (classAdv?.strong === defender.class) {
-                            damageMult = 1.10;
-                        } else if (classAdv?.weak === defender.class) {
-                            damageMult = 0.90;
-                        }
-                        
-                        const skillDamage = calcDamage({
-                            atk: effectiveAtk,
-                            def: effectiveDef,
-                            power: skill.power,
-                            damageMult: damageMult
-                        });
-                        
-                        defender.hp = Math.max(0, defender.hp - skillDamage);
-                        encounter.log.push(`💥 ${defender.name} recebe ${skillDamage} de dano!`);
-
-                        // Simbiose Natural: cura o atacante ao causar dano
-                        if (skill.selfHeal && skill.selfHeal > 0) {
-                            const heal = Math.min(skill.selfHeal, attacker.hpMax - attacker.hp);
-                            attacker.hp = Math.min(attacker.hpMax, attacker.hp + heal);
-                            if (heal > 0) encounter.log.push(`💚 ${attacker.name} recupera ${heal} HP pela Simbiose!`);
-                        }
-                        break;
-                        
-                    case 'HEAL':
-                        // Curar (self ou ally)
-                        const healAmount = skill.power;
-                        const target = (skill.target === 'ally' || skill.target === 'self') ? attacker : defender;
-                        target.hp = Math.min(target.hpMax, target.hp + healAmount);
-                        encounter.log.push(`💚 ${target.name} recupera ${healAmount} HP!`);
-
-                        // Purificação: remover buffs negativos (status negativos) do alvo
-                        if (skill.cleanse && skill.cleanse > 0 && target.buffs) {
-                            const negBefore = target.buffs.filter(b => b.power < 0).length;
-                            if (skill.cleanse >= 99) {
-                                target.buffs = target.buffs.filter(b => b.power >= 0);
-                            } else {
-                                let removed = 0;
-                                target.buffs = target.buffs.filter(b => {
-                                    if (b.power < 0 && removed < skill.cleanse) { removed++; return false; }
-                                    return true;
-                                });
-                            }
-                            const negAfter = target.buffs.filter(b => b.power < 0).length;
-                            const cleansed = negBefore - negAfter;
-                            if (cleansed > 0) encounter.log.push(`✨ ${cleansed} status negativo(s) removido(s) de ${target.name}!`);
-                        }
-                        break;
-                        
-                    case 'BUFF':
-                        // Aplicar buff/debuff
-                        const buffTarget = skill.target === 'enemy' ? defender : attacker;
-                        buffTarget.buffs = buffTarget.buffs || [];
-                        
-                        const buff = {
-                            type: skill.buffType,
-                            power: skill.power,
-                            duration: skill.duration || 1,
-                            source: skill.name
-                        };
-                        buffTarget.buffs.push(buff);
-                        
-                        const buffDesc = skill.power > 0 ? `+${skill.power}` : skill.power;
-                        encounter.log.push(`🔮 ${buffTarget.name} recebe ${buff.type} ${buffDesc} por ${buff.duration} turnos!`);
-                        
-                        // Se for Fúria (Bárbaro), aplicar também o debuff
-                        if (skill.debuffType && skill.debuffPower) {
-                            const debuff = {
-                                type: skill.debuffType,
-                                power: skill.debuffPower,
-                                duration: skill.duration || 1,
-                                source: skill.name
-                            };
-                            attacker.buffs.push(debuff);
-                            encounter.log.push(`⚠️ ${attacker.name} recebe ${debuff.type} ${debuff.power} por ${debuff.duration} turnos!`);
-                        }
-                        break;
-                        
-                    case 'TAUNT':
-                        // Marcar alvo como provocado (flag simples)
-                        defender.taunted = true;
-                        encounter.log.push(`😠 ${defender.name} foi provocado!`);
-                        break;
-                }
-                
-                return true;
-            } catch (error) {
-                console.error('Failed to use skill:', error);
-                return false;
-            }
+            return Combat.Wild.Actions.applyWildSkillEffect(
+                attacker, skill, defender, encounter, GameState.config?.classAdvantages,
+            );
         }
 
         // Função antiga removida - usar getMonsterSkills acima
@@ -9252,18 +9128,8 @@
          * base = 10 + 15 - 5 = 20
          * finalD = max(1, floor(20 * 1.0)) = 20
          */
-        function calcDamage({ atk, def, power, damageMult = 1.0 }) {
-            try {
-                // FÓRMULA: ATK + POWER - DEF (GAME_RULES.md)
-                const base = atk + power - def;
-                
-                // Aplicar multiplicador de classe e garantir dano mínimo 1
-                const finalD = Math.floor(base * damageMult);
-                return Math.max(1, finalD);
-            } catch (error) {
-                console.error('Damage calculation failed:', error);
-                return 1;
-            }
+        function calcDamage(params) {
+            return Combat.Wild.Actions.calculateWildSkillDamage(params);
         }
 
         /**
