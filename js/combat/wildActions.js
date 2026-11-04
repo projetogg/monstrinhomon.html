@@ -140,9 +140,10 @@ export function initializeWildBattleParticipation(playerMonster, wildMonster = n
  * @param {number} params.d20Roll - Resultado do dado de ataque
  * @param {number} [params.defenderRoll] - Resultado do dado de defesa (opcional)
  * @param {object} params.dependencies - Dependências externas
+ * @param {boolean} [params.deferEnemyResponse=false] - Deixa a oportunidade inimiga a cargo do chamador.
  * @returns {object} { success: boolean, result?: string, reason?: string }
  */
-export function executeWildAttack({ encounter, player, playerMonster, d20Roll, defenderRoll, dependencies }) {
+export function executeWildAttack({ encounter, player, playerMonster, d20Roll, defenderRoll, dependencies, deferEnemyResponse = false }) {
     try {
         if (!encounter?.wildMonster) {
             return { success: false, reason: 'no_encounter' };
@@ -158,19 +159,10 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
         // PR11B: Marcar que o monstro do jogador participou (executou ação)
         markAsParticipated(playerMonster);
         
-        // Aplicar regeneração de ENE
-        applyEneRegen(playerMonster, encounter, dependencies.eneRegenData);
-        
-        // Atualizar buffs (reduzir duração)
-        updateBuffs(playerMonster);
-
-        // PR-02: on_turn_start — início do turno do jogador (após regen/buffs, antes da ação)
-        fireCombatEvent(playerMonster, ON_TURN_START, {
-            hpPct: playerMonster.hpMax > 0 ? playerMonster.hp / playerMonster.hpMax : 0,
-        });
+        startWildPlayerOpportunity(playerMonster, encounter, dependencies);
         
         // Verificar crítico/falha
-        const critResult = processCritical(d20Roll, player, encounter);
+        const critResult = processCritical(d20Roll, player, encounter, dependencies.criticalRewards !== false);
         
         // Fórmula v2.2: Wild usa d20 defensivo bilateral.
         const wildDefenseRoll = Number.isInteger(defenderRoll) ? defenderRoll : rollEnemyD20(dependencies);
@@ -339,7 +331,7 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
         }
         
         // FASE 2: Contra-ataque do inimigo (se ainda vivo)
-        if (encounter.wildMonster.hp > 0) {
+        if (!deferEnemyResponse && encounter.wildMonster.hp > 0) {
             const enemyResult = processEnemyCounterattack(
                 encounter,
                 encounter.wildMonster,
@@ -358,6 +350,22 @@ export function executeWildAttack({ encounter, player, playerMonster, d20Roll, d
         console.error('Attack execution failed:', error);
         return { success: false, reason: error.message };
     }
+}
+
+function startWildPlayerOpportunity(monster, encounter, dependencies) {
+    applyEneRegen(monster, encounter, dependencies.eneRegenData);
+    updateBuffs(monster);
+    fireCombatEvent(monster, ON_TURN_START, {
+        hpPct: monster.hpMax > 0 ? monster.hp / monster.hpMax : 0,
+    });
+}
+
+/** Encerra uma oportunidade sem técnica. A arena controla ordem e geometria. */
+export function executeWildPlayerPass({ encounter, player, playerMonster, dependencies }) {
+    if (!encounter?.active || !(encounter.wildMonster?.hp > 0)) return { success: false };
+    if (!validateWildPlayerActor(encounter, player, playerMonster, dependencies).ok) return { success: false };
+    startWildPlayerOpportunity(playerMonster, encounter, dependencies);
+    return { success: true, result: 'ongoing' };
 }
 
 /**
@@ -416,12 +424,13 @@ export function updateBuffs(monster) {
  * 
  * @returns {object} { isCrit20, isFail1, critBonus, logEntries }
  */
-function processCritical(d20Roll, player, encounter) {
+function processCritical(d20Roll, player, encounter, grantReward) {
     const result = WildCore.checkCriticalRoll(d20Roll);
     result.critBonus = null;
     
     if (result.isCrit20) {
         encounter.log.push(`⭐ CRÍTICO 20! ⭐`);
+        if (!grantReward) return result;
         
         // Bônus de UX separado da fórmula v2.2 (não altera dano/RC; apenas log/recompensa)
         const bonusRoll = Math.floor(Math.random() * 3);
@@ -449,7 +458,7 @@ function processCritical(d20Roll, player, encounter) {
  * 
  * @returns {object} { defeated: boolean }
  */
-function processEnemyCounterattack(encounter, wildMonster, playerMonster, dependencies) {
+function processEnemyCounterattack(encounter, wildMonster, playerMonster, dependencies, action = 'auto') {
     // Fase 4.2: reset do estado de turno do shieldhorn — novo ciclo de ataque inimigo
     const passiveState = encounter.passiveState || (encounter.passiveState = {});
     passiveState.shieldhornBlockedThisTurn = false;
@@ -457,7 +466,7 @@ function processEnemyCounterattack(encounter, wildMonster, playerMonster, depend
     const wildSkill = wildMonster.skill;
     
     // IA: 50% chance de usar habilidade se tiver ENE
-    const useSkill = wildSkill && 
+    const useSkill = action === 'auto' && wildSkill && 
                      (wildMonster.ene || 0) >= wildSkill.energy_cost && 
                      Math.random() < 0.5;
     
@@ -828,7 +837,7 @@ function handleVictory(encounter, player, playerMonster, dependencies) {
  * @param {object} params.dependencies   - Dependências injetadas (eneRegenData, classAdvantages, etc.)
  * @returns {{ defeated: boolean }}
  */
-export function executeWildEnemyFullTurn({ encounter, wildMonster, playerMonster, dependencies }) {
+export function executeWildEnemyFullTurn({ encounter, wildMonster, playerMonster, dependencies, action = 'auto' }) {
     // 1. ENE regen do selvagem (começo de turno)
     applyEneRegen(wildMonster, encounter, dependencies.eneRegenData);
 
@@ -841,12 +850,171 @@ export function executeWildEnemyFullTurn({ encounter, wildMonster, playerMonster
     });
 
     // 3. Decisão de IA + resolução de ataque
-    return processEnemyCounterattack(encounter, wildMonster, playerMonster, dependencies);
+    if (action === 'pass') return { defeated: false };
+    return processEnemyCounterattack(encounter, wildMonster, playerMonster, dependencies, action);
+}
+
+/** Resolve uma escolha inimiga que a arena já validou: básico ou passe. */
+export function executeWildEnemyOpportunity({ encounter, player, playerMonster, dependencies, action }) {
+    const wildMonster = encounter?.wildMonster;
+    if (!encounter?.active || !(wildMonster?.hp > 0) || !(playerMonster?.hp > 0) ||
+        (action !== 'basic' && action !== 'pass')) return { success: false };
+
+    const result = executeWildEnemyFullTurn({ encounter, wildMonster, playerMonster, dependencies, action });
+    return result.defeated
+        ? handleDefeat(encounter, player, playerMonster, dependencies)
+        : { success: true, result: 'ongoing' };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AÇÕES DO JOGADOR — Pipelines Modulares
 // ─────────────────────────────────────────────────────────────────────────────
+
+/** Fórmula do efeito de técnica do Wild, antes resolvida no HTML. */
+export function calculateWildSkillDamage({ atk, def, power, damageMult = 1.0 }) {
+    try {
+        // FÓRMULA: ATK + POWER - DEF (GAME_RULES.md)
+        const base = atk + power - def;
+
+        // Aplicar multiplicador de classe e garantir dano mínimo 1
+        const finalD = Math.floor(base * damageMult);
+        return Math.max(1, finalD);
+    } catch (error) {
+        console.error('Damage calculation failed:', error);
+        return 1;
+    }
+}
+
+/** Aplica o efeito e o custo da técnica normalizada usada pelo Wild. */
+export function applyWildSkillEffect(attacker, skill, defender, encounter, classAdvantages) {
+    try {
+        if (!attacker || !skill || !defender) return false;
+
+        // Verificar se tem ENE suficiente
+        if (attacker.ene < skill.cost) {
+            return false;
+        }
+
+        // Consumir ENE
+        attacker.ene -= skill.cost;
+
+        encounter.log = encounter.log || [];
+        encounter.log.push(`✨ ${attacker.name} usa ${skill.name}! (-${skill.cost} ENE)`);
+
+        // Fase 14: indicador de kit_swap — distingue habilidade canônica da espécie
+        if (skill._kitSwapId) {
+            const isPromoted = skill._kitSwapId.endsWith('_ii');
+            if (isPromoted) {
+                encounter.log.push(`⭐ Habilidade especial da espécie (Promoção II)!`);
+            } else {
+                encounter.log.push(`🌟 Habilidade especial da espécie!`);
+            }
+        }
+
+        // Aplicar efeito baseado no tipo
+        switch (skill.type) {
+            case 'DAMAGE':
+                // Calcular dano da habilidade com nova fórmula
+                const atkMods = WildCore.getBuffModifiers(attacker);
+                const effectiveAtk = Math.max(1, attacker.atk + atkMods.atk);
+
+                const defMods = WildCore.getBuffModifiers(defender);
+                const effectiveDef = Math.max(1, defender.def + defMods.def);
+
+                // Vantagem de classe
+                const classAdv = classAdvantages?.[attacker.class];
+                let damageMult = 1.0;
+                if (classAdv?.strong === defender.class) {
+                    damageMult = 1.10;
+                } else if (classAdv?.weak === defender.class) {
+                    damageMult = 0.90;
+                }
+
+                const skillDamage = calculateWildSkillDamage({
+                    atk: effectiveAtk,
+                    def: effectiveDef,
+                    power: skill.power,
+                    damageMult: damageMult
+                });
+
+                defender.hp = Math.max(0, defender.hp - skillDamage);
+                encounter.log.push(`💥 ${defender.name} recebe ${skillDamage} de dano!`);
+
+                // Simbiose Natural: cura o atacante ao causar dano
+                if (skill.selfHeal && skill.selfHeal > 0) {
+                    const heal = Math.min(skill.selfHeal, attacker.hpMax - attacker.hp);
+                    attacker.hp = Math.min(attacker.hpMax, attacker.hp + heal);
+                    if (heal > 0) encounter.log.push(`💚 ${attacker.name} recupera ${heal} HP pela Simbiose!`);
+                }
+                break;
+
+            case 'HEAL':
+                // Curar (self ou ally)
+                const healAmount = skill.power;
+                const target = (skill.target === 'ally' || skill.target === 'self') ? attacker : defender;
+                target.hp = Math.min(target.hpMax, target.hp + healAmount);
+                encounter.log.push(`💚 ${target.name} recupera ${healAmount} HP!`);
+
+                // Purificação: remover buffs negativos (status negativos) do alvo
+                if (skill.cleanse && skill.cleanse > 0 && target.buffs) {
+                    const negBefore = target.buffs.filter(b => b.power < 0).length;
+                    if (skill.cleanse >= 99) {
+                        target.buffs = target.buffs.filter(b => b.power >= 0);
+                    } else {
+                        let removed = 0;
+                        target.buffs = target.buffs.filter(b => {
+                            if (b.power < 0 && removed < skill.cleanse) { removed++; return false; }
+                            return true;
+                        });
+                    }
+                    const negAfter = target.buffs.filter(b => b.power < 0).length;
+                    const cleansed = negBefore - negAfter;
+                    if (cleansed > 0) encounter.log.push(`✨ ${cleansed} status negativo(s) removido(s) de ${target.name}!`);
+                }
+                break;
+
+            case 'BUFF':
+                // Aplicar buff/debuff
+                const buffTarget = skill.target === 'enemy' ? defender : attacker;
+                buffTarget.buffs = buffTarget.buffs || [];
+
+                const buff = {
+                    type: skill.buffType,
+                    power: skill.power,
+                    duration: skill.duration || 1,
+                    source: skill.name
+                };
+                buffTarget.buffs.push(buff);
+
+                const buffDesc = skill.power > 0 ? `+${skill.power}` : skill.power;
+                encounter.log.push(`🔮 ${buffTarget.name} recebe ${buff.type} ${buffDesc} por ${buff.duration} turnos!`);
+
+                // Se for Fúria (Bárbaro), aplicar também o debuff
+                if (skill.debuffType && skill.debuffPower) {
+                    const debuff = {
+                        type: skill.debuffType,
+                        power: skill.debuffPower,
+                        duration: skill.duration || 1,
+                        source: skill.name
+                    };
+                    attacker.buffs.push(debuff);
+                    encounter.log.push(`⚠️ ${attacker.name} recebe ${debuff.type} ${debuff.power} por ${debuff.duration} turnos!`);
+                }
+                break;
+
+            case 'TAUNT':
+                // Marcar alvo como provocado (flag simples)
+                defender.taunted = true;
+                encounter.log.push(`😠 ${defender.name} foi provocado!`);
+                break;
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Failed to use skill:', error);
+        return false;
+    }
+}
 
 /**
  * Executa o uso de uma habilidade do jogador no combate selvagem.
@@ -874,10 +1042,11 @@ export function executeWildEnemyFullTurn({ encounter, wildMonster, playerMonster
  *   getBasicPower {function}        (monsterClass) → number
  *   audio {object?}                 { playSfx }
  *   rollD20 {function?}             () → number
+ * @param {boolean} [params.deferEnemyResponse=false] - Deixa a oportunidade inimiga a cargo do chamador.
  * @returns {{ success: boolean, result: string }}
  *   result: 'victory' | 'defeat' | 'ongoing' | 'invalid' | 'error'
  */
-export function executeWildSkill({ encounter, player, playerMonster, skillIndex, dependencies }) {
+export function executeWildSkill({ encounter, player, playerMonster, skillIndex, dependencies, deferEnemyResponse = false }) {
     try {
         const wildMonster = encounter?.wildMonster;
         if (!wildMonster) return { success: false, result: 'invalid' };
@@ -900,11 +1069,13 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
             return { success: false, result: 'invalid' };
         }
 
-        // ENE regen do jogador no início do turno
-        applyEneRegen(playerMonster, encounter, dependencies.eneRegenData);
-
-        // Atualizar buffs do jogador
-        updateBuffs(playerMonster);
+        if (deferEnemyResponse) {
+            startWildPlayerOpportunity(playerMonster, encounter, dependencies);
+        } else {
+            // Caminho legado: a técnica atualiza ENE e buffs sem evento de início.
+            applyEneRegen(playerMonster, encounter, dependencies.eneRegenData);
+            updateBuffs(playerMonster);
+        }
 
         // ON_ATTACK em skill é elegível somente para dano acertado.
         // Wild delega o efeito a useSkill (sem rolagem de acerto local):
@@ -1037,6 +1208,8 @@ export function executeWildSkill({ encounter, player, playerMonster, skillIndex,
             encounter.result = 'victory';
             return { success: true, result: 'victory' };
         }
+
+        if (deferEnemyResponse) return { success: true, result: 'ongoing' };
 
         // Turno completo do inimigo
         const counterResult = executeWildEnemyFullTurn({
