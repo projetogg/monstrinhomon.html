@@ -356,6 +356,7 @@ export function simulateScenario(scenario, options = {}) {
     enemyActionProfile: scenario.enemyActionProfile ?? 'basic',
     passivesEnabled: scenario.passivesEnabled !== false,
     summary: summarizeBattleRuns(runs, counters, maxTurns),
+    ...(options.includeBattleRuns === true ? { battleRuns: runs } : {}),
   };
 }
 

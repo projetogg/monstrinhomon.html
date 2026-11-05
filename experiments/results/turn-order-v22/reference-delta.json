@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "classification": "NO_QUANTITATIVE_DELTA_IN_CURRENT_HARNESS",
+  "comparable": true,
+  "before": {
+    "baselineSha": "e6d550ff427657110500d99cbc3e570cfedde2f6",
+    "generatedAt": "2026-10-28T19:31:16.332Z",
+    "seed": "monstrinhomon-combat-v2.2-baseline-v1",
+    "runsPerScenario": 1000
+  },
+  "after": {
+    "baselineSha": "e6d550ff427657110500d99cbc3e570cfedde2f6",
+    "generatedAt": "2026-10-28T19:33:55.254Z",
+    "seed": "monstrinhomon-combat-v2.2-baseline-v1",
+    "runsPerScenario": 1000
+  },
+  "coverage": {
+    "currentHarnessIncludesSpeciesPassives": false,
+    "currentHarnessIncludesClassPassives": true,
+    "sourceLimitation": "Sem passivas de espécie, cura, itens, alvo de IA ou equivalência completa Wild/Group."
+  },
+  "scenarioComparison": {
+    "beforeCount": 90,
+    "afterCount": 90,
+    "commonCount": 90,
+    "unchangedCount": 90,
+    "changedCount": 0,
+    "missingAfter": [],
+    "addedAfter": [],
+    "scenarioDifferences": [],
+    "scenarioMetadataDifferences": []
+  },
+  "metadataDifferences": [
+    {
+      "path": "/generatedAt",
+      "before": "2026-10-28T19:31:16.332Z",
+      "after": "2026-10-28T19:33:55.254Z"
+    }
+  ],
+  "structuralDifferences": [],
+  "sourceDifferences": [],
+  "aggregate": {
+    "before": {
+      "scenarioCount": 90,
+      "runsPerScenario": 1000,
+      "totalRuns": 90000,
+      "scenarioMeanWinRate": 0.680867,
+      "scenarioMeanTtk": 3.754722,
+      "scenarioMeanDamagePerDamagingAction": 16.244343,
+      "scenarioMeanPlayerHpFinal": 21.491989,
+      "totalAttacks": 614572,
+      "totalBasicUses": 487919,
+      "totalSkillUses": 126653,
+      "weightedSkillUseRate": 0.206083,
+      "weightedNatural1Rate": 0.050167,
+      "weightedNatural20Rate": 0.05045,
+      "rcCounts": {
+        "falha_total": 56505,
+        "contato_neutralizado": 64733,
+        "acerto_reduzido": 113030,
+        "acerto_normal": 154886,
+        "acerto_forte": 225418
+      },
+      "rcShares": {
+        "falha_total": 0.091942,
+        "contato_neutralizado": 0.10533,
+        "acerto_reduzido": 0.183917,
+        "acerto_normal": 0.252023,
+        "acerto_forte": 0.366789
+      }
+    },
+    "after": {
+      "scenarioCount": 90,
+      "runsPerScenario": 1000,
+      "totalRuns": 90000,
+      "scenarioMeanWinRate": 0.680867,
+      "scenarioMeanTtk": 3.754722,
+      "scenarioMeanDamagePerDamagingAction": 16.244343,
+      "scenarioMeanPlayerHpFinal": 21.491989,
+      "totalAttacks": 614572,
+      "totalBasicUses": 487919,
+      "totalSkillUses": 126653,
+      "weightedSkillUseRate": 0.206083,
+      "weightedNatural1Rate": 0.050167,
+      "weightedNatural20Rate": 0.05045,
+      "rcCounts": {
+        "falha_total": 56505,
+        "contato_neutralizado": 64733,
+        "acerto_reduzido": 113030,
+        "acerto_normal": 154886,
+        "acerto_forte": 225418
+      },
+      "rcShares": {
+        "falha_total": 0.091942,
+        "contato_neutralizado": 0.10533,
+        "acerto_reduzido": 0.183917,
+        "acerto_normal": 0.252023,
+        "acerto_forte": 0.366789
+      }
+    },
+    "delta": {
+      "rcCounts": {
+        "acerto_forte": 0,
+        "acerto_normal": 0,
+        "acerto_reduzido": 0,
+        "contato_neutralizado": 0,
+        "falha_total": 0
+      },
+      "rcShares": {
+        "acerto_forte": 0,
+        "acerto_normal": 0,
+        "acerto_reduzido": 0,
+        "contato_neutralizado": 0,
+        "falha_total": 0
+      },
+      "runsPerScenario": 0,
+      "scenarioCount": 0,
+      "scenarioMeanDamagePerDamagingAction": 0,
+      "scenarioMeanPlayerHpFinal": 0,
+      "scenarioMeanTtk": 0,
+      "scenarioMeanWinRate": 0,
+      "totalAttacks": 0,
+      "totalBasicUses": 0,
+      "totalRuns": 0,
+      "totalSkillUses": 0,
+      "weightedNatural1Rate": 0,
+      "weightedNatural20Rate": 0,
+      "weightedSkillUseRate": 0
+    }
+  }
+}

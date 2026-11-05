@@ -1,0 +1,30 @@
+{
+  "id": "MM-LAB-TURN-ORDER-PILOT",
+  "seed": "monstrinhomon-turn-order-v1",
+  "runs": 100,
+  "maxTurns": 50,
+  "levels": [
+    1,
+    10
+  ],
+  "pairs": [
+    [
+      "Guerreiro",
+      "Bárbaro"
+    ],
+    [
+      "Mago",
+      "Guerreiro"
+    ],
+    [
+      "Ladino",
+      "Caçador"
+    ]
+  ],
+  "selfClasses": [
+    "Guerreiro",
+    "Mago"
+  ],
+  "replicates": 1,
+  "includeSelfControls": true
+}

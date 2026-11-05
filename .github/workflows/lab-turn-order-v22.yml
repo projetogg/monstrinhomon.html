@@ -1,0 +1,51 @@
+name: Laboratorio - ordem V2.2
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/experiment-turn-order-v22.mjs'
+      - 'experiments/configs/turn-order-v22*.json'
+      - 'experiments/results/turn-order-v22/reference-before.json'
+      - 'tests/turn_order_experiment.test.mjs'
+      - 'js/combat/combatSimulationHarness.js'
+      - 'js/combat/groupCombatFormula.js'
+      - 'data/monsters.json'
+      - 'data/skills.json'
+      - 'design/canon/class_matchups.json'
+      - '.github/workflows/lab-turn-order-v22.yml'
+permissions:
+  contents: read
+jobs:
+  experiment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Testar desenho experimental
+        run: node --test tests/turn_order_experiment.test.mjs
+      - name: Executar e conferir reproducibilidade
+        env:
+          SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          node scripts/experiment-turn-order-v22.mjs --source-commit "$SOURCE_COMMIT" --config experiments/configs/turn-order-v22-pilot.json --output artifacts/pilot
+          node scripts/experiment-turn-order-v22.mjs --source-commit "$SOURCE_COMMIT"
+          node scripts/experiment-turn-order-v22.mjs --source-commit "$SOURCE_COMMIT" --output artifacts/repeat
+          node --input-type=module -e "import fs from 'node:fs'; import assert from 'node:assert/strict'; const a=JSON.parse(fs.readFileSync('artifacts/turn-order-v22.json')); const b=JSON.parse(fs.readFileSync('artifacts/repeat.json')); assert.deepEqual(a.results,b.results); assert.deepEqual(a.sourceHashes,b.sourceHashes);"
+          node scripts/simulate-combat-v2-2.mjs --runs 1000 --seed monstrinhomon-combat-v2.2-baseline-v1 --baseline-sha "$SOURCE_COMMIT" --output artifacts/reference-current.json --report artifacts/reference-current.md
+          node scripts/compare-combat-baselines-v2-2.mjs --before experiments/results/turn-order-v22/reference-before.json --after artifacts/reference-current.json --output artifacts/reference-delta.json --report artifacts/reference-delta.md
+          node --input-type=module -e "import fs from 'node:fs'; import assert from 'node:assert/strict'; assert.equal(JSON.parse(fs.readFileSync('artifacts/reference-delta.json')).classification,'NO_QUANTITATIVE_DELTA_IN_CURRENT_HARNESS');"
+          cat artifacts/turn-order-v22.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lab-turn-order-v22
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 30
